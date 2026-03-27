@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/constants.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -203,9 +204,7 @@ class DatabaseService {
         '$baseUrl/tables/$_recordsTableUid/records',
       ];
 
-  /// `DELETE` / row `PATCH` for plans table.
-  static String _plansRowUrl(String rowId) =>
-      '$baseUrl/$_plansTableUid/records/${rowId.trim()}';
+  /// Plans `DELETE`: collection URL + bulk body `[{"Id":<int>},…]` (see [deletePlanningTasksBulk]).
 
   /// NocoDB v3 table IDs (Table Settings -> API). List: `baseUrl/{tableUid}/records`; row: `baseUrl/{tableUid}/records/{rowId}`.
   static const String _profilesRecords = NocoV3TablePaths.profiles;
@@ -435,7 +434,7 @@ class DatabaseService {
       _loadErrorMessage = e.message ?? 'Session invalid or profile not found';
       _isInitialized = true;
       return false;
-    } catch (e, st) {
+    } catch (e) {
       _isInitialized = true;
       _loadErrorMessage = 'Sync Error: $e';
       _settingsController.add(_settings);
@@ -492,7 +491,7 @@ class DatabaseService {
         return [];
       }
       if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
-      final String? where = _whereUserId;
+      final String where = _whereUserId;
       final rawRows = await _getList(_plansRecords, where, 1000);
       final rows = rawRows.map(_flattenNocoRecord).toList();
       final targetDayStr =
@@ -922,11 +921,15 @@ class DatabaseService {
       Map<String, dynamic>? rowHint,
     ) async {
       final mergedRaw = Map<String, dynamic>.from(fields);
+      mergedRaw['user_id'] = _pid;
       _mergeBusinessRecordIdIntoFields(
         mergedRaw,
         rowHint ?? _findCachedRecordRowByRestCandidate(segment),
       );
-      final merged = _nocoFieldsForPatch(mergedRaw);
+      final merged = _recordsPatchFieldsJsonStrings(
+        _nocoFieldsForPatch(mergedRaw),
+      );
+      print('PATCHING DATA: records row restId=$segment fields=$merged');
       final parsed = int.tryParse(segment.trim());
       final bodies = <Map<String, dynamic>>[
         NocoRequest.single(fields: merged),
@@ -1038,7 +1041,7 @@ class DatabaseService {
     return last ?? http.Response('', 404);
   }
 
-  /// Noco plans row PK — @DATA_MAP.md: **plan_id** (fallback wrapper id).
+  /// Business key for plan rows: prefer **plan_id** (UUID); bulk PATCH outer `id` is [nocoRecordsTablePk] / [PlanningTask.id].
   static String nocoPlanRowPk(Map<String, dynamic> row) {
     for (final key in <String>['plan_id', 'Plan_id']) {
       final v = row[key];
@@ -2044,11 +2047,31 @@ class DatabaseService {
         continue;
       }
       try {
+        // @DATA_MAP `categories`: LongText JSON — empty Map → "{}" so clears server column.
         out[k] = jsonEncode(v);
       } catch (e) {
         _log('CATEGORY_JSON_ENCODE_FAIL key=$k error=$e');
         out.remove(k);
       }
+    }
+    return out;
+  }
+
+  /// @DATA_MAP `records`: **checklist** is stored as JSON **String** (LongText).
+  Map<String, dynamic> _recordsPatchFieldsJsonStrings(Map<String, dynamic> fields) {
+    final out = Map<String, dynamic>.from(fields);
+    if (!out.containsKey('checklist')) return out;
+    final v = out['checklist'];
+    if (v == null) {
+      out.remove('checklist');
+      return out;
+    }
+    if (v is String) return out;
+    try {
+      out['checklist'] = jsonEncode(v);
+    } catch (e) {
+      _log('RECORD_CHECKLIST_JSON_ENCODE_FAIL error=$e');
+      out.remove('checklist');
     }
     return out;
   }
@@ -2100,6 +2123,26 @@ class DatabaseService {
     print('RESPONSE BODY [$contextLabel]: ${res.body}');
     _log(
       'PLANS_PATCH_RESPONSE $contextLabel status=${res.statusCode} body=${res.body}',
+    );
+    return res;
+  }
+
+  Future<http.Response> _plansBulkDeleteHttp(
+    String contextLabel,
+    String bodyJson,
+  ) async {
+    print('PLANS DELETE BODY [$contextLabel]: $bodyJson');
+    _log('PLANS_DELETE_HTTP $contextLabel uri=$_plansBulkCollectionUri');
+    final res = await http.delete(
+      _plansBulkCollectionUri,
+      headers: _headers,
+      body: bodyJson,
+    );
+    print(
+      'PLANS DELETE RESPONSE [$contextLabel]: ${res.statusCode} ${res.body}',
+    );
+    _log(
+      'PLANS_DELETE_RESPONSE $contextLabel status=${res.statusCode} body=${res.body}',
     );
     return res;
   }
@@ -2278,7 +2321,7 @@ class DatabaseService {
           'user_id': _pid,
           'name': newName,
           'normalized_id': _slugifyCategoryDisplayName(newName),
-          if (biz != null) 'category_id': biz,
+          'category_id': ?biz,
           'order': existing.order,
         },
       );
@@ -2336,7 +2379,7 @@ class DatabaseService {
     try {
       final prepared = _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
         'user_id': _pid,
-        if (biz != null) 'category_id': biz,
+        'category_id': ?biz,
         ...mergedFields,
       });
       final merged = _nocoFieldsForPatch(prepared);
@@ -2354,6 +2397,7 @@ class DatabaseService {
       }
       _log('CATEGORY_PATCH_SINGLE uri=$_categoryBulkCollectionUri id=$sysId (bulk array len=1)');
       final bodyJson = _categoryBulkPatchJson(sysId, merged);
+      print('PATCHING DATA: category patchCategoryDelta id=$targetId body=$bodyJson');
       final res = await _categoryBulkPatchHttp('patchCategoryDelta', bodyJson);
       if (res.statusCode == 404) {
         _emitCategorySyncNotice('category_sync_not_found');
@@ -2519,7 +2563,7 @@ class DatabaseService {
         sysId,
         _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
           'user_id': _pid,
-          if (rowBiz != null) 'category_id': rowBiz,
+          'category_id': ?rowBiz,
           'parent_id': newParentKey,
           'order': movedOrder,
         }),
@@ -2977,11 +3021,12 @@ class DatabaseService {
         sysId,
         _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
           'user_id': _pid,
-          if (biz != null) 'category_id': biz,
+          'category_id': ?biz,
           'keywords': keywords,
           'order': rule.order,
         }),
       );
+      print('PATCHING DATA: category updateCategoryKeywords id=$categoryId body=$bodyJson');
       final res = await _categoryBulkPatchHttp('updateCategoryKeywords', bodyJson);
       if (res.statusCode == 404) {
         _log('UPDATE_CATEGORY_KEYWORDS: 404 — ${res.body}');
@@ -3678,7 +3723,7 @@ class DatabaseService {
     return <String, dynamic>{
       'id': restPk,
       'nocoRestPathId': restPk,
-      if (sysInt != null) 'nocoSystemId': sysInt,
+      'nocoSystemId': ?sysInt,
       'record_id': bizRid,
       // Legacy: numeric Noco system id only; business UUID is [record_id].
       'docId': int.tryParse(restPk) ?? 0,
@@ -3693,14 +3738,12 @@ class DatabaseService {
       'calendarDayStr': calendarDayStr,
       'tags': row['tags'] is List ? row['tags'] : null,
       'note': mergeRecordNoteFields(row['note'], row['notes']),
-      'checklist': row['checklist'] is List
-          ? row['checklist']
-              .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList()
-          : null,
+      'checklist': _parseRecordChecklistField(row['checklist']),
     };
   }
+
+  List<Map<String, dynamic>>? _parseRecordChecklistField(dynamic raw) =>
+      parseChecklistFromNoco(raw);
 
   Set<String> _collectRecordKeysFromCache(String recordId) {
     final id = recordId.trim();
@@ -4440,19 +4483,21 @@ class DatabaseService {
       final res = await http.post(
         Uri.parse('$baseUrl/$_recordsRecords'),
         headers: _headers,
-        body: jsonEncode(NocoRequest.single(fields: _nocoFieldsForPatch(<String, dynamic>{
-          'user_id': _pid,
-          'record_id': _newClientRecordUuid(),
-          'status': 'completed',
-          'title': parsed.title,
-          'start_time': startTime.toUtc().toIso8601String(),
-          'end_time': endTime.toUtc().toIso8601String(),
-          'category_id': _recordCategoryBusinessPkForApi(categoryId),
-          'type': 'record',
-          'parent_id': null,
-          'checklist': <Map<String, dynamic>>[],
-          if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
-        }))),
+        body: jsonEncode(NocoRequest.single(fields: _recordsPatchFieldsJsonStrings(
+          _nocoFieldsForPatch(<String, dynamic>{
+            'user_id': _pid,
+            'record_id': _newClientRecordUuid(),
+            'status': 'completed',
+            'title': parsed.title,
+            'start_time': startTime.toUtc().toIso8601String(),
+            'end_time': endTime.toUtc().toIso8601String(),
+            'category_id': _recordCategoryBusinessPkForApi(categoryId),
+            'type': 'record',
+            'parent_id': null,
+            'checklist': <Map<String, dynamic>>[],
+            if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
+          }),
+        ))),
       );
       _log('writeCompletedRecord POST status=${res.statusCode}');
       if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
@@ -4572,7 +4617,11 @@ class DatabaseService {
         final res = await http.post(
           Uri.parse('$baseUrl/$_recordsRecords'),
           headers: _headers,
-          body: jsonEncode(NocoRequest.single(fields: runningFields)),
+          body: jsonEncode(NocoRequest.single(
+            fields: _recordsPatchFieldsJsonStrings(
+              _nocoFieldsForPatch(runningFields),
+            ),
+          )),
         );
         _log('ROUTE_CHECK: POST records -> $_recordsRecords');
         _log('writeRecord POST status=${res.statusCode}');
@@ -4615,7 +4664,11 @@ class DatabaseService {
         final res = await http.post(
           Uri.parse('$baseUrl/$_recordsRecords'),
           headers: _headers,
-          body: jsonEncode(NocoRequest.single(fields: completedFields)),
+          body: jsonEncode(NocoRequest.single(
+            fields: _recordsPatchFieldsJsonStrings(
+              _nocoFieldsForPatch(completedFields),
+            ),
+          )),
         );
         _log('ROUTE_CHECK: POST records -> $_recordsRecords');
         _log('writeRecord POST status=${res.statusCode}');
@@ -4665,16 +4718,18 @@ class DatabaseService {
       await http.post(
         Uri.parse('$baseUrl/$_plansRecords'),
         headers: _headers,
-        body: jsonEncode(NocoRequest.single(fields: _nocoFieldsForPatch(<String, dynamic>{
-          'user_id': _pid,
-          'plan_id': _newClientRecordUuid(),
-          'title': parsed.title,
-          'category_id': planCat,
-          'is_done': false,
-          'order': 0,
-          'checklist': <Map<String, dynamic>>[],
-          if (startIso != null) 'start_time': startIso,
-        }))),
+        body: jsonEncode(NocoRequest.single(fields: _recordsPatchFieldsJsonStrings(
+          _nocoFieldsForPatch(<String, dynamic>{
+            'user_id': _pid,
+            'plan_id': _newClientRecordUuid(),
+            'title': parsed.title,
+            'category_id': planCat,
+            'is_done': false,
+            'order': 0,
+            'checklist': <Map<String, dynamic>>[],
+            if (startIso != null) 'start_time': startIso,
+          }),
+        ))),
       );
       _log('ROUTE_CHECK: POST plans -> $_plansRecords');
     } catch (_) {}
@@ -4697,16 +4752,18 @@ class DatabaseService {
         await http.post(
           Uri.parse('$baseUrl/$_plansRecords'),
           headers: _headers,
-          body: jsonEncode(NocoRequest.single(fields: _nocoFieldsForPatch(<String, dynamic>{
-            'user_id': _pid,
-            'plan_id': _newClientRecordUuid(),
-            'title': title,
-            'category_id': planCat,
-            'is_done': false,
-            'order': 0,
-            'checklist': <Map<String, dynamic>>[],
-            if (startIso != null) 'start_time': startIso,
-          }))),
+          body: jsonEncode(NocoRequest.single(fields: _recordsPatchFieldsJsonStrings(
+            _nocoFieldsForPatch(<String, dynamic>{
+              'user_id': _pid,
+              'plan_id': _newClientRecordUuid(),
+              'title': title,
+              'category_id': planCat,
+              'is_done': false,
+              'order': 0,
+              'checklist': <Map<String, dynamic>>[],
+              if (startIso != null) 'start_time': startIso,
+            }),
+          ))),
         );
         _log('ROUTE_CHECK: POST plans -> $_plansRecords');
       } catch (_) {}
@@ -4741,6 +4798,9 @@ class DatabaseService {
       }
       if (startTime != null) {
         updates['start_time'] = startTime.toUtc().toIso8601String();
+        if (endTime == null && !updates.containsKey('status')) {
+          updates['status'] = 'running';
+        }
       }
       if (categoryId != null) {
         updates['category_id'] = _recordCategoryBusinessPkForApi(categoryId);
@@ -4771,6 +4831,7 @@ class DatabaseService {
         _purgeGhostRecordById(rid);
         await _fetchRecordsIntoCache();
         _timeUpdateController.add(null);
+        AppSnack.failed();
         return null;
       }
       await _fetchRecordsIntoCache();
@@ -4782,10 +4843,15 @@ class DatabaseService {
             (r['record_id'] ?? '').toString().trim() == originalInput,
         orElse: () => <String, dynamic>{},
       );
-      if (row.isEmpty) return null;
+      if (row.isEmpty) {
+        AppSnack.failed();
+        return null;
+      }
       _timeUpdateController.add(null);
+      AppSnack.saved();
       return TimelineRecord.fromMap(_rowToRecordMap(row), recordId: rid);
     } catch (_) {
+      AppSnack.failed();
       return null;
     }
   }
@@ -4837,6 +4903,7 @@ class DatabaseService {
           _optimisticDeletedKeys.remove(k);
         }
         _timeUpdateController.add(null);
+        AppSnack.failed();
         return false;
       }
       await _fetchRecordsIntoCache();
@@ -4844,6 +4911,7 @@ class DatabaseService {
         _optimisticDeletedKeys.remove(k);
       }
       _timeUpdateController.add(null);
+      AppSnack.deleted();
       return true;
     } catch (e, st) {
       _log('deleteRecordByDocId failed: $e');
@@ -4852,6 +4920,7 @@ class DatabaseService {
         _optimisticDeletedKeys.remove(k);
       }
       _timeUpdateController.add(null);
+      AppSnack.failed();
       return false;
     }
   }
@@ -4887,6 +4956,7 @@ class DatabaseService {
         _clearOptimisticStopKeysForRecord(originalInput);
         await _fetchRecordsIntoCache();
         _timeUpdateController.add(null);
+        AppSnack.updated();
         return true;
       }
       final ok = res.statusCode >= 200 && res.statusCode < 300;
@@ -4894,16 +4964,19 @@ class DatabaseService {
         _clearOptimisticStopKeysForRecord(originalInput);
         await _fetchRecordsIntoCache();
         _timeUpdateController.add(null);
+        AppSnack.updated();
         return true;
       }
       _clearOptimisticStopKeysForRecord(originalInput);
       _timeUpdateController.add(null);
+      AppSnack.failed();
       return false;
     } catch (e, st) {
       _log('stopRecordByDocId failed: $e');
       _log(st.toString());
       _clearOptimisticStopKeysForRecord(originalInput);
       _timeUpdateController.add(null);
+      AppSnack.failed();
       return false;
     }
   }
@@ -4978,7 +5051,7 @@ class DatabaseService {
       'startTime': startDisplay,
       'endDateTime': endDisplay,
       'endDateKey': derivedEndDateKey,
-      'checklist': row['checklist'] is List ? row['checklist'] : [],
+      'checklist': row['checklist'],
       'note': mergeRecordNoteFields(row['note'], row['notes']),
       'parentPlanId': row['parent_plan_id'] == null
           ? null
@@ -4991,23 +5064,29 @@ class DatabaseService {
     if (!_isInitialized || _userIdForWhere == 0) return false;
     if (!_isPlansTableConfigured) {
       _log('TABLE_GUARD: blocked addPlanningTask because plans table id equals records table id.');
+      AppSnack.failed();
       return false;
     }
     try {
       final catStr = _categoryStringPkForApi(getCategoryRuleById(task.categoryId));
       if (catStr == null || catStr.isEmpty) {
         _log('ADD_PLAN: blocked — category_id string missing for local category ${task.categoryId}');
+        AppSnack.failed();
         return false;
       }
-      final planFields = _nocoFieldsForPatch(<String, dynamic>{
+      final planFieldsRaw = _nocoFieldsForPatch(<String, dynamic>{
         'user_id': _pid,
         'category_id': catStr,
         'plan_id': _newClientRecordUuid(),
         'title': task.title,
-        'is_done': task.isDone,
+        // Explicit boolean so Noco never applies a wrong default (@DATA_MAP `is_done`).
+        'is_done': task.isDone == true,
         'order': task.order,
         'checklist': task.checklist.isNotEmpty ? task.checklist : <Map<String, dynamic>>[],
       });
+      final planFields = _recordsPatchFieldsJsonStrings(
+        Map<String, dynamic>.from(planFieldsRaw),
+      );
       if (task.startTime != null) {
         planFields['start_time'] = task.startTime!.toUtc().toIso8601String();
       } else if (task.dateKey.length >= 10) {
@@ -5029,8 +5108,15 @@ class DatabaseService {
         body: jsonEncode(NocoRequest.single(fields: planFields)),
       );
       _log('ROUTE_CHECK: POST plans -> $_plansRecords');
-      return res.statusCode >= 200 && res.statusCode < 300;
+      final ok = res.statusCode >= 200 && res.statusCode < 300;
+      if (ok) {
+        AppSnack.saved();
+      } else {
+        AppSnack.failed();
+      }
+      return ok;
     } catch (_) {
+      AppSnack.failed();
       return false;
     }
   }
@@ -5366,6 +5452,8 @@ class DatabaseService {
 
   Future<bool> updatePlanningTask(
     String planRowId, {
+    /// @DATA_MAP `plan_id` (UUID) — send inside `fields` only; outer bulk `id` must be Integer Id.
+    String? planBusinessId,
     String? title,
     int? categoryId,
     bool? isDone,
@@ -5378,6 +5466,8 @@ class DatabaseService {
     DateTime? endDateTime,
     DateTime? endDateTimeDisplay,
     bool clearEnd = false,
+    /// When true, `AppSnack` success/failure toasts are omitted (caller handles UX).
+    bool suppressAppSnack = false,
   }) async {
     if (!_isInitialized || _userIdForWhere == 0) return false;
     if (!_isPlansTableConfigured) {
@@ -5417,11 +5507,23 @@ class DatabaseService {
     }
     if (fields.length <= 1) return false;
 
+    final bizPid = planBusinessId?.trim() ?? '';
+    if (bizPid.isNotEmpty && !bizPid.startsWith('optimistic-')) {
+      fields['plan_id'] = bizPid;
+    }
+
     try {
-      Object bulkId = rid;
-      final asInt = int.tryParse(rid);
-      if (asInt != null) bulkId = asInt;
-      final cleaned = _nocoFieldsForPatch(Map<String, dynamic>.from(fields));
+      final asInt = int.tryParse(rid.trim());
+      if (asInt == null || asInt <= 0) {
+        _log(
+          'UPDATE_PLANNING_TASK: refuse bulk PATCH — outer id must be Noco Integer Id, got "$rid"',
+        );
+        return false;
+      }
+      final bulkId = asInt;
+      final cleaned = _recordsPatchFieldsJsonStrings(
+        _nocoFieldsForPatch(Map<String, dynamic>.from(fields)),
+      );
       final bodyJson = jsonEncode(
         NocoRequest.bulk([NocoRequest(id: bulkId, fields: cleaned)]),
       );
@@ -5429,12 +5531,97 @@ class DatabaseService {
       final ok = res.statusCode >= 200 && res.statusCode < 300;
       if (!ok) {
         _log('UPDATE_PLANNING_TASK: server ${res.statusCode} — ${res.body}');
+        if (!suppressAppSnack) AppSnack.failed();
+      } else {
+        if (!suppressAppSnack) AppSnack.saved();
       }
       return ok;
     } catch (e) {
       _log('UPDATE_PLANNING_TASK: $e');
+      AppSnack.failed();
       return false;
     }
+  }
+
+  /// Collection DELETE: `[{"Id": <int>}, …]` then lowercase `id` fallback (Noco v3).
+  Future<bool> deletePlanningTasksBulk(Iterable<int> nocoSystemIds) async {
+    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isPlansTableConfigured) {
+      _log('TABLE_GUARD: blocked deletePlanningTasksBulk.');
+      return false;
+    }
+    final ids = nocoSystemIds.where((i) => i > 0).toSet().toList()..sort();
+    if (ids.isEmpty) return false;
+
+    Future<http.Response> tryKey(String pkKey) async {
+      final body = jsonEncode(
+        ids.map((id) => <String, dynamic>{pkKey: id}).toList(),
+      );
+      return _plansBulkDeleteHttp('deletePlanningTasksBulk_$pkKey', body);
+    }
+
+    var res = await tryKey('Id');
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      AppSnack.deleted();
+      return true;
+    }
+    res = await tryKey('id');
+    final ok = res.statusCode >= 200 && res.statusCode < 300;
+    if (ok) {
+      AppSnack.deleted();
+    } else {
+      _log(
+        'DELETE_PLANS_BULK: failed status=${res.statusCode} body=${res.body}',
+      );
+      AppSnack.failed();
+    }
+    return ok;
+  }
+
+  /// Bulk `is_done` — each element outer `id` is Integer wrapper PK (@DATA_MAP `plans`).
+  Future<bool> markPlanningTasksCompletedBulk(
+    Iterable<int> nocoSystemIds, {
+    required bool completed,
+  }) async {
+    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isPlansTableConfigured) return false;
+    final ids = nocoSystemIds.where((i) => i > 0).toSet().toList()..sort();
+    if (ids.isEmpty) return false;
+    const chunkSize = 10;
+    var allOk = true;
+    for (var i = 0; i < ids.length; i += chunkSize) {
+      final end = min(i + chunkSize, ids.length);
+      final chunk = ids.sublist(i, end);
+      final requests = <NocoRequest>[];
+      for (final id in chunk) {
+        requests.add(
+          NocoRequest(
+            id: id,
+            fields: _nocoFieldsForPatch(<String, dynamic>{
+              'user_id': _pid,
+              'is_done': completed,
+            }),
+          ),
+        );
+      }
+      final bodyJson = jsonEncode(NocoRequest.bulk(requests));
+      final res = await _plansBulkPatchHttp(
+        'markPlanningTasksCompletedBulk',
+        bodyJson,
+      );
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        allOk = false;
+        _log(
+          'MARK_PLANS_DONE_BULK: chunk failed status=${res.statusCode} body=${res.body}',
+        );
+      }
+    }
+    if (allOk) {
+      AppSnack.updated();
+    } else {
+      AppSnack.failed();
+    }
+    return allOk;
   }
 
   /// Debounced bulk PATCH: [order] + [user_id] only (@DATA_MAP.md). One multi-row bulk per chunk (max 10 rows).
@@ -5468,7 +5655,7 @@ class DatabaseService {
     });
   }
 
-  /// DELETE in background; [planRowId] = Noco **plan_id**.
+  /// Deletes one plan row via [deletePlanningTasksBulk] (collection DELETE, Integer PK only).
   Future<void> deletePlanningTask(String planRowId) async {
     if (!_isInitialized || _userIdForWhere == 0) return;
     if (!_isPlansTableConfigured) {
@@ -5482,21 +5669,10 @@ class DatabaseService {
       _log(
         'DELETE_PLANNING_TASK: refuse — row URL requires Noco system Id (int), got $id',
       );
+      AppSnack.failed();
       return;
     }
-    unawaited(() async {
-      try {
-        final res = await http.delete(
-          Uri.parse(_plansRowUrl(sysId.toString())),
-          headers: _headers,
-        );
-        if (res.statusCode == 400 || res.statusCode == 404) {
-          _log('DELETE_PLANNING_TASK: server ${res.statusCode} — ${res.body}');
-        }
-      } catch (e) {
-        _log('DELETE_PLANNING_TASK: $e');
-      }
-    }());
+    unawaited(deletePlanningTasksBulk([sysId]));
   }
 
   // Removed: Supabase OTP/Yandex/OAuth — use AuthBridge + Noco only.

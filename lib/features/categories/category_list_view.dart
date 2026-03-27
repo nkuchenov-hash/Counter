@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -30,29 +31,47 @@ const double _kCategoryGridGap = 8;
 const double _kScrollPeekFraction = 0.17;
 const double _kTileWidthClampMin = 48;
 
+/// Cap tile side on large viewports (desktop web) so grids stay compact (@DATA_MAP grid tiers).
+double _maxTileSideForViewport(BuildContext context) {
+  final w = MediaQuery.sizeOf(context).width;
+  if (kIsWeb && w >= 1100) return 104;
+  if (kIsWeb && w >= 800) return 112;
+  if (w >= 900) return 118;
+  if (w >= 700) return 124;
+  return 560;
+}
+
 /// Grid: exactly [N] full squares per row — `N*w + (N-1)*g == availableWidth`.
-double _calculateTileWidthGrid(int depth, double availableWidth) {
+double _calculateTileWidthGrid(
+  int depth,
+  double availableWidth,
+  double maxSide,
+) {
   final n = _gridTargetColumns(depth);
   if (availableWidth <= 0 || n <= 0) return _kTileWidthClampMin;
   final raw =
       (availableWidth - (n - 1) * _kCategoryGridGap) / n;
-  return raw.clamp(_kTileWidthClampMin, 560);
+  return raw.clamp(_kTileWidthClampMin, maxSide);
 }
 
 /// Scroll: viewport shows [N] full tiles + [k] of the next — `V = w*(N+k) + (N-1)*g`.
-double _calculateTileWidthScroll(int depth, double availableWidth) {
+double _calculateTileWidthScroll(
+  int depth,
+  double availableWidth,
+  double maxSide,
+) {
   final n = _gridTargetColumns(depth);
   if (availableWidth <= 0 || n <= 0) return _kTileWidthClampMin;
   final denom = n + _kScrollPeekFraction;
   final raw = (availableWidth - (n - 1) * _kCategoryGridGap) / denom;
-  return raw.clamp(_kTileWidthClampMin, 560);
+  return raw.clamp(_kTileWidthClampMin, maxSide);
 }
 
 /// Nominal reference [side] per depth tier (for scaling type/icons when [side] comes from math).
 double _referenceTileSideForDepth(int depth) {
   if (depth <= 0) return 120;
-  if (depth == 1) return 90;
-  return 70;
+  if (depth == 1) return 96;
+  return 82;
 }
 
 /// Per-depth icon / type / padding; [side] comes from grid math (square tile).
@@ -384,9 +403,10 @@ class CategoryRowWidget extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, c) {
           final avail = c.maxWidth;
+          final maxSide = _maxTileSideForViewport(context);
           final side = layout == CategoryBandLayout.horizontalPeek
-              ? _calculateTileWidthScroll(depth, avail)
-              : _calculateTileWidthGrid(depth, avail);
+              ? _calculateTileWidthScroll(depth, avail, maxSide)
+              : _calculateTileWidthGrid(depth, avail, maxSide);
           final dLayout = _CategoryDepthLayout.forDepthAndSide(depth, side);
 
           Widget cell(CategoryRule r) {
@@ -405,66 +425,61 @@ class CategoryRowWidget extends StatelessWidget {
             );
           }
 
-          if (editMode && onReorder != null) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ReorderableListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    buildDefaultDragHandles: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: items.length,
-                    onReorder: onReorder!,
-                    proxyDecorator: (child, _, animation) {
-                      final br = dLayout.borderRadius;
-                      return AnimatedBuilder(
-                        animation: animation,
-                        builder: (context, _) {
-                          final t = Curves.easeInOut.transform(animation.value);
-                          return Transform.scale(
-                            scale: 1.0 + 0.03 * t,
-                            child: Material(
-                              elevation: 6 * t,
-                              borderRadius: BorderRadius.circular(br),
-                              clipBehavior: Clip.none,
-                              child: child,
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    itemBuilder: (ctx, i) {
-                      final r = items[i];
-                      return Padding(
-                        key: ValueKey<String>('cat-band-${r.id}'),
-                        padding: EdgeInsets.only(bottom: bandGap),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: cell(r),
-                        ),
-                      );
-                    },
-                  ),
-                  if (showAdd && onAddTap != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: _addTile(context, dLayout),
+          /// Edit mode: same wrap grid as browse; long-press drag to reorder (ReorderableListView API).
+          Widget reorderMovable(int index, Widget child) {
+            if (!editMode || onReorder == null) return child;
+            return DragTarget<int>(
+              onAcceptWithDetails: (details) {
+                final from = details.data;
+                final to = index;
+                if (from == to) return;
+                // Match ReorderableListView: moving down uses insertion index after target row.
+                if (from < to) {
+                  onReorder!(from, to + 1);
+                } else {
+                  onReorder!(from, to);
+                }
+              },
+              builder: (context, candidate, rejected) {
+                final highlighted = candidate.isNotEmpty;
+                return LongPressDraggable<int>(
+                  data: index,
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: SizedBox(
+                      width: dLayout.side,
+                      height: dLayout.side,
+                      child: Opacity(
+                        opacity: 0.92,
+                        child: child,
                       ),
                     ),
-                ],
-              ),
+                  ),
+                  childWhenDragging: Opacity(
+                    opacity: 0.35,
+                    child: child,
+                  ),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: highlighted
+                          ? Border.all(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            )
+                          : Border.all(color: Colors.transparent, width: 2),
+                      borderRadius:
+                          BorderRadius.circular(dLayout.borderRadius + 2),
+                    ),
+                    child: child,
+                  ),
+                );
+              },
             );
           }
 
           if (layout == CategoryBandLayout.horizontalPeek) {
             var count = items.length;
-            if (showAdd && editMode && onAddTap != null) count += 1;
+            if (showAdd && onAddTap != null) count += 1;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: SizedBox(
@@ -480,7 +495,10 @@ class CategoryRowWidget extends StatelessWidget {
                       return SizedBox(
                         width: dLayout.side,
                         height: dLayout.side,
-                        child: cell(items[i]),
+                        child: reorderMovable(
+                          i,
+                          cell(items[i]),
+                        ),
                       );
                     }
                     return SizedBox(
@@ -495,9 +513,9 @@ class CategoryRowWidget extends StatelessWidget {
           }
 
           final squareChips = <Widget>[
-            ...items.map((r) => cell(r)),
-            if (showAdd && editMode && onAddTap != null)
-              _addTile(context, dLayout),
+            for (var i = 0; i < items.length; i++)
+              reorderMovable(i, cell(items[i])),
+            if (showAdd && onAddTap != null) _addTile(context, dLayout),
           ];
 
           return Wrap(
@@ -848,6 +866,8 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
       Navigator.of(context).pop();
     }
     try {
+      print(
+          'PATCHING DATA: UI quick appearance -> patchCategoryDelta id=$id');
       final patch = await DatabaseService.instance.patchCategoryDelta(
         id,
         <String, dynamic>{
@@ -1148,6 +1168,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         if (iconChanged) {
           delta['icon_code_point'] = _iconCodePoint;
         }
+        print('PATCHING DATA: UI category editor -> patchCategoryDelta cid=$cid');
         final patch =
             await DatabaseService.instance.patchCategoryDelta(cid, delta);
         if (!patch.ok) {
@@ -1261,7 +1282,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final forbidden = {widget.category.id, ...db.getRecordIdsInSubtree(widget.category.id)};
     final pairs = db.allCategoryIdPathPairs.where((p) => !forbidden.contains(p.id)).toList();
     return DropdownButtonFormField<int?>(
-      value: _parentId,
+      initialValue: _parentId,
       decoration: InputDecoration(labelText: t(currentLocale.value, 'parent_category')),
       items: [
         DropdownMenuItem<int?>(value: null, child: Text(t(currentLocale.value, 'root_top_level'))),
@@ -1760,6 +1781,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final roots = DatabaseService.instance.getChildrenOf(null);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(t(loc, 'categories_title')),
         actions: [

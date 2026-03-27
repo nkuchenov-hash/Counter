@@ -19,7 +19,8 @@ String _formatDuration(Duration d) {
   return '${s}s';
 }
 
-String _formatTimeOfDay(DateTime dt) => DateFormat.Hm().format(dt);
+String _formatTimeOfDay(DateTime dt) =>
+    DateFormat.Hm(currentLocale.value).format(dt);
 
 DateTime _utcToDisplay(DateTime utc) => DatabaseService.instance.applyUserOffset(utc);
 
@@ -31,25 +32,92 @@ class StatsView extends StatefulWidget {
     required this.rules,
     required this.isFutureDate,
     required this.selectedDate,
+    this.onDayChanged,
   });
 
   final List<Map<String, dynamic>> records;
   final List<CategoryRule> rules;
   final bool isFutureDate;
   final DateTime selectedDate;
+  /// Swipe between calendar days in Stats; must match [TimelineSwipeWrapper] day logic.
+  final ValueChanged<DateTime>? onDayChanged;
 
   @override
   State<StatsView> createState() => _StatsViewState();
 }
 
 class _StatsViewState extends State<StatsView> {
+  static const int _statsPageCenter = 5000;
+
   final Set<String> _expandedKeys = {};
 
   int? _lastCacheKey;
   List<StatsNode>? _cachedAggregated;
 
+  PageController? _dayPageController;
+
+  DateTime _utcDay(DateTime d) => DateTime.utc(d.year, d.month, d.day);
+
+  int _pageIndexForDate(DateTime day) {
+    final today = DatabaseService.instance.getProjectedToday();
+    return _statsPageCenter +
+        _utcDay(day).difference(_utcDay(today)).inDays;
+  }
+
   int _aggregatedCacheKey(List<Map<String, dynamic>> records, DateTime selectedDate) {
     return DatabaseService.statsRecordsSignature(records, selectedDate);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.onDayChanged != null) {
+      _dayPageController =
+          PageController(initialPage: _pageIndexForDate(widget.selectedDate));
+    }
+  }
+
+  @override
+  void dispose() {
+    _dayPageController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant StatsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.onDayChanged == null && widget.onDayChanged != null) {
+      _dayPageController?.dispose();
+      _dayPageController =
+          PageController(initialPage: _pageIndexForDate(widget.selectedDate));
+    } else if (oldWidget.onDayChanged != null &&
+        widget.onDayChanged == null) {
+      _dayPageController?.dispose();
+      _dayPageController = null;
+    }
+
+    final ctrl = _dayPageController;
+    if (ctrl == null || widget.onDayChanged == null) return;
+
+    final od = oldWidget.selectedDate;
+    final nd = widget.selectedDate;
+    if (od.year == nd.year && od.month == nd.month && od.day == nd.day) {
+      return;
+    }
+    final target = _pageIndexForDate(widget.selectedDate);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final c = _dayPageController;
+      if (c == null || !c.hasClients) return;
+      final cur = c.page?.round() ?? target;
+      if (cur != target) {
+        c.animateToPage(
+          target,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   @override
@@ -82,13 +150,63 @@ class _StatsViewState extends State<StatsView> {
       (sum, node) => sum + node.total,
     );
 
+    final content = _buildStatsColumnContent(
+      context,
+      scheme,
+      aggregated,
+      totalDuration,
+    );
+
+    final navigate = widget.onDayChanged;
+    final ctrl = _dayPageController;
+    if (navigate == null || ctrl == null) {
+      return content;
+    }
+
+    return PageView.builder(
+      controller: ctrl,
+      itemCount: 10000,
+      onPageChanged: (int index) {
+        final today = DatabaseService.instance.getProjectedToday();
+        final day = _utcDay(today)
+            .add(Duration(days: index - _statsPageCenter));
+        navigate(DateTime(day.year, day.month, day.day));
+      },
+      itemBuilder: (context, index) {
+        final today = DatabaseService.instance.getProjectedToday();
+        final pageUtc =
+            _utcDay(today).add(Duration(days: index - _statsPageCenter));
+        final pageDay =
+            DateTime(pageUtc.year, pageUtc.month, pageUtc.day);
+        final sel = widget.selectedDate;
+        final isThisPage = pageDay.year == sel.year &&
+            pageDay.month == sel.month &&
+            pageDay.day == sel.day;
+        if (!isThisPage) {
+          return ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: const SizedBox.expand(),
+          );
+        }
+        return content;
+      },
+    );
+  }
+
+  Widget _buildStatsColumnContent(
+    BuildContext context,
+    ColorScheme scheme,
+    List<StatsNode> aggregated,
+    Duration totalDuration,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
-            t(currentLocale.value, 'total_time_format').replaceFirst('%s', _formatDuration(totalDuration)),
+            t(currentLocale.value, 'total_time_format')
+                .replaceFirst('%s', _formatDuration(totalDuration)),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: scheme.primary,
@@ -100,8 +218,13 @@ class _StatsViewState extends State<StatsView> {
           child: widget.records.isEmpty
               ? Center(
                   child: Text(
-                    widget.isFutureDate ? t(currentLocale.value, 'no_planned_tasks') : t(currentLocale.value, 'no_records_yet'),
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
+                    widget.isFutureDate
+                        ? t(currentLocale.value, 'no_planned_tasks')
+                        : t(currentLocale.value, 'no_records_yet'),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                 )
               : _buildStatsTree(context, scheme, aggregated),

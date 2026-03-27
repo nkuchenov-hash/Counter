@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:counter/auth_service.dart';
+import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -12,7 +15,7 @@ import 'package:flutter/services.dart';
 // No hardcoded UI text. No direct DB writes (use DatabaseService).
 // ---------------------------------------------------------------------------
 
-/// Security (Profile): Biometric lock toggle. Persists to profiles.biometric_enabled. No biometric data in cloud.
+/// Security (Profile): Biometric lock toggle. Persists to profiles.biometric_enabled.
 class _SecuritySection extends StatelessWidget {
   const _SecuritySection({this.onSaved});
 
@@ -20,31 +23,32 @@ class _SecuritySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final s = DatabaseService.instance.settings;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(t(currentLocale.value, 'security_section'), style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary)),
-        const SizedBox(height: 4),
-        SwitchListTile(
-          value: s.biometricEnabled,
-          onChanged: (bool value) async {
-            try {
-              await DatabaseService.instance.saveSettings(s.copyWith(biometricEnabled: value));
-              onSaved?.call();
-            } catch (_) {}
-          },
-          title: Text(t(currentLocale.value, 'biometric_lock')),
-          subtitle: Text(t(currentLocale.value, 'biometric_lock_subtitle')),
-          secondary: const Icon(Icons.fingerprint_rounded),
-        ),
-      ],
+    return SwitchListTile(
+      value: s.biometricEnabled,
+      onChanged: (bool value) async {
+        try {
+          final ok = await DatabaseService.instance
+              .saveSettings(s.copyWith(biometricEnabled: value));
+          if (ok) {
+            onSaved?.call();
+            AppSnack.saved();
+          } else {
+            AppSnack.failed();
+          }
+        } catch (_) {
+          AppSnack.failed();
+        }
+      },
+      title: Text(t(currentLocale.value, 'biometric_lock')),
+      subtitle: Text(t(currentLocale.value, 'biometric_lock_subtitle')),
+      secondary: const Icon(Icons.fingerprint_rounded),
+      contentPadding: EdgeInsets.zero,
     );
   }
 }
 
-/// Account Security (Profile): show current user (email/displayName from AuthService), Logout.
+/// Account: current user + Logout in one row (auth logic unchanged).
 class _AccountSecuritySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -52,6 +56,7 @@ class _AccountSecuritySection extends StatelessWidget {
     final email = user?.email;
     final authDisplayName = user?.displayName;
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return StreamBuilder<UserSettings>(
       stream: DatabaseService.instance.userSettingsStream,
@@ -63,27 +68,42 @@ class _AccountSecuritySection extends StatelessWidget {
             : (authDisplayName != null && authDisplayName.isNotEmpty
                 ? authDisplayName
                 : (email ?? user?.uid ?? '—'));
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(t(currentLocale.value, 'account_security'),
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(color: theme.colorScheme.primary)),
-            const SizedBox(height: 4),
-            ListTile(
-              title: Text(t(currentLocale.value, 'signed_in_as')),
-              subtitle: Text(subtitle),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: Icon(Icons.logout_rounded, color: theme.colorScheme.error),
-              title: Text(t(currentLocale.value, 'log_out'),
+        final loc = currentLocale.value;
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    style: theme.textTheme.bodyLarge,
+                    children: [
+                      TextSpan(text: '${t(loc, 'signed_in_as')} '),
+                      TextSpan(
+                        text: subtitle,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => _logout(context),
+                icon: Icon(Icons.logout_rounded, color: scheme.error, size: 20),
+                label: Text(
+                  t(loc, 'log_out'),
                   style: TextStyle(
-                      color: theme.colorScheme.error,
-                      fontWeight: FontWeight.w500)),
-              onTap: () => _logout(context),
-            ),
-          ],
+                    color: scheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -96,7 +116,8 @@ class _AccountSecuritySection extends StatelessWidget {
     var showSlowSnackBar = true;
     Future.delayed(const Duration(seconds: 1), () {
       if (showSlowSnackBar) {
-        messenger.showSnackBar(SnackBar(content: Text(t(currentLocale.value, 'logging_out'))));
+        messenger.showSnackBar(
+            SnackBar(content: Text(t(currentLocale.value, 'logging_out'))));
       }
     });
     try {
@@ -106,7 +127,8 @@ class _AccountSecuritySection extends StatelessWidget {
       showSlowSnackBar = false;
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'sign_out_failed'))),
+          SnackBar(
+              content: Text(t(currentLocale.value, 'sign_out_failed'))),
         );
       }
     } finally {
@@ -119,7 +141,7 @@ class _AccountSecuritySection extends StatelessWidget {
   }
 }
 
-/// Profile tab: Language and Timezone. Zero-trust dropdown to prevent assertion crash.
+/// Profile tab: Language and Timezone. Auto-saves on change.
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key, this.onSaved});
 
@@ -133,11 +155,19 @@ class _ProfilePageState extends State<ProfilePage> {
   late String _language;
   late String _timeZone;
   late List<String> _activeLanguages;
-  late String _primaryLanguage;
   late String _themeMode;
   late final TextEditingController _displayNameController;
+  late final FocusNode _displayNameFocus;
+
+  Timer? _displayNameDebounce;
+  String _lastSavedDisplayName = '';
+  bool _savingDisplayName = false;
+  bool _savingTheme = false;
+  bool _savingLanguage = false;
+
   bool _savingTimeZone = false;
-  bool _timeZoneDirty = false;
+
+  static const _nameDebounceDuration = Duration(milliseconds: 600);
 
   @override
   void initState() {
@@ -146,19 +176,85 @@ class _ProfilePageState extends State<ProfilePage> {
     _language = s.language;
     _timeZone = s.preferredTimeZone;
     _activeLanguages = List.from(s.effectiveActiveLanguages);
-    _primaryLanguage = s.primaryLanguage;
     _themeMode = s.themeMode;
+    _lastSavedDisplayName = s.displayName?.trim() ?? '';
     _displayNameController =
         TextEditingController(text: s.displayName ?? '');
+    _displayNameFocus = FocusNode();
+    _displayNameFocus.addListener(_onDisplayNameFocusChange);
+  }
+
+  void _onDisplayNameFocusChange() {
+    if (!_displayNameFocus.hasFocus) {
+      _flushDisplayNameSave();
+    }
   }
 
   @override
   void dispose() {
+    _displayNameDebounce?.cancel();
+    _displayNameFocus.removeListener(_onDisplayNameFocusChange);
+    _displayNameFocus.dispose();
     _displayNameController.dispose();
     super.dispose();
   }
 
-  Future<void> _saveTheme() async {
+  void _scheduleDisplayNameSave() {
+    _displayNameDebounce?.cancel();
+    _displayNameDebounce = Timer(_nameDebounceDuration, () {
+      unawaited(_persistDisplayNameIfNeeded());
+    });
+  }
+
+  void _flushDisplayNameSave() {
+    _displayNameDebounce?.cancel();
+    _displayNameDebounce = null;
+    unawaited(_persistDisplayNameIfNeeded());
+  }
+
+  Future<void> _persistDisplayNameIfNeeded() async {
+    final trimmed = _displayNameController.text.trim();
+    if (trimmed == _lastSavedDisplayName) return;
+    if (_savingDisplayName) {
+      _displayNameDebounce?.cancel();
+      _displayNameDebounce = Timer(const Duration(milliseconds: 120), () {
+        unawaited(_persistDisplayNameIfNeeded());
+      });
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _savingDisplayName = true);
+    try {
+      final ok = await DatabaseService.instance.saveSettings(
+        DatabaseService.instance.settings.copyWith(
+          displayName: trimmed.isEmpty ? null : trimmed,
+        ),
+      );
+      if (!mounted) return;
+      if (ok) {
+        _lastSavedDisplayName = trimmed;
+        widget.onSaved?.call();
+        AppSnack.saved();
+      } else {
+        AppSnack.failed();
+      }
+    } catch (_) {
+      if (mounted) AppSnack.failed();
+    } finally {
+      if (mounted) setState(() => _savingDisplayName = false);
+      final again = _displayNameController.text.trim();
+      if (mounted && again != _lastSavedDisplayName) {
+        _scheduleDisplayNameSave();
+      }
+    }
+  }
+
+  Future<void> _saveTheme(String next) async {
+    if (_savingTheme) return;
+    setState(() {
+      _themeMode = next;
+      _savingTheme = true;
+    });
     try {
       final ok = await DatabaseService.instance.saveSettings(
         DatabaseService.instance.settings.copyWith(themeMode: _themeMode),
@@ -166,21 +262,27 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!mounted) return;
       if (ok) {
         widget.onSaved?.call();
+        AppSnack.saved();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'timezone_save_failed'))),
-        );
+        setState(() => _themeMode = DatabaseService.instance.settings.themeMode);
+        AppSnack.failed();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'timezone_save_failed'))),
-        );
+        setState(() => _themeMode = DatabaseService.instance.settings.themeMode);
+        AppSnack.failed();
       }
+    } finally {
+      if (mounted) setState(() => _savingTheme = false);
     }
   }
 
-  Future<void> _saveLanguage() async {
+  Future<void> _saveLanguage(String next) async {
+    if (_savingLanguage) return;
+    setState(() {
+      _language = next;
+      _savingLanguage = true;
+    });
     try {
       final ok = await DatabaseService.instance.saveSettings(
         DatabaseService.instance.settings.copyWith(
@@ -192,42 +294,24 @@ class _ProfilePageState extends State<ProfilePage> {
       if (ok) {
         currentLocale.value = _language;
         widget.onSaved?.call();
+        AppSnack.saved();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'timezone_save_failed'))),
-        );
+        setState(() {
+          final s = DatabaseService.instance.settings;
+          _language = s.language;
+        });
+        AppSnack.failed();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'timezone_save_failed'))),
-        );
+        setState(() {
+          final s = DatabaseService.instance.settings;
+          _language = s.language;
+        });
+        AppSnack.failed();
       }
-    }
-  }
-
-  Future<void> _saveDisplayName() async {
-    try {
-      final trimmed = _displayNameController.text.trim();
-      final ok = await DatabaseService.instance.saveSettings(
-        DatabaseService.instance.settings.copyWith(
-          displayName: trimmed.isEmpty ? null : trimmed,
-        ),
-      );
-      if (!mounted) return;
-      if (ok) {
-        widget.onSaved?.call();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'timezone_save_failed'))),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'timezone_save_failed'))),
-        );
-      }
+    } finally {
+      if (mounted) setState(() => _savingLanguage = false);
     }
   }
 
@@ -241,18 +325,17 @@ class _ProfilePageState extends State<ProfilePage> {
       if (ok) {
         setState(() => _timeZone = v);
         widget.onSaved?.call();
+        AppSnack.saved();
       } else {
-        setState(() => _timeZone = DatabaseService.instance.settings.preferredTimeZone);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'timezone_save_failed'))),
-        );
+        setState(
+            () => _timeZone = DatabaseService.instance.settings.preferredTimeZone);
+        AppSnack.failed();
       }
     } catch (_) {
       if (!mounted) return;
-      setState(() => _timeZone = DatabaseService.instance.settings.preferredTimeZone);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'timezone_save_failed'))),
-      );
+      setState(
+          () => _timeZone = DatabaseService.instance.settings.preferredTimeZone);
+      AppSnack.failed();
     } finally {
       if (mounted) setState(() => _savingTimeZone = false);
     }
@@ -268,11 +351,19 @@ class _ProfilePageState extends State<ProfilePage> {
       );
       if (mounted && ok) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'added_language_categories').replaceFirst('%s', langCode))),
+          SnackBar(
+            content: Text(
+              t(currentLocale.value, 'added_language_categories')
+                  .replaceFirst('%s', langCode),
+            ),
+          ),
         );
       }
     } catch (_) {
-      if (mounted) setState(() => _activeLanguages = List.from(DatabaseService.instance.settings.effectiveActiveLanguages));
+      if (mounted) {
+        setState(() => _activeLanguages =
+            List.from(DatabaseService.instance.settings.effectiveActiveLanguages));
+      }
     }
   }
 
@@ -283,91 +374,146 @@ class _ProfilePageState extends State<ProfilePage> {
     final locale = currentLocale.value;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(t(locale, 'profile')),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          16 + MediaQuery.of(context).viewInsets.bottom,
+        ),
         children: [
-          Text(t(locale, 'profile'), style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
           _AccountSecuritySection(),
           const Divider(),
           _SecuritySection(onSaved: widget.onSaved),
           const Divider(),
-          Text(t(locale, 'appearance'), style: Theme.of(context).textTheme.titleSmall),
+          Text(t(locale, 'appearance'),
+              style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
-          SegmentedButton<String>(
-            segments: [
-              ButtonSegment(
-                value: 'light',
-                label: Text(t(locale, 'theme_light')),
-                icon: const Icon(Icons.light_mode_rounded),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SegmentedButton<String>(
+                segments: [
+                  ButtonSegment(
+                    value: 'light',
+                    label: Text(t(locale, 'theme_light')),
+                    icon: const Icon(Icons.light_mode_rounded),
+                  ),
+                  ButtonSegment(
+                    value: 'dark',
+                    label: Text(t(locale, 'theme_dark')),
+                    icon: const Icon(Icons.dark_mode_rounded),
+                  ),
+                  ButtonSegment(
+                    value: 'system',
+                    label: Text(t(locale, 'theme_system')),
+                    icon: const Icon(Icons.settings_suggest_rounded),
+                  ),
+                ],
+                selected: {_themeMode},
+                onSelectionChanged: (Set<String> next) {
+                  if (_savingTheme) return;
+                  if (next.isEmpty) return;
+                  final v = next.first;
+                  if (v == _themeMode) return;
+                  unawaited(_saveTheme(v));
+                },
               ),
-              ButtonSegment(
-                value: 'dark',
-                label: Text(t(locale, 'theme_dark')),
-                icon: const Icon(Icons.dark_mode_rounded),
-              ),
-              ButtonSegment(
-                value: 'system',
-                label: Text(t(locale, 'theme_system')),
-                icon: const Icon(Icons.settings_suggest_rounded),
-              ),
+              if (_savingTheme)
+                Positioned(
+                  right: 4,
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
             ],
-            selected: {_themeMode},
-            onSelectionChanged: (Set<String> next) {
-              if (next.isEmpty) return;
-              setState(() => _themeMode = next.first);
-            },
-          ),
-          const SizedBox(height: 8),
-          FilledButton.tonal(
-            onPressed: _saveTheme,
-            child: Text(t(locale, 'save_theme')),
           ),
           const SizedBox(height: 16),
           TextField(
             controller: _displayNameController,
+            focusNode: _displayNameFocus,
             decoration: InputDecoration(
               labelText: t(locale, 'display_name_label'),
               hintText: t(locale, 'display_name_hint'),
               border: const OutlineInputBorder(),
+              suffixIcon: _savingDisplayName
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : null,
             ),
             textCapitalization: TextCapitalization.words,
-          ),
-          const SizedBox(height: 8),
-          FilledButton.tonal(
-            onPressed: _saveDisplayName,
-            child: Text(t(locale, 'save_display_name')),
+            onChanged: (_) => _scheduleDisplayNameSave(),
+            onEditingComplete: _flushDisplayNameSave,
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _language,
-            decoration: InputDecoration(
-              labelText: t(locale, 'language_label'),
-              border: const OutlineInputBorder(),
-            ),
-            items: [
-              DropdownMenuItem(value: 'en', child: Text(t(locale, 'language_english'))),
-              DropdownMenuItem(value: 'ru', child: Text(t(locale, 'language_russian'))),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: DropdownMenu<String>(
+                  key: ValueKey(_language),
+                  initialSelection: _language,
+                  expandedInsets: EdgeInsets.zero,
+                  label: Text(t(locale, 'language_label')),
+                  dropdownMenuEntries: [
+                    DropdownMenuEntry<String>(
+                      value: 'en',
+                      label: t(locale, 'language_english'),
+                    ),
+                    DropdownMenuEntry<String>(
+                      value: 'ru',
+                      label: t(locale, 'language_russian'),
+                    ),
+                  ],
+                  onSelected: _savingLanguage
+                      ? null
+                      : (v) {
+                          if (v == null || v == _language) return;
+                          unawaited(_saveLanguage(v));
+                        },
+                ),
+              ),
+              if (_savingLanguage)
+                const Padding(
+                  padding: EdgeInsets.only(left: 8, top: 14),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
             ],
-            onChanged: (String? v) {
-              if (v != null) setState(() => _language = v);
-            },
           ),
           const SizedBox(height: 8),
-          FilledButton.tonal(
-            onPressed: _saveLanguage,
-            child: Text(t(locale, 'save_language')),
-          ),
-          const Divider(),
-          ListTile(
-            title: Text(t(locale, 'manage_languages')),
-            subtitle: Text(t(locale, 'active_primary').replaceFirst('%s', _activeLanguages.join(', ')).replaceFirst('%s', _primaryLanguage)),
+          Text(
+            t(locale, 'active_primary')
+                .replaceFirst('%s', _activeLanguages.join(', '))
+                .replaceFirst(
+                  '%s',
+                  DatabaseService.instance.settings.primaryLanguage,
+                ),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Wrap(
               spacing: 8,
               children: [
@@ -385,51 +531,54 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           const Divider(),
-          ListTile(
-            title: Text(t(locale, 'time_zone')),
-            subtitle: Text(safeTimeZone),
-            trailing: _savingTimeZone
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : null,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 110,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    t(locale, 'time_zone'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: AbsorbPointer(
+                  absorbing: _savingTimeZone,
+                  child: Opacity(
+                    opacity: _savingTimeZone ? 0.55 : 1,
+                    child: DropdownMenu<String>(
+                      initialSelection: safeTimeZone,
+                      expandedInsets: EdgeInsets.zero,
+                      enableFilter: true,
+                      enableSearch: true,
+                      label: Text(t(locale, 'search_timezones')),
+                      dropdownMenuEntries: validTimezones
+                          .map((z) =>
+                              DropdownMenuEntry<String>(value: z, label: z))
+                          .toList(),
+                      onSelected: (v) {
+                        if (v == null) return;
+                        unawaited(_selectTimeZone(v));
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              if (_savingTimeZone)
+                const Padding(
+                  padding: EdgeInsets.only(left: 8, top: 14),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: DropdownMenu<String>(
-              initialSelection: safeTimeZone,
-              expandedInsets: EdgeInsets.zero,
-              enableFilter: true,
-              enableSearch: true,
-              label: Text(t(locale, 'search_timezones')),
-              dropdownMenuEntries: validTimezones
-                  .map((z) => DropdownMenuEntry<String>(value: z, label: z))
-                  .toList(),
-              onSelected: _savingTimeZone ? null : (v) {
-                if (v == null) return;
-                setState(() {
-                  _timeZone = v;
-                  _timeZoneDirty = true;
-                });
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: FilledButton(
-              onPressed: (_savingTimeZone || !_timeZoneDirty) ? null : () async {
-                await _selectTimeZone(_timeZone);
-                if (mounted) setState(() => _timeZoneDirty = false);
-              },
-              child: Text(t(locale, 'save_timezone')),
-            ),
-          ),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              t(locale, 'diagnostic_uid').replaceFirst('%s', DatabaseService.instance.currentProfileId?.toString() ?? '—'),
-              style: const TextStyle(color: Colors.grey, fontSize: 10),
-            ),
-          ),
+          const SizedBox(height: 24),
         ],
       ),
     );

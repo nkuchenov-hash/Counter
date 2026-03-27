@@ -35,7 +35,15 @@ DateTime _utcToDisplay(DateTime utc) =>
 DateTime _displayToUtc(DateTime displayNaive) =>
     DatabaseService.instance.displayTimeToUtc(displayNaive);
 
-String _formatTimeOfDay(DateTime dt) => DateFormat.Hm().format(dt);
+String _formatTimeOfDay(DateTime dt) =>
+    DateFormat.Hm(currentLocale.value).format(dt);
+
+/// Planning task opened from quick-add / draft: not yet on server (no PATCH id).
+bool _shellIsNewPlanningDraft(PlanningTask t) {
+  if (t.id != 0) return false;
+  final p = t.planRowId?.trim() ?? '';
+  return p.isEmpty;
+}
 
 // ---------------------------------------------------------------------------
 // Settings page (Language, TimeZone). Persists to users/{uid}.
@@ -814,13 +822,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 scrollController: scrollController,
                 onSaved: (updated) async {
                   if (sheetCtx.mounted) {
-                    ScaffoldMessenger.of(sheetCtx).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          t(currentLocale.value, 'changes_saved'),
-                        ),
-                      ),
-                    );
                     Navigator.of(sheetCtx).pop();
                   }
                 },
@@ -875,10 +876,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 planningTask: task,
                 scrollController: scrollController,
                 onSaved: (updated) => Navigator.of(ctx).pop(updated),
-                onDelete: () async {
-                  await _deletePlanningTask(task);
-                  if (ctx.mounted) Navigator.of(ctx).pop();
-                },
+                onDelete: _shellIsNewPlanningDraft(task)
+                    ? null
+                    : () async {
+                        await _deletePlanningTask(task);
+                        if (ctx.mounted) Navigator.of(ctx).pop();
+                      },
               );
             },
           ),
@@ -887,19 +890,45 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
     if (result is! PlanningTask || !mounted) return;
     try {
-      await DatabaseService.instance.updatePlanningTask(
-        task.planRowIdForNoco,
-        title: result.title,
-        categoryId: result.categoryId,
-        isDone: result.isDone,
-        notes: result.notes,
-        checklist: result.checklist,
-        parentPlanId: result.parentPlanId,
-        startTimeDisplay: result.startTime,
-        endDateTimeDisplay: result.endDateTime,
-        clearEnd: result.endDateTime == null,
-      );
-      HapticFeedback.heavyImpact();
+      if (_shellIsNewPlanningDraft(task)) {
+        final day = planningDateFromKey(result.dateKey) ??
+            _dateOnly(DateTime.now());
+        final nextOrder =
+            await DatabaseService.instance.nextPlanningOrderForDate(day);
+        final startUtc = result.startTime != null
+            ? _displayToUtc(result.startTime!)
+            : null;
+        final toCreate = result.copyWith(
+          order: nextOrder,
+          startTime: startUtc,
+        );
+        final ok = await DatabaseService.instance.addPlanningTask(toCreate);
+        if (!mounted) return;
+        if (!ok) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(t(currentLocale.value, 'plan_save_failed')),
+            ),
+          );
+          return;
+        }
+        HapticFeedback.heavyImpact();
+      } else {
+        await DatabaseService.instance.updatePlanningTask(
+          result.planRowIdForNoco,
+          planBusinessId: result.planRowId,
+          title: result.title,
+          categoryId: result.categoryId,
+          isDone: result.isDone,
+          notes: result.notes,
+          checklist: result.checklist,
+          parentPlanId: result.parentPlanId,
+          startTimeDisplay: result.startTime,
+          endDateTimeDisplay: result.endDateTime,
+          clearEnd: result.endDateTime == null,
+        );
+        HapticFeedback.heavyImpact();
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1004,6 +1033,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
     final isFutureDate = _isFutureDate;
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           pages[_tabIndex],
@@ -1184,7 +1214,7 @@ class _ManualEntryDialogState extends State<_ManualEntryDialog> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<int>(
-              value: effectiveId,
+              initialValue: effectiveId,
               decoration: InputDecoration(labelText: t(currentLocale.value, 'category_label')),
               items: pairs
                   .map((p) => DropdownMenuItem<int>(value: p.id, child: Text(p.path)))

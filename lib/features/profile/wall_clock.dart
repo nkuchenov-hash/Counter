@@ -104,18 +104,21 @@ DateTime toWallClock(DateTime utc, int offsetHours) {
 }
 
 /// Convert a wall-clock time (naive picker value) to a UTC timestamp for storage.
+///
+/// Uses only calendar components of [wallClock] as the user's profile wall time
+/// (see USER_PROFILE_SOVEREIGNTY) — never [DateTime.subtract] on a local DateTime,
+/// which would mix in the device/browser timezone.
 DateTime wallClockToUtc(DateTime wallClock, int offsetHours) {
-  final subtracted = wallClock.subtract(Duration(hours: offsetHours));
-  return DateTime.utc(
-    subtracted.year,
-    subtracted.month,
-    subtracted.day,
-    subtracted.hour,
-    subtracted.minute,
-    subtracted.second,
-    subtracted.millisecond,
-    subtracted.microsecond,
-  );
+  final y = wallClock.year;
+  final mo = wallClock.month;
+  final d = wallClock.day;
+  final h = wallClock.hour;
+  final mi = wallClock.minute;
+  final s = wallClock.second;
+  final ms = wallClock.millisecond;
+  final mc = wallClock.microsecond;
+  return DateTime.utc(y, mo, d, h, mi, s, ms, mc)
+      .subtract(Duration(hours: offsetHours));
 }
 
 /// ISO-8601 offset like "+03:00" or "-05:00" from hours.

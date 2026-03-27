@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/app_shell.dart';
 import 'package:counter/auth_screen.dart';
 import 'package:counter/auth_service.dart';
@@ -15,6 +16,9 @@ import 'package:counter/core/url_strategy_stub.dart'
     as url_strategy;
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 
@@ -23,6 +27,10 @@ bool _startupNetworkErrorShown = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await initializeDateFormatting('en', null);
+    await initializeDateFormatting('ru', null);
+  } catch (_) {}
   try {
     tz_data.initializeTimeZones();
   } catch (_) {}
@@ -69,13 +77,24 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
           builder: (context, settingsSnap) {
             final s = settingsSnap.data ?? DatabaseService.instance.settings;
             return MaterialApp(
+              scaffoldMessengerKey: appSnackMessengerKey,
               title: t(locale, 'app_title'),
               locale: Locale(locale),
               debugShowCheckedModeBanner: false,
               theme: appLightTheme,
               darkTheme: appDarkTheme,
               themeMode: parseAppThemeMode(s.themeMode),
+              localizationsDelegates: [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('en'),
+                Locale('ru'),
+              ],
               builder: (context, child) {
+                Intl.defaultLocale = locale;
                 if (!_startupNetworkErrorShown &&
                     _startupNetworkErrorMessage != null) {
                   _startupNetworkErrorShown = true;
@@ -319,10 +338,12 @@ class _BiometricGateState extends State<_BiometricGate> {
 
   Future<void> _checkAndAuthenticate() async {
     if (kIsWeb) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _checking = false;
         _biometricAvailable = false;
       });
+      }
       return;
     }
     try {

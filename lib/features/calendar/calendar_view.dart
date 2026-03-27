@@ -39,6 +39,7 @@ class CalendarView extends StatelessWidget {
       ),
       body: SafeArea(
         child: TableCalendar(
+          locale: currentLocale.value,
           firstDay: DateTime(2020, 1, 1),
           lastDay: DateTime(2100, 12, 31),
           focusedDay: focusedDay,

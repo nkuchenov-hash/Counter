@@ -12,14 +12,16 @@ import 'package:intl/intl.dart';
 import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 
 // --- Time helpers (Planetary: UTC + profile offset). Used by sheets. ---
-String _two(int n) => n.toString().padLeft(2, '0');
-String formatDate(DateTime date) => '${date.year}-${_two(date.month)}-${_two(date.day)}';
-String formatTimeOfDay(DateTime dt) => DateFormat.Hm().format(dt);
+/// Calendar date for UI (localized month/day per [currentLocale]).
+String formatDate(DateTime date) =>
+    DateFormat.yMMMd(currentLocale.value).format(date);
+String formatTimeOfDay(DateTime dt) =>
+    DateFormat.Hm(currentLocale.value).format(dt);
 DateTime utcToDisplay(DateTime utc) => DatabaseService.instance.applyUserOffset(utc);
 DateTime displayToUtc(DateTime displayNaive) => DatabaseService.instance.displayTimeToUtc(displayNaive);
 DateTime displayNow() => DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
 
-Future<DateTime?> showAppDateTimePicker(
+  Future<DateTime?> showAppDateTimePicker(
   BuildContext context, {
   DateTime? initial,
   DateTime? firstDate,
@@ -27,6 +29,7 @@ Future<DateTime?> showAppDateTimePicker(
 }) async {
   final theme = Theme.of(context);
   final defaultInitial = DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
+  // Omni picker follows [Intl.defaultLocale] set in MaterialApp builder.
   return showOmniDateTimePicker(
     context: context,
     initialDate: initial ?? defaultInitial,
@@ -243,7 +246,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                     children: [
                       ListView(
                         controller: widget.scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          24 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
                         children: [
                           TextField(
                             autofocus: true,
@@ -254,7 +262,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<int>(
-                            value: pairs.any((p) => p.id == dropdownValue)
+                            initialValue: pairs.any((p) => p.id == dropdownValue)
                                 ? dropdownValue
                                 : (pairs.isNotEmpty ? pairs.first.id : null),
                             decoration: InputDecoration(
@@ -305,7 +313,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         ],
                       ),
                       ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          24 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
                         children: [
                           TextField(
                             controller: _notesController,
@@ -319,32 +332,72 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         ],
                       ),
                       ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          24 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
                         children: [
-                          ...List.generate(_checklistControllers.length, (i) => Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
-                                child: Row(children: [
-                                  Checkbox(
-                                      value: _checklistDone[i],
-                                      onChanged: (v) =>
-                                          setState(() => _checklistDone[i] = v ?? false)),
-                                  Expanded(
-                                      child: TextField(
-                                    controller: _checklistControllers[i],
-                                    decoration: InputDecoration(
-                                      hintText: t(currentLocale.value, 'checklist_item'),
-                                      border: const OutlineInputBorder(),
-                                    ),
-                                  )),
-                                ]),
-                              )),
+                          ...List.generate(_checklistControllers.length, (i) {
+                            final scheme = Theme.of(context).colorScheme;
+                            return ListTile(
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              horizontalTitleGap: 4,
+                              leading: Checkbox(
+                                value: _checklistDone[i],
+                                onChanged: (v) =>
+                                    setState(() => _checklistDone[i] = v ?? false),
+                              ),
+                              title: TextField(
+                                controller: _checklistControllers[i],
+                                decoration: InputDecoration(
+                                  hintText:
+                                      t(currentLocale.value, 'checklist_item'),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  filled: true,
+                                  fillColor:
+                                      scheme.surfaceContainerHighest.withValues(
+                                          alpha: 0.35),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                          ListTile(
+                            leading: Icon(
+                              Icons.add_circle_outline_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            title: Text(
+                              t(currentLocale.value, 'add_checklist_item'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            onTap: () => setState(() {
+                              _checklistControllers.add(TextEditingController());
+                              _checklistDone.add(false);
+                            }),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    16 + MediaQuery.of(context).viewInsets.bottom,
+                  ),
                   child: Row(
                     children: [
                       if (widget.onDelete != null)
@@ -471,9 +524,13 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     final isRunning = widget.record.endTime == null;
 
     if (isRunning) {
+      final startUtc = _startDisplay != null ? displayToUtc(_startDisplay!) : null;
+      print(
+          'PATCHING DATA: UI record editor (running) -> updateRecord id=${widget.record.recordId}');
       final updated = await DatabaseService.instance.updateRecord(
         recordId: widget.record.recordId,
         title: title,
+        startTime: startUtc,
         categoryId: _categoryId,
         note: noteText,
         checklist: checklistPayload,
@@ -523,6 +580,8 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       });
       return;
     }
+    print(
+        'PATCHING DATA: UI record editor (stopped) -> updateRecord id=${widget.record.recordId}');
     final updated = await DatabaseService.instance.updateRecord(
       recordId: widget.record.recordId,
       title: title,
@@ -592,7 +651,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<int>(
-                        value: catVal,
+                        initialValue: catVal,
                         decoration: InputDecoration(
                             labelText: t(currentLocale.value, 'category_label')),
                         items: pairs
@@ -681,7 +740,12 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                       ListView(
                         primary: false,
                         controller: widget.scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          24 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
                         children: [
                           TextField(
                             controller: _noteController,
@@ -697,46 +761,65 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                       ),
                       ListView(
                         primary: false,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          24 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
                         children: [
                           ...List.generate(_checklistControllers.length, (i) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8),
-                                    child: Checkbox(
-                                      value: i < _checklistDone.length ? _checklistDone[i] : false,
-                                      onChanged: (v) => setState(() {
-                                        while (_checklistDone.length <= i) {
-                                          _checklistDone.add(false);
-                                        }
-                                        _checklistDone[i] = v ?? false;
-                                      }),
-                                    ),
+                            final scheme = Theme.of(context).colorScheme;
+                            return ListTile(
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              horizontalTitleGap: 4,
+                              leading: Checkbox(
+                                value: i < _checklistDone.length
+                                    ? _checklistDone[i]
+                                    : false,
+                                onChanged: (v) => setState(() {
+                                  while (_checklistDone.length <= i) {
+                                    _checklistDone.add(false);
+                                  }
+                                  _checklistDone[i] = v ?? false;
+                                }),
+                              ),
+                              title: TextField(
+                                controller: _checklistControllers[i],
+                                decoration: InputDecoration(
+                                  hintText:
+                                      t(currentLocale.value, 'checklist_item'),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  filled: true,
+                                  fillColor:
+                                      scheme.surfaceContainerHighest.withValues(
+                                          alpha: 0.35),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
                                   ),
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _checklistControllers[i],
-                                      decoration: InputDecoration(
-                                        hintText: t(currentLocale.value, 'checklist_item'),
-                                        border: const OutlineInputBorder(),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             );
                           }),
-                          TextButton.icon(
-                            onPressed: () => setState(() {
+                          ListTile(
+                            leading: Icon(
+                              Icons.add_circle_outline_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            title: Text(
+                              t(currentLocale.value, 'add_checklist_item'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            onTap: () => setState(() {
                               _checklistControllers.add(TextEditingController());
                               _checklistDone.add(false);
                             }),
-                            icon: const Icon(Icons.add_rounded),
-                            label: Text(t(currentLocale.value, 'add_checklist_item')),
                           ),
                         ],
                       ),
@@ -749,7 +832,12 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    8,
+                    16,
+                    16 + MediaQuery.of(context).viewInsets.bottom,
+                  ),
                   child: Row(
                     children: [
                       if (isRunning)
@@ -1056,6 +1144,8 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
     final title = _title.text.trim();
     if (title.isEmpty) return;
     try {
+      print(
+          'PATCHING DATA: UI child parallel bar -> updateRecord id=${widget.child.recordId}');
       final u = await DatabaseService.instance.updateRecord(
         recordId: widget.child.recordId,
         title: title,
@@ -1224,7 +1314,14 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
   }
 
   Future<void> _pickRecordDate() async {
-    final d = await showDatePicker(context: context, initialDate: _recordDate, firstDate: DateTime(2020), lastDate: DateTime(2030));
+    final loc = currentLocale.value;
+    final d = await showDatePicker(
+      context: context,
+      locale: Locale(loc),
+      initialDate: _recordDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
     if (d != null && mounted) {
       setState(() {
         _recordDate = d;
@@ -1234,7 +1331,14 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
   }
 
   Future<void> _pickEndDate() async {
-    final d = await showDatePicker(context: context, initialDate: _endDate, firstDate: _recordDate, lastDate: DateTime(2030));
+    final loc = currentLocale.value;
+    final d = await showDatePicker(
+      context: context,
+      locale: Locale(loc),
+      initialDate: _endDate,
+      firstDate: _recordDate,
+      lastDate: DateTime(2030),
+    );
     if (d != null && mounted) setState(() => _endDate = d);
   }
 
@@ -1299,6 +1403,8 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
         categoryId: _categoryId,
       );
     } else {
+      print(
+          'PATCHING DATA: UI manual time entry -> updateRecord id=${widget.serverRecordId}');
       final updated = await DatabaseService.instance.updateRecord(
         recordId: widget.serverRecordId,
         title: title,
@@ -1344,7 +1450,12 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
           const Divider(height: 1),
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                24 + MediaQuery.of(context).viewInsets.bottom,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -1354,7 +1465,7 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<int>(
-                    value: catVal,
+                    initialValue: catVal,
                     decoration: InputDecoration(labelText: t(currentLocale.value, 'category_label')),
                     items: pairs.map((p) => DropdownMenuItem<int>(value: p.id, child: Text(p.path))).toList(),
                     onChanged: (id) => setState(() => _categoryId = id ?? catVal),

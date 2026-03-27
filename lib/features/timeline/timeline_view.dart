@@ -16,10 +16,8 @@ import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 // --- Time helpers (Planetary: UTC + profile offset only) ---
 DateTime _localToday() => DatabaseService.instance.getProjectedToday();
 
-String _two(int n) => n.toString().padLeft(2, '0');
-
 String _formatDate(DateTime date) =>
-    '${date.year}-${_two(date.month)}-${_two(date.day)}';
+    DateFormat.yMMMd(currentLocale.value).format(date);
 
 bool _isToday(DateTime date) {
   final projectedToday = DatabaseService.instance.getProjectedToday();
@@ -28,7 +26,8 @@ bool _isToday(DateTime date) {
       date.day == projectedToday.day;
 }
 
-String _formatTimeOfDay(DateTime dt) => DateFormat.Hm().format(dt);
+String _formatTimeOfDay(DateTime dt) =>
+    DateFormat.Hm(currentLocale.value).format(dt);
 
 DateTime _utcToDisplay(DateTime utc) =>
     DatabaseService.instance.applyUserOffset(utc);
@@ -105,7 +104,7 @@ class _AppBarLiveClockState extends State<_AppBarLiveClock> {
       stream: DatabaseService.instance.timeUpdates,
       builder: (context, _) {
         return Text(
-          DateFormat.Hm().format(_displayNow()),
+          DateFormat.Hm(currentLocale.value).format(_displayNow()),
           style: widget.textStyle ??
               const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
         );
@@ -163,6 +162,8 @@ class TimelineSwipeWrapper extends StatefulWidget {
 class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   static const int _centerIndex = 5000;
   late PageController _controller;
+  /// Shared across all [TimelinePage] indices so calendar/date changes keep List vs Stats.
+  bool _showStatsView = false;
   DateTime get _today => DatabaseService.instance.getProjectedToday();
 
   // Prevent off-by-one issues caused by DateTime "timezone kind" differences.
@@ -234,6 +235,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
           onJumpToConflictDate: widget.onJumpToConflict,
           rules: widget.rules,
           onShowEditRecordSheet: widget.onShowEditRecordSheet,
+          onNavigateToDate: widget.onDateChanged,
+          showStatsView: _showStatsView,
+          onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
         );
       },
     );
@@ -262,7 +266,17 @@ class TimelinePage extends StatefulWidget {
   required this.rules,
   this.onJumpToConflictDate,
   required this.onShowEditRecordSheet,
+  this.onNavigateToDate,
+  required this.showStatsView,
+  required this.onShowStatsViewChanged,
   });
+
+  /// Picks a calendar day (AppBar / Stats PageView); drives parent [TimelineSwipeWrapper] PageController.
+  final void Function(DateTime date)? onNavigateToDate;
+
+  /// List vs Stats segment; owned by [TimelineSwipeWrapper] so date jumps preserve mode.
+  final bool showStatsView;
+  final ValueChanged<bool> onShowStatsViewChanged;
 
   final DateTime selectedDate;
   final String selectedDateString;
@@ -290,7 +304,6 @@ class TimelinePage extends StatefulWidget {
 }
 
 class _TimelinePageState extends State<TimelinePage> {
-  bool _showStatsView = false;
   late Stream<List<Map<String, dynamic>>> _recordsStream;
 
   void _initStream() {
@@ -327,21 +340,66 @@ class _TimelinePageState extends State<TimelinePage> {
         const TextStyle(fontSize: 20, fontWeight: FontWeight.w500);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${t(currentLocale.value, 'tab_timeline')} • ${_formatDate(widget.selectedDate)}',
-              style: titleStyle,
+        title: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onNavigateToDate == null
+                ? null
+                : () async {
+                    final loc = currentLocale.value;
+                    final picked = await showDialog<DateTime>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(t(loc, 'calendar')),
+                        content: SizedBox(
+                          width: 320,
+                          child: CalendarDatePicker(
+                            initialDate: widget.selectedDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2035),
+                            onDateChanged: (d) {
+                              Navigator.of(ctx).pop(
+                                DateTime(d.year, d.month, d.day),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    );
+                    if (picked != null && context.mounted) {
+                      widget.onNavigateToDate?.call(picked);
+                    }
+                  },
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${t(currentLocale.value, 'tab_timeline')} • ${_formatDate(widget.selectedDate)}',
+                    style: titleStyle,
+                  ),
+                  if (isToday) ...[
+                    Text(' • ', style: titleStyle),
+                    _AppBarLiveClock(
+                        textStyle: titleStyle.copyWith(
+                            fontSize: 14, fontWeight: FontWeight.w400)),
+                  ],
+                  if (widget.onNavigateToDate != null) ...[
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.calendar_month_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ],
+                ],
+              ),
             ),
-            if (isToday) ...[
-              Text(' • ', style: titleStyle),
-              _AppBarLiveClock(
-                  textStyle: titleStyle.copyWith(
-                      fontSize: 14, fontWeight: FontWeight.w400)),
-            ],
-          ],
+          ),
         ),
         actions: [
           IconButton(
@@ -428,9 +486,11 @@ class _TimelinePageState extends State<TimelinePage> {
                     icon: const Icon(Icons.bar_chart_rounded),
                     label: Text(t(currentLocale.value, 'stats'))),
               ],
-              selected: {_showStatsView},
-              onSelectionChanged: (Set<bool> sel) =>
-                  setState(() => _showStatsView = sel.first),
+              selected: {widget.showStatsView},
+              onSelectionChanged: (Set<bool> sel) {
+                if (sel.isEmpty) return;
+                widget.onShowStatsViewChanged(sel.first);
+              },
             ),
             const SizedBox(height: 8),
             const Divider(height: 1),
@@ -465,7 +525,7 @@ class _TimelinePageState extends State<TimelinePage> {
                             }
                             final records = recordSnap.data ?? [];
 
-                            if (_showStatsView) {
+                            if (widget.showStatsView) {
                               if (records.isEmpty) {
                                 return Center(
                                   child: Text(
@@ -486,6 +546,7 @@ class _TimelinePageState extends State<TimelinePage> {
                                 rules: widget.rules,
                                 isFutureDate: widget.isFutureDate,
                                 selectedDate: widget.selectedDate,
+                                onDayChanged: widget.onNavigateToDate,
                               );
                             }
 
@@ -786,9 +847,103 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
     final runningTextColor =
         isRunning ? (isDark ? scheme.primary : scheme.onPrimaryContainer) : null;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      color: runningFill,
+    final cardTheme = Theme.of(context).cardTheme;
+    final suppressInnerInk = Theme.of(context).copyWith(
+      splashFactory: NoSplash.splashFactory,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+    );
+
+    final paddedRow = Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (widget.currentActivityFromDate != null) ...[
+                  Text(
+                    t(currentLocale.value, 'current_activity_from')
+                        .replaceFirst('%s', widget.currentActivityFromDate!),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 6),
+                Theme(
+                  data: suppressInnerInk,
+                  child: Chip(
+                    label: Text(
+                      categoryPath,
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                    backgroundColor:
+                        categoryColor.withValues(alpha: 0.25),
+                    side: BorderSide(color: categoryColor, width: 1),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+                if (subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isRunning
+                              ? runningTextColor
+                              : scheme.onSurfaceVariant,
+                          fontWeight:
+                              isRunning ? FontWeight.w600 : null,
+                        ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (isRunning)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: FilledButton.icon(
+                onPressed: () => widget.onStop(widget.recordId),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                ),
+                icon: const Icon(Icons.stop_rounded, size: 20),
+                label: Text(t(currentLocale.value, 'stop')),
+              ),
+            ),
+          IconButton(
+            style: IconButton.styleFrom(
+              splashFactory: NoSplash.splashFactory,
+              hoverColor: Colors.transparent,
+            ),
+            icon: const Icon(Icons.delete_outline_rounded),
+            tooltip: t(currentLocale.value, 'delete'),
+            onPressed: _confirmDelete,
+          ),
+        ],
+      ),
+    );
+
+    return Material(
+      elevation: cardTheme.elevation ?? 1,
+      shadowColor: cardTheme.shadowColor,
+      surfaceTintColor: cardTheme.surfaceTintColor,
+      color: runningFill ?? cardTheme.color,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -796,85 +951,20 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
           width: isRunning ? 2.0 : 0,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: InkWell(
-                onTap: widget.onEdit,
-                borderRadius: BorderRadius.circular(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (widget.currentActivityFromDate != null) ...[
-                      Text(
-                        t(currentLocale.value, 'current_activity_from')
-                            .replaceFirst('%s', widget.currentActivityFromDate!),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: scheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                    ],
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 6),
-                    Chip(
-                      label: Text(
-                        categoryPath,
-                        style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w500),
-                      ),
-                      backgroundColor: categoryColor.withOpacity(0.25),
-                      side: BorderSide(color: categoryColor, width: 1),
-                      visualDensity: VisualDensity.compact,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    if (subtitle.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: isRunning
-                                  ? runningTextColor
-                                  : scheme.onSurfaceVariant,
-                              fontWeight:
-                                  isRunning ? FontWeight.w600 : null,
-                            ),
-                      ),
-                    ],
-                  ],
-                ),
+      clipBehavior: Clip.antiAlias,
+      child: widget.onEdit != null
+          ? InkWell(
+              onTap: widget.onEdit,
+              borderRadius: BorderRadius.circular(12),
+              child: Theme(
+                data: suppressInnerInk,
+                child: paddedRow,
               ),
+            )
+          : Theme(
+              data: suppressInnerInk,
+              child: paddedRow,
             ),
-            const SizedBox(width: 8),
-            if (isRunning)
-              Padding(
-                padding: const EdgeInsets.only(right: 4),
-                child: FilledButton.icon(
-                  onPressed: () => widget.onStop(widget.recordId),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.red.shade600,
-                    foregroundColor: Colors.white,
-                  ),
-                  icon: const Icon(Icons.stop_rounded, size: 20),
-                  label: Text(t(currentLocale.value, 'stop')),
-                ),
-              ),
-            IconButton(
-              icon: const Icon(Icons.delete_outline_rounded),
-              tooltip: t(currentLocale.value, 'delete'),
-              onPressed: _confirmDelete,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

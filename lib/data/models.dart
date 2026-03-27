@@ -181,6 +181,46 @@ class Category {
   }
 }
 
+/// Noco `@DATA_MAP` checklist: column may be JSON **String** or decoded List.
+List<Map<String, dynamic>>? parseChecklistFromNoco(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is List) {
+    if (raw.isEmpty) return [];
+    final out = <Map<String, dynamic>>[];
+    for (final e in raw) {
+      if (e is Map<String, dynamic>) {
+        out.add(Map<String, dynamic>.from(e));
+      } else if (e is Map) {
+        out.add(Map<String, dynamic>.from(e));
+      }
+    }
+    return out;
+  }
+  if (raw is String) {
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    try {
+      final d = jsonDecode(s);
+      if (d is List) {
+        final out = <Map<String, dynamic>>[];
+        for (final e in d) {
+          if (e is Map<String, dynamic>) {
+            out.add(Map<String, dynamic>.from(e));
+          } else if (e is Map) {
+            out.add(Map<String, dynamic>.from(e));
+          }
+        }
+        return out;
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
+/// Same as [parseChecklistFromNoco] but never null (empty list default).
+List<Map<String, dynamic>> parseChecklistFromNocoList(dynamic raw) =>
+    parseChecklistFromNoco(raw) ?? const [];
+
 /// Merge legacy Noco `notes` into singular `note` (migration path).
 String? mergeRecordNoteFields(dynamic noteRaw, dynamic notesRaw) {
   final a = noteRaw?.toString().trim() ?? '';
@@ -671,14 +711,7 @@ class TimelineRecord {
     final startDt = start is DateTime ? start : (start is String ? DateTime.tryParse(start) : null);
     final endDt = end is DateTime ? end : (end is String ? DateTime.tryParse(end) : null);
     final note = mergeRecordNoteFields(data['note'], data['notes']);
-    final rawChecklist = data['checklist'];
-    List<Map<String, dynamic>>? checklist;
-    if (rawChecklist is List) {
-      checklist = rawChecklist
-          .whereType<Map>()
-          .map<Map<String, dynamic>>((e) => Map<String, dynamic>.from(e))
-          .toList();
-    }
+    final checklist = parseChecklistFromNoco(data['checklist']);
     final rawSubIds = _get(data, 'subRecordIds', 'sub_record_ids');
     List<int>? subRecordIds;
     if (rawSubIds is List) {
@@ -717,7 +750,7 @@ class TimelineRecord {
     return <String, dynamic>{
         'record_id': recordId,
         'id': recordId,
-        if (sys != null) 'nocoSystemId': sys,
+        'nocoSystemId': ?sys,
         'title': title,
         'category_id': categoryId,
         'type': type,
@@ -1007,11 +1040,15 @@ class PlanningTask {
         subRecordIds = subRecordIds ?? const [];
 
   final int id;
-  /// Noco **plan_id** for PATCH/DELETE (@DATA_MAP.md). When null, Brain falls back to [id].toString().
+  /// Business **plan_id** (UUID) inside Noco `fields` — never use as bulk PATCH outer `id`.
   final String? planRowId;
 
+  /// Noco **wrapper Id** (integer) for bulk PATCH / DELETE URL segment (@DATA_MAP plans: System PK).
+  /// Stays `optimistic-…` for optimistic rows only. Uses [id] when > 0 (server row from _planRowToTask).
   String get planRowIdForNoco {
     final p = planRowId?.trim() ?? '';
+    if (p.startsWith('optimistic-')) return p;
+    if (id > 0) return id.toString();
     if (p.isNotEmpty) return p;
     return id.toString();
   }
@@ -1072,17 +1109,7 @@ class PlanningTask {
       endDateTime = DateTime.tryParse(rawEnd);
     }
     final endDateKey = (g('endDateKey', 'end_date_key') as String?) ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey);
-    final rawChecklist = json['checklist'];
-    List<Map<String, dynamic>> checklist = const [];
-    if (rawChecklist is List) {
-      checklist = rawChecklist.whereType<Map>().map<Map<String, dynamic>>((e) {
-        final map = <String, dynamic>{};
-        (e).forEach((key, value) {
-          map[key.toString()] = value;
-        });
-        return map;
-      }).toList();
-    }
+    final checklist = parseChecklistFromNocoList(json['checklist']);
     final notes =
         json['note']?.toString() ?? json['notes']?.toString();
     final pp = g('parentPlanId', 'parent_plan_id');
