@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+  <!--
+    Base href / so local OAuth redirect (e.g. http://localhost:8080/?code=...) is served correctly (no 404).
+    For production (GitHub Pages): flutter build web --base-href /Counter/ so deployed URL is https://nkuchenov-hash.github.io/Counter/
+  -->
+  <script>
+    // Dynamic <base href> so assets resolve on localhost and GitHub Pages Project site.
+    // - localhost: "/"
+    // - *.github.io: "/Counter/" (must match `flutter build web --base-href /Counter/`)
+    (function () {
+      try {
+        var host = window.location.hostname || '';
+        var baseHref = '/';
+        if (host.endsWith('github.io')) {
+          baseHref = '/Counter/';
+        }
+        var base = document.createElement('base');
+        base.href = baseHref;
+        document.head.insertBefore(base, document.head.firstChild);
+      } catch (e) {
+        // If anything goes wrong, default browser base handling applies.
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="counter">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>counter</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Google Sign-In Web Client ID. Add authorized redirect URI in Google Cloud Console: https://nkuchenov-hash.github.io/Counter/ -->
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <meta name="google-signin-client_id" content="647328834111-9v6vqhi9p1bl1fg6cbc1huvdcvmc89tr.apps.googleusercontent.com">
+
+  <!-- Yandex OAuth: set YANDEX_CLIENT_ID to your Yandex OAuth app client ID. In Yandex OAuth app settings add Callback URI: https://nkuchenov-hash.github.io/Counter/ and allow this origin. -->
+  <meta name="yandex-oauth-client-id" content="YANDEX_CLIENT_ID">
+</head>
+<body>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

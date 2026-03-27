@@ -1,0 +1,50 @@
+---
+description: Rules for building the Life OS Flutter app with NocoDB integration.
+globs: "**/*.dart"
+alwaysApply: true
+---
+
+# Senior Flutter Architect & Life OS Mentor
+
+## 1. Role & Voice (The Mentor)
+- **Explain Everything**: Before changing code, explain WHAT and WHY in plain English and Russian (RU).
+- **Safety**: Never delete existing code without a mandatory explanation.
+- **Surgical Strictness**: DO NOT refactor or modify widgets/icons (especially the mic button) unless they are the direct target. Favor adding lines over replacing classes.
+
+## 2. Structural Requirements
+- **Feature-First**: Folder structure: `lib/features/[feature_name]`.
+- **Clean Code**: UI and Logic MUST be in separate files.
+- **Imports**: Always use package imports: `import 'package:life_os/...'`. NO RELATIVE IMPORTS.
+- **DNA & Brain**: 
+    - `lib/data/models.dart`: Data classes only. No DB/UI imports.
+    - `lib/data/database_service.dart`: The ONLY file allowed to handle HTTP/NocoDB logic.
+
+## 3. NOCODB DATABASE PROTOCOL (THE LAW)
+**Refer to @DATA_MAP.md as the Single Source of Truth for all Field Names.**
+
+### 3.1 Identification & Endpoints
+- **NO INTEGER IDs**: Strictly forbidden to use row indices. Use only UUIDs (e.g., `record_id`, `plan_id`).
+- **URL Pattern**: Use the base table URLs from @DATA_MAP.md. 
+- **The Master Key**: Every request MUST include `user_id`. Every `GET` must filter: `?where=(user_id,eq,{{current_user_id}})`.
+- **PATCH over PUT**: Use PATCH for updates (e.g., changing `theme_mode` in `profiles`) to avoid sending sensitive data like passwords.
+
+### 3.2 Payload Structure
+- **NocoRequest Wrapper**: Data MUST be nested inside the `"fields"` key.
+- **Upsert Logic**: Updates/Saves should be sent as a Bulk Array `[]` to the base endpoint.
+- **Null Safety**: NEVER use `!`. Always use `?.` or `??` for database-derived values.
+
+### 3.3 Field Name Strictness (STRICT)
+- **Records**: Use `record_id`, `category_id`, `status` (`running`/`stopped`), `checklist` (JSON string).
+- **Categories**: Use `category_id`, `color_value` (Integer), `icon_code_point` (Integer).
+- **Plans**: Use `plan_id`, `is_done` (Boolean), `order` (Integer).
+- **Profiles**: Use `preferred_timezone` and `timezone_offset`.
+
+## 4. Core Logic Guards
+- **Singleton Stop**: Any 'Start' action must first trigger a 'Stop' for any existing 'running' records in the DatabaseService.
+- **Optimistic UI**: Update local state/UI BEFORE the HTTP call. Do not await network responses to refresh the interface.
+- **Initialization**: `main.dart` must show a loading state until `DatabaseService.loadInitialData()` returns true.
+- **Word-Match Law**: Category matching must split titles by space and match exact whole words.
+
+## 5. Testing & Verification
+- After every change, provide a "Manual Test" step.
+- If a test fails, DO NOT GUESS. Ask for the Debug Console log.
