@@ -103,7 +103,7 @@ class NocoDbResponse {
   Map<String, dynamic>? get first => records.isNotEmpty ? records.first : null;
 }
 
-/// Wrapper for NocoDB v3 bulk POST/PATCH. Nests payload under "fields".
+/// NocoDB v3 Data API POST/PATCH rows: **flat** JSON objects (no nested `"fields"`).
 /// Use: `jsonEncode([nocoRequest.toJson()])` for bulk array.
 ///
 /// [id] must be the real Noco row primary key: **int** (legacy) or **String** (UUID).
@@ -115,19 +115,24 @@ class NocoRequest {
   final Object id;
   final Map<String, dynamic> fields;
 
-  Map<String, dynamic> toJson() => <String, dynamic>{'id': id, 'fields': fields};
+  /// Flat row: `{ "id": ..., ...columns }` (constructor [id] wins over a key in [fields]).
+  Map<String, dynamic> toJson() {
+    final out = Map<String, dynamic>.from(fields);
+    out['id'] = id;
+    return out;
+  }
 
-  /// Single object payload: {"id": ..., "fields": {...}}
+  /// Single row object: `{ ...columns }` and optional top-level `id` for PATCH.
   static Map<String, dynamic> single({
     Object? id,
     required Map<String, dynamic> fields,
   }) {
-    final out = <String, dynamic>{'fields': fields};
+    final out = Map<String, dynamic>.from(fields);
     if (id != null) out['id'] = id;
     return out;
   }
 
-  /// Bulk payload (recommended by NocoDB v3): [{"id": ..., "fields": {...}}]
+  /// Bulk payload: `[{"id":1,"col":"a"},{"id":2,"col":"b"}]`
   static List<Map<String, dynamic>> bulk(List<NocoRequest> requests) {
     return requests.map((r) => r.toJson()).toList();
   }

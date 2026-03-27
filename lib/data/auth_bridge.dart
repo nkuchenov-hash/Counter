@@ -136,13 +136,11 @@ class AuthBridge {
         final url = Uri.parse(
             '${DatabaseService.baseUrl}/mkiyat3508jooui/records');
         print('AUTH_TRACE: URL parsed: $url');
-        // Bulk-nested: list of one record; "password" matches CSV header (value is hashed).
+        // Noco v3: flat row objects (no `"fields"` envelope).
         final body = [
           <String, dynamic>{
-            'fields': <String, dynamic>{
-              'email': email,
-              'password': hashedPassword,
-            },
+            'email': email,
+            'password': hashedPassword,
           },
         ];
         final bodyEncoded = jsonEncode(body);
@@ -170,9 +168,21 @@ class AuthBridge {
             dynamic data;
             if (resBody is List && resBody.isNotEmpty) {
               final firstRecord = resBody[0];
-              data = (firstRecord is Map && firstRecord.containsKey('fields'))
-                  ? firstRecord['fields']
-                  : firstRecord;
+              if (firstRecord is Map) {
+                final m = Map<String, dynamic>.from(firstRecord);
+                final nested = m['fields'];
+                data = nested is Map
+                    ? Map<String, dynamic>.from(nested)
+                    : m;
+              } else {
+                data = null;
+              }
+            } else if (resBody is Map) {
+              final rm = Map<String, dynamic>.from(resBody);
+              final nested = rm['fields'];
+              data = nested is Map
+                  ? Map<String, dynamic>.from(nested)
+                  : rm;
             } else {
               data = resBody;
             }
