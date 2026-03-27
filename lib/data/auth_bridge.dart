@@ -147,6 +147,7 @@ class AuthBridge {
         print('AUTH_TRACE: Body encoded: $bodyEncoded');
         try {
           print('AUTH_TRACE: Sending Request...');
+          print('FINAL PAYLOAD: $bodyEncoded');
           final response = await http.post(
             Uri.parse(url.toString()),
             headers: <String, String>{
