@@ -44,6 +44,36 @@ class AuthBridge {
     return sha256.convert(utf8.encode(password)).toString();
   }
 
+  /// First created row from Noco POST / list responses; unwrap nested `fields` when present.
+  static Map<String, dynamic>? _registrationPayloadFirstRowMap(dynamic resBody) {
+    if (resBody is List && resBody.isNotEmpty) {
+      final first = resBody.first;
+      if (first is! Map) return null;
+      final m = Map<String, dynamic>.from(first);
+      final nested = m['fields'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      return m;
+    }
+    if (resBody is Map) {
+      final rm = Map<String, dynamic>.from(resBody);
+      final list = rm['list'] ?? rm['records'];
+      if (list is List && list.isNotEmpty && list.first is Map) {
+        final first = Map<String, dynamic>.from(list.first as Map);
+        final nested = first['fields'];
+        if (nested is Map) return Map<String, dynamic>.from(nested);
+        return first;
+      }
+      final nested = rm['fields'];
+      if (nested is Map) return Map<String, dynamic>.from(nested);
+      if (rm.containsKey('user_id') ||
+          rm.containsKey('email') ||
+          rm.containsKey('userId')) {
+        return rm;
+      }
+    }
+    return null;
+  }
+
   static Future<bool> signIn(String email, String password) async {
     print('AUTH_TRACE: Attempting network call for $email');
     try {
@@ -136,11 +166,26 @@ class AuthBridge {
         final url = Uri.parse(
             '${DatabaseService.baseUrl}/mkiyat3508jooui/records');
         print('AUTH_TRACE: URL parsed: $url');
-        // Noco v3: flat row objects (no `"fields"` envelope).
+        // @DATA_MAP.md `profiles`: POST must nest columns under `fields`; include all required columns.
+        final newUserId = DatabaseService.newClientUuid();
+        final trimmedEmail = email.trim();
+        final localPart =
+            trimmedEmail.contains('@') ? trimmedEmail.split('@').first : trimmedEmail;
+        final displayName =
+            localPart.isNotEmpty ? localPart : 'User';
         final body = [
           <String, dynamic>{
-            'email': email,
-            'password': hashedPassword,
+            'fields': <String, dynamic>{
+              'user_id': newUserId,
+              'email': trimmedEmail,
+              'password': hashedPassword,
+              'display_name': displayName,
+              'primary_language': 'en',
+              'theme_mode': 'system',
+              'preferred_timezone': 'UTC (UTC+0)',
+              'timezone_offset': 0,
+              'biometric_enabled': false,
+            },
           },
         ];
         final bodyEncoded = jsonEncode(body);
@@ -163,43 +208,31 @@ class AuthBridge {
                 'REGISTRATION_DEBUG: Status ${response.statusCode}, Data: ${response.body}');
             return false;
           }
-          if (response.statusCode == 200 || response.statusCode == 201) {
-            final resBody = jsonDecode(response.body);
-            print('AUTH_VICTORY_DATA: $resBody');
-            dynamic data;
-            if (resBody is List && resBody.isNotEmpty) {
-              final firstRecord = resBody[0];
-              if (firstRecord is Map) {
-                final m = Map<String, dynamic>.from(firstRecord);
-                final nested = m['fields'];
-                data = nested is Map
-                    ? Map<String, dynamic>.from(nested)
-                    : m;
-              } else {
-                data = null;
+          if (response.statusCode == 200 ||
+              response.statusCode == 201 ||
+              response.statusCode == 204) {
+            Map<String, dynamic>? data;
+            try {
+              final raw = response.body.trim();
+              if (raw.isNotEmpty) {
+                final resBody = jsonDecode(raw);
+                data = _registrationPayloadFirstRowMap(resBody);
               }
-            } else if (resBody is Map) {
-              final rm = Map<String, dynamic>.from(resBody);
-              final nested = rm['fields'];
-              data = nested is Map
-                  ? Map<String, dynamic>.from(nested)
-                  : rm;
-            } else {
-              data = resBody;
+            } catch (e) {
+              print('AUTH_TRACE: Registration response parse skipped: $e');
             }
-            final createdId = data is Map
-                ? (data['user_id'] ?? data['id'] ?? data['Id'])
-                : null;
-            if (createdId != null) {
-              print('REGISTRATION_SUCCESS: Found ID $createdId');
-              await _storage.write(
-                  key: _profileIdKey, value: createdId.toString());
-              return true;
-            } else {
-              print(
-                  'AUTH_LOGIC_FAIL: Could not find an ID in the response. Check AUTH_VICTORY_DATA.');
-              return false;
-            }
+            print('AUTH_VICTORY_DATA: ${response.body}');
+            final createdId = data == null
+                ? null
+                : (data['user_id'] ?? data['id'] ?? data['Id']);
+            final sessionId = (createdId != null &&
+                    createdId.toString().trim().isNotEmpty)
+                ? createdId.toString().trim()
+                : newUserId;
+            print(
+                'REGISTRATION_SUCCESS: session user_id=$sessionId (from response: ${createdId != null})');
+            await _storage.write(key: _profileIdKey, value: sessionId);
+            return true;
           }
         } catch (e) {
           print('AUTH_LOCAL_CRASH: $e');

@@ -93,6 +93,9 @@ class DatabaseService {
 
   /// UUID v4 written to Noco column `record_id` on **create** so the row has a stable id in DB
   /// (Noco wrapper `id` may be a small int or missing; REST PATCH must match a real key).
+  /// Client UUID for `user_id`, `record_id`, `plan_id`, etc. (@DATA_MAP).
+  static String newClientUuid() => _newClientRecordUuid();
+
   static String _newClientRecordUuid() {
     final r = Random.secure();
     final b = List<int>.generate(16, (_) => r.nextInt(256));
@@ -194,7 +197,7 @@ class DatabaseService {
     ];
   }
 
-  /// Noco v3: bulk PATCH to the **collection** `[{"id":..., ...columns}]` when `/records/{id}` returns 404.
+  /// Noco v3: bulk PATCH to the **collection** `[{"id":..., "fields":{...}}]` when `/records/{id}` returns 404.
   List<String> get _recordsBulkPatchUrls => <String>[
         '$baseUrl/$_recordsTableUid/records',
         '$baseUrl/tables/$_recordsTableUid/records',
@@ -1692,7 +1695,7 @@ class DatabaseService {
     _settingsController.add(_settings);
     _timeUpdateController.add(null);
 
-    // 2. Aggressive upsert: POST bulk as flat rows via [NocoRequest]. Silent on 400/404.
+    // 2. Aggressive upsert: POST bulk via [NocoRequest] (`fields` envelope). Silent on 400/404.
     final nocoRequest = NocoRequest(
       id: recordId,
       fields: ProfileUpdate.fromSettings(s).toJson(),
@@ -2061,7 +2064,7 @@ class DatabaseService {
     return _slugifyCategoryDisplayName(r.name);
   }
 
-  /// `PATCH` body: flat rows `[{"id": <int>, ...columns}]` (@DATA_MAP §2 bulk mandate).
+  /// `PATCH` body: `[{"id": <int>, "fields": {...}}]` (@DATA_MAP §2 bulk mandate).
   /// Verbose request/response logging happens in [_categoryBulkPatchHttp] (response is unavailable here).
   String _categoryBulkPatchJson(int systemId, Map<String, dynamic> fields) => jsonEncode([
         NocoRequest(
@@ -2070,7 +2073,7 @@ class DatabaseService {
         ).toJson(),
       ]);
 
-  /// Single HTTP `PATCH` with many flat rows: `[{"id":7,...},{"id":32,...}]`.
+  /// Single HTTP `PATCH` with many rows: `[{"id":7,"fields":{...}},{"id":32,"fields":{...}}]`.
   String _categoryBulkPatchJsonMany(List<NocoRequest> items) {
     final cleaned = items
         .map(
@@ -2240,7 +2243,7 @@ class DatabaseService {
     return false;
   }
 
-  /// **PATCH** bulk-only: collection URL + `[{"id": <int>, ...columns}]` (flat rows).
+  /// **PATCH** bulk-only: collection URL + `[{"id": <int>, "fields": {...}}]`.
   /// [errorDetail] is the server body (or diagnostic) when [ok] is false.
   Future<({bool ok, String? errorDetail})> updateCategory(
     int targetId,
@@ -2306,7 +2309,7 @@ class DatabaseService {
     }
   }
 
-  /// One category row: bulk collection URL with **exactly one** flat `[{"id":…,…}]` element.
+  /// One category row: bulk collection URL with **exactly one** `[{"id":…,"fields":…}]` element.
   Future<({bool ok, String? errorDetail})> patchCategoryDelta(
     int targetId,
     Map<String, dynamic> fields,
