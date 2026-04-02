@@ -429,6 +429,7 @@ class Record {
     this.startTime,
     this.endTime,
     this.date,
+    this.isSynced = true,
   });
 
   /// PocketBase / Noco **row** id for REST (`.../records/{id}`). **Never** use [recordId] (UUID) in the URL.
@@ -447,6 +448,9 @@ class Record {
   final String? endTime;
   /// Calendar day from [start_time]: **device-local** date (midnight boundary matches timeline buckets).
   final DateTime? date;
+
+  /// Local-only: false when a row is queued for PocketBase retry (not a PB column).
+  final bool isSynced;
 
   /// Running only when there is no end timestamp and DB status is running.
   bool get isActuallyRunning {
@@ -523,6 +527,7 @@ class Record {
       startTime: startTimeStr,
       endTime: endTimeStr,
       date: date,
+      isSynced: _jsonBool(data['isSynced'] ?? data['is_synced'], true),
     );
   }
 
@@ -596,6 +601,7 @@ class CategoryRule {
     this.localizedNames,
     this.order = 0,
     this.isArchived = false,
+    this.isSynced = true,
   });
 
   factory CategoryRule.uncategorized() {
@@ -605,6 +611,7 @@ class CategoryRule {
       backendRowId: 'uncategorized',
       normalizedId: 'uncategorized',
       isArchived: false,
+      isSynced: true,
     );
   }
 
@@ -629,6 +636,8 @@ class CategoryRule {
   /// @DATA_MAP `is_archived` — soft-deleted categories stay in DB but off active lists.
   /// Uniqueness checks and “category exists” logic must ignore archived rows (zombie slug conflicts).
   bool isArchived;
+  /// Local-only: queued / cache state (not sent to PocketBase as a field).
+  bool isSynced;
   Map<String, List<String>>? keywords;
   final Map<String, String>? localizedNames;
 
@@ -644,6 +653,7 @@ class CategoryRule {
     Map<String, String>? localizedNames,
     int? order,
     bool? isArchived,
+    bool? isSynced,
   }) {
     final copiedChildren = children ??
         (this.children != null ? List<CategoryRule>.from(this.children!) : null);
@@ -671,6 +681,7 @@ class CategoryRule {
       localizedNames: localizedNames ?? this.localizedNames,
       order: order ?? this.order,
       isArchived: isArchived ?? this.isArchived,
+      isSynced: isSynced ?? this.isSynced,
     );
   }
 
@@ -828,6 +839,7 @@ class CategoryRule {
       localizedNames: localizedNames,
       order: orderVal,
       isArchived: isArc,
+      isSynced: _jsonBool(data['isSynced'] ?? json['isSynced'], true),
     );
   }
 }
@@ -1057,6 +1069,7 @@ class Task {
     this.endTime,
     required this.tags,
     required this.isActive,
+    this.isSynced = true,
   });
 
   final String title;
@@ -1064,6 +1077,8 @@ class Task {
   DateTime? endTime;
   final List<String> tags;
   bool isActive;
+  /// Local-only client sync flag (not a PocketBase column).
+  final bool isSynced;
 
   bool get isRunning => isActive && endTime == null;
 
@@ -1082,6 +1097,7 @@ class Task {
         'endTime': endTime?.toIso8601String(),
         'tags': tags,
         'isActive': isActive,
+        'isSynced': isSynced,
         if (userId != null && userId!.trim().isNotEmpty) 'user_id': userId,
       };
 
@@ -1109,6 +1125,7 @@ class Task {
       endTime: endStr != null && endStr.isNotEmpty ? DateTime.parse(endStr) : null,
       tags: parsedTags,
       isActive: data['is_active'] as bool? ?? data['isActive'] as bool? ?? false,
+      isSynced: _jsonBool(data['isSynced'] ?? data['is_synced'], true),
     );
   }
 
@@ -1278,6 +1295,7 @@ class Tag {
     this.wrapperRowId,
     this.pbRecordId,
     this.sortOrder = 0,
+    this.isSynced = true,
   });
 
   final int tagId;
@@ -1290,6 +1308,8 @@ class Tag {
   final String? pbRecordId;
   /// Display / grouping order in Planning (`tags.sort_order`); lower = first.
   final int sortOrder;
+  /// Local-only sync flag (not a PocketBase column).
+  final bool isSynced;
 
   Tag copyWith({
     int? tagId,
@@ -1299,6 +1319,7 @@ class Tag {
     int? wrapperRowId,
     String? pbRecordId,
     int? sortOrder,
+    bool? isSynced,
   }) {
     return Tag(
       tagId: tagId ?? this.tagId,
@@ -1308,6 +1329,7 @@ class Tag {
       wrapperRowId: wrapperRowId ?? this.wrapperRowId,
       pbRecordId: pbRecordId ?? this.pbRecordId,
       sortOrder: sortOrder ?? this.sortOrder,
+      isSynced: isSynced ?? this.isSynced,
     );
   }
 
@@ -1339,6 +1361,7 @@ class Tag {
       wrapperRowId: wrap > 0 ? wrap : null,
       pbRecordId: json['pocket_id']?.toString(),
       sortOrder: _jsonInt(json['sort_order'] ?? json['sortOrder']),
+      isSynced: _jsonBool(json['isSynced'] ?? json['is_synced'], true),
     );
   }
 
@@ -1353,6 +1376,7 @@ class Tag {
       wrapperRowId: null,
       pbRecordId: (rid != null && rid.isNotEmpty) ? rid : null,
       sortOrder: _jsonInt(json['sort_order'] ?? json['sortOrder']),
+      isSynced: true,
     );
   }
 
@@ -1384,6 +1408,7 @@ class PlanningTask {
     this.parentPlanId,
     List<int>? subRecordIds,
     List<Tag>? tags,
+    this.isSynced = true,
   })  : date = date ?? _dateFromDateKey(dateKey),
         endDateKey = endDateKey ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey),
         subRecordIds = subRecordIds ?? const [],
@@ -1430,6 +1455,8 @@ class PlanningTask {
   final int? parentPlanId;
   final List<int> subRecordIds;
   final List<Tag> tags;
+  /// Local-only: false for optimistic / outbox rows until PocketBase confirms.
+  final bool isSynced;
 
   static DateTime? _dateFromDateKey(String key) {
     if (key.length < 10) return null;
@@ -1448,6 +1475,7 @@ class PlanningTask {
         'title': title,
         'category_id': categoryId,
         'is_done': isDone,
+        'isSynced': isSynced,
         if (parentPlanId != null) 'parent_plan_id': parentPlanId.toString(),
         if (notes != null && notes!.isNotEmpty) 'note': notes,
         if (checklist.isNotEmpty) 'checklist': checklist,
@@ -1562,6 +1590,7 @@ class PlanningTask {
       parentPlanId: parentPlanId,
       subRecordIds: subRecordIds,
       tags: tagList,
+      isSynced: _jsonBool(g('isSynced', 'is_synced'), true),
     );
   }
 
@@ -1691,6 +1720,7 @@ class PlanningTask {
     int? parentPlanId,
     List<int>? subRecordIds,
     List<Tag>? tags,
+    bool? isSynced,
   }) {
     final eDt = clearEnd ? null : (endDateTime ?? this.endDateTime);
     final eDk = endDateKey ?? (eDt != null ? _dateKeyFromDate(eDt) : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
@@ -1712,6 +1742,7 @@ class PlanningTask {
       parentPlanId: parentPlanId ?? this.parentPlanId,
       subRecordIds: subRecordIds ?? this.subRecordIds,
       tags: tags ?? this.tags,
+      isSynced: isSynced ?? this.isSynced,
     );
   }
 }

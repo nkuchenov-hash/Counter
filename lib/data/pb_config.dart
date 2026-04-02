@@ -4,8 +4,8 @@ library;
 import 'package:counter/core/constants.dart';
 
 /// Base URL of the PocketBase instance (no trailing slash).
-/// Production VPS: HTTP port 80 (no `:8090`).
-const String kPocketBaseUrl = 'http://217.114.0.201';
+/// Production: HTTPS via sslip.io (required for Flutter Web on GitHub Pages — avoids mixed content).
+const String kPocketBaseUrl = 'https://217-114-0-201.sslip.io';
 
 /// PocketBase collection names (Admin → Collections). Must match server.
 abstract class PbCollections {

@@ -33,7 +33,7 @@ class SmartTimeParseResult {
 /// Parses times from free text without treating unrelated numbers as times.
 ///
 /// **Regex strategy (strict):**
-/// 1. `\b([01]?\d|2[0-3])[:.]([0-5]\d)\b` — clock `19:30`, `19.30`, `09.05` (dot = same as colon).
+/// 1. Word-bounded `HH:mm` / `HH.mm` (and comma or fullwidth dot normalized to `.` first).
 /// 2. Trailing ` … HH[:.]mm` at EOL (after one or more spaces), not glued to another number/date chunk.
 /// 3. Trailing **four digits** `HHmm` (e.g. `1230` → 12:30).
 /// 4. Trailing hour only: `[\s]+(2[0-3]|1[0-9]|[0-9])\s*$` (e.g. `Ужин 12`).
@@ -42,14 +42,45 @@ class SmartTimeParseResult {
 /// Dot form is always **clock time** (minute 00–59), not `dd.mm` calendar shorthand.
 /// First matching rule wins.
 abstract final class SmartInputParser {
+  static int _minuteGroupToInt(String? raw) {
+    final s = raw?.trim() ?? '';
+    if (s.isEmpty) return 0;
+    if (s.length == 1) {
+      final d = int.tryParse(s);
+      if (d == null) return 0;
+      return d.clamp(0, 9);
+    }
+    final v = int.tryParse(s);
+    if (v == null) return 0;
+    if (v < 0) return 0;
+    if (v > 59) return 59;
+    return v;
+  }
+
+  /// Normalizes fullwidth / middle dots and **comma** between hour and minute (`13,40` → `13.40`).
+  static String normalizeClockSeparators(String raw) {
+    var t = raw.replaceAll('\u00A0', ' ');
+    t = t
+        .replaceAll('\uFF0E', '.')
+        .replaceAll('\u2024', '.')
+        .replaceAll('\u2219', '.')
+        .replaceAll('\u00B7', '.');
+    t = t.replaceAllMapped(
+      RegExp(r'(?<![\d,])([01]?\d|2[0-3]),([0-5]?\d)(?![\d,])'),
+      (m) => '${m[1]}.${m[2]}',
+    );
+    return t;
+  }
+
   /// Word-bounded HH:mm or HH.mm (same semantics; `.` is not a decimal separator here).
+  /// Minutes may be one digit (`13.4` → 13:04) or two; separator is `:` or `.` only (comma normalized earlier).
   static final RegExp _clockTime = RegExp(
-    r'\b([01]?\d|2[0-3])[:.]([0-5]\d)\b',
+    r'\b([01]?\d|2[0-3])(?::|\.)([0-5]?\d)\b',
   );
 
   /// Trailing ` … HH:mm` / ` … HH.mm` at end (space before clock).
   static final RegExp _trailingClockTime = RegExp(
-    r'[\s\u00A0]+([01]?\d|2[0-3])[:.]([0-5]\d)\s*$',
+    r'[\s\u00A0]+([01]?\d|2[0-3])(?::|\.)([0-5]?\d)\s*$',
   );
 
   /// Trailing ` … HHmm` four digits at end (12:30 from `1230`).
@@ -57,7 +88,7 @@ abstract final class SmartInputParser {
 
   /// `at` / `@` / **в** / **на** only after start or whitespace (no splitting Cyrillic words on `в` mid-token).
   static final RegExp _atWordTime = RegExp(
-    r'(?:^|[\s\u00A0])(?:at|@|в|на)\s*([01]?\d|2[0-3])(?:(?::|\.)([0-5]\d))?(?=\s|$)',
+    r'(?:^|[\s\u00A0])(?:at|@|в|на)\s*([01]?\d|2[0-3])(?:(?::|\.)([0-5]?\d))?(?=\s|$)',
     caseSensitive: false,
   );
 
@@ -73,13 +104,13 @@ abstract final class SmartInputParser {
 
   /// Returns null if no time token matched (caller should not mutate the field).
   static SmartTimeParseResult? parseTitleForScheduledTime(String raw) {
-    final input = raw.replaceAll('\u00A0', ' ');
+    final input = normalizeClockSeparators(raw.replaceAll('\u00A0', ' '));
     if (input.trim().isEmpty) return null;
 
     Match? m = _clockTime.firstMatch(input);
     if (m != null) {
       final h = int.parse(m.group(1)!);
-      final min = int.parse(m.group(2)!);
+      final min = _minuteGroupToInt(m.group(2));
       final cleaned =
           _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
       return SmartTimeParseResult(cleanedTitle: cleaned, hour: h, minute: min);
@@ -93,7 +124,7 @@ abstract final class SmartInputParser {
           _charSuggestsGluedClockPrefix(trimmedRight, m.start - 1);
       if (!skip) {
         final h = int.parse(m.group(1)!);
-        final min = int.parse(m.group(2)!);
+        final min = _minuteGroupToInt(m.group(2));
         final cleaned = _collapseSpace(
           trimmedRight.replaceRange(m.start, m.end, ''),
         ).trim();
@@ -137,8 +168,7 @@ abstract final class SmartInputParser {
     m = _atWordTime.firstMatch(input);
     if (m != null) {
       final h = int.parse(m.group(1)!);
-      final min =
-          m.group(2) != null ? int.parse(m.group(2)!) : 0;
+      final min = _minuteGroupToInt(m.group(2));
       final cleaned =
           _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
       return SmartTimeParseResult(

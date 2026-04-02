@@ -4,6 +4,8 @@ import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/link_scalar.dart';
+import 'package:counter/data/local_sync/plan_create_outbox.dart';
+import 'package:counter/data/local_sync/sync_manager.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/pb_config.dart';
 import 'package:pocketbase/pocketbase.dart';
@@ -317,6 +319,209 @@ class DatabaseService {
       }
     }
     await _maybeVerifyPocketBaseReachable();
+    SyncManager.instance.attachIfNeeded();
+  }
+
+  String _scopedDataCacheKey(String base) {
+    final u = (currentProfileId ?? _userIdForWhere ?? '').trim();
+    if (u.isEmpty) return '${base}_anon';
+    return '${base}_$u';
+  }
+
+  Future<void> _hydrateRecordsCacheFromPrefsIfEmpty() async {
+    if (_cachedFlatRecords.isNotEmpty) return;
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final raw = prefs.getString(_scopedDataCacheKey(_cacheRecordsFlatKey));
+      if (raw == null || raw.trim().isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return;
+      _cachedFlatRecords = [
+        for (final e in decoded)
+          if (e is Map) Map<String, dynamic>.from(e as Map),
+      ];
+    } catch (_) {}
+  }
+
+  Map<String, dynamic> _planningTaskToDayCacheMap(PlanningTask t) {
+    return <String, dynamic>{
+      'pocketRecordId': t.pocketRecordId,
+      'plan_row_id': t.planRowId,
+      'id': t.id,
+      'title': t.title,
+      'categoryId': t.categoryId,
+      'category_id': t.categoryId,
+      'is_done': t.isDone,
+      'isDone': t.isDone,
+      'dateKey': t.dateKey,
+      'endDateKey': t.endDateKey,
+      'order': t.order,
+      if (t.startTime != null)
+        'start_wall': <int>[
+          t.startTime!.year,
+          t.startTime!.month,
+          t.startTime!.day,
+          t.startTime!.hour,
+          t.startTime!.minute,
+          t.startTime!.second,
+        ],
+      if (t.endDateTime != null)
+        'end_wall': <int>[
+          t.endDateTime!.year,
+          t.endDateTime!.month,
+          t.endDateTime!.day,
+          t.endDateTime!.hour,
+          t.endDateTime!.minute,
+          t.endDateTime!.second,
+        ],
+      'checklist': t.checklist,
+      'note': t.notes,
+      'parent_plan_id': t.parentPlanId,
+      'isSynced': t.isSynced,
+      'tags': <Map<String, dynamic>>[
+        for (final g in t.tags)
+          <String, dynamic>{
+            'tag_id': g.tagId,
+            'name': g.name,
+            'pocket_id': g.pbRecordId,
+            'sort_order': g.sortOrder,
+          },
+      ],
+    };
+  }
+
+  PlanningTask _planningTaskFromOfflineDayMap(Map<String, dynamic> m) {
+    DateTime? wallFromList(dynamic raw) {
+      if (raw is! List || raw.length < 5) return null;
+      return DateTime(
+        (raw[0] as num).toInt(),
+        (raw[1] as num).toInt(),
+        (raw[2] as num).toInt(),
+        (raw[3] as num).toInt(),
+        (raw[4] as num).toInt(),
+        raw.length > 5 ? (raw[5] as num).toInt() : 0,
+      );
+    }
+
+    var tags = const <Tag>[];
+    final tr = m['tags'];
+    if (tr is List) {
+      tags = [
+        for (final e in tr)
+          if (e is Map)
+            Tag(
+              tagId: int.tryParse((e['tag_id'] ?? '').toString()) ?? 0,
+              name: (e['name'] ?? '').toString(),
+              pbRecordId: e['pocket_id']?.toString(),
+              sortOrder: int.tryParse((e['sort_order'] ?? '0').toString()) ?? 0,
+            ),
+      ];
+    }
+    return PlanningTask(
+      id: int.tryParse((m['id'] ?? '').toString()) ?? 0,
+      planRowId: m['plan_row_id']?.toString(),
+      pocketRecordId: m['pocketRecordId']?.toString(),
+      title: (m['title'] ?? '').toString(),
+      categoryId: int.tryParse(
+            (m['category_id'] ?? m['categoryId'] ?? '0').toString(),
+          ) ??
+          0,
+      isDone: _jsonBoolFromDynamic(m['is_done'] ?? m['isDone']),
+      dateKey: (m['dateKey'] ?? '').toString(),
+      order: int.tryParse((m['order'] ?? '0').toString()) ?? 0,
+      startTime: wallFromList(m['start_wall']),
+      endDateTime: wallFromList(m['end_wall']),
+      endDateKey: (m['endDateKey'] ?? m['dateKey'] ?? '').toString(),
+      checklist: parseChecklistFromNocoList(m['checklist']),
+      notes: m['note']?.toString(),
+      parentPlanId: m['parent_plan_id'] == null
+          ? null
+          : int.tryParse(m['parent_plan_id'].toString()),
+      tags: tags,
+      isSynced: _jsonBoolFromDynamic(m['isSynced'] ?? true),
+    );
+  }
+
+  Future<void> _persistPlanningTasksDayCache(
+    String targetDayStr,
+    List<PlanningTask> plans,
+  ) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final payload =
+          plans.map(_planningTaskToDayCacheMap).toList(growable: false);
+      await prefs.setString(
+        '${_scopedDataCacheKey('cache_plans_day_v1')}_$targetDayStr',
+        jsonEncode(payload),
+      );
+    } catch (_) {}
+  }
+
+  Future<List<PlanningTask>> _loadPlanningTasksDayCache(
+    String targetDayStr,
+  ) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final raw = prefs.getString(
+        '${_scopedDataCacheKey('cache_plans_day_v1')}_$targetDayStr',
+      );
+      if (raw == null || raw.trim().isEmpty) return [];
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      final out = <PlanningTask>[];
+      for (final e in decoded) {
+        if (e is! Map) continue;
+        out.add(
+          _planningTaskFromOfflineDayMap(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        );
+      }
+      return out;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Drains queued PocketBase **plans** creates (offline outbox). Safe to call from [SyncManager] or after login.
+  Future<void> flushPendingPlanCreates() async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    if (!_isPlansTableConfigured) return;
+    if (_planCreateOutboxFlushInFlight) return;
+    _planCreateOutboxFlushInFlight = true;
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) return;
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final q = await PlanCreateOutbox.load(prefs);
+      if (q.isEmpty) return;
+      var pendingTail = const <Map<String, dynamic>>[];
+      var i = 0;
+      for (; i < q.length; i++) {
+        final item = q[i];
+        final wrapped = item['body'];
+        if (wrapped is! Map) {
+          continue;
+        }
+        final body = Map<String, dynamic>.from(wrapped as Map);
+        body['user_id'] = _pidForPbFilter;
+        try {
+          await _pb.collection(PbCollections.plans).create(body: body);
+          notifyPlanningRefresh();
+        } catch (e) {
+          _log('PLAN_OUTBOX_FLUSH: $e');
+          pendingTail = q.sublist(i);
+          break;
+        }
+      }
+      if (pendingTail.isEmpty && i >= q.length) {
+        await PlanCreateOutbox.replaceAll(prefs, []);
+      } else {
+        await PlanCreateOutbox.replaceAll(prefs, pendingTail);
+      }
+    } finally {
+      _planCreateOutboxFlushInFlight = false;
+    }
   }
 
   /// Same as [_maybeVerifyPocketBaseReachable] — used from [_loadInner] (debug builds).
@@ -359,10 +564,14 @@ class DatabaseService {
   /// One-shot local clean of titleless / "Untitled" rows from [_cachedFlatRecords] (@DATA_MAP ghost / bad creates).
   static const String _oneShotUntitledGhostCleanKey =
       'brain_one_shot_untitled_ghost_clean_v1';
+  static const String _cacheRecordsFlatKey = 'cache_records_flat_v1';
+  static const String _cacheCategoriesRawKey = 'cache_categories_raw_v1';
 
   String _dataRegion = 'global';
   String? _loadErrorMessage;
   String? get loadErrorMessage => _loadErrorMessage;
+
+  bool _planCreateOutboxFlushInFlight = false;
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
@@ -1043,6 +1252,7 @@ class DatabaseService {
     try {
       await runOneShotUntitledGhostRecordClean();
     } catch (_) {}
+    unawaited(flushPendingPlanCreates());
   }
 
   Future<void> _loadPlanningTasksForToday() async {
@@ -1077,37 +1287,44 @@ class DatabaseService {
       if (authId == null || authId.isEmpty) return [];
       final targetDayStr =
           '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
-      final uid = _escapeForPbFilter(authId);
-      // Required: without expand, API returns only relation ids — chips would be empty after refresh.
-      final tagCatalog = await fetchTagsForCurrentUser();
-      final list = await _pb.collection(PbCollections.plans).getFullList(
-            expand: kPbPlanTagsExpand,
-            filter: 'user_id = "$uid"',
-          );
-      final plans = <PlanningTask>[];
-      for (final r in list) {
-        var anchorUtc = _parseDateTimeUtc(r.data['start_time']);
-        anchorUtc ??= _parseDateTimeUtc(r.data['end_time']);
-        if (anchorUtc == null) continue;
-        final w = _profileWallFromUtc(anchorUtc);
-        final planDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
-        if (planDayStr != targetDayStr) continue;
-        plans.add(_planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog));
-      }
-      plans.sort((a, b) {
-        if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
-        final o = a.order.compareTo(b.order);
-        if (o != 0) return o;
-        final at = a.startTime;
-        final bt = b.startTime;
-        if (at != bt) {
-          if (at == null) return 1;
-          if (bt == null) return -1;
-          return at.compareTo(bt);
+      try {
+        final uid = _escapeForPbFilter(authId);
+        // Required: without expand, API returns only relation ids — chips would be empty after refresh.
+        final tagCatalog = await fetchTagsForCurrentUser();
+        final list = await _pb.collection(PbCollections.plans).getFullList(
+              expand: kPbPlanTagsExpand,
+              filter: 'user_id = "$uid"',
+            );
+        final plans = <PlanningTask>[];
+        for (final r in list) {
+          var anchorUtc = _parseDateTimeUtc(r.data['start_time']);
+          anchorUtc ??= _parseDateTimeUtc(r.data['end_time']);
+          if (anchorUtc == null) continue;
+          final w = _profileWallFromUtc(anchorUtc);
+          final planDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
+          if (planDayStr != targetDayStr) continue;
+          plans.add(_planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog));
         }
-        return a.title.compareTo(b.title);
-      });
-      return _mergePlanningOptimistic(targetDayStr, plans);
+        plans.sort((a, b) {
+          if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+          final o = a.order.compareTo(b.order);
+          if (o != 0) return o;
+          final at = a.startTime;
+          final bt = b.startTime;
+          if (at != bt) {
+            if (at == null) return 1;
+            if (bt == null) return -1;
+            return at.compareTo(bt);
+          }
+          return a.title.compareTo(b.title);
+        });
+        final merged = _mergePlanningOptimistic(targetDayStr, plans);
+        await _persistPlanningTasksDayCache(targetDayStr, merged);
+        return merged;
+      } catch (_) {
+        final cached = await _loadPlanningTasksDayCache(targetDayStr);
+        return _mergePlanningOptimistic(targetDayStr, cached);
+      }
     } catch (_) {
       return [];
     }
@@ -1644,11 +1861,18 @@ class DatabaseService {
           '[PB] fetchRecords: ${kept.length} rows (expand $expandRel) @ $kPocketBaseUrl',
         );
       }
+      try {
+        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        await prefs.setString(
+          _scopedDataCacheKey(_cacheRecordsFlatKey),
+          jsonEncode(kept),
+        );
+      } catch (_) {}
       return _cachedFlatRecords;
     } catch (e) {
       _maybeOpenPbCircuitFromListFailure(e, 'fetchRecords');
-      _cachedFlatRecords = [];
-      return [];
+      await _hydrateRecordsCacheFromPrefsIfEmpty();
+      return List<Map<String, dynamic>>.from(_cachedFlatRecords);
     }
   }
 
@@ -1694,8 +1918,40 @@ class DatabaseService {
   }
 
   Future<void> _loadRulesFromNoco() async {
+    List<Map<String, dynamic>>? allRows;
     try {
-      final allRows = await _fetchAllCategoryMapsForUser();
+      allRows = await _fetchAllCategoryMapsForUser();
+      try {
+        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        await prefs.setString(
+          _scopedDataCacheKey(_cacheCategoriesRawKey),
+          jsonEncode(allRows),
+        );
+      } catch (_) {}
+    } catch (e) {
+      _log('CATEGORY_FETCH: $e');
+      try {
+        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        final raw = prefs.getString(_scopedDataCacheKey(_cacheCategoriesRawKey));
+        if (raw != null && raw.trim().isNotEmpty) {
+          final decoded = jsonDecode(raw);
+          if (decoded is List) {
+            allRows = [
+              for (final e in decoded)
+                if (e is Map) Map<String, dynamic>.from(e as Map),
+            ];
+          }
+        }
+      } catch (_) {}
+    }
+    if (allRows == null || allRows.isEmpty) {
+      _rules = [];
+      _reservedCategorySlugsLower.clear();
+      _categoryDialogUniverse = [];
+      _categoryController.add(List.from(_rules));
+      return;
+    }
+    try {
       _rebuildReservedCategorySlugsFromRows(allRows);
       _rebuildCategoryDialogUniverse(allRows);
       final flat = allRows
@@ -6655,6 +6911,48 @@ class DatabaseService {
     return out;
   }
 
+  Future<Map<String, dynamic>> _buildPocketPlanCreateBody(
+    PlanningTask task, {
+    required String titleTrimmed,
+    required String clientPlanId,
+    required Object categoryFieldForPlan,
+  }) async {
+    final body = <String, dynamic>{
+      'plan_id': clientPlanId,
+      'user_id': _pidForPbFilter,
+      'category_id': categoryFieldForPlan.toString(),
+      'title': titleTrimmed,
+      'is_done': task.isDone,
+      'checklist': task.checklist.isNotEmpty
+          ? List<dynamic>.from(task.checklist)
+          : <dynamic>[],
+      'order': task.order,
+    };
+    if (task.startTime != null) {
+      body['start_time'] = task.startTime!.toUtc().toIso8601String();
+    } else if (task.dateKey.length >= 10) {
+      final iso = _planStartUtcIsoFromDateKey(task.dateKey);
+      if (iso != null) body['start_time'] = iso;
+    }
+    if (task.endDateTime != null) {
+      body['end_time'] = task.endDateTime!.toUtc().toIso8601String();
+    }
+    if (task.parentPlanId != null) {
+      body['parent_plan_id'] = task.parentPlanId.toString();
+    }
+    if (task.notes != null && task.notes!.trim().isNotEmpty) {
+      body['note'] = task.notes;
+    }
+    if (task.tags.isNotEmpty) {
+      final pbIds = await _pbTagRecordIdsFromTags(task.tags);
+      if (pbIds.isNotEmpty) {
+        print('DEBUG: Sending to PB tags_link: $pbIds');
+        body['tags_link'] = pbIds;
+      }
+    }
+    return body;
+  }
+
   Future<void> _syncPlanTagsPocket(String planRecordId, List<Tag> tags) async {
     final rid = planRecordId.trim();
     if (rid.isEmpty) return;
@@ -6686,41 +6984,22 @@ class DatabaseService {
     required String clientPlanId,
     required Object categoryFieldForPlan,
   }) async {
+    late final Map<String, dynamic> body;
     try {
-      final body = <String, dynamic>{
-        'plan_id': clientPlanId,
-        'user_id': _pidForPbFilter,
-        'category_id': categoryFieldForPlan.toString(),
-        'title': titleTrimmed,
-        'is_done': task.isDone,
-        'checklist': task.checklist.isNotEmpty
-            ? List<dynamic>.from(task.checklist)
-            : <dynamic>[],
-        'order': task.order,
-      };
-      if (task.startTime != null) {
-        body['start_time'] = task.startTime!.toUtc().toIso8601String();
-      } else if (task.dateKey.length >= 10) {
-        final iso = _planStartUtcIsoFromDateKey(task.dateKey);
-        if (iso != null) body['start_time'] = iso;
-      }
-      if (task.endDateTime != null) {
-        body['end_time'] = task.endDateTime!.toUtc().toIso8601String();
-      }
-      if (task.parentPlanId != null) {
-        body['parent_plan_id'] = task.parentPlanId.toString();
-      }
-      if (task.notes != null && task.notes!.trim().isNotEmpty) {
-        body['note'] = task.notes;
-      }
-      if (task.tags.isNotEmpty) {
-        final pbIds = await _pbTagRecordIdsFromTags(task.tags);
-        if (pbIds.isNotEmpty) {
-          print('DEBUG: Sending to PB tags_link: $pbIds');
-          body['tags_link'] = pbIds;
-        }
-      }
-      final record = await _pb.collection(PbCollections.plans).create(body: body);
+      body = await _buildPocketPlanCreateBody(
+        task,
+        titleTrimmed: titleTrimmed,
+        clientPlanId: clientPlanId,
+        categoryFieldForPlan: categoryFieldForPlan,
+      );
+    } catch (e, st) {
+      _log('ADD_PLAN_BUILD_BODY: $e');
+      _log(st.toString());
+      return false;
+    }
+    try {
+      final record =
+          await _pb.collection(PbCollections.plans).create(body: body);
       if (task.tags.isNotEmpty) {
         await _syncPlanTagsPocket(record.id, task.tags);
       }
@@ -6729,12 +7008,20 @@ class DatabaseService {
     } catch (e, st) {
       _log('ADD_PLAN_PB: $e');
       _log(st.toString());
-      AppSnack.failed();
-      return false;
+      try {
+        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        final normalized =
+            jsonDecode(jsonEncode(body)) as Map<String, dynamic>;
+        await PlanCreateOutbox.enqueue(prefs, normalized);
+      } catch (_) {}
+      return true;
     }
   }
 
-  Future<bool> addPlanningTask(PlanningTask task) async {
+  Future<bool> addPlanningTask(
+    PlanningTask task, {
+    String? clientPlanId,
+  }) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
     }
@@ -6771,16 +7058,17 @@ class DatabaseService {
         AppSnack.failed();
         return false;
       }
-      final clientPlanId = _newClientRecordUuid();
+      final cid = (clientPlanId != null && clientPlanId.trim().isNotEmpty)
+          ? clientPlanId.trim()
+          : _newClientRecordUuid();
       return _addPlanningTaskPocket(
         task,
         titleTrimmed: titleTrimmed,
-        clientPlanId: clientPlanId,
+        clientPlanId: cid,
         categoryFieldForPlan: categoryFieldForPlan,
       );
     } catch (e, st) {
-      debugPrint('[ADD_PLAN][FAIL] exception: $e\n$st');
-      AppSnack.failed();
+      _log('[ADD_PLAN][FAIL] exception: $e\n$st');
       return false;
     }
   }

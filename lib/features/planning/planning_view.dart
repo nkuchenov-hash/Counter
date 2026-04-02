@@ -846,7 +846,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       if (t.order >= nextOrder) nextOrder = t.order + 1;
     }
     final optimisticId = -DateTime.now().millisecondsSinceEpoch;
-    final optimisticRow = 'optimistic-${DateTime.now().microsecondsSinceEpoch}';
+    final clientPlanId = DatabaseService.newClientUuid();
+    final optimisticRow = 'optimistic-$clientPlanId';
     final tagsForCreate = List<Tag>.from(_creationSelectedTags);
     final pending = PlanningTask(
       id: optimisticId,
@@ -862,29 +863,31 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       notes: null,
       parentPlanId: null,
       tags: tagsForCreate,
+      isSynced: false,
     );
     setState(() => _optimisticTasks.add(pending));
     try {
-      final ok = await DatabaseService.instance.addPlanningTask(PlanningTask(
-        id: 0,
-        title: title,
-        categoryId: categoryId,
-        isDone: false,
-        dateKey: taskDateKey,
-        order: nextOrder,
-        startTime: startStored,
-        endDateTime: null,
-        checklist: const [],
-        notes: null,
-        parentPlanId: null,
-        tags: tagsForCreate,
-      ));
+      final ok = await DatabaseService.instance.addPlanningTask(
+        PlanningTask(
+          id: 0,
+          title: title,
+          categoryId: categoryId,
+          isDone: false,
+          dateKey: taskDateKey,
+          order: nextOrder,
+          startTime: startStored,
+          endDateTime: null,
+          checklist: const [],
+          notes: null,
+          parentPlanId: null,
+          tags: tagsForCreate,
+          isSynced: false,
+        ),
+        clientPlanId: clientPlanId,
+      );
       if (!mounted) return;
       if (!ok) {
         setState(() => _optimisticTasks.removeWhere((o) => o.planRowId == optimisticRow));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
-        );
       } else {
         _textController.clear();
         setState(() {
@@ -892,12 +895,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         });
       }
     } catch (e) {
-      print('UI ERROR: $e');
-      if (mounted) {
-        setState(() => _optimisticTasks.removeWhere((o) => o.planRowId == optimisticRow));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
-        );
+      if (kDebugMode) {
+        debugPrint('PLAN_ADD_UI: $e');
       }
     }
   }
