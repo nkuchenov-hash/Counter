@@ -12,8 +12,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
-import 'package:counter/features/profile/tag_manager_page.dart';
-import 'package:counter/features/profile/tag_settings_view.dart';
+import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
@@ -212,7 +211,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
 
   static const int _kUntaggedPlanGroupId = -1;
 
-  /// Tags for quick-add row; loaded once and after returning from [TagManagerPage].
+  /// Tags for quick-add row; reloaded after returning from [TagSettingsHub].
   List<Tag> _quickAddAvailableTags = [];
   bool _quickAddTagsLoading = true;
   /// M2M tags selected before submitting the inline task.
@@ -349,7 +348,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
 
   Future<void> _openTagManagerFromQuickAdd() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (ctx) => const TagManagerPage()),
+      MaterialPageRoute<void>(builder: (ctx) => const TagSettingsHub()),
     );
     await _reloadQuickAddTags();
   }
@@ -500,28 +499,18 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                 children: [
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.local_offer_outlined),
-                    title: Text(t(loc, 'manage_tags')),
+                    leading: const Icon(Icons.label_outline_rounded),
+                    title: Text(t(loc, 'tag_settings_hub_title')),
+                    subtitle: Text(
+                      t(loc, 'tag_settings_sheet_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () {
                       Navigator.of(sheetCtx).pop();
                       Navigator.of(context).push<void>(
                         MaterialPageRoute<void>(
-                          builder: (_) => const TagManagerPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.style_outlined),
-                    title: Text(t(loc, 'planning_tag_display_style')),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () {
-                      Navigator.of(sheetCtx).pop();
-                      Navigator.of(context).push<void>(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const TagSettingsView(),
+                          builder: (_) => const TagSettingsHub(),
                         ),
                       );
                     },

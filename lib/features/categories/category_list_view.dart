@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/create_category_dialog.dart';
@@ -828,26 +829,8 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
         widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint;
   }
 
-  List<int> _shadeValuesFor(MaterialColor c) => <int>[
-        c[50]!.value,
-        c[100]!.value,
-        c[200]!.value,
-        c[300]!.value,
-        c[400]!.value,
-        c[500]!.value,
-        c[600]!.value,
-        c[700]!.value,
-        c[800]!.value,
-        c[900]!.value,
-      ];
-
-  MaterialColor _primaryForValue(int? v) {
-    if (v == null) return Colors.blue;
-    for (final p in Colors.primaries) {
-      if (_shadeValuesFor(p).contains(v)) return p;
-    }
-    return Colors.blue;
-  }
+  MaterialColor _primaryForValue(int? v) =>
+      categoryMaterialPrimaryForValue(v);
 
   Future<void> _apply() async {
     if (_busy) return;
@@ -893,7 +876,9 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
     final loc = currentLocale.value;
     _selectedPrimary ??= _primaryForValue(_colorValue);
     _selectedShadeValue ??=
-        (_colorValue != null && _shadeValuesFor(_selectedPrimary!).contains(_colorValue))
+        (_colorValue != null &&
+                categoryMaterialShadeValues(_selectedPrimary!)
+                    .contains(_colorValue))
             ? _colorValue
             : _selectedPrimary![500]!.value;
 
@@ -916,7 +901,7 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: Colors.primaries.map((p) {
+              children: kCategoryPickerMaterialColors.map((p) {
                 final sel = _selectedPrimary == p;
                 return GestureDetector(
                   onTap: () {
@@ -1318,33 +1303,13 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final locale = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
 
-    List<int> shadeValuesFor(MaterialColor c) => <int>[
-          c[50]!.value,
-          c[100]!.value,
-          c[200]!.value,
-          c[300]!.value,
-          c[400]!.value,
-          c[500]!.value,
-          c[600]!.value,
-          c[700]!.value,
-          c[800]!.value,
-          c[900]!.value,
-        ];
-
-    MaterialColor primaryForValue(int? v) {
-      if (v == null) return Colors.blue;
-      for (final p in Colors.primaries) {
-        if (shadeValuesFor(p).contains(v)) return p;
-      }
-      return Colors.blue;
-    }
-
-    _selectedPrimary ??= primaryForValue(_selectedColorValue);
-    _selectedShadeValue ??=
-        (_selectedColorValue != null &&
-                shadeValuesFor(_selectedPrimary!).contains(_selectedColorValue))
-            ? _selectedColorValue
-            : _selectedPrimary![500]!.value;
+    _selectedPrimary ??=
+        categoryMaterialPrimaryForValue(_selectedColorValue);
+    _selectedShadeValue ??= (_selectedColorValue != null &&
+            categoryMaterialShadeValues(_selectedPrimary!)
+                .contains(_selectedColorValue))
+        ? _selectedColorValue
+        : _selectedPrimary![500]!.value;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -1394,7 +1359,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: Colors.primaries.map((p) {
+              children: kCategoryPickerMaterialColors.map((p) {
                 final sel = _selectedPrimary == p;
                 return GestureDetector(
                   onTap: () {

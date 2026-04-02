@@ -6,10 +6,11 @@
 import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
-import 'package:counter/features/profile/tag_manager_page.dart';
+import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -215,7 +216,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
 
   Future<void> _openTagManagerAndReload() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (ctx) => const TagManagerPage()),
+      MaterialPageRoute<void>(builder: (ctx) => const TagSettingsHub()),
     );
     if (!mounted) return;
     setState(() => _tagsLoading = true);
@@ -1784,29 +1785,11 @@ class _CategoryFolderTileState extends State<CategoryFolderTile> {
         context: context,
         builder: (ctx) => StatefulBuilder(
           builder: (ctx, setDialogState) {
-            List<int> shadeValuesFor(MaterialColor c) => <int>[
-              c[50]!.value,
-              c[100]!.value,
-              c[200]!.value,
-              c[300]!.value,
-              c[400]!.value,
-              c[500]!.value,
-              c[600]!.value,
-              c[700]!.value,
-              c[800]!.value,
-              c[900]!.value,
-            ];
-
-            MaterialColor? primaryForValue(int? v) {
-              if (v == null) return null;
-              for (final p in Colors.primaries) {
-                if (shadeValuesFor(p).contains(v)) return p;
-              }
-              return null;
-            }
-
-            selectedPrimary ??= primaryForValue(selectedColorValue) ?? Colors.blue;
-            selectedShadeValue ??= (selectedColorValue != null && shadeValuesFor(selectedPrimary!).contains(selectedColorValue))
+            selectedPrimary ??=
+                categoryMaterialPrimaryForValue(selectedColorValue);
+            selectedShadeValue ??= (selectedColorValue != null &&
+                    categoryMaterialShadeValues(selectedPrimary!)
+                        .contains(selectedColorValue))
                 ? selectedColorValue
                 : selectedPrimary![500]!.value;
 
@@ -1824,13 +1807,13 @@ class _CategoryFolderTileState extends State<CategoryFolderTile> {
                       Wrap(
                         spacing: 8.0,
                         runSpacing: 8.0,
-                        children: Colors.primaries.map((p) {
+                        children: kCategoryPickerMaterialColors.map((p) {
                           final isSelected = selectedPrimary == p;
                           return GestureDetector(
                             onTap: () {
                               setDialogState(() {
                                 selectedPrimary = p;
-                                selectedShadeValue = p.shade500.value;
+                                selectedShadeValue = p[500]!.value;
                                 selectedColorValue = selectedShadeValue;
                               });
                               HapticFeedback.lightImpact();

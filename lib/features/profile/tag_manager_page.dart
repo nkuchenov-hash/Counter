@@ -11,7 +11,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-/// Six preset hex colors (@DATA_MAP `tags.color`).
+/// Preset hex colors for @DATA_MAP `tags.color` (stored as "#RRGGBB").
 const List<String> kTagManagerPalette = [
   '#E53935',
   '#FB8C00',
@@ -19,6 +19,10 @@ const List<String> kTagManagerPalette = [
   '#43A047',
   '#1E88E5',
   '#8E24AA',
+  '#9E9E9E',
+  '#000000',
+  '#6D4C41',
+  '#EC407A',
 ];
 
 /// Ten Material icon keys (`tags.icon`).
@@ -71,7 +75,10 @@ Color? parseTagHexColor(String? hex) {
 }
 
 class TagManagerPage extends StatefulWidget {
-  const TagManagerPage({super.key});
+  const TagManagerPage({super.key, this.embeddedInHub = false});
+
+  /// When true, no [AppBar] — shown as a tab in the unified tag settings screen.
+  final bool embeddedInHub;
 
   @override
   State<TagManagerPage> createState() => _TagManagerPageState();
@@ -325,9 +332,11 @@ class _TagManagerPageState extends State<TagManagerPage> {
     final loc = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t(loc, 'tag_manager_title')),
-      ),
+      appBar: widget.embeddedInHub
+          ? null
+          : AppBar(
+              title: Text(t(loc, 'tag_manager_title')),
+            ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _loading ? null : () => _presentTagEditor(existing: null),
         icon: const Icon(Icons.add_rounded),

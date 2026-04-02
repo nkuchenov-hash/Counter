@@ -12,7 +12,10 @@ import 'package:flutter/material.dart';
 
 /// PocketBase field `tag_display_mode` — live preview + radio selector.
 class TagSettingsView extends StatefulWidget {
-  const TagSettingsView({super.key});
+  const TagSettingsView({super.key, this.embeddedInHub = false});
+
+  /// When true, body only (no [Scaffold]) — used as a tab inside the tag settings hub.
+  final bool embeddedInHub;
 
   @override
   State<TagSettingsView> createState() => _TagSettingsViewState();
@@ -59,15 +62,12 @@ class _TagSettingsViewState extends State<TagSettingsView> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildBody(BuildContext context) {
     final loc = currentLocale.value;
     final theme = Theme.of(context);
     final mockName = t(loc, 'tag_display_preview_mock_name');
 
-    return Scaffold(
-      appBar: AppBar(title: Text(t(loc, 'tag_display_settings_title'))),
-      body: ListView(
+    return ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
@@ -163,7 +163,18 @@ class _TagSettingsViewState extends State<TagSettingsView> {
               ),
             ),
         ],
-      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    if (widget.embeddedInHub) {
+      return _buildBody(context);
+    }
+    return Scaffold(
+      appBar: AppBar(title: Text(t(loc, 'tag_display_settings_title'))),
+      body: _buildBody(context),
     );
   }
 }

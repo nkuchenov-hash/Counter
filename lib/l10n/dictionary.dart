@@ -133,6 +133,11 @@ const Map<String, Map<String, String>> l10n = {
     'record_started_message': 'Record "%s" started',
     'manage_tags': 'Manage tags',
     'planning_tag_display_style': 'Tag display style',
+    'tag_settings_hub_title': 'Tag settings',
+    'tag_settings_sheet_subtitle':
+        'Manage tags and how they look in planning.',
+    'tag_settings_tab_tags': 'Tags',
+    'tag_settings_tab_style': 'Style',
     'tag_manager_title': 'Tags',
     'tag_manager_reorder_hint':
         'Drag the handle to set order. Planning groups follow this order.',
@@ -445,6 +450,11 @@ const Map<String, Map<String, String>> l10n = {
     'record_started_message': 'Запись «%s» запущена',
     'manage_tags': 'Управление тегами',
     'planning_tag_display_style': 'Стиль отображения тегов',
+    'tag_settings_hub_title': 'Настройки тегов',
+    'tag_settings_sheet_subtitle':
+        'Список тегов и стиль отображения в планировании.',
+    'tag_settings_tab_tags': 'Теги',
+    'tag_settings_tab_style': 'Стиль',
     'tag_manager_title': 'Теги',
     'tag_manager_reorder_hint':
         'Тяните за значок, чтобы задать порядок. Группы в планировании следуют ему.',
