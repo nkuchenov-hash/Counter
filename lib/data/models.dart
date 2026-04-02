@@ -698,7 +698,16 @@ class CategoryRule {
     return Icons.folder_rounded;
   }
 
-  /// Whole-word tokens only (@ARCHITECTURE §8 — no substring / fuzzy on title).
+  /// Case-insensitive: either [aLower] contains [bLower] or the reverse (multi-word names included).
+  /// The shorter side must be ≥2 chars to avoid trivial single-letter overlaps.
+  static bool _bidirectionalSubstringMatch(String aLower, String bLower) {
+    if (aLower.isEmpty || bLower.isEmpty) return false;
+    final minLen =
+        aLower.length < bLower.length ? aLower.length : bLower.length;
+    if (minLen < 2) return false;
+    return aLower.contains(bLower) || bLower.contains(aLower);
+  }
+
   static Set<String> _titleWholeWordSet(String title) {
     final trimmed = title.trim();
     if (trimmed.isEmpty) return {};
@@ -709,11 +718,31 @@ class CategoryRule {
         .toSet();
   }
 
-  /// True if [title] contains this rule's display name or any **keywords** entry as a whole token.
+  /// Human-friendly match for auto-categorization:
+  /// 1) Bidirectional substring on [name] and on each **keyword** (case-insensitive).
+  /// 2) Whole-word token overlap (legacy precision for single-token titles vs single-word categories).
   bool matchesTitleWholeWordKeywords(String title) {
+    final t = title.trim();
+    if (t.isEmpty) return false;
+    final tLower = t.toLowerCase();
+    final selfName = name.trim().toLowerCase();
+    if (selfName.isNotEmpty &&
+        CategoryRule._bidirectionalSubstringMatch(tLower, selfName)) {
+      return true;
+    }
+    if (keywords != null) {
+      for (final list in keywords!.values) {
+        for (final kw in list) {
+          final k = kw.trim().toLowerCase();
+          if (k.isNotEmpty &&
+              CategoryRule._bidirectionalSubstringMatch(tLower, k)) {
+            return true;
+          }
+        }
+      }
+    }
     final words = CategoryRule._titleWholeWordSet(title);
     if (words.isEmpty) return false;
-    final selfName = name.trim().toLowerCase();
     if (selfName.isNotEmpty && words.contains(selfName)) return true;
     if (keywords != null) {
       for (final list in keywords!.values) {
@@ -730,13 +759,18 @@ class CategoryRule {
     if (title.trim().isEmpty) return null;
     CategoryRule? best;
     int bestDepth = -1;
+    int bestNameLen = -1;
 
     void visit(CategoryRule r, int depth) {
       if (depth > 4) return;
       if (!r.isArchived && r.matchesTitleWholeWordKeywords(title)) {
-        if (depth >= bestDepth) {
+        final nameLen = r.name.trim().length;
+        if (best == null ||
+            depth > bestDepth ||
+            (depth == bestDepth && nameLen > bestNameLen)) {
           best = r;
           bestDepth = depth;
+          bestNameLen = nameLen;
         }
       }
       for (final c in r.children ?? []) {

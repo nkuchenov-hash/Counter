@@ -3428,7 +3428,10 @@ class DatabaseService {
       final m = root.findDeepestMatch(title);
       if (m != null) {
         final d = depthOf(m, _rules, 0);
-        if (d >= bestDepth) {
+        final mLen = m.name.trim().length;
+        if (best == null ||
+            d > bestDepth ||
+            (d == bestDepth && mLen > best.name.trim().length)) {
           best = m;
           bestDepth = d;
         }
@@ -3439,11 +3442,10 @@ class DatabaseService {
 
   CategoryRule? identifyCategory(String input) => findDeepestMatchForTitle(input);
 
-  /// Greedy substring link: longest **active** [CategoryRule.name] contained in [title]
-  /// (case-insensitive). Returns PocketBase **categories** row id (~15 chars), or null.
+  /// Smart link: longest **active** [CategoryRule.name] first (@[CategoryRule.matchesTitleWholeWordKeywords]),
+  /// then first with a valid PocketBase **categories** row id. Substring + whole-word rules live in [CategoryRule].
   String? _findBestCategoryMatch(String title) {
-    final t = title.trim().toLowerCase();
-    if (t.isEmpty) return null;
+    if (title.trim().isEmpty) return null;
     final candidates = <CategoryRule>[];
     void visit(List<CategoryRule> rules) {
       for (final r in rules) {
@@ -3460,9 +3462,7 @@ class DatabaseService {
     visit(_rules);
     candidates.sort((a, b) => b.name.length.compareTo(a.name.length));
     for (final r in candidates) {
-      final n = r.name.trim().toLowerCase();
-      if (n.isEmpty) continue;
-      if (!t.contains(n)) continue;
+      if (!r.matchesTitleWholeWordKeywords(title)) continue;
       final pb = _categoryBackendRowIdStrict(r);
       if (pb != null && pb.isNotEmpty && _isLikelyPocketBaseRowId(pb)) {
         print(
