@@ -21,30 +21,6 @@ abstract class TableNames {
   static const String plans = 'plans';
 }
 
-/// NocoDB v3 table segments: `baseUrl` = `.../api/v3/data/{baseId}` then `/{segment}` (@DATA_MAP.md §0).
-///
-/// **Row PATCH/DELETE (no 404s)**: `.../api/v3/data/{baseId}/{tableUid}/records/{Id}` — integer [Id] in URL;
-/// UUID `record_id` only in `fields`. (Do not insert `/noco/` unless your server docs require it.)
-///
-/// **Collection** (list GET / create POST): `.../{tableUid}/records`.
-/// **Single row** (PATCH / DELETE): `.../{tableUid}/records/{rowId}` (integer system Id for `records` / `plans`).
-abstract class NocoV3TablePaths {
-  static const String profiles = 'mkiyat3508jooui/records';
-
-  /// @DATA_MAP.md §0 — **categories** table. Never use for timeline record REST.
-  static const String categoriesTableUid = 'mhg7mv6dfsgq9i0';
-  static const String categories = '$categoriesTableUid/records';
-
-  /// @DATA_MAP.md §0 — **records** table (timeline / Sacred Law). Exclusive for record GET/POST/PATCH/DELETE.
-  static const String recordsTableUid = 'mjchwhned7zsvj0';
-
-  /// Collection path: `{recordsTableUid}/records` — must stay in sync with [recordsTableUid] only.
-  static const String records = '$recordsTableUid/records';
-
-  static const String plansTableUid = 'mybeqs5qmcaz887';
-  static const String plans = '$plansTableUid/records';
-}
-
 /// Hard limits for queries and UI.
 abstract class AppLimits {
   static const int recordsQueryLimit = 500;

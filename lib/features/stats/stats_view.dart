@@ -56,12 +56,14 @@ class _StatsViewState extends State<StatsView> {
 
   PageController? _dayPageController;
 
-  DateTime _utcDay(DateTime d) => DateTime.utc(d.year, d.month, d.day);
+  DateTime _dateOnlyCal(DateTime d) =>
+      DateTime(d.year, d.month, d.day);
 
   int _pageIndexForDate(DateTime day) {
-    final today = DatabaseService.instance.getProjectedToday();
+    final today =
+        _dateOnlyCal(DatabaseService.instance.getTimelineDeviceLocalToday());
     return _statsPageCenter +
-        _utcDay(day).difference(_utcDay(today)).inDays;
+        _dateOnlyCal(day).difference(today).inDays;
   }
 
   int _aggregatedCacheKey(List<Map<String, dynamic>> records, DateTime selectedDate) {
@@ -167,17 +169,24 @@ class _StatsViewState extends State<StatsView> {
       controller: ctrl,
       itemCount: 10000,
       onPageChanged: (int index) {
-        final today = DatabaseService.instance.getProjectedToday();
-        final day = _utcDay(today)
-            .add(Duration(days: index - _statsPageCenter));
-        navigate(DateTime(day.year, day.month, day.day));
+        final anchor =
+            _dateOnlyCal(DatabaseService.instance.getTimelineDeviceLocalToday());
+        final raw = anchor.add(Duration(days: index - _statsPageCenter));
+        final next = _dateOnlyCal(raw);
+        final sel = _dateOnlyCal(widget.selectedDate);
+        if (next.year == sel.year &&
+            next.month == sel.month &&
+            next.day == sel.day) {
+          return;
+        }
+        navigate(next);
       },
       itemBuilder: (context, index) {
-        final today = DatabaseService.instance.getProjectedToday();
-        final pageUtc =
-            _utcDay(today).add(Duration(days: index - _statsPageCenter));
-        final pageDay =
-            DateTime(pageUtc.year, pageUtc.month, pageUtc.day);
+        final anchor =
+            _dateOnlyCal(DatabaseService.instance.getTimelineDeviceLocalToday());
+        final raw =
+            anchor.add(Duration(days: index - _statsPageCenter));
+        final pageDay = _dateOnlyCal(raw);
         final sel = widget.selectedDate;
         final isThisPage = pageDay.year == sel.year &&
             pageDay.month == sel.month &&

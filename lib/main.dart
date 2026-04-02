@@ -28,6 +28,9 @@ bool _startupNetworkErrorShown = false;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    await DatabaseService.instance.ensurePocketBaseReady();
+  } catch (_) {}
+  try {
     await initializeDateFormatting('en', null);
     await initializeDateFormatting('ru', null);
   } catch (_) {}

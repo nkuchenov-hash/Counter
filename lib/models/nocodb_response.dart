@@ -1,3 +1,4 @@
-/// Re-export canonical NocoDB helpers (single source of truth).
+/// Legacy barrel — prefer `package:counter/core/link_scalar.dart` for [normalizeLinkScalar].
 library;
-export 'package:counter/nocodb_response.dart';
+
+export 'package:counter/core/link_scalar.dart';

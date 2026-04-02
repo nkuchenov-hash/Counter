@@ -1,0 +1,2 @@
+user_id,email,display_name,primary_language,theme_mode,preferred_timezone,timezone_offset,biometric_enabled
+11111111-1111-4111-8111-111111111111,Kuchenov@yandex.ru,Nikita,en,system,UTC (UTC+0),0,false

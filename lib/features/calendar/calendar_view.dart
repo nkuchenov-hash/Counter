@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
@@ -26,7 +27,8 @@ class CalendarView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    try {
+      return Scaffold(
       appBar: AppBar(
         title: Text(t(currentLocale.value, 'planning')),
         actions: [
@@ -48,7 +50,6 @@ class CalendarView extends StatelessWidget {
           selectedDayPredicate: (day) => isSameDay(day, selectedDate),
           onDaySelected: (selectedDay, focused) {
             unawaited(onSelectDate(selectedDay, focused));
-            debugPrint('NAV_TRACE: Calendar tap - User selected: $selectedDay');
             onJumpToTimeline();
           },
           headerStyle: const HeaderStyle(
@@ -57,6 +58,23 @@ class CalendarView extends StatelessWidget {
           ),
         ),
       ),
-    );
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('CalendarView: $e\n$st');
+      }
+      return Scaffold(
+        appBar: AppBar(title: Text(t(currentLocale.value, 'planning'))),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              t(currentLocale.value, 'no_data_found'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
   }
 }

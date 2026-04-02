@@ -11,6 +11,7 @@ import 'package:counter/features/calendar/calendar_view.dart';
 import 'package:counter/features/categories/category_list_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
+import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/timeline/timeline_view.dart' hide showAppDateTimePicker;
 import 'package:counter/l10n/dictionary.dart';
@@ -27,7 +28,7 @@ DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
 String _two(int n) => n.toString().padLeft(2, '0');
 
-DateTime _localToday() => DatabaseService.instance.getProjectedToday();
+DateTime _localToday() => DatabaseService.instance.getTimelineDeviceLocalToday();
 
 DateTime _utcToDisplay(DateTime utc) =>
     DatabaseService.instance.applyUserOffset(utc);
@@ -44,6 +45,9 @@ bool _shellIsNewPlanningDraft(PlanningTask t) {
   final p = t.planRowId?.trim() ?? '';
   return p.isEmpty;
 }
+
+/// Hides a plan on the current day in optimistic merge until DELETE completes (see [DatabaseService.applyOptimisticPlanningTask]).
+const String _shellOptimisticPurgeDateKey = '2099-12-31';
 
 // ---------------------------------------------------------------------------
 // Settings page (Language, TimeZone). Persists to users/{uid}.
@@ -79,14 +83,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _save() async {
     try {
-      await DatabaseService.instance.saveSettings(UserSettings(
-        userId: DatabaseService.instance.settings.userId,
-        language: _language,
-        preferredTimeZone: _timeZone,
-        activeLanguages: DatabaseService.instance.settings.activeLanguages,
-        primaryLanguage: _language,
-        defaultCategoryId: DatabaseService.instance.settings.defaultCategoryId,
-      ));
+      await DatabaseService.instance.saveSettings(
+        DatabaseService.instance.settings.copyWith(
+          language: _language,
+          preferredTimeZone: _timeZone,
+          primaryLanguage: _language,
+        ),
+      );
       currentLocale.value = _language;
       widget.onSaved?.call();
     } catch (_) {}
@@ -236,11 +239,28 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   bool? _connected;
   StreamSubscription<bool>? _syncSub;
 
+  /// Tracks device-local calendar day so an open session can follow midnight without restart.
+  Timer? _deviceLocalMidnightWatchTimer;
+  DateTime? _deviceTodayAtLastMidnightCheck;
+  String? _deviceLocalDayKeyLast;
+
+  /// Coalesce rapid Play / Start actions (500ms) to avoid double-running timers.
+  DateTime? _lastPlayOrStartAction;
+  static const Duration _playStartDebounce = Duration(milliseconds: 500);
+
+  /// Stop button / callback: ignore duplicate taps within 300ms (double-dispatch guard).
+  DateTime? _lastStopRecordAction;
+  static const Duration _stopRecordDebounce = Duration(milliseconds: 300);
+
+  /// Stops sync-failure SnackBars from stacking when rebuilds/errors repeat (e.g. page loop).
+  DateTime? _lastSyncFailedSnackAt;
+  static const Duration _syncFailedSnackThrottle = Duration(seconds: 4);
+
   @override
   void initState() {
     super.initState();
-    _selectedDate = DatabaseService.instance.getProjectedToday();
-    _focusedDay = DatabaseService.instance.getProjectedToday();
+    _selectedDate = DatabaseService.instance.getTimelineDeviceLocalToday();
+    _focusedDay = DatabaseService.instance.getTimelineDeviceLocalToday();
     _rules = List.from(DatabaseService.instance.rules);
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     unawaited(_loadTasksAndExtras());
@@ -261,6 +281,42 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (!mounted) return;
       setState(() => _rules = List.from(rules));
     });
+    _deviceTodayAtLastMidnightCheck =
+        DatabaseService.instance.getTimelineDeviceLocalToday();
+    _deviceLocalDayKeyLast =
+        DatabaseService.instance.getTimelineDeviceLocalTodayDateKey();
+    _deviceLocalMidnightWatchTimer =
+        Timer.periodic(const Duration(minutes: 1), (_) {
+      _onDeviceLocalCalendarDayWatchTick();
+    });
+  }
+
+  void _onDeviceLocalCalendarDayWatchTick() {
+    final key = DatabaseService.instance.getTimelineDeviceLocalTodayDateKey();
+    if (key == _deviceLocalDayKeyLast) {
+      _deviceTodayAtLastMidnightCheck =
+          DatabaseService.instance.getTimelineDeviceLocalToday();
+      return;
+    }
+    final oldToday = _deviceTodayAtLastMidnightCheck ??
+        DatabaseService.instance.getTimelineDeviceLocalToday();
+    _deviceLocalDayKeyLast = key;
+    _deviceTodayAtLastMidnightCheck =
+        DatabaseService.instance.getTimelineDeviceLocalToday();
+    DatabaseService.instance.notifyTimelineDeviceLocalDayChanged();
+    if (!mounted) return;
+    final sel = _dateOnly(_selectedDate);
+    final wasFollowingLiveToday = sel.year == oldToday.year &&
+        sel.month == oldToday.month &&
+        sel.day == oldToday.day;
+    if (wasFollowingLiveToday && _tabIndex == 0) {
+      final today = DatabaseService.instance.getTimelineDeviceLocalToday();
+      setState(() {
+        _selectedDate = today;
+        _focusedDay = today;
+      });
+      unawaited(_loadTasksForDate(today));
+    }
   }
 
   Future<void> _loadTasksAndExtras() async {
@@ -270,6 +326,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   @override
   void dispose() {
+    _deviceLocalMidnightWatchTimer?.cancel();
     _syncSub?.cancel();
     _notificationSub?.cancel();
     _categoryRulesSub?.cancel();
@@ -351,10 +408,21 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   void _showSyncFailedSnackBar({VoidCallback? onRetry}) {
     if (!mounted) return;
+    final now = DateTime.now();
+    if (_lastSyncFailedSnackAt != null &&
+        now.difference(_lastSyncFailedSnackAt!) < _syncFailedSnackThrottle) {
+      return;
+    }
+    _lastSyncFailedSnackAt = now;
     final loc = currentLocale.value;
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
       SnackBar(
         content: Text(t(loc, 'sync_failed_retry')),
+        behavior: SnackBarBehavior.floating,
+        dismissDirection: DismissDirection.horizontal,
+        duration: const Duration(seconds: 4),
         action: onRetry == null
             ? null
             : SnackBarAction(
@@ -394,7 +462,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
       await _saveTasks();
-    } catch (_) {
+    } catch (e) {
+      print('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryWriteNewTask(title, cid, pathTag)),
@@ -432,7 +501,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
       await _saveTasks();
-    } catch (_) {
+    } catch (e) {
+      print('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryVoiceWriteNewTask(title, cid, pathTag)),
@@ -444,6 +514,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   Future<void> _startTaskFromInput() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
+
+    final tick = DateTime.now();
+    if (_lastPlayOrStartAction != null &&
+        tick.difference(_lastPlayOrStartAction!) < _playStartDebounce) {
+      return;
+    }
+    _lastPlayOrStartAction = tick;
 
     await _stopAnyActiveTask();
 
@@ -482,7 +559,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
       await _saveTasks();
-    } catch (_) {
+    } catch (e) {
+      print('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryWriteNewTask(title, cid, pathTag)),
@@ -534,23 +612,28 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
   }
 
-  Future<void> _stopRecordByDocId(String recordId) async {
+  /// [systemRowId] must be PocketBase `records.id` (legacy `record_id` UUID is still accepted by [DatabaseService] but never preferred).
+  Future<void> _stopRecordByDocId(String systemRowId) async {
+    final tick = DateTime.now();
+    if (_lastStopRecordAction != null &&
+        tick.difference(_lastStopRecordAction!) < _stopRecordDebounce) {
+      return;
+    }
+    _lastStopRecordAction = tick;
     try {
-      final ok = await DatabaseService.instance.stopRecordByDocId(recordId);
+      final ok =
+          await DatabaseService.instance.stopRecordByDocId(systemRowId);
       if (!mounted) return;
       if (!ok) {
-        _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_stopRecordByDocId(recordId)),
+        print(
+          'UI ERROR: stopRecordByDocId returned false (systemRowId=$systemRowId)',
         );
+        // DatabaseService already showed error_stop_* / HTTP code — do not show sync_failed_retry.
         return;
       }
       await _stopAnyActiveTask();
     } catch (e) {
-      if (mounted) {
-        _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_stopRecordByDocId(recordId)),
-        );
-      }
+      print('UI ERROR: $e');
     }
   }
 
@@ -574,6 +657,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   Future<void> _startRecordFromPlanning(
       String title, int categoryId, String dateKey) async {
+    final tick = DateTime.now();
+    if (_lastPlayOrStartAction != null &&
+        tick.difference(_lastPlayOrStartAction!) < _playStartDebounce) {
+      return;
+    }
+    _lastPlayOrStartAction = tick;
     try {
       final id = await DatabaseService.instance.startTimerWithCategory(title,
           categoryId: categoryId, dateKey: dateKey);
@@ -585,8 +674,17 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         );
         return;
       }
+      final loc = currentLocale.value;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(loc, 'record_started_message').replaceFirst('%s', title),
+          ),
+        ),
+      );
       setState(() {});
-    } catch (_) {
+    } catch (e) {
+      print('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(
@@ -676,7 +774,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           categoryId: result.categoryId ?? _effectiveCategoryId,
         );
       });
-    } catch (_) {
+    } catch (e) {
+      print('UI ERROR: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t(currentLocale.value, 'failed_to_save_manual'))),
@@ -773,10 +872,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
               });
               await _saveTasks();
               return true;
-            } catch (_) {
+            } catch (e) {
+              print('UI ERROR: $e');
               if (mounted) {
                 _showSyncFailedSnackBar(
-                  onRetry: () => unawaited(_retryVoiceWriteNewTask(title, cid, pathTag)),
+                  onRetry: () =>
+                      unawaited(_retryVoiceWriteNewTask(title, cid, pathTag)),
                 );
               }
               return false;
@@ -820,31 +921,33 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 kind: ActivityDetailKind.timelineRecord,
                 timelineRecord: record,
                 scrollController: scrollController,
-                onSaved: (updated) async {
+                onSaved: (updated) {
                   if (sheetCtx.mounted) {
                     Navigator.of(sheetCtx).pop();
                   }
                 },
                 onDelete: () async {
                   final ok = await DatabaseService.instance
-                      .deleteRecordByDocId(record.recordId);
+                      .deleteRecordByDocId(record.id);
                   if (!mounted) return;
                   if (!ok) {
                     _showSyncFailedSnackBar(
                       onRetry: () => unawaited(DatabaseService.instance
-                          .deleteRecordByDocId(record.recordId)),
+                          .deleteRecordByDocId(record.id)),
                     );
                   }
                   if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
                 },
                 onStop: () async {
+                  print(
+                    'Attempting to stop record with systemRowId: ${record.id} (legacy record_id: ${record.recordId})',
+                  );
                   final ok = await DatabaseService.instance
-                      .stopRecordByDocId(record.recordId);
+                      .stopRecordByDocId(record.id);
                   if (!mounted) return;
                   if (!ok) {
-                    _showSyncFailedSnackBar(
-                      onRetry: () => unawaited(DatabaseService.instance
-                          .stopRecordByDocId(record.recordId)),
+                    print(
+                      'UI ERROR: stopRecordByDocId returned false (systemRowId=${record.id})',
                     );
                   }
                   if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
@@ -875,12 +978,36 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 kind: ActivityDetailKind.planningTask,
                 planningTask: task,
                 scrollController: scrollController,
-                onSaved: (updated) => Navigator.of(ctx).pop(updated),
+                onSaved: (dynamic updatedRaw) {
+                  final updated = updatedRaw as PlanningTask;
+                  if (!_shellIsNewPlanningDraft(task)) {
+                    DatabaseService.instance.applyOptimisticPlanningTask(updated);
+                    DatabaseService.instance.notifyPlanningRefresh();
+                  }
+                  AppSnack.saved();
+                  Navigator.of(ctx).pop(updated);
+                },
                 onDelete: _shellIsNewPlanningDraft(task)
                     ? null
-                    : () async {
-                        await _deletePlanningTask(task);
-                        if (ctx.mounted) Navigator.of(ctx).pop();
+                    : () {
+                        final backup = PlanningTask(
+                          id: 0,
+                          title: task.title,
+                          categoryId: task.categoryId,
+                          isDone: task.isDone,
+                          dateKey: task.dateKey,
+                          order: task.order,
+                          startTime: task.startTime,
+                          date: task.date,
+                          tags: task.tags,
+                        );
+                        DatabaseService.instance.applyOptimisticPlanningTask(
+                          task.copyWith(dateKey: _shellOptimisticPurgeDateKey),
+                        );
+                        DatabaseService.instance.notifyPlanningRefresh();
+                        unawaited(
+                          _deletePlanningTaskOptimisticFollowUp(task, backup),
+                        );
                       },
               );
             },
@@ -889,10 +1016,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       },
     );
     if (result is! PlanningTask || !mounted) return;
+    final loc = currentLocale.value;
     try {
       if (_shellIsNewPlanningDraft(task)) {
         final day = planningDateFromKey(result.dateKey) ??
-            _dateOnly(DateTime.now());
+            DatabaseService.instance.getTimelineDeviceLocalToday();
         final nextOrder =
             await DatabaseService.instance.nextPlanningOrderForDate(day);
         final startUtc = result.startTime != null
@@ -907,63 +1035,112 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         if (!ok) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed')),
+              content: Text(t(loc, 'plan_save_failed')),
             ),
           );
           return;
         }
         HapticFeedback.heavyImpact();
       } else {
-        await DatabaseService.instance.updatePlanningTask(
-          result.planRowIdForNoco,
-          planBusinessId: result.planRowId,
-          title: result.title,
-          categoryId: result.categoryId,
-          isDone: result.isDone,
-          notes: result.notes,
-          checklist: result.checklist,
-          parentPlanId: result.parentPlanId,
-          startTimeDisplay: result.startTime,
-          endDateTimeDisplay: result.endDateTime,
-          clearEnd: result.endDateTime == null,
-        );
-        HapticFeedback.heavyImpact();
+        unawaited(_persistPlanningEditFromSheet(task, result));
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'save_failed').replaceFirst('%s', e.toString()))),
+          SnackBar(content: Text(t(loc, 'save_failed').replaceFirst('%s', e.toString()))),
         );
       }
     }
     if (mounted) setState(() {});
   }
 
-  Future<void> _deletePlanningTask(PlanningTask task) async {
-    final backup = PlanningTask(
-      id: 0,
-      title: task.title,
-      categoryId: task.categoryId,
-      isDone: task.isDone,
-      dateKey: task.dateKey,
-      order: task.order,
-      startTime: task.startTime,
-      date: task.date,
-    );
-    await DatabaseService.instance.deletePlanningTask(task.planRowIdForNoco);
+  Future<void> _persistPlanningEditFromSheet(
+    PlanningTask baseline,
+    PlanningTask edited,
+  ) async {
+    final loc = currentLocale.value;
+    try {
+      final ok = await DatabaseService.instance.updatePlanningTask(
+        edited.planRowIdForBackend,
+        planBusinessId: edited.planRowId,
+        title: edited.title,
+        categoryId: edited.categoryId,
+        isDone: edited.isDone,
+        notes: edited.notes,
+        checklist: edited.checklist,
+        parentPlanId: edited.parentPlanId,
+        startTimeDisplay: edited.startTime,
+        endDateTimeDisplay: edited.endDateTime,
+        clearEnd: edited.endDateTime == null,
+        tags: edited.tags,
+        suppressAppSnack: true,
+      );
+      if (!mounted) return;
+      if (!ok) {
+        DatabaseService.instance.applyOptimisticPlanningTask(baseline);
+        DatabaseService.instance.notifyPlanningRefresh();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t(loc, 'plan_save_failed'))),
+        );
+        return;
+      }
+      HapticFeedback.heavyImpact();
+      if (mounted) setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+      DatabaseService.instance.applyOptimisticPlanningTask(baseline);
+      DatabaseService.instance.notifyPlanningRefresh();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text(t(loc, 'save_failed').replaceFirst('%s', e.toString())),
+        ),
+      );
+    }
+  }
+
+  Future<void> _deletePlanningTaskOptimisticFollowUp(
+    PlanningTask task,
+    PlanningTask backup,
+  ) async {
+    final loc = currentLocale.value;
+    final backendId = task.recordIdForBackend.trim();
+    if (backendId.isEmpty) {
+      if (!mounted) return;
+      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      DatabaseService.instance.notifyPlanningRefresh();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(loc, 'plan_save_failed'))),
+      );
+      return;
+    }
+    final ok =
+        await DatabaseService.instance.deletePlanningTasksBulk([backendId]);
     if (!mounted) return;
+    DatabaseService.instance
+        .clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (!ok) {
+      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      DatabaseService.instance.notifyPlanningRefresh();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(loc, 'plan_save_failed'))),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(t(currentLocale.value, 'task_deleted')),
+        content: Text(t(loc, 'task_deleted')),
         action: SnackBarAction(
-          label: t(currentLocale.value, 'undo'),
+          label: t(loc, 'undo'),
           onPressed: () async {
             await DatabaseService.instance.addPlanningTask(backup);
           },
         ),
       ),
     );
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   @override
@@ -972,8 +1149,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       TimelineSwipeWrapper(
         selectedDate: _selectedDate,
         onDateChanged: (d) {
-          setState(() => _selectedDate = d);
-          _loadTasksForDate(d);
+          final day = _dateOnly(d);
+          setState(() => _selectedDate = day);
+          _loadTasksForDate(day);
         },
         onJumpToConflict: _jumpToConflictDate,
         tasks: _tasks,
@@ -1032,75 +1210,80 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     ];
 
     final isFutureDate = _isFutureDate;
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Stack(
-        children: [
-          pages[_tabIndex],
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 8,
-            child: _SyncStatusIcon(
-              connected: _connected,
-              onTap: () => _showSyncMenu(context),
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        body: Stack(
+          children: [
+            pages[_tabIndex],
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              right: 8,
+              child: _SyncStatusIcon(
+                connected: _connected,
+                onTap: () => _showSyncMenu(context),
+              ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-      floatingActionButton: isFutureDate
-          ? null
-          : FloatingActionButton(
-              onPressed: _startVoiceInput,
-              tooltip: _isVoiceListening ? t(currentLocale.value, 'listening') : t(currentLocale.value, 'voice_input'),
-              child: Icon(_isVoiceListening ? Icons.graphic_eq_rounded : Icons.mic_rounded),
-            ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tabIndex,
-        onDestinationSelected: (i) {
-          setState(() {
-            _tabIndex = i;
-          });
-          if (i == 0) {
-            debugPrint('NAV_TRACE: Reset to Today triggered: ${DateTime.now()}');
-            final target = DatabaseService.instance.getProjectedToday();
+          ],
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+        floatingActionButton: isFutureDate
+            ? null
+            : FloatingActionButton(
+                onPressed: _startVoiceInput,
+                tooltip: _isVoiceListening ? t(currentLocale.value, 'listening') : t(currentLocale.value, 'voice_input'),
+                child: Icon(_isVoiceListening ? Icons.graphic_eq_rounded : Icons.mic_rounded),
+              ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _tabIndex,
+          onDestinationSelected: (i) {
             setState(() {
-              _selectedDate = target;
-              _focusedDay = target;
+              _tabIndex = i;
             });
-            unawaited(_loadTasksForDate(target));
-          } else if (i == 1) {
-            // Keep the active day synchronized across tabs.
-            _loadTasksForDate(_selectedDate);
-          }
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.timeline_outlined),
-            selectedIcon: const Icon(Icons.timeline_rounded),
-            label: t(currentLocale.value, 'tab_timeline'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.checklist_outlined),
-            selectedIcon: const Icon(Icons.checklist_rounded),
-            label: t(currentLocale.value, 'tab_planning'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month_rounded),
-            label: t(currentLocale.value, 'calendar'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.category_outlined),
-            selectedIcon: const Icon(Icons.category_rounded),
-            label: t(currentLocale.value, 'categories'),
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline_rounded),
-            selectedIcon: const Icon(Icons.person_rounded),
-            label: t(currentLocale.value, 'profile'),
-          ),
-        ],
+            if (i == 0) {
+              final target = DatabaseService.instance.getTimelineDeviceLocalToday();
+              setState(() {
+                _selectedDate = target;
+                _focusedDay = target;
+              });
+              unawaited(_loadTasksForDate(target));
+            } else if (i == 1) {
+              // Keep the active day synchronized across tabs.
+              _loadTasksForDate(_selectedDate);
+            }
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.timeline_outlined),
+              selectedIcon: const Icon(Icons.timeline_rounded),
+              label: t(currentLocale.value, 'tab_timeline'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.checklist_outlined),
+              selectedIcon: const Icon(Icons.checklist_rounded),
+              label: t(currentLocale.value, 'tab_planning'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.calendar_month_outlined),
+              selectedIcon: const Icon(Icons.calendar_month_rounded),
+              label: t(currentLocale.value, 'calendar'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.category_outlined),
+              selectedIcon: const Icon(Icons.category_rounded),
+              label: t(currentLocale.value, 'categories'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline_rounded),
+              selectedIcon: const Icon(Icons.person_rounded),
+              label: t(currentLocale.value, 'profile'),
+            ),
+          ],
+        ),
       ),
     );
   }

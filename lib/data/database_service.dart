@@ -3,17 +3,17 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/constants.dart';
+import 'package:counter/core/link_scalar.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/pb_config.dart';
+import 'package:pocketbase/pocketbase.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/profile/wall_clock.dart' as wall_clock;
-import 'package:counter/nocodb_response.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-// NocoDB REST (Brain). Only http + SharedPreferences here.
+// Brain: PocketBase for profiles, records, categories, plans, tags.
 
 class _BuildNode {
   _BuildNode(this.label);
@@ -36,6 +36,15 @@ class _OptimisticEndPatch {
   final DateTime endUtc;
 }
 
+/// Legacy `record_id` / UI doc id could not be mapped to PocketBase **15-char** row `id` (@DATA_MAP).
+/// Never send this value as the REST path segment.
+class LegacyIdResolutionException implements Exception {
+  LegacyIdResolutionException(this.docId);
+  final String docId;
+  @override
+  String toString() => 'LegacyIdResolutionException($docId)';
+}
+
 /// Thrown when profile fetch returns 404 or 422 (invalid session / UUID mismatch).
 class _ProfileFetchFailedException implements Exception {
   _ProfileFetchFailedException(this.statusCode, [this.message]);
@@ -43,6 +52,15 @@ class _ProfileFetchFailedException implements Exception {
   final String? message;
   @override
   String toString() => message ?? 'Profile fetch failed: $statusCode';
+}
+
+/// PocketBase auth record id is required for mutating API calls (`user_id` on child rows).
+class AuthenticatedUserIdRequiredException implements Exception {
+  AuthenticatedUserIdRequiredException([this.message =
+      'PocketBase auth record id is null or empty; refusing mutating request.']);
+  final String message;
+  @override
+  String toString() => message;
 }
 
 /// Noco may return `is_done` as bool, 0/1, or string.
@@ -59,13 +77,21 @@ bool _jsonBoolFromDynamic(dynamic v) {
   return false;
 }
 
+/// True when a flattened **categories** row should participate in the active tree / uniqueness checks.
+bool _categoryFlatRowIsActive(Map<String, dynamic> row) {
+  final fields =
+      row['fields'] is Map ? Map<String, dynamic>.from(row['fields'] as Map) : row;
+  final archRaw = row['is_archived'] ?? fields['is_archived'];
+  if (_jsonBoolFromDynamic(archRaw)) return false;
+  final st =
+      (row['status'] ?? fields['status'] ?? '').toString().trim().toLowerCase();
+  if (st == 'archived' || st == 'deleted') return false;
+  return true;
+}
+
 class DatabaseService {
   DatabaseService._();
   static final DatabaseService instance = DatabaseService._();
-
-  /// NocoDB v3 Data API authentication (`xc-token` header on every REST call).
-  static const String nocoXcToken =
-      'Zi1tRdLEWLq4f8kQU4aJYILY255BV43PJ3fgVoAs';
 
   /// Sacred Law: at most this many **pre-today** open rows merged after today’s candidates (singleton
   /// implies ≤1 in a healthy DB; cap handles rare duplicate ghosts — oldest first).
@@ -156,80 +182,159 @@ class DatabaseService {
     return null;
   }
 
-  /// NocoDB v3 may return the new row id only in the HTTP `Location` header.
-  static String? _recordIdFromResponseLocation(http.Response res) {
-    try {
-      final loc = res.headers['location'] ?? res.headers['Location'];
-      if (loc == null || loc.trim().isEmpty) return null;
-      final uri = Uri.tryParse(loc.trim());
-      if (uri == null) return null;
-      final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-      if (segs.isEmpty) return null;
-      if (segs.length >= 2 &&
-          segs[segs.length - 2].toLowerCase() == 'records') {
-        return _sanitizePkString(segs.last);
-      }
-      return _sanitizePkString(segs.last);
-    } catch (_) {
-      return null;
-    }
-  }
+  /// Legacy **plans** M2M column key (historical Noco expand / JSON only — unused with PocketBase plans).
+  static const String _plansToTagsLinkColumnSystemId = 'cnmo43ed26h293n';
 
-  /// Public host for Noco v3 Data API (no path — [baseUrl] adds `/api/v3/data/...`).
-  static const String _nocoApiHost = '217-114-0-201.sslip.io';
-  /// NocoDB v3 Base ID (verify in NocoDB: Project Settings / API). 404 on /tables is common in v3 — use UI to verify column names.
-  static const String _baseId = 'pfew89z7fxv42ek';
-  /// v3 Data API: `https://{host}/api/v3/data/{baseId}/...` (no `/noco/` segment — that path returns 404).
-  static String get baseUrl => 'https://$_nocoApiHost/api/v3/data/$_baseId';
-
-  /// `PATCH` / `DELETE` single record row: `.../{tableUid}/records/{Id}` (integer [Id] only).
-  static String _recordsRowUrl(String rowId) =>
-      '$baseUrl/$_recordsTableUid/records/${rowId.trim()}';
-
-  /// Single-row PATCH URL candidates (some servers 404 all of these but accept [PATCH_BULK_TABLE]).
-  List<String> _recordRowPatchUrlCandidates(String rowId) {
-    final s = rowId.trim();
-    if (s.isEmpty) return <String>[];
-    final enc = Uri.encodeComponent(s);
-    return <String>[
-      '$baseUrl/$_recordsTableUid/records/$enc',
-      '$baseUrl/tables/$_recordsTableUid/records/$enc',
-      '$baseUrl/$_recordsTableUid/$enc',
-    ];
-  }
-
-  /// Noco v3: bulk PATCH to the **collection** `[{"id":..., "fields":{...}}]` when `/records/{id}` returns 404.
-  List<String> get _recordsBulkPatchUrls => <String>[
-        '$baseUrl/$_recordsTableUid/records',
-        '$baseUrl/tables/$_recordsTableUid/records',
-      ];
-
-  /// Plans `DELETE`: collection URL + bulk body `[{"Id":<int>},…]` (see [deletePlanningTasksBulk]).
-
-  /// NocoDB v3 table IDs (Table Settings -> API). List: `baseUrl/{tableUid}/records`; row: `baseUrl/{tableUid}/records/{rowId}`.
-  static const String _profilesRecords = NocoV3TablePaths.profiles;
-  static const String _categoriesRecords = NocoV3TablePaths.categories;
-  static const String _recordsRecords = NocoV3TablePaths.records;
-  static const String _recordsTableUid = NocoV3TablePaths.recordsTableUid;
-  static const String _plansRecords = NocoV3TablePaths.plans;
-  static const String _plansTableUid = NocoV3TablePaths.plansTableUid;
-  static bool get _isPlansTableConfigured =>
-      _plansRecords.trim().isNotEmpty && _plansRecords != _recordsRecords;
-
-  /// One-line proof at startup that timeline **records** REST uses @DATA_MAP `records` UID, not `categories`.
-  void _logRecordVsCategoryTableRouting() {
-    final ru = NocoV3TablePaths.recordsTableUid;
-    final cu = NocoV3TablePaths.categoriesTableUid;
-    _log(
-      'NOCO_TABLE_ROUTE: records uid=$ru segment=$_recordsRecords | categories uid=$cu segment=$_categoriesRecords',
-    );
-  }
+  static bool get _isPlansTableConfigured => true;
 
   String? currentProfileId;
 
-  static void _log(Object? message) {
-    debugPrint('[DatabaseService] $message');
+  /// PocketBase **profiles** auth row id (for PATCH settings); set on profile load.
+  String? _profilePbRecordId;
+
+  PocketBase? _pocketBase;
+
+  static const String _pbAuthPrefsKey = 'pb_auth';
+
+  /// After **health** or **list-sync** failure (404 / connection-style): no bulk list HTTP until this instant.
+  /// Fixed **15s** cooldown to stop millisecond-rate retries (**@POCKETBASE_MANIFEST** / VPS).
+  DateTime? _pbNextAllowedNetworkAt;
+  static const int _pbCircuitCooldownSeconds = 15;
+
+  /// Skips redundant **records** `getFullList` after a successful sync (manual refresh uses [forceNetwork]).
+  DateTime? _lastSuccessfulRecordsNetworkFetchAt;
+  static const Duration _kMinGapRecordsNetworkFetch = Duration(seconds: 60);
+
+  /// Avoids hitting [/api/health] on every [ensurePocketBaseReady] when the last probe succeeded.
+  DateTime? _pbLastHealthProbeAt;
+  bool? _pbLastHealthOk;
+  static const Duration _kMinGapHealthWhenOk = Duration(seconds: 60);
+
+  bool get _pbHttpBackoffActive {
+    final t = _pbNextAllowedNetworkAt;
+    if (t == null) return false;
+    return DateTime.now().isBefore(t);
   }
+
+  void _clearPocketBaseConnectivityBackoff() {
+    _pbNextAllowedNetworkAt = null;
+  }
+
+  /// Opens the 15s circuit for [/api/health] failures (always — tunnel/server down).
+  void _registerPocketBaseUnreachable(Object e) {
+    _pbNextAllowedNetworkAt =
+        DateTime.now().add(const Duration(seconds: _pbCircuitCooldownSeconds));
+    _pbLastHealthProbeAt = DateTime.now();
+    final wasOk = _pbLastHealthOk;
+    _pbLastHealthOk = false;
+    if (kDebugMode && wasOk != false) {
+      debugPrint(
+        '[PB] /api/health failed — circuit ${_pbCircuitCooldownSeconds}s: $e',
+      );
+    }
+  }
+
+  /// True for **404** or transport-style errors — avoids cooling down on every 400 validation burst.
+  bool _isPbCircuitWorthyFailure(Object e) {
+    if (e is ClientException) {
+      final c = e.statusCode;
+      if (c == 404) return true;
+      if (c >= 500) return true;
+      if (c <= 0) return true;
+      final blob = '${e.originalError} $e'.toLowerCase();
+      if (blob.contains('socket') ||
+          blob.contains('connection refused') ||
+          blob.contains('failed host lookup') ||
+          blob.contains('network is unreachable') ||
+          blob.contains('timed out') ||
+          blob.contains('connection reset')) {
+        return true;
+      }
+    }
+    final s = e.toString().toLowerCase();
+    return s.contains('socketexception') ||
+        s.contains('connection refused') ||
+        s.contains('failed host lookup') ||
+        s.contains('connection reset') ||
+        s.contains('err_connection_refused');
+  }
+
+  /// Opens **15s** list-sync pause after a worthy API/transport failure (one debug line).
+  void _maybeOpenPbCircuitFromListFailure(Object e, String reason) {
+    if (!_isPbCircuitWorthyFailure(e)) return;
+    _pbNextAllowedNetworkAt =
+        DateTime.now().add(const Duration(seconds: _pbCircuitCooldownSeconds));
+    if (kDebugMode) {
+      debugPrint(
+        '[PB] $reason — circuit ${_pbCircuitCooldownSeconds}s (404/connection): $e',
+      );
+    }
+  }
+
+  /// Probes [/api/health]. Respects circuit, **throttles** happy-path probes to [_kMinGapHealthWhenOk],
+  /// and logs **only on OK↔FAIL transitions** (stops per-tick console spam).
+  Future<void> _maybeVerifyPocketBaseReachable() async {
+    final now = DateTime.now();
+    final until = _pbNextAllowedNetworkAt;
+    if (until != null && now.isBefore(until)) {
+      return;
+    }
+    final lastProbe = _pbLastHealthProbeAt;
+    if (lastProbe != null &&
+        _pbLastHealthOk == true &&
+        now.difference(lastProbe) < _kMinGapHealthWhenOk) {
+      return;
+    }
+    try {
+      await _pb.health.check();
+      _clearPocketBaseConnectivityBackoff();
+      _pbLastHealthProbeAt = DateTime.now();
+      final wasOk = _pbLastHealthOk;
+      _pbLastHealthOk = true;
+      if (kDebugMode && wasOk != true) {
+        debugPrint('[PB] /api/health OK — $kPocketBaseUrl');
+      }
+    } catch (e) {
+      _registerPocketBaseUnreachable(e);
+    }
+  }
+
+  Future<void> ensurePocketBaseReady() async {
+    if (_pocketBase == null) {
+      final prefs = await SharedPreferences.getInstance();
+      _pocketBase = PocketBase(
+        kPocketBaseUrl,
+        authStore: AsyncAuthStore(
+          save: (data) async => prefs.setString(_pbAuthPrefsKey, data),
+          initial: prefs.getString(_pbAuthPrefsKey),
+          clear: () async => prefs.remove(_pbAuthPrefsKey),
+        ),
+      );
+      if (kDebugMode && !_pbHttpBackoffActive) {
+        debugPrint(
+          '[PB] PocketBase SDK ready — base URL $kPocketBaseUrl (auth prefs key $_pbAuthPrefsKey)',
+        );
+      }
+    }
+    await _maybeVerifyPocketBaseReachable();
+  }
+
+  /// Same as [_maybeVerifyPocketBaseReachable] — used from [_loadInner] (debug builds).
+  Future<void> _debugPocketBaseHealth() async {
+    await _maybeVerifyPocketBaseReachable();
+  }
+
+  /// Shared client; call [ensurePocketBaseReady] from [main] and before auth.
+  PocketBase get pocketBase {
+    final p = _pocketBase;
+    if (p == null) {
+      throw StateError('Call ensurePocketBaseReady() before using pocketBase');
+    }
+    return p;
+  }
+
+  /// Brain tracing is off by default (production-quiet). Enable temporarily when debugging Noco locally.
+  static void _log(Object? message) {}
 
   /// Resolves waiting UI (SnackBar via [notifications] in app_shell) after category 404 = gone.
   void _emitCategorySyncNotice(String l10nKey) {
@@ -264,14 +369,16 @@ class DatabaseService {
 
   SharedPreferences? _prefs;
   List<CategoryRule> _rules = [];
-  UserSettings _settings = UserSettings(userId: 0);
+  /// All `category_id` / `normalized_id` (lowercase) for this user from PocketBase, **including archived** — reserved for new POSTs.
+  Set<String> _reservedCategorySlugsLower = {};
+  /// Display names + archive flags for **all** PB rows (see [_rebuildCategoryDialogUniverse]) — create dialog pre-flight.
+  List<Map<String, dynamic>> _categoryDialogUniverse = [];
+  UserSettings _settings = UserSettings(userId: '');
   UserSettings get settings => _settings;
 
   int? _lastAggregatedKey;
   List<StatsNode>? _lastStatsNodeRoots;
-  /// Integer id from profile row (for user_id where clause when profile id is UUID).
-  int? _cachedProfileIntId;
-  /// user_id (UUID) from profile row when applicable.
+  /// user_id from profile row when applicable (business string; mirrors auth id when healthy).
   String? _cachedProfileUuid;
 
   final StreamController<UserSettings> _settingsController =
@@ -285,7 +392,216 @@ class DatabaseService {
   final StreamController<void> _timeUpdateController =
       StreamController<void>.broadcast();
 
+  /// >0 during multi-step record cache writes (e.g. sacred stop + POST) — skips per-step
+  /// [timeUpdates] so the timeline sees **one** refresh when the batch completes.
+  int _recordCacheTimelineNotifyBatchDepth = 0;
+
+  void _emitTimelineRefreshRaw() {
+    _timeUpdateController.add(null);
+  }
+
+  void _notifyTimelineAfterRecordCacheMutation() {
+    if (_recordCacheTimelineNotifyBatchDepth > 0) return;
+    _emitTimelineRefreshRaw();
+  }
+
+  Future<T> _runBatchedRecordCacheTimelineNotify<T>(
+    Future<T> Function() action,
+  ) async {
+    _recordCacheTimelineNotifyBatchDepth++;
+    try {
+      return await action();
+    } finally {
+      _recordCacheTimelineNotifyBatchDepth--;
+      if (_recordCacheTimelineNotifyBatchDepth == 0) {
+        _emitTimelineRefreshRaw();
+      }
+    }
+  }
+
+  /// Planning UI: manual refresh in addition to the 2s poll (after PATCH/cross-day optimistic).
+  final StreamController<void> _planningRefreshController =
+      StreamController<void>.broadcast();
+
+  /// Last [fetchTagsForCurrentUser] result (`sort_order` then name). Updated on every fetch; not broadcast.
+  List<Tag> _userTagsCatalogCache = [];
+
+  /// Planning **Sort by Tags** grouping refreshes when tag order changes in Tag Manager (no plan list tick).
+  final StreamController<void> _tagsCatalogRefreshController =
+      StreamController<void>.broadcast();
+
+  /// Snapshot for tag-group headers (may be empty before first fetch).
+  List<Tag> get cachedUserTagsCatalog => List.unmodifiable(_userTagsCatalogCache);
+
+  Stream<void> get tagsCatalogUpdated => _tagsCatalogRefreshController.stream;
+
+  void notifyTagsCatalogChanged() {
+    if (!_tagsCatalogRefreshController.isClosed) {
+      _tagsCatalogRefreshController.add(null);
+    }
+  }
+
+  /// Serialize primary `running` POST so rapid double-Start cannot race past [stopAllRunningRecords].
+  Future<void> _primaryRunningRecordStartChain = Future.value();
+
+  /// Wall **dateKey** → (**planRowIdForBackend** → task) merged on top of server list until PATCH lands.
+  final Map<String, Map<String, PlanningTask>> _planningOptimisticByDateKey =
+      {};
+
+  PocketBase get _pb => pocketBase;
+
+  /// PocketBase [ClientException] diagnostics (terminal): URL, body, status, full `response` + `data`, auth id.
+  void _debugPrintPocketBaseClientException({
+    required String operation,
+    required ClientException e,
+    required Map<String, dynamic> payload,
+    String? fallbackUrl,
+  }) {
+    String pretty(dynamic v) {
+      if (v == null) return 'null';
+      try {
+        return const JsonEncoder.withIndent('  ').convert(v);
+      } catch (_) {
+        return v.toString();
+      }
+    }
+
+    final url = (e.url != null && e.url.toString().trim().isNotEmpty)
+        ? e.url.toString()
+        : (fallbackUrl ?? '(unknown URL)');
+
+    final authId = () {
+      try {
+        return _pocketBase?.authStore.record?.id.trim() ?? '';
+      } catch (_) {
+        return '';
+      }
+    }();
+
+    debugPrint('=== PB ClientException [$operation] ===');
+    debugPrint('URL: $url');
+    debugPrint('PAYLOAD: ${pretty(payload)}');
+    debugPrint('STATUS: ${e.statusCode}');
+    debugPrint('RESPONSE: ${pretty(e.response)}');
+    debugPrint("RESPONSE['data']: ${pretty(e.response['data'])}");
+    if (e.originalError != null) {
+      debugPrint('ORIGINAL_ERROR: ${e.originalError}');
+    }
+    debugPrint('AUTH_ID: $authId');
+    debugPrint('=== end PB ClientException ===');
+  }
+
   Stream<void> get timeUpdates => _timeUpdateController.stream;
+
+  /// Ping all open [planningStream] subscribers to refetch immediately.
+  void notifyPlanningRefresh() {
+    if (!_planningRefreshController.isClosed) {
+      _planningRefreshController.add(null);
+    }
+  }
+
+  /// When the device-local calendar day changes while the app stays open (midnight), ping [timeUpdates]
+  /// so open timeline streams re-bucket without a manual refresh.
+  void notifyTimelineDeviceLocalDayChanged() {
+    _emitTimelineRefreshRaw();
+  }
+
+  /// Apply client-side plan row for instant list updates; cleared when server PATCH succeeds.
+  void applyOptimisticPlanningTask(PlanningTask task) {
+    final pid = task.planRowIdForBackend.trim();
+    if (pid.isEmpty || pid == '0') return;
+    for (final m in _planningOptimisticByDateKey.values) {
+      m.remove(pid);
+    }
+    final dk = task.dateKey.trim();
+    if (dk.length < 10) return;
+    _planningOptimisticByDateKey.putIfAbsent(dk, () => {})[pid] = task;
+  }
+
+  void clearOptimisticPlanningForPlanRow(String planRowIdForBackend) {
+    final p = planRowIdForBackend.trim();
+    if (p.isEmpty) return;
+    for (final m in _planningOptimisticByDateKey.values) {
+      m.remove(p);
+    }
+  }
+
+  List<PlanningTask> _mergePlanningOptimistic(
+    String targetDayStr,
+    List<PlanningTask> serverPlans,
+  ) {
+    final hiddenOnThisDay = <String>{};
+    for (final e in _planningOptimisticByDateKey.entries) {
+      if (e.key == targetDayStr) continue;
+      hiddenOnThisDay.addAll(e.value.keys);
+    }
+    final filtered = serverPlans
+        .where((t) => !hiddenOnThisDay.contains(t.planRowIdForBackend))
+        .toList();
+    final overlay = _planningOptimisticByDateKey[targetDayStr];
+    if (overlay == null || overlay.isEmpty) return filtered;
+    final byId = <String, PlanningTask>{
+      for (final t in filtered) t.planRowIdForBackend: t,
+    };
+    for (final e in overlay.entries) {
+      final existing = byId[e.key];
+      final overlayTask = e.value;
+      final overlayChips = overlayTask.tags.any((t) => t.rendersAsChip);
+      final existingChips = existing != null &&
+          existing.tags.any((t) => t.rendersAsChip);
+      // Optimistic chips win over an empty / count-only list row until single-row expand runs.
+      if (overlayChips && !existingChips) {
+        byId[e.key] = overlayTask;
+        continue;
+      }
+      if (existingChips) {
+        continue;
+      }
+      byId[e.key] = overlayTask;
+    }
+    final merged = byId.values.toList();
+    merged.sort((a, b) {
+      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final o = a.order.compareTo(b.order);
+      if (o != 0) return o;
+      final at = a.startTime;
+      final bt = b.startTime;
+      if (at != bt) {
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        return at.compareTo(bt);
+      }
+      return a.title.compareTo(b.title);
+    });
+    return merged;
+  }
+
+  /// Primary running record title from cache (no parent); for planning “active” highlight.
+  String? get cachedPrimaryRunningTitle {
+    for (final r in _cachedFlatRecords) {
+      if (_rowHasNonEmptyParent(r['parent_id'])) continue;
+      if (!_isNocoRowActiveRunning(r)) continue;
+      final tit = (r['title'] ?? '').toString().trim();
+      if (tit.isEmpty) continue;
+      return tit;
+    }
+    return null;
+  }
+
+  int _indexOfCachedRecordRow(String resolvedRid, String originalInput) {
+    for (var i = 0; i < _cachedFlatRecords.length; i++) {
+      final r = _cachedFlatRecords[i];
+      final pk = recordsTablePk(r);
+      final biz = (r['record_id'] ?? '').toString().trim();
+      if (pk == resolvedRid ||
+          biz == resolvedRid ||
+          pk == originalInput ||
+          biz == originalInput) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
   Stream<UserSettings> get userSettingsStream => Stream.multi((c) {
         c.add(_settings);
@@ -326,6 +642,9 @@ class DatabaseService {
   /// Timeline row keys (REST id / business UUID) that returned **definitive** 404 after full retry — no repeat PATCH/DELETE until row reappears in GET.
   final Set<String> _recordRestDefinitive404Keys = <String>{};
 
+  /// Set when [_patchRecordsRowWith404Recovery] returns **without** calling PB because [rid]/[originalQueryId] hit [_recordRestDefinitive404Keys].
+  bool _lastRecordsPatchSkippedDeadLetter = false;
+
   // --- Optimistic timeline UI (merged into [recordsStream] / [activeRecordStream]; reverted on failure) ---
 
   /// Client-only: show ended state before PATCH returns.
@@ -337,50 +656,303 @@ class DatabaseService {
   /// Synthetic running row while POST is in flight (primary timer start only).
   Map<String, dynamic>? _optimisticPendingStartRecordMap;
 
+  /// Dedupes rapid repeat **stop** taps for the same timeline id (UUID or REST id).
+  final Set<String> _stopRecordInFlightKeys = <String>{};
+
+  /// Dedupes overlapping **writeRecord** / **writeCompletedRecord** calls.
+  bool _writeRecordMutationInFlight = false;
+
   Stream<String?> get notifications => _notify.stream;
   List<CategoryRule> get rules => List.unmodifiable(_rules);
   static DateTime getPlanetaryNow() => DateTime.now().toUtc();
   List<CategoryRule> get categoryRules => rules;
 
-  Map<String, String> get _headers => <String, String>{
-        'xc-token': nocoXcToken,
-        'Content-Type': 'application/json',
-      };
+  /// PocketBase **signed-in auth record id** only (same value as child-row `user_id`). No int surrogate.
+  String? get _userIdForWhere {
+    try {
+      final id = _pocketBase?.authStore.record?.id.trim() ?? '';
+      if (id.isEmpty) return null;
+      return id;
+    } catch (_) {
+      return null;
+    }
+  }
 
-  String get _pid {
-    final p = currentProfileId;
-    if (p == null || p.isEmpty) throw StateError('No profile');
+  /// Same identity set as [AuthBridge.checkSession]: profile data `user_id` when non-empty, else auth record id.
+  /// Used for **GET** filters so we still find rows whose `user_id` matches the stored session UUID.
+  String? _pocketBaseOwnerFilterClauseForRecords() {
+    try {
+      final rec = _pocketBase?.authStore.record;
+      if (rec == null) return null;
+      final dataUid = (rec.data['user_id'] ?? '').toString().trim();
+      final rid = rec.id.trim();
+      final ids = <String>{};
+      if (rid.isNotEmpty) ids.add(rid);
+      if (dataUid.isNotEmpty) ids.add(dataUid);
+      if (ids.isEmpty) return null;
+      if (ids.length == 1) {
+        final only = ids.first;
+        return 'user_id = "${_escapeForPbFilter(only)}"';
+      }
+      final ors = ids
+          .map((id) => 'user_id = "${_escapeForPbFilter(id)}"')
+          .join(' || ');
+      return '($ors)';
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Lowercase set of owner ids for matching [Map] rows in [_filterCachedRecordsForDate].
+  Set<String> _recordRowOwnerIdMatchSet() {
+    final out = <String>{
+      (currentProfileId ?? '').trim().toLowerCase(),
+      (_userIdForWhere ?? '').trim().toLowerCase(),
+    };
+    try {
+      final dataUid = (_pocketBase?.authStore.record?.data['user_id'] ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
+      if (dataUid.isNotEmpty) out.add(dataUid);
+    } catch (_) {}
+    out.removeWhere((e) => e.isEmpty);
+    return out;
+  }
+
+  bool get _hasAuthenticatedUserId =>
+      (_userIdForWhere?.isNotEmpty ?? false);
+
+  /// Use for POST/PATCH bodies and any call that must not run without a valid auth id.
+  String _requireAuthUserIdForWrite() {
+    final id = _userIdForWhere;
+    if (id == null || id.isEmpty) {
+      throw AuthenticatedUserIdRequiredException();
+    }
+    return id;
+  }
+
+  /// PocketBase `user_id` on child rows — **strictly** the auth record id ([_requireAuthUserIdForWrite]).
+  String get _pidForPbFilter => _requireAuthUserIdForWrite();
+
+  String _escapeForPbFilter(String raw) =>
+      raw.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+
+  /// Business UUID shape (`record_id` / `plan_id`), not PocketBase row id.
+  static final RegExp _standardUuidRe = RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  );
+
+  static bool _looksLikeStandardUuid(String s) =>
+      _standardUuidRe.hasMatch(s.trim());
+
+  /// PocketBase collection row `id`: lowercase alphanumeric, ~15 chars, no hyphens (@DATA_MAP).
+  static bool _isLikelyPocketBaseRowId(String s) {
+    final t = s.trim();
+    if (t.isEmpty || t.contains('-')) return false;
+    if (t.length < 14 || t.length > 17) return false;
+    return RegExp(r'^[a-z0-9]+$').hasMatch(t);
+  }
+
+  /// `records.user_id` relation from list response (plain id or expanded map).
+  static String _pbRecordRowUserIdString(RecordModel rec) {
+    final v = rec.data['user_id'];
+    if (v == null) return '';
+    if (v is String) return v.trim();
+    if (v is Map) {
+      final id = v['id'];
+      if (id != null) return id.toString().trim();
+    }
+    return v.toString().trim();
+  }
+
+  /// One row: `records.record_id` → system `id` for PATCH/DELETE URLs.
+  ///
+  /// Tries `record_id` + [user_id] first (@DATA_MAP). If that misses (e.g. dirty
+  /// `user_id` still pointing at email/legacy owner), retries `record_id` only,
+  /// logs [CONFLICT], and returns the row [id] anyway so PATCH can run (may 403).
+  Future<String?> _fetchPbRecordSysIdByRecordIdField(
+    String businessRecordId,
+  ) async {
+    final key = businessRecordId.trim();
+    if (key.isEmpty) return null;
+    if (_isLikelyPocketBaseRowId(key)) return key;
+    try {
+      await ensurePocketBaseReady();
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return null;
+      final uid = _escapeForPbFilter(authId);
+      final esc = _escapeForPbFilter(key);
+
+      print('SEARCHING PB FOR: record_id = "$key"');
+      try {
+        final scoped = 'record_id = "$esc" && user_id = "$uid"';
+        final rec = await _pb
+            .collection(PbCollections.records)
+            .getFirstListItem(scoped);
+        final id = rec.id.trim();
+        return id.isEmpty ? null : id;
+      } on ClientException catch (_) {
+        try {
+          print(
+            'SEARCHING PB FOR: record_id = "$key" (emergency: no user_id filter)',
+          );
+          final solo = 'record_id = "$esc"';
+          final rec =
+              await _pb.collection(PbCollections.records).getFirstListItem(
+                    solo,
+                  );
+          final foundOwner = _pbRecordRowUserIdString(rec);
+          if (foundOwner != authId) {
+            print(
+              'CONFLICT: Record found but owner mismatch. Found: $foundOwner, Expected: $authId',
+            );
+          }
+          final id = rec.id.trim();
+          return id.isEmpty ? null : id;
+        } on ClientException catch (_) {
+          return null;
+        }
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// One row: `categories.category_id` (slug/UUID) → system `id`.
+  Future<String?> _fetchPbCategorySysIdByCategoryIdField(
+    String categoryBizKey,
+  ) async {
+    final key = categoryBizKey.trim();
+    if (key.isEmpty || key == 'uncategorized') return null;
+    if (_isLikelyPocketBaseRowId(key)) return key;
+    try {
+      await ensurePocketBaseReady();
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return null;
+      final uid = _escapeForPbFilter(authId);
+      final esc = _escapeForPbFilter(key);
+      final rec = await _pb
+          .collection(PbCollections.categories)
+          .getFirstListItem('category_id = "$esc" && user_id = "$uid"');
+      final id = rec.id.trim();
+      return id.isEmpty ? null : id;
+    } on ClientException catch (_) {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// One row: `plans.plan_id` (UUID) → system `id`.
+  Future<String?> _fetchPbPlanSysIdByPlanIdField(String planBizId) async {
+    final key = planBizId.trim();
+    if (key.isEmpty || key.startsWith('optimistic-')) return null;
+    if (_isLikelyPocketBaseRowId(key)) return key;
+    try {
+      await ensurePocketBaseReady();
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return null;
+      final uid = _escapeForPbFilter(authId);
+      final esc = _escapeForPbFilter(key);
+      final rec = await _pb.collection(PbCollections.plans).getFirstListItem(
+            'plan_id = "$esc" && user_id = "$uid"',
+          );
+      final id = rec.id.trim();
+      return id.isEmpty ? null : id;
+    } on ClientException catch (_) {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Resolves planning row REST id when UI holds legacy `plan_id` UUID or mixed keys.
+  Future<String> _resolvePlanRestId(
+    String planRowIdForBackend, {
+    String? planBusinessId,
+  }) async {
+    final p = planRowIdForBackend.trim();
+    if (p.isEmpty) return p;
+    if (_isLikelyPocketBaseRowId(p)) return p;
+    final tried = <String>{};
+    final biz = (planBusinessId ?? '').trim();
+    for (final key in <String>[
+      if (biz.isNotEmpty && !biz.startsWith('optimistic-')) biz,
+      p,
+    ]) {
+      if (key.isEmpty || !tried.add(key)) continue;
+      final sid = await _fetchPbPlanSysIdByPlanIdField(key);
+      if (sid != null && sid.isNotEmpty && sid != p) {
+        print('ID TRANSLATION: Legacy UUID $key -> PocketBase ID $sid');
+        return sid;
+      }
+      if (sid != null && sid.isNotEmpty) return sid;
+    }
     return p;
   }
 
-  /// Legacy int id for UserSettings when profile id is numeric; 0 for UUID.
-  int get _pidInt => int.tryParse(_pid) ?? 0;
+  /// Resolves PocketBase **categories** row `id` when [CategoryRule.backendRowId] still holds legacy `category_id`.
+  Future<String> _resolveCategoryRowIdForPb(CategoryRule rule) async {
+    var p = (_categoryBackendRowIdStrict(rule) ?? '').trim();
+    if (p.isEmpty) return p;
+    if (p == 'uncategorized') return p;
+    if (_isLikelyPocketBaseRowId(p)) return p;
+    final tried = <String>{};
+    final biz = (_categoryStringPkForApi(rule) ?? '').trim();
+    for (final key in <String>[
+      if (biz.isNotEmpty && biz != 'uncategorized') biz,
+      p,
+    ]) {
+      if (key.isEmpty || !tried.add(key)) continue;
+      final sid = await _fetchPbCategorySysIdByCategoryIdField(key);
+      if (sid != null && sid.isNotEmpty && sid != p) {
+        print('ID TRANSLATION: Legacy UUID $key -> PocketBase ID $sid');
+        return sid;
+      }
+      if (sid != null && sid.isNotEmpty) return sid;
+    }
+    return p;
+  }
 
   void clearLocalStateOnSignOut() {
     try {
+      _pocketBase?.authStore.clear();
+    } catch (_) {}
+    _clearPocketBaseConnectivityBackoff();
+    _lastSuccessfulRecordsNetworkFetchAt = null;
+    _pbLastHealthProbeAt = null;
+    _pbLastHealthOk = null;
+    try {
       _isInitialized = false;
       currentProfileId = null;
-      _cachedProfileIntId = null;
       _cachedProfileUuid = null;
       _loadErrorMessage = null;
       _rules = [];
+      _reservedCategorySlugsLower.clear();
+      _categoryDialogUniverse = [];
       _tasksCache = [];
       _cachedFlatRecords = [];
-      _settings = UserSettings(userId: 0);
+      _settings = UserSettings(userId: '');
+      _userTagsCatalogCache = [];
       _lastAggregatedKey = null;
       _lastStatsNodeRoots = null;
       _recordRestDefinitive404Keys.clear();
+      _planningOptimisticByDateKey.clear();
+      _primaryRunningRecordStartChain = Future.value();
       _settingsController.add(_settings);
       _categoryController.add(List.from(_rules));
       _tasksController.add(List.from(_tasksCache));
       clearOptimisticTimelineUi();
-      _timeUpdateController.add(null);
+      _stopRecordInFlightKeys.clear();
+      _writeRecordMutationInFlight = false;
       _cancelPlanOrderDebounceTimer();
       _pendingPlanOrderSyncList = null;
       _planReorderBaselineByPlanId = null;
       _cancelCategoryOrderDebounceTimer();
       _pendingCategoryOrderSyncList = null;
       _categoryReorderBaselineByLocalId = null;
+      _profilePbRecordId = null;
     } catch (_) {}
     unawaited(() async {
       try {
@@ -408,6 +980,7 @@ class DatabaseService {
   String get dataRegion => _dataRegion;
 
   Future<bool> loadInitialData(String uid) async {
+    await ensurePocketBaseReady();
     _isInitialized = false;
     _loadErrorMessage = null;
     final trimmed = uid.trim();
@@ -421,7 +994,8 @@ class DatabaseService {
       await _loadInner().timeout(
         const Duration(seconds: 8),
         onTimeout: () {
-          _settings = UserSettings(userId: _pidInt);
+          final aid = _userIdForWhere ?? '';
+          _settings = UserSettings(userId: aid.isNotEmpty ? aid : trimmed);
           _settingsController.add(_settings);
         },
       );
@@ -444,11 +1018,19 @@ class DatabaseService {
 
   Future<void> _loadInner() async {
     _prefs = await SharedPreferences.getInstance();
-    _logRecordVsCategoryTableRouting();
+    await _debugPocketBaseHealth();
+    if (_pbHttpBackoffActive) {
+      _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
+      _settingsController.add(_settings);
+      _categoryController.add(List.from(_rules));
+      _tasksController.add(List.from(_tasksCache));
+      _isInitialized = true;
+      return;
+    }
     await _loadSettingsFromNoco();
     await _loadRulesFromNoco();
     try {
-      await _fetchRecordsIntoCache();
+      await _fetchRecordsIntoCache(forceNetwork: true);
     } catch (_) {}
     await _loadPlanningTasksForToday();
     // Safety re-run: finish startup with a final category load.
@@ -465,7 +1047,7 @@ class DatabaseService {
 
   Future<void> _loadPlanningTasksForToday() async {
     try {
-      final today = getProjectedToday();
+      final today = getTimelineDeviceLocalToday();
       _tasksCache = await _fetchPlanningTasksForDate(today);
       _tasksController.add(List.from(_tasksCache));
     } catch (_) {
@@ -487,24 +1069,30 @@ class DatabaseService {
   Future<List<PlanningTask>> _fetchPlanningTasksForDate(DateTime selectedDate) async {
     try {
       if (!_isPlansTableConfigured) {
-        _log('TABLE_GUARD: plans table is not configured (same as records). Skip plans fetch.');
+        _log('TABLE_GUARD: plans fetch disabled.');
         return [];
       }
       if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
-      final String where = _whereUserId;
-      final rawRows = await _getList(_plansRecords, where, 1000);
-      final rows = rawRows.map(_flattenNocoRecord).toList();
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return [];
       final targetDayStr =
           '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
+      final uid = _escapeForPbFilter(authId);
+      // Required: without expand, API returns only relation ids — chips would be empty after refresh.
+      final tagCatalog = await fetchTagsForCurrentUser();
+      final list = await _pb.collection(PbCollections.plans).getFullList(
+            expand: kPbPlanTagsExpand,
+            filter: 'user_id = "$uid"',
+          );
       final plans = <PlanningTask>[];
-      for (final row in rows) {
-        var anchorUtc = _parseDateTimeUtc(row['start_time']);
-        anchorUtc ??= _parseDateTimeUtc(row['end_time']);
+      for (final r in list) {
+        var anchorUtc = _parseDateTimeUtc(r.data['start_time']);
+        anchorUtc ??= _parseDateTimeUtc(r.data['end_time']);
         if (anchorUtc == null) continue;
         final w = _profileWallFromUtc(anchorUtc);
         final planDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
         if (planDayStr != targetDayStr) continue;
-        plans.add(_planRowToTask(row));
+        plans.add(_planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog));
       }
       plans.sort((a, b) {
         if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
@@ -519,94 +1107,124 @@ class DatabaseService {
         }
         return a.title.compareTo(b.title);
       });
-      return plans;
+      return _mergePlanningOptimistic(targetDayStr, plans);
     } catch (_) {
       return [];
     }
   }
 
-  Future<List<Map<String, dynamic>>> _getList(
-    String pathSegment,
-    String? where,
-    int? limit,
-  ) async {
-    try {
-      final qp = <String, String>{};
-      if (where != null) qp['where'] = where;
-      if (limit != null) qp['limit'] = limit.toString();
-      final uri = Uri.parse('$baseUrl/$pathSegment')
-          .replace(queryParameters: qp.isEmpty ? null : qp);
-      final res = await http.get(uri, headers: _headers);
-      if (res.statusCode == 422 && where != null && where.contains("'")) {
-        final whereUnquoted = where.replaceAll("'", '');
-        final fallbackUri = Uri.parse('$baseUrl/$pathSegment').replace(
-          queryParameters: <String, String>{
-            'where': whereUnquoted,
-            if (limit != null) 'limit': limit.toString(),
-          },
-        );
-        final fallbackRes = await http.get(fallbackUri, headers: _headers);
-        if (fallbackRes.statusCode >= 200 && fallbackRes.statusCode < 300) {
-          final j2 = jsonDecode(fallbackRes.body);
-          if (j2 is! Map) return [];
-          final list2 = j2['list'] ?? j2['records'];
-          if (list2 is! List) return [];
-          return list2.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-        }
-        _log('GET failed for $pathSegment (422 with quoted/unquoted where).');
-      }
-      if (res.statusCode < 200 || res.statusCode >= 300) return [];
-      final j = jsonDecode(res.body);
-      if (j is! Map) return [];
-      final list = j['list'] ?? j['records'];
-      if (list is! List) return [];
-      return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    } catch (e, st) {
-      _log('GET failed for $pathSegment: $e');
-      _log(st);
-      return [];
+  PlanningTask _planningTaskFromPocketRecord(
+    RecordModel r, {
+    required List<Tag> pocketTagCatalog,
+  }) {
+    final d = r.data;
+    final startUtc = _parseDateTimeUtc(d['start_time']);
+    final startDisplay =
+        startUtc != null ? _profileWallFromUtc(startUtc.toUtc()) : null;
+    final endUtc = _parseDateTimeUtc(d['end_time']);
+    final endDisplay =
+        endUtc != null ? _profileWallFromUtc(endUtc.toUtc()) : null;
+    final derivedDateKey = startDisplay != null
+        ? _dateKeyFromDate(startDisplay)
+        : (endDisplay != null ? _dateKeyFromDate(endDisplay) : '');
+    final derivedEndDateKey =
+        endDisplay != null ? _dateKeyFromDate(endDisplay) : derivedDateKey;
+    dynamic expandTagsPayload;
+    final exp = r.get<dynamic>('expand.tags_link');
+    if (exp is List) {
+      expandTagsPayload = <dynamic>[
+        for (final item in exp)
+          if (item is RecordModel)
+            <String, dynamic>{...item.data, 'id': item.id}
+          else if (item is Map)
+            Map<String, dynamic>.from(item)
+      ];
+    } else if (exp is RecordModel) {
+      expandTagsPayload = <String, dynamic>{...exp.data, 'id': exp.id};
+    } else if (exp is Map) {
+      expandTagsPayload = Map<String, dynamic>.from(exp);
     }
+    Map<String, dynamic>? expandJson;
+    if (expandTagsPayload != null) {
+      if (expandTagsPayload is List) {
+        if (expandTagsPayload.isNotEmpty) {
+          expandJson = <String, dynamic>{'tags_link': expandTagsPayload};
+        }
+      } else {
+        expandJson = <String, dynamic>{'tags_link': expandTagsPayload};
+      }
+    }
+    final catId =
+        categoryIdFromRecordRow(<String, dynamic>{'category_id': d['category_id']}) ??
+            0;
+    return PlanningTask.fromJson(
+      <String, dynamic>{
+        'pocketRecordId': r.id,
+        'plan_row_id': d['plan_id']?.toString(),
+        'id': 0,
+        'title': d['title']?.toString() ?? '',
+        'categoryId': catId,
+        'category_id': d['category_id'],
+        'isDone': d['is_done'],
+        'is_done': d['is_done'],
+        'dateKey': derivedDateKey,
+        'endDateKey': derivedEndDateKey,
+        'order': d['order'] is num ? (d['order'] as num).toInt() : 0,
+        'startTime': startDisplay,
+        'endDateTime': endDisplay,
+        'checklist': d['checklist'],
+        'note': d['note'],
+        'notes': d['note'],
+        'parent_plan_id': d['parent_plan_id'],
+        if (expandJson != null) 'expand': expandJson,
+        'tags_link': d['tags_link'],
+      },
+      pocketTagCatalog: pocketTagCatalog,
+    );
   }
 
-  /// Fetches profile by user_id. OWNERSHIP_FILTER only — no unscoped GET (@ARCHITECTURE.md §3).
+  /// Returns a positive count when the server sent a numeric link rollup (not expanded rows).
+  static int? _m2MlinkIntCount(dynamic linkRaw) {
+    if (linkRaw is int) return linkRaw;
+    if (linkRaw is num) return linkRaw.toInt();
+    return null;
+  }
+
+  /// Fetches profile row: auth store first, else list filter by [user_id] (@ARCHITECTURE §3).
   Future<Map<String, dynamic>?> getUserProfile(String id) async {
-    final whereValue = "(user_id,eq,'$id')";
-    var uri = Uri.parse('$baseUrl/$_profilesRecords').replace(
-      queryParameters: <String, String>{'where': whereValue},
-    );
-    var res = await http.get(uri, headers: _headers);
-    if (res.statusCode == 422 && whereValue.contains("'")) {
-      final whereUnquoted = whereValue.replaceAll("'", '');
-      uri = Uri.parse('$baseUrl/$_profilesRecords').replace(
-        queryParameters: <String, String>{'where': whereUnquoted},
+    await ensurePocketBaseReady();
+    final want = id.trim();
+    if (want.isEmpty) return null;
+    try {
+      final auth = _pb.authStore.record;
+      if (auth != null) {
+        final data = Map<String, dynamic>.from(auth.data);
+        data['id'] = auth.id;
+        final uid = (data['user_id'] ?? '').toString().trim();
+        if (uid == want || auth.id == want) {
+          _profilePbRecordId = auth.id;
+          return data;
+        }
+      }
+    } catch (_) {}
+    try {
+      final escaped = want.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
+      final rec = await _pb.collection(PbCollections.profiles).getFirstListItem(
+        'user_id = "$escaped"',
       );
-      res = await http.get(uri, headers: _headers);
-    }
-    if (res.statusCode == 404 || res.statusCode == 422) {
-      throw _ProfileFetchFailedException(
-        res.statusCode,
-        'Session invalid or profile not found',
-      );
-    } else if (res.statusCode < 200 || res.statusCode >= 300) {
+      _profilePbRecordId = rec.id;
+      return Map<String, dynamic>.from(rec.data)..['id'] = rec.id;
+    } on ClientException catch (e) {
+      if (e.statusCode == 404 || e.statusCode == 403 || e.statusCode == 422) {
+        throw _ProfileFetchFailedException(
+          e.statusCode,
+          'Session invalid or profile not found',
+        );
+      }
+      return null;
+    } catch (_) {
       return null;
     }
-    final j = jsonDecode(res.body);
-    if (j is! Map<String, dynamic>) return null;
-    final rawList = (j['records'] ?? j['list']) as List?;
-    if (rawList == null || rawList.isEmpty) return null;
-    final item = rawList.first;
-    if (item is! Map) return null;
-    final record = Map<String, dynamic>.from(item);
-    Map<String, dynamic> raw = record.containsKey('fields')
-        ? Map<String, dynamic>.from(record['fields'] as Map)
-        : record;
-    if (record.containsKey('id') && record['id'] != null) {
-      raw['id'] = record['id'];
-    } else {
-      final resolvedId = raw['user_id'] ?? raw['id'];
-      if (resolvedId != null) raw['id'] = resolvedId;
-    }
-    return raw;
   }
 
   /// Shell: current profile as map (snake_case keys aligned with UI).
@@ -624,79 +1242,465 @@ class DatabaseService {
     }
   }
 
-  /// Integer id for where clause; 0 when no cached profile id (stops network calls).
-  int get _userIdForWhere => _cachedProfileIntId ?? _pidInt;
-
-  /// Where clause for user_id: uses UUID from profile so NocoDB filter returns user's data.
-  String get _whereUserId => "(user_id,eq,'$_pid')";
-
-  Future<List<Map<String, dynamic>>> getCategories() async {
+  /// PocketBase: all **categories** for the signed-in `user_id` (@DATA_MAP).
+  Future<List<Map<String, dynamic>>> fetchCategories() async {
     if (!(currentProfileId?.isNotEmpty ?? false)) return [];
     try {
-      final qp = <String, String>{
-        'where': _whereUserId,
-        'limit': '1000',
-      };
-      final categoriesUri =
-          Uri.parse('$baseUrl/$_categoriesRecords').replace(queryParameters: qp);
-      final response = await http.get(categoriesUri, headers: _headers);
-      if (response.statusCode < 200 || response.statusCode >= 300) return [];
-      final decoded = jsonDecode(response.body);
-      final rawRows = decoded is Map
-          ? (decoded['records'] ?? decoded['list'] ?? <dynamic>[])
-          : <dynamic>[];
-      if (rawRows is! List) return [];
-      return rawRows
-          .whereType<Map>()
-          .map((e) => Map<String, dynamic>.from(e))
-          .toList();
-    } catch (_) {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) {
+        return [];
+      }
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return [];
+      final uid = _escapeForPbFilter(authId);
+      final list = await _pb.collection(PbCollections.categories).getFullList(
+        filter: 'user_id = "$uid" && is_archived = false',
+      );
+      final out = list.map((r) {
+        final m = Map<String, dynamic>.from(r.data);
+        m['id'] = r.id;
+        m['_pb_record_id'] = r.id;
+        return m;
+      }).toList();
+      if (kDebugMode) {
+        debugPrint(
+          '[PB] fetchCategories: ${out.length} rows (user_id filter) @ $kPocketBaseUrl',
+        );
+      }
+      return out;
+    } on ClientException catch (e) {
+      print('PB_ERROR_RESPONSE: ${e.response}');
+      _maybeOpenPbCircuitFromListFailure(e, 'fetchCategories');
+      return [];
+    } catch (e) {
+      _maybeOpenPbCircuitFromListFailure(e, 'fetchCategories');
       return [];
     }
   }
 
-  /// Network fetch; updates [_cachedFlatRecords] for timeline filtering without repeated GETs.
-  Future<List<Map<String, dynamic>>> _fetchRecordsIntoCache() async {
+  Future<List<Map<String, dynamic>>> getCategories() => fetchCategories();
+
+  /// PocketBase **categories**: every row for `user_id` (active + archived) for slug reservation / collision checks.
+  Future<List<Map<String, dynamic>>> _fetchAllCategoryMapsForUser() async {
+    if (!(currentProfileId?.isNotEmpty ?? false)) return [];
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) {
+        return [];
+      }
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return [];
+      final uid = _escapeForPbFilter(authId);
+      final list = await _pb.collection(PbCollections.categories).getFullList(
+        filter: 'user_id = "$uid"',
+      );
+      return list
+          .map((r) {
+            final m = Map<String, dynamic>.from(r.data);
+            m['id'] = r.id;
+            m['_pb_record_id'] = r.id;
+            return m;
+          })
+          .toList();
+    } on ClientException catch (e) {
+      print('PB_ERROR_RESPONSE: ${e.response}');
+      _maybeOpenPbCircuitFromListFailure(e, 'fetchAllCategories');
+      return [];
+    } catch (e) {
+      _maybeOpenPbCircuitFromListFailure(e, 'fetchAllCategories');
+      return [];
+    }
+  }
+
+  void _rebuildReservedCategorySlugsFromRows(
+      List<Map<String, dynamic>> rows) {
+    final set = <String>{};
+    for (final row in rows) {
+      final flat = _flattenNocoRecord(row, allowCategoryIdAsRowPk: true);
+      void add(dynamic v) {
+        final s = (v ?? '').toString().trim().toLowerCase();
+        if (s.isNotEmpty) set.add(s);
+      }
+
+      add(flat['category_id'] ?? flat['Category_id']);
+      add(flat['normalized_id'] ?? flat['normalizedId']);
+    }
+    _reservedCategorySlugsLower = set;
+  }
+
+  void _rebuildCategoryDialogUniverse(List<Map<String, dynamic>> allRawRows) {
+    final list = <Map<String, dynamic>>[];
+    for (final row in allRawRows) {
+      final flat = _flattenNocoRecord(row, allowCategoryIdAsRowPk: true);
+      final name = _categoryDisplayNameFromRow(flat);
+      final archRaw = flat['is_archived'] ?? flat['isArchived'];
+      var isArc = _jsonBoolFromDynamic(archRaw);
+      final st = (flat['status'] ?? '').toString().trim().toLowerCase();
+      if (st == 'archived' || st == 'deleted') isArc = true;
+      final pb = (row['id'] ?? row['_pb_record_id'] ?? flat['id'] ?? '')
+          .toString()
+          .trim();
+      list.add({
+        'name': name,
+        'nameLower': name.trim().toLowerCase(),
+        'isArchived': isArc,
+        'pbRowId': pb,
+      });
+    }
+    _categoryDialogUniverse = list;
+  }
+
+  Map<String, dynamic> _recordMapFromPb(RecordModel r) {
+    final d = Map<String, dynamic>.from(r.data);
+    d['id'] = r.id;
+    d['_pb_record_id'] = r.id;
+    dynamic exp = r.get<dynamic>('expand.$kPbRecordCategoryExpand');
+    if (exp == null) {
+      exp = r.get<dynamic>('expand.category_id');
+    }
+    if (exp is RecordModel) {
+      final cd = exp.data;
+      d['category_id'] = cd['category_id']?.toString() ?? d['category_id'];
+      d['_expanded_category'] = <String, dynamic>{...cd, 'id': exp.id};
+    } else if (exp is List && exp.isNotEmpty) {
+      final first = exp.first;
+      if (first is RecordModel) {
+        final cd = first.data;
+        d['category_id'] = cd['category_id']?.toString() ?? d['category_id'];
+        d['_expanded_category'] = <String, dynamic>{...cd, 'id': first.id};
+      }
+    }
+    final expTags = r.get<dynamic>('expand.$kPbRecordTagsExpand');
+    if (expTags is List) {
+      d['_expanded_tags'] = <Map<String, dynamic>>[
+        for (final item in expTags)
+          if (item is RecordModel)
+            <String, dynamic>{...item.data, 'id': item.id}
+          else if (item is Map)
+            Map<String, dynamic>.from(item),
+      ];
+    } else if (expTags is RecordModel) {
+      d['_expanded_tags'] = <Map<String, dynamic>>[
+        <String, dynamic>{...expTags.data, 'id': expTags.id},
+      ];
+    }
+    final uidNorm = normalizeLinkScalar(d['user_id']);
+    if (uidNorm != null) {
+      d['user_id'] = uidNorm.toString().trim();
+    }
+    return d;
+  }
+
+  List<Map<String, dynamic>> _cloneDeepCachedFlatRecords() =>
+      List<Map<String, dynamic>>.from(
+        _cachedFlatRecords.map((e) => Map<String, dynamic>.from(e)),
+      );
+
+  void _restoreCachedFlatRecordsDeep(List<Map<String, dynamic>> snap) {
+    _cachedFlatRecords = List<Map<String, dynamic>>.from(
+      snap.map((e) => Map<String, dynamic>.from(e)),
+    );
+  }
+
+  /// Verification: at most one `running` row should exist after local Highlander apply.
+  void _printAtomicCheckRunningCount() {
+    final n = _cachedFlatRecords
+        .where(
+          (r) =>
+              (r['status'] ?? '').toString().trim().toLowerCase() == 'running',
+        )
+        .length;
+    print('[ATOMIC_CHECK] Running records in cache: $n');
+  }
+
+  /// **Highlander** — local-only phase: every `status == running` row is forced to `stopped`
+  /// with [end_time]; then the new primary running row is appended. Single notifier happens
+  /// in the surrounding [_runBatchedRecordCacheTimelineNotify] after this returns.
+  ///
+  /// **startAtomicTaskSequence** (steps 1–3): memory stop-all-running → append pending POST row.
+  void _startAtomicTaskSequenceApplyLocalPrimary({
+    required Map<String, dynamic> createBody,
+    required List<Map<String, String>> patchTargetsOut,
+  }) {
+    patchTargetsOut.clear();
+    final nowIso = getPlanetaryNow().toUtc().toIso8601String();
+    final next = <Map<String, dynamic>>[];
+    for (final row in _cachedFlatRecords) {
+      final copy = Map<String, dynamic>.from(row);
+      final st = (copy['status'] ?? '').toString().trim().toLowerCase();
+      if (st == 'running') {
+        final pk = recordsTablePk(copy);
+        final biz = (copy['record_id'] ?? '').toString().trim();
+        if (pk.isNotEmpty) {
+          patchTargetsOut.add(<String, String>{
+            'rid': pk,
+            'oq': biz.isNotEmpty ? biz : pk,
+          });
+        }
+        copy['status'] = 'stopped';
+        copy['end_time'] = nowIso;
+      }
+      next.add(copy);
+    }
+    final pending = Map<String, dynamic>.from(createBody);
+    final bizId = (pending['record_id'] ?? '').toString().trim();
+    if (bizId.isEmpty) {
+      _log('HIGHLANDER: createBody missing record_id — aborting local append');
+      _cachedFlatRecords = next;
+      return;
+    }
+    pending['id'] = bizId;
+    pending['_pb_record_id'] = '';
+    pending['status'] = 'running';
+    pending['end_time'] = null;
+    pending['_highlanderPendingPost'] = true;
+    next.add(pending);
+    _cachedFlatRecords = next;
+  }
+
+  /// True when [after] only advances REST/metadata (e.g. PocketBase `id`) but timeline-visible
+  /// fields match [before] — skip [timeUpdates] to avoid ID-swap list blink.
+  static bool _flatTimelineVisuallyEquivalent(
+    Map<String, dynamic> before,
+    Map<String, dynamic> after,
+  ) {
+    String ns(dynamic v) {
+      if (v == null) return '';
+      final x = normalizeLinkScalar(v);
+      return (x ?? v).toString().trim();
+    }
+
+    bool sameTime(dynamic a, dynamic b) {
+      final da = _parseDateTimeUtc(a);
+      final db = _parseDateTimeUtc(b);
+      if (da != null && db != null) {
+        final ua = da.toUtc();
+        final ub = db.toUtc();
+        final aSec = DateTime.utc(
+            ua.year, ua.month, ua.day, ua.hour, ua.minute, ua.second);
+        final bSec = DateTime.utc(
+            ub.year, ub.month, ub.day, ub.hour, ub.minute, ub.second);
+        return aSec == bSec;
+      }
+      final sa = normalizeRecordIsoToUtcSecondPrecision(a);
+      final sb = normalizeRecordIsoToUtcSecondPrecision(b);
+      if ((sa ?? '').isNotEmpty || (sb ?? '').isNotEmpty) {
+        return sa == sb;
+      }
+      return ns(a) == ns(b);
+    }
+
+    if (ns(before['status']).toLowerCase() !=
+        ns(after['status']).toLowerCase()) {
+      return false;
+    }
+    if (ns(before['title']) != ns(after['title'])) return false;
+    if (ns(before['record_id']) != ns(after['record_id'])) return false;
+    if (!sameTime(before['start_time'], after['start_time'])) return false;
+    if (!sameTime(before['end_time'], after['end_time'])) return false;
+    if (ns(before['type']) != ns(after['type'])) return false;
+    if (ns(before['parent_id']) != ns(after['parent_id'])) return false;
+    if (ns(before['tags']) != ns(after['tags'])) return false;
+    if (ns(before['category_id']) != ns(after['category_id'])) return false;
+    if (ns(before['note']) != ns(after['note']) ||
+        ns(before['notes']) != ns(after['notes'])) {
+      return false;
+    }
+    try {
+      final ea = jsonEncode(before['checklist'] ?? <dynamic>[]);
+      final eb = jsonEncode(after['checklist'] ?? <dynamic>[]);
+      if (ea != eb) return false;
+    } catch (_) {
+      if (ns(before['checklist']) != ns(after['checklist'])) return false;
+    }
+    return true;
+  }
+
+  /// Merge one PocketBase **records** row into [_cachedFlatRecords] without refetching the full list.
+  void _upsertFlatRecordFromPbModel(
+    RecordModel r, {
+    bool preserveExpand = true,
+    bool suppressTimelineNotify = false,
+  }) {
+    try {
+      final m = _recordMapFromPb(r);
+      final pk = recordsTablePk(m);
+      if (pk.isEmpty) return;
+      final biz = (m['record_id'] ?? '').toString().trim();
+      final next = List<Map<String, dynamic>>.from(_cachedFlatRecords);
+      for (var i = 0; i < next.length; i++) {
+        final row = next[i];
+        final rpk = recordsTablePk(row);
+        final rbiz = (row['record_id'] ?? '').toString().trim();
+        final same =
+            rpk == pk || (biz.isNotEmpty && (rbiz == biz || rpk == biz));
+        if (same) {
+          if (preserveExpand &&
+              m['_expanded_category'] == null &&
+              row['_expanded_category'] != null) {
+            m['_expanded_category'] = row['_expanded_category'];
+          }
+          final silent = rbiz.isNotEmpty &&
+              biz.isNotEmpty &&
+              rbiz == biz &&
+              _flatTimelineVisuallyEquivalent(row, m);
+          next[i] = m;
+          _cachedFlatRecords = next;
+          if (!suppressTimelineNotify && !silent) {
+            print('✅ Local cache updated atomically for record: ${r.id}');
+            _notifyTimelineAfterRecordCacheMutation();
+          }
+          return;
+        }
+      }
+      next.add(m);
+      _cachedFlatRecords = next;
+      if (!suppressTimelineNotify) {
+        print('✅ Local cache updated atomically for record: ${r.id}');
+        _notifyTimelineAfterRecordCacheMutation();
+      }
+    } catch (e, st) {
+      _log('_upsertFlatRecordFromPbModel failed: $e');
+      _log(st.toString());
+    }
+  }
+
+  /// PocketBase: **records** for the current user with category + tags expands (@POCKETBASE_MANIFEST).
+  /// Updates [_cachedFlatRecords] for timeline filtering without repeated GETs.
+  ///
+  /// When [forceNetwork] is false (default), returns **cached** rows for [\_kMinGapRecordsNetworkFetch]
+  /// after a successful sync — kills VPS spam from UI/timer loops. Use **true** after mutations / pull-to-refresh.
+  Future<List<Map<String, dynamic>>> fetchRecords({bool forceNetwork = false}) async {
     final pid = currentProfileId;
     if (pid == null || pid.isEmpty) {
       _cachedFlatRecords = [];
       return [];
     }
-    if (!(currentProfileId?.isNotEmpty ?? false)) {
+    final now = DateTime.now();
+    if (!forceNetwork &&
+        _lastSuccessfulRecordsNetworkFetchAt != null &&
+        now.difference(_lastSuccessfulRecordsNetworkFetchAt!) <
+            _kMinGapRecordsNetworkFetch &&
+        _cachedFlatRecords.isNotEmpty) {
+      return List<Map<String, dynamic>>.from(_cachedFlatRecords);
+    }
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) {
+        return List<Map<String, dynamic>>.from(_cachedFlatRecords);
+      }
+      final filterClause = _pocketBaseOwnerFilterClauseForRecords();
+      if (filterClause == null || filterClause.isEmpty) {
+        _cachedFlatRecords = [];
+        return [];
+      }
+      final expandRel =
+          '$kPbRecordCategoryExpand,$kPbRecordTagsExpand';
+      List<RecordModel> list;
+      try {
+        list = await _pb.collection(PbCollections.records).getFullList(
+          filter: filterClause,
+          expand: expandRel,
+        );
+      } on ClientException catch (_) {
+        list = await _pb.collection(PbCollections.records).getFullList(
+          filter: filterClause,
+          expand: kPbRecordCategoryExpand,
+        );
+        if (kDebugMode) {
+          debugPrint(
+            '[PB] fetchRecords: retry without $kPbRecordTagsExpand (schema?)',
+          );
+        }
+      }
+      final kept = <Map<String, dynamic>>[];
+      try {
+        for (final r in list) {
+          try {
+            final m = _recordMapFromPb(r);
+            final pk = recordsTablePk(m);
+            if (pk.isEmpty) {
+              _log(
+                'GHOST_ROW_SKIPPED: PB record missing PK (keys=${m.keys.map((k) => k.toString()).take(12).join(",")})',
+              );
+              continue;
+            }
+            kept.add(Map<String, dynamic>.from(m));
+          } catch (e, st) {
+            final rowData = '${r.id} data=${r.data}';
+            _log('RECORD_PARSE_ROW: $e | $rowData');
+            _log(st.toString());
+          }
+        }
+      } catch (e, st) {
+        _log('fetchRecords: mapping loop failed: $e');
+        _log(st.toString());
+      }
+      _cachedFlatRecords = kept;
+      _pruneRecord404DeadletterUsingCache();
+      _lastSuccessfulRecordsNetworkFetchAt = DateTime.now();
+      if (kDebugMode && forceNetwork) {
+        debugPrint(
+          '[PB] fetchRecords: ${kept.length} rows (expand $expandRel) @ $kPocketBaseUrl',
+        );
+      }
+      return _cachedFlatRecords;
+    } catch (e) {
+      _maybeOpenPbCircuitFromListFailure(e, 'fetchRecords');
       _cachedFlatRecords = [];
       return [];
     }
-    // OWNERSHIP_FILTER: never GET all rows — only quoted user_id (@ARCHITECTURE.md §3).
-    final where = _whereUserId;
-    var list = await _getList(_recordsRecords, where, 1000);
-    list = list.map(_flattenNocoRecord).toList();
-    if (list.isEmpty) {
-      _log('Records GET returned 0 rows for $where (no unfiltered fallback).');
-    }
-    final kept = <Map<String, dynamic>>[];
-    for (final r in list) {
-      final pk = nocoRecordsTablePk(r);
-      if (pk.isEmpty) {
-        _log(
-            'GHOST_ROW_SKIPPED: record missing PK after flatten (keys=${r.keys.map((k) => k.toString()).take(12).join(",")})');
-        continue;
-      }
-      kept.add(Map<String, dynamic>.from(r));
-    }
-    _cachedFlatRecords = kept;
-    _pruneRecord404DeadletterUsingCache();
-    return _cachedFlatRecords;
   }
 
-  Future<List<Map<String, dynamic>>> getRecords() async {
-    return _fetchRecordsIntoCache();
+  Future<List<Map<String, dynamic>>> _fetchRecordsIntoCache({
+    bool forceNetwork = false,
+  }) =>
+      fetchRecords(forceNetwork: forceNetwork);
+
+  Future<List<Map<String, dynamic>>> getRecords({bool forceNetwork = false}) =>
+      fetchRecords(forceNetwork: forceNetwork);
+
+  /// All **plans** for the current user (raw maps; includes `tags_link` expand when present).
+  Future<List<Map<String, dynamic>>> fetchPlans() async {
+    if (!(currentProfileId?.isNotEmpty ?? false)) return [];
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) {
+        return [];
+      }
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return [];
+      final uid = _escapeForPbFilter(authId);
+      final list = await _pb.collection(PbCollections.plans).getFullList(
+        filter: 'user_id = "$uid"',
+        expand: kPbPlanTagsExpand,
+      );
+      final out = list.map((r) {
+        final m = Map<String, dynamic>.from(r.data);
+        m['id'] = r.id;
+        m['_pb_record_id'] = r.id;
+        return m;
+      }).toList();
+      if (kDebugMode) {
+        debugPrint(
+          '[PB] fetchPlans: ${out.length} rows @ $kPocketBaseUrl',
+        );
+      }
+      return out;
+    } catch (e) {
+      _maybeOpenPbCircuitFromListFailure(e, 'fetchPlans');
+      return [];
+    }
   }
 
   Future<void> _loadRulesFromNoco() async {
     try {
-      final rows = await getCategories();
-      final flat = rows
+      final allRows = await _fetchAllCategoryMapsForUser();
+      _rebuildReservedCategorySlugsFromRows(allRows);
+      _rebuildCategoryDialogUniverse(allRows);
+      final flat = allRows
           .map((e) => _flattenNocoRecord(e, allowCategoryIdAsRowPk: true))
+          .where(_categoryFlatRowIsActive)
           .toList();
       final built = flat.isEmpty
           ? (<CategoryRule>[], <List<CategoryRule>>[])
@@ -713,7 +1717,128 @@ class DatabaseService {
       _log('CATEGORY_CRASH: $e');
       _log(s);
       _rules = [];
+      _reservedCategorySlugsLower.clear();
+      _categoryDialogUniverse = [];
       _categoryController.add(List.from(_rules));
+    }
+  }
+
+  /// Reload categories (active + archived metadata) from PocketBase into [_rules] and dialog universe.
+  Future<void> refreshCategoryRulesFromServer() => _loadRulesFromNoco();
+
+  /// Breadcrumb of local category ids from root to [leafLocalId] (inclusive).
+  List<int> categoryPathFromRootToLocalId(int leafLocalId) {
+    List<int>? found;
+    bool walk(CategoryRule node, List<int> prefix) {
+      final path = [...prefix, node.id];
+      if (node.id == leafLocalId) {
+        found = path;
+        return true;
+      }
+      for (final c in node.children ?? []) {
+        if (walk(c, path)) return true;
+      }
+      return false;
+    }
+
+    for (final r in _rules) {
+      if (walk(r, [])) break;
+    }
+    return found ?? const [];
+  }
+
+  CategoryRule? getCategoryRuleByBackendRowId(String pocketBaseRowId) {
+    final t = pocketBaseRowId.trim();
+    if (t.isEmpty) return null;
+    CategoryRule? found;
+    void visit(List<CategoryRule> rules) {
+      for (final r in rules) {
+        if ((r.backendRowId ?? '').trim() == t) {
+          found = r;
+          return;
+        }
+        if (r.children != null) visit(r.children!);
+      }
+    }
+
+    visit(_rules);
+    return found;
+  }
+
+  int? findActiveLocalCategoryIdByDisplayName(String displayName) {
+    final key = displayName.trim().toLowerCase();
+    if (key.isEmpty) return null;
+    int? found;
+    void visit(List<CategoryRule> rules) {
+      for (final r in rules) {
+        if (r.isArchived) {
+          if (r.children != null) visit(r.children!);
+          continue;
+        }
+        if (r.name.trim().toLowerCase() == key) {
+          found = r.id;
+          return;
+        }
+        if (r.children != null) visit(r.children!);
+      }
+    }
+
+    visit(_rules);
+    return found;
+  }
+
+  CategoryNameInputStatus classifyCategoryDisplayNameInput(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return CategoryNameInputStatus.empty;
+    final activeId = findActiveLocalCategoryIdByDisplayName(trimmed);
+    if (activeId != null) {
+      return CategoryNameInputStatus.active(activeId);
+    }
+    final key = trimmed.toLowerCase();
+    for (final e in _categoryDialogUniverse) {
+      if ((e['nameLower'] as String?) != key) continue;
+      if (e['isArchived'] == true) {
+        final pb = (e['pbRowId'] ?? '').toString().trim();
+        if (pb.isNotEmpty) return CategoryNameInputStatus.archived(pb);
+      }
+    }
+    return CategoryNameInputStatus.available;
+  }
+
+  /// Sets `is_archived` false on a PocketBase **categories** row. Returns local id after reload.
+  Future<int?> restoreArchivedCategory(String pbRowId) async {
+    final rid = pbRowId.trim();
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return null;
+    if (rid.isEmpty || !_isLikelyPocketBaseRowId(rid)) return null;
+    try {
+      await ensurePocketBaseReady();
+      final rec = await _pb.collection(PbCollections.categories).getOne(rid);
+      final m = Map<String, dynamic>.from(rec.data);
+      final biz = _sanitizePkString(m['category_id']?.toString());
+      final ordRaw = m['order'];
+      final ord = ordRaw is int
+          ? ordRaw
+          : int.tryParse(ordRaw?.toString() ?? '') ?? 0;
+      final patchBody = _nocoFieldsForPatch(
+        _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
+          'user_id': _pidForPbFilter,
+          'is_archived': false,
+          'order': ord,
+          if (biz != null && biz.isNotEmpty) 'category_id': biz,
+        }),
+      );
+      await _pb.collection(PbCollections.categories).update(rid, body: patchBody);
+      await _loadRulesFromNoco();
+      return getCategoryRuleByBackendRowId(rid)?.id;
+    } on ClientException catch (e) {
+      _log('RESTORE_CATEGORY: $e');
+      if (e.statusCode == 404) {
+        _emitCategorySyncNotice('category_sync_not_found');
+      }
+      return null;
+    } catch (e) {
+      _log('RESTORE_CATEGORY: $e');
+      return null;
     }
   }
 
@@ -756,8 +1881,15 @@ class DatabaseService {
         if (uuidInFields != null &&
             (envPk == null || _isSmallIntegerString(envPk))) {
           fields[_nocoEnvelopePkKey] = uuidInFields;
-        } else if (envPk != null) {
+        } else         if (envPk != null) {
           fields[_nocoEnvelopePkKey] = envPk;
+        }
+        // M2M link column may sit on the v3 list **envelope** (nested expand) or match `fields`
+        // when using `fields=` GET. If the wrapper has the link key, **overwrite** `fields` so
+        // chips survive refresh.
+        final linkKey = _plansToTagsLinkColumnSystemId;
+        if (record.containsKey(linkKey)) {
+          fields[linkKey] = record[linkKey];
         }
         return fields;
       }
@@ -837,8 +1969,14 @@ class DatabaseService {
     return flat;
   }
 
-  /// Segment for **REST row URL** `.../{tableUid}/{id}` — **wrapper Id integer only** (never business UUID).
-  static String nocoRecordsTablePk(Map<String, dynamic> row) {
+  /// PocketBase **records** row id (string) or legacy numeric id string.
+  static String recordsTablePk(Map<String, dynamic> row) {
+    final pb = row['_pb_record_id']?.toString().trim() ?? '';
+    if (pb.isNotEmpty) return pb;
+    final idStr = row['id']?.toString().trim() ?? '';
+    if (idStr.isNotEmpty && int.tryParse(idStr) == null) {
+      return idStr;
+    }
     final sys = row[_nocoSystemRowIdKey];
     if (sys is int) return sys.toString();
     if (sys != null) {
@@ -866,183 +2004,381 @@ class DatabaseService {
     final c = candidate.trim();
     if (c.isEmpty) return null;
     for (final r in _cachedFlatRecords) {
-      if (nocoRecordsTablePk(r) == c) return r;
+      if (recordsTablePk(r) == c) return r;
       if ((r['record_id'] ?? '').toString().trim() == c) return r;
     }
     return null;
   }
 
-  /// When UI still holds a [fields.record_id] UUID but REST needs wrapper [id], map to [nocoRecordsTablePk].
+  void _logRecordsPatchDispatch(String restId) {
+    final row = _findCachedRecordRowByRestCandidate(restId);
+    final leg = (row?['record_id'] ?? '').toString().trim();
+    final legOut = leg.isEmpty ? '—' : leg;
+    print(
+      '[DISPATCH] Firing PATCH to /records/$restId. (FYI: legacy record_id is $legOut)',
+    );
+  }
+
+  void _logRecordsDeleteDispatch(String restId) {
+    final row = _findCachedRecordRowByRestCandidate(restId);
+    final leg = (row?['record_id'] ?? '').toString().trim();
+    final legOut = leg.isEmpty ? '—' : leg;
+    print(
+      '[DISPATCH] Firing DELETE to /records/$restId. (FYI: legacy record_id is $legOut)',
+    );
+  }
+
+  /// PocketBase row `id` from a cached flat row — never a legacy UUID mistaken for REST id.
+  String? _pbSystemIdFromCachedRecordRow(Map<String, dynamic> r) {
+    final pb = r['_pb_record_id']?.toString().trim() ?? '';
+    if (_isLikelyPocketBaseRowId(pb)) return pb;
+    final idStr = r['id']?.toString().trim() ?? '';
+    if (_isLikelyPocketBaseRowId(idStr)) return idStr;
+    return null;
+  }
+
+  /// When UI still holds a [fields.record_id] UUID but REST needs wrapper [id], map to [recordsTablePk].
   String? _resolveRecordsRestPathId(String candidate) {
     final c = candidate.trim();
     if (c.isEmpty) return null;
     for (final r in _cachedFlatRecords) {
-      final rest = nocoRecordsTablePk(r);
-      if (rest.isNotEmpty && rest == c) return rest;
+      final rest = recordsTablePk(r);
+      if (rest.isNotEmpty &&
+          rest == c &&
+          _isLikelyPocketBaseRowId(rest)) {
+        return rest;
+      }
       final biz = (r['record_id'] ?? '').toString().trim();
-      if (biz.isNotEmpty && biz == c) return rest.isNotEmpty ? rest : null;
+      if (biz.isNotEmpty && biz == c) {
+        final pbOnly = _pbSystemIdFromCachedRecordRow(r);
+        if (pbOnly != null) return pbOnly;
+      }
     }
     return null;
+  }
+
+  /// Logs **only** when [inputId] is mapped to a different PocketBase row id.
+  static void _logIdMapTranslated(String inputId, String pocketBaseId) {
+    final i = inputId.trim();
+    final p = pocketBaseId.trim();
+    if (i.isEmpty || p.isEmpty || i == p) return;
+    if (!_isLikelyPocketBaseRowId(p)) return;
+    print('ID_MAP: Translated UUID $i to PB_ID $p');
+  }
+
+  /// Snack from the Brain; falls back to [notifications] when [appSnackMessengerKey] has no overlay yet.
+  void _brainSnackError(String message) {
+    try {
+      final messenger = appSnackMessengerKey.currentState;
+      if (messenger != null) {
+        AppSnack.show(message, error: true);
+        return;
+      }
+    } catch (_) {}
+    try {
+      if (!_notify.isClosed) {
+        _notify.add(message);
+      }
+    } catch (_) {}
+  }
+
+  void _snackStopHttpFailure(int code) {
+    final loc = currentLocale.value;
+    final msg = code == 404
+        ? t(loc, 'error_stop_not_found_404')
+        : '${t(loc, 'error_stop_http_prefix')}$code';
+    _brainSnackError(msg);
+  }
+
+  void _snackDeleteHttpFailure(int code) {
+    final loc = currentLocale.value;
+    final msg = code == 404
+        ? t(loc, 'error_stop_not_found_404')
+        : '${t(loc, 'error_delete_http_prefix')}$code';
+    _brainSnackError(msg);
+  }
+
+  /// Stop / delete: **local** `record_id == docId` → PB id, then server lookup (@DATA_MAP).
+  /// Throws [LegacyIdResolutionException] if no PocketBase row id can be found (**never** returns a legacy UUID).
+  Future<String> _resolveRecordIdForStopOrDelete(String docId) async {
+    final c = docId.trim();
+    if (c.isEmpty) throw LegacyIdResolutionException(docId);
+    if (_isLikelyPocketBaseRowId(c)) return c;
+
+    String? scanLocal() {
+      for (final r in _cachedFlatRecords) {
+        final biz = (r['record_id'] ?? '').toString().trim();
+        if (biz == c) {
+          return _pbSystemIdFromCachedRecordRow(r);
+        }
+      }
+      return null;
+    }
+
+    var pb = scanLocal();
+    if (pb != null && pb.isNotEmpty) {
+      _logIdMapTranslated(c, pb);
+      return pb;
+    }
+
+    try {
+      await _fetchRecordsIntoCache(forceNetwork: true);
+    } catch (_) {}
+
+    pb = scanLocal();
+    if (pb != null && pb.isNotEmpty) {
+      _logIdMapTranslated(c, pb);
+      return pb;
+    }
+
+    var fromServer = await _fetchPbRecordSysIdByRecordIdField(c);
+    if (fromServer != null && fromServer.isNotEmpty) {
+      _logIdMapTranslated(c, fromServer);
+      return fromServer;
+    }
+
+    try {
+      await _fetchRecordsIntoCache(forceNetwork: true);
+    } catch (_) {}
+    pb = scanLocal();
+    if (pb != null && pb.isNotEmpty) {
+      _logIdMapTranslated(c, pb);
+      return pb;
+    }
+
+    fromServer = await _fetchPbRecordSysIdByRecordIdField(c);
+    if (fromServer != null && fromServer.isNotEmpty) {
+      _logIdMapTranslated(c, fromServer);
+      return fromServer;
+    }
+
+    throw LegacyIdResolutionException(c);
   }
 
   Future<String> _resolveRecordIdForRestUrl(String candidate) async {
     final c = candidate.trim();
     if (c.isEmpty) return c;
+    if (_isLikelyPocketBaseRowId(c)) return c;
     try {
-      await _fetchRecordsIntoCache();
+      await _fetchRecordsIntoCache(forceNetwork: true);
     } catch (_) {}
-    final resolved = _resolveRecordsRestPathId(c);
-    if (resolved != null && resolved.isNotEmpty && resolved != c) {
-      _log('REST_ID_RESOLVE: business/cache id "$c" -> Noco URL segment "$resolved"');
+    final fromCache = _resolveRecordsRestPathId(c);
+    if (fromCache != null &&
+        fromCache.isNotEmpty &&
+        _isLikelyPocketBaseRowId(fromCache)) {
+      if (!_isLikelyPocketBaseRowId(c) && fromCache != c) {
+        print('ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromCache');
+      }
+      if (fromCache != c) {
+        _log(
+          'REST_ID_RESOLVE: business/cache id "$c" -> Noco URL segment "$fromCache"',
+        );
+      }
+      return fromCache;
     }
-    return (resolved != null && resolved.isNotEmpty) ? resolved : c;
+    final fromServer = await _fetchPbRecordSysIdByRecordIdField(c);
+    if (fromServer != null && fromServer.isNotEmpty) {
+      if (fromServer != c) {
+        print('ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromServer');
+      }
+      return fromServer;
+    }
+    return c;
   }
 
-  /// Records PATCH: bulk-first then per-row URLs for one segment; **no** post-404 id re-query.
-  Future<http.Response> _patchRecordsRowWith404Recovery({
+  /// PocketBase **records**: when `category_id` is a **relation** to `categories`, the API body must
+  /// contain the **categories** row system id (~15 chars), never the business slug (`life`, etc.).
+  /// Optional field `category_link` is not sent here (timeline GET may still use `expand: category_link`
+  /// per [kPbRecordCategoryExpand] if that field exists Admin-side).
+  void _mapCategoryIdToLinkForPb(Map<String, dynamic> merged) {
+    merged.remove('category_link');
+    if (!merged.containsKey('category_id')) return;
+    final rawCat = merged['category_id'];
+    final key = rawCat?.toString().trim() ?? '';
+    if (key.isEmpty) {
+      merged.remove('category_id');
+      return;
+    }
+    var localId = int.tryParse(key);
+    localId ??= findCategoryIdForStoredCategoryKey(key);
+    final rule = categoryRuleForRecordCategoryId(localId);
+    final bid = _categoryBackendRowIdStrict(rule);
+    if (bid != null &&
+        bid.isNotEmpty &&
+        bid != 'uncategorized' &&
+        _isLikelyPocketBaseRowId(bid) &&
+        _categoryPbRowIdKnownInRules(bid)) {
+      merged['category_id'] = bid;
+    } else {
+      merged.remove('category_id');
+    }
+  }
+
+  /// True if [pbId] matches a loaded [CategoryRule.backendRowId] (tree walk).
+  bool _categoryPbRowIdKnownInRules(String pbId) {
+    final t = pbId.trim();
+    if (t.isEmpty) return false;
+    var found = false;
+    void visit(List<CategoryRule> rules) {
+      for (final r in rules) {
+        if ((r.backendRowId ?? '').trim() == t) {
+          found = true;
+          return;
+        }
+        if (r.children != null) visit(r.children!);
+      }
+    }
+
+    visit(_rules);
+    return found;
+  }
+
+  /// Records POST/PATCH: strip legacy `category_link` key; ensure relation [category_id] is only a known PB id.
+  void _sanitizeOutgoingCategoryLink(Map<String, dynamic> merged) {
+    merged.remove('category_link');
+    if (!merged.containsKey('category_id')) return;
+    final raw = merged['category_id']?.toString().trim() ?? '';
+    if (raw.isEmpty ||
+        !_isLikelyPocketBaseRowId(raw) ||
+        !_categoryPbRowIdKnownInRules(raw)) {
+      merged.remove('category_id');
+    }
+  }
+
+  /// PocketBase **records** PATCH. Returns HTTP-style status (200, 404, …).
+  Future<int> _patchRecordsRowWith404Recovery({
     required String originalQueryId,
     required String restId,
     required Map<String, dynamic> fields,
+    bool debugPbClientException = false,
   }) async {
+    _lastRecordsPatchSkippedDeadLetter = false;
     final rid = restId.trim();
     final oq = originalQueryId.trim();
     if (rid.isNotEmpty &&
         (_recordRestDefinitive404Keys.contains(rid) ||
             (oq.isNotEmpty && _recordRestDefinitive404Keys.contains(oq)))) {
-      _log(
-        'RECORDS_REST SKIP_PATCH: dead-letter 404 (no HTTP) rid=$rid tableUid=$_recordsTableUid',
+      _lastRecordsPatchSkippedDeadLetter = true;
+      print(
+        '[ABORT_REASON] PATCH not sent — id is in _recordRestDefinitive404Keys (dead letter). '
+        'rid="$rid" oq="$oq". No [DISPATCH], no pb.collection.update.',
       );
+      _log('RECORDS_PB SKIP_PATCH: dead-letter 404 rid=$rid');
       _purgeGhostRecordById(rid.isNotEmpty ? rid : oq);
-      return http.Response('', 404);
+      return 404;
     }
-
-    Future<http.Response> doPatchAllUrlsForSegment(
-      String segment,
-      Map<String, dynamic>? rowHint,
-    ) async {
+    _requireAuthUserIdForWrite();
+    var payloadForError = Map<String, dynamic>.from(fields);
+    try {
+      await ensurePocketBaseReady();
       final mergedRaw = Map<String, dynamic>.from(fields);
-      mergedRaw['user_id'] = _pid;
+      mergedRaw['user_id'] = _pidForPbFilter;
       _mergeBusinessRecordIdIntoFields(
         mergedRaw,
-        rowHint ?? _findCachedRecordRowByRestCandidate(segment),
+        _findCachedRecordRowByRestCandidate(rid),
       );
       final merged = _recordsPatchFieldsJsonStrings(
         _nocoFieldsForPatch(mergedRaw),
       );
-      print('PATCHING DATA: records row restId=$segment fields=$merged');
-      final parsed = int.tryParse(segment.trim());
-      final bodies = <Map<String, dynamic>>[
-        NocoRequest.single(fields: merged),
-        if (parsed != null) NocoRequest.single(id: parsed, fields: merged),
-      ];
-      http.Response? last;
-      // Prefer **bulk** PATCH first: many Noco v3 hosts 404 on `/records/{id}` but accept collection PATCH.
-      // That avoids a dozen failed requests (and red browser console noise) before bulk runs.
-      Object? bulkId;
-      if (parsed != null) {
-        bulkId = parsed;
-      } else if (_isLikelyUuidOrLongPk(segment.trim())) {
-        bulkId = segment.trim();
-      }
-      if (bulkId != null) {
-        final payload = NocoRequest.bulk([
-          NocoRequest(id: bulkId, fields: merged),
-        ]);
-        final bodyStr = jsonEncode(payload);
-        _log(
-          'RECORDS_REST PATCH_BULK_TRY tableUid=$_recordsTableUid id=$bulkId',
+      _mapCategoryIdToLinkForPb(merged);
+      _sanitizeOutgoingCategoryLink(merged);
+      merged['user_id'] = _pidForPbFilter;
+      payloadForError = merged;
+      _logRecordsPatchDispatch(rid);
+      final updated =
+          await _pb.collection(PbCollections.records).update(rid, body: merged);
+      _upsertFlatRecordFromPbModel(updated,
+          suppressTimelineNotify: true);
+      return 200;
+    } on ClientException catch (e) {
+      if (debugPbClientException) {
+        final patchFallbackUrl = () {
+          try {
+            final b = (_pocketBase?.baseURL ?? '').trim();
+            if (b.isEmpty) return '(unknown URL)';
+            final bt = b.replaceAll(RegExp(r'/$'), '');
+            return '$bt/api/collections/${PbCollections.records}/records/$rid';
+          } catch (_) {
+            return '(unknown URL)';
+          }
+        }();
+        _debugPrintPocketBaseClientException(
+          operation: 'records PATCH (stop / update)',
+          e: e,
+          payload: payloadForError,
+          fallbackUrl: patchFallbackUrl,
         );
-        final resp =
-            await _recordsBulkPatchHttpTry('patchRecordBulk', bodyStr);
-        if (resp != null && resp.statusCode >= 200 && resp.statusCode < 300) {
-          return resp;
-        }
-        last = resp;
       }
-      // Fallback: single-row URLs (servers that only expose row PATCH).
-      for (final url in _recordRowPatchUrlCandidates(segment)) {
-        for (final body in bodies) {
-          final resp = await http.patch(
-            Uri.parse(url),
-            headers: _headers,
-            body: jsonEncode(body),
-          );
-          last = resp;
-          if (resp.statusCode != 404) return resp;
-        }
+      if (e.statusCode == 404) {
+        _purgeGhostRecordById(rid.isNotEmpty ? rid : oq);
       }
-      return last ?? http.Response('', 404);
-    }
-
-    final res = await doPatchAllUrlsForSegment(rid, null);
-    if (res.statusCode == 404) {
-      _log(
-        'RECORDS_REST PATCH_404: no alternate-id retry (fix local cache / rest id) rid=$rid',
+      return e.statusCode;
+    } catch (e, st) {
+      print(
+        '[ABORT_REASON] records PATCH failed inside try (before or after [DISPATCH]): $e',
       );
+      _log(st.toString());
+      return 500;
     }
-    return res;
   }
 
-  /// Same routing as row PATCH: many v3 hosts **404** on `DELETE .../records/{id}` but accept **bulk** DELETE on the collection.
-  Future<http.Response> _deleteRecordsRowWithFallback({
+  Future<int> _deleteRecordsRowWithFallback({
     required String originalQueryId,
     required String restId,
   }) async {
     final rid = restId.trim();
-    if (rid.isEmpty) return http.Response('', 400);
+    if (rid.isEmpty) return 400;
     final oq = originalQueryId.trim();
     if (_recordRestDefinitive404Keys.contains(rid) ||
         (oq.isNotEmpty && _recordRestDefinitive404Keys.contains(oq))) {
-      _log(
-        'RECORDS_REST SKIP_DELETE: dead-letter 404 (no HTTP) rid=$rid tableUid=$_recordsTableUid',
-      );
+      _log('RECORDS_PB SKIP_DELETE: dead-letter rid=$rid');
       _purgeGhostRecordById(rid.isNotEmpty ? rid : oq);
-      return http.Response('', 404);
+      return 404;
     }
-    http.Response? last;
-
-    Object? bulkId;
-    final parsed = int.tryParse(rid);
-    if (parsed != null) {
-      bulkId = parsed;
-    } else if (_isLikelyUuidOrLongPk(rid)) {
-      bulkId = rid;
+    try {
+      await ensurePocketBaseReady();
+      _logRecordsDeleteDispatch(rid);
+      await _pb.collection(PbCollections.records).delete(rid);
+      return 204;
+    } on ClientException catch (e) {
+      return e.statusCode;
+    } catch (_) {
+      return 500;
     }
-
-    if (bulkId != null) {
-      final delBody = jsonEncode(<Map<String, dynamic>>[
-        <String, dynamic>{'id': bulkId},
-      ]);
-      for (final bulkUri in _recordsBulkPatchUrls) {
-        _log(
-          'RECORDS_REST DELETE_BULK_TRY tableUid=$_recordsTableUid uri=$bulkUri id=$bulkId',
-        );
-        final resp = await http.delete(
-          Uri.parse(bulkUri),
-          headers: _headers,
-          body: delBody,
-        );
-        last = resp;
-        if (resp.statusCode >= 200 && resp.statusCode < 300) return resp;
-      }
-    }
-
-    for (final url in _recordRowPatchUrlCandidates(rid)) {
-      final resp = await http.delete(Uri.parse(url), headers: _headers);
-      last = resp;
-      if (resp.statusCode != 404) return resp;
-    }
-
-    if (last?.statusCode == 404) {
-      _log(
-        'RECORDS_REST DELETE_404: no fresh-id requery (fix local rest id) rid=$rid',
-      );
-    }
-    return last ?? http.Response('', 404);
   }
 
-  /// Business key for plan rows: prefer **plan_id** (UUID); bulk PATCH outer `id` is [nocoRecordsTablePk] / [PlanningTask.id].
-  static String nocoPlanRowPk(Map<String, dynamic> row) {
+  Future<String?> _createRecordPb(Map<String, dynamic> rawFields) async {
+    try {
+      await ensurePocketBaseReady();
+      final authRowId = (_pb.authStore.record?.id ?? '').trim();
+      if (authRowId.isEmpty) {
+        throw AuthenticatedUserIdRequiredException();
+      }
+      final merged = _recordsPatchFieldsJsonStrings(
+        _nocoFieldsForPatch(Map<String, dynamic>.from(rawFields)),
+      );
+      _mapCategoryIdToLinkForPb(merged);
+      _sanitizeOutgoingCategoryLink(merged);
+      merged['user_id'] = authRowId;
+      print('[POST_PAYLOAD] $merged');
+      final created =
+          await _pb.collection(PbCollections.records).create(body: merged);
+      _upsertFlatRecordFromPbModel(created,
+          preserveExpand: false, suppressTimelineNotify: true);
+      return created.id;
+    } on ClientException catch (e) {
+      print('PB_CREATE_ERROR_DETAILS: ${e.response}');
+      _log('RECORDS_PB create failed: ${e.statusCode}');
+      return null;
+    } catch (e, st) {
+      _log('RECORDS_PB create failed: $e');
+      _log(st.toString());
+      return null;
+    }
+  }
+
+  /// Business key for plan rows: prefer **plan_id** (UUID); bulk PATCH outer `id` is [recordsTablePk] / [PlanningTask.id].
+  static String planRowBusinessIdFromRow(Map<String, dynamic> row) {
     for (final key in <String>['plan_id', 'Plan_id']) {
       final v = row[key];
       if (v == null) continue;
@@ -1069,7 +2405,7 @@ class DatabaseService {
     }
     if (rid.isNotEmpty) _recordRestDefinitive404Keys.add(rid);
     _cachedFlatRecords.removeWhere((r) {
-      final pk = nocoRecordsTablePk(r).trim();
+      final pk = recordsTablePk(r).trim();
       if (pk == rid) return true;
       final sys = r[_nocoSystemRowIdKey];
       if (sys is int && sys.toString() == rid) return true;
@@ -1080,7 +2416,7 @@ class DatabaseService {
       final localRecordId = (r['record_id'] ?? '').toString().trim();
       return localId == rid || localRecordId == rid;
     });
-    _timeUpdateController.add(null);
+    _notifyTimelineAfterRecordCacheMutation();
     _log('SYNC: purged ghost local record id=$rid after 404');
   }
 
@@ -1113,28 +2449,27 @@ class DatabaseService {
     return false;
   }
 
-  /// Sacred Law scope: only rows whose [start_time] falls on **[getProjectedToday]** wall day.
-  /// Avoids PATCHing dozens of legacy `running` ghosts from other days; see [_mergeSacredStaleOpenCandidates].
+  /// Sacred Law scope: only rows whose [start_time] falls on **device-local calendar today**
+  /// (same as timeline buckets). Avoids PATCHing legacy `running` ghosts from other local days.
   bool _rowStartWallDayIsProjectedToday(Map<String, dynamic> r) {
     try {
       final stUtc = _parseDateTimeUtc(r['start_time']);
       if (stUtc == null) return false;
-      final w = _profileWallFromUtc(stUtc);
-      final t = getProjectedToday();
-      return w.year == t.year && w.month == t.month && w.day == t.day;
+      return _timelineDeviceLocalDayKeyFromUtc(stUtc) ==
+          getTimelineDeviceLocalTodayDateKey();
     } catch (_) {
       return false;
     }
   }
 
-  /// True when [start_time] wall day is **strictly before** [getProjectedToday] (multi-day open).
+  /// True when [start_time] local calendar day is **strictly before** device-local today (multi-day open).
   bool _rowStartWallDayIsBeforeProjectedToday(Map<String, dynamic> r) {
     try {
       final stUtc = _parseDateTimeUtc(r['start_time']);
       if (stUtc == null) return false;
-      final w = _profileWallFromUtc(stUtc);
-      final t = getProjectedToday();
-      final wd = DateTime(w.year, w.month, w.day);
+      final loc = stUtc.toUtc().toLocal();
+      final wd = DateTime(loc.year, loc.month, loc.day);
+      final t = getTimelineDeviceLocalToday();
       final td = DateTime(t.year, t.month, t.day);
       return wd.isBefore(td);
     } catch (_) {
@@ -1154,7 +2489,7 @@ class DatabaseService {
       if (!_isNocoRowSacredStopTarget(r)) continue;
       if (_rowStartWallDayIsProjectedToday(r)) continue;
       if (!_rowStartWallDayIsBeforeProjectedToday(r)) continue;
-      final id = nocoRecordsTablePk(r);
+      final id = recordsTablePk(r);
       if (id.isEmpty) continue;
       if (byPk.containsKey(id)) continue;
       stale.add(r);
@@ -1170,7 +2505,7 @@ class DatabaseService {
     var added = 0;
     for (final r in stale) {
       if (added >= _sacredStaleOpenCap) break;
-      final id = nocoRecordsTablePk(r);
+      final id = recordsTablePk(r);
       if (id.isEmpty) continue;
       byPk[id] = r;
       added++;
@@ -1204,15 +2539,18 @@ class DatabaseService {
 
   /// GET records where `status` is running for current user (server truth for Sacred Law).
   Future<List<Map<String, dynamic>>> _fetchRunningRecordsFromNoco() async {
-    final where =
-        "(user_id,eq,'$_pid')~and(status,eq,running)";
-    var list = await _getList(_recordsRecords, where, 500);
-    if (list.isEmpty) {
-      final whereUnquoted =
-          '(user_id,eq,$_pid)~and(status,eq,running)';
-      list = await _getList(_recordsRecords, whereUnquoted, 500);
+    try {
+      await ensurePocketBaseReady();
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return [];
+      final uid = _escapeForPbFilter(authId);
+      final list = await _pb.collection(PbCollections.records).getFullList(
+        filter: 'user_id = "$uid" && status = "running"',
+      );
+      return list.map(_recordMapFromPb).toList();
+    } catch (_) {
+      return [];
     }
-    return list.map(_flattenNocoRecord).toList();
   }
 
   /// ISO UTC for start of a calendar [dateKey] (`YYYY-MM-DD`) in profile wall-clock, then stored as UTC.
@@ -1237,7 +2575,11 @@ class DatabaseService {
     return int.tryParse(v.toString()) ?? d;
   }
 
-  static int _stableIntFromString(String raw, [int fallback = 0]) {
+  /// Local [CategoryRule.id] only when Noco wrapper id is non-numeric — **not** for auth/`user_id`.
+  static int _hashStringToPositiveIntForCategoryTreeLocalIdOnly(
+    String raw, [
+    int fallback = 0,
+  ]) {
     final s = raw.trim();
     if (s.isEmpty) return fallback;
     var hash = 2166136261;
@@ -1334,7 +2676,7 @@ class DatabaseService {
       // Local list id = Noco wrapper **Id** when present (@DATA_MAP); else stable key from business fields only.
       final int nodeLocalId = wrapperInt != 0
           ? wrapperInt
-          : _stableIntFromString(
+          : _hashStringToPositiveIntForCategoryTreeLocalIdOnly(
               bizCategoryId.isNotEmpty
                   ? bizCategoryId
                   : (normalizedForMatching ??
@@ -1345,7 +2687,7 @@ class DatabaseService {
               1,
             );
       final pidRaw = row['parent_id'];
-      final pidFlat = normalizeNocoLinkField(pidRaw) ?? pidRaw;
+      final pidFlat = normalizeLinkScalar(pidRaw) ?? pidRaw;
       final parentIdStr = pidFlat == null || pidFlat.toString().trim().isEmpty
           ? null
           : pidFlat.toString().trim();
@@ -1387,10 +2729,12 @@ class DatabaseService {
       final orderRaw = row['order'] ?? fields['order'];
       final orderExplicit = _categoryOrderRawIsExplicit(orderRaw);
       orderExplicitByLocalId[nodeLocalId] = orderExplicit;
+      final archRaw = row['is_archived'] ?? fields['is_archived'];
+      final isArchivedCat = _jsonBoolFromDynamic(archRaw);
       final node = CategoryRule(
         id: nodeLocalId,
         name: _categoryDisplayNameFromRow(row),
-        nocoId: internalRowStr.isNotEmpty ? internalRowStr : null,
+        backendRowId: internalRowStr.isNotEmpty ? internalRowStr : null,
         normalizedId: normalizedForMatching,
         children: <CategoryRule>[],
         colorValue: _rowInt(row['color_value'], 0) == 0
@@ -1402,6 +2746,7 @@ class DatabaseService {
         keywords: keywords,
         localizedNames: loc,
         order: orderExplicit ? _rowInt(orderRaw) : 0,
+        isArchived: isArchivedCat,
       );
       all.add(node);
       if (internalRowStr.isNotEmpty) lookup[internalRowStr] = node;
@@ -1512,11 +2857,8 @@ class DatabaseService {
           'Profile row missing user_id',
         );
       }
-      _log('Profile data loaded from NocoDB.');
-      // Top-level integer PK from record (for user_id where clause).
-      final rawId = data['id'];
-      final intId = rawId == null ? null : _rowInt(rawId);
-      if (intId != null && intId > 0) _cachedProfileIntId = intId;
+      _log('Profile data loaded from PocketBase.');
+      final authUid = _userIdForWhere ?? '';
       final uid = data['user_id']?.toString().trim();
       if (uid != null && uid.isNotEmpty) _cachedProfileUuid = uid;
       final raw = data['active_languages'];
@@ -1553,8 +2895,11 @@ class DatabaseService {
         }
       }
       final dn = data['display_name'] as String?;
+      final tagModeRaw = data['tag_display_mode']?.toString().trim();
+      final settingsUserId =
+          authUid.isNotEmpty ? authUid : (uid != null && uid.isNotEmpty ? uid : rowUid);
       _settings = UserSettings(
-        userId: _pidInt,
+        userId: settingsUserId,
         language: data['primary_language'] as String? ?? 'en',
         preferredTimeZone: tzLabel.isEmpty ? 'UTC' : tzLabel,
         timezoneOffsetHours: tzOffset,
@@ -1566,13 +2911,20 @@ class DatabaseService {
         biometricEnabled: data['biometric_enabled'] == true,
         themeMode: themeMode,
         displayName: dn != null && dn.trim().isNotEmpty ? dn.trim() : null,
+        tagDisplayMode: categoryDisplayModeFromWire(tagModeRaw),
+        tagDisplayModeWireRaw:
+            (tagModeRaw != null && tagModeRaw.isNotEmpty) ? tagModeRaw : null,
       );
       _mergeDeviceProfilePreferenceOverridesSync();
       _settingsController.add(_settings);
     } on _ProfileFetchFailedException {
       rethrow;
     } catch (_) {
-      _settings = UserSettings(userId: _pidInt);
+      final authUid = _userIdForWhere ?? '';
+      final fallback = currentProfileId?.trim() ?? '';
+      final uidStr =
+          authUid.isNotEmpty ? authUid : fallback;
+      _settings = UserSettings(userId: uidStr);
       _mergeDeviceProfilePreferenceOverridesSync();
       _settingsController.add(_settings);
     }
@@ -1683,55 +3035,56 @@ class DatabaseService {
     return '${t.year}-${_two(t.month)}-${_two(t.day)}';
   }
 
+  /// Timeline calendar “today” / strip anchor: **profile wall-clock** ([getProjectedToday]), per [DATA_MAP] records §8 / [wall_clock] (not device TZ).
+  DateTime getTimelineDeviceLocalToday() => getProjectedToday();
+
+  String getTimelineDeviceLocalTodayDateKey() => getProjectedTodayDateKey();
+
+  /// Day-bucket key for a stored UTC instant: profile wall date, never raw UTC Y-M-D / never [DateTime.toLocal].
+  String _timelineDeviceLocalDayKeyFromUtc(DateTime utcInstant) {
+    final wall = _profileWallFromUtc(utcInstant.toUtc());
+    return _dateKeyFromDate(DateTime(wall.year, wall.month, wall.day));
+  }
+
   static String _two(int n) => n.toString().padLeft(2, '0');
   static String _dateKeyFromDate(DateTime date) =>
       '${date.year}-${_two(date.month)}-${_two(date.day)}';
 
-  /// UI-first: update state and clock immediately; then POST bulk upsert in background. Never revert on 400/404.
+  /// UI-first: update state immediately; then PocketBase PATCH on **profiles** auth row.
   Future<bool> saveSettings(UserSettings s) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
-    final recordId = _cachedProfileIntId ?? 1;
-    if (recordId <= 0) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
 
-    // 1. Immediate UI update — clock flips the moment the finger leaves the button.
-    _settings = s.copyWith(userId: _pidInt);
+    final authId = _requireAuthUserIdForWrite();
+    _settings = s.copyWith(userId: authId);
     _settingsController.add(_settings);
-    _timeUpdateController.add(null);
+    _notifyTimelineAfterRecordCacheMutation();
 
-    // 2. Aggressive upsert: POST bulk via [NocoRequest] (`fields` envelope). Silent on 400/404.
-    final nocoRequest = NocoRequest(
-      id: recordId,
-      fields: ProfileUpdate.fromSettings(s).toJson(),
-    );
     try {
-      final body = jsonEncode([nocoRequest.toJson()]);
-      final baseUri = Uri.parse(baseUrl);
-      final path = '${baseUri.path}/$_profilesRecords'.replaceAll('//', '/');
-      final uri = baseUri.replace(path: path);
-      _log('saveSettings payload prepared.');
-      _log('saveSettings target URI prepared.');
-      final res = await http.post(
-        uri,
-        headers: <String, String>{
-          'Content-Type': 'application/json',
-          'xc-token': nocoXcToken,
-        },
-        body: body,
-      );
-      if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
-        _log('Timezone synced to server.');
-        try {
-          final prefs = _prefs ?? await SharedPreferences.getInstance();
-          await prefs.setString(_profileThemeModeKey, s.themeMode);
-          await prefs.setString(_profileTzLabelKey, s.preferredTimeZone);
-          await prefs.setInt(_profileTzOffsetKey, s.timezoneOffsetHours);
-        } catch (_) {}
-        return true;
+      await ensurePocketBaseReady();
+      final pbId = (_profilePbRecordId ?? _pb.authStore.record?.id)?.trim();
+      if (pbId == null || pbId.isEmpty) return false;
+      final profileBody = ProfileUpdate.fromSettings(s).toJson();
+      await _pb.collection(PbCollections.profiles).update(
+            pbId,
+            body: profileBody,
+          );
+      final patchedTagWire = profileBody['tag_display_mode']?.toString();
+      if (patchedTagWire != null && patchedTagWire.isNotEmpty) {
+        _settings = _settings.copyWith(
+          tagDisplayModeWireRaw: patchedTagWire,
+        );
+        _settingsController.add(_settings);
       }
-      if (res.statusCode == 400 || res.statusCode == 404) {
-        _log('SAVE_SETTINGS: server returned ${res.statusCode} — ${res.body}');
-        return false;
-      }
+      _log('Timezone synced to PocketBase.');
+      try {
+        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        await prefs.setString(_profileThemeModeKey, s.themeMode);
+        await prefs.setString(_profileTzLabelKey, s.preferredTimeZone);
+        await prefs.setInt(_profileTzOffsetKey, s.timezoneOffsetHours);
+      } catch (_) {}
+      return true;
+    } on ClientException catch (e) {
+      _log('SAVE_SETTINGS: PocketBase ${e.statusCode} — $e');
       return false;
     } catch (e, st) {
       _log('SAVE_SETTINGS: request failed — $e');
@@ -1744,14 +3097,14 @@ class DatabaseService {
     final ok = await saveSettings(_settings.copyWith(
         preferredTimeZone: label,
         timezoneOffsetHours: _fixedOffsetHoursFromLabel(label)));
-    _timeUpdateController.add(null);
+    _notifyTimelineAfterRecordCacheMutation();
     return ok;
   }
 
   Future<bool> updateUserTimezone(double offsetHours) async {
     final ok = await saveSettings(_settings.copyWith(
         timezoneOffsetHours: offsetHours.round()));
-    _timeUpdateController.add(null);
+    _notifyTimelineAfterRecordCacheMutation();
     return ok;
   }
 
@@ -1789,7 +3142,7 @@ class DatabaseService {
         _log(
           'CLEAN_UNTITLED_GHOST: removed $removed local record cache row(s) (one-shot)',
         );
-        _timeUpdateController.add(null);
+        _notifyTimelineAfterRecordCacheMutation();
       }
       await prefs.setBool(_oneShotUntitledGhostCleanKey, true);
     } catch (_) {}
@@ -1830,6 +3183,49 @@ class DatabaseService {
 
   CategoryRule? identifyCategory(String input) => findDeepestMatchForTitle(input);
 
+  /// Greedy substring link: longest **active** [CategoryRule.name] contained in [title]
+  /// (case-insensitive). Returns PocketBase **categories** row id (~15 chars), or null.
+  String? _findBestCategoryMatch(String title) {
+    final t = title.trim().toLowerCase();
+    if (t.isEmpty) return null;
+    final candidates = <CategoryRule>[];
+    void visit(List<CategoryRule> rules) {
+      for (final r in rules) {
+        if (r.isArchived) {
+          if (r.children != null) visit(r.children!);
+          continue;
+        }
+        if (r.id == CategoryRule.uncategorizedSyntheticId) continue;
+        candidates.add(r);
+        if (r.children != null) visit(r.children!);
+      }
+    }
+
+    visit(_rules);
+    candidates.sort((a, b) => b.name.length.compareTo(a.name.length));
+    for (final r in candidates) {
+      final n = r.name.trim().toLowerCase();
+      if (n.isEmpty) continue;
+      if (!t.contains(n)) continue;
+      final pb = _categoryBackendRowIdStrict(r);
+      if (pb != null && pb.isNotEmpty && _isLikelyPocketBaseRowId(pb)) {
+        print(
+          '[SMART_LINK] Detected category match for "$title" -> Category ID: $pb',
+        );
+        return pb;
+      }
+    }
+    return null;
+  }
+
+  /// When [cid] is null or zero, fill from [_findBestCategoryMatch] so POST/optimistic body agree.
+  int? _resolveRecordCategoryIdWithSmartLink(String title, int? cid) {
+    if (cid != null && cid != 0) return cid;
+    final pb = _findBestCategoryMatch(title);
+    if (pb == null) return cid;
+    return getCategoryRuleByBackendRowId(pb)?.id ?? cid;
+  }
+
   /// Voice / quick map: deepest category match + path label.
   ({int id, String path})? findCategoryByFuzzyMatch(String title) {
     final r = identifyCategory(title);
@@ -1841,6 +3237,7 @@ class DatabaseService {
     final out = <({int id, String path})>[];
     void visit(List<CategoryRule> rules, List<String> soFar) {
       for (final r in rules) {
+        if (r.isArchived) continue;
         final path = [...soFar, r.name].join(' > ');
         out.add((id: r.id, path: path));
         if (r.children != null) visit(r.children!, [...soFar, r.name]);
@@ -1905,6 +3302,10 @@ class DatabaseService {
     int? found;
     void visit(List<CategoryRule> rules) {
       for (final r in rules) {
+        if (r.isArchived) {
+          if (r.children != null) visit(r.children!);
+          continue;
+        }
         final n = (r.normalizedId ?? r.name)
             .toLowerCase()
             .replaceAll(' ', '');
@@ -1922,6 +3323,10 @@ class DatabaseService {
     int? found;
     void visit(List<CategoryRule> rules) {
       for (final r in rules) {
+        if (r.isArchived) {
+          if (r.children != null) visit(r.children!);
+          continue;
+        }
         if (r.name.trim().toLowerCase() == t) found = r.id;
         if (r.children != null) visit(r.children!);
       }
@@ -1974,13 +3379,12 @@ class DatabaseService {
     return found;
   }
 
-  /// Noco **system** `Id` (integer) for category **bulk** envelope `id` — from [CategoryRule.nocoId] only.
-  /// No fallback from local display id (may be a hash). Missing ⇒ sync / load bug; do not call REST.
-  int? _categoryNocoSystemIdStrict(CategoryRule? rule) {
+  /// PocketBase **categories** row id — from [CategoryRule.backendRowId] only.
+  String? _categoryBackendRowIdStrict(CategoryRule? rule) {
     if (rule == null) return null;
     if (rule.id == -1) return null;
-    final p = int.tryParse((rule.nocoId ?? '').trim());
-    if (p != null && p > 0) return p;
+    final s = (rule.backendRowId ?? '').trim();
+    if (s.isNotEmpty && s != 'uncategorized') return s;
     return null;
   }
 
@@ -2002,15 +3406,14 @@ class DatabaseService {
     return 'uncategorized';
   }
 
+  /// PocketBase **`categories.parent_id`** (self relation): must be the parent row’s **system `id`**
+  /// (15-char), not the business slug in [CategoryRule.normalizedId].
   String? _parentCategoryIdStringForApi(int? parentLocalId) {
     if (parentLocalId == null) return null;
-    return _categoryStringPkForApi(getCategoryRuleById(parentLocalId));
+    return _categoryBackendRowIdStrict(getCategoryRuleById(parentLocalId));
   }
 
-  /// **Bulk-only** collection URL `@DATA_MAP` table `mhg7mv6dfsgq9i0/records` — no row segment.
-  Uri get _categoryBulkCollectionUri => Uri.parse('$baseUrl/$_categoriesRecords');
-
-  /// Strip system-managed / read-only keys from Noco `fields` for **every** table (@DATA_MAP).
+  /// Strip system-managed / read-only keys from payloads for any table (@DATA_MAP).
   static const Set<String> _nocoPatchStripFieldKeysLower = {
     'createdat',
     'updatedat',
@@ -2057,7 +3460,7 @@ class DatabaseService {
     return out;
   }
 
-  /// @DATA_MAP `records`: **checklist** is stored as JSON **String** (LongText).
+  /// @DATA_MAP `records` and `plans`: **checklist** is stored as **JSON String** (LongText/CSV) — [jsonEncode] for API.
   Map<String, dynamic> _recordsPatchFieldsJsonStrings(Map<String, dynamic> fields) {
     final out = Map<String, dynamic>.from(fields);
     if (!out.containsKey('checklist')) return out;
@@ -2087,124 +3490,114 @@ class DatabaseService {
     return _slugifyCategoryDisplayName(r.name);
   }
 
-  /// `PATCH` body: `[{"id": <int>, "fields": {...}}]` (@DATA_MAP §2 bulk mandate).
-  /// Verbose request/response logging happens in [_categoryBulkPatchHttp] (response is unavailable here).
-  String _categoryBulkPatchJson(int systemId, Map<String, dynamic> fields) => jsonEncode([
-        NocoRequest(
-          id: systemId,
-          fields: _nocoFieldsForPatch(Map<String, dynamic>.from(fields)),
-        ).toJson(),
-      ]);
-
-  /// Single HTTP `PATCH` with many rows: `[{"id":7,"fields":{...}},{"id":32,"fields":{...}}]`.
-  String _categoryBulkPatchJsonMany(List<NocoRequest> items) {
-    final cleaned = items
-        .map(
-          (e) => NocoRequest(
-            id: e.id,
-            fields: _nocoFieldsForPatch(Map<String, dynamic>.from(e.fields)),
-          ),
-        )
-        .toList();
-    return jsonEncode(NocoRequest.bulk(cleaned));
-  }
-
-  Uri get _plansBulkCollectionUri => Uri.parse('$baseUrl/$_plansRecords');
-
-  Future<http.Response> _plansBulkPatchHttp(String contextLabel, String bodyJson) async {
-    print('PATCHING BODY [$contextLabel]: $bodyJson');
-    _log('PLANS_PATCH_HTTP $contextLabel uri=$_plansBulkCollectionUri');
-    final res = await http.patch(
-      _plansBulkCollectionUri,
-      headers: _headers,
-      body: bodyJson,
-    );
-    print('RESPONSE STATUS [$contextLabel]: ${res.statusCode}');
-    print('RESPONSE BODY [$contextLabel]: ${res.body}');
-    _log(
-      'PLANS_PATCH_RESPONSE $contextLabel status=${res.statusCode} body=${res.body}',
-    );
-    return res;
-  }
-
-  Future<http.Response> _plansBulkDeleteHttp(
-    String contextLabel,
-    String bodyJson,
-  ) async {
-    print('PLANS DELETE BODY [$contextLabel]: $bodyJson');
-    _log('PLANS_DELETE_HTTP $contextLabel uri=$_plansBulkCollectionUri');
-    final res = await http.delete(
-      _plansBulkCollectionUri,
-      headers: _headers,
-      body: bodyJson,
-    );
-    print(
-      'PLANS DELETE RESPONSE [$contextLabel]: ${res.statusCode} ${res.body}',
-    );
-    _log(
-      'PLANS_DELETE_RESPONSE $contextLabel status=${res.statusCode} body=${res.body}',
-    );
-    return res;
-  }
-
-  /// Records table: collection bulk PATCH with verbose logging (mirrors [_categoryBulkPatchHttp]).
-  Future<http.Response?> _recordsBulkPatchHttpTry(
-    String contextLabel,
-    String bodyJson,
-  ) async {
-    print('PATCHING BODY [$contextLabel]: $bodyJson');
-    http.Response? last;
-    for (final bulkUri in _recordsBulkPatchUrls) {
-      _log('RECORDS_BULK_PATCH $contextLabel uri=$bulkUri');
-      final res = await http.patch(
-        Uri.parse(bulkUri),
-        headers: _headers,
-        body: bodyJson,
-      );
-      last = res;
-      print('RESPONSE STATUS [$contextLabel]: ${res.statusCode}');
-      print('RESPONSE BODY [$contextLabel]: ${res.body}');
-      _log(
-        'RECORDS_PATCH_RESPONSE $contextLabel status=${res.statusCode} body=${res.body}',
-      );
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        return res;
-      }
-    }
-    return last;
-  }
-
-  /// Awaited category bulk `PATCH` with mandatory console + brain logs of status and body.
-  Future<http.Response> _categoryBulkPatchHttp(String contextLabel, String bodyJson) async {
-    print('PATCHING BODY [$contextLabel]: $bodyJson');
-    _log('CATEGORY_PATCH_HTTP $contextLabel uri=$_categoryBulkCollectionUri');
-    final res = await http.patch(
-      _categoryBulkCollectionUri,
-      headers: _headers,
-      body: bodyJson,
-    );
-    print('RESPONSE STATUS [$contextLabel]: ${res.statusCode}');
-    print('RESPONSE BODY [$contextLabel]: ${res.body}');
-    _log(
-      'CATEGORY_PATCH_RESPONSE $contextLabel status=${res.statusCode} body=${res.body}',
-    );
-    return res;
-  }
-
   /// Unique string PK for new category rows ([fields.category_id]).
   String _newCategoryIdString() => _newClientRecordUuid();
 
-  /// Resolves a non-empty [category_id] before any category **POST**. Uses a sanitized
-  /// [CategoryRule.normalizedId] when valid; otherwise generates a client UUID. Returns
-  /// **null** only if no safe id can be produced — caller must **not** call the API.
-  String? _categoryIdRequiredForCreate(CategoryRule child) {
-    var candidate = _sanitizePkString(child.normalizedId);
-    candidate ??= _newCategoryIdString();
-    candidate = _sanitizePkString(candidate);
-    if (candidate == null || candidate.isEmpty) {
-      return null;
+  String _randomCategoryKeySuffix() {
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
+    final r = Random.secure();
+    return List.generate(4, (_) => chars[r.nextInt(chars.length)]).join();
+  }
+
+  String _randomCategoryRecoverySuffix3() {
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyz';
+    final r = Random.secure();
+    return List.generate(3, (_) => chars[r.nextInt(chars.length)]).join();
+  }
+
+  bool _rulesTreeClaimsCategorySlug(String slug) {
+    final s = slug.trim().toLowerCase();
+    if (s.isEmpty) return false;
+    bool visit(List<CategoryRule> rules) {
+      for (final r in rules) {
+        final nid = (r.normalizedId ?? '').trim().toLowerCase();
+        if (nid.isNotEmpty && nid == s) return true;
+        if (r.children != null && visit(r.children!)) return true;
+      }
+      return false;
     }
-    return candidate;
+    return visit(_rules);
+  }
+
+  /// Reserved slugs include **archived** rows ([_reservedCategorySlugsLower]) + in-memory tree (placeholders).
+  bool _categoryBusinessSlugReservedOrInRules(String slug) {
+    final s = slug.trim().toLowerCase();
+    if (s.isEmpty) return true;
+    if (_reservedCategorySlugsLower.contains(s)) return true;
+    if (_rulesTreeClaimsCategorySlug(s)) return true;
+    return false;
+  }
+
+  String _slugWithRandomSuffixUntaken(String base) {
+    final trimmed = base.trim();
+    final b = trimmed.isEmpty ? 'cat' : trimmed;
+    for (var i = 0; i < 24; i++) {
+      final candidate = '${b}_${_randomCategoryKeySuffix()}';
+      if (!_categoryBusinessSlugReservedOrInRules(candidate)) {
+        return candidate;
+      }
+    }
+    final ts = DateTime.now().millisecondsSinceEpoch % 100000;
+    final tsSlug = '${b}_$ts';
+    if (!_categoryBusinessSlugReservedOrInRules(tsSlug)) return tsSlug;
+    return _newCategoryIdString();
+  }
+
+  /// PocketBase [category_id] / [normalized_id]: always `base_xxxx` ([_randomCategoryKeySuffix])
+  /// so POST avoids unique collisions; [base] from [normalizedId] or slugified [name].
+  String _pickNewCategoryBusinessKey(CategoryRule child) {
+    final explicit = _sanitizePkString(child.normalizedId);
+    final baseRaw = (explicit != null && explicit.isNotEmpty)
+        ? explicit
+        : _slugifyCategoryDisplayName(child.name);
+    final base = baseRaw.isEmpty ? 'cat' : baseRaw;
+    return _slugWithRandomSuffixUntaken(base);
+  }
+
+  bool _pbErrorLooksLikeUniqueCategoryCollision(ClientException e) {
+    final code = e.statusCode;
+    if (code != 400 && code != 409) return false;
+    final blob = '${e.response} $e'.toLowerCase();
+    return blob.contains('unique') ||
+        blob.contains('already exists') ||
+        blob.contains('duplicate') ||
+        blob.contains('validation_not_unique') ||
+        blob.contains('failed unique') ||
+        blob.contains('autoincrement');
+  }
+
+  void _patchPlaceholderCategoryBizId(
+    int? parentId,
+    String displayName,
+    String newCategoryId,
+  ) {
+    final wantTag = displayName.trim();
+    void patchIn(List<CategoryRule> rules) {
+      for (var i = 0; i < rules.length; i++) {
+        final r = rules[i];
+        if (r.id == -1 && r.name.trim() == wantTag) {
+          rules[i] = r.copyWith(normalizedId: newCategoryId);
+          return;
+        }
+        if (r.children != null) patchIn(r.children!);
+      }
+    }
+
+    if (parentId == null) {
+      patchIn(_rules);
+    } else {
+      void findParent(List<CategoryRule> rules) {
+        for (final r in rules) {
+          if (r.id == parentId) {
+            if (r.children != null) patchIn(r.children!);
+            return;
+          }
+          if (r.children != null) findParent(r.children!);
+        }
+      }
+
+      findParent(_rules);
+    }
   }
 
   void _removeFailedPlaceholderCategory(int? parentId, String tag) {
@@ -2263,6 +3656,61 @@ class DatabaseService {
     return categoryRuleForRecordCategoryId(categoryId).colorOrDefault;
   }
 
+  /// Timeline card color: active [CategoryRule] if present, else expanded category (archived OK).
+  Color categoryDisplayColorForRecordData(Map<String, dynamic> data) {
+    final rid = resolvedCategoryIdForRecord(data);
+    final rule = categoryRuleForRecordCategoryId(rid);
+    if (rule.id != CategoryRule.uncategorizedSyntheticId) {
+      return rule.colorOrDefault;
+    }
+    final exp = data['_expanded_category'];
+    if (exp is Map) {
+      final cv = exp['color_value'] ?? exp['colorValue'];
+      if (cv != null) {
+        final n = cv is int ? cv : int.tryParse(cv.toString());
+        if (n != null && n != 0) return Color(n);
+      }
+    }
+    return Colors.grey;
+  }
+
+  /// Timeline category path: active tree, else single name from expand (archived OK).
+  String categoryDisplayPathForRecordData(Map<String, dynamic> data) {
+    final rid = resolvedCategoryIdForRecord(data);
+    final rule = categoryRuleForRecordCategoryId(rid);
+    if (rule.id != CategoryRule.uncategorizedSyntheticId) {
+      return categoryDisplayPathForTimeline(rule.id);
+    }
+    final exp = data['_expanded_category'];
+    if (exp is Map) {
+      final n = exp['name']?.toString().trim();
+      if (n != null && n.isNotEmpty) return n;
+      final biz = exp['category_id']?.toString().trim();
+      if (biz != null && biz.isNotEmpty) return biz;
+    }
+    return 'Life';
+  }
+
+  /// Glyph for timeline / chip UI: active rule, else expanded category metadata.
+  IconData categoryDisplayIconForRecordData(Map<String, dynamic> data) {
+    final rid = resolvedCategoryIdForRecord(data);
+    final rule = categoryRuleForRecordCategoryId(rid);
+    if (rule.id != CategoryRule.uncategorizedSyntheticId) {
+      return rule.iconOrDefault;
+    }
+    final exp = data['_expanded_category'];
+    if (exp is Map) {
+      final icp = exp['icon_code_point'] ?? exp['iconCodePoint'];
+      if (icp != null) {
+        final n = icp is int ? icp : int.tryParse(icp.toString());
+        if (n != null && n != 0) {
+          return IconData(n, fontFamily: 'MaterialIcons');
+        }
+      }
+    }
+    return Icons.folder_rounded;
+  }
+
   Color getCategoryColor(int categoryId) {
     return getCategoryRuleById(categoryId)?.colorOrDefault ?? Colors.grey;
   }
@@ -2271,6 +3719,7 @@ class DatabaseService {
     final children = getChildrenOf(parentId);
     final t = tag.trim().toLowerCase();
     for (final c in children) {
+      if (c.isArchived) continue;
       if (c.name.trim().toLowerCase() == t) return c.id;
     }
     return null;
@@ -2280,19 +3729,18 @@ class DatabaseService {
     final children = getChildrenOf(parentId);
     final t = tag.trim().toLowerCase();
     for (final c in children) {
+      if (c.isArchived) continue;
       if (excludeId != null && c.id == excludeId) continue;
       if (c.name.trim().toLowerCase() == t) return true;
     }
     return false;
   }
 
-  /// **PATCH** bulk-only: collection URL + `[{"id": <int>, "fields": {...}}]`.
-  /// [errorDetail] is the server body (or diagnostic) when [ok] is false.
   Future<({bool ok, String? errorDetail})> updateCategory(
     int targetId,
     String newName,
   ) async {
-    if (!_isInitialized || _userIdForWhere == 0) {
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return (ok: false, errorDetail: 'not_initialized');
     }
     if (siblingHasTag(getParentId(targetId), newName, excludeId: targetId)) {
@@ -2303,61 +3751,41 @@ class DatabaseService {
       return (ok: false, errorDetail: 'category_not_found');
     }
 
+    final pbId = _categoryBackendRowIdStrict(existing);
+    if (pbId == null) {
+      return (ok: false, errorDetail: 'missing_backend_row_id');
+    }
+    final biz = _categoryStringPkForApi(existing);
     try {
-      final sysId = _categoryNocoSystemIdStrict(existing);
-      if (sysId == null) {
-        _log(
-          'UPDATE_CATEGORY: refuse PATCH — no Noco system Id (sync _loadRulesFromNoco)',
-        );
-        return (ok: false, errorDetail: 'missing_noco_row_id');
-      }
-      final biz = _categoryStringPkForApi(existing);
-      _log(
-        'CATEGORY_PATCH_SINGLE rename uri=$_categoryBulkCollectionUri id=$sysId (bulk array len=1)',
-      );
-      final bodyJson = _categoryBulkPatchJson(
-        sysId,
-        <String, dynamic>{
-          'user_id': _pid,
+      await ensurePocketBaseReady();
+      final body = _nocoFieldsForPatch(
+        _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
+          'user_id': _pidForPbFilter,
           'name': newName,
           'normalized_id': _slugifyCategoryDisplayName(newName),
-          'category_id': ?biz,
+          if (biz != null && biz.isNotEmpty) 'category_id': biz,
           'order': existing.order,
-        },
+        }),
       );
-      final res = await _categoryBulkPatchHttp('updateCategory', bodyJson);
-      if (res.statusCode == 404) {
-        _log('UPDATE_CATEGORY: server 404 — ${res.body}');
+      await _pb.collection(PbCollections.categories).update(pbId, body: body);
+      await _loadRulesFromNoco();
+      return (ok: true, errorDetail: null);
+    } on ClientException catch (e) {
+      if (e.statusCode == 404) {
         _emitCategorySyncNotice('category_sync_not_found');
-        return (ok: false, errorDetail: res.body);
       }
-      if (res.statusCode == 400) {
-        _log('UPDATE_CATEGORY: server 400 — ${res.body}');
-        return (ok: false, errorDetail: res.body);
-      }
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        _reconcileCategoryNodeAfterWrite(
-          previousId: targetId,
-          previousRule: existing,
-          newTag: newName,
-          res: res,
-        );
-        await _loadRulesFromNoco();
-        return (ok: true, errorDetail: null);
-      }
-      return (ok: false, errorDetail: res.body);
+      return (ok: false, errorDetail: e.toString());
     } catch (e) {
       _log('UPDATE_CATEGORY: $e');
       return (ok: false, errorDetail: e.toString());
     }
   }
 
-  /// One category row: bulk collection URL with **exactly one** `[{"id":…,"fields":…}]` element.
   Future<({bool ok, String? errorDetail})> patchCategoryDelta(
     int targetId,
     Map<String, dynamic> fields,
   ) async {
-    if (!_isInitialized || _userIdForWhere == 0) {
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return (ok: false, errorDetail: 'not_initialized');
     }
     if (fields.isEmpty) {
@@ -2367,9 +3795,9 @@ class DatabaseService {
     if (existing == null) {
       return (ok: false, errorDetail: 'category_not_found');
     }
-    final sysId = _categoryNocoSystemIdStrict(existing);
-    if (sysId == null) {
-      return (ok: false, errorDetail: 'missing_noco_row_id');
+    final pbId = _categoryBackendRowIdStrict(existing);
+    if (pbId == null) {
+      return (ok: false, errorDetail: 'missing_backend_row_id');
     }
     final biz = _categoryStringPkForApi(existing);
     final mergedFields = Map<String, dynamic>.from(fields);
@@ -2378,36 +3806,20 @@ class DatabaseService {
     }
     try {
       final prepared = _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
-        'user_id': _pid,
-        'category_id': ?biz,
+        'user_id': _pidForPbFilter,
+        if (biz != null && biz.isNotEmpty) 'category_id': biz,
         ...mergedFields,
       });
       final merged = _nocoFieldsForPatch(prepared);
-      if (merged.containsKey('localized_names')) {
-        final s = merged['localized_names']?.toString() ?? '';
-        _log(
-          'CATEGORY_PATCH_DELTA localized_names json (${s.length} chars): ${s.length > 160 ? '${s.substring(0, 160)}…' : s}',
-        );
-      }
-      if (merged.containsKey('keywords')) {
-        final s = merged['keywords']?.toString() ?? '';
-        _log(
-          'CATEGORY_PATCH_DELTA keywords json (${s.length} chars): ${s.length > 160 ? '${s.substring(0, 160)}…' : s}',
-        );
-      }
-      _log('CATEGORY_PATCH_SINGLE uri=$_categoryBulkCollectionUri id=$sysId (bulk array len=1)');
-      final bodyJson = _categoryBulkPatchJson(sysId, merged);
-      print('PATCHING DATA: category patchCategoryDelta id=$targetId body=$bodyJson');
-      final res = await _categoryBulkPatchHttp('patchCategoryDelta', bodyJson);
-      if (res.statusCode == 404) {
+      await ensurePocketBaseReady();
+      await _pb.collection(PbCollections.categories).update(pbId, body: merged);
+      await _loadRulesFromNoco();
+      return (ok: true, errorDetail: null);
+    } on ClientException catch (e) {
+      if (e.statusCode == 404) {
         _emitCategorySyncNotice('category_sync_not_found');
-        return (ok: false, errorDetail: res.body);
       }
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        await _loadRulesFromNoco();
-        return (ok: true, errorDetail: null);
-      }
-      return (ok: false, errorDetail: res.body);
+      return (ok: false, errorDetail: e.toString());
     } catch (e) {
       _log('PATCH_CATEGORY_DELTA: $e');
       return (ok: false, errorDetail: e.toString());
@@ -2448,58 +3860,6 @@ class DatabaseService {
     replaceIn(_rules);
   }
 
-  /// Locks in server PK + local display id from PATCH/POST body when Noco returns it.
-  void _reconcileCategoryNodeAfterWrite({
-    required int previousId,
-    required CategoryRule previousRule,
-    required String newTag,
-    required http.Response res,
-  }) {
-    try {
-      final bizFromBody = _parseCategoryFieldsCategoryIdFromBody(res.body);
-      var internalRow = _parseNocoCategoryWrapperRowIdFromBody(res.body);
-      String? nocoStr;
-      if (internalRow != null && internalRow > 0) {
-        nocoStr = internalRow.toString();
-      } else {
-        final fromPrev = _sanitizePkString(previousRule.nocoId);
-        final parsedPrev = int.tryParse(fromPrev ?? '');
-        if (parsedPrev != null && parsedPrev > 0) {
-          internalRow = parsedPrev;
-          nocoStr = parsedPrev.toString();
-        }
-      }
-      if (nocoStr == null || nocoStr.isEmpty) {
-        _updateCategoryTagInRules(previousId, newTag);
-        return;
-      }
-      final norm = (bizFromBody != null && bizFromBody.isNotEmpty)
-          ? bizFromBody
-          : previousRule.normalizedId;
-      final newLocalId = (internalRow != null && internalRow > 0)
-          ? internalRow
-          : int.tryParse(nocoStr) ??
-              _categoryDisplayIdFromServerPk(nocoStr, tagFallback: newTag);
-      _replaceCategoryNodeById(
-        previousId,
-        CategoryRule(
-          id: newLocalId,
-          name: newTag,
-          nocoId: nocoStr,
-          normalizedId: norm,
-          children: previousRule.children,
-          colorValue: previousRule.colorValue,
-          iconCodePoint: previousRule.iconCodePoint,
-          keywords: previousRule.keywords,
-          localizedNames: previousRule.localizedNames,
-          order: previousRule.order,
-        ),
-      );
-    } catch (_) {
-      _updateCategoryTagInRules(previousId, newTag);
-    }
-  }
-
   void _updateCategoryTagInRules(int id, String newTag) {
     void visit(List<CategoryRule> rules) {
       for (final r in rules) {
@@ -2513,9 +3873,9 @@ class DatabaseService {
     visit(_rules);
   }
 
-  /// UI-first: move category in _rules, push; then **PATCH** parent_id (same row), not bulk POST create.
+  /// UI-first: move category in _rules, push; then PocketBase PATCH `parent_id`.
   Future<bool> updateCategoryParent(int categoryId, int? newParentId) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
 
     final oldParentId = getParentId(categoryId);
     if (!_moveCategoryInRules(categoryId, newParentId)) return false;
@@ -2533,11 +3893,8 @@ class DatabaseService {
 
     try {
       final existing = getCategoryRuleById(categoryId);
-      final sysId = _categoryNocoSystemIdStrict(existing);
-      if (sysId == null) {
-        _log(
-          'UPDATE_CATEGORY_PARENT: no system Id on row — reload rules localId=$categoryId',
-        );
+      final pbId = _categoryBackendRowIdStrict(existing);
+      if (pbId == null) {
         await _loadRulesFromNoco();
         _categoryController.add(List.from(_rules));
         return false;
@@ -2547,57 +3904,35 @@ class DatabaseService {
           : _parentCategoryIdStringForApi(newParentId);
       if (newParentId != null &&
           (newParentKey == null || newParentKey.isEmpty)) {
-        _log(
-          'UPDATE_CATEGORY_PARENT: parent has no category_id string parentLocal=$newParentId',
-        );
         await _loadRulesFromNoco();
         _categoryController.add(List.from(_rules));
         return false;
       }
       final rowBiz = _categoryStringPkForApi(existing);
       final movedOrder = existing?.order ?? 0;
-      _log(
-        'CATEGORY_PATCH_SINGLE parent uri=$_categoryBulkCollectionUri id=$sysId (bulk array len=1)',
-      );
-      final bodyJson = _categoryBulkPatchJson(
-        sysId,
+      await ensurePocketBaseReady();
+      final body = _nocoFieldsForPatch(
         _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
-          'user_id': _pid,
-          'category_id': ?rowBiz,
+          'user_id': _pidForPbFilter,
+          if (rowBiz != null && rowBiz.isNotEmpty) 'category_id': rowBiz,
           'parent_id': newParentKey,
           'order': movedOrder,
         }),
       );
-      final res = await _categoryBulkPatchHttp('updateCategoryParent', bodyJson);
-      if (res.statusCode == 400) {
-        _log('UPDATE_CATEGORY_PARENT: server ${res.statusCode} — ${res.body}');
-      }
-      if (res.statusCode == 404) {
-        _log('UPDATE_CATEGORY_PARENT: server 404 — ${res.body}');
+      await _pb.collection(PbCollections.categories).update(pbId, body: body);
+      await _persistCategoryOrdersBulkForce(
+        List<CategoryRule>.from(getChildrenOf(oldParentId)),
+        contextLabel: 'parentMoveOldSiblings',
+      );
+      await _persistCategoryOrdersBulkForce(
+        List<CategoryRule>.from(getChildrenOf(newParentId)),
+        contextLabel: 'parentMoveNewSiblings',
+      );
+      await _loadRulesFromNoco();
+      return true;
+    } on ClientException catch (e) {
+      if (e.statusCode == 404) {
         _emitCategorySyncNotice('category_sync_not_found');
-        await _loadRulesFromNoco();
-        _categoryController.add(List.from(_rules));
-        return false;
-      }
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        await _persistCategoryOrdersBulkForce(
-          List<CategoryRule>.from(getChildrenOf(oldParentId)),
-          contextLabel: 'parentMoveOldSiblings',
-        );
-        await _persistCategoryOrdersBulkForce(
-          List<CategoryRule>.from(getChildrenOf(newParentId)),
-          contextLabel: 'parentMoveNewSiblings',
-        );
-        if (existing != null) {
-          _reconcileCategoryNodeAfterWrite(
-            previousId: categoryId,
-            previousRule: existing,
-            newTag: existing.name,
-            res: res,
-          );
-        }
-        await _loadRulesFromNoco();
-        return true;
       }
       await _loadRulesFromNoco();
       _categoryController.add(List.from(_rules));
@@ -2654,9 +3989,8 @@ class DatabaseService {
     return true;
   }
 
-  /// **DELETE** bulk-only: collection URL + `[{"id": <int>}]`. Local [_rules] after **2xx** only.
   Future<bool> deleteCategory(int id) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
 
     final rule = getCategoryRuleById(id);
     if (rule == null || rule.id == -1) {
@@ -2664,50 +3998,59 @@ class DatabaseService {
       return false;
     }
 
-    final sysId = _categoryNocoSystemIdStrict(rule);
-    if (sysId == null) {
-      _log(
-        'DELETE_CATEGORY: refuse — missing Noco system Id (nocoId=${rule.nocoId})',
-      );
+    if (_categoryBackendRowIdStrict(rule) == null) {
+      _emitCategorySyncNotice('category_sync_not_found');
+      return false;
+    }
+
+    final delId = await _resolveCategoryRowIdForPb(rule);
+    if (delId.isEmpty || !_isLikelyPocketBaseRowId(delId)) {
       _emitCategorySyncNotice('category_sync_not_found');
       return false;
     }
 
     try {
-      final body = jsonEncode([
-        <String, dynamic>{'id': sysId},
-      ]);
-      _log(
-        'CATEGORY_BULK_DELETE uri=$_categoryBulkCollectionUri body=$body',
+      await ensurePocketBaseReady();
+      final biz = _categoryStringPkForApi(rule);
+      final patchBody = _nocoFieldsForPatch(
+        _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
+          'user_id': _pidForPbFilter,
+          'is_archived': true,
+          'order': rule.order,
+          if (biz != null && biz.isNotEmpty) 'category_id': biz,
+        }),
       );
-      final res = await http.delete(
-        _categoryBulkCollectionUri,
-        headers: _headers,
-        body: body,
+      await _pb.collection(PbCollections.categories).update(
+            delId,
+            body: patchBody,
+          );
+      _removeCategoryFromRules(id);
+      _categoryController.add(List.from(_rules));
+      return true;
+    } on ClientException catch (e) {
+      final deleteFallbackUrl = () {
+        try {
+          final b = (_pocketBase?.baseURL ?? '').trim();
+          if (b.isEmpty) return '(unknown URL)';
+          final bt = b.replaceAll(RegExp(r'/$'), '');
+          return '$bt/api/collections/${PbCollections.categories}/records/$delId';
+        } catch (_) {
+          return '(unknown URL)';
+        }
+      }();
+      _debugPrintPocketBaseClientException(
+        operation: 'categories soft-delete PATCH',
+        e: e,
+        payload: <String, dynamic>{'is_archived': true},
+        fallbackUrl: deleteFallbackUrl,
       );
-
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        _removeCategoryFromRules(id);
-        _categoryController.add(List.from(_rules));
-        return true;
-      }
-      if (res.statusCode == 404) {
-        _log(
-          'DELETE_CATEGORY: 404 — ${res.body} url=${res.request?.url}',
-        );
+      if (e.statusCode == 404) {
         _emitCategorySyncNotice('category_sync_not_found');
-      } else if (res.statusCode == 400) {
-        _log(
-          'DELETE_CATEGORY: server ${res.statusCode} — ${res.body} url=${res.request?.url}',
-        );
-      } else {
-        _log(
-          'DELETE_CATEGORY: server ${res.statusCode} — ${res.body} url=${res.request?.url}',
-        );
       }
+      _log('SOFT_DELETE_CATEGORY: $e');
       return false;
     } catch (e) {
-      _log('DELETE_CATEGORY: $e');
+      _log('SOFT_DELETE_CATEGORY: $e');
       return false;
     }
   }
@@ -2734,70 +4077,32 @@ class DatabaseService {
   int _categoryDisplayIdFromServerPk(String rawPk, {required String tagFallback}) {
     final trimmed = rawPk.trim();
     if (trimmed.isEmpty) {
-      return _stableIntFromString(tagFallback.trim(), 1);
+      return _hashStringToPositiveIntForCategoryTreeLocalIdOnly(tagFallback.trim(), 1);
     }
     final asInt = _rowInt(trimmed);
     if (asInt != 0) return asInt;
-    final h = _stableIntFromString(trimmed, 0);
+    final h = _hashStringToPositiveIntForCategoryTreeLocalIdOnly(trimmed, 0);
     if (h != 0) return h;
-    return _stableIntFromString(tagFallback.trim(), 1);
+    return _hashStringToPositiveIntForCategoryTreeLocalIdOnly(tagFallback.trim(), 1);
   }
 
-  /// After POST creates a category, map Noco's returned wrapper **Id** onto [CategoryRule.nocoId]
-  /// (required for `.../records/{Id}`); [normalizedId] holds business [category_id].
-  void _applyCategoryCreateResponseToPlaceholder({
+  void _applyCategoryCreateResponseToPlaceholderPb({
     required int? parentId,
     required String displayName,
-    required http.Response res,
+    required RecordModel created,
   }) {
     try {
-      var wrapperInt = _parseNocoCategoryWrapperRowIdFromBody(res.body);
-      String? nocoStr;
-      if (wrapperInt != null && wrapperInt > 0) {
-        nocoStr = wrapperInt.toString();
-      } else {
-        final fromBody =
-            _sanitizePkString(_recordIdFromNocoCreateResponseBody(res.body));
-        final fromLoc = _recordIdFromResponseLocation(res);
-        String? pick = fromBody;
-        if (fromBody != null &&
-            fromLoc != null &&
-            fromBody.isNotEmpty &&
-            fromLoc.isNotEmpty &&
-            fromBody != fromLoc) {
-          if (_isLikelyUuidOrLongPk(fromBody) &&
-              _isSmallIntegerString(fromLoc)) {
-            pick = fromLoc;
-          } else if (_isLikelyUuidOrLongPk(fromLoc) &&
-              _isSmallIntegerString(fromBody)) {
-            pick = fromBody;
-          }
-        }
-        if (pick != null &&
-            !_isSmallIntegerString(pick) &&
-            fromLoc != null &&
-            _isSmallIntegerString(fromLoc)) {
-          pick = fromLoc;
-        }
-        pick ??= fromLoc;
-        final sanitized = _sanitizePkString(pick);
-        if (sanitized != null && _isSmallIntegerString(sanitized)) {
-          nocoStr = sanitized;
-          wrapperInt = int.tryParse(sanitized);
-        }
-      }
-      if (nocoStr == null || nocoStr.isEmpty) return;
+      final rowId = created.id.trim();
+      if (rowId.isEmpty) return;
       final wantTag = displayName.trim();
-      final biz = _parseCategoryFieldsCategoryIdFromBody(res.body);
-      final newId = (wrapperInt != null && wrapperInt > 0)
-          ? wrapperInt
-          : int.tryParse(nocoStr) ??
-              _categoryDisplayIdFromServerPk(nocoStr, tagFallback: wantTag);
+      final biz = created.data['category_id']?.toString();
+      final newId =
+          _categoryDisplayIdFromServerPk(rowId, tagFallback: wantTag);
       CategoryRule upgraded(CategoryRule old) {
         return CategoryRule(
           id: newId,
           name: old.name,
-          nocoId: nocoStr,
+          backendRowId: rowId,
           normalizedId:
               (biz != null && biz.isNotEmpty) ? biz : old.normalizedId,
           children: old.children,
@@ -2806,6 +4111,7 @@ class DatabaseService {
           keywords: old.keywords,
           localizedNames: old.localizedNames,
           order: old.order,
+          isArchived: false,
         );
       }
 
@@ -2845,23 +4151,29 @@ class DatabaseService {
     } catch (_) {}
   }
 
-  /// UI-first: add child to _rules (temp id -1), push; then POST. On success refresh in background.
+  /// UI-first: add child to _rules (temp id -1), push; then PocketBase create.
   Future<bool> addNestedCategory(int? parentId, CategoryRule child) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
+
+    final ownerPbId = _userIdForWhere;
+    if (ownerPbId == null || ownerPbId.isEmpty) {
+      _log('ADD_CATEGORY: missing auth record id for user_id relation');
+      return false;
+    }
+
+    if (siblingHasTag(parentId, child.name)) {
+      return false;
+    }
 
     final parentKey = _parentCategoryIdStringForApi(parentId);
     if (parentId != null && (parentKey == null || parentKey.isEmpty)) {
-      _log('ADD_CATEGORY: parent missing category_id localParent=$parentId');
-      return false;
-    }
-
-    final categoryId = _categoryIdRequiredForCreate(child);
-    if (categoryId == null) {
       _log(
-        'ADD_CATEGORY: POST blocked — category_id null/empty/invalid after client generation',
+        'ADD_CATEGORY: parent missing PocketBase row id (backendRowId) localParent=$parentId',
       );
       return false;
     }
+
+    var categoryId = _pickNewCategoryBusinessKey(child);
 
     final nextOrder = _nextCategoryOrderAmongSiblings(parentId);
 
@@ -2875,6 +4187,7 @@ class DatabaseService {
       keywords: child.keywords,
       localizedNames: child.localizedNames,
       order: nextOrder,
+      isArchived: false,
     );
     if (parentId == null) {
       _rules.add(placeholder);
@@ -2892,48 +4205,66 @@ class DatabaseService {
     }
     _categoryController.add(List.from(_rules));
 
-    try {
-      final fieldsRaw = <String, dynamic>{
-        'user_id': _pid,
-        'category_id': categoryId,
-        'name': child.name,
-        if (parentKey != null && parentKey.isNotEmpty) 'parent_id': parentKey,
-        'color_value': child.colorValue ?? 0,
-        'icon_code_point': child.iconCodePoint ?? 0,
-        'order': nextOrder,
-        if (child.keywords != null) 'keywords': child.keywords,
-        if (child.localizedNames != null) 'localized_names': child.localizedNames,
-        'normalized_id': _sanitizePkString(child.normalizedId) ?? categoryId,
-      };
-      final fields = _nocoFieldsForPatch(
-        _categoryPatchFieldsWithJsonLongText(fieldsRaw),
-      );
-      final postedPk = (fields['category_id'] ?? '').toString().trim();
-      if (postedPk.isEmpty) {
-        _log('ADD_CATEGORY: POST blocked — category_id missing in fields map');
-        _removeFailedPlaceholderCategory(parentId, child.name);
-        return false;
-      }
-      final res = await http.post(
-        Uri.parse('$baseUrl/$_categoriesRecords'),
-        headers: _headers,
-        body: jsonEncode(NocoRequest.single(fields: fields)),
-      );
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        _applyCategoryCreateResponseToPlaceholder(
+    for (var attempt = 0; attempt < 2; attempt++) {
+      try {
+        final fieldsRaw = <String, dynamic>{
+          'user_id': ownerPbId,
+          'category_id': categoryId,
+          'name': child.name,
+          if (parentKey != null && parentKey.isNotEmpty) 'parent_id': parentKey,
+          'color_value': child.colorValue ?? 0,
+          'icon_code_point': child.iconCodePoint ?? 0,
+          'order': nextOrder,
+          if (child.keywords != null) 'keywords': child.keywords,
+          if (child.localizedNames != null)
+            'localized_names': child.localizedNames,
+          'normalized_id': categoryId,
+          'is_archived': false,
+        };
+        final fields = _nocoFieldsForPatch(
+          _categoryPatchFieldsWithJsonLongText(fieldsRaw),
+        );
+        final postedPk = (fields['category_id'] ?? '').toString().trim();
+        if (postedPk.isEmpty) {
+          _log('ADD_CATEGORY: POST blocked — category_id missing in fields map');
+          _removeFailedPlaceholderCategory(parentId, child.name);
+          return false;
+        }
+        await ensurePocketBaseReady();
+        final created =
+            await _pb.collection(PbCollections.categories).create(body: fields);
+        _applyCategoryCreateResponseToPlaceholderPb(
           parentId: parentId,
           displayName: child.name,
-          res: res,
+          created: created,
         );
         _categoryController.add(List.from(_rules));
         unawaited(_loadRulesFromNoco());
         return true;
+      } on ClientException catch (e) {
+        print('[SERVER_ERROR_BODY] ${e.response}');
+        if (attempt == 0 && _pbErrorLooksLikeUniqueCategoryCollision(e)) {
+          final baseForRetry = categoryId.trim().isEmpty ? 'cat' : categoryId.trim();
+          var newSlug = '${baseForRetry}_${_randomCategoryRecoverySuffix3()}';
+          for (var k = 0; k < 12; k++) {
+            if (!_categoryBusinessSlugReservedOrInRules(newSlug)) break;
+            newSlug =
+                '${baseForRetry}_${_randomCategoryRecoverySuffix3()}';
+          }
+          print(
+            '[CATEGORY_RECOVERY] Retrying creation with unique slug: $newSlug',
+          );
+          categoryId = newSlug;
+          _patchPlaceholderCategoryBizId(parentId, child.name, categoryId);
+          _categoryController.add(List.from(_rules));
+          continue;
+        }
+        _log('ADD_CATEGORY: $e');
+        break;
+      } catch (e) {
+        _log('ADD_CATEGORY: $e');
+        break;
       }
-      if (res.statusCode == 400 || res.statusCode == 404) {
-        _log('ADD_CATEGORY: server ${res.statusCode} — ${res.body}');
-      }
-    } catch (e) {
-      _log('ADD_CATEGORY: $e');
     }
     _removeFailedPlaceholderCategory(parentId, child.name);
     return false;
@@ -3006,39 +4337,25 @@ class DatabaseService {
     try {
       final rule = getCategoryRuleById(categoryId);
       if (rule == null) return;
-      final sysId = _categoryNocoSystemIdStrict(rule);
-      if (sysId == null) {
-        _log(
-          'UPDATE_CATEGORY_KEYWORDS: skip — no Noco system Id on rule localId=$categoryId',
-        );
+      final pbId = _categoryBackendRowIdStrict(rule);
+      if (pbId == null) {
         return;
       }
       final biz = _categoryStringPkForApi(rule);
-      _log(
-        'CATEGORY_PATCH_SINGLE keywords uri=$_categoryBulkCollectionUri id=$sysId (bulk array len=1)',
-      );
-      final bodyJson = _categoryBulkPatchJson(
-        sysId,
+      await ensurePocketBaseReady();
+      final body = _nocoFieldsForPatch(
         _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
-          'user_id': _pid,
-          'category_id': ?biz,
+          'user_id': _pidForPbFilter,
+          if (biz != null && biz.isNotEmpty) 'category_id': biz,
           'keywords': keywords,
           'order': rule.order,
         }),
       );
-      print('PATCHING DATA: category updateCategoryKeywords id=$categoryId body=$bodyJson');
-      final res = await _categoryBulkPatchHttp('updateCategoryKeywords', bodyJson);
-      if (res.statusCode == 404) {
-        _log('UPDATE_CATEGORY_KEYWORDS: 404 — ${res.body}');
+      await _pb.collection(PbCollections.categories).update(pbId, body: body);
+      await _loadRulesFromNoco();
+    } on ClientException catch (e) {
+      if (e.statusCode == 404) {
         _emitCategorySyncNotice('category_sync_not_found');
-        return;
-      }
-      if (res.statusCode >= 200 && res.statusCode < 300) {
-        await _loadRulesFromNoco();
-      } else {
-        _log(
-          'UPDATE_CATEGORY_KEYWORDS: failed status=${res.statusCode} — ${res.body}',
-        );
       }
     } catch (e, st) {
       _log('UPDATE_CATEGORY_KEYWORDS: $e');
@@ -3367,7 +4684,8 @@ class DatabaseService {
   /// Parse NocoDB date string as UTC so Moscow (UTC+3) is not treated as UTC.
   static DateTime? _parseDateTimeUtc(dynamic v) {
     if (v == null) return null;
-    if (v is DateTime) return v.isUtc ? v : DateTime.utc(v.year, v.month, v.day, v.hour, v.minute, v.second, v.millisecond, v.microsecond);
+    // Local DateTime from any source: convert properly — never treat wall components as UTC.
+    if (v is DateTime) return v.isUtc ? v : v.toUtc();
     if (v is String) {
       var s = v.trim();
       if (s.isEmpty) return null;
@@ -3384,76 +4702,6 @@ class DatabaseService {
     return null;
   }
 
-  /// Preview for CRITICAL logs (avoid dumping huge bodies).
-  static String _httpBodyPreview(String body, [int max = 500]) {
-    if (body.length <= max) return body;
-    return '${body.substring(0, max)}...';
-  }
-
-  /// JSON keys that may hold the real row PK. Never use `order`, `nc_order`, row index, or category_id.
-  static const List<String> _nocoRowPkJsonKeys = <String>[
-    'record_id',
-    'Record_id',
-    'recordId',
-    'RecordId',
-    'Id',
-    'id',
-    'ID',
-  ];
-
-  static String? _pickNocoPkFromMap(Map<String, dynamic> m) {
-    for (final k in _nocoRowPkJsonKeys) {
-      final v = m[k];
-      if (v == null) continue;
-      final s = _sanitizePkString(v.toString());
-      if (s != null && s.isNotEmpty) return s;
-    }
-    return null;
-  }
-
-  /// Deep-walk NocoDB v3 create/read JSON for a row PK (never uses order / category_id).
-  static String? _walkNocoCreateResponseForPk(dynamic node, [int depth = 0]) {
-    if (depth > 10 || node == null) return null;
-    if (node is Map) {
-      final m = Map<String, dynamic>.from(node);
-      final direct = _pickNocoPkFromMap(m);
-      if (direct != null) return direct;
-      if (m['fields'] is Map) {
-        final fm = Map<String, dynamic>.from(m['fields'] as Map);
-        final inFields = _pickNocoPkFromMap(fm);
-        if (inFields != null) return inFields;
-      }
-      for (final k in <String>['record', 'data', 'result', 'row']) {
-        final inner = m[k];
-        final w = _walkNocoCreateResponseForPk(inner, depth + 1);
-        if (w != null) return w;
-      }
-      for (final k in <String>['records', 'list']) {
-        final inner = m[k];
-        if (inner is List) {
-          for (final item in inner) {
-            final w = _walkNocoCreateResponseForPk(item, depth + 1);
-            if (w != null) return w;
-          }
-        }
-      }
-      return null;
-    }
-    if (node is List && node.isNotEmpty) {
-      return _walkNocoCreateResponseForPk(node.first, depth + 1);
-    }
-    return null;
-  }
-
-  static String? _recordIdFromNocoCreateResponseBody(String body) {
-    try {
-      final j = jsonDecode(body);
-      return _walkNocoCreateResponseForPk(j);
-    } catch (_) {
-      return null;
-    }
-  }
-
   static bool _isLikelyUuidOrLongPk(String s) {
     final t = s.trim();
     if (t.length >= 28) return true;
@@ -3468,158 +4716,20 @@ class DatabaseService {
     return RegExp(r'^\d{1,9}$').hasMatch(t);
   }
 
-  /// Prefer cache over POST when POST returns business UUID but cache has the **system** row id.
-  static bool _preferCachePkOverPostParse(String? postId, String cacheId) {
-    final p = _sanitizePkString(postId) ?? '';
-    final c = _sanitizePkString(cacheId) ?? '';
-    if (c.isEmpty) return false;
-    if (p.isEmpty) return false;
-    if (_isLikelyUuidOrLongPk(p) && _isSmallIntegerString(c)) return true;
-    return _isSmallIntegerString(p) && _isLikelyUuidOrLongPk(c);
-  }
-
-  static bool _hasTrustedEnvelopePk(Map<String, dynamic> row) {
-    return _sanitizePkString(row[_nocoEnvelopePkKey]?.toString()) != null;
-  }
-
-  /// Without POST id: trust cache PK when row has system id, envelope, or non–small-int PK.
-  static bool _shouldTrustCachePkWithoutPost(
-      String? cachePk, Map<String, dynamic>? row) {
-    final pk = _sanitizePkString(cachePk);
-    if (pk == null || pk.isEmpty || row == null) return false;
-    if (row[_nocoSystemRowIdKey] != null) return true;
-    if (_hasTrustedEnvelopePk(row)) return true;
-    if (_isLikelyUuidOrLongPk(pk)) return true;
-    if (!_isSmallIntegerString(pk)) return true;
-    return false;
-  }
-
-  /// After POST, find the created row in [_cachedFlatRecords] (call [_fetchRecordsIntoCache] first).
-  Map<String, dynamic>? _findRecordRowInCache({
-    required String title,
-    required String startIsoUtc,
-    String? endIsoUtc,
-  }) {
-    try {
-      final targetStart = _parseDateTimeUtc(startIsoUtc);
-      final targetEnd =
-          endIsoUtc != null ? _parseDateTimeUtc(endIsoUtc) : null;
-      final pidStr = _pid.toString().trim();
-      final wantTitle = title.trim();
-      Map<String, dynamic>? bestRow;
-      int? bestScore;
-      for (final r in _cachedFlatRecords) {
-        if (r['user_id']?.toString().trim() != pidStr) continue;
-        if ((r['title'] ?? '').toString().trim() != wantTitle) continue;
-        if (targetEnd != null) {
-          final te = targetEnd;
-          final en = _parseDateTimeUtc(r['end_time']);
-          if (en == null ||
-              en.difference(te).abs().inSeconds > 25) {
-            continue;
-          }
-        }
-        final st = _parseDateTimeUtc(r['start_time']);
-        var d = 0;
-        if (targetStart != null && st != null) {
-          d = st.difference(targetStart).abs().inSeconds;
-          if (d > 20) continue;
-        }
-        final pk = nocoRecordsTablePk(r);
-        if (pk.isEmpty) continue;
-        var score = d;
-        if (r[_nocoSystemRowIdKey] == null) {
-          score += 3000;
-        }
-        if (!_hasTrustedEnvelopePk(r)) {
-          score += 5000;
-        }
-        if (_isSmallIntegerString(pk) &&
-            r[_nocoSystemRowIdKey] == null &&
-            !_hasTrustedEnvelopePk(r)) {
-          score += 10000;
-        }
-        if (bestScore == null || score < bestScore) {
-          bestScore = score;
-          bestRow = r;
-        }
-      }
-      return bestRow;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Refreshes cache, resolves PK from body + optional cache repair; logs CRITICAL if still missing.
+  /// Refreshes timeline cache after PocketBase create; [pocketCreatedRecordId] is the new row id.
   Future<String?> _finalizeRecordCreateHandshake({
-    required http.Response res,
-    required String titleForMatch,
-    required String startIsoUtc,
-    String? endIsoUtc,
+    required String pocketCreatedRecordId,
   }) async {
-    if (res.statusCode < 200 || res.statusCode >= 300) return null;
-    final fromBody =
-        _sanitizePkString(_recordIdFromNocoCreateResponseBody(res.body));
-    final fromLoc = _recordIdFromResponseLocation(res);
-    String? fromPost = fromBody ?? fromLoc;
-    if (fromBody != null &&
-        fromLoc != null &&
-        fromBody.isNotEmpty &&
-        fromLoc.isNotEmpty &&
-        fromBody != fromLoc) {
-      // Noco v3: REST `/records/{id}` uses **system integer**; body may return business UUID.
-      if (_isLikelyUuidOrLongPk(fromBody) && _isSmallIntegerString(fromLoc)) {
-        fromPost = fromLoc;
-      } else if (_isLikelyUuidOrLongPk(fromLoc) &&
-          _isSmallIntegerString(fromBody)) {
-        fromPost = fromBody;
-      } else {
-        fromPost = fromBody;
-      }
-    }
-    await _fetchRecordsIntoCache();
-    final matchRow = _findRecordRowInCache(
-      title: titleForMatch,
-      startIsoUtc: startIsoUtc,
-      endIsoUtc: endIsoUtc,
-    );
-    final cacheId =
-        matchRow == null ? null : nocoRecordsTablePk(matchRow);
-
-    String? newId;
-    if (fromPost != null && fromPost.isNotEmpty) {
-      if (_preferCachePkOverPostParse(fromPost, cacheId ?? '')) {
-        _log(
-            'PK_REPAIR: POST parsed id="$fromPost" ignored; using cache PK="$cacheId"');
-        newId = cacheId;
-      } else {
-        newId = fromPost;
-      }
-    } else {
-      if (_shouldTrustCachePkWithoutPost(cacheId, matchRow)) {
-        newId = cacheId;
-      } else {
-        _log(
-            'CRITICAL: No POST id and cache PK is untrusted (need wrapper id or non–small-int). '
-            'cachePk=$cacheId envelope=${matchRow?[_nocoEnvelopePkKey]} body=${_httpBodyPreview(res.body)}');
-        newId = null;
-      }
-    }
-
-    if (newId == null || newId.isEmpty) {
-      _log(
-          'CRITICAL: Server returned ${res.statusCode} but no usable ID. body=${_httpBodyPreview(res.body)}');
-    } else {
-      _log('WRITE_RECORD_PK_OK: server_id=$newId');
-    }
-    _timeUpdateController.add(null);
-    return (newId != null && newId.isNotEmpty) ? newId : null;
+    final id = pocketCreatedRecordId.trim();
+    if (id.isEmpty) return null;
+    _log('WRITE_RECORD_PK_OK: server_id=$id');
+    return id;
   }
 
   /// True when [parent_id] points to a parent row (int PK, UUID string, or Link object).
   bool _rowHasNonEmptyParent(dynamic parentField) {
     if (parentField == null) return false;
-    final flat = normalizeNocoLinkField(parentField);
+    final flat = normalizeLinkScalar(parentField);
     final s = (flat ?? parentField).toString().trim();
     if (s.isEmpty || s == '0') return false;
     return true;
@@ -3636,7 +4746,7 @@ class DatabaseService {
     void visit(List<CategoryRule> rules) {
       for (final r in rules) {
         final tag = r.name.trim().toLowerCase();
-        final noco = (r.nocoId ?? '').trim().toLowerCase();
+        final noco = (r.backendRowId ?? '').trim().toLowerCase();
         if (r.id.toString() == s) {
           found = r.id;
           return;
@@ -3663,20 +4773,54 @@ class DatabaseService {
     return findCategoryIdByNormalizedTag(s) ?? findCategoryIdByTag(s);
   }
 
-  /// Maps NocoDB `category_id` (number, string slug, UUID, or nested link / list) to [CategoryRule.id].
-  int? categoryIdFromNocoRecordRow(Map<String, dynamic> row) {
+  /// Maps stored `category_id` (number, slug, UUID, link expand) to [CategoryRule.id].
+  int? categoryIdFromRecordRow(Map<String, dynamic> row) {
     try {
       dynamic v =
           row['category_id'] ?? row['Category_id'] ?? row['categoryId'];
-      v = normalizeNocoLinkField(v);
-      if (v == null) return null;
-      final s = v.toString().trim();
-      if (s.isEmpty) return null;
-      final asInt = _rowInt(v);
-      if (asInt != 0) return asInt;
-      return findCategoryIdForStoredCategoryKey(s);
-    } catch (_) {
+      v = normalizeLinkScalar(v);
+      if (v != null) {
+        final s = v.toString().trim();
+        if (s.isNotEmpty) {
+          final asInt = _rowInt(v);
+          if (asInt != 0) return asInt;
+          final fromKey = findCategoryIdForStoredCategoryKey(s);
+          if (fromKey != null) return fromKey;
+        }
+      }
+      final exp = row['_expanded_category'];
+      if (exp is Map) {
+        final pid =
+            (exp['id'] ?? exp['Id'] ?? '').toString().trim();
+        if (pid.isNotEmpty) {
+          int? byBackend;
+          void visit(List<CategoryRule> rules) {
+            for (final rule in rules) {
+              final b = (rule.backendRowId ?? '').trim();
+              if (b.isNotEmpty && b == pid) {
+                byBackend = rule.id;
+                return;
+              }
+              if (rule.children != null) visit(rule.children!);
+            }
+          }
+
+          visit(_rules);
+          if (byBackend != null) return byBackend;
+          return CategoryRule.uncategorizedSyntheticId;
+        }
+      }
+      final linkFlat =
+          normalizeLinkScalar(row['category_link'] ?? row['categoryLink']);
+      if (linkFlat != null && linkFlat.toString().trim().isNotEmpty) {
+        return CategoryRule.uncategorizedSyntheticId;
+      }
+      if (v != null && v.toString().trim().isNotEmpty) {
+        return CategoryRule.uncategorizedSyntheticId;
+      }
       return null;
+    } catch (_) {
+      return CategoryRule.uncategorizedSyntheticId;
     }
   }
 
@@ -3684,7 +4828,7 @@ class DatabaseService {
     final start = _parseDateTimeUtc(row['start_time']);
     final end = _parseDateTimeUtc(row['end_time']);
     final pidRaw = row['parent_id'];
-    final pidFlat = normalizeNocoLinkField(pidRaw) ?? pidRaw;
+    final pidFlat = normalizeLinkScalar(pidRaw) ?? pidRaw;
     final pidStr = pidFlat?.toString().trim() ?? '';
     int? parentInt;
     if (pidStr.isNotEmpty && pidStr != '0') {
@@ -3695,8 +4839,8 @@ class DatabaseService {
       }
     }
     final categoryRaw =
-        normalizeNocoLinkField(row['category_id'] ?? row['Category_id'] ?? row['categoryId']);
-    final catInt = categoryIdFromNocoRecordRow(row);
+        normalizeLinkScalar(row['category_id'] ?? row['Category_id'] ?? row['categoryId']);
+    final catInt = categoryIdFromRecordRow(row);
     final statusFromRow = row['status']?.toString();
     // Basta: any row with end_time is closed — never surface as running in app maps.
     final String status;
@@ -3707,23 +4851,25 @@ class DatabaseService {
     } else {
       status = 'running';
     }
-    final restPk = nocoRecordsTablePk(row);
+    final restPk = recordsTablePk(row);
     final bizRid = (row['record_id'] ?? '').toString().trim();
     final sysObj = row[_nocoSystemRowIdKey];
     final int? sysInt =
         sysObj is int ? sysObj : int.tryParse(restPk.isNotEmpty ? restPk : '');
-    // Wall-clock calendar day (profile offset), not raw UTC YYYY-MM-DD prefix.
+    // Calendar day for timeline bucket: profile wall Y-M-D ([DATA_MAP] records §8; [wall_clock]).
     String calendarDayStr;
     if (start != null) {
-      final w = _profileWallFromUtc(start.toUtc());
-      calendarDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
+      calendarDayStr = _timelineDeviceLocalDayKeyFromUtc(start);
     } else {
-      calendarDayStr = _utcDatePrefixFromRaw(row['start_time']) ?? '';
+      final stFallback = _parseDateTimeUtc(row['start_time']);
+      calendarDayStr = stFallback != null
+          ? _timelineDeviceLocalDayKeyFromUtc(stFallback)
+          : '';
     }
     return <String, dynamic>{
       'id': restPk,
-      'nocoRestPathId': restPk,
-      'nocoSystemId': ?sysInt,
+      'backendRestPathId': restPk,
+      'backendNumericId': sysInt,
       'record_id': bizRid,
       // Legacy: numeric Noco system id only; business UUID is [record_id].
       'docId': int.tryParse(restPk) ?? 0,
@@ -3739,6 +4885,8 @@ class DatabaseService {
       'tags': row['tags'] is List ? row['tags'] : null,
       'note': mergeRecordNoteFields(row['note'], row['notes']),
       'checklist': _parseRecordChecklistField(row['checklist']),
+      if (row['_expanded_category'] != null)
+        '_expanded_category': row['_expanded_category'],
     };
   }
 
@@ -3750,7 +4898,7 @@ class DatabaseService {
     final out = <String>{};
     if (id.isNotEmpty) out.add(id);
     for (final row in _cachedFlatRecords) {
-      final pk = nocoRecordsTablePk(row);
+      final pk = recordsTablePk(row);
       final biz = (row['record_id'] ?? '').toString().trim();
       if (pk == id || biz == id) {
         if (pk.isNotEmpty) out.add(pk);
@@ -3765,7 +4913,7 @@ class DatabaseService {
     if (_recordRestDefinitive404Keys.isEmpty) return;
     final alive = <String>{};
     for (final r in _cachedFlatRecords) {
-      final pk = nocoRecordsTablePk(r).trim();
+      final pk = recordsTablePk(r).trim();
       final biz = (r['record_id'] ?? '').toString().trim();
       if (pk.isNotEmpty) alive.add(pk);
       if (biz.isNotEmpty) alive.add(biz);
@@ -3780,7 +4928,7 @@ class DatabaseService {
   }
 
   bool _optimisticRowDeletedRaw(Map<String, dynamic> row) {
-    final pk = nocoRecordsTablePk(row);
+    final pk = recordsTablePk(row);
     final biz = (row['record_id'] ?? '').toString().trim();
     for (final k in [pk, biz]) {
       if (k.isNotEmpty && _optimisticDeletedKeys.contains(k)) return true;
@@ -3791,7 +4939,12 @@ class DatabaseService {
   /// Merge [end_time] for rows the user just stopped (PATCH in flight).
   Map<String, dynamic> _mergeOptimisticIntoRecordMap(Map<String, dynamic> data) {
     final rid = (data['record_id'] ?? '').toString().trim();
-    final nid = (data['id'] ?? data['nocoRestPathId'] ?? '').toString().trim();
+    final nid = (data['id'] ??
+            data['backendRestPathId'] ??
+            data['nocoRestPathId'] ??
+            '')
+        .toString()
+        .trim();
     _OptimisticEndPatch? p;
     for (final k in [rid, nid]) {
       if (k.isNotEmpty && _optimisticEndByKey.containsKey(k)) {
@@ -3813,7 +4966,7 @@ class DatabaseService {
       for (final k in keys) {
         if (k.isNotEmpty) _optimisticEndByKey[k] = _OptimisticEndPatch(now);
       }
-      _timeUpdateController.add(null);
+      _notifyTimelineAfterRecordCacheMutation();
     } catch (e, st) {
       _log('applyOptimisticStopUiSnapshot failed: $e');
       _log(st.toString());
@@ -3826,7 +4979,7 @@ class DatabaseService {
       for (final k in keys) {
         _optimisticEndByKey.remove(k);
       }
-      _timeUpdateController.add(null);
+      _notifyTimelineAfterRecordCacheMutation();
     } catch (e, st) {
       _log('clearOptimisticStopKeysForRecord failed: $e');
       _log(st.toString());
@@ -3834,12 +4987,14 @@ class DatabaseService {
   }
 
   /// Clears optimistic overlay for timeline + active row (call after failed write or server sync).
-  void clearOptimisticTimelineUi() {
+  void clearOptimisticTimelineUi({bool notifyTimeline = true}) {
     try {
       _optimisticEndByKey.clear();
       _optimisticDeletedKeys.clear();
       _optimisticPendingStartRecordMap = null;
-      _timeUpdateController.add(null);
+      if (notifyTimeline) {
+        _notifyTimelineAfterRecordCacheMutation();
+      }
     } catch (e, st) {
       _log('clearOptimisticTimelineUi failed: $e');
       _log(st.toString());
@@ -3852,16 +5007,13 @@ class DatabaseService {
     required DateTime startUtc,
     int? categoryId,
   }) {
-    final w =
-        _profileWallFromUtc(startUtc.toUtc());
-    final calendarDayStr =
-        '${w.year}-${_two(w.month)}-${_two(w.day)}';
+    final calendarDayStr = _timelineDeviceLocalDayKeyFromUtc(startUtc);
     final rid = clientRecordId.trim();
     return <String, dynamic>{
       'id': rid,
-      'nocoRestPathId': rid,
+      'backendRestPathId': rid,
       'record_id': rid,
-      'nocoSystemId': null,
+      'backendNumericId': null,
       'docId': 0,
       'title': title,
       'type': 'record',
@@ -3887,7 +5039,7 @@ class DatabaseService {
       for (final row in _cachedFlatRecords) {
         if (_rowHasNonEmptyParent(row['parent_id'])) continue;
         if (!_isNocoRowSacredStopTarget(row)) continue;
-        final pk = nocoRecordsTablePk(row);
+        final pk = recordsTablePk(row);
         final biz = (row['record_id'] ?? '').toString().trim();
         for (final k in [pk, biz]) {
           if (k.isNotEmpty) _optimisticEndByKey[k] = _OptimisticEndPatch(now);
@@ -3899,47 +5051,54 @@ class DatabaseService {
         startUtc: startUtc,
         categoryId: categoryId,
       );
-      _timeUpdateController.add(null);
+      _notifyTimelineAfterRecordCacheMutation();
     } catch (e, st) {
       _log('applyOptimisticSacredHandoffForNewStart failed: $e');
       _log(st.toString());
     }
   }
 
-  /// Noco stores wall-clock date in UTC strings; use the `YYYY-MM-DD` prefix only — no [.toLocal] day shift.
-  static String? _utcDatePrefixFromRaw(dynamic raw) {
-    final s = (raw ?? '').toString().trim();
-    if (s.length < 10) return null;
-    final head = s.substring(0, 10);
-    if (!RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(head)) return null;
-    return head;
-  }
-
   List<Map<String, dynamic>> _filterCachedRecordsForDate(DateTime date) {
     try {
-      // Same basis as [getProjectedTodayDateKey]: wall calendar day for the given [date] naive fields.
+      // Selected calendar day + record day: device **local** Y-M-D only (no profile-offset wall).
       final targetDayStr =
           '${date.year}-${_two(date.month)}-${_two(date.day)}';
-      final profileKey = (currentProfileId ?? '').trim().toLowerCase();
+      final ownerIds = _recordRowOwnerIdMatchSet();
       final filtered = <Map<String, dynamic>>[];
       for (final row in _cachedFlatRecords) {
         if (_rowHasNonEmptyParent(row['parent_id'])) {
           continue;
         }
-        if (_optimisticRowDeletedRaw(row)) continue;
+        if (_optimisticRowDeletedRaw(row)) {
+          continue;
+        }
         final rowUid =
             (row['user_id'] ?? '').toString().trim().toLowerCase();
-        if (rowUid != profileKey) continue;
+        if (ownerIds.isEmpty) {
+          continue;
+        }
+        if (rowUid.isEmpty || !ownerIds.contains(rowUid)) {
+          continue;
+        }
 
         final stUtc = _parseDateTimeUtc(row['start_time']);
-        if (stUtc == null) continue;
-        final w = _profileWallFromUtc(stUtc);
-        final recordDayStr =
-            '${w.year}-${_two(w.month)}-${_two(w.day)}';
-        if (recordDayStr != targetDayStr) continue;
+        if (stUtc == null) {
+          continue;
+        }
+        final recordDayStr = _timelineDeviceLocalDayKeyFromUtc(stUtc);
+        if (recordDayStr != targetDayStr) {
+          continue;
+        }
 
-        filtered.add(
-            _mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
+        try {
+          filtered.add(
+              _mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
+        } catch (e, st) {
+          final rowData =
+              '${recordsTablePk(row)} ${(row['record_id'] ?? '').toString().trim()} data=$row';
+          _log('TIMELINE_ROW_MAP: $e | $rowData');
+          _log(st.toString());
+        }
       }
       final pend = _optimisticPendingStartRecordMap;
       if (pend != null) {
@@ -3986,7 +5145,7 @@ class DatabaseService {
         _isInitialized &&
         (currentProfileId?.isNotEmpty ?? false)) {
       try {
-        await _fetchRecordsIntoCache();
+        await _fetchRecordsIntoCache(forceNetwork: true);
       } catch (_) {}
     }
     return _filterCachedRecordsForDate(date);
@@ -4009,29 +5168,85 @@ class DatabaseService {
     return list;
   }
 
+  /// Fingerprint for [recordsStream] — skips a [timeUpdates] tick when the day’s rows are visually unchanged.
+  String _timelineRecordsStreamDistinctSignature(
+      List<Map<String, dynamic>> rows) {
+    final b = StringBuffer();
+    for (final r in rows) {
+      b.write((r['record_id'] ?? '').toString().trim());
+      b.write('|');
+      b.write((r['status'] ?? '').toString().trim().toLowerCase());
+      b.write('|');
+      b.write((r['title'] ?? '').toString());
+      b.write('|');
+      final st = r['startTime'] as DateTime?;
+      final en = r['endTime'] as DateTime?;
+      if (st != null) {
+        final u = st.toUtc();
+        b.write(
+          '${u.year}-${u.month}-${u.day}T${u.hour}:${u.minute}:${u.second}',
+        );
+      }
+      b.write('|');
+      if (en != null) {
+        final u = en.toUtc();
+        b.write(
+          '${u.year}-${u.month}-${u.day}T${u.hour}:${u.minute}:${u.second}',
+        );
+      }
+      b.write(';');
+    }
+    return b.toString();
+  }
+
+  /// Per-call **async\*** stream: one subscription per [TimelinePage] (recreated on date change only).
+  /// Mutations update [_cachedFlatRecords] then [_timeUpdateController]; this stream **awaits** that
+  /// broadcast and yields [nextPayload] — no intentional empty “reset” event before the new list.
+  /// Do not tie this to [fetchRecords] re-entry in a way that completes the stream between ticks.
   Stream<List<Map<String, dynamic>>> recordsStream(DateTime date) async* {
-    if (!_isInitialized || _userIdForWhere == 0) {
-      debugPrint(
-          'SUCCESS: Date=${date.toIso8601String().split('T')[0]} | Found=0 records');
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       yield [];
       return;
     }
     try {
       if (_cachedFlatRecords.isEmpty) {
-        await _fetchRecordsIntoCache();
+        await _fetchRecordsIntoCache(forceNetwork: true);
       }
     } catch (_) {}
 
     List<Map<String, dynamic>> nextPayload() {
-      final filtered = _filterCachedRecordsForDate(date);
-      debugPrint(
-          'SUCCESS: Date=${date.toIso8601String().split('T')[0]} | Found=${filtered.length} records');
-      return _withDisplayTimes(filtered);
+      try {
+        final filtered = _filterCachedRecordsForDate(date);
+        return _withDisplayTimes(filtered);
+      } catch (e, st) {
+        _log('recordsStream nextPayload: $e');
+        if (kDebugMode) {
+          debugPrint(st.toString());
+        }
+        return <Map<String, dynamic>>[];
+      }
     }
 
-    yield nextPayload();
+    String? lastStreamSig;
+    try {
+      final first = nextPayload();
+      lastStreamSig = _timelineRecordsStreamDistinctSignature(first);
+      yield first;
+    } catch (_) {
+      yield <Map<String, dynamic>>[];
+    }
     await for (final _ in timeUpdates) {
-      yield nextPayload();
+      try {
+        final next = nextPayload();
+        final sig = _timelineRecordsStreamDistinctSignature(next);
+        if (lastStreamSig == sig) {
+          continue;
+        }
+        lastStreamSig = sig;
+        yield next;
+      } catch (_) {
+        yield <Map<String, dynamic>>[];
+      }
     }
   }
 
@@ -4062,8 +5277,13 @@ class DatabaseService {
         final data = _rowToRecordMap(row);
         final biz = (data['record_id'] ?? '').toString().trim();
         final pk = (data['id'] ?? '').toString().trim();
-        final path = (data['nocoRestPathId'] ?? '').toString().trim();
-        final sys = data['nocoSystemId']?.toString().trim() ?? '';
+        final path = (data['backendRestPathId'] ?? data['nocoRestPathId'] ?? '')
+            .toString()
+            .trim();
+        final sys = (data['backendNumericId'] ?? data['nocoSystemId'])
+                ?.toString()
+                .trim() ??
+            '';
         final matches = q == biz ||
             q == pk ||
             (path.isNotEmpty && q == path) ||
@@ -4087,7 +5307,11 @@ class DatabaseService {
     final candidates = <String>{
       (data['record_id'] ?? '').toString().trim(),
       (data['id'] ?? '').toString().trim(),
-      (data['nocoRestPathId'] ?? '').toString().trim(),
+      (data['backendRestPathId'] ?? data['nocoRestPathId'] ?? '')
+          .toString()
+          .trim(),
+      if (data['backendNumericId'] != null)
+        data['backendNumericId'].toString().trim(),
       if (data['nocoSystemId'] != null)
         data['nocoSystemId'].toString().trim(),
       if (data['docId'] != null && data['docId'] != 0)
@@ -4159,7 +5383,14 @@ class DatabaseService {
           await Future.delayed(const Duration(seconds: 2));
           continue;
         }
-        final rows = await getRecords();
+        if (_cachedFlatRecords.isEmpty &&
+            _isInitialized &&
+            (currentProfileId?.isNotEmpty ?? false)) {
+          try {
+            await _fetchRecordsIntoCache(forceNetwork: true);
+          } catch (_) {}
+        }
+        final rows = List<Map<String, dynamic>>.from(_cachedFlatRecords);
         Map<String, dynamic>? row;
         for (final r in rows) {
           if (_rowHasNonEmptyParent(r['parent_id'])) continue;
@@ -4197,7 +5428,7 @@ class DatabaseService {
       Map<String, dynamic> childRow, String parentRecordId) {
     if (parentRecordId.isEmpty) return false;
     final raw = childRow['parent_id'];
-    final u = normalizeNocoLinkField(raw)?.toString().trim() ??
+    final u = normalizeLinkScalar(raw)?.toString().trim() ??
         raw?.toString().trim() ??
         '';
     if (u == parentRecordId) return true;
@@ -4212,7 +5443,7 @@ class DatabaseService {
     if (q.isEmpty) return q;
     try {
       for (final row in _cachedFlatRecords) {
-        final pk = nocoRecordsTablePk(row);
+        final pk = recordsTablePk(row);
         final biz = (row['record_id'] ?? '').toString().trim();
         if (pk == q || biz == q) {
           if (biz.isNotEmpty) return biz;
@@ -4240,12 +5471,21 @@ class DatabaseService {
           final bt = b['start_time']?.toString() ?? '';
           return bt.compareTo(at);
         });
-        return list
-            .map((row) => TimelineRecord.fromMap(
-                  _rowToRecordMap(row),
-                  recordId: nocoRecordsTablePk(row),
-                ))
-            .toList();
+        final out = <TimelineRecord>[];
+        for (final row in list) {
+          try {
+            out.add(TimelineRecord.fromMap(
+              _rowToRecordMap(row),
+              systemId: recordsTablePk(row),
+            ));
+          } catch (e, st) {
+            final rid = recordsTablePk(row);
+            print('[CHILD_RECORD_PARSE] $e row=$rid data=${row.keys}');
+            print(st);
+            _log('CHILD_RECORD_PARSE: $e | $rid');
+          }
+        }
+        return out;
       } catch (_) {
         return <TimelineRecord>[];
       }
@@ -4268,22 +5508,34 @@ class DatabaseService {
           final bt = b['start_time']?.toString() ?? '';
           return bt.compareTo(at);
         });
-        return list
-            .take(50)
-            .map((row) => TimelineRecord.fromMap(
-                  _rowToRecordMap(row),
-                  recordId: nocoRecordsTablePk(row),
-                ))
-            .toList();
+        final out = <TimelineRecord>[];
+        for (final row in list.take(50)) {
+          try {
+            out.add(TimelineRecord.fromMap(
+              _rowToRecordMap(row),
+              systemId: recordsTablePk(row),
+            ));
+          } catch (e, st) {
+            final rid = recordsTablePk(row);
+            print('[CHILD_RECORD_PARSE] $e row=$rid');
+            print(st);
+            _log('CHILD_RECORD_PARSE: $e | $rid');
+          }
+        }
+        return out;
       } catch (_) {
         return <TimelineRecord>[];
       }
     });
   }
 
-  static Stream<T> _streamFromPolling<T>(Future<T> Function() fetch) async* {
+  /// Throttled polling (default **60s**) — uses [getRecords] cache path when [DatabaseService] fetch throttle applies.
+  static Stream<T> _streamFromPolling<T>(
+    Future<T> Function() fetch, {
+    Duration period = const Duration(seconds: 60),
+  }) async* {
     yield await fetch();
-    await for (final _ in Stream.periodic(const Duration(seconds: 2))) {
+    await for (final _ in Stream.periodic(period)) {
       yield await fetch();
     }
   }
@@ -4293,10 +5545,10 @@ class DatabaseService {
       await _loadRulesFromNoco();
       await _loadSettingsFromNoco();
       try {
-        await _fetchRecordsIntoCache();
+        await _fetchRecordsIntoCache(forceNetwork: true);
       } catch (_) {}
       _settingsController.add(_settings);
-      _timeUpdateController.add(null);
+      _notifyTimelineAfterRecordCacheMutation();
     } catch (_) {}
   }
 
@@ -4307,7 +5559,7 @@ class DatabaseService {
   Future<String?> startTimerWithCategory(String title,
       {int? categoryId, String? dateKey}) async {
     final now = getPlanetaryNow();
-    final key = dateKey ?? getProjectedTodayDateKey();
+    final key = dateKey ?? getTimelineDeviceLocalTodayDateKey();
     return writeRecord(key, title,
         categoryId: categoryId, explicitStartTime: now);
   }
@@ -4317,7 +5569,7 @@ class DatabaseService {
   }
 
   Future<bool> stopAllRunningRecords() async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     try {
       final nowIso = getPlanetaryNow().toUtc().toIso8601String();
       final byPk = <String, Map<String, dynamic>>{};
@@ -4330,7 +5582,7 @@ class DatabaseService {
           if (_rowHasNonEmptyParent(r['parent_id'])) continue;
           if (!_isNocoRowSacredStopTarget(r)) continue;
           if (!_rowStartWallDayIsProjectedToday(r)) continue;
-          final id = nocoRecordsTablePk(r);
+          final id = recordsTablePk(r);
           if (id.isEmpty) continue;
           byPk[id] = r;
         }
@@ -4347,13 +5599,13 @@ class DatabaseService {
 
       if (!serverOk) {
         try {
-          await _fetchRecordsIntoCache();
+          await _fetchRecordsIntoCache(forceNetwork: true);
           final local = _cachedFlatRecords;
           for (final r in local) {
             if (_rowHasNonEmptyParent(r['parent_id'])) continue;
             if (!_isNocoRowSacredStopTarget(r)) continue;
             if (!_rowStartWallDayIsProjectedToday(r)) continue;
-            final id = nocoRecordsTablePk(r);
+            final id = recordsTablePk(r);
             if (id.isEmpty) continue;
             byPk[id] = r;
           }
@@ -4363,113 +5615,39 @@ class DatabaseService {
         }
       }
 
-      final bulkRequests = <NocoRequest>[];
-      final idsIncludedInBulk = <String>{};
+      _log('SACRED_LAW: PocketBase per-row stop ${byPk.length} record(s)');
       for (final id in byPk.keys) {
         final row = byPk[id];
         if (row == null) continue;
-        final fields = _nocoFieldsForPatch(<String, dynamic>{
-          'end_time': nowIso,
-          'status': 'stopped',
-        });
-        _mergeBusinessRecordIdIntoFields(fields, row);
-        final p = int.tryParse(id);
-        if (p != null) {
-          bulkRequests.add(
-            NocoRequest(id: p, fields: Map<String, dynamic>.from(fields)),
-          );
-          idsIncludedInBulk.add(id);
-        } else if (_isLikelyUuidOrLongPk(id)) {
-          bulkRequests.add(
-            NocoRequest(id: id, fields: Map<String, dynamic>.from(fields)),
-          );
-          idsIncludedInBulk.add(id);
-        }
-      }
-
-      var bulkStoppedAllEncodedRows = false;
-      if (bulkRequests.isNotEmpty) {
-        _log(
-          'SACRED_LAW: bulk-stopping ${bulkRequests.length} record(s) before singleton handoff (one PATCH per chunk)',
-        );
-        const chunkSize = 80;
-        var bulkAllOk = true;
-        for (var i = 0; i < bulkRequests.length; i += chunkSize) {
-          final end = min(i + chunkSize, bulkRequests.length);
-          final chunk = bulkRequests.sublist(i, end);
-          final payload = NocoRequest.bulk(chunk);
-          var chunkOk = false;
-          final res = await _recordsBulkPatchHttpTry(
-            'stopAllRunningRecords',
-            jsonEncode(payload),
-          );
-          if (res != null && res.statusCode >= 200 && res.statusCode < 300) {
-            chunkOk = true;
-          }
-          if (!chunkOk) {
-            bulkAllOk = false;
-            _log(
-              'SACRED_LAW: bulk chunk ${i + 1}-$end failed; will try per-row fallback',
-            );
-            break;
-          }
-        }
-        if (bulkAllOk && idsIncludedInBulk.length == byPk.length) {
-          await _fetchRecordsIntoCache();
-          _timeUpdateController.add(null);
-          return true;
-        }
-        if (bulkAllOk && idsIncludedInBulk.length < byPk.length) {
-          _log(
-            'SACRED_LAW: bulk stopped ${idsIncludedInBulk.length} row(s); per-row for ${byPk.length - idsIncludedInBulk.length} row(s) with non-bulk PK shape',
-          );
-          bulkStoppedAllEncodedRows = true;
-        }
-      }
-
-      _log(
-        'SACRED_LAW: per-row fallback stopping ${byPk.length} record(s) (bulk multi-row not available or failed)',
-      );
-      for (final id in byPk.keys) {
-        if (bulkStoppedAllEncodedRows && idsIncludedInBulk.contains(id)) {
-          continue;
-        }
-        final row = byPk[id];
-        if (row == null) continue;
-        debugPrint(
-            '[DatabaseService] SACRED_LAW: Stopping record id=$id before singleton handoff (PATCH end_time + stopped)');
-        _log(
-            'PATCH_ID_TRACE: stopAllRunningRecords recordsUid=$_recordsTableUid url=${_recordsRowUrl(id)}',
-        );
+        _log('PATCH_ID_TRACE: stopAllRunningRecords pb id=$id');
         final fields = _nocoFieldsForPatch(<String, dynamic>{
           'end_time': nowIso,
           'status': 'stopped',
         });
         final biz = (row['record_id'] ?? '').toString().trim();
         final originalOid = biz.isNotEmpty ? biz : id;
-        final res = await _patchRecordsRowWith404Recovery(
+        final code = await _patchRecordsRowWith404Recovery(
           originalQueryId: originalOid,
           restId: id,
           fields: fields,
         );
-        if (res.statusCode == 404) {
+        if (code == 404) {
           _purgeGhostRecordById(id);
           continue;
         }
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          _log('STOP_SWITCH_ABORT: failed to stop record id=$id status=${res.statusCode}');
+        if (code < 200 || code >= 300) {
+          _log('STOP_SWITCH_ABORT: failed to stop record id=$id status=$code');
           return false;
         }
       }
-      await _fetchRecordsIntoCache();
-      _timeUpdateController.add(null);
+      _notifyTimelineAfterRecordCacheMutation();
       return true;
     } catch (_) {
       return false;
     }
   }
 
-  String get _todayKey => getProjectedTodayDateKey();
+  String get _todayKey => getTimelineDeviceLocalTodayDateKey();
 
   Future<bool> writeCompletedRecord(
     String title,
@@ -4477,46 +5655,45 @@ class DatabaseService {
     DateTime endTime, {
     int? categoryId,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    if (_writeRecordMutationInFlight) return false;
+    _writeRecordMutationInFlight = true;
     try {
       final parsed = getCleanTitleAndTags(title);
-      final res = await http.post(
-        Uri.parse('$baseUrl/$_recordsRecords'),
-        headers: _headers,
-        body: jsonEncode(NocoRequest.single(fields: _recordsPatchFieldsJsonStrings(
-          _nocoFieldsForPatch(<String, dynamic>{
-            'user_id': _pid,
-            'record_id': _newClientRecordUuid(),
-            'status': 'completed',
-            'title': parsed.title,
-            'start_time': startTime.toUtc().toIso8601String(),
-            'end_time': endTime.toUtc().toIso8601String(),
-            'category_id': _recordCategoryBusinessPkForApi(categoryId),
-            'type': 'record',
-            'parent_id': null,
-            'checklist': <Map<String, dynamic>>[],
-            if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
-          }),
-        ))),
-      );
-      _log('writeCompletedRecord POST status=${res.statusCode}');
-      if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
-        await _finalizeRecordCreateHandshake(
-          res: res,
-          titleForMatch: parsed.title,
-          startIsoUtc: startTime.toUtc().toIso8601String(),
-          endIsoUtc: endTime.toUtc().toIso8601String(),
-        );
-        return true;
-      } else {
-        _log(
-            'writeCompletedRecord POST failed: status=${res.statusCode} body=${res.body}');
+      var cid = categoryId ?? defaultCategoryId;
+      cid = identifyCategory(parsed.title)?.id ?? cid;
+      cid = _resolveRecordCategoryIdWithSmartLink(parsed.title, cid);
+      if (cid == null || cid == 0) {
+        _log('writeCompletedRecord: no resolvable category_id');
+        AppSnack.failed();
         return false;
       }
+      final newId = await _createRecordPb(<String, dynamic>{
+        'user_id': _pidForPbFilter,
+        'record_id': _newClientRecordUuid(),
+        'status': 'completed',
+        'title': parsed.title,
+        'start_time': startTime.toUtc().toIso8601String(),
+        'end_time': endTime.toUtc().toIso8601String(),
+        'category_id': _recordCategoryBusinessPkForApi(cid),
+        'type': 'record',
+        'parent_id': null,
+        'checklist': <Map<String, dynamic>>[],
+        if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
+      });
+      if (newId == null) {
+        _log('writeCompletedRecord PocketBase create failed');
+        return false;
+      }
+      await _finalizeRecordCreateHandshake(pocketCreatedRecordId: newId);
+      _notifyTimelineAfterRecordCacheMutation();
+      return true;
     } catch (e, st) {
       _log('writeCompletedRecord failed: $e');
       _log(st);
       return false;
+    } finally {
+      _writeRecordMutationInFlight = false;
     }
   }
 
@@ -4528,11 +5705,14 @@ class DatabaseService {
     int? parentId,
     String? parentRecordId,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return null;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return null;
+    if (_writeRecordMutationInFlight) return null;
+    _writeRecordMutationInFlight = true;
     try {
       final parsed = getCleanTitleAndTags(taskText);
       int? cid = categoryId;
       cid = identifyCategory(parsed.title)?.id ?? cid;
+      cid = _resolveRecordCategoryIdWithSmartLink(parsed.title, cid);
       final now = getPlanetaryNow();
       final start = explicitStartTime ?? now;
       final isStartingNow = explicitStartTime != null;
@@ -4548,57 +5728,146 @@ class DatabaseService {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
         if (isPrimary) {
+          final primaryGate = Completer<void>();
+          final prevChain = _primaryRunningRecordStartChain;
+          _primaryRunningRecordStartChain =
+              prevChain.then((_) => primaryGate.future);
+          await prevChain;
           runningRecordBizId = _newClientRecordUuid();
-          final optTitle =
-              parsed.title.trim().isEmpty ? taskText.trim() : parsed.title;
-          applyOptimisticSacredHandoffForNewStart(
-            clientRecordId: runningRecordBizId,
-            title: optTitle,
-            startUtc: start,
-            categoryId: cid,
-          );
-          debugPrint(
-              '[DatabaseService] SACRED_LAW: stopAllRunningRecords() before POST new task "${parsed.title}"');
-          final stopped = await stopAllRunningRecords();
-          if (!stopped) {
-            _log('STOP_THEN_START_ABORT: did not start new record because stop failed.');
-            clearOptimisticTimelineUi();
-            return null;
+          final runningFields = _nocoFieldsForPatch(<String, dynamic>{
+            'user_id': _pidForPbFilter,
+            'record_id': runningRecordBizId,
+            'status': 'running',
+            'title': parsed.title,
+            'start_time': startIso,
+            'end_time': null,
+            'category_id': _recordCategoryBusinessPkForApi(cid),
+            'type': 'record',
+            'checklist': <Map<String, dynamic>>[],
+            if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
+          });
+          if (pr != null && pr.isNotEmpty) {
+            runningFields['parent_id'] = pr;
+          } else if (parentId != null) {
+            runningFields['parent_id'] = parentId.toString();
           }
-        } else {
-          runningRecordBizId = _newClientRecordUuid();
-          final rows = await getRecords();
-          for (final r in rows) {
-            var sameParent = false;
-            if (pr != null && pr.isNotEmpty) {
-              sameParent = _parentFieldEqualsRecordId(r, pr);
-            } else if (parentId != null) {
-              sameParent = _rowInt(r['parent_id']) == parentId;
-            }
-            if (!sameParent) continue;
-            if (!_isNocoRowSacredStopTarget(r)) continue;
-            final id = nocoRecordsTablePk(r);
-            if (id.isEmpty) continue;
-            _log(
-                'PATCH_ID_TRACE: child-stop recordsUid=$_recordsTableUid url=${_recordsRowUrl(id)}',
-            );
-            final childFields = _nocoFieldsForPatch(<String, dynamic>{
-              'end_time': startIso,
-              'status': 'stopped',
+          final patchTargets = <Map<String, String>>[];
+          List<Map<String, dynamic>>? rollbackSnap;
+          try {
+            await _runBatchedRecordCacheTimelineNotify(() async {
+              rollbackSnap = _cloneDeepCachedFlatRecords();
+              clearOptimisticTimelineUi();
+              _startAtomicTaskSequenceApplyLocalPrimary(
+                createBody: runningFields,
+                patchTargetsOut: patchTargets,
+              );
+              _printAtomicCheckRunningCount();
             });
-            final biz = (r['record_id'] ?? '').toString().trim();
-            final cr = await _patchRecordsRowWith404Recovery(
-              originalQueryId: biz.isNotEmpty ? biz : id,
-              restId: id,
-              fields: childFields,
-            );
-            if (cr.statusCode == 404) {
-              _purgeGhostRecordById(id);
+
+            String? newPbId;
+            try {
+              // Suppress per-PATCH/POST [timeUpdates]: optimistic handoff already notified once.
+              // POST upsert uses [_flatTimelineVisuallyEquivalent] to skip notify on id-only merge.
+              _recordCacheTimelineNotifyBatchDepth++;
+              try {
+                final stopIso =
+                    getPlanetaryNow().toUtc().toIso8601String();
+                final stopFields = _nocoFieldsForPatch(<String, dynamic>{
+                  'end_time': stopIso,
+                  'status': 'stopped',
+                });
+                for (final t in patchTargets) {
+                  final rid = (t['rid'] ?? '').trim();
+                  final oq = (t['oq'] ?? '').trim();
+                  if (rid.isEmpty) continue;
+                  final code = await _patchRecordsRowWith404Recovery(
+                    originalQueryId: oq.isNotEmpty ? oq : rid,
+                    restId: rid,
+                    fields: stopFields,
+                  );
+                  if (code == 404) {
+                    _purgeGhostRecordById(rid);
+                    continue;
+                  }
+                  if (code < 200 || code >= 300) {
+                    throw StateError('HIGHLANDER_PATCH_FAILED_$code');
+                  }
+                }
+                final createdId = await _createRecordPb(runningFields);
+                if (createdId == null || createdId.trim().isEmpty) {
+                  throw StateError('HIGHLANDER_POST_FAILED');
+                }
+                newPbId = createdId;
+                await _finalizeRecordCreateHandshake(
+                  pocketCreatedRecordId: createdId,
+                );
+              } finally {
+                _recordCacheTimelineNotifyBatchDepth--;
+              }
+              clearOptimisticTimelineUi(notifyTimeline: false);
+              try {
+                return newPbId;
+              } finally {
+                if (!primaryGate.isCompleted) {
+                  primaryGate.complete();
+                }
+              }
+            } catch (e, st) {
+              _log('HIGHLANDER server phase failed: $e');
+              _log(st.toString());
+              await _runBatchedRecordCacheTimelineNotify(() async {
+                if (rollbackSnap != null) {
+                  _restoreCachedFlatRecordsDeep(rollbackSnap!);
+                }
+                clearOptimisticTimelineUi();
+                _printAtomicCheckRunningCount();
+              });
+              AppSnack.failed();
+              if (!primaryGate.isCompleted) {
+                primaryGate.complete();
+              }
+              return null;
             }
+          } catch (e, st) {
+            _log('writeRecord primary Highlander local phase: $e');
+            _log(st.toString());
+            clearOptimisticTimelineUi();
+            if (!primaryGate.isCompleted) {
+              primaryGate.complete();
+            }
+            rethrow;
+          }
+        }
+        runningRecordBizId = _newClientRecordUuid();
+        final rows = await getRecords();
+        for (final r in rows) {
+          var sameParent = false;
+          if (pr != null && pr.isNotEmpty) {
+            sameParent = _parentFieldEqualsRecordId(r, pr);
+          } else if (parentId != null) {
+            sameParent = _rowInt(r['parent_id']) == parentId;
+          }
+          if (!sameParent) continue;
+          if (!_isNocoRowSacredStopTarget(r)) continue;
+          final id = recordsTablePk(r);
+          if (id.isEmpty) continue;
+          _log('PATCH_ID_TRACE: child-stop pb id=$id');
+          final childFields = _nocoFieldsForPatch(<String, dynamic>{
+            'end_time': startIso,
+            'status': 'stopped',
+          });
+          final biz = (r['record_id'] ?? '').toString().trim();
+          final cr = await _patchRecordsRowWith404Recovery(
+            originalQueryId: biz.isNotEmpty ? biz : id,
+            restId: id,
+            fields: childFields,
+          );
+          if (cr == 404) {
+            _purgeGhostRecordById(id);
           }
         }
         final runningFields = _nocoFieldsForPatch(<String, dynamic>{
-          'user_id': _pid,
+          'user_id': _pidForPbFilter,
           'record_id': runningRecordBizId,
           'status': 'running',
           'title': parsed.title,
@@ -4614,38 +5883,17 @@ class DatabaseService {
         } else if (parentId != null) {
           runningFields['parent_id'] = parentId.toString();
         }
-        final res = await http.post(
-          Uri.parse('$baseUrl/$_recordsRecords'),
-          headers: _headers,
-          body: jsonEncode(NocoRequest.single(
-            fields: _recordsPatchFieldsJsonStrings(
-              _nocoFieldsForPatch(runningFields),
-            ),
-          )),
-        );
-        _log('ROUTE_CHECK: POST records -> $_recordsRecords');
-        _log('writeRecord POST status=${res.statusCode}');
-        if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
-          final newId = await _finalizeRecordCreateHandshake(
-            res: res,
-            titleForMatch: parsed.title,
-            startIsoUtc: startIso,
-            endIsoUtc: null,
-          );
-          if (isPrimary) {
-            clearOptimisticTimelineUi();
-          } else {
-            _timeUpdateController.add(null);
-          }
-          return newId;
-        } else {
-          _log('writeRecord POST failed: status=${res.statusCode} body=${res.body}');
-          if (isPrimary) clearOptimisticTimelineUi();
+        final newId = await _createRecordPb(runningFields);
+        if (newId == null) {
+          _log('writeRecord PocketBase create failed');
           return null;
         }
+        await _finalizeRecordCreateHandshake(pocketCreatedRecordId: newId);
+        _notifyTimelineAfterRecordCacheMutation();
+        return newId;
       } else {
         final completedFields = _nocoFieldsForPatch(<String, dynamic>{
-          'user_id': _pid,
+          'user_id': _pidForPbFilter,
           'record_id': _newClientRecordUuid(),
           'status': 'completed',
           'title': parsed.title,
@@ -4661,28 +5909,14 @@ class DatabaseService {
         } else if (parentId != null) {
           completedFields['parent_id'] = parentId.toString();
         }
-        final res = await http.post(
-          Uri.parse('$baseUrl/$_recordsRecords'),
-          headers: _headers,
-          body: jsonEncode(NocoRequest.single(
-            fields: _recordsPatchFieldsJsonStrings(
-              _nocoFieldsForPatch(completedFields),
-            ),
-          )),
-        );
-        _log('ROUTE_CHECK: POST records -> $_recordsRecords');
-        _log('writeRecord POST status=${res.statusCode}');
-        if (res.statusCode == 200 || res.statusCode == 201 || res.statusCode == 204) {
-          return _finalizeRecordCreateHandshake(
-            res: res,
-            titleForMatch: parsed.title,
-            startIsoUtc: startIso,
-            endIsoUtc: endTime?.toUtc().toIso8601String(),
-          );
-        } else {
-          _log('writeRecord POST failed: status=${res.statusCode} body=${res.body}');
+        final newId = await _createRecordPb(completedFields);
+        if (newId == null) {
+          _log('writeRecord PocketBase create failed (completed branch)');
           return null;
         }
+        await _finalizeRecordCreateHandshake(pocketCreatedRecordId: newId);
+        _notifyTimelineAfterRecordCacheMutation();
+        return newId;
       }
     } catch (e, st) {
       _log('writeRecord failed: $e');
@@ -4694,6 +5928,9 @@ class DatabaseService {
       }
       return null;
     }
+    finally {
+      _writeRecordMutationInFlight = false;
+    }
   }
 
   Future<void> addPlannedTask(
@@ -4701,8 +5938,9 @@ class DatabaseService {
     String taskText, {
     int? categoryId,
     bool isManual = false,
+    List<Tag>? tags,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) {
       _log('TABLE_GUARD: blocked addPlannedTask because plans table id equals records table id.');
       return;
@@ -4713,25 +5951,16 @@ class DatabaseService {
       if (!isManual) {
         cid = identifyCategory(parsed.title)?.id ?? (defaultCategoryId ?? 0);
       }
-      final startIso = _planStartUtcIsoFromDateKey(dateKey);
-      final planCat = _recordCategoryBusinessPkForApi(cid);
-      await http.post(
-        Uri.parse('$baseUrl/$_plansRecords'),
-        headers: _headers,
-        body: jsonEncode(NocoRequest.single(fields: _recordsPatchFieldsJsonStrings(
-          _nocoFieldsForPatch(<String, dynamic>{
-            'user_id': _pid,
-            'plan_id': _newClientRecordUuid(),
-            'title': parsed.title,
-            'category_id': planCat,
-            'is_done': false,
-            'order': 0,
-            'checklist': <Map<String, dynamic>>[],
-            if (startIso != null) 'start_time': startIso,
-          }),
-        ))),
+      await addPlanningTask(
+        PlanningTask(
+          id: 0,
+          title: parsed.title,
+          categoryId: cid,
+          dateKey: dateKey,
+          order: 0,
+          tags: tags ?? const [],
+        ),
       );
-      _log('ROUTE_CHECK: POST plans -> $_plansRecords');
     } catch (_) {}
   }
 
@@ -4740,34 +5969,63 @@ class DatabaseService {
     required int categoryId,
     required String dateKey,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) {
       _log('TABLE_GUARD: blocked addPlan because plans table id equals records table id.');
       return;
     }
     unawaited(() async {
       try {
-        final startIso = _planStartUtcIsoFromDateKey(dateKey);
-        final planCat = _recordCategoryBusinessPkForApi(categoryId);
-        await http.post(
-          Uri.parse('$baseUrl/$_plansRecords'),
-          headers: _headers,
-          body: jsonEncode(NocoRequest.single(fields: _recordsPatchFieldsJsonStrings(
-            _nocoFieldsForPatch(<String, dynamic>{
-              'user_id': _pid,
-              'plan_id': _newClientRecordUuid(),
-              'title': title,
-              'category_id': planCat,
-              'is_done': false,
-              'order': 0,
-              'checklist': <Map<String, dynamic>>[],
-              if (startIso != null) 'start_time': startIso,
-            }),
-          ))),
+        await addPlanningTask(
+          PlanningTask(
+            id: 0,
+            title: title,
+            categoryId: categoryId,
+            dateKey: dateKey,
+            order: 0,
+          ),
         );
-        _log('ROUTE_CHECK: POST plans -> $_plansRecords');
       } catch (_) {}
     }());
+  }
+
+  /// In-memory cache patch so timeline UI can refresh immediately when the record sheet closes.
+  void applyOptimisticRecordRowEdit({
+    required String recordId,
+    String? title,
+    DateTime? startTime,
+    DateTime? endTime,
+    int? categoryId,
+    String? note,
+    String? tags,
+    List<Map<String, dynamic>>? checklist,
+  }) {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    var rid = recordId.trim();
+    if (rid.isEmpty) return;
+    final originalInput = rid;
+    final idx = _indexOfCachedRecordRow(rid, originalInput);
+    if (idx < 0) return;
+    final row = _cachedFlatRecords[idx];
+    if (title != null) row['title'] = title;
+    if (startTime != null) {
+      row['start_time'] = startTime.toUtc().toIso8601String();
+      if (endTime == null) row['status'] = 'running';
+    }
+    if (endTime != null) {
+      row['end_time'] = endTime.toUtc().toIso8601String();
+      row['status'] = 'stopped';
+    }
+    if (categoryId != null) {
+      row['category_id'] = _recordCategoryBusinessPkForApi(categoryId);
+    }
+    if (note != null) row['note'] = note;
+    if (tags != null) {
+      final t = tags.trim();
+      if (t.isNotEmpty) row['tags'] = t;
+    }
+    if (checklist != null) row['checklist'] = checklist;
+    _notifyTimelineAfterRecordCacheMutation();
   }
 
   Future<TimelineRecord?> updateRecord({
@@ -4777,19 +6035,20 @@ class DatabaseService {
     DateTime? endTime,
     int? categoryId,
     String? note,
+    /// Comma-separated tag **names** (@DATA_MAP `records.tags` string). Omitted when null or blank.
+    String? tags,
     List<Map<String, dynamic>>? checklist,
     bool bypassConflictCheck = false,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return null;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return null;
+    Map<String, dynamic>? rollbackRow;
+    var rollbackIndex = -1;
     try {
       var rid = recordId.trim();
       if (rid.isEmpty) return null;
       final originalInput = rid;
       rid = await _resolveRecordIdForRestUrl(rid);
-      debugPrint('DB_TRACE: Using NocoDB record_id: $rid for sync.');
-      _log(
-          'PATCH_ID_TRACE: updateRecord recordsUid=$_recordsTableUid url=${_recordsRowUrl(rid)}',
-      );
+      _log('PATCH_ID_TRACE: updateRecord pb id=$rid');
       final updates = <String, dynamic>{};
       if (title != null) updates['title'] = title;
       if (endTime != null) {
@@ -4806,12 +6065,16 @@ class DatabaseService {
         updates['category_id'] = _recordCategoryBusinessPkForApi(categoryId);
       }
       if (note != null) updates['note'] = note;
+      if (tags != null) {
+        final t = tags.trim();
+        if (t.isNotEmpty) updates['tags'] = t;
+      }
       if (checklist != null) updates['checklist'] = checklist;
       if (updates.isEmpty) {
         final rows = await getRecords();
         Map<String, dynamic>? found;
         for (final r in rows) {
-          if (nocoRecordsTablePk(r) == rid ||
+          if (recordsTablePk(r) == rid ||
               (r['record_id'] ?? '').toString().trim() == rid ||
               (r['record_id'] ?? '').toString().trim() == originalInput) {
             found = r;
@@ -4820,25 +6083,61 @@ class DatabaseService {
         }
         if (found == null) return null;
         return TimelineRecord.fromMap(_rowToRecordMap(found),
-            recordId: rid);
+            systemId: rid);
       }
-      final res = await _patchRecordsRowWith404Recovery(
+      rollbackIndex = _indexOfCachedRecordRow(rid, originalInput);
+      if (rollbackIndex >= 0) {
+        rollbackRow = Map<String, dynamic>.from(_cachedFlatRecords[rollbackIndex]);
+        final row = _cachedFlatRecords[rollbackIndex];
+        if (title != null) row['title'] = title;
+        if (startTime != null) {
+          row['start_time'] = startTime.toUtc().toIso8601String();
+          if (endTime == null) row['status'] = 'running';
+        }
+        if (endTime != null) {
+          row['end_time'] = endTime.toUtc().toIso8601String();
+          row['status'] = 'stopped';
+        }
+        if (categoryId != null) {
+          row['category_id'] = updates['category_id'];
+        }
+        if (note != null) row['note'] = note;
+        if (tags != null) {
+          final t = tags.trim();
+          if (t.isNotEmpty) row['tags'] = t;
+        }
+        if (checklist != null) row['checklist'] = checklist;
+        _notifyTimelineAfterRecordCacheMutation();
+      }
+      final patchCode = await _patchRecordsRowWith404Recovery(
         originalQueryId: originalInput,
         restId: rid,
         fields: _nocoFieldsForPatch(Map<String, dynamic>.from(updates)),
       );
-      if (res.statusCode == 404) {
+      if (patchCode == 404) {
+        if (rollbackRow != null && rollbackIndex >= 0) {
+          _cachedFlatRecords[rollbackIndex] = rollbackRow;
+          _notifyTimelineAfterRecordCacheMutation();
+        }
         _purgeGhostRecordById(rid);
-        await _fetchRecordsIntoCache();
-        _timeUpdateController.add(null);
+        await _fetchRecordsIntoCache(forceNetwork: true);
+        _notifyTimelineAfterRecordCacheMutation();
         AppSnack.failed();
         return null;
       }
-      await _fetchRecordsIntoCache();
-      final rows = await getRecords();
+      if (patchCode < 200 || patchCode >= 300) {
+        if (rollbackRow != null && rollbackIndex >= 0) {
+          _cachedFlatRecords[rollbackIndex] = rollbackRow;
+          _notifyTimelineAfterRecordCacheMutation();
+        }
+        AppSnack.failed();
+        return null;
+      }
+      await _fetchRecordsIntoCache(forceNetwork: true);
+      final rows = await getRecords(forceNetwork: true);
       final row = rows.firstWhere(
         (r) =>
-            nocoRecordsTablePk(r) == rid ||
+            recordsTablePk(r) == rid ||
             (r['record_id'] ?? '').toString().trim() == rid ||
             (r['record_id'] ?? '').toString().trim() == originalInput,
         orElse: () => <String, dynamic>{},
@@ -4847,16 +6146,21 @@ class DatabaseService {
         AppSnack.failed();
         return null;
       }
-      _timeUpdateController.add(null);
-      AppSnack.saved();
-      return TimelineRecord.fromMap(_rowToRecordMap(row), recordId: rid);
+      _notifyTimelineAfterRecordCacheMutation();
+      return TimelineRecord.fromMap(_rowToRecordMap(row), systemId: rid);
     } catch (_) {
+      if (rollbackRow != null && rollbackIndex >= 0) {
+        if (rollbackIndex < _cachedFlatRecords.length) {
+          _cachedFlatRecords[rollbackIndex] = rollbackRow;
+          _notifyTimelineAfterRecordCacheMutation();
+        }
+      }
       AppSnack.failed();
       return null;
     }
   }
 
-  /// Alias: Noco row PATCH — [recordId] must resolve to **wrapper `Id`** (integer) for URL path.
+  /// Alias for [updateRecord] (PocketBase row PATCH by record id).
   Future<TimelineRecord?> patchRecord({
     required String recordId,
     String? title,
@@ -4864,6 +6168,7 @@ class DatabaseService {
     DateTime? endTime,
     int? categoryId,
     String? note,
+    String? tags,
     List<Map<String, dynamic>>? checklist,
     bool bypassConflictCheck = false,
   }) =>
@@ -4874,53 +6179,68 @@ class DatabaseService {
         endTime: endTime,
         categoryId: categoryId,
         note: note,
+        tags: tags,
         checklist: checklist,
         bypassConflictCheck: bypassConflictCheck,
       );
 
   Future<bool> deleteRecordByDocId(String recordId) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     final originalInput = recordId.trim();
     if (originalInput.isEmpty) return false;
     final delKeys = _collectRecordKeysFromCache(originalInput);
     for (final k in delKeys) {
       if (k.isNotEmpty) _optimisticDeletedKeys.add(k);
     }
-    _timeUpdateController.add(null);
+    _notifyTimelineAfterRecordCacheMutation();
     try {
-      var rid = await _resolveRecordIdForRestUrl(originalInput);
-      final res = await _deleteRecordsRowWithFallback(
+      final rid = await _resolveRecordIdForStopOrDelete(originalInput);
+      final delCode = await _deleteRecordsRowWithFallback(
         originalQueryId: originalInput,
         restId: rid,
       );
-      if (res.statusCode == 404) {
+      if (delCode == 404) {
         _purgeGhostRecordById(rid);
       }
-      final ok = (res.statusCode >= 200 && res.statusCode < 300) ||
-          res.statusCode == 404;
+      final ok = (delCode >= 200 && delCode < 300) || delCode == 404;
       if (!ok) {
         for (final k in delKeys) {
           _optimisticDeletedKeys.remove(k);
         }
-        _timeUpdateController.add(null);
-        AppSnack.failed();
+        _notifyTimelineAfterRecordCacheMutation();
+        _snackDeleteHttpFailure(delCode);
         return false;
       }
-      await _fetchRecordsIntoCache();
+      await _fetchRecordsIntoCache(forceNetwork: true);
       for (final k in delKeys) {
         _optimisticDeletedKeys.remove(k);
       }
-      _timeUpdateController.add(null);
+      _notifyTimelineAfterRecordCacheMutation();
       AppSnack.deleted();
       return true;
+    } on LegacyIdResolutionException catch (e, st) {
+      _log('deleteRecordByDocId: $e');
+      _log(st.toString());
+      for (final k in delKeys) {
+        _optimisticDeletedKeys.remove(k);
+      }
+      _notifyTimelineAfterRecordCacheMutation();
+      AppSnack.show(
+        t(currentLocale.value, 'error_stop_id_unresolved'),
+        error: true,
+      );
+      return false;
     } catch (e, st) {
       _log('deleteRecordByDocId failed: $e');
       _log(st.toString());
       for (final k in delKeys) {
         _optimisticDeletedKeys.remove(k);
       }
-      _timeUpdateController.add(null);
-      AppSnack.failed();
+      _notifyTimelineAfterRecordCacheMutation();
+      AppSnack.show(
+        t(currentLocale.value, 'error_prefix').replaceAll('%s', '$e'),
+        error: true,
+      );
       return false;
     }
   }
@@ -4929,55 +6249,129 @@ class DatabaseService {
     await deleteRecordByDocId(recordId);
   }
 
-  /// Stops a record (PATCH). Applies optimistic UI immediately; returns `false` if network/PATCH failed (UI reverts).
+  /// Stops a record via PocketBase `records` PATCH — the argument must resolve to PB row **`id`** (15-char).
+  /// Legacy column `record_id` (UUID) is mapped internally but must not be passed from UI as the primary key.
+  /// Returns **`true` only** for **2xx** (not 404). Optimistic UI reverts when the request fails.
   Future<bool> stopRecordByDocId(String recordId) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized) {
+      print(
+        '[ABORT_REASON] Exiting early because: !_isInitialized '
+        '(_isInitialized=$_isInitialized). No PATCH.',
+      );
+      _brainSnackError(t(currentLocale.value, 'error_stop_brain_not_ready'));
+      return false;
+    }
+    if (!_hasAuthenticatedUserId) {
+      print(
+        '[ABORT_REASON] Exiting early because: PocketBase auth record id is missing '
+        '(_isInitialized=$_isInitialized, currentProfileId=$currentProfileId). No PATCH.',
+      );
+      _brainSnackError(t(currentLocale.value, 'error_stop_brain_not_ready'));
+      return false;
+    }
     var rid = recordId.trim();
-    if (rid.isEmpty) return false;
+    if (rid.isEmpty) {
+      print(
+        '[ABORT_REASON] Exiting early because: trimmed recordId is empty. No PATCH.',
+      );
+      _brainSnackError(t(currentLocale.value, 'error_stop_empty_doc_id'));
+      return false;
+    }
+    if (_stopRecordInFlightKeys.contains(rid)) {
+      return false;
+    }
+    _stopRecordInFlightKeys.add(rid);
     final originalInput = rid;
     _applyOptimisticStopUiSnapshot(originalInput);
     try {
-      rid = await _resolveRecordIdForRestUrl(rid);
+      rid = await _resolveRecordIdForStopOrDelete(rid);
+      if (!_isLikelyPocketBaseRowId(rid)) {
+        print(
+          '[ABORT_REASON] After resolve, rid="$rid" is not a PocketBase row id segment '
+          '(fails _isLikelyPocketBaseRowId). Throwing LegacyIdResolutionException.',
+        );
+        throw LegacyIdResolutionException(originalInput);
+      }
       final nowIso = getPlanetaryNow().toUtc().toIso8601String();
-      _log(
-          'PATCH_ID_TRACE: stopRecordByDocId recordsUid=$_recordsTableUid url=${_recordsRowUrl(rid)}',
-      );
+      _log('PATCH_ID_TRACE: stopRecordByDocId pb id=$rid');
       final stopFields = _nocoFieldsForPatch(<String, dynamic>{
         'end_time': nowIso,
         'status': 'stopped',
       });
-      final res = await _patchRecordsRowWith404Recovery(
+      final stopCode = await _patchRecordsRowWith404Recovery(
         originalQueryId: originalInput,
         restId: rid,
         fields: stopFields,
+        debugPbClientException: true,
       );
-      if (res.statusCode == 404) {
+      if (stopCode == 404) {
         _purgeGhostRecordById(rid);
         _clearOptimisticStopKeysForRecord(originalInput);
-        await _fetchRecordsIntoCache();
-        _timeUpdateController.add(null);
-        AppSnack.updated();
-        return true;
+        if (_lastRecordsPatchSkippedDeadLetter) {
+          print(
+            '[ABORT_REASON] stopRecordByDocId: HTTP code 404 from dead-letter skip (no network).',
+          );
+          _brainSnackError(
+            t(currentLocale.value, 'error_stop_dead_letter_skip'),
+          );
+        } else {
+          print(
+            '[ABORT_REASON] stopRecordByDocId: server returned 404 for PATCH (record missing).',
+          );
+          _snackStopHttpFailure(404);
+        }
+        return false;
       }
-      final ok = res.statusCode >= 200 && res.statusCode < 300;
+      final ok = stopCode >= 200 && stopCode < 300;
       if (ok) {
         _clearOptimisticStopKeysForRecord(originalInput);
-        await _fetchRecordsIntoCache();
-        _timeUpdateController.add(null);
         AppSnack.updated();
         return true;
       }
       _clearOptimisticStopKeysForRecord(originalInput);
-      _timeUpdateController.add(null);
-      AppSnack.failed();
+      _notifyTimelineAfterRecordCacheMutation();
+      print(
+        '[ABORT_REASON] stopRecordByDocId: PATCH returned non-success code $stopCode.',
+      );
+      _snackStopHttpFailure(stopCode);
       return false;
-    } catch (e, st) {
+    } on LegacyIdResolutionException catch (e, st) {
+      print('UI ERROR: $e');
+      print(
+        '[ABORT_REASON] LegacyIdResolutionException — could not map input to PB row id: $e',
+      );
+      _log('stopRecordByDocId: $e');
+      _log(st.toString());
+      _clearOptimisticStopKeysForRecord(originalInput);
+      _notifyTimelineAfterRecordCacheMutation();
+      _brainSnackError(t(currentLocale.value, 'error_stop_id_unresolved'));
+      return false;
+    } on ClientException catch (e, st) {
+      print('UI ERROR: $e');
+      print(
+        '[ABORT_REASON] stopRecordByDocId: PocketBase ClientException status=${e.statusCode} $e',
+      );
       _log('stopRecordByDocId failed: $e');
       _log(st.toString());
       _clearOptimisticStopKeysForRecord(originalInput);
-      _timeUpdateController.add(null);
-      AppSnack.failed();
+      _notifyTimelineAfterRecordCacheMutation();
+      _snackStopHttpFailure(e.statusCode);
       return false;
+    } catch (e, st) {
+      print('UI ERROR: $e');
+      print(
+        '[ABORT_REASON] stopRecordByDocId: unexpected exception before/after PATCH: $e',
+      );
+      _log('stopRecordByDocId failed: $e');
+      _log(st.toString());
+      _clearOptimisticStopKeysForRecord(originalInput);
+      _notifyTimelineAfterRecordCacheMutation();
+      _brainSnackError(
+        t(currentLocale.value, 'error_prefix').replaceAll('%s', '$e'),
+      );
+      return false;
+    } finally {
+      _stopRecordInFlightKeys.remove(originalInput);
     }
   }
 
@@ -4986,142 +6380,411 @@ class DatabaseService {
 
   Future<void> updateRecordChecklist(
       String recordId, List<Map<String, dynamic>> checklist) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
     try {
       var rid = recordId.trim();
       if (rid.isEmpty) return;
       final originalInput = rid;
       rid = await _resolveRecordIdForRestUrl(rid);
       final clFields = _nocoFieldsForPatch(<String, dynamic>{'checklist': checklist});
-      final res = await _patchRecordsRowWith404Recovery(
+      final clCode = await _patchRecordsRowWith404Recovery(
         originalQueryId: originalInput,
         restId: rid,
         fields: clFields,
       );
-      if (res.statusCode == 404) {
+      if (clCode == 404) {
         _purgeGhostRecordById(rid);
       }
-      await _fetchRecordsIntoCache();
-      _timeUpdateController.add(null);
+      await _fetchRecordsIntoCache(forceNetwork: true);
+      _notifyTimelineAfterRecordCacheMutation();
     } catch (_) {}
   }
 
-  Stream<List<PlanningTask>> planningStream(DateTime selectedDate) {
-    return Stream.multi((controller) async {
-      StreamSubscription<void>? sub;
-      try {
-        controller.add(await _fetchPlanningTasksForDate(selectedDate));
-        sub = Stream.periodic(const Duration(seconds: 2)).listen((_) async {
+  /// Planning list stream. **No periodic polling** (PageView keeps many days alive).
+  /// [listenToGlobalPlanningRefresh]: only the **visible** planning day should be `true` so [notifyPlanningRefresh]
+  /// does not fan out identical GETs to every off-screen [PlanningPage].
+  Stream<List<PlanningTask>> planningStream(
+    DateTime selectedDate, {
+    bool listenToGlobalPlanningRefresh = true,
+  }) {
+    return Stream.multi((controller) {
+      StreamSubscription<void>? pokeSub;
+      var busy = false;
+      Future<void> pump() async {
+        if (busy || controller.isClosed) return;
+        busy = true;
+        try {
+          List<PlanningTask> tasks;
           try {
-            if (!controller.isClosed) {
-              controller.add(await _fetchPlanningTasksForDate(selectedDate));
-            }
+            tasks = await _fetchPlanningTasksForDate(selectedDate);
           } catch (_) {
-            if (!controller.isClosed) controller.add(<PlanningTask>[]);
+            tasks = <PlanningTask>[];
           }
-        });
-      } catch (_) {
-        if (!controller.isClosed) controller.add(<PlanningTask>[]);
+          if (!controller.isClosed) controller.add(tasks);
+        } finally {
+          busy = false;
+        }
       }
-      controller.onCancel = () => sub?.cancel();
+
+      unawaited(pump());
+      if (listenToGlobalPlanningRefresh) {
+        pokeSub = _planningRefreshController.stream.listen((_) {
+          unawaited(pump());
+        });
+      }
+      controller.onCancel = () {
+        pokeSub?.cancel();
+      };
     });
   }
 
-  PlanningTask _planRowToTask(Map<String, dynamic> row) {
-    final startUtc = _parseDateTimeUtc(row['start_time']);
-    final startDisplay =
-        startUtc != null ? _profileWallFromUtc(startUtc.toUtc()) : null;
-    final endUtc = _parseDateTimeUtc(row['end_time']);
-    final endDisplay =
-        endUtc != null ? _profileWallFromUtc(endUtc.toUtc()) : null;
-    final derivedDateKey = startDisplay != null
-        ? _dateKeyFromDate(startDisplay)
-        : (endDisplay != null ? _dateKeyFromDate(endDisplay) : '');
-    final derivedEndDateKey =
-        endDisplay != null ? _dateKeyFromDate(endDisplay) : derivedDateKey;
-    final planPk = nocoPlanRowPk(row);
-    return PlanningTask.fromJson(<String, dynamic>{
-      'plan_row_id': planPk.isNotEmpty ? planPk : null,
-      'id': _rowInt(row['id']),
-      'title': row['title'] as String? ?? '',
-      'categoryId': categoryIdFromNocoRecordRow(row) ?? 0,
-      'isDone': _jsonBoolFromDynamic(row['is_done']),
-      'dateKey': derivedDateKey,
-      'order': row['order'] is int ? row['order'] as int : 0,
-      'startTime': startDisplay,
-      'endDateTime': endDisplay,
-      'endDateKey': derivedEndDateKey,
-      'checklist': row['checklist'],
-      'note': mergeRecordNoteFields(row['note'], row['notes']),
-      'parentPlanId': row['parent_plan_id'] == null
-          ? null
-          : _rowInt(row['parent_plan_id']),
-      'subRecordIds': <int>[],
-    });
+  /// PocketBase: **tags** rows for the current `user_id` (flat maps incl. 15-char `id`).
+  Future<List<Map<String, dynamic>>> fetchTags() async {
+    if (!(currentProfileId?.isNotEmpty ?? false)) return [];
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) {
+        return [];
+      }
+      final authId = _userIdForWhere;
+      if (authId == null || authId.isEmpty) return [];
+      final uid = _escapeForPbFilter(authId);
+      final list = await _pb.collection(PbCollections.tags).getFullList(
+        filter: 'user_id = "$uid"',
+      );
+      final out = list.map((r) {
+        final m = Map<String, dynamic>.from(r.data);
+        m['id'] = r.id;
+        m['_pb_record_id'] = r.id;
+        return m;
+      }).toList();
+      if (kDebugMode) {
+        debugPrint(
+          '[PB] fetchTags: ${out.length} rows @ $kPocketBaseUrl',
+        );
+      }
+      return out;
+    } catch (e, st) {
+      _maybeOpenPbCircuitFromListFailure(e, 'fetchTags');
+      _log('TAGS_FETCH: $e');
+      _log(st.toString());
+      return [];
+    }
+  }
+
+  /// Loads tag rows for the current profile (`user_id` filter). Returns empty if none or error (no mocks).
+  Future<List<Tag>> fetchTagsForCurrentUser() async {
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+      _userTagsCatalogCache = [];
+      return [];
+    }
+    try {
+      final flat = await fetchTags();
+      final out = <Tag>[];
+      for (final row in flat) {
+        final tag = Tag.fromPocketJson(row);
+        if (tag.tagId == 0 && (tag.pbRecordId == null || tag.pbRecordId!.isEmpty)) {
+          continue;
+        }
+        out.add(tag);
+      }
+      out.sort((a, b) {
+        final c = a.sortOrder.compareTo(b.sortOrder);
+        if (c != 0) return c;
+        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      });
+      _userTagsCatalogCache = List.unmodifiable(out);
+      return List<Tag>.from(out);
+    } catch (e, st) {
+      _log('TAGS_FETCH: $e');
+      _log(st.toString());
+      _userTagsCatalogCache = [];
+      return [];
+    }
+  }
+
+  /// Writes `sort_order` 0…n-1 for [ordered] (PocketBase **tags** rows). Concurrent PATCH per row.
+  Future<bool> persistTagsSortOrderForCurrentUser(List<Tag> ordered) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    if (ordered.isEmpty) return true;
+    try {
+      await ensurePocketBaseReady();
+      final jobs = <Future<dynamic>>[];
+      for (var i = 0; i < ordered.length; i++) {
+        final rid = ordered[i].pbRecordId?.trim() ?? '';
+        if (rid.isEmpty) continue;
+        jobs.add(
+          _pb.collection(PbCollections.tags).update(
+                rid,
+                body: <String, dynamic>{
+                  'user_id': _pidForPbFilter,
+                  'sort_order': i,
+                },
+              ),
+        );
+      }
+      if (jobs.isEmpty) return false;
+      await Future.wait(jobs);
+      final next = <Tag>[
+        for (var i = 0; i < ordered.length; i++) ordered[i].copyWith(sortOrder: i),
+      ];
+      _userTagsCatalogCache = List.unmodifiable(next);
+      notifyTagsCatalogChanged();
+      return true;
+    } catch (e, st) {
+      _log('TAG_SORT_PERSIST: $e');
+      _log(st.toString());
+      return false;
+    }
+  }
+
+  /// POST one tag row: `user_id`, `tag_id` (business), `name`, optional `color` / `icon` (@DATA_MAP `tags`).
+  Future<Tag?> createTagForCurrentUser({
+    required String name,
+    required String colorHex,
+    required String iconKey,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return null;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return null;
+    try {
+      final existing = await fetchTagsForCurrentUser();
+      var nextBiz = 1;
+      var nextOrder = 0;
+      for (final t in existing) {
+        if (t.tagId >= nextBiz) nextBiz = t.tagId + 1;
+        if (t.sortOrder >= nextOrder) nextOrder = t.sortOrder + 1;
+      }
+      final created = await _pb.collection(PbCollections.tags).create(
+            body: <String, dynamic>{
+              'tag_id': nextBiz,
+              'user_id': _pidForPbFilter,
+              'name': trimmed,
+              'color': colorHex,
+              'icon': iconKey,
+              'sort_order': nextOrder,
+            },
+          );
+      return Tag.fromPocketJson(<String, dynamic>{...created.data, 'id': created.id});
+    } catch (e, st) {
+      _log('CREATE_TAG: $e');
+      _log(st.toString());
+      return null;
+    }
+  }
+
+  /// PocketBase **tags** collection row id.
+  Future<bool> deleteTagByPocketRecordId(String pocketRecordId) async {
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+      return false;
+    }
+    final id = pocketRecordId.trim();
+    if (id.isEmpty) return false;
+    try {
+      await _pb.collection(PbCollections.tags).delete(id);
+      return true;
+    } catch (e, st) {
+      _log('DELETE_TAG_PB: $e');
+      _log(st.toString());
+      return false;
+    }
+  }
+
+  /// Update one **tags** row on PocketBase.
+  Future<bool> patchTagForCurrentUser({
+    required String pocketRecordId,
+    required String name,
+    required String colorHex,
+    required String iconKey,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return false;
+    final rid = pocketRecordId.trim();
+    if (rid.isEmpty) return false;
+    try {
+      await _pb.collection(PbCollections.tags).update(
+            rid,
+            body: <String, dynamic>{
+              'user_id': _pidForPbFilter,
+              'name': trimmed,
+              'color': colorHex,
+              'icon': iconKey,
+            },
+          );
+      return true;
+    } catch (e, st) {
+      _log('TAG_PATCH: $e');
+      _log(st.toString());
+      return false;
+    }
+  }
+
+  /// PocketBase `tags_link` values: **only** `tags` collection record ids ([Tag.pbRecordId]).
+  /// Resolves by business [Tag.tagId] against [fetchTagsForCurrentUser] when pb id missing on the instance.
+  /// Never uses tag name, Noco wrapper id, or any non-PB identifier.
+  Future<List<String>> _pbTagRecordIdsFromTags(List<Tag> tags) async {
+    if (tags.isEmpty) return [];
+    final catalog = await fetchTagsForCurrentUser();
+    final byBiz = <int, Tag>{};
+    for (final t in catalog) {
+      if (t.tagId != 0) {
+        byBiz[t.tagId] = t;
+      }
+    }
+    final out = <String>[];
+    final seen = <String>{};
+    for (final t in tags) {
+      print('DEBUG: Tag "${t.name}" has pbRecordId: ${t.pbRecordId}');
+      if (!t.rendersAsChip) continue;
+      var pid = t.pbRecordId?.trim() ?? '';
+      if (pid.isEmpty && t.tagId != 0) {
+        pid = byBiz[t.tagId]?.pbRecordId?.trim() ?? '';
+      }
+      if (pid.isEmpty) {
+        if (kDebugMode) {
+          debugPrint(
+            '[PB] _pbTagRecordIdsFromTags: skip — no PocketBase record id '
+            '(tagId=${t.tagId} name="${t.name}")',
+          );
+        }
+        continue;
+      }
+      if (seen.add(pid)) out.add(pid);
+    }
+    return out;
+  }
+
+  Future<void> _syncPlanTagsPocket(String planRecordId, List<Tag> tags) async {
+    final rid = planRecordId.trim();
+    if (rid.isEmpty) return;
+    try {
+      final pbIds = await _pbTagRecordIdsFromTags(tags);
+      if (tags.isNotEmpty &&
+          pbIds.length <
+              tags.where((t) => t.rendersAsChip).length &&
+          kDebugMode) {
+        debugPrint(
+          '[PB] _syncPlanTagsPocket: resolved ${pbIds.length} link id(s) '
+          'from ${tags.length} tag(s); missing rows need pbRecordId / tag_id in catalog. plan=$rid',
+        );
+      }
+      print('DEBUG: Sending to PB tags_link: $pbIds');
+      await _pb.collection(PbCollections.plans).update(
+            rid,
+            body: <String, dynamic>{kPbPlanTagsExpand: pbIds},
+          );
+    } catch (e, st) {
+      _log('SYNC_PLAN_TAGS_PB: $e');
+      _log(st.toString());
+    }
+  }
+
+  Future<bool> _addPlanningTaskPocket(
+    PlanningTask task, {
+    required String titleTrimmed,
+    required String clientPlanId,
+    required Object categoryFieldForPlan,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'plan_id': clientPlanId,
+        'user_id': _pidForPbFilter,
+        'category_id': categoryFieldForPlan.toString(),
+        'title': titleTrimmed,
+        'is_done': task.isDone,
+        'checklist': task.checklist.isNotEmpty
+            ? List<dynamic>.from(task.checklist)
+            : <dynamic>[],
+        'order': task.order,
+      };
+      if (task.startTime != null) {
+        body['start_time'] = task.startTime!.toUtc().toIso8601String();
+      } else if (task.dateKey.length >= 10) {
+        final iso = _planStartUtcIsoFromDateKey(task.dateKey);
+        if (iso != null) body['start_time'] = iso;
+      }
+      if (task.endDateTime != null) {
+        body['end_time'] = task.endDateTime!.toUtc().toIso8601String();
+      }
+      if (task.parentPlanId != null) {
+        body['parent_plan_id'] = task.parentPlanId.toString();
+      }
+      if (task.notes != null && task.notes!.trim().isNotEmpty) {
+        body['note'] = task.notes;
+      }
+      if (task.tags.isNotEmpty) {
+        final pbIds = await _pbTagRecordIdsFromTags(task.tags);
+        if (pbIds.isNotEmpty) {
+          print('DEBUG: Sending to PB tags_link: $pbIds');
+          body['tags_link'] = pbIds;
+        }
+      }
+      final record = await _pb.collection(PbCollections.plans).create(body: body);
+      if (task.tags.isNotEmpty) {
+        await _syncPlanTagsPocket(record.id, task.tags);
+      }
+      notifyPlanningRefresh();
+      return true;
+    } catch (e, st) {
+      _log('ADD_PLAN_PB: $e');
+      _log(st.toString());
+      AppSnack.failed();
+      return false;
+    }
   }
 
   Future<bool> addPlanningTask(PlanningTask task) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+      return false;
+    }
     if (!_isPlansTableConfigured) {
       _log('TABLE_GUARD: blocked addPlanningTask because plans table id equals records table id.');
       AppSnack.failed();
       return false;
     }
     try {
-      final catStr = _categoryStringPkForApi(getCategoryRuleById(task.categoryId));
-      if (catStr == null || catStr.isEmpty) {
-        _log('ADD_PLAN: blocked — category_id string missing for local category ${task.categoryId}');
+      final catRule = getCategoryRuleById(task.categoryId);
+      if (catRule == null) {
+        _log('ADD_PLAN: blocked — unknown category local id ${task.categoryId}');
         AppSnack.failed();
         return false;
       }
-      final planFieldsRaw = _nocoFieldsForPatch(<String, dynamic>{
-        'user_id': _pid,
-        'category_id': catStr,
-        'plan_id': _newClientRecordUuid(),
-        'title': task.title,
-        // Explicit boolean so Noco never applies a wrong default (@DATA_MAP `is_done`).
-        'is_done': task.isDone == true,
-        'order': task.order,
-        'checklist': task.checklist.isNotEmpty ? task.checklist : <Map<String, dynamic>>[],
-      });
-      final planFields = _recordsPatchFieldsJsonStrings(
-        Map<String, dynamic>.from(planFieldsRaw),
-      );
-      if (task.startTime != null) {
-        planFields['start_time'] = task.startTime!.toUtc().toIso8601String();
-      } else if (task.dateKey.length >= 10) {
-        final iso = _planStartUtcIsoFromDateKey(task.dateKey);
-        if (iso != null) planFields['start_time'] = iso;
-      }
-      if (task.endDateTime != null) {
-        planFields['end_time'] = task.endDateTime!.toUtc().toIso8601String();
-      }
-      if (task.notes != null && task.notes!.trim().isNotEmpty) {
-        planFields['note'] = task.notes;
-      }
-      if (task.parentPlanId != null) {
-        planFields['parent_plan_id'] = task.parentPlanId.toString();
-      }
-      final res = await http.post(
-        Uri.parse('$baseUrl/$_plansRecords'),
-        headers: _headers,
-        body: jsonEncode(NocoRequest.single(fields: planFields)),
-      );
-      _log('ROUTE_CHECK: POST plans -> $_plansRecords');
-      final ok = res.statusCode >= 200 && res.statusCode < 300;
-      if (ok) {
-        AppSnack.saved();
+      // Noco **Link** / FK columns on `plans.category_id` often expect the linked row’s system **Id** (int),
+      // not the business slug. Prefer [CategoryRule.nocoId]; fall back to string PK like [addPlan] / DATA_MAP.
+      final Object categoryFieldForPlan;
+      final catNocoSys = _categoryBackendRowIdStrict(catRule);
+      if (catNocoSys != null) {
+        categoryFieldForPlan = catNocoSys;
       } else {
-        AppSnack.failed();
+        final catStr = _categoryStringPkForApi(catRule);
+        if (catStr != null && catStr.isNotEmpty) {
+          categoryFieldForPlan = catStr;
+        } else {
+          categoryFieldForPlan =
+              _recordCategoryBusinessPkForApi(task.categoryId);
+        }
       }
-      return ok;
-    } catch (_) {
+      final titleTrimmed = task.title.trim();
+      if (titleTrimmed.isEmpty) {
+        _log('ADD_PLAN: blocked — empty title');
+        AppSnack.failed();
+        return false;
+      }
+      final clientPlanId = _newClientRecordUuid();
+      return _addPlanningTaskPocket(
+        task,
+        titleTrimmed: titleTrimmed,
+        clientPlanId: clientPlanId,
+        categoryFieldForPlan: categoryFieldForPlan,
+      );
+    } catch (e, st) {
+      debugPrint('[ADD_PLAN][FAIL] exception: $e\n$st');
       AppSnack.failed();
       return false;
     }
   }
 
-  /// POST bulk upsert with NocoRequest. [planRowId] = Noco **plan_id** (@DATA_MAP.md).
   void _cancelPlanOrderDebounceTimer() {
     _planOrderDebounceTimer?.cancel();
     _planOrderDebounceTimer = null;
@@ -5132,8 +6795,8 @@ class DatabaseService {
     if (_planReorderBaselineByPlanId != null) return;
     final m = <String, int>{};
     for (final t in tasksWithServerOrders) {
-      if (t.planRowIdForNoco.startsWith('optimistic-')) continue;
-      final id = t.planRowIdForNoco.trim();
+      if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
+      final id = t.planRowIdForBackend.trim();
       if (id.isEmpty) continue;
       m[id] = t.order;
     }
@@ -5141,73 +6804,39 @@ class DatabaseService {
   }
 
   Future<void> _persistPlanningTaskOrdersBulkNow(List<PlanningTask> ordered) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) return;
 
-    final requests = <NocoRequest>[];
-    for (var i = 0; i < ordered.length; i++) {
-      final t = ordered[i];
-      if (t.planRowIdForNoco.startsWith('optimistic-')) continue;
-      final id = t.planRowIdForNoco.trim();
-      if (id.isEmpty) continue;
-      final base = _planReorderBaselineByPlanId?[id];
-      if (base != null && base == i) continue;
-
-      Object bulkId = id;
-      final asInt = int.tryParse(id);
-      if (asInt != null) bulkId = asInt;
-
-      final fields = _nocoFieldsForPatch(<String, dynamic>{
-        'user_id': _pid,
-        'order': i,
-      });
-      requests.add(NocoRequest(id: bulkId, fields: fields));
-    }
-
-    if (requests.isEmpty) {
-      _log(
-        'PLAN_ORDER_SYNC: skip bulk PATCH — every order matches baseline (${ordered.length} tasks)',
-      );
-      _planReorderBaselineByPlanId = null;
+    try {
+      await ensurePocketBaseReady();
+      for (var i = 0; i < ordered.length; i++) {
+        final t = ordered[i];
+        if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
+        final id = t.planRowIdForBackend.trim();
+        if (id.isEmpty) continue;
+        final base = _planReorderBaselineByPlanId?[id];
+        if (base != null && base == i) continue;
+        final restId = await _resolvePlanRestId(
+          id,
+          planBusinessId: t.planRowId,
+        );
+        await _pb.collection(PbCollections.plans).update(
+              restId,
+              body: <String, dynamic>{'order': i},
+            );
+      }
+    } catch (e, st) {
+      print('UI ERROR: $e');
+      _log('PLAN_ORDER_SYNC_PB: $e');
+      _log(st.toString());
+      try {
+        final msg = t(currentLocale.value, 'plan_save_failed');
+        if (!_notify.isClosed) _notify.add(msg);
+      } catch (_) {}
       return;
     }
-
-    for (var start = 0; start < requests.length; start += _planOrderBulkChunkSize) {
-      final end = min(start + _planOrderBulkChunkSize, requests.length);
-      final chunk = requests.sublist(start, end);
-      final chunkIndex = start ~/ _planOrderBulkChunkSize + 1;
-      final chunkCount = (requests.length + _planOrderBulkChunkSize - 1) ~/ _planOrderBulkChunkSize;
-      final bodyJson = jsonEncode(NocoRequest.bulk(chunk));
-      _log(
-        'PLAN_ORDER_SYNC: bulk PATCH chunk $chunkIndex/$chunkCount rows=${chunk.length}',
-      );
-      try {
-        final res =
-            await _plansBulkPatchHttp('persistPlanningTaskOrderBulk', bodyJson);
-        final ok = res.statusCode >= 200 && res.statusCode < 300;
-        if (!ok) {
-          _log(
-            'PLAN_ORDER_SYNC: chunk failed status=${res.statusCode} body=${res.body}',
-          );
-          try {
-            final msg = t(currentLocale.value, 'plan_save_failed');
-            if (!_notify.isClosed) _notify.add(msg);
-          } catch (_) {}
-          return;
-        }
-      } catch (e, st) {
-        _log('PLAN_ORDER_SYNC: chunk exception $e');
-        _log(st.toString());
-        try {
-          final msg = t(currentLocale.value, 'plan_save_failed');
-          if (!_notify.isClosed) _notify.add(msg);
-        } catch (_) {}
-        return;
-      }
-    }
-
     _log(
-      'PLAN_ORDER_SYNC: bulk PATCH ok (${requests.length} row(s) across chunks)',
+      'PLAN_ORDER_SYNC: PocketBase PATCH ok (${ordered.length} task(s) checked)',
     );
     _planReorderBaselineByPlanId = null;
   }
@@ -5272,137 +6901,75 @@ class DatabaseService {
     List<CategoryRule> ordered, {
     String contextLabel = 'categoryOrderForce',
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return;
 
-    final requests = <NocoRequest>[];
-    for (var i = 0; i < ordered.length; i++) {
-      final r = ordered[i];
-      if (r.id == -1) continue;
-      final sysId = _categoryNocoSystemIdStrict(r);
-      if (sysId == null) continue;
-
-      final biz = _categoryStringPkForApi(r);
-      final fieldsRaw = <String, dynamic>{
-        'user_id': _pid,
-        if (biz != null && biz.isNotEmpty) 'category_id': biz,
-        'order': r.order,
-      };
-      final fields = _nocoFieldsForPatch(
-        _categoryPatchFieldsWithJsonLongText(fieldsRaw),
-      );
-      requests.add(NocoRequest(id: sysId, fields: fields));
-    }
-
-    if (requests.isEmpty) {
-      _log('$contextLabel: skip bulk PATCH (no rows)');
-      return;
-    }
-
-    for (var start = 0; start < requests.length;
-        start += _planOrderBulkChunkSize) {
-      final end = min(start + _planOrderBulkChunkSize, requests.length);
-      final chunk = requests.sublist(start, end);
-      final chunkIndex = start ~/ _planOrderBulkChunkSize + 1;
-      final chunkCount =
-          (requests.length + _planOrderBulkChunkSize - 1) ~/
-              _planOrderBulkChunkSize;
-      final bodyJson = _categoryBulkPatchJsonMany(chunk);
-      _log(
-        '$contextLabel: bulk PATCH chunk $chunkIndex/$chunkCount rows=${chunk.length}',
-      );
-      try {
-        final res =
-            await _categoryBulkPatchHttp('$contextLabel bulk', bodyJson);
-        final ok = res.statusCode >= 200 && res.statusCode < 300;
-        if (!ok) {
-          _log(
-            '$contextLabel: chunk failed status=${res.statusCode} body=${res.body}',
-          );
-          return;
-        }
-      } catch (e, st) {
-        _log('$contextLabel: chunk exception $e');
-        _log(st.toString());
-        return;
+    var n = 0;
+    try {
+      await ensurePocketBaseReady();
+      for (final r in ordered) {
+        if (r.id == -1) continue;
+        final pbId = _categoryBackendRowIdStrict(r);
+        if (pbId == null) continue;
+        final biz = _categoryStringPkForApi(r);
+        final body = _nocoFieldsForPatch(
+          _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
+            'user_id': _pidForPbFilter,
+            if (biz != null && biz.isNotEmpty) 'category_id': biz,
+            'order': r.order,
+          }),
+        );
+        await _pb.collection(PbCollections.categories).update(pbId, body: body);
+        n++;
       }
+    } catch (e, st) {
+      _log('$contextLabel: PB order sync exception $e');
+      _log(st.toString());
     }
-    _log('$contextLabel: bulk PATCH ok (${requests.length} row(s))');
+    _log('$contextLabel: PocketBase order ok ($n row(s))');
   }
 
   Future<void> _persistCategoryOrdersBulkNow(List<CategoryRule> ordered) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return;
 
-    final requests = <NocoRequest>[];
-    for (var i = 0; i < ordered.length; i++) {
-      final r = ordered[i];
-      if (r.id == -1) continue;
-      final sysId = _categoryNocoSystemIdStrict(r);
-      if (sysId == null) continue;
-      final base = _categoryReorderBaselineByLocalId?[r.id];
-      if (base != null && base == i) continue;
+    var n = 0;
+    try {
+      await ensurePocketBaseReady();
+      for (var i = 0; i < ordered.length; i++) {
+        final r = ordered[i];
+        if (r.id == -1) continue;
+        final pbId = _categoryBackendRowIdStrict(r);
+        if (pbId == null) continue;
+        final base = _categoryReorderBaselineByLocalId?[r.id];
+        if (base != null && base == i) continue;
 
-      final biz = _categoryStringPkForApi(r);
-      final fieldsRaw = <String, dynamic>{
-        'user_id': _pid,
-        if (biz != null && biz.isNotEmpty) 'category_id': biz,
-        'order': i,
-      };
-      final fields = _nocoFieldsForPatch(
-        _categoryPatchFieldsWithJsonLongText(fieldsRaw),
-      );
-      requests.add(NocoRequest(id: sysId, fields: fields));
-    }
-
-    if (requests.isEmpty) {
-      _log(
-        'CATEGORY_ORDER_SYNC: skip bulk PATCH — every index matches baseline (${ordered.length} row(s))',
-      );
-      _categoryReorderBaselineByLocalId = null;
+        final biz = _categoryStringPkForApi(r);
+        final body = _nocoFieldsForPatch(
+          _categoryPatchFieldsWithJsonLongText(<String, dynamic>{
+            'user_id': _pidForPbFilter,
+            if (biz != null && biz.isNotEmpty) 'category_id': biz,
+            'order': i,
+          }),
+        );
+        await _pb.collection(PbCollections.categories).update(pbId, body: body);
+        n++;
+      }
+    } catch (e, st) {
+      _log('CATEGORY_ORDER_SYNC: chunk exception $e');
+      _log(st.toString());
+      try {
+        final msg = t(currentLocale.value, 'sync_failed');
+        if (!_notify.isClosed) _notify.add(msg);
+      } catch (_) {}
       return;
     }
 
-    for (var start = 0; start < requests.length;
-        start += _planOrderBulkChunkSize) {
-      final end = min(start + _planOrderBulkChunkSize, requests.length);
-      final chunk = requests.sublist(start, end);
-      final chunkIndex = start ~/ _planOrderBulkChunkSize + 1;
-      final chunkCount =
-          (requests.length + _planOrderBulkChunkSize - 1) ~/
-              _planOrderBulkChunkSize;
-      final bodyJson = _categoryBulkPatchJsonMany(chunk);
+    if (n == 0) {
       _log(
-        'CATEGORY_ORDER_SYNC: bulk PATCH chunk $chunkIndex/$chunkCount rows=${chunk.length}',
+        'CATEGORY_ORDER_SYNC: skip — every index matches baseline (${ordered.length} row(s))',
       );
-      try {
-        final res = await _categoryBulkPatchHttp(
-          'persistCategoryOrderBulk',
-          bodyJson,
-        );
-        final ok = res.statusCode >= 200 && res.statusCode < 300;
-        if (!ok) {
-          _log(
-            'CATEGORY_ORDER_SYNC: chunk failed status=${res.statusCode} body=${res.body}',
-          );
-          try {
-            final msg = t(currentLocale.value, 'sync_failed');
-            if (!_notify.isClosed) _notify.add(msg);
-          } catch (_) {}
-          return;
-        }
-      } catch (e, st) {
-        _log('CATEGORY_ORDER_SYNC: chunk exception $e');
-        _log(st.toString());
-        try {
-          final msg = t(currentLocale.value, 'sync_failed');
-          if (!_notify.isClosed) _notify.add(msg);
-        } catch (_) {}
-        return;
-      }
+    } else {
+      _log('CATEGORY_ORDER_SYNC: PocketBase ok ($n row(s))');
     }
-
-    _log(
-      'CATEGORY_ORDER_SYNC: bulk PATCH ok (${requests.length} row(s) across chunks)',
-    );
     _categoryReorderBaselineByLocalId = null;
   }
 
@@ -5415,7 +6982,7 @@ class DatabaseService {
     List<CategoryRule> ordered, {
     List<CategoryRule>? baselineBeforeReorder,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (parentId != null && getCategoryRuleById(parentId) == null) {
       return;
     }
@@ -5468,15 +7035,20 @@ class DatabaseService {
     bool clearEnd = false,
     /// When true, `AppSnack` success/failure toasts are omitted (caller handles UX).
     bool suppressAppSnack = false,
+    /// When non-null, replaces **tags_link** on PocketBase after successful scalar PATCH.
+    List<Tag>? tags,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+      return false;
+    }
     if (!_isPlansTableConfigured) {
       _log('TABLE_GUARD: blocked updatePlanningTask because plans table id equals records table id.');
       return false;
     }
     final rid = planRowId.trim();
     if (rid.isEmpty) return false;
-    final fields = <String, dynamic>{'user_id': _pid};
+    final restId = await _resolvePlanRestId(rid, planBusinessId: planBusinessId);
+    final fields = <String, dynamic>{'user_id': _pidForPbFilter};
     if (title != null) fields['title'] = title;
     if (categoryId != null) {
       final cs = _categoryStringPkForApi(getCategoryRuleById(categoryId));
@@ -5505,119 +7077,97 @@ class DatabaseService {
     } else if (endDateTime != null) {
       fields['end_time'] = endDateTime.toUtc().toIso8601String();
     }
-    if (fields.length <= 1) return false;
-
+    // Tags: PocketBase — [_syncPlanTagsPocket] after field PATCH when [tags] is non-null.
     final bizPid = planBusinessId?.trim() ?? '';
     if (bizPid.isNotEmpty && !bizPid.startsWith('optimistic-')) {
       fields['plan_id'] = bizPid;
     }
 
+    final patchBody = <String, dynamic>{};
+    for (final e in fields.entries) {
+      if (e.key == 'user_id') continue;
+      patchBody[e.key] = e.value;
+    }
+    if (patchBody.isEmpty && tags == null) return false;
     try {
-      final asInt = int.tryParse(rid.trim());
-      if (asInt == null || asInt <= 0) {
-        _log(
-          'UPDATE_PLANNING_TASK: refuse bulk PATCH — outer id must be Noco Integer Id, got "$rid"',
-        );
-        return false;
+      if (patchBody.isNotEmpty) {
+        await _pb.collection(PbCollections.plans).update(restId, body: patchBody);
       }
-      final bulkId = asInt;
-      final cleaned = _recordsPatchFieldsJsonStrings(
-        _nocoFieldsForPatch(Map<String, dynamic>.from(fields)),
-      );
-      final bodyJson = jsonEncode(
-        NocoRequest.bulk([NocoRequest(id: bulkId, fields: cleaned)]),
-      );
-      final res = await _plansBulkPatchHttp('updatePlanningTask', bodyJson);
-      final ok = res.statusCode >= 200 && res.statusCode < 300;
-      if (!ok) {
-        _log('UPDATE_PLANNING_TASK: server ${res.statusCode} — ${res.body}');
-        if (!suppressAppSnack) AppSnack.failed();
-      } else {
-        if (!suppressAppSnack) AppSnack.saved();
+      if (tags != null) {
+        await _syncPlanTagsPocket(restId, tags);
       }
-      return ok;
-    } catch (e) {
-      _log('UPDATE_PLANNING_TASK: $e');
-      AppSnack.failed();
+      clearOptimisticPlanningForPlanRow(rid);
+      clearOptimisticPlanningForPlanRow(restId);
+      notifyPlanningRefresh();
+      return true;
+    } catch (e, st) {
+      _log('UPDATE_PLANNING_TASK_PB: $e');
+      _log(st.toString());
+      if (!suppressAppSnack) AppSnack.failed();
       return false;
     }
   }
 
-  /// Collection DELETE: `[{"Id": <int>}, …]` then lowercase `id` fallback (Noco v3).
-  Future<bool> deletePlanningTasksBulk(Iterable<int> nocoSystemIds) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+  /// PocketBase [plans] rows: each id is a **record id** string.
+  Future<bool> deletePlanningTasksBulk(Iterable<String> planBackendIds) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     if (!_isPlansTableConfigured) {
       _log('TABLE_GUARD: blocked deletePlanningTasksBulk.');
       return false;
     }
-    final ids = nocoSystemIds.where((i) => i > 0).toSet().toList()..sort();
-    if (ids.isEmpty) return false;
+    final raw = planBackendIds.map((s) => s.trim()).where((s) => s.isNotEmpty).toSet().toList();
+    if (raw.isEmpty) return false;
 
-    Future<http.Response> tryKey(String pkKey) async {
-      final body = jsonEncode(
-        ids.map((id) => <String, dynamic>{pkKey: id}).toList(),
-      );
-      return _plansBulkDeleteHttp('deletePlanningTasksBulk_$pkKey', body);
-    }
-
-    var res = await tryKey('Id');
-    if (res.statusCode >= 200 && res.statusCode < 300) {
-      AppSnack.deleted();
-      return true;
-    }
-    res = await tryKey('id');
-    final ok = res.statusCode >= 200 && res.statusCode < 300;
-    if (ok) {
-      AppSnack.deleted();
-    } else {
-      _log(
-        'DELETE_PLANS_BULK: failed status=${res.statusCode} body=${res.body}',
-      );
+    try {
+      for (final id in raw) {
+        final restId = await _resolvePlanRestId(id);
+        await _pb.collection(PbCollections.plans).delete(restId);
+        clearOptimisticPlanningForPlanRow(id);
+        clearOptimisticPlanningForPlanRow(restId);
+      }
+    } catch (e, st) {
+      _log('DELETE_PLAN_PB_BULK: $e');
+      _log(st.toString());
       AppSnack.failed();
+      return false;
     }
-    return ok;
+    AppSnack.deleted();
+    notifyPlanningRefresh();
+    return true;
   }
 
-  /// Bulk `is_done` — each element outer `id` is Integer wrapper PK (@DATA_MAP `plans`).
+  /// Bulk `is_done` — Noco: integer wrapper PK string; PocketBase: record id string.
   Future<bool> markPlanningTasksCompletedBulk(
-    Iterable<int> nocoSystemIds, {
+    Iterable<String> planBackendIds, {
     required bool completed,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return false;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     if (!_isPlansTableConfigured) return false;
-    final ids = nocoSystemIds.where((i) => i > 0).toSet().toList()..sort();
-    if (ids.isEmpty) return false;
+    final raw = planBackendIds.map((s) => s.trim()).where((s) => s.isNotEmpty).toSet().toList();
+    if (raw.isEmpty) return false;
+
     const chunkSize = 10;
     var allOk = true;
-    for (var i = 0; i < ids.length; i += chunkSize) {
-      final end = min(i + chunkSize, ids.length);
-      final chunk = ids.sublist(i, end);
-      final requests = <NocoRequest>[];
+    for (var i = 0; i < raw.length; i += chunkSize) {
+      final end = min(i + chunkSize, raw.length);
+      final chunk = raw.sublist(i, end);
       for (final id in chunk) {
-        requests.add(
-          NocoRequest(
-            id: id,
-            fields: _nocoFieldsForPatch(<String, dynamic>{
-              'user_id': _pid,
-              'is_done': completed,
-            }),
-          ),
-        );
-      }
-      final bodyJson = jsonEncode(NocoRequest.bulk(requests));
-      final res = await _plansBulkPatchHttp(
-        'markPlanningTasksCompletedBulk',
-        bodyJson,
-      );
-      if (res.statusCode < 200 || res.statusCode >= 300) {
-        allOk = false;
-        _log(
-          'MARK_PLANS_DONE_BULK: chunk failed status=${res.statusCode} body=${res.body}',
-        );
+        try {
+          final restId = await _resolvePlanRestId(id);
+          await _pb.collection(PbCollections.plans).update(
+                restId,
+                body: <String, dynamic>{'is_done': completed},
+              );
+        } catch (e, st) {
+          allOk = false;
+          _log('MARK_PLANS_DONE_PB: $e');
+          _log(st.toString());
+        }
       }
     }
     if (allOk) {
       AppSnack.updated();
+      notifyPlanningRefresh();
     } else {
       AppSnack.failed();
     }
@@ -5633,7 +7183,7 @@ class DatabaseService {
     List<PlanningTask> ordered, {
     List<PlanningTask>? baselineBeforeReorder,
   }) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) return;
     if (baselineBeforeReorder != null) {
       _ensurePlanningOrderBaseline(baselineBeforeReorder);
@@ -5655,24 +7205,16 @@ class DatabaseService {
     });
   }
 
-  /// Deletes one plan row via [deletePlanningTasksBulk] (collection DELETE, Integer PK only).
+  /// Deletes one plan row via [deletePlanningTasksBulk].
   Future<void> deletePlanningTask(String planRowId) async {
-    if (!_isInitialized || _userIdForWhere == 0) return;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) {
       _log('TABLE_GUARD: blocked deletePlanningTask because plans table id equals records table id.');
       return;
     }
     final id = planRowId.trim();
     if (id.isEmpty) return;
-    final sysId = int.tryParse(id);
-    if (sysId == null || sysId <= 0) {
-      _log(
-        'DELETE_PLANNING_TASK: refuse — row URL requires Noco system Id (int), got $id',
-      );
-      AppSnack.failed();
-      return;
-    }
-    unawaited(deletePlanningTasksBulk([sysId]));
+    unawaited(deletePlanningTasksBulk([id]));
   }
 
   // Removed: Supabase OTP/Yandex/OAuth — use AuthBridge + Noco only.

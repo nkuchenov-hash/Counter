@@ -3,8 +3,14 @@
 // All strings via t(). Use Theme.of(context). No hardcoded colors.
 // ---------------------------------------------------------------------------
 
+import 'dart:async';
+
+import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/planning/smart_input_parser.dart';
+import 'package:counter/features/profile/tag_manager_page.dart';
+import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -131,6 +137,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   final List<TextEditingController> _checklistControllers = [];
   final List<bool> _checklistDone = [];
   late TabController _tabController;
+  List<Tag> _availableTags = [];
+  /// True until [DatabaseService.fetchTagsForCurrentUser] completes (strip stays visible).
+  bool _tagsLoading = true;
+  late List<Tag> _selectedTags;
 
   @override
   void initState() {
@@ -139,8 +149,17 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _titleController = TextEditingController(text: widget.task.title);
     _notesController = TextEditingController(text: widget.task.notes ?? '');
     _categoryId = widget.task.categoryId;
-    _scheduledTime = widget.task.startTime != null ? utcToDisplay(widget.task.startTime!) : null;
-    _endTime = widget.task.endDateTime != null ? utcToDisplay(widget.task.endDateTime!) : null;
+    _selectedTags = List<Tag>.from(widget.task.tags);
+    DatabaseService.instance.fetchTagsForCurrentUser().then((List<Tag> result) {
+      if (!mounted) return;
+      setState(() {
+        _availableTags = result;
+        _tagsLoading = false;
+      });
+    });
+    // [PlanningTask.startTime] / [endDateTime] from Brain are profile wall components, not UTC.
+    _scheduledTime = widget.task.startTime;
+    _endTime = widget.task.endDateTime;
     _date = planningDateFromKey(widget.task.dateKey) ?? widget.task.date ?? DateTime.now();
     _date = DateTime(_date.year, _date.month, _date.day);
     for (final item in widget.task.checklist) {
@@ -164,6 +183,61 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       c.dispose();
     }
     super.dispose();
+  }
+
+  void _onTitleChangedForSmartTime(String raw) {
+    final v = _titleController.value;
+    if (!v.composing.isCollapsed) return;
+
+    final parsed = SmartInputParser.parseTitleForScheduledTime(raw);
+    if (parsed == null) return;
+
+    final cleaned = parsed.cleanedTitle;
+    final newOffset = cleaned.length;
+    if (_titleController.text != cleaned) {
+      _titleController.value = TextEditingValue(
+        text: cleaned,
+        selection: TextSelection.collapsed(
+          offset: newOffset.clamp(0, cleaned.length),
+        ),
+        composing: TextRange.empty,
+      );
+    } else {
+      _titleController.selection = TextSelection.collapsed(
+        offset: newOffset.clamp(0, cleaned.length),
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _scheduledTime = parsed.wallDateTimeOn(_date);
+    });
+  }
+
+  Future<void> _openTagManagerAndReload() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (ctx) => const TagManagerPage()),
+    );
+    if (!mounted) return;
+    setState(() => _tagsLoading = true);
+    final list = await DatabaseService.instance.fetchTagsForCurrentUser();
+    if (!mounted) return;
+    setState(() {
+      _availableTags = list;
+      _tagsLoading = false;
+    });
+  }
+
+  void _toggleTag(Tag t) {
+    setState(() {
+      final next = List<Tag>.from(_selectedTags);
+      final i = next.indexWhere((x) => x.tagId == t.tagId);
+      if (i >= 0) {
+        next.removeAt(i);
+      } else {
+        next.add(t);
+      }
+      _selectedTags = next;
+    });
   }
 
   String _dateKeyFromDate(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -195,6 +269,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       endDateKey: _endTime != null ? newDateKey : null,
       checklist: checklist,
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      tags: List<Tag>.from(_selectedTags),
     );
     if (widget.onSaved != null) {
       widget.onSaved!(updated);
@@ -259,20 +334,71 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 InputDecoration(labelText: t(currentLocale.value, 'title_label')),
                             controller: _titleController,
                             textCapitalization: TextCapitalization.sentences,
+                            onChanged: (String value) =>
+                                _onTitleChangedForSmartTime(value),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8, bottom: 4),
+                            child: SizedBox(
+                              height: 52,
+                              child: _tagsLoading
+                                  ? Center(
+                                      child: SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                      ),
+                                    )
+                                  : _availableTags.isEmpty
+                                      ? Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: OutlinedButton.icon(
+                                            onPressed: _openTagManagerAndReload,
+                                            icon:
+                                                const Icon(Icons.add_rounded, size: 20),
+                                            label: Text(t(currentLocale.value,
+                                                'tags_empty_create_first')),
+                                          ),
+                                        )
+                                      : TagQuickPickStrip(
+                                          tags: _availableTags,
+                                          selected: _selectedTags,
+                                          onToggle: _toggleTag,
+                                        ),
+                            ),
                           ),
                           const SizedBox(height: 12),
-                          DropdownButtonFormField<int>(
-                            initialValue: pairs.any((p) => p.id == dropdownValue)
-                                ? dropdownValue
-                                : (pairs.isNotEmpty ? pairs.first.id : null),
-                            decoration: InputDecoration(
-                                labelText: t(currentLocale.value, 'category_label')),
-                            items: pairs
-                                .map((p) => DropdownMenuItem<int>(
-                                    value: p.id,
-                                    child: Text(p.path, overflow: TextOverflow.ellipsis)))
-                                .toList(),
-                            onChanged: (id) => setState(() => _categoryId = id ?? _categoryId),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<int>(
+                                  initialValue: pairs.any((p) => p.id == dropdownValue)
+                                      ? dropdownValue
+                                      : (pairs.isNotEmpty ? pairs.first.id : null),
+                                  isExpanded: true,
+                                  menuMaxHeight: 360,
+                                  decoration: InputDecoration(
+                                      labelText:
+                                          t(currentLocale.value, 'category_label')),
+                                  items: pairs
+                                      .map((p) => DropdownMenuItem<int>(
+                                          value: p.id,
+                                          child: Text(
+                                            p.path,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          )))
+                                      .toList(),
+                                  onChanged: (id) =>
+                                      setState(() => _categoryId = id ?? _categoryId),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           ListTile(
@@ -322,12 +448,18 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         children: [
                           TextField(
                             controller: _notesController,
-                            maxLines: 12,
+                            minLines: 1,
+                            maxLines: 4,
                             decoration: InputDecoration(
-                              labelText: t(currentLocale.value, 'notes_label'),
-                              hintText: t(currentLocale.value, 'add_details'),
-                              border: const OutlineInputBorder(),
+                              border: InputBorder.none,
+                              hintText: t(currentLocale.value, 'notes_hint_flat'),
+                              hintStyle: TextStyle(
+                                color: Colors.grey.withOpacity(0.5),
+                                fontWeight: FontWeight.w400,
+                              ),
+                              labelText: null,
                             ),
+                            textCapitalization: TextCapitalization.sentences,
                           ),
                         ],
                       ),
@@ -524,20 +656,42 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     final isRunning = widget.record.endTime == null;
 
     if (isRunning) {
-      final startUtc = _startDisplay != null ? displayToUtc(_startDisplay!) : null;
-      print(
-          'PATCHING DATA: UI record editor (running) -> updateRecord id=${widget.record.recordId}');
-      final updated = await DatabaseService.instance.updateRecord(
-        recordId: widget.record.recordId,
+      final startUtc =
+          _startDisplay != null ? displayToUtc(_startDisplay!) : null;
+      DatabaseService.instance.applyOptimisticRecordRowEdit(
+        recordId: widget.record.id,
         title: title,
         startTime: startUtc,
         categoryId: _categoryId,
         note: noteText,
         checklist: checklistPayload,
       );
-      if (updated != null && mounted) {
-        widget.onSaved(updated);
-      }
+      final optimistic = widget.record.copyWith(
+        title: title,
+        startTime: startUtc,
+        categoryId: _categoryId,
+        note: noteText.isEmpty ? null : noteText,
+        checklist: checklistPayload.isEmpty ? null : checklistPayload,
+      );
+      AppSnack.saved();
+      widget.onSaved(optimistic);
+      unawaited(
+        DatabaseService.instance
+            .updateRecord(
+              recordId: widget.record.id,
+              title: title,
+              startTime: startUtc,
+              categoryId: _categoryId,
+              note: noteText,
+              checklist: checklistPayload,
+            )
+            .then((TimelineRecord? server) {
+          if (!mounted) return;
+          if (server == null) {
+            AppSnack.failed();
+          }
+        }),
+      );
       return;
     }
 
@@ -555,17 +709,14 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     final overlap = await DatabaseService.instance.checkOverlapWithExistingRecords(
       startUtc,
       endUtc,
-      excludeRecordId: widget.record.recordId.isNotEmpty
-          ? widget.record.recordId
-          : null,
+      excludeRecordId: widget.record.id.isNotEmpty ? widget.record.id : null,
     );
     if (overlap && mounted) {
       final conflict = await DatabaseService.instance.findFirstOverlappingRecord(
         startUtc,
         endUtc,
-        excludeRecordId: widget.record.recordId.isNotEmpty
-            ? widget.record.recordId
-            : null,
+        excludeRecordId:
+            widget.record.id.isNotEmpty ? widget.record.id : null,
       );
       if (!mounted) return;
       final loc = currentLocale.value;
@@ -580,10 +731,8 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       });
       return;
     }
-    print(
-        'PATCHING DATA: UI record editor (stopped) -> updateRecord id=${widget.record.recordId}');
-    final updated = await DatabaseService.instance.updateRecord(
-      recordId: widget.record.recordId,
+    DatabaseService.instance.applyOptimisticRecordRowEdit(
+      recordId: widget.record.id,
       title: title,
       startTime: startUtc,
       endTime: endUtc,
@@ -591,9 +740,34 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       note: noteText,
       checklist: checklistPayload,
     );
-    if (updated != null && mounted) {
-      widget.onSaved(updated);
-    }
+    final optimisticStopped = widget.record.copyWith(
+      title: title,
+      startTime: startUtc,
+      endTime: endUtc,
+      categoryId: _categoryId,
+      note: noteText.isEmpty ? null : noteText,
+      checklist: checklistPayload.isEmpty ? null : checklistPayload,
+    );
+    AppSnack.saved();
+    widget.onSaved(optimisticStopped);
+    unawaited(
+      DatabaseService.instance
+          .updateRecord(
+            recordId: widget.record.id,
+            title: title,
+            startTime: startUtc,
+            endTime: endUtc,
+            categoryId: _categoryId,
+            note: noteText,
+            checklist: checklistPayload,
+          )
+          .then((TimelineRecord? server) {
+        if (!mounted) return;
+        if (server == null) {
+          AppSnack.failed();
+        }
+      }),
+    );
   }
 
   @override
@@ -646,19 +820,34 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                         controller: _titleController,
                         decoration: InputDecoration(
                             labelText: t(currentLocale.value, 'title_label'),
-                            hintText: t(currentLocale.value, 'hint_task_example')),
+                            hintText: t(currentLocale.value, 'hint_record_example')),
                         textCapitalization: TextCapitalization.sentences,
                       ),
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<int>(
-                        initialValue: catVal,
-                        decoration: InputDecoration(
-                            labelText: t(currentLocale.value, 'category_label')),
-                        items: pairs
-                            .map((p) => DropdownMenuItem<int>(
-                                value: p.id, child: Text(p.path, overflow: TextOverflow.ellipsis)))
-                            .toList(),
-                        onChanged: (id) => setState(() => _categoryId = id ?? catVal),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: catVal,
+                              isExpanded: true,
+                              menuMaxHeight: 360,
+                              decoration: InputDecoration(
+                                  labelText:
+                                      t(currentLocale.value, 'category_label')),
+                              items: pairs
+                                  .map((p) => DropdownMenuItem<int>(
+                                      value: p.id,
+                                      child: Text(
+                                        p.path,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      )))
+                                  .toList(),
+                              onChanged: (id) =>
+                                  setState(() => _categoryId = id ?? catVal),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -734,6 +923,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                   ],
                 ),
                 Expanded(
+                  flex: 3,
                   child: TabBarView(
                     controller: _tabController,
                     children: [
@@ -750,11 +940,16 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                           TextField(
                             controller: _noteController,
                             decoration: InputDecoration(
-                              labelText: t(currentLocale.value, 'notes_label'),
-                              hintText: t(currentLocale.value, 'add_details'),
-                              border: const OutlineInputBorder(),
+                              border: InputBorder.none,
+                              hintText: t(currentLocale.value, 'notes_hint_flat'),
+                              hintStyle: TextStyle(
+                                color: Colors.grey.withOpacity(0.5),
+                                fontWeight: FontWeight.w400,
+                              ),
+                              labelText: null,
                             ),
-                            maxLines: 12,
+                            minLines: 1,
+                            maxLines: 4,
                             textCapitalization: TextCapitalization.sentences,
                           ),
                         ],
@@ -882,6 +1077,12 @@ class _ParallelActivitiesTab extends StatefulWidget {
 class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
     with AutomaticKeepAliveClientMixin {
   late final TextEditingController _newTitleController;
+  /// Parent link key for which [_runningChildrenStream] / [_completedChildrenStream] were built.
+  /// [runningChildrenStream] / [completedChildrenStream] return new streams per call — must not
+  /// pass a freshly created stream from [build] each rebuild.
+  String? _childStreamsLink;
+  late Stream<List<TimelineRecord>> _runningChildrenStream;
+  late Stream<List<TimelineRecord>> _completedChildrenStream;
 
   @override
   bool get wantKeepAlive => true;
@@ -890,6 +1091,15 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
   void initState() {
     super.initState();
     _newTitleController = TextEditingController();
+  }
+
+  void _ensureChildStreams(String link) {
+    if (_childStreamsLink == link) return;
+    _childStreamsLink = link;
+    _runningChildrenStream =
+        DatabaseService.instance.runningChildrenStream(link);
+    _completedChildrenStream =
+        DatabaseService.instance.completedChildrenStream(link);
   }
 
   @override
@@ -911,7 +1121,7 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
     final title = _newTitleController.text.trim();
     if (title.isEmpty) return;
     final link = DatabaseService.instance
-        .resolveParentLinkForChildren(widget.parentRecord.recordId);
+        .resolveParentLinkForChildren(widget.parentRecord.id);
     if (link.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -940,7 +1150,8 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
               content: Text(t(currentLocale.value, 'plan_save_failed'))),
         );
       }
-    } catch (_) {
+    } catch (e) {
+      print('UI ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -951,23 +1162,20 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
   }
 
   Future<void> _stopChild(TimelineRecord child) async {
+    print(
+      'Attempting to stop record with systemRowId: ${child.id} (legacy record_id: ${child.recordId})',
+    );
     try {
       final ok =
-          await DatabaseService.instance.stopRecordByDocId(child.recordId);
+          await DatabaseService.instance.stopRecordByDocId(child.id);
       if (!mounted) return;
       if (!ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed'))),
+        print(
+          'UI ERROR: stopRecordByDocId returned false (systemRowId=${child.id})',
         );
       }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed'))),
-        );
-      }
+    } catch (e) {
+      print('UI ERROR: $e');
     }
   }
 
@@ -1025,7 +1233,7 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    if (widget.parentRecord.recordId.isEmpty) {
+    if (widget.parentRecord.id.isEmpty) {
       return ListView(
         primary: false,
         controller: widget.scrollController,
@@ -1039,7 +1247,8 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
       );
     }
     final link = DatabaseService.instance
-        .resolveParentLinkForChildren(widget.parentRecord.recordId);
+        .resolveParentLinkForChildren(widget.parentRecord.id);
+    _ensureChildStreams(link);
     return ListView(
       primary: false,
       controller: widget.scrollController,
@@ -1049,7 +1258,7 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
           controller: _newTitleController,
           decoration: InputDecoration(
             labelText: t(currentLocale.value, 'title_label'),
-            hintText: t(currentLocale.value, 'hint_task_example'),
+            hintText: t(currentLocale.value, 'hint_record_example'),
             border: const OutlineInputBorder(),
           ),
           textCapitalization: TextCapitalization.sentences,
@@ -1064,7 +1273,7 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
         Text(t(currentLocale.value, 'child_records_running'),
             style: Theme.of(context).textTheme.titleMedium),
         StreamBuilder<List<TimelineRecord>>(
-          stream: DatabaseService.instance.runningChildrenStream(link),
+          stream: _runningChildrenStream,
           builder: (context, snap) {
             final list = snap.data ?? const <TimelineRecord>[];
             if (list.isEmpty) {
@@ -1089,7 +1298,7 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
         Text(t(currentLocale.value, 'child_records_completed'),
             style: Theme.of(context).textTheme.titleMedium),
         StreamBuilder<List<TimelineRecord>>(
-          stream: DatabaseService.instance.completedChildrenStream(link),
+          stream: _completedChildrenStream,
           builder: (context, snap) {
             final list = snap.data ?? const <TimelineRecord>[];
             if (list.isEmpty) {
@@ -1144,10 +1353,8 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
     final title = _title.text.trim();
     if (title.isEmpty) return;
     try {
-      print(
-          'PATCHING DATA: UI child parallel bar -> updateRecord id=${widget.child.recordId}');
       final u = await DatabaseService.instance.updateRecord(
-        recordId: widget.child.recordId,
+        recordId: widget.child.id,
         title: title,
         note: _note.text.trim(),
       );
@@ -1160,7 +1367,8 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
               content: Text(t(currentLocale.value, 'plan_save_failed'))),
         );
       }
-    } catch (_) {
+    } catch (e) {
+      print('UI ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1171,25 +1379,22 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
   }
 
   Future<void> _stop() async {
+    print(
+      'Attempting to stop record with systemRowId: ${widget.child.id} (legacy record_id: ${widget.child.recordId})',
+    );
     try {
       final ok = await DatabaseService.instance
-          .stopRecordByDocId(widget.child.recordId);
+          .stopRecordByDocId(widget.child.id);
       if (!mounted) return;
       if (ok) {
         widget.onSaved();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed'))),
+        print(
+          'UI ERROR: stopRecordByDocId returned false (systemRowId=${widget.child.id})',
         );
       }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed'))),
-        );
-      }
+    } catch (e) {
+      print('UI ERROR: $e');
     }
   }
 
@@ -1403,8 +1608,6 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
         categoryId: _categoryId,
       );
     } else {
-      print(
-          'PATCHING DATA: UI manual time entry -> updateRecord id=${widget.serverRecordId}');
       final updated = await DatabaseService.instance.updateRecord(
         recordId: widget.serverRecordId,
         title: title,
@@ -1464,11 +1667,31 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
                     decoration: InputDecoration(labelText: t(currentLocale.value, 'title_label'), hintText: t(currentLocale.value, 'hint_task_example')),
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<int>(
-                    initialValue: catVal,
-                    decoration: InputDecoration(labelText: t(currentLocale.value, 'category_label')),
-                    items: pairs.map((p) => DropdownMenuItem<int>(value: p.id, child: Text(p.path))).toList(),
-                    onChanged: (id) => setState(() => _categoryId = id ?? catVal),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: catVal,
+                          isExpanded: true,
+                          menuMaxHeight: 360,
+                          decoration: InputDecoration(
+                              labelText:
+                                  t(currentLocale.value, 'category_label')),
+                          items: pairs
+                              .map((p) => DropdownMenuItem<int>(
+                                    value: p.id,
+                                    child: Text(
+                                      p.path,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (id) =>
+                              setState(() => _categoryId = id ?? catVal),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   ListTile(

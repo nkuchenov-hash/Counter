@@ -1,0 +1,50 @@
+﻿category_id,Id,CreatedAt,UpdatedAt,user_id,name,normalized_id,keywords,parent_id,localized_names,color,color_value,icon,icon_code_point,order
+1773779977008_kcojex,1,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Email check,pricereporter,{},price_reporter,,,4279592384,,63358,0
+astra,3,2026-03-18 17:55:02+00:00,2026-03-27 15:36:19+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Astra,astra,,kvetta,,,,,,0
+atozed,4,2026-03-18 17:55:02+00:00,2026-03-27 14:05:24+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Atozed,atozed,{},work,,,4279903102,,,1
+atozed_clients,5,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Atozed Clients,atozedclients,,atozed,,,,,,0
+atozed_website,6,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Atozed Website,atozedwebsite,,atozed,,,,,,1
+c6dd71c8-2644-4b0a-899b-70d42001fd61,7,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Gym,sub,{},life,,,4291356361,,63358,0
+cd8517fc-6576-43d3-8b53-c22a04bd067f,8,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Chill,sub,[object Object],personal_time,,,4294947584,,63358,0
+client_3qc,9,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,3QC,3qc,{},price_reporter,,,4279592384,,,1
+client_age,10,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,AGE SOLUTIONS,agesolutions,{},price_reporter,,,4279592384,,,2
+client_ball,11,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,BALL OFFICE PRODUCTS,ballofficeproducts,{},price_reporter,,,4279592384,,,3
+client_carroll,12,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,CARROLL WOODS,carrollwoods,{},price_reporter,,,4279592384,,,4
+client_chapel,13,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,CHAPEL HILL,chapelhill,{},price_reporter,,,4279592384,,,5
+client_culinary,14,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,CULINARY DEPOT,culinarydepot,{},price_reporter,,,4279592384,,,6
+client_drone,15,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,DRONE SECURITY SERVICE,dronesecurityservice,{},price_reporter,,,4279592384,,,7
+client_falcon,16,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,FALCON LOGIC,falconlogic,{},price_reporter,,,4279592384,,,8
+client_global,17,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,GLOBAL IMPACT GROUP,globalimpactgroup,{},price_reporter,,,4279592384,,,9
+client_laredo,18,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,LAREDO TS,laredots,{},price_reporter,,,4279592384,,,10
+client_logical,19,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,LOGICAL MARKETING,logicalmarketing,{},price_reporter,,,4279592384,,,11
+client_ouraring,20,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,OURARING,ouraring,{},price_reporter,,,4279592384,,,12
+client_paradisepillow,21,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,PARADISE PILLOW,paradisepillow,{},price_reporter,,,4279592384,,,13
+client_rcq,22,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,RC QUARTERMASTER,rcquartermaster,{},price_reporter,,,4279592384,,,14
+client_resicum,23,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,RESICUM INTERNATIONAL,resicuminternational,{},price_reporter,,,4279592384,,,15
+client_saitech,24,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,SAITECH,saitech,{},price_reporter,,,4279592384,,,16
+client_smblc,25,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,SMBLC,smblc,{},price_reporter,,,4279592384,,,17
+client_southern,26,2026-03-18 17:55:02+00:00,2026-03-30 19:33:54+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,SOUTHERN COMPUTER warehouse,southerncomputerwarehouse,{},price_reporter,,,4279592384,,,18
+client_turnkey,27,2026-03-18 17:55:02+00:00,2026-03-27 15:36:21+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,TURNKEY CORPORATE HOUSING,turnkeycorporatehousing,{},price_reporter,,,4279592384,,,19
+client_water,28,2026-03-18 17:55:02+00:00,2026-03-27 15:36:22+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,WATER FILTER EXCHANGE,waterfilterexchange,{},price_reporter,,,4279592384,,,20
+crm,29,2026-03-18 17:55:02+00:00,2026-03-27 15:36:22+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,CRM,crm,{},price_reporter,,,4279592384,,,21
+easycrypt,30,2026-03-18 17:55:02+00:00,2026-03-27 15:36:19+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,EasyCrypt,easycrypt,,kvetta,,,,,,1
+etnika,31,2026-03-18 17:55:02+00:00,2026-03-27 14:05:24+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Этника,этника,{},work,,,4293943954,,,2
+food,32,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Food,food,{},life,,,4282622023,,,1
+hygiene,33,2026-03-18 17:55:02+00:00,2026-03-28 10:20:02+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Hygiene,hygiene,"{""ru"":[""душ"",""умывание"",""ванная""]}",life,,,4284922730,,,2
+kvetta,34,2026-03-18 17:55:02+00:00,2026-03-27 14:05:24+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Kvetta,kvetta,,work,,,,,,3
+life,35,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Life,life,[object Object],,[object Object],,4283215696,,,0
+movies,36,2026-03-18 17:55:02+00:00,2026-03-28 21:57:02+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Movies,movies,"{""ru"":[""фильм""]}",personal_time,,,4294938368,,,1
+personal_time,37,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Personal time,personaltime,{},,"{""en"":""Personal Time"",""ru"":""Личное время""}",,4294951175,,,1
+planning,38,2026-03-18 17:55:02+00:00,2026-03-27 15:36:22+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Planning,planning,{},price_reporter,,,4279592384,,,22
+price_reporter,39,2026-03-18 17:55:02+00:00,2026-03-27 14:05:24+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Price Reporter,pricereporter,{},work,,,4279592384,,983751,0
+reading,40,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Reading,reading,,personal_time,,,,,,2
+sleep,41,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Sleep,sleep,"{""ru"":[""сон""]}",life,,,4279983648,,,3
+time_sheets,42,2026-03-18 17:55:02+00:00,2026-03-27 15:36:22+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Time sheets,timesheets,{},price_reporter,,,4279592384,,,23
+toilet,43,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Toilet,toilet,"{""ru"":[""туалет""]}",life,,,4289058471,,,4
+vibecoding,44,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Vibecoding,vibecoding,"{""ru"":[""вайбкодинг""]}",personal_time,,,,,,3
+walking,45,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Walking,walking,"{""ru"":[""прогулка""]}",life,,,4282622023,,,5
+work,46,2026-03-18 17:55:02+00:00,2026-03-27 15:36:20+00:00,ae3dd65a-557c-4465-b095-260fd1922e26,Work,work,{},,,,4279592384,,983751,2
+a264b20f-ee12-40cd-a6ce-e2f900c6561b,47,2026-03-27 20:32:37+00:00,2026-03-31 09:12:35+00:00,e3f88658-c4ed-49ab-b9a4-d04329ca6539,Life,a264b20f-ee12-40cd-a6ce-e2f900c6561b,{},,,,4283215696,,63218,0
+20b8a29f-fdef-49bb-b5ae-a0a79734323a,48,2026-03-27 20:32:54+00:00,2026-03-27 20:36:37+00:00,e3f88658-c4ed-49ab-b9a4-d04329ca6539,Хобби,хобби,{},,,,4293467747,,63725,1
+d2d58493-bd2f-444f-b5b9-3df02ccc421a,49,2026-03-27 20:35:50+00:00,2026-03-27 20:36:02+00:00,e3f88658-c4ed-49ab-b9a4-d04329ca6539,Пение,пение,{},20b8a29f-fdef-49bb-b5ae-a0a79734323a,,,4288585374,,63358,0
+dcf8c024-3e20-40a5-a6b8-e1d0e7ef060b,50,2026-03-31 09:11:27+00:00,2026-03-31 09:12:15+00:00,e3f88658-c4ed-49ab-b9a4-d04329ca6539,Work,work,{},,"{""ru"":""Работа""}",,4280191205,,983751,2

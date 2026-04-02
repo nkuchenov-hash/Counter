@@ -2,11 +2,75 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+/// How profile categories/tags render in Timeline & Planning (`profiles.tag_display_mode`).
+enum CategoryDisplayMode {
+  letterChip,
+  chip,
+  round,
+  icon,
+  iconCircle,
+}
+
+/// Values PATCHed to `profiles.tag_display_mode` when the server does not dictate a preserved raw string.
+///
+/// **Letter / “Text chip”** uses the exact PocketBase value `text chip` (space). Other modes use
+/// stable ids below. [categoryDisplayModeFromWire] still accepts legacy reads (`letter_chip`, etc.).
+extension CategoryDisplayModeWire on CategoryDisplayMode {
+  String get wireValue => switch (this) {
+        CategoryDisplayMode.letterChip => 'text chip',
+        CategoryDisplayMode.chip => 'chip',
+        CategoryDisplayMode.round => 'round',
+        CategoryDisplayMode.icon => 'icon',
+        CategoryDisplayMode.iconCircle => 'icon_in_circle',
+      };
+}
+
+CategoryDisplayMode categoryDisplayModeFromWire(String? raw) {
+  switch (raw?.trim().toLowerCase()) {
+    case 'text chip':
+    case 'text_chip':
+    case 'textchip':
+    case 'letter_chip':
+    case 'letterchip':
+    case 'text':
+      return CategoryDisplayMode.letterChip;
+    case 'chip':
+    case 'pill':
+      return CategoryDisplayMode.chip;
+    case 'dot':
+    case 'round':
+      return CategoryDisplayMode.round;
+    case 'icon':
+      return CategoryDisplayMode.icon;
+    case 'icon_circle':
+    case 'iconcircle':
+    case 'icon_in_circle':
+      return CategoryDisplayMode.iconCircle;
+    default:
+      return CategoryDisplayMode.letterChip;
+  }
+}
+
+/// PATCH payload for [profiles.tag_display_mode]. **Text chip** always uses the exact string
+/// `text chip`. Other modes may reuse the last server spelling when it maps to the same enum.
+String tagDisplayModeWireForPatch(UserSettings s) {
+  if (s.tagDisplayMode == CategoryDisplayMode.letterChip) {
+    return 'text chip';
+  }
+  final raw = s.tagDisplayModeWireRaw?.trim();
+  if (raw != null &&
+      raw.isNotEmpty &&
+      categoryDisplayModeFromWire(raw) == s.tagDisplayMode) {
+    return raw;
+  }
+  return s.tagDisplayMode.wireValue;
+}
+
 // ---------------------------------------------------------------------------
 // DATA DNA — VAULT: lib/data/models.dart (@ARCHITECTURE.md §1, @DATA_MAP.md).
 // Pure classes and serialization. No database imports.
-// PKs: records → wrapper `Id` (int, row URL `.../tableUid/Id`) + `record_id` (UUID, fields); categories → category_id; plans → plan_id;
-// profiles → user_id (String). Legacy int fields kept only where UI still expects them.
+// PKs: PocketBase row `id` (string) for REST; `record_id` on records is legacy UUID / passive metadata only.
+// Other: `category_id` / `plan_id` where applicable; profiles → user_id (String).
 // ---------------------------------------------------------------------------
 
 int _jsonInt(dynamic v, [int fallback = 0]) {
@@ -35,6 +99,24 @@ int? _parseIntNullable(dynamic v) {
   return int.tryParse(v.toString().trim());
 }
 
+/// PocketBase record row `id` (no hyphens, ~15 chars) — **not** the legacy `record_id` UUID.
+bool _isPbRecordsRowIdSegment(String s) {
+  final t = s.trim();
+  if (t.isEmpty || t.contains('-')) return false;
+  if (t.length < 14 || t.length > 17) return false;
+  return RegExp(r'^[a-z0-9]+$').hasMatch(t);
+}
+
+/// Value allowed as REST path segment for **records** (PB id, legacy int string, or client `optimistic-*` key).
+bool _isTimelineRestRowId(String s) {
+  final t = s.trim();
+  if (t.isEmpty) return false;
+  if (_isPbRecordsRowIdSegment(t)) return true;
+  if (int.tryParse(t) != null) return true;
+  if (t.startsWith('optimistic-')) return true;
+  return false;
+}
+
 int _stableStringId(String raw, [int fallback = 0]) {
   final s = raw.trim();
   if (s.isEmpty) return fallback;
@@ -47,7 +129,50 @@ int _stableStringId(String raw, [int fallback = 0]) {
   return hash;
 }
 
-/// NocoDB profile row.
+String _twoIso(int n) => n.toString().padLeft(2, '0');
+
+/// UTC ISO-8601 with **second** precision only — avoids client/server sub-second drift in UI compares.
+String _iso8601UtcSecondsPrecision(DateTime utc) {
+  final u = utc.toUtc();
+  final t = DateTime.utc(
+    u.year,
+    u.month,
+    u.day,
+    u.hour,
+    u.minute,
+    u.second,
+  );
+  return '${t.year.toString().padLeft(4, '0')}-${_twoIso(t.month)}-${_twoIso(t.day)}T'
+      '${_twoIso(t.hour)}:${_twoIso(t.minute)}:${_twoIso(t.second)}.000Z';
+}
+
+/// Normalize stored record timestamp strings (PocketBase may vary fractional digits).
+String? normalizeRecordIsoToUtcSecondPrecision(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is DateTime) {
+    return _iso8601UtcSecondsPrecision(raw);
+  }
+  var s = raw.toString().trim();
+  if (s.isEmpty) return null;
+  if (s.contains(' ') && !s.contains('T')) {
+    s = s.replaceFirst(' ', 'T');
+  }
+  final parsed = DateTime.tryParse(s);
+  if (parsed == null) return raw.toString();
+  return _iso8601UtcSecondsPrecision(parsed);
+}
+
+DateTime? _parseToUtcSecondPrecision(dynamic v) {
+  if (v == null) return null;
+  final dt = v is DateTime
+      ? v
+      : DateTime.tryParse(v.toString().trim().replaceFirst(' ', 'T'));
+  if (dt == null) return null;
+  final u = dt.toUtc();
+  return DateTime.utc(u.year, u.month, u.day, u.hour, u.minute, u.second);
+}
+
+/// Profile row (legacy int shape); prefer [UserProfile] for PocketBase `profiles`.
 class Profile {
   const Profile({
     required this.id,
@@ -130,7 +255,7 @@ class UserProfile {
   }
 }
 
-/// NocoDB category row (flat). @DATA_MAP.md: [name], [category_id], [normalized_id].
+/// Category row (flat). @DATA_MAP.md: PB row `id` (string), [category_id], [name], [normalized_id].
 class Category {
   const Category({
     required this.id,
@@ -141,6 +266,7 @@ class Category {
     this.normalizedId,
     this.colorValue,
     this.iconCodePoint,
+    this.isArchived = false,
   });
 
   final String id;
@@ -153,6 +279,7 @@ class Category {
   final String? normalizedId;
   final int? colorValue;
   final int? iconCodePoint;
+  final bool isArchived;
 
   factory Category.fromJson(Map<String, dynamic> json) {
     final pid = json['parent_id'];
@@ -168,6 +295,10 @@ class Category {
     final display = resolvedName ??
         (normRaw.isNotEmpty ? normRaw : null) ??
         (legacyTag != null && legacyTag.isNotEmpty ? legacyTag : null);
+    final arc = json['is_archived'] ?? json['isArchived'];
+    final isArc = arc == true ||
+        arc == 1 ||
+        (arc is String && arc.toLowerCase().trim() == 'true');
     return Category(
       id: (rawId ?? '').toString(),
       userId: _jsonInt(json['user_id']),
@@ -177,6 +308,57 @@ class Category {
       normalizedId: json['normalized_id']?.toString(),
       colorValue: json['color_value'] is int ? json['color_value'] as int : int.tryParse(json['color_value']?.toString() ?? ''),
       iconCodePoint: json['icon_code_point'] is int ? json['icon_code_point'] as int : int.tryParse(json['icon_code_point']?.toString() ?? ''),
+      isArchived: isArc,
+    );
+  }
+
+  /// Subset of PocketBase `categories` columns (@DATA_MAP.md) for diagnostics / cache.
+  /// Note: [userId] is a local int hash of `user_id` when the server sends non-numeric ids
+  /// ([_jsonInt]); do not use this map as a verbatim POST body for relation fields.
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
+        'user_id': userId,
+        if (name != null && name!.isNotEmpty) 'name': name,
+        if (normalizedId != null && normalizedId!.isNotEmpty)
+          'normalized_id': normalizedId,
+        if (parentId != null) 'parent_id': parentId,
+        if (colorValue != null) 'color_value': colorValue,
+        if (iconCodePoint != null) 'icon_code_point': iconCodePoint,
+        'is_archived': isArchived,
+      };
+}
+
+/// Create-category dialog: name availability vs active tree + archived PB rows.
+enum CategoryNameInputKind { empty, available, active, archived }
+
+class CategoryNameInputStatus {
+  const CategoryNameInputStatus._({
+    required this.kind,
+    this.activeLocalId,
+    this.archivedPbRowId,
+  });
+
+  final CategoryNameInputKind kind;
+  final int? activeLocalId;
+  final String? archivedPbRowId;
+
+  static const CategoryNameInputStatus empty =
+      CategoryNameInputStatus._(kind: CategoryNameInputKind.empty);
+
+  static const CategoryNameInputStatus available =
+      CategoryNameInputStatus._(kind: CategoryNameInputKind.available);
+
+  factory CategoryNameInputStatus.active(int localId) {
+    return CategoryNameInputStatus._(
+      kind: CategoryNameInputKind.active,
+      activeLocalId: localId,
+    );
+  }
+
+  factory CategoryNameInputStatus.archived(String pbRowId) {
+    return CategoryNameInputStatus._(
+      kind: CategoryNameInputKind.archived,
+      archivedPbRowId: pbRowId,
     );
   }
 }
@@ -249,9 +431,9 @@ class Record {
     this.date,
   });
 
-  /// NocoDB **list wrapper** `Id` (integer from JSON root). REST row URL is `.../{tableUid}/{Id}` — **never** [recordId] (UUID), **never** a list index.
-  final int? id;
-  /// Business UUID from column `record_id`.
+  /// PocketBase / Noco **row** id for REST (`.../records/{id}`). **Never** use [recordId] (UUID) in the URL.
+  final String? id;
+  /// Column `record_id` (legacy business UUID). Passive metadata only — not an API path segment.
   final String recordId;
   final int userId;
   final String? title;
@@ -263,11 +445,8 @@ class Record {
   final int? parentId;
   final String? startTime;
   final String? endTime;
-  /// Calendar day from [start_time] UTC date only (no device [.toLocal()]).
+  /// Calendar day from [start_time]: **device-local** date (midnight boundary matches timeline buckets).
   final DateTime? date;
-
-  /// Same as [recordId] (business UUID column).
-  String get nocoRecordId => recordId;
 
   /// Running only when there is no end timestamp and DB status is running.
   bool get isActuallyRunning {
@@ -278,11 +457,29 @@ class Record {
 
   factory Record.fromJson(Map<String, dynamic> json) {
     final data = (json['fields'] ?? json) as Map<String, dynamic>;
-    final systemId = _parseIntNullable(json['id']) ??
-        _parseIntNullable(json['Id']) ??
-        _parseIntNullable(json['ID']) ??
-        _parseIntNullable(data['nocoSystemId']) ??
-        _parseIntNullable(data['id']);
+    String? systemIdStr;
+    for (final key in <String>['id', 'Id', 'ID']) {
+      final raw = json[key];
+      if (raw == null) continue;
+      final s = raw.toString().trim();
+      if (s.isNotEmpty) {
+        systemIdStr = s;
+        break;
+      }
+    }
+    if (systemIdStr == null || systemIdStr.isEmpty) {
+      final inner = data['id'];
+      if (inner != null) {
+        final s = inner.toString().trim();
+        if (s.isNotEmpty) systemIdStr = s;
+      }
+    }
+    if (systemIdStr == null || systemIdStr.isEmpty) {
+      final ni = _parseIntNullable(data['backendNumericId']) ??
+          _parseIntNullable(data['nocoSystemId']) ??
+          _parseIntNullable(data['id']);
+      if (ni != null) systemIdStr = ni.toString();
+    }
     final bizId = (data['record_id'] ??
             data['Record_id'] ??
             json['record_id'])
@@ -306,16 +503,12 @@ class Record {
                 ? null
                 : catRaw.toString().trim();
     final startRaw = data['start_time'] ?? data['startTime'];
-    final String? startTimeStr = startRaw is DateTime
-        ? startRaw.toUtc().toIso8601String()
-        : startRaw?.toString();
+    final String? startTimeStr = normalizeRecordIsoToUtcSecondPrecision(startRaw);
     final date = _recordLocalCalendarDate(startRaw);
     final endRaw = data['end_time'] ?? data['endTime'];
-    final String? endTimeStr = endRaw is DateTime
-        ? endRaw.toUtc().toIso8601String()
-        : endRaw?.toString();
+    final String? endTimeStr = normalizeRecordIsoToUtcSecondPrecision(endRaw);
     return Record(
-      id: systemId,
+      id: systemIdStr,
       recordId: bizId,
       userId: userId,
       title: data['title']?.toString(),
@@ -333,9 +526,9 @@ class Record {
     );
   }
 
+  /// API-facing JSON: **only** [id] identifies the row to the server ([recordId] is omitted here).
   Map<String, dynamic> toJson() => <String, dynamic>{
-        if (id != null) 'id': id,
-        'record_id': recordId,
+        if (id != null && id!.trim().isNotEmpty) 'id': id,
         'user_id': userId,
         'title': title,
         if (note != null && note!.isNotEmpty) 'note': note,
@@ -348,24 +541,31 @@ class Record {
         if (date != null)
           'date': '${date!.year}-${date!.month.toString().padLeft(2, '0')}-${date!.day.toString().padLeft(2, '0')}',
       };
+
+  /// Same field shape as [toJson] (API / cache maps).
+  Map<String, dynamic> toMap() => toJson();
 }
 
-/// UTC calendar date from stored timestamp (@ARCHITECTURE.md Planetary Time — no [.toLocal()]).
+/// DNA helper: naive calendar day from `start_time` (UTC→device [DateTime.toLocal]). **Timeline buckets** use profile wall-clock in `DatabaseService` only ([DATA_MAP] records §8 / `wall_clock.dart`).
 DateTime? _recordLocalCalendarDate(dynamic v) {
   if (v == null) return null;
+  DateTime? parsed;
   if (v is DateTime) {
-    final u = v.toUtc();
-    return DateTime.utc(u.year, u.month, u.day);
+    parsed = v.isUtc ? v : v.toUtc();
+  } else {
+    var s = v.toString().trim();
+    if (s.isEmpty) return null;
+    if (s.contains(' ') && !s.contains('T')) {
+      s = s.replaceFirst(' ', 'T');
+    }
+    final hasTz = s.endsWith('Z') ||
+        s.contains('+') ||
+        (s.length > 11 && s.substring(11).contains('-'));
+    parsed = DateTime.tryParse(hasTz ? s : '${s}Z');
   }
-  var s = v.toString().trim();
-  if (s.isEmpty) return null;
-  if (s.contains(' ') && !s.contains('T')) {
-    s = s.replaceFirst(' ', 'T');
-  }
-  final parsed = DateTime.tryParse(s);
   if (parsed == null) return null;
-  final u = parsed.toUtc();
-  return DateTime.utc(u.year, u.month, u.day);
+  final loc = parsed.toUtc().toLocal();
+  return DateTime(loc.year, loc.month, loc.day);
 }
 
 DateTime? _parseFlexibleDateTime(dynamic v) {
@@ -379,49 +579,6 @@ DateTime? _parseFlexibleDateTime(dynamic v) {
   return parsed?.toUtc();
 }
 
-/// NocoDB plan row (flat).
-class Plan {
-  const Plan({
-    required this.id,
-    required this.planId,
-    required this.userId,
-    this.title,
-    this.categoryId,
-    this.dateKey,
-    this.startTime,
-    this.endTime,
-    this.isDone,
-  });
-
-  final int id;
-  /// String identifier for this plan row (NocoDB column: plan_id).
-  final String planId;
-  final int userId;
-  final String? title;
-  final String? categoryId;
-  final String? dateKey;
-  final String? startTime;
-  final String? endTime;
-  final bool? isDone;
-
-  factory Plan.fromJson(Map<String, dynamic> json) {
-    final data = (json['fields'] ?? json) as Map<String, dynamic>;
-    final id = _jsonInt(json['id'] ?? data['id']);
-    final planId = (data['plan_id'] ?? data['id'] ?? id).toString();
-    return Plan(
-      id: id,
-      planId: planId,
-      userId: _jsonInt(data['user_id']),
-      title: data['title']?.toString(),
-      categoryId: data['category_id']?.toString(),
-      dateKey: data['date_key']?.toString(),
-      startTime: data['start_time']?.toString(),
-      endTime: data['end_time']?.toString(),
-      isDone: data['is_done'] as bool?,
-    );
-  }
-}
-
 /// Strict hierarchical category. Supports optional keywords per language (MULTILINGUAL_KEYWORDS).
 class CategoryRule {
   /// Synthetic id for records whose Noco `category_id` does not match any loaded rule.
@@ -430,7 +587,7 @@ class CategoryRule {
   CategoryRule({
     required this.id,
     required this.name,
-    this.nocoId,
+    this.backendRowId,
     this.normalizedId,
     this.children,
     this.colorValue,
@@ -438,41 +595,47 @@ class CategoryRule {
     this.keywords,
     this.localizedNames,
     this.order = 0,
+    this.isArchived = false,
   });
 
   factory CategoryRule.uncategorized() {
     return CategoryRule(
       id: uncategorizedSyntheticId,
       name: 'Uncategorized',
-      nocoId: 'uncategorized',
+      backendRowId: 'uncategorized',
       normalizedId: 'uncategorized',
+      isArchived: false,
     );
   }
 
   final int id;
   /// @DATA_MAP.md `categories.name` (display name).
   String name;
-  final String? nocoId;
+  /// PocketBase **categories** collection record id (PATCH/DELETE).
+  final String? backendRowId;
   final String? normalizedId;
-  /// String business key from DB (e.g. "astra", "life", UUID).
+  /// String business key from DB (e.g. slug / UUID). May differ from [name] when resolving archive unique constraints.
   String get categoryKey =>
-      (nocoId ?? '').trim().isNotEmpty
-          ? nocoId!.trim()
-          : (normalizedId ?? '').trim().isNotEmpty
-              ? normalizedId!.trim()
+      (normalizedId ?? '').trim().isNotEmpty
+          ? normalizedId!.trim()
+          : (backendRowId ?? '').trim().isNotEmpty
+              ? backendRowId!.trim()
               : name.trim();
   List<CategoryRule>? children;
   int? colorValue;
   int? iconCodePoint;
   /// @DATA_MAP.md `categories.order` — sibling sort index (integer); persisted via bulk PATCH.
   int order;
+  /// @DATA_MAP `is_archived` — soft-deleted categories stay in DB but off active lists.
+  /// Uniqueness checks and “category exists” logic must ignore archived rows (zombie slug conflicts).
+  bool isArchived;
   Map<String, List<String>>? keywords;
   final Map<String, String>? localizedNames;
 
   CategoryRule copyWith({
     int? id,
     String? name,
-    String? nocoId,
+    String? backendRowId,
     String? normalizedId,
     List<CategoryRule>? children,
     int? colorValue,
@@ -480,6 +643,7 @@ class CategoryRule {
     Map<String, List<String>>? keywords,
     Map<String, String>? localizedNames,
     int? order,
+    bool? isArchived,
   }) {
     final copiedChildren = children ??
         (this.children != null ? List<CategoryRule>.from(this.children!) : null);
@@ -498,7 +662,7 @@ class CategoryRule {
     return CategoryRule(
       id: id ?? this.id,
       name: name ?? this.name,
-      nocoId: nocoId ?? this.nocoId,
+      backendRowId: backendRowId ?? this.backendRowId,
       normalizedId: normalizedId ?? this.normalizedId,
       children: copiedChildren,
       colorValue: colorValue ?? this.colorValue,
@@ -506,6 +670,7 @@ class CategoryRule {
       keywords: copiedKeywords,
       localizedNames: localizedNames ?? this.localizedNames,
       order: order ?? this.order,
+      isArchived: isArchived ?? this.isArchived,
     );
   }
 
@@ -522,16 +687,42 @@ class CategoryRule {
     return Icons.folder_rounded;
   }
 
+  /// Whole-word tokens only (@ARCHITECTURE §8 — no substring / fuzzy on title).
+  static Set<String> _titleWholeWordSet(String title) {
+    final trimmed = title.trim();
+    if (trimmed.isEmpty) return {};
+    return trimmed
+        .toLowerCase()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toSet();
+  }
+
+  /// True if [title] contains this rule's display name or any **keywords** entry as a whole token.
+  bool matchesTitleWholeWordKeywords(String title) {
+    final words = CategoryRule._titleWholeWordSet(title);
+    if (words.isEmpty) return false;
+    final selfName = name.trim().toLowerCase();
+    if (selfName.isNotEmpty && words.contains(selfName)) return true;
+    if (keywords != null) {
+      for (final list in keywords!.values) {
+        for (final kw in list) {
+          final k = kw.trim().toLowerCase();
+          if (k.isNotEmpty && words.contains(k)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   CategoryRule? findDeepestMatch(String title) {
-    final t = title.trim().toLowerCase();
-    if (t.isEmpty) return null;
+    if (title.trim().isEmpty) return null;
     CategoryRule? best;
     int bestDepth = -1;
 
     void visit(CategoryRule r, int depth) {
       if (depth > 4) return;
-      final tagLower = r.name.trim().toLowerCase();
-      if (tagLower.isNotEmpty && t.contains(tagLower)) {
+      if (!r.isArchived && r.matchesTitleWholeWordKeywords(title)) {
         if (depth >= bestDepth) {
           best = r;
           bestDepth = depth;
@@ -549,7 +740,7 @@ class CategoryRule {
   Map<String, dynamic> toJson() => <String, dynamic>{
         'id': id,
         'name': name,
-        if (nocoId != null && nocoId!.isNotEmpty) 'nocoId': nocoId,
+        if (backendRowId != null && backendRowId!.isNotEmpty) 'backendRowId': backendRowId,
         if (normalizedId != null && normalizedId!.isNotEmpty) 'normalizedId': normalizedId,
         if (children != null && children!.isNotEmpty)
           'children': children!.map((c) => c.toJson()).toList(),
@@ -560,6 +751,7 @@ class CategoryRule {
         if (localizedNames != null && localizedNames!.isNotEmpty)
           'localizedNames': localizedNames,
         'order': order,
+        'isArchived': isArchived,
       };
 
   factory CategoryRule.fromJson(Map<String, dynamic> json) {
@@ -619,10 +811,15 @@ class CategoryRule {
     final orderVal = orderRaw is int
         ? orderRaw
         : int.tryParse(orderRaw?.toString() ?? '') ?? 0;
+    final archivedRaw = data['is_archived'] ?? data['isArchived'];
+    final isArc = archivedRaw == true ||
+        archivedRaw == 1 ||
+        (archivedRaw is String &&
+            archivedRaw.toLowerCase().trim() == 'true');
     return CategoryRule(
       id: int.tryParse(rawId) ?? rawId.hashCode,
       name: safeTag,
-      nocoId: rawId,
+      backendRowId: rawId,
       normalizedId: (data['category_id'] ?? data['id1'] ?? data['normalized_id'] ?? data['normalizedId'])?.toString(),
       children: children.isEmpty ? null : children,
       colorValue: colorRaw is int ? colorRaw : (colorRaw != null ? int.tryParse(colorRaw.toString()) : null),
@@ -630,15 +827,17 @@ class CategoryRule {
       keywords: keywords,
       localizedNames: localizedNames,
       order: orderVal,
+      isArchived: isArc,
     );
   }
 }
 
-/// In-memory representation of a timeline record. Hierarchy: parentId + [recordId].
-/// Calendar day for UI is always derived from [startTime] (UTC date), not from date_key.
+/// In-memory representation of a timeline record. Hierarchy: parentId + [id].
+/// Calendar day for UI is derived from [startTime] using **device-local** date, not UTC prefix.
 class TimelineRecord {
   TimelineRecord({
-    required this.recordId,
+    required this.id,
+    this.recordId,
     required this.title,
     this.categoryId,
     this.type = 'record',
@@ -653,9 +852,10 @@ class TimelineRecord {
     this.parentId,
   });
 
-  /// Brain uses **wrapper `Id`** as decimal string for row URL (`.../mjchwhned7zsvj0/{Id}`); never a list index.
-  final String recordId;
-  String get id => recordId;
+  /// PocketBase **records** row id — **only** value used for REST paths and stop/delete/patch dispatch.
+  final String id;
+  /// Column `record_id` (legacy UUID). Passive metadata; do **not** use for `/records/...` URLs.
+  final String? recordId;
   String title;
   int? categoryId;
   final String type;
@@ -669,12 +869,12 @@ class TimelineRecord {
   final List<int>? subRecordIds;
   final int? parentId;
 
-  /// ISO `YYYY-MM-DD` from [startTime] in UTC (matches Noco start_time date prefix).
+  /// ISO `YYYY-MM-DD` from [startTime] in **device-local** calendar (matches timeline list buckets).
   String get dateKey {
     final st = startTime;
     if (st == null) return '';
-    final u = st.toUtc();
-    return '${u.year}-${u.month.toString().padLeft(2, '0')}-${u.day.toString().padLeft(2, '0')}';
+    final loc = st.toUtc().toLocal();
+    return '${loc.year}-${loc.month.toString().padLeft(2, '0')}-${loc.day.toString().padLeft(2, '0')}';
   }
 
   /// Basta: [endTime] set ⇒ not running, regardless of [status] string.
@@ -684,32 +884,51 @@ class TimelineRecord {
   static dynamic _get(Map<String, dynamic> data, String camel, String snake) =>
       data[camel] ?? data[snake];
 
-  factory TimelineRecord.fromMap(Map<String, dynamic> data, {String? recordId}) {
-    final rid = () {
-      if (recordId != null && recordId.trim().isNotEmpty) {
-        return recordId.trim();
+  factory TimelineRecord.fromMap(Map<String, dynamic> data, {String? systemId}) {
+    String? passiveBiz;
+    for (final k in <String>['record_id', 'recordId']) {
+      final v = data[k];
+      if (v == null) continue;
+      final s = v.toString().trim();
+      if (s.isNotEmpty) {
+        passiveBiz = s;
+        break;
       }
-      final sys = data['nocoSystemId'];
-      if (sys is int) return sys.toString();
-      // Prefer Noco **system** id (digits) for Brain REST URLs — never UUID alone.
-      for (final k in <String>['id', 'Id', 'nocoRestPathId']) {
+    }
+    final restId = () {
+      if (systemId != null && systemId.trim().isNotEmpty) {
+        return systemId.trim();
+      }
+      for (final k in <String>[
+        'backendRestPathId',
+        'nocoRestPathId',
+        'id',
+        'Id',
+      ]) {
         final v = data[k];
         if (v == null) continue;
         final s = v.toString().trim();
-        if (s.isNotEmpty && int.tryParse(s) != null) return s;
+        if (s.isNotEmpty && _isTimelineRestRowId(s)) return s;
       }
-      for (final k in <String>['record_id', 'recordId']) {
-        final v = data[k];
-        if (v == null) continue;
-        final s = v.toString().trim();
-        if (s.isNotEmpty) return s;
+      final sys = data['backendNumericId'] ?? data['nocoSystemId'];
+      if (sys is int && sys != 0) return sys.toString();
+      if (sys != null) {
+        final p = int.tryParse(sys.toString());
+        if (p != null && p != 0) return p.toString();
       }
       return '';
     }();
+    if (passiveBiz != null &&
+        passiveBiz.isNotEmpty &&
+        passiveBiz == restId &&
+        !_isPbRecordsRowIdSegment(passiveBiz) &&
+        int.tryParse(passiveBiz) == null) {
+      passiveBiz = null;
+    }
     final start = _get(data, 'startTime', 'start_time');
     final end = _get(data, 'endTime', 'end_time');
-    final startDt = start is DateTime ? start : (start is String ? DateTime.tryParse(start) : null);
-    final endDt = end is DateTime ? end : (end is String ? DateTime.tryParse(end) : null);
+    final startDt = _parseToUtcSecondPrecision(start);
+    final endDt = _parseToUtcSecondPrecision(end);
     final note = mergeRecordNoteFields(data['note'], data['notes']);
     final checklist = parseChecklistFromNoco(data['checklist']);
     final rawSubIds = _get(data, 'subRecordIds', 'sub_record_ids');
@@ -722,7 +941,8 @@ class TimelineRecord {
     final int? parentId = pid == null || pid.toString().isEmpty ? null : _jsonInt(pid);
 
     return TimelineRecord(
-      recordId: rid,
+      id: restId,
+      recordId: passiveBiz,
       title: (data['title'] as String?) ?? '',
       categoryId: () {
         final c = _get(data, 'categoryId', 'category_id');
@@ -746,17 +966,24 @@ class TimelineRecord {
   }
 
   Map<String, dynamic> toMap() {
-    final sys = int.tryParse(recordId);
+    final sys = int.tryParse(id);
     return <String, dynamic>{
-        'record_id': recordId,
-        'id': recordId,
-        'nocoSystemId': ?sys,
+        'id': id,
+        'backendRestPathId': id,
+        if (recordId != null && recordId!.trim().isNotEmpty)
+          'record_id': recordId,
+        'backendNumericId': sys,
+        'docId': sys ?? 0,
         'title': title,
         'category_id': categoryId,
         'type': type,
         'status': status,
-        'start_time': startTime?.toUtc().toIso8601String(),
-        'end_time': endTime?.toUtc().toIso8601String(),
+        'start_time': startTime != null
+            ? _iso8601UtcSecondsPrecision(startTime!)
+            : null,
+        'end_time': endTime != null
+            ? _iso8601UtcSecondsPrecision(endTime!)
+            : null,
         'duration': duration,
         'duration_seconds': durationSeconds,
         if (note != null && note!.isNotEmpty) 'note': note,
@@ -769,23 +996,27 @@ class TimelineRecord {
   String toJson() => jsonEncode(toMap());
 
   factory TimelineRecord.fromJson(Map<String, dynamic> json) {
-    final sys = json['nocoSystemId'];
-    final rid = (sys is int
-            ? sys.toString()
-            : (json['recordId'] ??
-                json['nocoRestPathId'] ??
-                json['id'] ??
-                json['Id'] ??
-                json['record_id'] ??
-                json['docId']))
+    final sid = (json['backendRestPathId'] ??
+            json['nocoRestPathId'] ??
+            json['id'] ??
+            json['Id'])
         ?.toString()
-        .trim() ??
-        '';
-    return TimelineRecord.fromMap(Map<String, dynamic>.from(json),
-        recordId: rid.isNotEmpty ? rid : null);
+        .trim();
+    final sys = json['backendNumericId'] ?? json['nocoSystemId'];
+    final fromNum = sys is int
+        ? sys.toString()
+        : int.tryParse(sys?.toString() ?? '')?.toString();
+    final chosen = (sid != null && sid.isNotEmpty)
+        ? sid
+        : (fromNum != null && fromNum != '0' ? fromNum : '');
+    return TimelineRecord.fromMap(
+      Map<String, dynamic>.from(json),
+      systemId: chosen.isNotEmpty ? chosen : null,
+    );
   }
 
   TimelineRecord copyWith({
+    String? id,
     String? recordId,
     String? title,
     int? categoryId,
@@ -801,6 +1032,7 @@ class TimelineRecord {
     int? parentId,
   }) {
     return TimelineRecord(
+      id: id ?? this.id,
       recordId: recordId ?? this.recordId,
       title: title ?? this.title,
       categoryId: categoryId ?? this.categoryId,
@@ -841,8 +1073,8 @@ class Task {
     return d.isNegative ? Duration.zero : d;
   }
 
-  /// Optional: set when sending to NocoDB so payload includes user_id.
-  int? userId;
+  /// Optional: set when sending to the backend so payload includes `user_id` (PocketBase auth record id).
+  String? userId;
 
   Map<String, dynamic> toMap() => <String, dynamic>{
         'title': title,
@@ -850,7 +1082,7 @@ class Task {
         'endTime': endTime?.toIso8601String(),
         'tags': tags,
         'isActive': isActive,
-        if (userId != null) 'user_id': userId,
+        if (userId != null && userId!.trim().isNotEmpty) 'user_id': userId,
       };
 
   String toJson() => jsonEncode(toMap());
@@ -883,34 +1115,34 @@ class Task {
   factory Task.fromJson(Map<String, dynamic> json) => Task.fromMap(json);
 }
 
-/// NocoDB profile row payload (snake_case). Use for bulk POST upsert.
+/// Profile PATCH body (snake_case) for PocketBase — no `user_id` (owner is the auth record).
 class ProfileUpdate {
   ProfileUpdate.fromSettings(UserSettings s)
       : preferredTimeZone = s.preferredTimeZone,
         timezoneOffsetHours = s.timezoneOffsetHours,
-        userId = s.userId,
         themeMode = s.themeMode,
         displayName = s.displayName,
         primaryLanguage =
-            s.primaryLanguage.isNotEmpty ? s.primaryLanguage : s.language;
+            s.primaryLanguage.isNotEmpty ? s.primaryLanguage : s.language,
+        tagDisplayMode = tagDisplayModeWireForPatch(s);
   final String preferredTimeZone;
   final int timezoneOffsetHours;
-  final int userId;
   final String themeMode;
   final String? displayName;
   final String primaryLanguage;
+  final String tagDisplayMode;
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'user_id': userId,
         'preferred_timezone': preferredTimeZone,
         'timezone_offset': timezoneOffsetHours,
         'theme_mode': themeMode,
         'primary_language': primaryLanguage,
+        'tag_display_mode': tagDisplayMode,
         if (displayName != null && displayName!.trim().isNotEmpty)
           'display_name': displayName!.trim(),
       };
 }
 
-/// User preferences. userId = profile id (int).
+/// User preferences. [userId] = PocketBase auth record id / `user_id` on child rows (string).
 class UserSettings {
   UserSettings({
     required this.userId,
@@ -925,9 +1157,11 @@ class UserSettings {
     this.dataRegion,
     this.biometricEnabled = false,
     this.displayName,
+    this.tagDisplayMode = CategoryDisplayMode.letterChip,
+    this.tagDisplayModeWireRaw,
   });
 
-  final int userId;
+  final String userId;
   final String language;
   final String preferredTimeZone;
   final int timezoneOffsetHours;
@@ -941,6 +1175,10 @@ class UserSettings {
   final String? displayName;
   /// Local biometric lock on app launch. Stored in profiles; never stored in cloud as biometric data.
   final bool biometricEnabled;
+  /// Minimalist chip style for categories/tags (Timeline, Planning). `profiles.tag_display_mode`.
+  final CategoryDisplayMode tagDisplayMode;
+  /// Exact string last read from PocketBase for [tagDisplayMode] (Select option spelling).
+  final String? tagDisplayModeWireRaw;
 
   List<String> get effectiveActiveLanguages => activeLanguages ?? ['en', 'ru'];
 
@@ -957,6 +1195,7 @@ class UserSettings {
         if (dataRegion != null && dataRegion!.isNotEmpty) 'dataRegion': dataRegion,
         if (displayName != null && displayName!.trim().isNotEmpty)
           'displayName': displayName!.trim(),
+        'tagDisplayMode': tagDisplayMode.wireValue,
       };
 
   factory UserSettings.fromJson(Map<String, dynamic> json) {
@@ -970,8 +1209,10 @@ class UserSettings {
       activeLanguages = raw.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
       if (activeLanguages.isEmpty) activeLanguages = null;
     }
+    final tagWire = json['tag_display_mode'] ?? json['tagDisplayMode'];
+    final tagWireStr = tagWire?.toString().trim();
     return UserSettings(
-      userId: _jsonInt(json['user_id'] ?? json['userId']),
+      userId: (json['user_id'] ?? json['userId'])?.toString() ?? '',
       language: json['language'] as String? ?? 'en',
       preferredTimeZone: preferredTimeZone,
       timezoneOffsetHours: offset,
@@ -983,11 +1224,14 @@ class UserSettings {
       dataRegion: json['dataRegion'] as String?,
       biometricEnabled: json['biometricEnabled'] as bool? ?? false,
       displayName: json['displayName'] as String? ?? json['display_name'] as String?,
+      tagDisplayMode: categoryDisplayModeFromWire(tagWireStr),
+      tagDisplayModeWireRaw:
+          (tagWireStr != null && tagWireStr.isNotEmpty) ? tagWireStr : null,
     );
   }
 
   UserSettings copyWith({
-    int? userId,
+    String? userId,
     String? language,
     String? preferredTimeZone,
     int? timezoneOffsetHours,
@@ -999,6 +1243,8 @@ class UserSettings {
     String? dataRegion,
     bool? biometricEnabled,
     String? displayName,
+    CategoryDisplayMode? tagDisplayMode,
+    String? tagDisplayModeWireRaw,
   }) {
     return UserSettings(
       userId: userId ?? this.userId,
@@ -1013,8 +1259,109 @@ class UserSettings {
       dataRegion: dataRegion ?? this.dataRegion,
       biometricEnabled: biometricEnabled ?? this.biometricEnabled,
       displayName: displayName ?? this.displayName,
+      tagDisplayMode: tagDisplayMode ?? this.tagDisplayMode,
+      tagDisplayModeWireRaw: tagDisplayMode != null
+          ? null
+          : (tagDisplayModeWireRaw ?? this.tagDisplayModeWireRaw),
     );
   }
+}
+
+/// Tag row. Business PK is [tagId] (`tag_id`); [wrapperRowId] optional legacy table row id.
+/// **PocketBase:** [pbRecordId] is the only id safe for `plans.tags_link` / relation writes.
+class Tag {
+  const Tag({
+    required this.tagId,
+    required this.name,
+    this.color,
+    this.icon,
+    this.wrapperRowId,
+    this.pbRecordId,
+    this.sortOrder = 0,
+  });
+
+  final int tagId;
+  final String name;
+  final String? color;
+  final String? icon;
+  /// Legacy numeric wrapper id (non–PocketBase hosts).
+  final int? wrapperRowId;
+  /// PocketBase **tags** collection record id.
+  final String? pbRecordId;
+  /// Display / grouping order in Planning (`tags.sort_order`); lower = first.
+  final int sortOrder;
+
+  Tag copyWith({
+    int? tagId,
+    String? name,
+    String? color,
+    String? icon,
+    int? wrapperRowId,
+    String? pbRecordId,
+    int? sortOrder,
+  }) {
+    return Tag(
+      tagId: tagId ?? this.tagId,
+      name: name ?? this.name,
+      color: color ?? this.color,
+      icon: icon ?? this.icon,
+      wrapperRowId: wrapperRowId ?? this.wrapperRowId,
+      pbRecordId: pbRecordId ?? this.pbRecordId,
+      sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
+
+  /// Whether a planning (or similar) chip should render — excludes junk rows from incomplete Noco M2M parse.
+  bool get rendersAsChip =>
+      tagId != 0 ||
+      name.trim().isNotEmpty ||
+      (wrapperRowId ?? 0) > 0 ||
+      (pbRecordId != null && pbRecordId!.trim().isNotEmpty);
+
+  factory Tag.fromNocoJson(Map<String, dynamic> json) {
+    // Brain `_flattenNocoRecord` may stamp wrapper int as `id` or `_noco_system_row_id` (@DATA_MAP tags `Id`).
+    final wrap = _jsonInt(
+      json['id'] ?? json['Id'] ?? json['ID'] ?? json['_noco_system_row_id'],
+    );
+    final hasBizTagIdKey = json.containsKey('tag_id') ||
+        json.containsKey('Tag_id') ||
+        json.containsKey('tagId');
+    var tid = _jsonInt(
+      json['tag_id'] ?? json['Tag_id'] ?? json['tagId'],
+    );
+    // Never treat wrapper Id as business `tag_id` when `tag_id` is present (even if 0 = bad row).
+    if (!hasBizTagIdKey && tid == 0 && wrap > 0) tid = wrap;
+    return Tag(
+      tagId: tid,
+      name: json['name']?.toString() ?? '',
+      color: json['color']?.toString(),
+      icon: json['icon']?.toString(),
+      wrapperRowId: wrap > 0 ? wrap : null,
+      pbRecordId: json['pocket_id']?.toString(),
+      sortOrder: _jsonInt(json['sort_order'] ?? json['sortOrder']),
+    );
+  }
+
+  /// PocketBase **tags** row map (`id`, `tag_id`, `name`, …). Always set [pbRecordId] from the collection row id when present.
+  factory Tag.fromPocketJson(Map<String, dynamic> json) {
+    final rid = (json['id'] ?? json['recordId'])?.toString().trim();
+    return Tag(
+      tagId: _jsonInt(json['tag_id']),
+      name: json['name']?.toString() ?? '',
+      color: json['color']?.toString(),
+      icon: json['icon']?.toString(),
+      wrapperRowId: null,
+      pbRecordId: (rid != null && rid.isNotEmpty) ? rid : null,
+      sortOrder: _jsonInt(json['sort_order'] ?? json['sortOrder']),
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is Tag && other.tagId == tagId;
+
+  @override
+  int get hashCode => tagId.hashCode;
 }
 
 /// Planning task (intent / todo). Stored in plans.
@@ -1022,6 +1369,7 @@ class PlanningTask {
   PlanningTask({
     required this.id,
     this.planRowId,
+    this.pocketRecordId,
     required this.title,
     required this.categoryId,
     this.isDone = false,
@@ -1035,19 +1383,35 @@ class PlanningTask {
     this.notes,
     this.parentPlanId,
     List<int>? subRecordIds,
+    List<Tag>? tags,
   })  : date = date ?? _dateFromDateKey(dateKey),
         endDateKey = endDateKey ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey),
-        subRecordIds = subRecordIds ?? const [];
+        subRecordIds = subRecordIds ?? const [],
+        tags = tags ?? const [];
 
   final int id;
   /// Business **plan_id** (UUID) inside Noco `fields` — never use as bulk PATCH outer `id`.
   final String? planRowId;
 
-  /// Noco **wrapper Id** (integer) for bulk PATCH / DELETE URL segment (@DATA_MAP plans: System PK).
-  /// Stays `optimistic-…` for optimistic rows only. Uses [id] when > 0 (server row from _planRowToTask).
-  String get planRowIdForNoco {
+  /// PocketBase **plans** collection record id (replaces integer Noco id for CRUD).
+  final String? pocketRecordId;
+
+  /// Stable id for bulk delete / patch: PocketBase row id, else legacy Noco int as string.
+  String get recordIdForBackend {
+    final pb = pocketRecordId?.trim() ?? '';
+    if (pb.isNotEmpty) return pb;
+    if (id > 0) return id.toString();
+    final p = planRowId?.trim() ?? '';
+    return p;
+  }
+
+  /// Stable plan row id for PocketBase CRUD (`pocketRecordId`, else legacy int / `planRowId`).
+  /// Stays `optimistic-…` for optimistic rows only.
+  String get planRowIdForBackend {
     final p = planRowId?.trim() ?? '';
     if (p.startsWith('optimistic-')) return p;
+    final pr = pocketRecordId?.trim() ?? '';
+    if (pr.isNotEmpty) return pr;
     if (id > 0) return id.toString();
     if (p.isNotEmpty) return p;
     return id.toString();
@@ -1065,6 +1429,7 @@ class PlanningTask {
   final String? notes;
   final int? parentPlanId;
   final List<int> subRecordIds;
+  final List<Tag> tags;
 
   static DateTime? _dateFromDateKey(String key) {
     if (key.length < 10) return null;
@@ -1090,7 +1455,15 @@ class PlanningTask {
         if (endDateTime != null) 'end_time': endDateTime!.toUtc().toIso8601String(),
       };
 
-  factory PlanningTask.fromJson(Map<String, dynamic> json) {
+  /// Same as [fromJson]; use when the source is a Noco row `fields` map / REST object.
+  factory PlanningTask.fromMap(Map<String, dynamic> map) =>
+      PlanningTask.fromJson(map);
+
+  /// PocketBase-only: when `expand` is missing, [pocketTagCatalog] resolves plain `tags_link` id list to [Tag]s.
+  factory PlanningTask.fromJson(
+    Map<String, dynamic> json, {
+    List<Tag>? pocketTagCatalog,
+  }) {
     dynamic g(String camel, String snake) => json[camel] ?? json[snake];
     final st = g('startTime', 'start_time');
     final DateTime? startTime = st is DateTime ? st : (st is String ? DateTime.tryParse(st) : null);
@@ -1121,9 +1494,60 @@ class PlanningTask {
     }
     final planPk =
         (json['plan_row_id'] ?? json['plan_id'] ?? json['planId'])?.toString().trim();
+    // @DATA_MAP `plans.tags` is a read-only **Count** (int). M2M edge rows use link column `cnmo43ed26h293n` (top-level list row, inside `fields`, or nested expand).
+    Map<String, dynamic>? fieldsBag;
+    if (json['fields'] is Map) {
+      fieldsBag = Map<String, dynamic>.from(json['fields'] as Map);
+    }
+    dynamic rawLinkCol =
+        json['cnmo43ed26h293n'] ?? fieldsBag?['cnmo43ed26h293n'];
+    if (rawLinkCol is Map) {
+      rawLinkCol = rawLinkCol['list'] ?? rawLinkCol['records'] ?? rawLinkCol;
+    }
+    final rawPlanTags = json['tags'] ?? json['Tags'];
+    final rawPbLinkField = json['tags_link'];
+
+    List<Tag> tagList = [];
+
+    // —— PocketBase: expanded documents live under json['expand']['tags_link'] ——
+    final expandBag = json['expand'];
+    if (expandBag is Map) {
+      final em = Map<String, dynamic>.from(expandBag);
+      tagList = _tagsFromPbExpandField(em['tags_link']);
+    }
+
+    // Plain tags_link: full maps (no expand) or id list only.
+    if (tagList.isEmpty && rawPbLinkField is List && rawPbLinkField.isNotEmpty) {
+      final head = rawPbLinkField.first;
+      if (head is Map) {
+        tagList = _tagsFromPbExpandField(rawPbLinkField);
+      } else if (pocketTagCatalog != null && pocketTagCatalog.isNotEmpty) {
+        tagList = _tagsFromPbPlainLinkIds(rawPbLinkField, pocketTagCatalog);
+      }
+    }
+    if (tagList.isEmpty &&
+        rawPbLinkField is String &&
+        pocketTagCatalog != null &&
+        pocketTagCatalog.isNotEmpty &&
+        rawPbLinkField.trim().isNotEmpty) {
+      tagList = _tagsFromPbPlainLinkIds(<dynamic>[rawPbLinkField], pocketTagCatalog);
+    }
+
+    // —— Legacy Noco ——
+    if (tagList.isEmpty) {
+      if (rawPlanTags is int) {
+        tagList =
+            rawLinkCol is List ? _parseTagsJson(rawLinkCol) : const <Tag>[];
+      } else if (rawLinkCol is List) {
+        tagList = _parseTagsJson(rawLinkCol);
+      } else {
+        tagList = _parseTagsJson(rawPlanTags);
+      }
+    }
     return PlanningTask(
       id: _jsonInt(json['id']),
       planRowId: (planPk != null && planPk.isNotEmpty) ? planPk : null,
+      pocketRecordId: json['pocketRecordId']?.toString(),
       title: json['title'] as String? ?? '',
       categoryId: _jsonInt(g('categoryId', 'category_id')),
       isDone: _jsonBool(g('isDone', 'is_done')),
@@ -1137,12 +1561,121 @@ class PlanningTask {
       notes: notes,
       parentPlanId: parentPlanId,
       subRecordIds: subRecordIds,
+      tags: tagList,
     );
+  }
+
+  /// `expand.tags_link` or a list of PocketBase **tags** row maps (`id`, `tag_id`, …).
+  static List<Tag> _tagsFromPbExpandField(dynamic tl) {
+    if (tl == null) return [];
+    if (tl is List) {
+      final out = <Tag>[];
+      for (final e in tl) {
+        if (e is Map<String, dynamic>) {
+          out.add(Tag.fromPocketJson(e));
+        } else if (e is Map) {
+          out.add(Tag.fromPocketJson(Map<String, dynamic>.from(e)));
+        }
+      }
+      return out;
+    }
+    if (tl is Map) {
+      return [Tag.fromPocketJson(Map<String, dynamic>.from(tl))];
+    }
+    return [];
+  }
+
+  /// `tags_link` when expand is off: list of **collection record id** strings — match catalog [Tag.pbRecordId] or [Tag.tagId].
+  static List<Tag> _tagsFromPbPlainLinkIds(List<dynamic> raw, List<Tag> catalog) {
+    final byPb = <String, Tag>{};
+    final byBiz = <int, Tag>{};
+    for (final t in catalog) {
+      final pid = t.pbRecordId?.trim() ?? '';
+      if (pid.isNotEmpty) byPb[pid] = t;
+      if (t.tagId != 0) byBiz[t.tagId] = t;
+    }
+    final out = <Tag>[];
+    final seenBearer = <String>{};
+    for (final e in raw) {
+      if (e is Map) {
+        final tag = Tag.fromPocketJson(Map<String, dynamic>.from(e));
+        final id = tag.pbRecordId?.trim() ?? '';
+        if (id.isNotEmpty && seenBearer.add(id)) {
+          out.add(tag);
+        }
+        continue;
+      }
+      final id = e?.toString().trim() ?? '';
+      if (id.isEmpty) continue;
+      var tag = byPb[id];
+      if (tag == null) {
+        final n = int.tryParse(id);
+        if (n != null) tag = byBiz[n];
+      }
+      if (tag == null) continue;
+      final seenKey = tag.pbRecordId?.trim() ?? 'biz:${tag.tagId}';
+      if (seenBearer.add(seenKey)) {
+        out.add(tag);
+      }
+    }
+    return out;
+  }
+
+  /// Noco list item or nested `{ "fields": {…} }` from M2M / read API → flat map for [Tag.fromNocoJson].
+  static Map<String, dynamic> _unwrapLinkedTagRow(dynamic e) {
+    if (e is! Map) return {};
+    final m = Map<String, dynamic>.from(e);
+    if (m['fields'] is Map) {
+      final f = Map<String, dynamic>.from(m['fields'] as Map);
+      final topId = m['id'] ?? m['Id'];
+      if (topId != null) {
+        f['id'] ??= topId;
+      }
+      return f;
+    }
+    return m;
+  }
+
+  /// Noco linked records: `tags` is typically a JSON array of row objects (`id` / `fields` / nested maps).
+  /// A bare [int] is treated as empty (e.g. plans rollup count — not a tag id list).
+  static List<Tag> _parseTagsJson(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is int) return const [];
+    if (raw is String) {
+      final s = raw.trim();
+      if (s.isEmpty) return const [];
+      final out = <Tag>[];
+      for (final part in s.split(',')) {
+        final n = part.trim();
+        if (n.isNotEmpty) {
+          out.add(Tag(tagId: 0, name: n));
+        }
+      }
+      return out;
+    }
+    if (raw is! List) return const [];
+    final out = <Tag>[];
+    for (final e in raw) {
+      if (e is int) {
+        if (e != 0) out.add(Tag(tagId: e, name: ''));
+        continue;
+      }
+      if (e is! Map) continue;
+      final flat = _unwrapLinkedTagRow(e);
+      if (flat.isEmpty) continue;
+      final tag = Tag.fromNocoJson(flat);
+      final hasLink = tag.wrapperRowId != null && tag.wrapperRowId! > 0;
+      if (tag.tagId != 0 || hasLink || tag.name.isNotEmpty) {
+        out.add(tag);
+      }
+    }
+    return out;
   }
 
   PlanningTask copyWith({
     int? id,
     String? planRowId,
+    String? pocketRecordId,
     String? title,
     int? categoryId,
     bool? isDone,
@@ -1157,12 +1690,14 @@ class PlanningTask {
     String? notes,
     int? parentPlanId,
     List<int>? subRecordIds,
+    List<Tag>? tags,
   }) {
     final eDt = clearEnd ? null : (endDateTime ?? this.endDateTime);
     final eDk = endDateKey ?? (eDt != null ? _dateKeyFromDate(eDt) : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
     return PlanningTask(
       id: id ?? this.id,
       planRowId: planRowId ?? this.planRowId,
+      pocketRecordId: pocketRecordId ?? this.pocketRecordId,
       title: title ?? this.title,
       categoryId: categoryId ?? this.categoryId,
       isDone: isDone ?? this.isDone,
@@ -1176,6 +1711,7 @@ class PlanningTask {
       notes: notes ?? this.notes,
       parentPlanId: parentPlanId ?? this.parentPlanId,
       subRecordIds: subRecordIds ?? this.subRecordIds,
+      tags: tags ?? this.tags,
     );
   }
 }

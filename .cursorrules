@@ -1,0 +1,5 @@
+# Cursor rules (pointer)
+
+Authoritative Flutter + NocoDB rules live in **`.cursor/rules/flutter_expert.mdc`** (always applied).
+
+**Mandatory for ALL database (NocoDB) work and ALL related layout tasks:** follow **`NOCODB_MANIFEST.md`** at the repo root together with **`lib/DATA_MAP.md`**. Do not invent alternate URL shapes, link payloads, or parsing behavior; update the manifest first if the stack changes.

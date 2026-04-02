@@ -1,7 +1,6 @@
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Auth gate: email + password. Session = profile_id in secure storage.
 /// Primary: Sign In. Secondary: Create Account (claim or new).

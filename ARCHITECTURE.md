@@ -1,50 +1,77 @@
-# LIFE OS: MASTER SPECIFICATION v8.0.0 (NocoDB-STRICT)
+# LIFE OS: Architecture (PocketBase)
 
-## 1. FILE HIERARCHY (The Sovereign Vaults)
+**Runtime law:** The app’s primary backend is **PocketBase** (`pocketbase` Dart SDK). URL, collection names, auth, and **record → category** relation (`category_link` + expand) are defined in **`POCKETBASE_MANIFEST.md`**. **`lib/DATA_MAP.md`** remains the vocabulary for **field names** and business IDs (`user_id`, `record_id`, `plan_id`, `category_id`, etc.).
+
+---
+
+## 1. File hierarchy
+
 | Vault | Responsibility | Rule |
 | :--- | :--- | :--- |
-| `lib/data/models.dart` | **Data DNA** | Pure Classes. Fields MUST match @DATA_MAP.md exactly. No logic or UI imports. |
-| `lib/data/database_service.dart`| **The Brain** | [REST ONLY] All NocoDB HTTP logic. Only file allowed to import `http`. |
-| `lib/data/auth_bridge.dart` | **The Gate** | Session Persistence via `user_id` + `xc-token`. |
-| `lib/app_shell.dart` | **The Navigator**| BottomNavBar & Global FAB. The UI Orchestrator. |
-| `lib/main.dart` | **The Ignition** | Boot sequence: Verify `user_id` and load Global Profile before Home. |
+| `lib/data/models.dart` | **Data DNA** | Pure data classes. No DB/UI imports. |
+| `lib/data/database_service.dart` | **The Brain** | PocketBase SDK for profiles, categories, records, plans. Single place for server I/O. |
+| `lib/data/auth_bridge.dart` | **The Gate** | PocketBase `authWithPassword`, session + secure storage. |
+| `lib/app_shell.dart` | **The Navigator** | Shell / global UI. |
+| `lib/main.dart` | **The ignition** | Calls `ensurePocketBaseReady()`, then restores session and loads profile. |
 
-## 2. THE UUID & PK LAW (Anti-404 Protocol)
-- **PRIMARY_KEY_STRICTNESS**: Every object MUST use its specific UUID field as the primary identifier: `record_id`, `category_id`, `plan_id`, or `user_id`. 
-- **NO_ROW_INDICES**: Using bogus integer row indices for API endpoints is **STRICTLY PROHIBITED**. Use @DATA_MAP.md PK columns only.
-- **ID_ALIASING**: Timeline/record REST id = Noco `record_id` (String). Planning REST id = `plan_id` (String).
-- **ENDPOINT_CONSISTENCY (Noco v3)**: PATCH/DELETE use `.../{table}/records/{pk}` where `{pk}` is the **business PK** (`record_id`, `plan_id`), per @DATA_MAP.md. Payloads still use the `{"fields":{}}` wrapper.
+---
 
-## 3. CORE LOGIC CONTRACTS
-- **ACTIVE_STATUS_LAW**: An "Active" record is defined ONLY as a row where `end_time` is NULL and `status == 'running'`.
-- **SINGLETON_STOP**: Starting a new record MUST automatically PATCH the `end_time` of any currently 'running' record for that user before starting the new one.
-- **OWNERSHIP_FILTER**: Every single API request MUST include the query: `?where=(user_id,eq,{{current_user_id}})`.
-- **INSTANT_PURGE_PROTOCOL**: UI updates state (Optimistic Update) BEFORE the HTTP `await` completes.
-- **STATE_RECONCILIATION**: If a server request fails (404/422), the UI MUST revert the local change or purge the ghost record.
+## 2. IDs
 
-## 4. NOCODB v3 API WRAPPING
-- **FIELDS_WRAPPER**: ALL outbound POST/PATCH payloads MUST wrap data in a `{"fields": {...}}` object per NocoDB v3 specifications.
-- **FLATTENING_LAW**: Upon receiving data, the Brain MUST flatten the `fields` object so the Model only sees the direct properties.
-- **UPSERT_PROTOCOL**: Prefer sending updates as a Bulk Array `[]` to the base endpoint to ensure NocoDB handles the transaction correctly.
+- **PocketBase row id:** string primary key on each collection (used in `update` / `delete`).
+- **Business IDs:** `user_id` (UUID string), `record_id`, `plan_id`, `category_id` — carried in row data for filtering and matching.
+- **Timeline PATCH/DELETE:** Prefer PB row id from cache (`_pb_record_id` / `id`); resolve business `record_id` to row id when needed.
 
-## 5. PLANETARY TIME PROTOCOL (The God Offset)
-- **STORAGE_FORMAT**: All timestamps stored as UTC ISO8601 strings in the database.
-- **THE_GOD_OFFSET**: `timezone_offset` from the `profiles` table is the ONLY source of truth for time.
-- **BANNED_FUNCTIONS**: `DateTime.now().toLocal()` and automatic hardware timezone detection are STRICTLY BANNED.
-- **WALL_CLOCK_LOGIC**: UI display = `UTC_Time + Profile_Offset`. User input = `Input_Time - Profile_Offset` (converted to UTC before POST).
+---
 
-## 6. GEO-SOVEREIGNTY & MIRRORS
-- **VPN_SOVEREIGNTY**: Shell MUST detect location/origin at runtime to choose between Global VDS or Local Mirror.
-- **SOVEREIGN_ENDPOINT**: Production Noco v3 Data API (HTTPS): `https://217-114-0-201.sslip.io/api/v3/data/pfew89z7fxv42ek/mjchwhned7zsvj0/records`.
-- **AUTH_REST_CONTRACT**: Authentication uses the `xc-token`: `Zi1tRdLEWLq4f8kQU4aJYILY255BV43PJ3fgVoAs`.
-- **UUID_ANCHOR**: Identity is anchored to the `user_id` stored in `SecureStorage`. Consistent across all mirrors.
+## 3. Core contracts
 
-## 7. CATEGORY MATCHING & MATCHING LAW
-- **WORD_MATCH_LAW**: Auto-categorization (from voice/text) MUST use Whole Word Matching via `title.split(' ')`. 
-- **STRICT_BAN**: Substring matching and fuzzy character matching are STRICTLY PROHIBITED.
+- **ACTIVE_STATUS_LAW:** A running interval has `end_time` null and `status == running` (UI also treats any row with `end_time` as closed where noted in code).
+- **SINGLETON_STOP:** Starting a new primary timer stops other open primaries for the same wall-clock rules before create.
+- **OWNERSHIP:** Every query filters by current user, e.g. `user_id = "<uuid>"` in PB filter strings.
+- **INSTANT_PURGE_PROTOCOL:** Optimistic UI before await where the Brain already does so; revert on failure.
+- **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.
 
-## 8. HIERARCHICAL STATS CONTRACT
-- **RECURSIVE_TREE**: `getAggregatedStats` MUST build a nested `StatsNode` tree where Parents mathematically sum the durations of all nested children.
+---
 
-## 9. WEB_PLATFORM_SOVEREIGNTY
-- **HARDWARE_GUARDS**: Speech-to-Text and Biometrics MUST check `kIsWeb` and use browser-native APIs (HTML5 SpeechRecognition) where available.
+## 4. API shape
+
+- **No Noco `fields` wrapper.** Requests use flat JSON maps. Checklist / long JSON fields are stringified where the schema expects strings.
+- **Relations:** e.g. `records.category_link` → categories id; list with `expand` to hydrate timeline category data.
+
+---
+
+## 5. Planetary time
+
+- **STORAGE:** UTC ISO8601 in DB.
+- **OFFSET:** `timezone_offset` + `preferred_timezone` from profile drive wall-clock grouping (see existing Brain helpers).
+- **BANNED:** `DateTime.now().toLocal()` for **persisted** grid keys; use profile offset patterns already in the codebase.
+
+---
+
+## 6. Categories & planning
+
+- **WORD_MATCH_LAW:** Whole-word matching on `title.split` for auto-category (no substring fuzzy).
+- **Planning tasks:** Loaded from PocketBase `plans` collection with expands as implemented in `database_service.dart` (not a separate Dart `Plan` model — use `PlanningTask` / record maps).
+
+---
+
+## 7. Tags & many-to-many
+
+- Implemented via PocketBase relations / junction as in the Brain (`tags_link`, etc.). Follow `POCKETBASE_MANIFEST.md` and `database_service.dart` for the live schema.
+
+---
+
+## 8. Web / hardware
+
+- Speech and biometrics: guard with `kIsWeb` and platform capabilities as in `app_shell` / services.
+
+---
+
+## 9. Cross-references
+
+| Document | Role |
+| :--- | :--- |
+| **POCKETBASE_MANIFEST.md** | PB URL, collections, `category_link`, auth. |
+| **DATA_MAP.md** | Field naming reference (legacy Noco table UIDs are historical only). |
+| **NOCODB_MANIFEST.md** | Legacy Noco contract — do not use for new work. |

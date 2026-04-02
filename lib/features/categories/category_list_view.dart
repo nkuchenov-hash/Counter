@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/categories/create_category_dialog.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -582,14 +583,12 @@ class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSetting
   }
 
   Future<void> _save() async {
-    await DatabaseService.instance.saveSettings(UserSettings(
-      userId: DatabaseService.instance.settings.userId,
-      language: DatabaseService.instance.settings.language,
-      preferredTimeZone: DatabaseService.instance.settings.preferredTimeZone,
-      activeLanguages: _activeLanguages,
-      primaryLanguage: _primaryLanguage,
-      defaultCategoryId: DatabaseService.instance.settings.defaultCategoryId,
-    ));
+    await DatabaseService.instance.saveSettings(
+      DatabaseService.instance.settings.copyWith(
+        activeLanguages: _activeLanguages,
+        primaryLanguage: _primaryLanguage,
+      ),
+    );
     widget.onSaved();
   }
 
@@ -866,8 +865,6 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
       Navigator.of(context).pop();
     }
     try {
-      print(
-          'PATCHING DATA: UI quick appearance -> patchCategoryDelta id=$id');
       final patch = await DatabaseService.instance.patchCategoryDelta(
         id,
         <String, dynamic>{
@@ -1168,7 +1165,6 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         if (iconChanged) {
           delta['icon_code_point'] = _iconCodePoint;
         }
-        print('PATCHING DATA: UI category editor -> patchCategoryDelta cid=$cid');
         final patch =
             await DatabaseService.instance.patchCategoryDelta(cid, delta);
         if (!patch.ok) {
@@ -1230,12 +1226,16 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   }
 
   void _setAsDefault() {
-    unawaited(
-      DatabaseService.instance.saveSettings(
-        DatabaseService.instance.settings
-            .copyWith(defaultCategoryId: widget.category.id),
-      ),
-    );
+    unawaited(() async {
+      try {
+        await DatabaseService.instance.saveSettings(
+          DatabaseService.instance.settings
+              .copyWith(defaultCategoryId: widget.category.id),
+        );
+      } on AuthenticatedUserIdRequiredException {
+        // Auth store empty — cannot PATCH profile; ignore silently here.
+      } catch (_) {}
+    }());
     widget.onSaved();
     if (mounted) Navigator.of(context).pop();
   }
@@ -1647,6 +1647,28 @@ class _CategoriesPageState extends State<CategoriesPage> {
     });
   }
 
+  void _navigateToCategoryPath(List<int> path) {
+    setState(() {
+      for (var d = 0; d < _maxDepth; d++) {
+        _selectedPath[d] = d < path.length ? path[d] : null;
+      }
+    });
+  }
+
+  Future<void> _showAddCategoryDialog({required int? parentId}) async {
+    await showCreateCategoryDialog(
+      context: context,
+      parentId: parentId,
+      onGoToActiveCategory: (localId) {
+        final path =
+            DatabaseService.instance.categoryPathFromRootToLocalId(localId);
+        if (path.isEmpty) return;
+        _navigateToCategoryPath(path);
+      },
+      onDone: _notifyChanged,
+    );
+  }
+
   void _clearSelectionIfDeleted(int deletedId) {
     for (var i = 0; i < _maxDepth; i++) {
       if (_selectedPath[i] == deletedId) {
@@ -1697,40 +1719,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   Future<void> _addRule() async {
-    final newRule = CategoryRule(
-      id: DatabaseService.instance.newId(),
-      name: 'Life',
-      colorValue: Colors.grey.value,
-      iconCodePoint: Icons.folder_rounded.codePoint,
-    );
-    try {
-      final added = await DatabaseService.instance.addNestedCategory(null, newRule);
-      if (!added && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'category_exists'))),
-        );
-      }
-    } catch (_) {}
-    if (mounted) unawaited(_notifyChanged());
+    await _showAddCategoryDialog(parentId: null);
   }
 
   Future<void> _addSubcategoryAtDepth(int depth) async {
     final parentId = depth == 0 ? null : _selectedPath[depth - 1];
-    final newRule = CategoryRule(
-      id: DatabaseService.instance.newId(),
-      name: 'Sub',
-      colorValue: Colors.grey.value,
-      iconCodePoint: Icons.folder_rounded.codePoint,
-    );
-    try {
-      final added = await DatabaseService.instance.addNestedCategory(parentId, newRule);
-      if (!added && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'category_exists'))),
-        );
-      }
-    } catch (_) {}
-    if (mounted) unawaited(_notifyChanged());
+    await _showAddCategoryDialog(parentId: parentId);
   }
 
   Widget buildTabRow(BuildContext context, int depth, List<CategoryRule> items) {
