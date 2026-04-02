@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' show max;
 
 import 'package:flutter/material.dart';
 
@@ -698,79 +699,98 @@ class CategoryRule {
     return Icons.folder_rounded;
   }
 
-  /// Case-insensitive: either [aLower] contains [bLower] or the reverse (multi-word names included).
-  /// The shorter side must be ≥2 chars to avoid trivial single-letter overlaps.
-  static bool _bidirectionalSubstringMatch(String aLower, String bLower) {
-    if (aLower.isEmpty || bLower.isEmpty) return false;
-    final minLen =
-        aLower.length < bLower.length ? aLower.length : bLower.length;
-    if (minLen < 2) return false;
-    return aLower.contains(bLower) || bLower.contains(aLower);
+  static bool _isAsciiWordCharAt(String s, int i) {
+    if (i < 0 || i >= s.length) return false;
+    final c = s.codeUnitAt(i);
+    return (c >= 0x30 && c <= 0x39) ||
+        (c >= 0x41 && c <= 0x5a) ||
+        (c >= 0x61 && c <= 0x7a);
   }
 
-  static Set<String> _titleWholeWordSet(String title) {
-    final trimmed = title.trim();
-    if (trimmed.isEmpty) return {};
-    return trimmed
-        .toLowerCase()
-        .split(RegExp(r'\s+'))
-        .where((w) => w.isNotEmpty)
-        .toSet();
+  /// Longest [needleLower] length if it appears in [hayLower] at word boundaries (not inside a longer token).
+  static int _wordBoundedOccurrenceScore(String hayLower, String needleLower) {
+    if (hayLower.isEmpty || needleLower.isEmpty) return 0;
+    if (needleLower.length < 2) return 0;
+    var found = 0;
+    var start = 0;
+    while (true) {
+      final i = hayLower.indexOf(needleLower, start);
+      if (i < 0) break;
+      final beforeOk = i == 0 || !_isAsciiWordCharAt(hayLower, i - 1);
+      final after = i + needleLower.length;
+      final afterOk =
+          after >= hayLower.length || !_isAsciiWordCharAt(hayLower, after);
+      if (beforeOk && afterOk) found = needleLower.length;
+      start = i + 1;
+    }
+    return found;
   }
 
-  /// Human-friendly match for auto-categorization:
-  /// 1) Bidirectional substring on [name] and on each **keyword** (case-insensitive).
-  /// 2) Whole-word token overlap (legacy precision for single-token titles vs single-word categories).
-  bool matchesTitleWholeWordKeywords(String title) {
+  static void _accumulatePairScores(
+    String tLower,
+    String fragmentLower,
+    void Function(int len) onScore,
+  ) {
+    if (fragmentLower.isEmpty) return;
+    if (fragmentLower.length < 2) return;
+    final a = _wordBoundedOccurrenceScore(tLower, fragmentLower);
+    if (a > 0) onScore(a);
+    final b = _wordBoundedOccurrenceScore(fragmentLower, tLower);
+    if (b > 0) onScore(b);
+  }
+
+  /// Highest word-bounded match length for [name] / **keywords** vs [title] (case-insensitive).
+  /// Longer matches win over shorter ones (e.g. "NIS SOLUTIONS" beats "CRM" in the same title).
+  int categoryMatchScoreForTitle(String title) {
     final t = title.trim();
-    if (t.isEmpty) return false;
+    if (t.isEmpty) return 0;
     final tLower = t.toLowerCase();
+    var best = 0;
     final selfName = name.trim().toLowerCase();
-    if (selfName.isNotEmpty &&
-        CategoryRule._bidirectionalSubstringMatch(tLower, selfName)) {
-      return true;
+    if (selfName.isNotEmpty) {
+      _accumulatePairScores(tLower, selfName, (len) => best = max(best, len));
     }
     if (keywords != null) {
       for (final list in keywords!.values) {
         for (final kw in list) {
           final k = kw.trim().toLowerCase();
-          if (k.isNotEmpty &&
-              CategoryRule._bidirectionalSubstringMatch(tLower, k)) {
-            return true;
+          if (k.isNotEmpty) {
+            _accumulatePairScores(tLower, k, (len) => best = max(best, len));
           }
         }
       }
     }
-    final words = CategoryRule._titleWholeWordSet(title);
-    if (words.isEmpty) return false;
-    if (selfName.isNotEmpty && words.contains(selfName)) return true;
-    if (keywords != null) {
-      for (final list in keywords!.values) {
-        for (final kw in list) {
-          final k = kw.trim().toLowerCase();
-          if (k.isNotEmpty && words.contains(k)) return true;
-        }
-      }
-    }
-    return false;
+    return best;
   }
+
+  /// True when [categoryMatchScoreForTitle] > 0 (word-bounded phrase / token match only).
+  bool matchesTitleWholeWordKeywords(String title) =>
+      categoryMatchScoreForTitle(title) > 0;
 
   CategoryRule? findDeepestMatch(String title) {
     if (title.trim().isEmpty) return null;
     CategoryRule? best;
-    int bestDepth = -1;
-    int bestNameLen = -1;
+    var bestScore = -1;
+    var bestDepth = -1;
+    var bestNameLen = -1;
 
     void visit(CategoryRule r, int depth) {
       if (depth > 4) return;
-      if (!r.isArchived && r.matchesTitleWholeWordKeywords(title)) {
-        final nameLen = r.name.trim().length;
-        if (best == null ||
-            depth > bestDepth ||
-            (depth == bestDepth && nameLen > bestNameLen)) {
-          best = r;
-          bestDepth = depth;
-          bestNameLen = nameLen;
+      if (!r.isArchived) {
+        final sc = r.categoryMatchScoreForTitle(title);
+        if (sc > 0) {
+          final nameLen = r.name.trim().length;
+          if (best == null ||
+              sc > bestScore ||
+              (sc == bestScore && depth > bestDepth) ||
+              (sc == bestScore &&
+                  depth == bestDepth &&
+                  nameLen > bestNameLen)) {
+            best = r;
+            bestScore = sc;
+            bestDepth = depth;
+            bestNameLen = nameLen;
+          }
         }
       }
       for (final c in r.children ?? []) {

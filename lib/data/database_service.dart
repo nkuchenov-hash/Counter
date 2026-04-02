@@ -3413,7 +3413,8 @@ class DatabaseService {
 
   CategoryRule? findDeepestMatchForTitle(String title) {
     CategoryRule? best;
-    int bestDepth = -1;
+    var bestScore = -1;
+    var bestDepth = -1;
     int depthOf(CategoryRule target, List<CategoryRule> roots, int level) {
       if (level > 4) return -1;
       for (final r in roots) {
@@ -3428,11 +3429,16 @@ class DatabaseService {
       final m = root.findDeepestMatch(title);
       if (m != null) {
         final d = depthOf(m, _rules, 0);
+        final sc = m.categoryMatchScoreForTitle(title);
         final mLen = m.name.trim().length;
         if (best == null ||
-            d > bestDepth ||
-            (d == bestDepth && mLen > best.name.trim().length)) {
+            sc > bestScore ||
+            (sc == bestScore && d > bestDepth) ||
+            (sc == bestScore &&
+                d == bestDepth &&
+                mLen > best.name.trim().length)) {
           best = m;
+          bestScore = sc;
           bestDepth = d;
         }
       }
@@ -3442,8 +3448,8 @@ class DatabaseService {
 
   CategoryRule? identifyCategory(String input) => findDeepestMatchForTitle(input);
 
-  /// Smart link: longest **active** [CategoryRule.name] first (@[CategoryRule.matchesTitleWholeWordKeywords]),
-  /// then first with a valid PocketBase **categories** row id. Substring + whole-word rules live in [CategoryRule].
+  /// Smart link: best [CategoryRule.categoryMatchScoreForTitle], then longest [CategoryRule.name] tie-break;
+  /// requires valid PocketBase **categories** row id.
   String? _findBestCategoryMatch(String title) {
     if (title.trim().isEmpty) return null;
     final candidates = <CategoryRule>[];
@@ -3460,11 +3466,26 @@ class DatabaseService {
     }
 
     visit(_rules);
-    candidates.sort((a, b) => b.name.length.compareTo(a.name.length));
+    CategoryRule? bestRule;
+    var bestScore = -1;
     for (final r in candidates) {
-      if (!r.matchesTitleWholeWordKeywords(title)) continue;
+      final sc = r.categoryMatchScoreForTitle(title);
+      if (sc <= 0) continue;
       final pb = _categoryBackendRowIdStrict(r);
-      if (pb != null && pb.isNotEmpty && _isLikelyPocketBaseRowId(pb)) {
+      if (pb == null || pb.isEmpty || !_isLikelyPocketBaseRowId(pb)) {
+        continue;
+      }
+      if (bestRule == null ||
+          sc > bestScore ||
+          (sc == bestScore &&
+              r.name.trim().length > bestRule.name.trim().length)) {
+        bestRule = r;
+        bestScore = sc;
+      }
+    }
+    if (bestRule != null) {
+      final pb = _categoryBackendRowIdStrict(bestRule);
+      if (pb != null && pb.isNotEmpty) {
         print(
           '[SMART_LINK] Detected category match for "$title" -> Category ID: $pb',
         );
