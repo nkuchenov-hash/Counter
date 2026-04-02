@@ -1,30 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <!-- Replaced at build time. Production: flutter build web --base-href="/Counter/" -->
   <base href="/Counter/">
   <!--
-    Base href / so local OAuth redirect (e.g. http://localhost:8080/?code=...) is served correctly (no 404).
-    For production (GitHub Pages): flutter build web --base-href /Counter/ so deployed URL is https://nkuchenov-hash.github.io/Counter/
+    GitHub Pages project site: https://nkuchenov-hash.github.io/Counter/
+    Local: flutter run (default base "/") or flutter build web --base-href="/" for static serve at root.
   -->
-  <script>
-    // Dynamic <base href> so assets resolve on localhost and GitHub Pages Project site.
-    // - localhost: "/"
-    // - *.github.io: "/Counter/" (must match `flutter build web --base-href /Counter/`)
-    (function () {
-      try {
-        var host = window.location.hostname || '';
-        var baseHref = '/';
-        if (host.endsWith('github.io')) {
-          baseHref = '/Counter/';
-        }
-        var base = document.createElement('base');
-        base.href = baseHref;
-        document.head.insertBefore(base, document.head.firstChild);
-      } catch (e) {
-        // If anything goes wrong, default browser base handling applies.
-      }
-    })();
-  </script>
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
