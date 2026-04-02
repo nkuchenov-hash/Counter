@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - master
 
 permissions:
   contents: write
@@ -15,10 +16,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: 'Set up Flutter (pinned; pubspec.lock requires flutter >=3.38.4)'
+      - name: 'Set up Flutter 3.41.6 (Dart 3.11 satisfies pubspec sdk ^3.11.0)'
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.38.4'
+          flutter-version: '3.41.6'
 
       - name: Flutter doctor (CI environment diagnostics)
         run: flutter doctor -v
