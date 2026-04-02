@@ -33,27 +33,31 @@ class SmartTimeParseResult {
 /// Parses times from free text without treating unrelated numbers as times.
 ///
 /// **Regex strategy (strict):**
-/// 1. `\b([01]?\d|2[0-3]):([0-5]\d)\b` — explicit clock `19:30` / `09:05`.
-/// 2. Trailing `HH:mm` after whitespace (EOL).
+/// 1. `\b([01]?\d|2[0-3])[:.]([0-5]\d)\b` — clock `19:30`, `19.30`, `09.05` (dot = same as colon).
+/// 2. Trailing ` … HH[:.]mm` at EOL (after one or more spaces), not glued to another number/date chunk.
 /// 3. Trailing **four digits** `HHmm` (e.g. `1230` → 12:30).
 /// 4. Trailing hour only: `[\s]+(2[0-3]|1[0-9]|[0-9])\s*$` (e.g. `Ужин 12`).
-/// 5. `at` / `@` / **preposition в** only after start or whitespace.
+/// 5. `at` / `@` / **в** / **на** after start or whitespace, optional `:` or `.` before minutes.
 ///
+/// Dot form is always **clock time** (minute 00–59), not `dd.mm` calendar shorthand.
 /// First matching rule wins.
 abstract final class SmartInputParser {
-  static final RegExp _colonTime = RegExp(r'\b([01]?\d|2[0-3]):([0-5]\d)\b');
+  /// Word-bounded HH:mm or HH.mm (same semantics; `.` is not a decimal separator here).
+  static final RegExp _clockTime = RegExp(
+    r'\b([01]?\d|2[0-3])[:.]([0-5]\d)\b',
+  );
 
-  /// Trailing ` … HH:mm` at end of string (space before hours).
-  static final RegExp _trailingColonTime = RegExp(
-    r'[\s\u00A0]+([01]?\d|2[0-3]):([0-5]\d)\s*$',
+  /// Trailing ` … HH:mm` / ` … HH.mm` at end (space before clock).
+  static final RegExp _trailingClockTime = RegExp(
+    r'[\s\u00A0]+([01]?\d|2[0-3])[:.]([0-5]\d)\s*$',
   );
 
   /// Trailing ` … HHmm` four digits at end (12:30 from `1230`).
   static final RegExp _trailingHhmmCompact = RegExp(r'[\s\u00A0]+(\d{4})\s*$');
 
-  /// Requires space/start before `at|@|в` so Cyrillic words are never split on `в`.
+  /// `at` / `@` / **в** / **на** only after start or whitespace (no splitting Cyrillic words on `в` mid-token).
   static final RegExp _atWordTime = RegExp(
-    r'(?:^|[\s\u00A0])(?:at|@|в)\s*([01]?\d|2[0-3])(?::([0-5]\d))?(?=\s|$)',
+    r'(?:^|[\s\u00A0])(?:at|@|в|на)\s*([01]?\d|2[0-3])(?:(?::|\.)([0-5]\d))?(?=\s|$)',
     caseSensitive: false,
   );
 
@@ -62,12 +66,17 @@ abstract final class SmartInputParser {
     r'[\s\u00A0]+(2[0-3]|1[0-9]|[0-9])\s*$',
   );
 
+  static bool _charSuggestsGluedClockPrefix(String s, int indexBeforeSpace) {
+    if (indexBeforeSpace < 0 || indexBeforeSpace >= s.length) return false;
+    return RegExp(r'[\d:.]').hasMatch(s[indexBeforeSpace]);
+  }
+
   /// Returns null if no time token matched (caller should not mutate the field).
   static SmartTimeParseResult? parseTitleForScheduledTime(String raw) {
     final input = raw.replaceAll('\u00A0', ' ');
     if (input.trim().isEmpty) return null;
 
-    Match? m = _colonTime.firstMatch(input);
+    Match? m = _clockTime.firstMatch(input);
     if (m != null) {
       final h = int.parse(m.group(1)!);
       final min = int.parse(m.group(2)!);
@@ -78,10 +87,10 @@ abstract final class SmartInputParser {
 
     final trimmedRight = input.trimRight();
 
-    m = _trailingColonTime.firstMatch(trimmedRight);
+    m = _trailingClockTime.firstMatch(trimmedRight);
     if (m != null) {
       final skip = m.start > 0 &&
-          RegExp(r'[\d:]').hasMatch(trimmedRight[m.start - 1]);
+          _charSuggestsGluedClockPrefix(trimmedRight, m.start - 1);
       if (!skip) {
         final h = int.parse(m.group(1)!);
         final min = int.parse(m.group(2)!);
@@ -96,7 +105,7 @@ abstract final class SmartInputParser {
     m = _trailingHhmmCompact.firstMatch(trimmedRight);
     if (m != null) {
       final skip = m.start > 0 &&
-          RegExp(r'[\d:]').hasMatch(trimmedRight[m.start - 1]);
+          _charSuggestsGluedClockPrefix(trimmedRight, m.start - 1);
       if (!skip) {
         final digits = m.group(1)!;
         final h = int.parse(digits.substring(0, 2));
@@ -115,7 +124,7 @@ abstract final class SmartInputParser {
     if (m != null) {
       if (m.start > 0) {
         final beforeWhitespaceRun = trimmedRight[m.start - 1];
-        if (RegExp(r'[\d:]').hasMatch(beforeWhitespaceRun)) {
+        if (RegExp(r'[\d:.]').hasMatch(beforeWhitespaceRun)) {
           return null;
         }
       }
