@@ -39,7 +39,12 @@ class PlanningSwipeWrapper extends StatefulWidget {
   final void Function(DateTime date) onDateChanged;
   final int? selectedCategoryId;
   final void Function(int? categoryId) onCategoryChanged;
-  final Future<void> Function(String title, int categoryId, String dateKey) onStartRecordFromTask;
+  final Future<void> Function(
+    String title,
+    int categoryId,
+    String dateKey, {
+    String? sourcePlanPocketRecordId,
+  }) onStartRecordFromTask;
   final void Function(PlanningTask task) onEditTask;
 
   @override
@@ -181,7 +186,12 @@ class PlanningPage extends StatefulWidget {
   final bool isActivePlanningDay;
   final int? selectedCategoryId;
   final void Function(int? categoryId) onCategoryChanged;
-  final Future<void> Function(String title, int categoryId, String dateKey) onStartRecordFromTask;
+  final Future<void> Function(
+    String title,
+    int categoryId,
+    String dateKey, {
+    String? sourcePlanPocketRecordId,
+  }) onStartRecordFromTask;
   final void Function(PlanningTask task) onEditTask;
   final void Function(DateTime date)? onDatePicked;
   final PageController? pageController;
@@ -1083,7 +1093,12 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             },
       onPlay: () async {
         await widget.onStartRecordFromTask(
-            task.title, task.categoryId, task.dateKey);
+          task.title,
+          task.categoryId,
+          task.dateKey,
+          sourcePlanPocketRecordId:
+              DatabaseService.pocketRelationIdOrNull(task.pocketRecordId),
+        );
         if (mounted) setState(() {});
       },
       onOpenMenu: (anchorCtx) => _showPlanRadialMenu(anchorCtx, task),

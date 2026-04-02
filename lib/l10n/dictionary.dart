@@ -70,6 +70,10 @@ const Map<String, Map<String, String>> l10n = {
     'failed_to_delete': 'Failed to delete: %s',
     'failed_to_stop_record': 'Failed to stop record: %s',
     'failed_to_save_manual': 'Failed to save manual entry.',
+    'error_record_create_forbidden':
+        'Could not save the record (access denied). Sign in again or check that the plan is yours.',
+    'error_record_create_unauthorized':
+        'Could not save the record (session expired). Please sign in again.',
     'microphone_permission': 'Microphone permission is required.',
     'speech_unavailable': 'Speech recognition unavailable.',
     'mapped_to': "Mapped '%s' to %s",
@@ -279,6 +283,16 @@ const Map<String, Map<String, String>> l10n = {
     'mark_done': 'Mark done',
     'mark_incomplete': 'Mark incomplete',
     'listen': 'Listen',
+    'voice_status_say_task': 'Say your task now…',
+    'voice_status_heard': 'Recognized. Tap to confirm.',
+    'speech_error_network': 'Network error. Check your connection and try again.',
+    'speech_error_prefix': 'Speech error: %s',
+    'speech_russian_engine_fallback': 'Russian speech is unavailable on this device. Using English recognition.',
+    'link_to_plan_title': 'Link to planned task?',
+    'link_to_plan_message':
+        'Your entry "%s" matches the open plan "%s" (%s similarity). Link this record to that plan?',
+    'skip_link_plan': 'Not now',
+    'link_plan_confirm': 'Link',
     'edit_category_tag': 'Edit category: %s',
     'sync_checking': 'Sync: checking…',
     'sync_connected': 'Sync: connected. Tap for options',
@@ -387,6 +401,10 @@ const Map<String, Map<String, String>> l10n = {
     'failed_to_delete': 'Не удалось удалить: %s',
     'failed_to_stop_record': 'Не удалось остановить запись: %s',
     'failed_to_save_manual': 'Не удалось сохранить ручную запись.',
+    'error_record_create_forbidden':
+        'Не удалось сохранить запись (доступ запрещён). Войдите снова или проверьте, что план ваш.',
+    'error_record_create_unauthorized':
+        'Не удалось сохранить запись (сессия недействительна). Войдите снова.',
     'microphone_permission': 'Требуется разрешение микрофона.',
     'speech_unavailable': 'Распознавание речи недоступно.',
     'mapped_to': "Сопоставлено '%s' с %s",
@@ -596,6 +614,17 @@ const Map<String, Map<String, String>> l10n = {
     'mark_done': 'Отметить выполнено',
     'mark_incomplete': 'Отметить не выполнено',
     'listen': 'Слушать',
+    'voice_status_say_task': 'Назовите задачу…',
+    'voice_status_heard': 'Распознано. Нажмите для подтверждения.',
+    'speech_error_network': 'Ошибка сети. Проверьте подключение и попробуйте снова.',
+    'speech_error_prefix': 'Ошибка распознавания: %s',
+    'speech_russian_engine_fallback':
+        'Русское распознавание недоступно на этом устройстве. Используется английский движок.',
+    'link_to_plan_title': 'Связать с задачей из плана?',
+    'link_to_plan_message':
+        'Запись «%s» похожа на открытый план «%s» (сходство %s). Привязать запись к этому плану?',
+    'skip_link_plan': 'Не сейчас',
+    'link_plan_confirm': 'Привязать',
     'edit_category_tag': 'Редактировать категорию: %s',
     'sync_checking': 'Синхронизация…',
     'sync_connected': 'Синхронизировано. Нажмите для опций',

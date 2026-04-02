@@ -80,6 +80,22 @@ int _jsonInt(dynamic v, [int fallback = 0]) {
   return int.tryParse(v.toString()) ?? fallback;
 }
 
+/// PocketBase relation field: plain id or `{ "id": "..." }` from expand.
+String? pbRelationIdFromDynamic(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is String) {
+    final s = raw.trim();
+    return s.isEmpty ? null : s;
+  }
+  if (raw is Map) {
+    final id = raw['id'];
+    if (id == null) return null;
+    final s = id.toString().trim();
+    return s.isEmpty ? null : s;
+  }
+  return null;
+}
+
 /// NocoDB may return booleans as 0/1 or strings.
 bool _jsonBool(dynamic v, [bool fallback = false]) {
   if (v == true) return true;
@@ -421,6 +437,7 @@ class Record {
     this.id,
     required this.recordId,
     required this.userId,
+    this.sourcePlanId,
     this.title,
     this.note,
     this.type,
@@ -437,7 +454,10 @@ class Record {
   final String? id;
   /// Column `record_id` (legacy business UUID). Passive metadata only — not an API path segment.
   final String recordId;
-  final int userId;
+  /// PocketBase `user_id` relation (**profiles.id**, string) or legacy Noco numeric / string.
+  final String userId;
+  /// Optional `source_plan_id` → **plans** row id (@DATA_MAP).
+  final String? sourcePlanId;
   final String? title;
   /// Single description field (replaces legacy `notes`).
   final String? note;
@@ -491,7 +511,15 @@ class Record {
         ?.toString()
         .trim() ??
         '';
-    final userId = _jsonInt(data['user_id']);
+    final uidRel = pbRelationIdFromDynamic(data['user_id']);
+    final userId = uidRel ??
+        () {
+          final n = _jsonInt(data['user_id']);
+          return n == 0 ? '' : n.toString();
+        }();
+    final srcPlan = pbRelationIdFromDynamic(
+      data['source_plan_id'] ?? data['sourcePlanId'],
+    );
     // Noco: category_id may be Link (Map / List of {id: ...}) or scalar int/string slug.
     dynamic catRaw = data['category_id'] ?? data['categoryId'];
     if (catRaw is Map) {
@@ -516,6 +544,7 @@ class Record {
       id: systemIdStr,
       recordId: bizId,
       userId: userId,
+      sourcePlanId: srcPlan,
       title: data['title']?.toString(),
       note: mergeRecordNoteFields(data['note'], data['notes']),
       type: data['type']?.toString(),
@@ -535,7 +564,9 @@ class Record {
   /// API-facing JSON: **only** [id] identifies the row to the server ([recordId] is omitted here).
   Map<String, dynamic> toJson() => <String, dynamic>{
         if (id != null && id!.trim().isNotEmpty) 'id': id,
-        'user_id': userId,
+        if (userId.isNotEmpty) 'user_id': userId,
+        if (sourcePlanId != null && sourcePlanId!.trim().isNotEmpty)
+          'source_plan_id': sourcePlanId,
         'title': title,
         if (note != null && note!.isNotEmpty) 'note': note,
         'type': type,
@@ -904,6 +935,8 @@ class TimelineRecord {
   TimelineRecord({
     required this.id,
     this.recordId,
+    this.userId,
+    this.sourcePlanId,
     required this.title,
     this.categoryId,
     this.type = 'record',
@@ -922,6 +955,10 @@ class TimelineRecord {
   final String id;
   /// Column `record_id` (legacy UUID). Passive metadata; do **not** use for `/records/...` URLs.
   final String? recordId;
+  /// Owner: `user_id` → **profiles.id** (string).
+  final String? userId;
+  /// Optional `source_plan_id` → **plans** row id.
+  final String? sourcePlanId;
   String title;
   int? categoryId;
   final String type;
@@ -1005,10 +1042,26 @@ class TimelineRecord {
     }
     final pid = _get(data, 'parentId', 'parent_id');
     final int? parentId = pid == null || pid.toString().isEmpty ? null : _jsonInt(pid);
+    final uidMap = _get(data, 'userId', 'user_id');
+    final userIdStr = pbRelationIdFromDynamic(uidMap) ??
+        () {
+          final s = uidMap?.toString().trim();
+          if (s == null || s.isEmpty) return null;
+          return s;
+        }();
+    final planLink = _get(data, 'sourcePlanId', 'source_plan_id');
+    final sourcePlanStr = pbRelationIdFromDynamic(planLink) ??
+        () {
+          final s = planLink?.toString().trim();
+          if (s == null || s.isEmpty) return null;
+          return s;
+        }();
 
     return TimelineRecord(
       id: restId,
       recordId: passiveBiz,
+      userId: userIdStr,
+      sourcePlanId: sourcePlanStr,
       title: (data['title'] as String?) ?? '',
       categoryId: () {
         final c = _get(data, 'categoryId', 'category_id');
@@ -1038,6 +1091,9 @@ class TimelineRecord {
         'backendRestPathId': id,
         if (recordId != null && recordId!.trim().isNotEmpty)
           'record_id': recordId,
+        if (userId != null && userId!.trim().isNotEmpty) 'user_id': userId,
+        if (sourcePlanId != null && sourcePlanId!.trim().isNotEmpty)
+          'source_plan_id': sourcePlanId,
         'backendNumericId': sys,
         'docId': sys ?? 0,
         'title': title,
@@ -1084,6 +1140,8 @@ class TimelineRecord {
   TimelineRecord copyWith({
     String? id,
     String? recordId,
+    String? userId,
+    String? sourcePlanId,
     String? title,
     int? categoryId,
     String? type,
@@ -1100,6 +1158,8 @@ class TimelineRecord {
     return TimelineRecord(
       id: id ?? this.id,
       recordId: recordId ?? this.recordId,
+      userId: userId ?? this.userId,
+      sourcePlanId: sourcePlanId ?? this.sourcePlanId,
       title: title ?? this.title,
       categoryId: categoryId ?? this.categoryId,
       type: type ?? this.type,
@@ -1440,6 +1500,19 @@ class Tag {
 
   @override
   int get hashCode => tagId.hashCode;
+}
+
+/// Brain suggestion when a free-running record may match today’s open plan (@DATA_MAP `source_plan_id`).
+class SourcePlanLinkSuggestion {
+  const SourcePlanLinkSuggestion({
+    required this.planPocketRecordId,
+    required this.planTitle,
+    required this.similarity,
+  });
+
+  final String planPocketRecordId;
+  final String planTitle;
+  final double similarity;
 }
 
 /// Planning task (intent / todo). Stored in plans.

@@ -40,6 +40,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **created** | ISO8601 String | Metadata | **YES** | System timestamp (PocketBase auto-managed). |
 | **updated** | ISO8601 String | Metadata | NO | System timestamp (PocketBase auto-managed). |
 | **parent_id** | String | Hierarchy | NO | Optional hierarchy text ID. |
+| **source_plan_id** | Relation | **Link** | NO | Optional relation to **plans** `id` (15-char). Many records may reference one plan (iterations). Omit for legacy rows. |
 | **tags** | String | Metadata | NO | Comma-separated tags string. |
 | **checklist** | JSON | Complex | **YES** | Default is `[]`. Encoded as JSON string in API layer where needed. |
 | **note** | String | Text | NO | User remarks or comments. |

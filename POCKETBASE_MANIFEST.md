@@ -49,6 +49,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 | **`user_id`** | **relation** | **Must be 15-char `profiles.id`.** Rule: `user_id = @request.auth.id`. |
 | **`category_id`**| **relation** | **Relation to `categories.id`.** Payload must send 15-char ID, NOT the slug. |
 | **`category_link`**| **relation** | **Required for `expand: category_link`.** Used to fetch category metadata. |
+| **`source_plan_id`** | **relation** | Optional. Points to **plans** collection system `id` (15-char). Multiple **records** may share one plan. |
 | `status` | text | `running` / `stopped`. |
 | `start_time` | text | ISO string. Filtering uses **Local Time** comparison (Y-M-D). |
 

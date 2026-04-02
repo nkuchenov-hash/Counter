@@ -963,6 +963,46 @@ class DatabaseService {
     return RegExp(r'^[a-z0-9]+$').hasMatch(t);
   }
 
+  /// Single safe relation id for POST/PATCH (e.g. `records.source_plan_id`). Never pass UUIDs here.
+  static String? pocketRelationIdOrNull(String? raw) {
+    final t = raw?.trim() ?? '';
+    if (t.isEmpty) return null;
+    if (!_isLikelyPocketBaseRowId(t)) return null;
+    return t;
+  }
+
+  static int _levenshteinDistance(String s, String t) {
+    if (s == t) return 0;
+    if (s.isEmpty) return t.length;
+    if (t.isEmpty) return s.length;
+    final m = s.length;
+    final n = t.length;
+    var row = List<int>.generate(n + 1, (j) => j);
+    for (var i = 1; i <= m; i++) {
+      var prev = row[0];
+      row[0] = i;
+      for (var j = 1; j <= n; j++) {
+        final cur = row[j];
+        final cost = s.codeUnitAt(i - 1) == t.codeUnitAt(j - 1) ? 0 : 1;
+        row[j] = min(row[j] + 1, min(row[j - 1] + 1, prev + cost));
+        prev = cur;
+      }
+    }
+    return row[n];
+  }
+
+  /// 0..1 title similarity for plan–record linking heuristics (not category matching).
+  static double titleSimilarityForPlanLink(String a, String b) {
+    final na = a.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    final nb = b.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    if (na.isEmpty || nb.isEmpty) return 0;
+    if (na == nb) return 1;
+    final dist = _levenshteinDistance(na, nb);
+    final denom = max(na.length, nb.length);
+    if (denom <= 0) return 0;
+    return 1.0 - dist / denom;
+  }
+
   /// `records.user_id` relation from list response (plain id or expanded map).
   static String _pbRecordRowUserIdString(RecordModel rec) {
     final v = rec.data['user_id'];
@@ -1328,6 +1368,48 @@ class DatabaseService {
     } catch (_) {
       return [];
     }
+  }
+
+  DateTime? _wallDateKeyToLocalDate(String dateKey) {
+    if (dateKey.length < 10) return null;
+    final y = int.tryParse(dateKey.substring(0, 4));
+    final m = int.tryParse(dateKey.substring(5, 7));
+    final d = int.tryParse(dateKey.substring(8, 10));
+    if (y == null || m == null || d == null) return null;
+    return DateTime(y, m, d);
+  }
+
+  /// Heuristic: open plan on [wallDateKey] whose title is ≥ [minSimilarity] close to [recordTitle].
+  Future<SourcePlanLinkSuggestion?> suggestSourcePlanForFreeStart({
+    required String recordTitle,
+    required String wallDateKey,
+    double minSimilarity = 0.7,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return null;
+    final parsed = getCleanTitleAndTags(recordTitle);
+    final title = parsed.title.trim();
+    if (title.isEmpty) return null;
+    final day = _wallDateKeyToLocalDate(wallDateKey);
+    if (day == null) return null;
+    final plans = await _fetchPlanningTasksForDate(day);
+    SourcePlanLinkSuggestion? best;
+    var bestScore = 0.0;
+    for (final p in plans) {
+      if (p.isDone) continue;
+      final pid = pocketRelationIdOrNull(p.pocketRecordId);
+      if (pid == null) continue;
+      final score = titleSimilarityForPlanLink(title, p.title);
+      if (score > bestScore) {
+        bestScore = score;
+        best = SourcePlanLinkSuggestion(
+          planPocketRecordId: pid,
+          planTitle: p.title,
+          similarity: score,
+        );
+      }
+    }
+    if (best == null || bestScore < minSimilarity) return null;
+    return best;
   }
 
   PlanningTask _planningTaskFromPocketRecord(
@@ -2606,7 +2688,9 @@ class DatabaseService {
   Future<String?> _createRecordPb(Map<String, dynamic> rawFields) async {
     try {
       await ensurePocketBaseReady();
-      final authRowId = (_pb.authStore.record?.id ?? '').trim();
+      // DATA_MAP: identity is pb.authStore.model.id — in SDK 0.21 [model] aliases [record].
+      final authRec = _pb.authStore.record;
+      final authRowId = (authRec?.id ?? '').trim();
       if (authRowId.isEmpty) {
         throw AuthenticatedUserIdRequiredException();
       }
@@ -2625,10 +2709,22 @@ class DatabaseService {
     } on ClientException catch (e) {
       print('PB_CREATE_ERROR_DETAILS: ${e.response}');
       _log('RECORDS_PB create failed: ${e.statusCode}');
+      final code = e.statusCode;
+      if (code == 403 || code == 401) {
+        final loc = currentLocale.value;
+        final msg = code == 401
+            ? t(loc, 'error_record_create_unauthorized')
+            : t(loc, 'error_record_create_forbidden');
+        _brainSnackError(msg);
+      }
       return null;
     } catch (e, st) {
       _log('RECORDS_PB create failed: $e');
       _log(st.toString());
+      if (e is AuthenticatedUserIdRequiredException) {
+        final loc = currentLocale.value;
+        _brainSnackError(t(loc, 'error_record_create_unauthorized'));
+      }
       return null;
     }
   }
@@ -5834,11 +5930,13 @@ class DatabaseService {
   }
 
   Future<String?> startTimerWithCategory(String title,
-      {int? categoryId, String? dateKey}) async {
+      {int? categoryId, String? dateKey, String? sourcePlanPocketRecordId}) async {
     final now = getPlanetaryNow();
     final key = dateKey ?? getTimelineDeviceLocalTodayDateKey();
     return writeRecord(key, title,
-        categoryId: categoryId, explicitStartTime: now);
+        categoryId: categoryId,
+        explicitStartTime: now,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId);
   }
 
   Future<String?> startTimer(String title) async {
@@ -5981,6 +6079,7 @@ class DatabaseService {
     DateTime? explicitStartTime,
     int? parentId,
     String? parentRecordId,
+    String? sourcePlanPocketRecordId,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
     if (_writeRecordMutationInFlight) return null;
@@ -6001,6 +6100,9 @@ class DatabaseService {
       final pr = parentRecordId?.trim();
       final hasParent =
           (pr != null && pr.isNotEmpty) || parentId != null;
+      final sourcePlanForPayload = !hasParent
+          ? pocketRelationIdOrNull(sourcePlanPocketRecordId)
+          : null;
       if (status == 'running') {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
@@ -6022,6 +6124,8 @@ class DatabaseService {
             'type': 'record',
             'checklist': <Map<String, dynamic>>[],
             if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
+            if (sourcePlanForPayload != null)
+              'source_plan_id': sourcePlanForPayload,
           });
           if (pr != null && pr.isNotEmpty) {
             runningFields['parent_id'] = pr;
@@ -6154,6 +6258,8 @@ class DatabaseService {
           'type': 'record',
           'checklist': <Map<String, dynamic>>[],
           if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
+          if (sourcePlanForPayload != null)
+            'source_plan_id': sourcePlanForPayload,
         });
         if (pr != null && pr.isNotEmpty) {
           runningFields['parent_id'] = pr;
@@ -6180,6 +6286,8 @@ class DatabaseService {
           'type': 'record',
           'checklist': <Map<String, dynamic>>[],
           if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
+          if (sourcePlanForPayload != null)
+            'source_plan_id': sourcePlanForPayload,
         });
         if (pr != null && pr.isNotEmpty) {
           completedFields['parent_id'] = pr;

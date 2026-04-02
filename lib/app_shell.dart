@@ -433,7 +433,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
   }
 
-  Future<void> _retryWriteNewTask(String title, int? cid, String pathTag) async {
+  Future<void> _retryWriteNewTask(
+    String title,
+    int? cid,
+    String pathTag, {
+    String? sourcePlanPocketRecordId,
+  }) async {
     try {
       final startTime = DatabaseService.getPlanetaryNow();
       final serverId = await DatabaseService.instance.writeRecord(
@@ -441,11 +446,17 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         title,
         categoryId: cid,
         explicitStartTime: startTime,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
       );
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryWriteNewTask(title, cid, pathTag)),
+          onRetry: () => unawaited(_retryWriteNewTask(
+            title,
+            cid,
+            pathTag,
+            sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+          )),
         );
         return;
       }
@@ -466,25 +477,41 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       print('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryWriteNewTask(title, cid, pathTag)),
+          onRetry: () => unawaited(_retryWriteNewTask(
+            title,
+            cid,
+            pathTag,
+            sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+          )),
         );
       }
     }
   }
 
   /// Same as [writeRecord] from voice sheet (no [explicitStartTime] — Planetary “now” in Brain).
-  Future<void> _retryVoiceWriteNewTask(String title, int? cid, String pathTag) async {
+  Future<void> _retryVoiceWriteNewTask(
+    String title,
+    int? cid,
+    String pathTag, {
+    String? sourcePlanPocketRecordId,
+  }) async {
     try {
       final now = DatabaseService.getPlanetaryNow();
       final serverId = await DatabaseService.instance.writeRecord(
         _selectedDateString,
         title,
         categoryId: cid,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
       );
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryVoiceWriteNewTask(title, cid, pathTag)),
+          onRetry: () => unawaited(_retryVoiceWriteNewTask(
+            title,
+            cid,
+            pathTag,
+            sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+          )),
         );
         return;
       }
@@ -505,7 +532,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       print('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryVoiceWriteNewTask(title, cid, pathTag)),
+          onRetry: () => unawaited(_retryVoiceWriteNewTask(
+            title,
+            cid,
+            pathTag,
+            sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+          )),
         );
       }
     }
@@ -532,17 +564,30 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _titleController.clear();
     _titleFocus.requestFocus();
 
+    String? chosenSourcePlanId;
     try {
+      if (mounted) {
+        chosenSourcePlanId = await _promptSourcePlanLinkIfEligible(
+          title: title,
+          dateKey: _selectedDateString,
+        );
+      }
       final serverId = await DatabaseService.instance.writeRecord(
         _selectedDateString,
         title,
         categoryId: cid,
         explicitStartTime: now,
+        sourcePlanPocketRecordId: chosenSourcePlanId,
       );
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryWriteNewTask(title, cid, pathTag)),
+          onRetry: () => unawaited(_retryWriteNewTask(
+            title,
+            cid,
+            pathTag,
+            sourcePlanPocketRecordId: chosenSourcePlanId,
+          )),
         );
         return;
       }
@@ -563,7 +608,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       print('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryWriteNewTask(title, cid, pathTag)),
+          onRetry: () => unawaited(_retryWriteNewTask(
+            title,
+            cid,
+            pathTag,
+            sourcePlanPocketRecordId: chosenSourcePlanId,
+          )),
         );
       }
     }
@@ -655,8 +705,49 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     setState(() => _speechReady = available);
   }
 
+  /// Returns PB **plans** row id if the user confirms; `null` if no match or dismissed.
+  Future<String?> _promptSourcePlanLinkIfEligible({
+    required String title,
+    required String dateKey,
+  }) async {
+    final sugg =
+        await DatabaseService.instance.suggestSourcePlanForFreeStart(
+      recordTitle: title,
+      wallDateKey: dateKey,
+    );
+    if (!mounted || sugg == null) return null;
+    final loc = currentLocale.value;
+    var body = t(loc, 'link_to_plan_message');
+    body = body.replaceFirst('%s', title);
+    body = body.replaceFirst('%s', sugg.planTitle);
+    body = body.replaceFirst('%s', '${(sugg.similarity * 100).round()}%');
+    final link = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t(loc, 'link_to_plan_title')),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(t(loc, 'skip_link_plan')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(t(loc, 'link_plan_confirm')),
+          ),
+        ],
+      ),
+    );
+    if (link == true) return sugg.planPocketRecordId;
+    return null;
+  }
+
   Future<void> _startRecordFromPlanning(
-      String title, int categoryId, String dateKey) async {
+    String title,
+    int categoryId,
+    String dateKey, {
+    String? sourcePlanPocketRecordId,
+  }) async {
     final tick = DateTime.now();
     if (_lastPlayOrStartAction != null &&
         tick.difference(_lastPlayOrStartAction!) < _playStartDebounce) {
@@ -664,13 +755,21 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
     _lastPlayOrStartAction = tick;
     try {
-      final id = await DatabaseService.instance.startTimerWithCategory(title,
-          categoryId: categoryId, dateKey: dateKey);
+      final id = await DatabaseService.instance.startTimerWithCategory(
+        title,
+        categoryId: categoryId,
+        dateKey: dateKey,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+      );
       if (!mounted) return;
       if (id == null || id.trim().isEmpty) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_startRecordFromPlanning(
-              title, categoryId, dateKey)),
+                title,
+                categoryId,
+                dateKey,
+                sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+              )),
         );
         return;
       }
@@ -688,7 +787,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(
-              _startRecordFromPlanning(title, categoryId, dateKey)),
+            _startRecordFromPlanning(
+              title,
+              categoryId,
+              dateKey,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
         );
       }
     }
@@ -845,16 +950,29 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 SnackBar(content: Text(t(currentLocale.value, 'mapped_to').replaceFirst('%s', title).replaceFirst('%s', fuzzyMatch.path))),
               );
             }
+            String? voiceSourcePlanId;
+            if (mounted) {
+              voiceSourcePlanId = await _promptSourcePlanLinkIfEligible(
+                title: title,
+                dateKey: _selectedDateString,
+              );
+            }
             try {
               final serverId = await DatabaseService.instance.writeRecord(
                 _selectedDateString,
                 title,
                 categoryId: cid,
+                sourcePlanPocketRecordId: voiceSourcePlanId,
               );
               if (!mounted) return false;
               if (serverId == null || serverId.trim().isEmpty) {
                 _showSyncFailedSnackBar(
-                  onRetry: () => unawaited(_retryVoiceWriteNewTask(title, cid, pathTag)),
+                  onRetry: () => unawaited(_retryVoiceWriteNewTask(
+                    title,
+                    cid,
+                    pathTag,
+                    sourcePlanPocketRecordId: voiceSourcePlanId,
+                  )),
                 );
                 return false;
               }
@@ -876,8 +994,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
               print('UI ERROR: $e');
               if (mounted) {
                 _showSyncFailedSnackBar(
-                  onRetry: () =>
-                      unawaited(_retryVoiceWriteNewTask(title, cid, pathTag)),
+                  onRetry: () => unawaited(_retryVoiceWriteNewTask(
+                    title,
+                    cid,
+                    pathTag,
+                    sourcePlanPocketRecordId: voiceSourcePlanId,
+                  )),
                 );
               }
               return false;
@@ -1477,7 +1599,7 @@ class _VoiceTaskSheet extends StatefulWidget {
 class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProviderStateMixin {
   bool _isListening = false;
   bool _isPulsing = false;
-  String _statusText = 'Voice input';
+  late String _statusText;
   String? _error;
   bool _hadErrorInSession = false;
   bool _isSaving = false;
@@ -1493,6 +1615,7 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
   @override
   void initState() {
     super.initState();
+    _statusText = t(currentLocale.value, 'voice_input');
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -1522,10 +1645,25 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
     super.dispose();
   }
 
+  Future<void> _runSpeechListen(String localeId) async {
+    await widget.speech.listen(
+      onResult: _onSpeechResult,
+      onSoundLevelChange: (level) => _soundLevel.value = level,
+      listenMode: stt.ListenMode.dictation,
+      partialResults: true,
+      cancelOnError: false,
+      onDevice: false,
+      localeId: localeId,
+      listenFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 5),
+    );
+  }
+
   Future<void> _start() async {
+    final loc = currentLocale.value;
     setState(() {
       _isPulsing = true;
-      _statusText = 'Say your task now...';
+      _statusText = t(loc, 'voice_status_say_task');
       _isListening = true;
       _error = null;
       _hadErrorInSession = false;
@@ -1549,8 +1687,8 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
       if (status.startsWith('error:')) {
         final msg = status.replaceFirst('error:', '').trim();
         final displayMsg = msg.toLowerCase().contains('network')
-            ? 'Network error. Check your internet connection and try again.'
-            : 'Speech error: $msg';
+            ? t(loc, 'speech_error_network')
+            : t(loc, 'speech_error_prefix').replaceFirst('%s', msg);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           setState(() {
@@ -1574,30 +1712,40 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
           if (!mounted) return;
           setState(() {
             _isPulsing = false;
-            _statusText = 'I heard you. Tap to confirm.';
+            _statusText = t(loc, 'voice_status_heard');
             _isListening = false;
           });
           widget.onListeningChanged?.call(false);
         });
       }
     });
+    const primaryLocale = 'ru_RU';
+    const fallbackLocale = 'en_US';
     try {
-      await widget.speech.listen(
-        onResult: _onSpeechResult,
-        onSoundLevelChange: (level) => _soundLevel.value = level,
-        listenMode: stt.ListenMode.dictation,
-        partialResults: true,
-        cancelOnError: false,
-        onDevice: false,
-        localeId: 'en-US',
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 5),
-      );
-    } catch (err) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _error = err.toString());
-      });
-      widget.setSpeechStatusCallback(null);
+      await _runSpeechListen(primaryLocale);
+    } catch (firstErr) {
+      try {
+        await widget.speech.stop();
+        await widget.speech.cancel();
+      } catch (_) {}
+      if (!mounted) return;
+      try {
+        await _runSpeechListen(fallbackLocale);
+        if (!mounted) return;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(t(currentLocale.value, 'speech_russian_engine_fallback')),
+            ),
+          );
+        });
+      } catch (_) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() => _error = firstErr.toString());
+        });
+        widget.setSpeechStatusCallback(null);
+      }
     } finally {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -1614,7 +1762,7 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
       setState(() {
         _isListening = false;
         _isPulsing = false;
-        _statusText = 'I heard you. Tap to confirm.';
+        _statusText = t(currentLocale.value, 'voice_status_heard');
       });
       widget.onListeningChanged?.call(false);
     });
