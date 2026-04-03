@@ -16,6 +16,12 @@ abstract class PbCollections {
   static const String tags = 'tags';
 }
 
+/// PocketBase Admin → OAuth2 provider **names** must match these strings exactly.
+abstract class PbOauthProviderNames {
+  static const String google = 'google';
+  static const String yandex = 'yandex';
+}
+
 /// `records` → `categories` relation field (Timeline expand).
 const String kPbRecordCategoryExpand = 'category_link';
 

@@ -233,6 +233,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   stt.SpeechToText? _speech;
   bool _speechReady = false;
+  /// Last engine init failure (shown with [speech_unavailable] snackbar detail).
+  String? _speechLastInitError;
   bool _isVoiceListening = false;
   void Function(String)? _speechStatusCallback;
 
@@ -696,13 +698,48 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   Future<void> _ensureSpeechReady() async {
     if (_speechReady) return;
+    _speechLastInitError = null;
     _speech ??= stt.SpeechToText();
-    final available = await _speech!.initialize(
-      onStatus: (s) => _speechStatusCallback?.call(s),
-      onError: (e) => _speechStatusCallback?.call('error:${e.errorMsg}'),
-    );
-    if (!mounted) return;
-    setState(() => _speechReady = available);
+    try {
+      final available = await _speech!.initialize(
+        onStatus: (s) => _speechStatusCallback?.call(s),
+        onError: (e) {
+          final msg = e.errorMsg;
+          debugPrint(
+            '[STT] onError: $msg (permanent=${e.permanent})',
+          );
+          _speechStatusCallback?.call('error:$msg');
+        },
+      );
+      if (!mounted) return;
+      if (available) {
+        try {
+          final locales = await _speech!.locales();
+          final ids = <String>[
+            for (final l in locales) l.localeId.toString(),
+          ];
+          debugPrint(
+            '[STT] initialize OK; locales (${locales.length}): ${ids.join(", ")}',
+          );
+        } catch (e, st) {
+          debugPrint('[STT] locales() after init failed: $e\n$st');
+        }
+        setState(() {
+          _speechReady = true;
+          _speechLastInitError = null;
+        });
+      } else {
+        const msg = 'initialize() returned false';
+        _speechLastInitError = msg;
+        debugPrint('[STT] $msg');
+        setState(() => _speechReady = false);
+      }
+    } catch (e, st) {
+      debugPrint('[STT] initialize exception: $e\n$st');
+      _speechLastInitError = e.toString();
+      if (!mounted) return;
+      setState(() => _speechReady = false);
+    }
   }
 
   /// Returns PB **plans** row id if the user confirms; `null` if no match or dismissed.
@@ -902,12 +939,20 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         }
       }
     }
+    if (kIsWeb) {
+      debugPrint(
+        '[STT] Web: SpeechToText uses the browser Web Speech API (HTTPS + user gesture).',
+      );
+    }
     await _ensureSpeechReady();
     if (!_speechReady) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'speech_unavailable'))),
-      );
+      final loc = currentLocale.value;
+      final detail = _speechLastInitError?.trim();
+      final text = detail != null && detail.isNotEmpty
+          ? t(loc, 'speech_error_prefix').replaceFirst('%s', detail)
+          : t(loc, 'speech_unavailable');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
       return;
     }
 
@@ -1665,12 +1710,12 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
     try {
       list = await widget.speech.locales();
     } catch (e) {
-      print('[STT locale] locales() failed: $e');
+      debugPrint('[STT locale] locales() failed: $e');
     }
     final idsForLog = <String>[
       for (final l in list) l.localeId.toString(),
     ];
-    print(
+    debugPrint(
       '[STT locale] locales count=${idsForLog.length} ids=${idsForLog.join(", ")}',
     );
 
@@ -1705,7 +1750,7 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
       }
     }
     if (bestRuId != null && best > 0) {
-      print(
+      debugPrint(
         '[STT locale] chosen Russian from enumerated list: $bestRuId (score=$best)',
       );
       return bestRuId;
@@ -1718,29 +1763,39 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
           (e) => e.toLowerCase() == h.toLowerCase(),
           orElse: () => h,
         );
-        print('[STT locale] chosen exact catalog id: $exact');
+        debugPrint('[STT locale] chosen exact catalog id: $exact');
         return exact;
       }
+    }
+
+    // Russian UI: never use [systemLocale] (often en_US) before trying ru_* —
+    // that produced `language-not-supported` while Russian packs exist.
+    if (currentLocale.value == 'ru') {
+      for (final id in idsForLog) {
+        final n = id.toLowerCase().replaceAll('-', '_');
+        if (n.startsWith('ru')) {
+          debugPrint('[STT locale] UI=ru, first ru* in device list: $id');
+          return id;
+        }
+      }
+      debugPrint(
+        '[STT locale] UI=ru, no ru in enumerated list — listen() will use ru_RU',
+      );
+      return 'ru_RU';
     }
 
     try {
       final sys = await widget.speech.systemLocale();
       final id = sys?.localeId.trim() ?? '';
       if (id.isNotEmpty) {
-        print('[STT locale] systemLocale: $id');
+        debugPrint('[STT locale] systemLocale: $id');
         return id;
       }
     } catch (e) {
-      print('[STT locale] systemLocale() failed: $e');
+      debugPrint('[STT locale] systemLocale() failed: $e');
     }
 
-    if (currentLocale.value == 'ru') {
-      print(
-        '[STT locale] app UI locale is ru — hard fallback ru_RU (engine may still reject)',
-      );
-      return 'ru_RU';
-    }
-    print('[STT locale] final fallback en_US');
+    debugPrint('[STT locale] final fallback en_US');
     return 'en_US';
   }
 
@@ -1773,12 +1828,40 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
     await Future.delayed(const Duration(milliseconds: 50));
     if (!mounted) return;
 
+    if (!kIsWeb) {
+      final micStatus = await Permission.microphone.status;
+      if (!micStatus.isGranted) {
+        final res = await Permission.microphone.request();
+        if (!res.isGranted) {
+          if (!mounted) return;
+          setState(() {
+            _error = t(loc, 'microphone_permission');
+            _isPulsing = false;
+            _isListening = false;
+          });
+          widget.onListeningChanged?.call(false);
+          return;
+        }
+      }
+    } else {
+      debugPrint(
+        '[STT] Web: microphone access is handled by the browser when listening starts.',
+      );
+    }
+    if (!mounted) return;
+
     try {
       if (!widget.speech.isAvailable) {
-        await widget.speech.initialize();
+        await widget.speech.initialize(
+          onError: (e) {
+            debugPrint(
+              '[STT sheet] initialize onError: ${e.errorMsg} (permanent=${e.permanent})',
+            );
+          },
+        );
       }
-    } catch (e) {
-      // ignore
+    } catch (e, st) {
+      debugPrint('[STT sheet] initialize in sheet failed: $e\n$st');
     }
     if (!mounted) return;
 
@@ -1818,41 +1901,86 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
         });
       }
     });
-    final chosen = await _resolveSpeechListenLocale();
-    print('[STT locale] speech.listen will use localeId=$chosen');
-    try {
-      await _runSpeechListen(chosen);
-    } catch (firstErr) {
+
+    Future<bool> attemptListen(String localeId) async {
       try {
-        await widget.speech.stop();
-        await widget.speech.cancel();
-      } catch (_) {}
-      if (!mounted) return;
-      try {
-        final sys = await widget.speech.systemLocale();
-        final fallback = (sys?.localeId ?? '').trim().isNotEmpty
-            ? sys!.localeId
-            : 'en_US';
-        if (fallback != chosen) {
-          await _runSpeechListen(fallback);
-          if (!mounted) return;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(t(currentLocale.value, 'speech_locale_fallback_generic')),
-              ),
-            );
-          });
-        } else {
-          throw firstErr;
-        }
-      } catch (_) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() => _error = firstErr.toString());
-        });
-        widget.setSpeechStatusCallback(null);
+        await _runSpeechListen(localeId);
+        return true;
+      } catch (e, st) {
+        debugPrint('[STT listen] localeId=$localeId failed: $e\n$st');
+        try {
+          await widget.speech.stop();
+          await widget.speech.cancel();
+        } catch (_) {}
+        return false;
       }
+    }
+
+    final chosen = await _resolveSpeechListenLocale();
+    debugPrint('[STT] speech.listen primary localeId=$chosen');
+
+    try {
+      var ok = await attemptListen(chosen);
+      if (!ok && currentLocale.value == 'ru') {
+        for (final alt in <String>['ru_RU', 'ru-RU', 'ru']) {
+          if (alt == chosen) continue;
+          debugPrint('[STT listen] retry localeId=$alt');
+          ok = await attemptListen(alt);
+          if (ok) {
+            if (!mounted) break;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    t(currentLocale.value, 'speech_locale_fallback_generic'),
+                  ),
+                ),
+              );
+            });
+            break;
+          }
+        }
+      }
+      if (!ok) {
+        try {
+          final sys = await widget.speech.systemLocale();
+          final fallback = (sys?.localeId ?? '').trim().isNotEmpty
+              ? sys!.localeId
+              : 'en_US';
+          if (fallback != chosen) {
+            ok = await attemptListen(fallback);
+            if (ok && mounted) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      t(currentLocale.value, 'speech_russian_engine_fallback'),
+                    ),
+                  ),
+                );
+              });
+            }
+          }
+        } catch (e) {
+          debugPrint('[STT listen] system locale fallback error: $e');
+        }
+      }
+      if (!ok) {
+        throw StateError('Speech listen failed for all tried locales');
+      }
+    } catch (firstErr) {
+      debugPrint('[STT listen] fatal: $firstErr');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _error = t(loc, 'speech_error_prefix')
+                .replaceFirst('%s', firstErr.toString());
+          });
+        }
+        widget.setSpeechStatusCallback(null);
+      });
     } finally {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;

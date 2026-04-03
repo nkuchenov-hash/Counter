@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/app_shell.dart';
-import 'package:counter/auth_screen.dart';
+import 'package:counter/features/auth/auth_screen.dart';
 import 'package:counter/auth_service.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/database_service.dart';
