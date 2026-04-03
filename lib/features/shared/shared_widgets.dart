@@ -58,6 +58,72 @@ DateTime? planningDateFromKey(String key) {
 
 const List<String> _shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// --- Checklist editors (_PlanningTaskEditSheet + _TimelineRecordSheetContent) ---
+void _syncChecklistDoneLength(
+  List<TextEditingController> controllers,
+  List<bool> done,
+) {
+  while (done.length < controllers.length) {
+    done.add(false);
+  }
+  if (done.length > controllers.length) {
+    done.removeRange(controllers.length, done.length);
+  }
+}
+
+/// Unchecked rows first (stable order), then checked (stable order). Mutates lists in place.
+void _partitionChecklistRowsByDone({
+  required List<TextEditingController> controllers,
+  required List<bool> done,
+}) {
+  if (controllers.isEmpty) return;
+  _syncChecklistDoneLength(controllers, done);
+  final n = controllers.length;
+  final order = List<int>.generate(n, (i) => i);
+  order.sort((a, b) {
+    final da = done[a] ? 1 : 0;
+    final db = done[b] ? 1 : 0;
+    if (da != db) return da.compareTo(db);
+    return a.compareTo(b);
+  });
+  var identity = true;
+  for (var k = 0; k < n; k++) {
+    if (order[k] != k) {
+      identity = false;
+      break;
+    }
+  }
+  if (identity) return;
+  final newControllers = order.map(controllers.elementAt).toList();
+  final newDone = order.map(done.elementAt).toList();
+  controllers
+    ..clear()
+    ..addAll(newControllers);
+  done
+    ..clear()
+    ..addAll(newDone);
+}
+
+void _removeChecklistRowAt(
+  int index, {
+  required List<TextEditingController> controllers,
+  required List<bool> done,
+}) {
+  if (index < 0 || index >= controllers.length) return;
+  controllers[index].dispose();
+  controllers.removeAt(index);
+  if (index < done.length) {
+    done.removeAt(index);
+  }
+  _syncChecklistDoneLength(controllers, done);
+  if (controllers.isEmpty) {
+    controllers.add(TextEditingController());
+    done
+      ..clear()
+      ..add(false);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Empty states — first-run / empty collection (grayscale, minimal).
 // ---------------------------------------------------------------------------
@@ -269,6 +335,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       _checklistControllers.add(TextEditingController());
       _checklistDone.add(false);
     }
+    _partitionChecklistRowsByDone(
+      controllers: _checklistControllers,
+      done: _checklistDone,
+    );
   }
 
   @override
@@ -348,11 +418,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         ? _categoryId
         : (pairs.isNotEmpty ? pairs.first.id : _categoryId);
     final newDateKey = _dateKeyFromDate(_date);
+    _syncChecklistDoneLength(_checklistControllers, _checklistDone);
     final List<Map<String, dynamic>> checklist = [];
     for (var i = 0; i < _checklistControllers.length; i++) {
       final text = _checklistControllers[i].text.trim();
       if (text.isEmpty) continue;
-      checklist.add({'text': text, 'isDone': _checklistDone[i]});
+      checklist.add(<String, dynamic>{
+        'text': text,
+        'isDone': i < _checklistDone.length ? _checklistDone[i] : false,
+      });
     }
     final updated = widget.task.copyWith(
       title: title,
@@ -570,20 +644,44 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         children: [
                           ...List.generate(_checklistControllers.length, (i) {
                             final scheme = Theme.of(context).colorScheme;
+                            final rowDone =
+                                i < _checklistDone.length && _checklistDone[i];
                             return ListTile(
                               contentPadding:
                                   const EdgeInsets.symmetric(horizontal: 4),
                               horizontalTitleGap: 4,
                               leading: Checkbox(
-                                value: _checklistDone[i],
-                                onChanged: (v) =>
-                                    setState(() => _checklistDone[i] = v ?? false),
+                                value: rowDone,
+                                onChanged: (v) => setState(() {
+                                  _syncChecklistDoneLength(
+                                      _checklistControllers, _checklistDone);
+                                  _checklistDone[i] = v ?? false;
+                                  _partitionChecklistRowsByDone(
+                                    controllers: _checklistControllers,
+                                    done: _checklistDone,
+                                  );
+                                }),
                               ),
                               title: TextField(
                                 controller: _checklistControllers[i],
+                                style: TextStyle(
+                                  decoration: rowDone
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                  color: rowDone
+                                      ? scheme.onSurface.withValues(alpha: 0.5)
+                                      : scheme.onSurface,
+                                  decorationColor: rowDone
+                                      ? scheme.onSurface.withValues(alpha: 0.5)
+                                      : null,
+                                ),
                                 decoration: InputDecoration(
                                   hintText:
                                       t(currentLocale.value, 'checklist_item'),
+                                  hintStyle: TextStyle(
+                                    color: scheme.onSurfaceVariant
+                                        .withValues(alpha: rowDone ? 0.35 : 0.5),
+                                  ),
                                   border: InputBorder.none,
                                   isDense: true,
                                   filled: true,
@@ -595,6 +693,20 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     vertical: 12,
                                   ),
                                 ),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: scheme.error,
+                                ),
+                                tooltip: t(currentLocale.value, 'delete'),
+                                onPressed: () => setState(() {
+                                  _removeChecklistRowAt(
+                                    i,
+                                    controllers: _checklistControllers,
+                                    done: _checklistDone,
+                                  );
+                                }),
                               ),
                             );
                           }),
@@ -693,6 +805,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
   bool _plansLoading = true;
 
   List<Map<String, dynamic>> _checklistForApi() {
+    _syncChecklistDoneLength(_checklistControllers, _checklistDone);
     final out = <Map<String, dynamic>>[];
     for (var i = 0; i < _checklistControllers.length; i++) {
       final text = _checklistControllers[i].text.trim();
@@ -724,6 +837,10 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       _checklistControllers.add(TextEditingController());
       _checklistDone.add(false);
     }
+    _partitionChecklistRowsByDone(
+      controllers: _checklistControllers,
+      done: _checklistDone,
+    );
     _sourcePlanPbId =
         DatabaseService.pocketRelationIdOrNull(widget.record.sourcePlanId) ??
             '';
@@ -1341,26 +1458,44 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                         children: [
                           ...List.generate(_checklistControllers.length, (i) {
                             final scheme = Theme.of(context).colorScheme;
+                            final rowDone =
+                                i < _checklistDone.length && _checklistDone[i];
                             return ListTile(
                               contentPadding:
                                   const EdgeInsets.symmetric(horizontal: 4),
                               horizontalTitleGap: 4,
                               leading: Checkbox(
-                                value: i < _checklistDone.length
-                                    ? _checklistDone[i]
-                                    : false,
+                                value: rowDone,
                                 onChanged: (v) => setState(() {
-                                  while (_checklistDone.length <= i) {
-                                    _checklistDone.add(false);
-                                  }
+                                  _syncChecklistDoneLength(
+                                      _checklistControllers, _checklistDone);
                                   _checklistDone[i] = v ?? false;
+                                  _partitionChecklistRowsByDone(
+                                    controllers: _checklistControllers,
+                                    done: _checklistDone,
+                                  );
                                 }),
                               ),
                               title: TextField(
                                 controller: _checklistControllers[i],
+                                style: TextStyle(
+                                  decoration: rowDone
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                  color: rowDone
+                                      ? scheme.onSurface.withValues(alpha: 0.5)
+                                      : scheme.onSurface,
+                                  decorationColor: rowDone
+                                      ? scheme.onSurface.withValues(alpha: 0.5)
+                                      : null,
+                                ),
                                 decoration: InputDecoration(
                                   hintText:
                                       t(currentLocale.value, 'checklist_item'),
+                                  hintStyle: TextStyle(
+                                    color: scheme.onSurfaceVariant
+                                        .withValues(alpha: rowDone ? 0.35 : 0.5),
+                                  ),
                                   border: InputBorder.none,
                                   isDense: true,
                                   filled: true,
@@ -1372,6 +1507,20 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                                     vertical: 12,
                                   ),
                                 ),
+                              ),
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: scheme.error,
+                                ),
+                                tooltip: t(currentLocale.value, 'delete'),
+                                onPressed: () => setState(() {
+                                  _removeChecklistRowAt(
+                                    i,
+                                    controllers: _checklistControllers,
+                                    done: _checklistDone,
+                                  );
+                                }),
                               ),
                             );
                           }),
