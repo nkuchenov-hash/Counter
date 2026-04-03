@@ -61,9 +61,9 @@ class _AuthScreenState extends State<AuthScreen> {
   void _showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _onSignedInSuccess() async {
@@ -96,9 +96,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
       if (success) {
-        if (!kIsWeb &&
-            _rememberBiometric &&
-            _biometricCapable) {
+        if (!kIsWeb && _rememberBiometric && _biometricCapable) {
           await AuthBridge.saveQuickLoginCredentials(email, password);
         }
         await _reloadProvidersAndBiometricState();
@@ -145,9 +143,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
       if (ok) {
-        if (!kIsWeb &&
-            _rememberBiometric &&
-            _biometricCapable) {
+        if (!kIsWeb && _rememberBiometric && _biometricCapable) {
           await AuthBridge.saveQuickLoginCredentials(email, password);
         }
         await _reloadProvidersAndBiometricState();
@@ -242,7 +238,9 @@ class _AuthScreenState extends State<AuthScreen> {
       labelText: label,
       border: const OutlineInputBorder(),
       suffixIcon: IconButton(
-        icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+        icon: Icon(
+          obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+        ),
         tooltip: obscure ? _t('auth_show_password') : _t('auth_hide_password'),
         onPressed: onToggle,
       ),
@@ -261,190 +259,202 @@ class _AuthScreenState extends State<AuthScreen> {
     return Scaffold(
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  _t('auth_headline'),
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.5,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _loginMode ? _t('auth_tab_login') : _t('auth_tab_register'),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                SegmentedButton<bool>(
-                  segments: [
-                    ButtonSegment<bool>(
-                      value: true,
-                      label: Text(_t('auth_tab_login')),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    _t('auth_headline'),
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.5,
                     ),
-                    ButtonSegment<bool>(
-                      value: false,
-                      label: Text(_t('auth_tab_register')),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _loginMode ? _t('auth_tab_login') : _t('auth_tab_register'),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  SegmentedButton<bool>(
+                    segments: [
+                      ButtonSegment<bool>(
+                        value: true,
+                        label: Text(_t('auth_tab_login')),
+                      ),
+                      ButtonSegment<bool>(
+                        value: false,
+                        label: Text(_t('auth_tab_register')),
+                      ),
+                    ],
+                    selected: {_loginMode},
+                    onSelectionChanged: (s) {
+                      setState(() {
+                        _loginMode = s.first;
+                        _confirmController.clear();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  if (showBioButton) ...[
+                    OutlinedButton.icon(
+                      onPressed: _loading ? null : _biometricSignIn,
+                      icon: const Icon(Icons.fingerprint),
+                      label: Text(_t('auth_biometric_button')),
+                    ),
+                    const SizedBox(height: 16),
                   ],
-                  selected: {_loginMode},
-                  onSelectionChanged: (s) {
-                    setState(() {
-                      _loginMode = s.first;
-                      _confirmController.clear();
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                if (showBioButton) ...[
-                  OutlinedButton.icon(
-                    onPressed: _loading ? null : _biometricSignIn,
-                    icon: const Icon(Icons.fingerprint),
-                    label: Text(_t('auth_biometric_button')),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: theme.colorScheme.outlineVariant),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          autocorrect: false,
-                          autofillHints: const [AutofillHints.email],
-                          textInputAction: TextInputAction.next,
-                          decoration: InputDecoration(
-                            labelText: _t('auth_email_label'),
-                            hintText: _t('auth_email_hint'),
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          autofillHints: const [AutofillHints.password],
-                          textInputAction: _loginMode
-                              ? TextInputAction.done
-                              : TextInputAction.next,
-                          onSubmitted: (_) =>
-                              _loginMode ? _signIn() : null,
-                          decoration: _passwordDecoration(
-                            label: _t('auth_password_label'),
-                            obscure: _obscurePassword,
-                            onToggle: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: theme.colorScheme.outlineVariant),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            autocorrect: false,
+                            autofillHints: const [AutofillHints.email],
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              labelText: _t('auth_email_label'),
+                              hintText: _t('auth_email_hint'),
+                              border: const OutlineInputBorder(),
                             ),
                           ),
-                        ),
-                        if (!_loginMode) ...[
                           const SizedBox(height: 12),
                           TextField(
-                            controller: _confirmController,
-                            obscureText: _obscureConfirm,
-                            autofillHints: const [AutofillHints.newPassword],
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _register(),
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            autofillHints: const [AutofillHints.password],
+                            textInputAction: _loginMode
+                                ? TextInputAction.done
+                                : TextInputAction.next,
+                            onSubmitted: (_) => _loginMode ? _signIn() : null,
                             decoration: _passwordDecoration(
-                              label: _t('auth_confirm_password_label'),
-                              obscure: _obscureConfirm,
+                              label: _t('auth_password_label'),
+                              obscure: _obscurePassword,
                               onToggle: () => setState(
-                                () => _obscureConfirm = !_obscureConfirm,
+                                () => _obscurePassword = !_obscurePassword,
                               ),
                             ),
                           ),
-                        ],
-                        if (!kIsWeb && _biometricCapable) ...[
-                          const SizedBox(height: 12),
-                          CheckboxListTile(
-                            value: _rememberBiometric,
-                            onChanged: _loading
-                                ? null
-                                : (v) => setState(
+                          if (!_loginMode) ...[
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _confirmController,
+                              obscureText: _obscureConfirm,
+                              autofillHints: const [AutofillHints.newPassword],
+                              textInputAction: TextInputAction.done,
+                              onSubmitted: (_) => _register(),
+                              decoration: _passwordDecoration(
+                                label: _t('auth_confirm_password_label'),
+                                obscure: _obscureConfirm,
+                                onToggle: () => setState(
+                                  () => _obscureConfirm = !_obscureConfirm,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (!kIsWeb && _biometricCapable) ...[
+                            const SizedBox(height: 12),
+                            CheckboxListTile(
+                              value: _rememberBiometric,
+                              onChanged: _loading
+                                  ? null
+                                  : (v) => setState(
                                       () => _rememberBiometric = v ?? false,
                                     ),
-                            title: Text(
-                              _t('auth_biometric_remember'),
-                              style: theme.textTheme.bodySmall,
+                              title: Text(
+                                _t('auth_biometric_remember'),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                              controlAffinity: ListTileControlAffinity.leading,
+                              contentPadding: EdgeInsets.zero,
                             ),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            contentPadding: EdgeInsets.zero,
+                          ],
+                          const SizedBox(height: 24),
+                          FilledButton(
+                            onPressed: _loading
+                                ? null
+                                : (_loginMode ? _signIn : _register),
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    _loginMode
+                                        ? _t('auth_sign_in')
+                                        : _t('auth_create_account'),
+                                  ),
                           ),
                         ],
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          onPressed: _loading
-                              ? null
-                              : (_loginMode ? _signIn : _register),
-                          child: _loading
-                              ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : Text(
-                                  _loginMode
-                                      ? _t('auth_sign_in')
-                                      : _t('auth_create_account'),
-                                ),
+                      ),
+                    ),
+                  ),
+                  if (showAnyOAuth) ...[
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            _t('auth_or_divider'),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-                if (showAnyOAuth) ...[
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          _t('auth_or_divider'),
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                    const SizedBox(height: 16),
+                    if (showGoogle)
+                      OutlinedButton.icon(
+                        onPressed: _loading
+                            ? null
+                            : () => _oauth(PbOauthProviderNames.google),
+                        icon: const Icon(Icons.g_mobiledata, size: 28),
+                        label: Text(_t('auth_oauth_google')),
                       ),
-                      Expanded(child: Divider(color: theme.colorScheme.outlineVariant)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  if (showGoogle)
-                    OutlinedButton.icon(
-                      onPressed: _loading
-                          ? null
-                          : () => _oauth(PbOauthProviderNames.google),
-                      icon: const Icon(Icons.g_mobiledata, size: 28),
-                      label: Text(_t('auth_oauth_google')),
-                    ),
-                  if (showGoogle && showYandex) const SizedBox(height: 8),
-                  if (showYandex)
-                    OutlinedButton.icon(
-                      onPressed: _loading
-                          ? null
-                          : () => _oauth(PbOauthProviderNames.yandex),
-                      icon: const Icon(Icons.login),
-                      label: Text(_t('auth_oauth_yandex')),
-                    ),
+                    if (showGoogle && showYandex) const SizedBox(height: 8),
+                    if (showYandex)
+                      OutlinedButton.icon(
+                        onPressed: _loading
+                            ? null
+                            : () => _oauth(PbOauthProviderNames.yandex),
+                        icon: const Icon(Icons.login),
+                        label: Text(_t('auth_oauth_yandex')),
+                      ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
