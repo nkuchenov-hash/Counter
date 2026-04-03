@@ -820,18 +820,35 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   Future<void> _addTask() async {
     final taskDateKey = widget.selectedDateString;
     final raw = _textController.text;
-    final parsed = SmartInputParser.parseTitleForScheduledTime(raw);
-    final title = (parsed?.cleanedTitle ?? raw).trim();
-    if (title.isEmpty) return;
-
     final baseDay = widget.selectedDate ?? _today;
-    final DateTime? startStored = parsed != null
-        ? DatabaseService.instance.displayTimeToUtc(
-            parsed.wallDateTimeOn(
-              DateTime(baseDay.year, baseDay.month, baseDay.day),
-            ),
-          )
-        : null;
+    final wallDay = DateTime(baseDay.year, baseDay.month, baseDay.day);
+
+    final range = SmartInputParser.parseTitleForTimeRange(raw);
+    SmartTimeParseResult? parsed;
+    String title;
+    final DateTime? startStored;
+    final DateTime? endStored;
+
+    if (range != null) {
+      title = range.cleanedTitle.trim();
+      if (title.isEmpty) {
+        title = t(currentLocale.value, 'plan_title_time_range_fallback');
+      }
+      startStored =
+          DatabaseService.instance.displayTimeToUtc(range.startWallOn(wallDay));
+      endStored =
+          DatabaseService.instance.displayTimeToUtc(range.endWallOn(wallDay));
+    } else {
+      parsed = SmartInputParser.parseTitleForScheduledTime(raw);
+      title = (parsed?.cleanedTitle ?? raw).trim();
+      if (title.isEmpty) return;
+      startStored = parsed != null
+          ? DatabaseService.instance.displayTimeToUtc(
+              parsed.wallDateTimeOn(wallDay),
+            )
+          : null;
+      endStored = null;
+    }
 
     final match = DatabaseService.instance.identifyCategory(title);
     final categoryId = match?.id ??
@@ -858,7 +875,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       dateKey: taskDateKey,
       order: nextOrder,
       startTime: startStored,
-      endDateTime: null,
+      endDateTime: endStored,
       checklist: const [],
       notes: null,
       parentPlanId: null,
@@ -876,7 +893,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           dateKey: taskDateKey,
           order: nextOrder,
           startTime: startStored,
-          endDateTime: null,
+          endDateTime: endStored,
           checklist: const [],
           notes: null,
           parentPlanId: null,
@@ -1067,9 +1084,15 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     bool isSelected, {
     required bool highlightAsRunning,
     bool omitLongPress = false,
+    required Map<String, int> planActualByPbId,
   }) {
+    final pbId = DatabaseService.pocketRelationIdOrNull(task.pocketRecordId);
+    final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
+    final estimate = DatabaseService.planningWallEstimateSeconds(task);
     return _PlanningTaskCard(
       task: task,
+      planTrackedSeconds: tracked,
+      planEstimatedSeconds: estimate,
       displayIsDone: displayDone,
       selectMode: _planSelectMode,
       isSelected: isSelected,
@@ -1161,6 +1184,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     required String key,
     required bool displayDone,
     required bool isSelected,
+    required Map<String, int> planActualByPbId,
     bool enableLongPressDrag = false,
     /// When true, [InkWell.onLongPress] is omitted so [ReorderableDelayedDragStartListener] can claim long-press reorder.
     bool omitLongPressForReorder = false,
@@ -1176,6 +1200,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       isSelected,
       highlightAsRunning: highlightAsRunning,
       omitLongPress: omitLongPress,
+      planActualByPbId: planActualByPbId,
     );
     final allowLongPressDrag = enableLongPressDrag &&
         !_planSelectMode &&
@@ -1209,6 +1234,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                   isSelected,
                   highlightAsRunning: highlightAsRunning,
                   omitLongPress: true,
+                  planActualByPbId: planActualByPbId,
                 ),
               ),
             ),
@@ -1223,6 +1249,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             isSelected,
             highlightAsRunning: highlightAsRunning,
             omitLongPress: true,
+            planActualByPbId: planActualByPbId,
           ),
         ),
         child: card,
@@ -1230,7 +1257,10 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     );
   }
 
-  Widget _buildHourGridView(List<PlanningTask> tasks) {
+  Widget _buildHourGridView(
+    List<PlanningTask> tasks,
+    Map<String, int> planActualByPbId,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final rangeStart = _timelineHourStart;
@@ -1279,6 +1309,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             key: key,
             displayDone: displayDone,
             isSelected: _selectedPlanKeys.contains(key),
+            planActualByPbId: planActualByPbId,
             enableLongPressDrag: true,
           ),
         );
@@ -1317,6 +1348,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             key: key,
             displayDone: displayDone,
             isSelected: _selectedPlanKeys.contains(key),
+            planActualByPbId: planActualByPbId,
             enableLongPressDrag: true,
           ),
         );
@@ -1406,6 +1438,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                                 displayDone: displayDone,
                                 isSelected:
                                     _selectedPlanKeys.contains(key),
+                                planActualByPbId: planActualByPbId,
                                 enableLongPressDrag: true,
                               );
                             },
@@ -1423,7 +1456,10 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     );
   }
 
-  Widget _buildCategoryGroupedView(List<PlanningTask> tasks) {
+  Widget _buildCategoryGroupedView(
+    List<PlanningTask> tasks,
+    Map<String, int> planActualByPbId,
+  ) {
     final scheme = Theme.of(context).colorScheme;
     final groups = _groupTasksByCategoryPath(tasks);
     final keys = groups.keys.toList()
@@ -1461,6 +1497,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             key: key,
             displayDone: displayDone,
             isSelected: _selectedPlanKeys.contains(key),
+            planActualByPbId: planActualByPbId,
           ),
         );
       }
@@ -1471,7 +1508,10 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     );
   }
 
-  Widget _buildTagGroupedListView(List<PlanningTask> tasks) {
+  Widget _buildTagGroupedListView(
+    List<PlanningTask> tasks,
+    Map<String, int> planActualByPbId,
+  ) {
     final masterBar = _tagSortMasterBarOrder();
     final groups = _groupTasksByMasterBar(tasks, masterBar);
     final orderedIds = _groupIdsInMasterBarSequence(groups, masterBar);
@@ -1516,6 +1556,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
               key: key,
               displayDone: displayDone,
               isSelected: _selectedPlanKeys.contains(key),
+              planActualByPbId: planActualByPbId,
             ),
           );
         }
@@ -1545,6 +1586,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                   key: key,
                   displayDone: displayDone,
                   isSelected: _selectedPlanKeys.contains(key),
+                  planActualByPbId: planActualByPbId,
                   omitLongPressForReorder: canReorder,
                 ),
               );
@@ -1857,8 +1899,16 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                   ),
                 ),
               Expanded(
-                child: tasks.isEmpty
-                    ? Center(
+                child: StreamBuilder<void>(
+                  stream: DatabaseService.instance.timeUpdates,
+                  builder: (context, _) {
+                    final planWallDay = widget.selectedDate ?? _today;
+                    final planActualByPbId = DatabaseService.instance
+                        .aggregateSourcePlanActualSecondsForWallCalendarDay(
+                      planWallDay,
+                    );
+                    if (tasks.isEmpty) {
+                      return Center(
                         child: Text(
                           t(currentLocale.value, 'no_data_found'),
                           style: Theme.of(context)
@@ -1866,60 +1916,66 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                               .bodyLarge
                               ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
-                      )
-                    : _sortMode == _PlanSortMode.time
-                        ? _buildHourGridView(tasks)
-                        : _sortMode == _PlanSortMode.category
-                            ? _buildCategoryGroupedView(tasks)
-                            : _sortMode == _PlanSortMode.tags
-                                ? _buildTagGroupedListView(tasks)
-                                : ReorderableListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 8),
-                                buildDefaultDragHandles: false,
-                                proxyDecorator:
-                                    (Widget child, int index, Animation<double> anim) {
-                                  return AnimatedBuilder(
-                                    animation: anim,
-                                    builder: (context, c) {
-                                      final v = Curves.easeInOut.transform(anim.value);
-                                      return Material(
-                                        elevation: lerpDouble(0, 10, v) ?? 0,
-                                        shadowColor: Colors.black38,
-                                        borderRadius: BorderRadius.circular(12),
-                                        clipBehavior: Clip.antiAlias,
-                                        child: c,
-                                      );
-                                    },
-                                    child: child,
-                                  );
-                                },
-                                itemCount: tasks.length,
-                                onReorder: (oldI, newI) =>
-                                    _onReorder(tasks, oldI, newI),
-                                itemBuilder: (context, index) {
-                                  final task = tasks[index];
-                                  final key = _planKey(task);
-                                  final displayDone =
-                                      _planDoneOverride[key] ?? task.isDone;
-                                  final canReorder = !_planSelectMode &&
-                                      !task.planRowIdForBackend.startsWith('optimistic-');
-                                  return ReorderableDelayedDragStartListener(
-                                    key: ValueKey(key),
-                                    index: index,
-                                    enabled: canReorder,
-                                    child: _planCardRow(
-                                      context: context,
-                                      task: task,
-                                      key: key,
-                                      displayDone: displayDone,
-                                      isSelected:
-                                          _selectedPlanKeys.contains(key),
-                                      omitLongPressForReorder: canReorder,
-                                    ),
-                                  );
-                                },
-                              ),
+                      );
+                    }
+                    if (_sortMode == _PlanSortMode.time) {
+                      return _buildHourGridView(tasks, planActualByPbId);
+                    }
+                    if (_sortMode == _PlanSortMode.category) {
+                      return _buildCategoryGroupedView(tasks, planActualByPbId);
+                    }
+                    if (_sortMode == _PlanSortMode.tags) {
+                      return _buildTagGroupedListView(tasks, planActualByPbId);
+                    }
+                    return ReorderableListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
+                      buildDefaultDragHandles: false,
+                      proxyDecorator:
+                          (Widget child, int index, Animation<double> anim) {
+                        return AnimatedBuilder(
+                          animation: anim,
+                          builder: (context, c) {
+                            final v = Curves.easeInOut.transform(anim.value);
+                            return Material(
+                              elevation: lerpDouble(0, 10, v) ?? 0,
+                              shadowColor: Colors.black38,
+                              borderRadius: BorderRadius.circular(12),
+                              clipBehavior: Clip.antiAlias,
+                              child: c,
+                            );
+                          },
+                          child: child,
+                        );
+                      },
+                      itemCount: tasks.length,
+                      onReorder: (oldI, newI) =>
+                          _onReorder(tasks, oldI, newI),
+                      itemBuilder: (context, index) {
+                        final task = tasks[index];
+                        final key = _planKey(task);
+                        final displayDone =
+                            _planDoneOverride[key] ?? task.isDone;
+                        final canReorder = !_planSelectMode &&
+                            !task.planRowIdForBackend.startsWith('optimistic-');
+                        return ReorderableDelayedDragStartListener(
+                          key: ValueKey(key),
+                          index: index,
+                          enabled: canReorder,
+                          child: _planCardRow(
+                            context: context,
+                            task: task,
+                            key: key,
+                            displayDone: displayDone,
+                            isSelected: _selectedPlanKeys.contains(key),
+                            planActualByPbId: planActualByPbId,
+                            omitLongPressForReorder: canReorder,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           );
@@ -2334,6 +2390,8 @@ class _PlanningDatePickerDialog extends StatelessWidget {
 class _PlanningTaskCard extends StatelessWidget {
   const _PlanningTaskCard({
     required this.task,
+    required this.planTrackedSeconds,
+    required this.planEstimatedSeconds,
     required this.displayIsDone,
     required this.selectMode,
     required this.isSelected,
@@ -2348,6 +2406,10 @@ class _PlanningTaskCard extends StatelessWidget {
   });
 
   final PlanningTask task;
+  /// Sum of record durations this wall day with [source_plan_id] → this plan’s PocketBase id.
+  final int planTrackedSeconds;
+  /// Planned span from task start/end wall times; null hides the progress strip.
+  final int? planEstimatedSeconds;
   /// Merged server [PlanningTask.isDone] with optimistic override from parent.
   final bool displayIsDone;
   final bool selectMode;
@@ -2382,6 +2444,23 @@ class _PlanningTaskCard extends StatelessWidget {
   /// [wall] is profile wall time from [PlanningTask.startTime] / end (not UTC).
   static String _formatPlanningWallTime(DateTime wall) {
     return '${wall.hour.toString().padLeft(2, '0')}:${wall.minute.toString().padLeft(2, '0')}';
+  }
+
+  static String _shortDur(int sec) {
+    if (sec < 60) return '${sec}s';
+    if (sec < 3600) return '${(sec / 60).round()}m';
+    final h = sec ~/ 3600;
+    final m = (sec % 3600) ~/ 60;
+    if (m == 0) return '${h}h';
+    return '${h}h ${m}m';
+  }
+
+  /// Elapsed duration as `HH:mm` for compact “fact” line (not wall-clock time).
+  static String _trackedDurationAsHhMm(int sec) {
+    final s = sec.clamp(0, 8640000);
+    final h = s ~/ 3600;
+    final m = (s % 3600) ~/ 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   }
 
   static String _subtitle(PlanningTask task) {
@@ -2494,6 +2573,66 @@ class _PlanningTaskCard extends StatelessWidget {
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if ((planEstimatedSeconds ?? 0) > 0) ...[
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(2),
+                            child: LinearProgressIndicator(
+                              minHeight: 3,
+                              value: planTrackedSeconds <= planEstimatedSeconds!
+                                  ? planTrackedSeconds / planEstimatedSeconds!
+                                  : 1.0,
+                              backgroundColor: scheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.65),
+                              color: planTrackedSeconds > planEstimatedSeconds!
+                                  ? scheme.error
+                                  : scheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            () {
+                              final est = planEstimatedSeconds!;
+                              final a = planTrackedSeconds;
+                              final pct =
+                                  est > 0 ? ((a * 100) / est).round() : 0;
+                              return '${_shortDur(a)} / ${_shortDur(est)} ($pct%)';
+                            }(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  fontSize: 10,
+                                  height: 1.1,
+                                  color: planTrackedSeconds >
+                                          planEstimatedSeconds!
+                                      ? scheme.error
+                                      : scheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ] else if (planTrackedSeconds > 0) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            t(currentLocale.value, 'plan_card_fact_time')
+                                .replaceFirst(
+                              '%s',
+                              _trackedDurationAsHhMm(planTrackedSeconds),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  fontSize: 10,
+                                  height: 1.1,
+                                  color: scheme.primary
+                                      .withValues(alpha: 0.92),
+                                ),
+                          ),
+                        ],
                         if (task.tags.any((t) => t.rendersAsChip)) ...[
                           const SizedBox(height: 6),
                           StreamBuilder<UserSettings>(

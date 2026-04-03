@@ -1027,8 +1027,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       BuildContext context, Map<String, dynamic> data) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      clipBehavior: Clip.none,
       builder: (sheetCtx) {
         final record = TimelineRecord.fromMap(data);
         return Padding(
@@ -1374,8 +1376,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
               });
               unawaited(_loadTasksForDate(target));
             } else if (i == 1) {
-              // Keep the active day synchronized across tabs.
-              _loadTasksForDate(_selectedDate);
+              final target = DatabaseService.instance.getTimelineDeviceLocalToday();
+              setState(() {
+                _selectedDate = target;
+                _focusedDay = target;
+              });
+              unawaited(_loadTasksForDate(target));
             }
           },
           destinations: [
@@ -1645,6 +1651,99 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
     super.dispose();
   }
 
+  Future<String> _resolveSpeechListenLocale() async {
+    const hardcodedRuIds = <String>[
+      'ru_RU',
+      'ru-RU',
+      'ru',
+      'ru_MD',
+      'ru_KZ',
+      'ru_BY',
+      'ru_UA',
+    ];
+    List<dynamic> list = const [];
+    try {
+      list = await widget.speech.locales();
+    } catch (e) {
+      print('[STT locale] locales() failed: $e');
+    }
+    final idsForLog = <String>[
+      for (final l in list) l.localeId.toString(),
+    ];
+    print(
+      '[STT locale] locales count=${idsForLog.length} ids=${idsForLog.join(", ")}',
+    );
+
+    int ruLocalePreferenceScore(String localeId) {
+      final id = localeId.trim();
+      if (id.isEmpty) return -1;
+      final lower = id.toLowerCase().replaceAll('-', '_');
+      if (!lower.startsWith('ru')) return -1;
+      if (lower == 'ru_ru') return 1000;
+      if (lower.startsWith('ru_')) return 800;
+      if (lower == 'ru') return 600;
+      return 400;
+    }
+
+    String? bestRuId;
+    var best = -1;
+    for (final l in list) {
+      final lid = l.localeId.toString();
+      var sc = ruLocalePreferenceScore(lid);
+      try {
+        final dynamic raw = l;
+        final n = (raw.name as String?)?.toLowerCase() ?? '';
+        if (n.contains('russian') ||
+            n.contains('русск') ||
+            n.contains('russia')) {
+          sc = sc < 0 ? 500 : (sc > 500 ? sc : 500);
+        }
+      } catch (_) {}
+      if (sc > best) {
+        best = sc;
+        bestRuId = lid;
+      }
+    }
+    if (bestRuId != null && best > 0) {
+      print(
+        '[STT locale] chosen Russian from enumerated list: $bestRuId (score=$best)',
+      );
+      return bestRuId;
+    }
+
+    final lowerSet = idsForLog.map((e) => e.toLowerCase()).toSet();
+    for (final h in hardcodedRuIds) {
+      if (lowerSet.contains(h.toLowerCase())) {
+        final exact = idsForLog.firstWhere(
+          (e) => e.toLowerCase() == h.toLowerCase(),
+          orElse: () => h,
+        );
+        print('[STT locale] chosen exact catalog id: $exact');
+        return exact;
+      }
+    }
+
+    try {
+      final sys = await widget.speech.systemLocale();
+      final id = sys?.localeId.trim() ?? '';
+      if (id.isNotEmpty) {
+        print('[STT locale] systemLocale: $id');
+        return id;
+      }
+    } catch (e) {
+      print('[STT locale] systemLocale() failed: $e');
+    }
+
+    if (currentLocale.value == 'ru') {
+      print(
+        '[STT locale] app UI locale is ru — hard fallback ru_RU (engine may still reject)',
+      );
+      return 'ru_RU';
+    }
+    print('[STT locale] final fallback en_US');
+    return 'en_US';
+  }
+
   Future<void> _runSpeechListen(String localeId) async {
     await widget.speech.listen(
       onResult: _onSpeechResult,
@@ -1719,10 +1818,10 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
         });
       }
     });
-    const primaryLocale = 'ru_RU';
-    const fallbackLocale = 'en_US';
+    final chosen = await _resolveSpeechListenLocale();
+    print('[STT locale] speech.listen will use localeId=$chosen');
     try {
-      await _runSpeechListen(primaryLocale);
+      await _runSpeechListen(chosen);
     } catch (firstErr) {
       try {
         await widget.speech.stop();
@@ -1730,16 +1829,24 @@ class _VoiceTaskSheetState extends State<_VoiceTaskSheet> with SingleTickerProvi
       } catch (_) {}
       if (!mounted) return;
       try {
-        await _runSpeechListen(fallbackLocale);
-        if (!mounted) return;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        final sys = await widget.speech.systemLocale();
+        final fallback = (sys?.localeId ?? '').trim().isNotEmpty
+            ? sys!.localeId
+            : 'en_US';
+        if (fallback != chosen) {
+          await _runSpeechListen(fallback);
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(t(currentLocale.value, 'speech_russian_engine_fallback')),
-            ),
-          );
-        });
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(t(currentLocale.value, 'speech_locale_fallback_generic')),
+              ),
+            );
+          });
+        } else {
+          throw firstErr;
+        }
       } catch (_) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) setState(() => _error = firstErr.toString());

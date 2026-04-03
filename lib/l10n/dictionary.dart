@@ -288,6 +288,13 @@ const Map<String, Map<String, String>> l10n = {
     'speech_error_network': 'Network error. Check your connection and try again.',
     'speech_error_prefix': 'Speech error: %s',
     'speech_russian_engine_fallback': 'Russian speech is unavailable on this device. Using English recognition.',
+    'speech_locale_fallback_generic':
+        'Speech recognition retried with the device locale. If results are wrong, check system language packs.',
+    'record_link_plan_label': 'Link to plan',
+    'plan_card_fact_time': 'Fact: %s',
+    'record_link_plan_loading': 'Loading plans…',
+    'record_no_plan_link': 'No plan link',
+    'plan_title_time_range_fallback': 'Time block',
     'link_to_plan_title': 'Link to planned task?',
     'link_to_plan_message':
         'Your entry "%s" matches the open plan "%s" (%s similarity). Link this record to that plan?',
@@ -620,6 +627,13 @@ const Map<String, Map<String, String>> l10n = {
     'speech_error_prefix': 'Ошибка распознавания: %s',
     'speech_russian_engine_fallback':
         'Русское распознавание недоступно на этом устройстве. Используется английский движок.',
+    'speech_locale_fallback_generic':
+        'Распознавание перезапущено с системной локалью. При ошибках проверьте языковые пакеты.',
+    'record_link_plan_label': 'Привязка к плану',
+    'plan_card_fact_time': 'Факт: %s',
+    'record_link_plan_loading': 'Загрузка планов…',
+    'record_no_plan_link': 'Без привязки к плану',
+    'plan_title_time_range_fallback': 'Блок по времени',
     'link_to_plan_title': 'Связать с задачей из плана?',
     'link_to_plan_message':
         'Запись «%s» похожа на открытый план «%s» (сходство %s). Привязать запись к этому плану?',

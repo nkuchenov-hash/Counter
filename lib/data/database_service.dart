@@ -1003,6 +1003,42 @@ class DatabaseService {
     return 1.0 - dist / denom;
   }
 
+  static Set<String> _planLinkTokenSet(String s) {
+    final t = s.trim().toLowerCase();
+    if (t.isEmpty) return {};
+    return t
+        .split(RegExp(r'[\s,.;:!?\-–—/\\]+'))
+        .map((w) => w.trim())
+        .where((w) => w.length >= 2)
+        .toSet();
+  }
+
+  /// Shared significant words / min(|A|,|B|) — good for "Уборка квартиры" vs "Уборка дома".
+  static double planLinkWordOverlapRatio(String a, String b) {
+    final ta = _planLinkTokenSet(a);
+    final tb = _planLinkTokenSet(b);
+    if (ta.isEmpty || tb.isEmpty) return 0;
+    var inter = 0;
+    for (final w in ta) {
+      if (tb.contains(w)) inter++;
+    }
+    if (inter == 0) return 0;
+    return inter / min(ta.length, tb.length);
+  }
+
+  /// Softer than pure Levenshtein: words + substring hint + legacy ratio.
+  static double titlePlanLinkScore(String a, String b) {
+    final lev = titleSimilarityForPlanLink(a, b);
+    final word = planLinkWordOverlapRatio(a, b);
+    final na = a.trim().toLowerCase();
+    final nb = b.trim().toLowerCase();
+    var contain = 0.0;
+    if (na.isNotEmpty && nb.isNotEmpty) {
+      if (na.contains(nb) || nb.contains(na)) contain = 0.72;
+    }
+    return max(lev, max(word, contain));
+  }
+
   /// `records.user_id` relation from list response (plain id or expanded map).
   static String _pbRecordRowUserIdString(RecordModel rec) {
     final v = rec.data['user_id'];
@@ -1306,6 +1342,80 @@ class DatabaseService {
   }
 
   /// Next `order` for a new plan on this wall day (for optimistic + POST).
+  /// Plans for a wall day (same source as Planning tab). For UI manual `source_plan_id` linking.
+  Future<List<PlanningTask>> getPlanningTasksForWallDate(DateTime wallDay) =>
+      _fetchPlanningTasksForDate(wallDay);
+
+  /// Wall-clock estimate from plan start/end (profile wall [PlanningTask] times). Null if unknown.
+  static int? planningWallEstimateSeconds(PlanningTask task) {
+    final a = task.startTime;
+    final b = task.endDateTime;
+    if (a == null || b == null) return null;
+    final sec = b.difference(a).inSeconds;
+    if (sec <= 0) return null;
+    return sec;
+  }
+
+  /// One pass over [_cachedFlatRecords]: seconds tracked per plan PocketBase id on [wallCalendarDay]
+  /// (same day bucketing as timeline). Includes optimistic end overlay; running rows use [getPlanetaryNow].
+  Map<String, int> aggregateSourcePlanActualSecondsForWallCalendarDay(
+    DateTime wallCalendarDay,
+  ) {
+    final out = <String, int>{};
+    try {
+      if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+        return out;
+      }
+      final targetDayStr =
+          '${wallCalendarDay.year}-${_two(wallCalendarDay.month)}-${_two(wallCalendarDay.day)}';
+      final ownerIds = _recordRowOwnerIdMatchSet();
+      if (ownerIds.isEmpty) return out;
+
+      void addFromMerged(Map<String, dynamic> merged) {
+        final planId =
+            pocketRelationIdOrNull(merged['source_plan_id']?.toString());
+        if (planId == null) return;
+        final st = merged['startTime'] as DateTime?;
+        if (st == null) return;
+        var en = merged['endTime'] as DateTime?;
+        if (en == null) {
+          final stStr = merged['status']?.toString() ?? '';
+          if (stStr == 'running') {
+            en = getPlanetaryNow();
+          } else {
+            return;
+          }
+        }
+        final sec = en.difference(st).inSeconds;
+        if (sec <= 0) return;
+        out[planId] = (out[planId] ?? 0) + sec;
+      }
+
+      for (final row in _cachedFlatRecords) {
+        if (_rowHasNonEmptyParent(row['parent_id'])) continue;
+        if (_optimisticRowDeletedRaw(row)) continue;
+        final rowUid =
+            (row['user_id'] ?? '').toString().trim().toLowerCase();
+        if (rowUid.isEmpty || !ownerIds.contains(rowUid)) continue;
+        final stUtc = _parseDateTimeUtc(row['start_time']);
+        if (stUtc == null) continue;
+        final recordDayStr = _timelineDeviceLocalDayKeyFromUtc(stUtc);
+        if (recordDayStr != targetDayStr) continue;
+        try {
+          addFromMerged(_mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
+        } catch (_) {}
+      }
+      final pend = _optimisticPendingStartRecordMap;
+      if (pend != null) {
+        final pDay = (pend['calendarDayStr'] ?? '').toString().trim();
+        if (pDay == targetDayStr) {
+          addFromMerged(Map<String, dynamic>.from(pend));
+        }
+      }
+    } catch (_) {}
+    return out;
+  }
+
   Future<int> nextPlanningOrderForDate(DateTime selectedDate) async {
     final list = await _fetchPlanningTasksForDate(selectedDate);
     if (list.isEmpty) return 0;
@@ -1379,11 +1489,11 @@ class DatabaseService {
     return DateTime(y, m, d);
   }
 
-  /// Heuristic: open plan on [wallDateKey] whose title is ≥ [minSimilarity] close to [recordTitle].
+  /// Heuristic: open plan on [wallDateKey] whose title matches [recordTitle] (word overlap + fuzzy).
   Future<SourcePlanLinkSuggestion?> suggestSourcePlanForFreeStart({
     required String recordTitle,
     required String wallDateKey,
-    double minSimilarity = 0.7,
+    double minSimilarity = 0.42,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
     final parsed = getCleanTitleAndTags(recordTitle);
@@ -1398,7 +1508,7 @@ class DatabaseService {
       if (p.isDone) continue;
       final pid = pocketRelationIdOrNull(p.pocketRecordId);
       if (pid == null) continue;
-      final score = titleSimilarityForPlanLink(title, p.title);
+      final score = titlePlanLinkScore(title, p.title);
       if (score > bestScore) {
         bestScore = score;
         best = SourcePlanLinkSuggestion(
@@ -5239,6 +5349,11 @@ class DatabaseService {
           ? _timelineDeviceLocalDayKeyFromUtc(stFallback)
           : '';
     }
+    final ownerUid = normalizeLinkScalar(row['user_id'])?.toString().trim();
+    final srcPlanRaw = normalizeLinkScalar(row['source_plan_id'])?.toString() ??
+        row['source_plan_id']?.toString().trim();
+    final srcPlan =
+        srcPlanRaw != null && srcPlanRaw.isNotEmpty ? srcPlanRaw : null;
     return <String, dynamic>{
       'id': restPk,
       'backendRestPathId': restPk,
@@ -5254,6 +5369,8 @@ class DatabaseService {
       'categoryId': catInt,
       if (categoryRaw != null) 'categoryKey': categoryRaw.toString(),
       'parentId': parentInt,
+      if (ownerUid != null && ownerUid.isNotEmpty) 'user_id': ownerUid,
+      if (srcPlan != null && srcPlan.isNotEmpty) 'source_plan_id': srcPlan,
       'calendarDayStr': calendarDayStr,
       'tags': row['tags'] is List ? row['tags'] : null,
       'note': mergeRecordNoteFields(row['note'], row['notes']),
@@ -6384,6 +6501,9 @@ class DatabaseService {
     String? note,
     String? tags,
     List<Map<String, dynamic>>? checklist,
+    bool syncSourcePlan = false,
+    bool clearSourcePlan = false,
+    String? sourcePlanPocketRecordId,
   }) {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     var rid = recordId.trim();
@@ -6410,6 +6530,14 @@ class DatabaseService {
       if (t.isNotEmpty) row['tags'] = t;
     }
     if (checklist != null) row['checklist'] = checklist;
+    if (syncSourcePlan) {
+      if (clearSourcePlan) {
+        row['source_plan_id'] = null;
+      } else {
+        final sp = pocketRelationIdOrNull(sourcePlanPocketRecordId);
+        if (sp != null) row['source_plan_id'] = sp;
+      }
+    }
     _notifyTimelineAfterRecordCacheMutation();
   }
 
@@ -6423,6 +6551,9 @@ class DatabaseService {
     /// Comma-separated tag **names** (@DATA_MAP `records.tags` string). Omitted when null or blank.
     String? tags,
     List<Map<String, dynamic>>? checklist,
+    bool syncSourcePlan = false,
+    bool clearSourcePlan = false,
+    String? sourcePlanPocketRecordId,
     bool bypassConflictCheck = false,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
@@ -6455,6 +6586,14 @@ class DatabaseService {
         if (t.isNotEmpty) updates['tags'] = t;
       }
       if (checklist != null) updates['checklist'] = checklist;
+      if (syncSourcePlan) {
+        if (clearSourcePlan) {
+          updates['source_plan_id'] = null;
+        } else {
+          final sp = pocketRelationIdOrNull(sourcePlanPocketRecordId);
+          if (sp != null) updates['source_plan_id'] = sp;
+        }
+      }
       if (updates.isEmpty) {
         final rows = await getRecords();
         Map<String, dynamic>? found;
@@ -6492,6 +6631,14 @@ class DatabaseService {
           if (t.isNotEmpty) row['tags'] = t;
         }
         if (checklist != null) row['checklist'] = checklist;
+        if (syncSourcePlan) {
+          if (clearSourcePlan) {
+            row['source_plan_id'] = null;
+          } else {
+            final sp = pocketRelationIdOrNull(sourcePlanPocketRecordId);
+            if (sp != null) row['source_plan_id'] = sp;
+          }
+        }
         _notifyTimelineAfterRecordCacheMutation();
       }
       final patchCode = await _patchRecordsRowWith404Recovery(
@@ -6555,6 +6702,9 @@ class DatabaseService {
     String? note,
     String? tags,
     List<Map<String, dynamic>>? checklist,
+    bool syncSourcePlan = false,
+    bool clearSourcePlan = false,
+    String? sourcePlanPocketRecordId,
     bool bypassConflictCheck = false,
   }) =>
       updateRecord(
@@ -6566,6 +6716,9 @@ class DatabaseService {
         note: note,
         tags: tags,
         checklist: checklist,
+        syncSourcePlan: syncSourcePlan,
+        clearSourcePlan: clearSourcePlan,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
         bypassConflictCheck: bypassConflictCheck,
       );
 

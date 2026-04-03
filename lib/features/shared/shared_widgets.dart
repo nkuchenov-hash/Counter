@@ -591,6 +591,10 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
   final List<TextEditingController> _checklistControllers = [];
   final List<bool> _checklistDone = [];
   late TabController _tabController;
+  /// PocketBase **plans** row id; empty = no link.
+  late String _sourcePlanPbId;
+  List<PlanningTask> _plansForLink = [];
+  bool _plansLoading = true;
 
   List<Map<String, dynamic>> _checklistForApi() {
     final out = <Map<String, dynamic>>[];
@@ -624,6 +628,198 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       _checklistControllers.add(TextEditingController());
       _checklistDone.add(false);
     }
+    _sourcePlanPbId =
+        DatabaseService.pocketRelationIdOrNull(widget.record.sourcePlanId) ??
+            '';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_loadPlansForLink());
+    });
+  }
+
+  /// Same wall-calendar day as [DatabaseService._profileWallFromUtc] / planning fetch —
+  /// never [DateTime.toLocal] on raw UTC (that shifted links to the wrong day vs profile).
+  DateTime _wallDayForRecord() {
+    if (_startDisplay != null) {
+      final d = _startDisplay!;
+      return DateTime(d.year, d.month, d.day);
+    }
+    final st = widget.record.startTime;
+    if (st != null) {
+      final wall = utcToDisplay(st);
+      return DateTime(wall.year, wall.month, wall.day);
+    }
+    final dk = widget.record.dateKey;
+    if (dk.length >= 10) {
+      final y = int.tryParse(dk.substring(0, 4));
+      final m = int.tryParse(dk.substring(5, 7));
+      final d = int.tryParse(dk.substring(8, 10));
+      if (y != null && m != null && d != null) {
+        return DateTime(y, m, d);
+      }
+    }
+    final now = displayNow();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  Future<void> _loadPlansForLink() async {
+    if (mounted) setState(() => _plansLoading = true);
+    final list = await DatabaseService.instance
+        .getPlanningTasksForWallDate(_wallDayForRecord());
+    if (!mounted) return;
+    setState(() {
+      _plansForLink = list;
+      _plansLoading = false;
+    });
+  }
+
+  Future<void> _showPlanLinkPickerSheet(
+    BuildContext context, {
+    required List<MapEntry<String, String>> options,
+    required String selectedKey,
+  }) async {
+    final loc = currentLocale.value;
+    final theme = Theme.of(context);
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetCtx) {
+        final viewInsets = MediaQuery.viewInsetsOf(sheetCtx).bottom;
+        final h = (MediaQuery.sizeOf(sheetCtx).height * 0.55)
+            .clamp(240.0, 520.0);
+        return Padding(
+          padding: EdgeInsets.only(bottom: viewInsets),
+          child: SizedBox(
+            height: h,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                  child: Text(
+                    t(loc, 'record_link_plan_label'),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.only(left: 8, right: 8, bottom: 16),
+                    itemCount: options.length,
+                    separatorBuilder: (context, index) =>
+                        const Divider(height: 1),
+                    itemBuilder: (ctx, i) {
+                      final o = options[i];
+                      return ListTile(
+                        title: Text(
+                          o.value,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        selected: o.key == selectedKey,
+                        onTap: () => Navigator.of(sheetCtx).pop(o.key),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (picked != null && mounted) {
+      setState(() => _sourcePlanPbId = picked);
+    }
+  }
+
+  /// Full-screen-width tap target; list opens in a sheet with a real [ListView] (always scrolls).
+  Widget _buildPlanLinkDropdown(BuildContext context) {
+    final loc = currentLocale.value;
+    final options = <MapEntry<String, String>>[
+      MapEntry('', t(loc, 'record_no_plan_link')),
+    ];
+    final seen = <String>{''};
+    for (final p in _plansForLink) {
+      final pid = DatabaseService.pocketRelationIdOrNull(p.pocketRecordId);
+      if (pid == null || seen.contains(pid)) continue;
+      seen.add(pid);
+      options.add(MapEntry(pid, p.title));
+    }
+    var value = _sourcePlanPbId;
+    if (value.isNotEmpty &&
+        !seen.contains(value) &&
+        DatabaseService.pocketRelationIdOrNull(value) != null) {
+      final v = DatabaseService.pocketRelationIdOrNull(value)!;
+      options.insert(1, MapEntry(v, '—'));
+      seen.add(v);
+      value = v;
+    }
+    if (value.isNotEmpty && !seen.contains(value)) {
+      value = '';
+    }
+    final desired = value.isEmpty ? '' : value;
+    final initial = options.any((e) => e.key == desired) ? desired : '';
+    var displayLabel = t(loc, 'record_no_plan_link');
+    for (final o in options) {
+      if (o.key == initial) {
+        displayLabel = o.value;
+        break;
+      }
+    }
+    final theme = Theme.of(context);
+    return InputDecorator(
+      decoration: InputDecoration(
+        isDense: true,
+        labelText: t(loc, 'record_link_plan_label'),
+        helperText:
+            _plansLoading ? t(loc, 'record_link_plan_loading') : null,
+        suffixIcon: Icon(
+          Icons.arrow_drop_down_rounded,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+      child: InkWell(
+        onTap: _plansLoading
+            ? null
+            : () => unawaited(_showPlanLinkPickerSheet(
+                  context,
+                  options: options,
+                  selectedKey: initial,
+                )),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  displayLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyLarge,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  ({bool sync, bool clear, String? id}) _sourcePlanPatchArgs() {
+    final initial =
+        DatabaseService.pocketRelationIdOrNull(widget.record.sourcePlanId) ??
+            '';
+    final sel = _sourcePlanPbId.isEmpty
+        ? ''
+        : (DatabaseService.pocketRelationIdOrNull(_sourcePlanPbId) ?? '');
+    if (initial == sel) {
+      return (sync: false, clear: false, id: null);
+    }
+    if (sel.isEmpty) {
+      return (sync: true, clear: true, id: null);
+    }
+    return (sync: true, clear: false, id: sel);
   }
 
   @override
@@ -640,7 +836,10 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
   Future<void> _pickStart() async {
     final initial = _startDisplay ?? displayNow();
     final picked = await showAppDateTimePicker(context, initial: initial);
-    if (picked != null && mounted) setState(() => _startDisplay = picked);
+    if (picked != null && mounted) {
+      setState(() => _startDisplay = picked);
+      unawaited(_loadPlansForLink());
+    }
   }
 
   Future<void> _pickEnd() async {
@@ -655,6 +854,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     final noteText = _noteController.text.trim();
     final checklistPayload = _checklistForApi();
     final isRunning = widget.record.endTime == null;
+    final planPatch = _sourcePlanPatchArgs();
 
     if (isRunning) {
       final startUtc =
@@ -666,6 +866,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
         categoryId: _categoryId,
         note: noteText,
         checklist: checklistPayload,
+        syncSourcePlan: planPatch.sync,
+        clearSourcePlan: planPatch.clear,
+        sourcePlanPocketRecordId: planPatch.id,
       );
       final optimistic = widget.record.copyWith(
         title: title,
@@ -673,6 +876,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
         categoryId: _categoryId,
         note: noteText.isEmpty ? null : noteText,
         checklist: checklistPayload.isEmpty ? null : checklistPayload,
+        sourcePlanId: planPatch.sync
+            ? (planPatch.clear ? null : planPatch.id)
+            : widget.record.sourcePlanId,
       );
       AppSnack.saved();
       widget.onSaved(optimistic);
@@ -685,6 +891,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
               categoryId: _categoryId,
               note: noteText,
               checklist: checklistPayload,
+              syncSourcePlan: planPatch.sync,
+              clearSourcePlan: planPatch.clear,
+              sourcePlanPocketRecordId: planPatch.id,
             )
             .then((TimelineRecord? server) {
           if (!mounted) return;
@@ -732,6 +941,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       });
       return;
     }
+    final planPatchStopped = _sourcePlanPatchArgs();
     DatabaseService.instance.applyOptimisticRecordRowEdit(
       recordId: widget.record.id,
       title: title,
@@ -740,6 +950,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       categoryId: _categoryId,
       note: noteText,
       checklist: checklistPayload,
+      syncSourcePlan: planPatchStopped.sync,
+      clearSourcePlan: planPatchStopped.clear,
+      sourcePlanPocketRecordId: planPatchStopped.id,
     );
     final optimisticStopped = widget.record.copyWith(
       title: title,
@@ -748,6 +961,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       categoryId: _categoryId,
       note: noteText.isEmpty ? null : noteText,
       checklist: checklistPayload.isEmpty ? null : checklistPayload,
+      sourcePlanId: planPatchStopped.sync
+          ? (planPatchStopped.clear ? null : planPatchStopped.id)
+          : widget.record.sourcePlanId,
     );
     AppSnack.saved();
     widget.onSaved(optimisticStopped);
@@ -761,6 +977,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
             categoryId: _categoryId,
             note: noteText,
             checklist: checklistPayload,
+            syncSourcePlan: planPatchStopped.sync,
+            clearSourcePlan: planPatchStopped.clear,
+            sourcePlanPocketRecordId: planPatchStopped.id,
           )
           .then((TimelineRecord? server) {
         if (!mounted) return;
@@ -775,9 +994,36 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
   Widget build(BuildContext context) {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final isRunning = widget.record.endTime == null;
-    final catVal = _categoryId != null && pairs.any((p) => p.id == _categoryId)
-        ? _categoryId
-        : (pairs.isNotEmpty ? pairs.first.id : null);
+    final categoryItems = pairs.isEmpty
+        ? <DropdownMenuItem<int>>[
+            DropdownMenuItem<int>(
+              value: CategoryRule.uncategorizedSyntheticId,
+              child: Text(
+                t(currentLocale.value, 'uncategorized'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ]
+        : pairs
+            .map((p) => DropdownMenuItem<int>(
+                  value: p.id,
+                  child: Text(
+                    p.path,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ))
+            .toList();
+    final int catVal;
+    if (_categoryId != null &&
+        pairs.any((p) => p.id == _categoryId)) {
+      catVal = _categoryId!;
+    } else if (pairs.isNotEmpty) {
+      catVal = pairs.first.id;
+    } else {
+      catVal = CategoryRule.uncategorizedSyntheticId;
+    }
 
     Widget startEndCaption(bool isEnd) {
       if (isEnd && isRunning) {
@@ -794,6 +1040,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     }
 
     return Material(
+      clipBehavior: Clip.none,
       color: Theme.of(context).colorScheme.surface,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       child: Column(
@@ -812,107 +1059,149 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextField(
-                        controller: _titleController,
-                        decoration: InputDecoration(
-                            labelText: t(currentLocale.value, 'title_label'),
-                            hintText: t(currentLocale.value, 'hint_record_example')),
-                        textCapitalization: TextCapitalization.sentences,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
+                          TextField(
+                            controller: _titleController,
+                            decoration: InputDecoration(
+                              isDense: true,
+                              labelText: t(
+                                  currentLocale.value, 'title_label'),
+                              hintText: t(currentLocale.value,
+                                  'hint_record_example'),
+                            ),
+                            textCapitalization:
+                                TextCapitalization.sentences,
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
                             child: DropdownButtonFormField<int>(
                               initialValue: catVal,
                               isExpanded: true,
-                              menuMaxHeight: 360,
+                              menuMaxHeight: 250,
                               decoration: InputDecoration(
-                                  labelText:
-                                      t(currentLocale.value, 'category_label')),
-                              items: pairs
-                                  .map((p) => DropdownMenuItem<int>(
-                                      value: p.id,
-                                      child: Text(
-                                        p.path,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      )))
-                                  .toList(),
-                              onChanged: (id) =>
-                                  setState(() => _categoryId = id ?? catVal),
+                                isDense: true,
+                                labelText: t(
+                                    currentLocale.value,
+                                    'category_label'),
+                              ),
+                              items: categoryItems,
+                              onChanged: pairs.isEmpty
+                                  ? null
+                                  : (id) => setState(() =>
+                                      _categoryId = id ?? catVal),
                             ),
                           ),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _buildPlanLinkDropdown(context),
+                          ),
+                          if (_plansLoading)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: LinearProgressIndicator(
+                                minHeight: 2,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary,
+                              ),
+                            ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: _pickStart,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.calendar_month_rounded, size: 18),
-                                        const SizedBox(width: 6),
-                                        Text(t(currentLocale.value, 'start_time'),
-                                            style: Theme.of(context).textTheme.labelMedium),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    DefaultTextStyle.merge(
-                                      style: Theme.of(context).textTheme.bodySmall!,
-                                      child: startEndCaption(false),
-                                    ),
-                                  ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                      child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _pickStart,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 6),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                              Icons.calendar_month_rounded,
+                                              size: 18),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                              t(currentLocale.value,
+                                                  'start_time'),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelMedium),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      DefaultTextStyle.merge(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall!,
+                                        child: startEndCaption(false),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: isRunning ? null : _pickEnd,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.event_available_rounded, size: 18),
-                                        const SizedBox(width: 6),
-                                        Text(t(currentLocale.value, 'end_time'),
-                                            style: Theme.of(context).textTheme.labelMedium),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    DefaultTextStyle.merge(
-                                      style: Theme.of(context).textTheme.bodySmall!,
-                                      child: startEndCaption(true),
-                                    ),
-                                  ],
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: isRunning ? null : _pickEnd,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 6),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                              Icons.event_available_rounded,
+                                              size: 18),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                              t(currentLocale.value,
+                                                  'end_time'),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelMedium),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      DefaultTextStyle.merge(
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall!,
+                                        child: startEndCaption(true),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
                 TabBar(
                   controller: _tabController,
@@ -931,12 +1220,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                       ListView(
                         primary: false,
                         controller: widget.scrollController,
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          12,
-                          16,
-                          24 + MediaQuery.of(context).viewInsets.bottom,
-                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                         children: [
                           TextField(
                             controller: _noteController,
@@ -957,12 +1241,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                       ),
                       ListView(
                         primary: false,
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          12,
-                          16,
-                          24 + MediaQuery.of(context).viewInsets.bottom,
-                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                         children: [
                           ...List.generate(_checklistControllers.length, (i) {
                             final scheme = Theme.of(context).colorScheme;
@@ -1028,11 +1307,11 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.fromLTRB(
+                  padding: const EdgeInsets.fromLTRB(
                     16,
                     8,
                     16,
-                    16 + MediaQuery.of(context).viewInsets.bottom,
+                    16,
                   ),
                   child: Row(
                     children: [
@@ -1052,6 +1331,12 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                 ),
               ],
             ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: const SizedBox.shrink(),
           ),
         ],
       ),

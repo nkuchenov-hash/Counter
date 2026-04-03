@@ -30,6 +30,39 @@ class SmartTimeParseResult {
       );
 }
 
+/// Embedded **start → end** wall-clock range; caller binds to [baseDate] for the day.
+class SmartTimeRangeParseResult {
+  const SmartTimeRangeParseResult({
+    required this.cleanedTitle,
+    required this.startHour,
+    required this.startMinute,
+    required this.endHour,
+    required this.endMinute,
+  });
+
+  final String cleanedTitle;
+  final int startHour;
+  final int startMinute;
+  final int endHour;
+  final int endMinute;
+
+  DateTime startWallOn(DateTime baseDate) => DateTime(
+        baseDate.year,
+        baseDate.month,
+        baseDate.day,
+        startHour,
+        startMinute,
+      );
+
+  DateTime endWallOn(DateTime baseDate) => DateTime(
+        baseDate.year,
+        baseDate.month,
+        baseDate.day,
+        endHour,
+        endMinute,
+      );
+}
+
 /// Parses times from free text without treating unrelated numbers as times.
 ///
 /// **Regex strategy (strict):**
@@ -179,6 +212,136 @@ abstract final class SmartInputParser {
     }
 
     return null;
+  }
+
+  // --- Time **ranges** (plan title NLP): try range first, then [parseTitleForScheduledTime]. ---
+
+  /// EN: spaces optional so `from9to5`, `from 9 to 12` both match. Leading word
+  /// must start after start-of-string or whitespace (avoid glued Latin words).
+  static final RegExp _rangeFromToEn = RegExp(
+    r'(?:^|[\s\u00A0,.;:!?\-–—])from\s*([01]?\d|2[0-3])(?:(?::|\.)(\d{1,2}))?\s*to\s*([01]?\d|2[0-3])(?:(?::|\.)(\d{1,2}))?',
+    caseSensitive: false,
+  );
+
+  /// RU: `с 10 до 2`, `с11до12`, etc.
+  static final RegExp _rangeRuDo = RegExp(
+    r'(?:^|[\s\u00A0,.;:!?\-–—])с\s*([01]?\d|2[0-3])(?:(?::|\.)(\d{1,2}))?\s*до\s*([01]?\d|2[0-3])(?:(?::|\.)(\d{1,2}))?',
+    caseSensitive: false,
+  );
+
+  static final RegExp _rangeSpacedTo = RegExp(
+    r'\b([01]?\d|2[0-3])(?:(?::|\.)(\d{2}))?\s*to\s*([01]?\d|2[0-3])(?:(?::|\.)(\d{2}))?\b',
+    caseSensitive: false,
+  );
+
+  static final RegExp _rangeDash = RegExp(
+    r'\b([01]?\d|2[0-3])(?:(?::|\.)(\d{2}))?\s*-\s*([01]?\d|2[0-3])(?:(?::|\.)(\d{2}))?\b',
+  );
+
+  static final RegExp _rangeGluedTo = RegExp(
+    r'\b([01]?\d|2[0-3])to([01]?\d|2[0-3])\b',
+    caseSensitive: false,
+  );
+
+  /// Parses a start–end time range from the title. Returns null if nothing matched.
+  ///
+  /// Applies **+12h on the end** when end is strictly before start the same day
+  /// (e.g. `from 10 to 2` → 14:00).
+  static SmartTimeRangeParseResult? parseTitleForTimeRange(String raw) {
+    try {
+      final input = normalizeClockSeparators(raw.replaceAll('\u00A0', ' '));
+      if (input.trim().isEmpty) return null;
+
+      SmartTimeRangeParseResult? try4(
+        Match m, {
+        required int shI,
+        required int smI,
+        required int ehI,
+        required int emI,
+      }) {
+        final sh = int.tryParse(m.group(shI) ?? '');
+        final eh = int.tryParse(m.group(ehI) ?? '');
+        if (sh == null || eh == null || sh < 0 || sh > 23 || eh < 0 || eh > 23) {
+          return null;
+        }
+        final sm = smI < 0 ? 0 : _minuteGroupToInt(m.group(smI));
+        final em = emI < 0 ? 0 : _minuteGroupToInt(m.group(emI));
+        if (sm < 0 || sm > 59 || em < 0 || em > 59) return null;
+        final adjusted = _afternoonAdjustEnd(sh, sm, eh, em);
+        final eh2 = adjusted.$1;
+        final em2 = adjusted.$2;
+        final cleaned = _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
+        return SmartTimeRangeParseResult(
+          cleanedTitle: cleaned,
+          startHour: sh,
+          startMinute: sm,
+          endHour: eh2,
+          endMinute: em2,
+        );
+      }
+
+      SmartTimeRangeParseResult? tryGlued(Match m) {
+        final sh = int.tryParse(m.group(1) ?? '');
+        final eh = int.tryParse(m.group(2) ?? '');
+        if (sh == null || eh == null || sh < 0 || sh > 23 || eh < 0 || eh > 23) {
+          return null;
+        }
+        final adjusted = _afternoonAdjustEnd(sh, 0, eh, 0);
+        final cleaned = _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
+        return SmartTimeRangeParseResult(
+          cleanedTitle: cleaned,
+          startHour: sh,
+          startMinute: 0,
+          endHour: adjusted.$1,
+          endMinute: adjusted.$2,
+        );
+      }
+
+      Match? m = _rangeFromToEn.firstMatch(input);
+      if (m != null) {
+        final r = try4(m, shI: 1, smI: 2, ehI: 3, emI: 4);
+        if (r != null) return r;
+      }
+      m = _rangeRuDo.firstMatch(input);
+      if (m != null) {
+        final r = try4(m, shI: 1, smI: 2, ehI: 3, emI: 4);
+        if (r != null) return r;
+      }
+      m = _rangeSpacedTo.firstMatch(input);
+      if (m != null) {
+        final r = try4(m, shI: 1, smI: 2, ehI: 3, emI: 4);
+        if (r != null) return r;
+      }
+      m = _rangeDash.firstMatch(input);
+      if (m != null) {
+        final r = try4(m, shI: 1, smI: 2, ehI: 3, emI: 4);
+        if (r != null) return r;
+      }
+      m = _rangeGluedTo.firstMatch(input);
+      if (m != null) {
+        final r = tryGlued(m);
+        if (r != null) return r;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// When [end] is earlier on the clock than [start], shift end by +12 hours (same calendar day bucket).
+  static (int, int) _afternoonAdjustEnd(int sh, int sm, int eh, int em) {
+    var startT = sh * 60 + sm;
+    var endT = eh * 60 + em;
+    if (endT < startT) {
+      endT += 12 * 60;
+    }
+    while (endT >= 24 * 60) {
+      endT -= 24 * 60;
+    }
+    while (endT < 0) {
+      endT += 24 * 60;
+    }
+    return (endT ~/ 60, endT % 60);
   }
 
   static String _collapseSpace(String s) =>
