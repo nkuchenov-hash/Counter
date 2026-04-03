@@ -1,6 +1,7 @@
 // Shared mic / speech-to-text bottom sheet. Routing is defined by [VoiceCaptureConfig.submitIntent].
 import 'dart:async';
 
+import 'package:counter/core/services/speech_listen_locale.dart';
 import 'package:counter/data/voice_audio_stub.dart' if (dart.library.html) 'package:counter/data/voice_audio_web.dart' as voice_audio;
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -77,118 +78,19 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     super.dispose();
   }
 
-  Future<String> _resolveSpeechListenLocale() async {
-    const hardcodedRuIds = <String>[
-      'ru_RU',
-      'ru-RU',
-      'ru',
-      'ru_MD',
-      'ru_KZ',
-      'ru_BY',
-      'ru_UA',
-    ];
-    List<dynamic> list = const [];
-    try {
-      list = await widget.speech.locales();
-    } catch (e) {
-      debugPrint('[STT locale] locales() failed: $e');
-    }
-    final idsForLog = <String>[
-      for (final l in list) l.localeId.toString(),
-    ];
-    debugPrint(
-      '[STT locale] locales count=${idsForLog.length} ids=${idsForLog.join(", ")}',
-    );
-
-    int ruLocalePreferenceScore(String localeId) {
-      final id = localeId.trim();
-      if (id.isEmpty) return -1;
-      final lower = id.toLowerCase().replaceAll('-', '_');
-      if (!lower.startsWith('ru')) return -1;
-      if (lower == 'ru_ru') return 1000;
-      if (lower.startsWith('ru_')) return 800;
-      if (lower == 'ru') return 600;
-      return 400;
-    }
-
-    String? bestRuId;
-    var best = -1;
-    for (final l in list) {
-      final lid = l.localeId.toString();
-      var sc = ruLocalePreferenceScore(lid);
-      try {
-        final dynamic raw = l;
-        final n = (raw.name as String?)?.toLowerCase() ?? '';
-        if (n.contains('russian') ||
-            n.contains('русск') ||
-            n.contains('russia')) {
-          sc = sc < 0 ? 500 : (sc > 500 ? sc : 500);
-        }
-      } catch (_) {}
-      if (sc > best) {
-        best = sc;
-        bestRuId = lid;
-      }
-    }
-    if (bestRuId != null && best > 0) {
-      debugPrint(
-        '[STT locale] chosen Russian from enumerated list: $bestRuId (score=$best)',
-      );
-      return bestRuId;
-    }
-
-    final lowerSet = idsForLog.map((e) => e.toLowerCase()).toSet();
-    for (final h in hardcodedRuIds) {
-      if (lowerSet.contains(h.toLowerCase())) {
-        final exact = idsForLog.firstWhere(
-          (e) => e.toLowerCase() == h.toLowerCase(),
-          orElse: () => h,
-        );
-        debugPrint('[STT locale] chosen exact catalog id: $exact');
-        return exact;
-      }
-    }
-
-    if (currentLocale.value == 'ru') {
-      for (final id in idsForLog) {
-        final n = id.toLowerCase().replaceAll('-', '_');
-        if (n.startsWith('ru')) {
-          debugPrint('[STT locale] UI=ru, first ru* in device list: $id');
-          return id;
-        }
-      }
-      debugPrint(
-        '[STT locale] UI=ru, no ru in enumerated list — listen() will use ru_RU',
-      );
-      return 'ru_RU';
-    }
-
-    try {
-      final sys = await widget.speech.systemLocale();
-      final id = sys?.localeId.trim() ?? '';
-      if (id.isNotEmpty) {
-        debugPrint('[STT locale] systemLocale: $id');
-        return id;
-      }
-    } catch (e) {
-      debugPrint('[STT locale] systemLocale() failed: $e');
-    }
-
-    debugPrint('[STT locale] final fallback en_US');
-    return 'en_US';
-  }
-
-  Future<void> _runSpeechListen(String localeId) async {
+  Future<void> _runSpeechListen(String? localeId) async {
     await widget.speech.listen(
       onResult: _onSpeechResult,
       onSoundLevelChange: (level) => _soundLevel.value = level,
-      listenMode: stt.ListenMode.dictation,
-      partialResults: true,
-      cancelOnError: false,
-      onDevice: false,
       localeId: localeId,
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 5),
+      listenOptions: stt.SpeechListenOptions(
+        listenMode: stt.ListenMode.dictation,
+        partialResults: true,
+        cancelOnError: false,
+        onDevice: false,
+      ),
     );
   }
 
@@ -247,16 +149,21 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     widget.setSpeechStatusCallback((status) {
       if (status.startsWith('error:')) {
         final msg = status.replaceFirst('error:', '').trim();
-        final displayMsg = msg.toLowerCase().contains('network')
+        final low = msg.toLowerCase();
+        final displayMsg = low.contains('network')
             ? t(loc, 'speech_error_network')
-            : t(loc, 'speech_error_prefix').replaceFirst('%s', msg);
+            : SpeechListenLocale.messageIndicatesLanguageUnsupported(msg)
+                ? t(loc, 'speech_language_not_supported')
+                : t(loc, 'speech_error_prefix').replaceFirst('%s', msg);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           setState(() {
             _error = displayMsg;
             _hadErrorInSession = true;
             _isPulsing = false;
+            _isListening = false;
           });
+          widget.onListeningChanged?.call(false);
         });
         return;
       }
@@ -268,20 +175,21 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
         return;
       }
       if (status == 'done' || status == 'notListening') {
-        if (_hadErrorInSession) return;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           setState(() {
             _isPulsing = false;
-            _statusText = t(loc, 'voice_status_heard');
             _isListening = false;
+            if (!_hadErrorInSession) {
+              _statusText = t(loc, 'voice_status_heard');
+            }
           });
           widget.onListeningChanged?.call(false);
         });
       }
     });
 
-    Future<bool> attemptListen(String localeId) async {
+    Future<bool> attemptListen(String? localeId) async {
       try {
         await _runSpeechListen(localeId);
         return true;
@@ -295,55 +203,51 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       }
     }
 
-    final chosen = await _resolveSpeechListenLocale();
-    debugPrint('[STT] speech.listen primary localeId=$chosen');
+    final chosen = await SpeechListenLocale.resolveListenLocaleId(
+      speech: widget.speech,
+      appLoc: loc,
+    );
+    if (kDebugMode) {
+      debugPrint('[STT] speech.listen primary localeId=$chosen');
+    }
 
     try {
       var ok = await attemptListen(chosen);
-      if (!ok && currentLocale.value == 'ru') {
-        for (final alt in <String>['ru_RU', 'ru-RU', 'ru']) {
-          if (alt == chosen) continue;
-          debugPrint('[STT listen] retry localeId=$alt');
-          ok = await attemptListen(alt);
-          if (ok) {
-            if (!mounted) break;
+      if (!ok && chosen != null) {
+        if (kDebugMode) {
+          debugPrint('[STT listen] retry localeId=null (device default)');
+        }
+        ok = await attemptListen(null);
+        if (ok && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  t(currentLocale.value, 'speech_locale_fallback_generic'),
+                ),
+              ),
+            );
+          });
+        }
+      }
+      if (!ok && !kIsWeb) {
+        try {
+          ok = await attemptListen('en_US');
+          if (ok && mounted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    t(currentLocale.value, 'speech_locale_fallback_generic'),
+                    t(currentLocale.value, 'speech_russian_engine_fallback'),
                   ),
                 ),
               );
             });
-            break;
-          }
-        }
-      }
-      if (!ok) {
-        try {
-          final sys = await widget.speech.systemLocale();
-          final fallback = (sys?.localeId ?? '').trim().isNotEmpty
-              ? sys!.localeId
-              : 'en_US';
-          if (fallback != chosen) {
-            ok = await attemptListen(fallback);
-            if (ok && mounted) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      t(currentLocale.value, 'speech_russian_engine_fallback'),
-                    ),
-                  ),
-                );
-              });
-            }
           }
         } catch (e) {
-          debugPrint('[STT listen] system locale fallback error: $e');
+          debugPrint('[STT listen] en_US fallback error: $e');
         }
       }
       if (!ok) {
@@ -356,7 +260,10 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
           setState(() {
             _error = t(loc, 'speech_error_prefix')
                 .replaceFirst('%s', firstErr.toString());
+            _isPulsing = false;
+            _isListening = false;
           });
+          widget.onListeningChanged?.call(false);
         }
         widget.setSpeechStatusCallback(null);
       });

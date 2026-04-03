@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:counter/core/services/ai_service.dart';
+import 'package:counter/core/services/speech_listen_locale.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -48,78 +49,6 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
         s.contains('recognition has already started');
   }
 
-  String _primaryLanguageCode(String appLoc) {
-    final i = appLoc.indexOf(RegExp(r'[-_]'));
-    return (i < 0 ? appLoc : appLoc.substring(0, i)).toLowerCase();
-  }
-
-  String _normalizeLocaleToken(String id) =>
-      id.replaceAll('-', '_').toLowerCase();
-
-  /// Picks a [SpeechToText] locale id from [available] whose language matches
-  /// [appPrimary], preferring an exact primary match then a regional variant.
-  String? _findBestLocaleIdForLanguage(
-    List<stt.LocaleName> available,
-    String appPrimary,
-  ) {
-    final p = appPrimary.toLowerCase();
-    String? regional;
-    for (final l in available) {
-      final n = _normalizeLocaleToken(l.localeId);
-      if (n == p) {
-        return l.localeId;
-      }
-      if (regional == null && n.startsWith('${p}_')) {
-        regional = l.localeId;
-      }
-    }
-    return regional;
-  }
-
-  bool _languageAvailableInList(
-    List<stt.LocaleName> available,
-    String appPrimary,
-  ) {
-    return _findBestLocaleIdForLanguage(available, appPrimary) != null;
-  }
-
-  /// Resolves [localeId] for [listen] using [SpeechToText.locales],
-  /// [SpeechToText.systemLocale], and [PlatformDispatcher.instance.locale].
-  ///
-  /// Web: when the engine reports an empty [locales] list (typical), we only set
-  /// an explicit tag if the UI language matches the Flutter/platform locale so
-  /// we do not force e.g. `ru-RU` on a browser that only exposes English.
-  /// Otherwise [null] leaves `lang` unset so Chromium uses its default.
-  Future<String?> _resolveListenLocaleId(String appLoc) async {
-    final available = await _speech.locales();
-    final systemLc = await _speech.systemLocale();
-    final platformLocale = PlatformDispatcher.instance.locale;
-    final platformTag = platformLocale.toLanguageTag();
-    final appPrimary = _primaryLanguageCode(appLoc);
-
-    if (available.isNotEmpty) {
-      if (!_languageAvailableInList(available, appPrimary)) {
-        return systemLc?.localeId ?? platformTag;
-      }
-      final picked = _findBestLocaleIdForLanguage(available, appPrimary);
-      if (picked != null) {
-        return picked;
-      }
-      return systemLc?.localeId ?? platformTag;
-    }
-
-    if (kIsWeb) {
-      final platPrimary = platformLocale.languageCode.toLowerCase();
-      if (platPrimary == appPrimary) {
-        return platformTag.isEmpty ? null : platformTag;
-      }
-      return null;
-    }
-
-    return systemLc?.localeId ??
-        (platformTag.isEmpty ? null : platformTag);
-  }
-
   void _onSpeechStatus(String status) {
     if (!mounted) return;
     switch (status) {
@@ -138,6 +67,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   void _onSpeechError(dynamic e) {
     if (e is! SpeechRecognitionError) {
       if (mounted) setState(() => _listening = false);
+      unawaited(_stopSpeechSession());
       return;
     }
     if (kDebugMode) {
@@ -148,19 +78,15 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       if (mounted) setState(() => _listening = false);
       return;
     }
-    final langUnsupported = msg.contains('language-not-supported') ||
-        msg.contains('language_not_supported') ||
-        msg.contains('error_language_not_supported') ||
-        (msg.contains('language') &&
-            msg.contains('not') &&
-            msg.contains('support'));
+    final langUnsupported =
+        SpeechListenLocale.messageIndicatesLanguageUnsupported(e.errorMsg);
     if (langUnsupported) {
+      if (mounted) setState(() => _listening = false);
       if (_lastListenLocaleIdForRetry != null) {
         unawaited(_retryListenWithDeviceDefault());
         return;
       }
       if (!mounted) return;
-      setState(() => _listening = false);
       unawaited(_stopSpeechSession());
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -173,6 +99,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     }
     if (!mounted) return;
     setState(() => _listening = false);
+    unawaited(_stopSpeechSession());
     if (msg.contains('network')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t(currentLocale.value, 'speech_error_network'))),
@@ -216,6 +143,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
   Future<void> _runSpeechListen({required String? localeId}) async {
     if (!mounted) return;
+    _lastListenLocaleIdForRetry = localeId;
     setState(() => _listening = true);
     try {
       if (_speech.isListening) {
@@ -316,9 +244,12 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
     if (!mounted) return;
 
-    final String? listenLocaleId = await _resolveListenLocaleId(loc);
+    final String? listenLocaleId =
+        await SpeechListenLocale.resolveListenLocaleId(
+      speech: _speech,
+      appLoc: loc,
+    );
     if (!mounted) return;
-    _lastListenLocaleIdForRetry = listenLocaleId;
     await _runSpeechListen(localeId: listenLocaleId);
   }
 
