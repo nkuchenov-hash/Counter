@@ -1,8 +1,9 @@
-// Groq OpenAI-compatible API for Smart Plan. No Flutter imports.
+// Groq OpenAI-compatible API for Smart Plan.
 // Paste your API key in [_apiKey] below.
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
 
 /// Thrown when API/network/parse fails after a user-initiated Smart Plan request.
@@ -67,10 +68,21 @@ class AiService {
           )
           .timeout(const Duration(seconds: 90));
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AiService] Network/request error: $e');
+      }
       throw AiServiceException('Network error: $e');
     }
 
     if (res.statusCode < 200 || res.statusCode >= 300) {
+      final bodySnippet = res.body.length > 500
+          ? '${res.body.substring(0, 500)}…'
+          : res.body;
+      if (kDebugMode) {
+        debugPrint(
+          '[AiService] API error HTTP ${res.statusCode} body: $bodySnippet',
+        );
+      }
       throw AiServiceException(
         'API HTTP ${res.statusCode}: ${res.body.length > 200 ? '${res.body.substring(0, 200)}…' : res.body}',
       );

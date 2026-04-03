@@ -31,6 +31,10 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   bool _thinking = false;
   bool _speechInitialized = false;
 
+  /// Shown inside the sheet (not via [ScaffoldMessenger]) so errors stay
+  /// visible above modal z-order issues.
+  String? _inlineError;
+
   /// Last non-null [localeId] passed to [SpeechToText.listen]; drives one-shot
   /// fallback to `null` (device / browser default) on language errors.
   String? _lastListenLocaleIdForRetry;
@@ -64,6 +68,16 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     }
   }
 
+  void _setInlineError(String message) {
+    if (!mounted) return;
+    setState(() => _inlineError = message);
+  }
+
+  void _clearInlineError() {
+    if (!mounted || _inlineError == null) return;
+    setState(() => _inlineError = null);
+  }
+
   void _onSpeechError(dynamic e) {
     if (e is! SpeechRecognitionError) {
       if (mounted) setState(() => _listening = false);
@@ -76,6 +90,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     final msg = e.errorMsg.toLowerCase();
     if (msg.contains('already') && msg.contains('start')) {
       if (mounted) setState(() => _listening = false);
+      unawaited(_stopSpeechSession());
       return;
     }
     final langUnsupported =
@@ -88,31 +103,19 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       }
       if (!mounted) return;
       unawaited(_stopSpeechSession());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(currentLocale.value, 'speech_language_not_supported'),
-          ),
-        ),
-      );
+      _setInlineError(t(currentLocale.value, 'speech_language_not_supported'));
       return;
     }
     if (!mounted) return;
     setState(() => _listening = false);
     unawaited(_stopSpeechSession());
     if (msg.contains('network')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'speech_error_network'))),
-      );
+      _setInlineError(t(currentLocale.value, 'speech_error_network'));
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          t(currentLocale.value, 'speech_error_prefix')
-              .replaceFirst('%s', e.errorMsg),
-        ),
-      ),
+    _setInlineError(
+      t(currentLocale.value, 'speech_error_prefix')
+          .replaceFirst('%s', e.errorMsg),
     );
   }
 
@@ -135,9 +138,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     await _stopSpeechSession();
     if (!mounted) return;
     final loc = currentLocale.value;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(t(loc, 'speech_locale_fallback_generic'))),
-    );
+    _setInlineError(t(loc, 'speech_locale_fallback_generic'));
     await _runSpeechListen(localeId: null);
   }
 
@@ -173,19 +174,21 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       }
       if (mounted) {
         setState(() => _listening = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t(currentLocale.value, 'speech_error_prefix')
-                  .replaceFirst('%s', '$e'),
-            ),
-          ),
+        _setInlineError(
+          t(currentLocale.value, 'speech_error_prefix')
+              .replaceFirst('%s', '$e'),
         );
       }
     }
   }
 
   Future<void> _toggleMic() async {
+    if (kDebugMode) {
+      debugPrint(
+        '[SmartPlan mic] tap registered thinking=$_thinking listening=$_listening',
+      );
+    }
+    _clearInlineError();
     final loc = currentLocale.value;
 
     if (_listening) {
@@ -203,9 +206,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
         final req = await Permission.microphone.request();
         if (!req.isGranted) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t(loc, 'microphone_permission'))),
-          );
+          _setInlineError(t(loc, 'microphone_permission'));
           return;
         }
       }
@@ -213,15 +214,17 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
     try {
       if (!_speechInitialized) {
+        if (kDebugMode) debugPrint('[SmartPlan mic] initializing SpeechToText…');
         final available = await _speech.initialize(
           onError: _onSpeechError,
           onStatus: _onSpeechStatus,
         );
+        if (kDebugMode) {
+          debugPrint('[SmartPlan mic] initialize result available=$available');
+        }
         if (!available) {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t(loc, 'speech_unavailable'))),
-          );
+          _setInlineError(t(loc, 'speech_unavailable'));
           return;
         }
         _speechInitialized = true;
@@ -232,13 +235,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
         await _stopSpeechSession();
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(loc, 'speech_error_prefix').replaceFirst('%s', '$e'),
-          ),
-        ),
-      );
+      _setInlineError(t(loc, 'speech_error_prefix').replaceFirst('%s', '$e'));
       return;
     }
 
@@ -258,29 +255,22 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
+    _clearInlineError();
     setState(() => _thinking = true);
     List<Map<String, dynamic>> items;
     try {
       items = await AiService.instance.processPlanningText(text);
     } on AiServiceException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t(loc, 'smart_plan_failed_detail').replaceFirst('%s', '$e'),
-            ),
-          ),
+        _setInlineError(
+          t(loc, 'smart_plan_failed_detail').replaceFirst('%s', '$e'),
         );
       }
       return;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t(loc, 'smart_plan_failed_detail').replaceFirst('%s', '$e'),
-            ),
-          ),
+        _setInlineError(
+          t(loc, 'smart_plan_failed_detail').replaceFirst('%s', '$e'),
         );
       }
       return;
@@ -291,9 +281,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     if (!mounted) return;
 
     if (items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'smart_plan_empty'))),
-      );
+      _setInlineError(t(loc, 'smart_plan_empty'));
       return;
     }
 
@@ -302,12 +290,8 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       created = await widget.onCommit(items);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t(loc, 'smart_plan_failed_detail').replaceFirst('%s', '$e'),
-            ),
-          ),
+        _setInlineError(
+          t(loc, 'smart_plan_failed_detail').replaceFirst('%s', '$e'),
         );
       }
       return;
@@ -315,15 +299,13 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
     if (!mounted) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     if (created <= 0) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(t(loc, 'smart_plan_empty'))),
-      );
+      _setInlineError(t(loc, 'smart_plan_empty'));
       return;
     }
+    final rootMessenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
-    messenger.showSnackBar(
+    rootMessenger.showSnackBar(
       SnackBar(
         content: Text(
           t(loc, 'smart_plan_added').replaceFirst('%s', '$created'),
@@ -363,30 +345,60 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
               ],
             ),
             const SizedBox(height: 8),
-            TextField(
-              controller: _textController,
-              minLines: 4,
-              maxLines: 8,
-              enabled: !_thinking,
-              decoration: InputDecoration(
-                hintText: t(loc, 'smart_plan_hint'),
-                filled: true,
-                fillColor: scheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _textController,
+                    minLines: 4,
+                    maxLines: 8,
+                    enabled: !_thinking,
+                    decoration: InputDecoration(
+                      hintText: t(loc, 'smart_plan_hint'),
+                      filled: true,
+                      fillColor: scheme.surfaceContainerHighest,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onChanged: (_) {
+                      if (_inlineError != null) {
+                        setState(() => _inlineError = null);
+                      }
+                      setState(() {});
+                    },
+                  ),
                 ),
-                suffixIcon: IconButton(
+                IconButton(
                   tooltip: _listening ? t(loc, 'stop') : t(loc, 'voice_input'),
                   icon: Icon(
                     _listening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                    color: _listening ? scheme.primary : scheme.onSurfaceVariant,
+                    color: _listening
+                        ? scheme.primary
+                        : scheme.onSurfaceVariant,
                   ),
-                  onPressed: _thinking ? null : _toggleMic,
+                  onPressed: _thinking
+                      ? null
+                      : () {
+                          if (kDebugMode) {
+                            debugPrint('[SmartPlan mic] IconButton onPressed');
+                          }
+                          unawaited(_toggleMic());
+                        },
                 ),
-              ),
-              onChanged: (_) => setState(() {}),
+              ],
             ),
+            if (_inlineError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _inlineError!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.error,
+                    ),
+              ),
+            ],
             const SizedBox(height: 12),
             if (_thinking)
               Padding(
