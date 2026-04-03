@@ -7,6 +7,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 typedef SmartPlanCommit =
@@ -27,21 +28,91 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _listening = false;
   bool _thinking = false;
+  bool _speechInitialized = false;
 
   @override
   void dispose() {
-    unawaited(_speech.stop());
-    unawaited(_speech.cancel());
+    unawaited(_stopSpeechSession(silent: true));
     _textController.dispose();
     super.dispose();
   }
 
-  Future<void> _toggleMic() async {
-    final loc = currentLocale.value;
-    if (_listening) {
-      await _speech.stop();
+  bool _isBenignSttDoubleStart(Object e) {
+    final s = e.toString().toLowerCase();
+    return s.contains('invalidstateerror') ||
+        s.contains('already started') ||
+        s.contains('recognition has already started');
+  }
+
+  void _onSpeechStatus(String status) {
+    if (!mounted) return;
+    switch (status) {
+      case 'listening':
+        setState(() => _listening = true);
+        break;
+      case 'notListening':
+      case 'done':
+        setState(() => _listening = false);
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _onSpeechError(dynamic e) {
+    if (e is! SpeechRecognitionError) {
       if (mounted) setState(() => _listening = false);
       return;
+    }
+    if (kDebugMode) {
+      debugPrint('[SmartPlan STT] ${e.errorMsg} permanent=${e.permanent}');
+    }
+    final msg = e.errorMsg.toLowerCase();
+    if (msg.contains('already') && msg.contains('start')) {
+      if (mounted) setState(() => _listening = false);
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _listening = false);
+    if (msg.contains('network')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'speech_error_network'))),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          t(currentLocale.value, 'speech_error_prefix')
+              .replaceFirst('%s', e.errorMsg),
+        ),
+      ),
+    );
+  }
+
+  /// Stops the native session and aligns UI. Safe to call when idle.
+  Future<void> _stopSpeechSession({bool silent = false}) async {
+    try {
+      if (_speech.isListening) {
+        await _speech.stop();
+      }
+    } catch (_) {}
+    try {
+      await _speech.cancel();
+    } catch (_) {}
+    if (mounted) setState(() => _listening = false);
+  }
+
+  Future<void> _toggleMic() async {
+    final loc = currentLocale.value;
+
+    if (_listening) {
+      await _stopSpeechSession();
+      return;
+    }
+
+    if (_speech.isListening) {
+      await _stopSpeechSession();
     }
 
     if (!kIsWeb) {
@@ -59,22 +130,26 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     }
 
     try {
-      final available = await _speech.initialize(
-        onError: (e) {
-          if (kDebugMode) {
-            debugPrint('[SmartPlan STT] ${e.errorMsg}');
-          }
-        },
-      );
-      if (!available) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(loc, 'speech_unavailable'))),
+      if (!_speechInitialized) {
+        final available = await _speech.initialize(
+          onError: _onSpeechError,
+          onStatus: _onSpeechStatus,
         );
-        return;
+        if (!available) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(t(loc, 'speech_unavailable'))),
+          );
+          return;
+        }
+        _speechInitialized = true;
       }
     } catch (e) {
       if (!mounted) return;
+      if (_isBenignSttDoubleStart(e)) {
+        await _stopSpeechSession();
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -88,25 +163,36 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     if (!mounted) return;
     setState(() => _listening = true);
 
-    final localeId =
-        loc == 'ru' ? 'ru_RU' : 'en_US';
+    final localeId = loc == 'ru' ? 'ru_RU' : 'en_US';
 
     try {
+      if (_speech.isListening) {
+        await _stopSpeechSession();
+        if (!mounted) return;
+        setState(() => _listening = true);
+      }
       await _speech.listen(
         onResult: (res) {
           if (mounted && res.recognizedWords.isNotEmpty) {
             setState(() => _textController.text = res.recognizedWords);
           }
         },
-        listenMode: stt.ListenMode.dictation,
-        partialResults: true,
-        cancelOnError: false,
         localeId: localeId,
         listenFor: const Duration(seconds: 60),
         pauseFor: const Duration(seconds: 6),
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.dictation,
+          partialResults: true,
+          cancelOnError: false,
+        ),
       );
     } catch (e) {
+      if (_isBenignSttDoubleStart(e)) {
+        await _stopSpeechSession();
+        return;
+      }
       if (mounted) {
+        setState(() => _listening = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -115,8 +201,6 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
           ),
         );
       }
-    } finally {
-      if (mounted) setState(() => _listening = false);
     }
   }
 
