@@ -25,6 +25,11 @@ jobs:
       - name: Flutter doctor (CI environment diagnostics)
         run: flutter doctor -v
 
+      - name: Create env.dart
+        run: |
+          mkdir -p lib/core/env
+          echo "class Env { static const String groqApiKey = '${{ secrets.GROQ_API_KEY }}'; }" > lib/core/env/env.dart
+
       - name: Install dependencies
         run: flutter pub get
 
