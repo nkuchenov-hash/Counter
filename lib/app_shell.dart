@@ -16,6 +16,7 @@ import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
 import 'package:counter/features/timeline/timeline_view.dart' hide showAppDateTimePicker;
+import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -73,7 +74,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     final s = DatabaseService.instance.settings;
-    _language = s.language;
+    _language = normalizeUiLanguageCode(s.language);
     _timeZone = s.preferredTimeZone;
     if (_timezoneOptions.isNotEmpty && !_timezoneOptions.contains(_timeZone)) {
       _timeZone = _timezoneOptions.first;
@@ -109,14 +110,18 @@ class _SettingsPageState extends State<SettingsPage> {
           Text(t(locale, 'settings'), style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
+            key: ValueKey<String>(_language),
             initialValue: _language,
             decoration: InputDecoration(
               labelText: t(locale, 'language_label'),
               border: const OutlineInputBorder(),
             ),
             items: [
-              DropdownMenuItem(value: 'en', child: Text(t(locale, 'language_english'))),
-              DropdownMenuItem(value: 'ru', child: Text(t(locale, 'language_russian'))),
+              for (final opt in appLocaleOptionsForPicker)
+                DropdownMenuItem<String>(
+                  value: opt.storageCode,
+                  child: Text(opt.nativeName),
+                ),
             ],
             onChanged: (String? v) {
               if (v != null) setState(() => _language = v);

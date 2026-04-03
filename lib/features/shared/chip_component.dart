@@ -6,12 +6,8 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
+import 'package:counter/features/shared/tag_contrast.dart';
 import 'package:flutter/material.dart';
-
-Color _contrastOn(Color background) {
-  final luma = background.computeLuminance();
-  return luma > 0.5 ? const Color(0xFF1A1A1A) : Colors.white;
-}
 
 /// **Timeline record category** — text-only breadcrumbs, not a tag chip.
 ///
@@ -28,8 +24,6 @@ class RecordCategoryHeader extends StatelessWidget {
   final String breadcrumbPath;
   final Color accentColor;
 
-  static const double _plateOpacity = 0.13;
-
   @override
   Widget build(BuildContext context) {
     var parts = breadcrumbPath
@@ -42,7 +36,10 @@ class RecordCategoryHeader extends StatelessWidget {
       parts = f.isEmpty ? <String>['—'] : <String>[f];
     }
 
-    final fg = accentColor;
+    final scheme = Theme.of(context).colorScheme;
+    final plate =
+        tagRecordCategoryHeaderPlate(accentColor, scheme.surface);
+    final fg = tagVibrantForeground(accentColor);
     final sepStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
           color: fg.withValues(alpha: 0.58),
           fontWeight: FontWeight.w700,
@@ -61,7 +58,7 @@ class RecordCategoryHeader extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: accentColor.withValues(alpha: _plateOpacity),
+          color: plate,
           borderRadius: BorderRadius.circular(100),
         ),
         child: Wrap(
@@ -131,10 +128,15 @@ class CategoryChip extends StatelessWidget {
 
     final child = switch (mode) {
       CategoryDisplayMode.letterChip => _letterChipPlanStyle(context),
-      CategoryDisplayMode.chip => _chipPlanStyle(),
+      CategoryDisplayMode.chip => _chipPlanStyle(context),
       CategoryDisplayMode.round => _tagRoundDot(),
-      CategoryDisplayMode.icon =>
-          Center(child: Icon(icon, color: color, size: 26)),
+      CategoryDisplayMode.icon => Center(
+          child: Icon(
+            icon,
+            color: tagGlyphOnCanvas(color),
+            size: 26,
+          ),
+        ),
       CategoryDisplayMode.iconCircle => _iconInCircle(),
     };
     final visual = mode != CategoryDisplayMode.letterChip
@@ -204,33 +206,38 @@ class CategoryChip extends StatelessWidget {
   /// letter_chip: **same widget pattern** as task-card tag in [planning_view] — padded [Text] in tinted [Container] (tight wrap).
   Widget _letterChipPlanStyle(BuildContext context) {
     final displayLabel = label.trim().isNotEmpty ? label.trim() : '?';
+    final scheme = Theme.of(context).colorScheme;
+    final plate = tagLetterChipPlate(color, scheme.surface);
+    final fg = tagVibrantForeground(color);
+    final stroke = tagLetterChipBorder(color, scheme.surface);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.16),
+        color: plate,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.42)),
+        border: Border.all(color: stroke),
       ),
       child: Text(
         displayLabel,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: color,
+              color: fg,
             ),
       ),
     );
   }
 
   /// chip: fixed horizontal stadium — **not** intrinsic/flexible; matches a compact text-chip footprint.
-  Widget _chipPlanStyle() {
+  Widget _chipPlanStyle(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
     return SizedBox(
       width: _emptyChipWidth,
       height: _emptyChipHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.16),
+          color: tagEmptyChipFill(color, surface),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withValues(alpha: 0.42)),
+          border: Border.all(color: tagEmptyChipBorderColor(color)),
         ),
       ),
     );
@@ -267,7 +274,7 @@ class CategoryChip extends StatelessWidget {
         child: Center(
           child: Icon(
             icon,
-            color: _contrastOn(color),
+            color: tagIconOnFilledTagColor(color),
             size: 18,
           ),
         ),

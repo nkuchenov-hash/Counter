@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/chip_component.dart';
@@ -251,7 +252,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   @override
   Widget build(BuildContext context) {
     final anchor = _anchorToday;
-    return PageView.builder(
+    return ScrollConfiguration(
+      behavior: const MouseDragScrollBehavior(),
+      child: PageView.builder(
       controller: _controller,
       itemCount: 10000,
       onPageChanged: (int index) {
@@ -297,6 +300,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
           onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
         );
       },
+      ),
     );
   }
 }
@@ -550,64 +554,110 @@ class _TimelinePageState extends State<TimelinePage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: widget.onNavigateToDate == null
-                ? null
-                : () async {
-                    final loc = currentLocale.value;
-                    final picked = await showDialog<DateTime>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: Text(t(loc, 'calendar')),
-                        content: SizedBox(
-                          width: 320,
-                          child: CalendarDatePicker(
-                            initialDate: widget.selectedDate,
-                            firstDate: DateTime(2020),
-                            lastDate: DateTime(2035),
-                            onDateChanged: (d) {
-                              Navigator.of(ctx).pop(
-                                DateTime(d.year, d.month, d.day),
-                              );
-                            },
+        title: Row(
+          children: [
+            if (widget.onNavigateToDate != null)
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 40,
+                ),
+                icon: const Icon(Icons.chevron_left_rounded),
+                tooltip: t(currentLocale.value, 'date_previous_day'),
+                onPressed: () {
+                  widget.onNavigateToDate!(
+                    _dateOnlyCalendar(widget.selectedDate)
+                        .subtract(const Duration(days: 1)),
+                  );
+                },
+              ),
+            Expanded(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: widget.onNavigateToDate == null
+                      ? null
+                      : () async {
+                          final loc = currentLocale.value;
+                          final picked = await showDialog<DateTime>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text(t(loc, 'calendar')),
+                              content: SizedBox(
+                                width: 320,
+                                child: CalendarDatePicker(
+                                  initialDate: widget.selectedDate,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2035),
+                                  onDateChanged: (d) {
+                                    Navigator.of(ctx).pop(
+                                      DateTime(d.year, d.month, d.day),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          );
+                          if (picked != null && context.mounted) {
+                            widget.onNavigateToDate?.call(picked);
+                          }
+                        },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${t(currentLocale.value, 'tab_timeline')} • ${_formatDate(widget.selectedDate)}',
+                            style: titleStyle,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ),
-                    );
-                    if (picked != null && context.mounted) {
-                      widget.onNavigateToDate?.call(picked);
-                    }
-                  },
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${t(currentLocale.value, 'tab_timeline')} • ${_formatDate(widget.selectedDate)}',
-                    style: titleStyle,
-                  ),
-                  if (isToday) ...[
-                    Text(' • ', style: titleStyle),
-                    _AppBarLiveClock(
-                        textStyle: titleStyle.copyWith(
-                            fontSize: 14, fontWeight: FontWeight.w400)),
-                  ],
-                  if (widget.onNavigateToDate != null) ...[
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.calendar_month_rounded,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
+                        if (isToday) ...[
+                          Text(' • ', style: titleStyle),
+                          _AppBarLiveClock(
+                            textStyle: titleStyle.copyWith(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                        if (widget.onNavigateToDate != null) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.calendar_month_rounded,
+                            size: 20,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
-          ),
+            if (widget.onNavigateToDate != null)
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 40,
+                ),
+                icon: const Icon(Icons.chevron_right_rounded),
+                tooltip: t(currentLocale.value, 'date_next_day'),
+                onPressed: () {
+                  widget.onNavigateToDate!(
+                    _dateOnlyCalendar(widget.selectedDate)
+                        .add(const Duration(days: 1)),
+                  );
+                },
+              ),
+          ],
         ),
         actions: [
           IconButton(

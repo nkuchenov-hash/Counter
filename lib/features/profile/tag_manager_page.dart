@@ -8,6 +8,7 @@ import 'dart:async';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/shared/tag_contrast.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -378,6 +379,9 @@ class _TagManagerPageState extends State<TagManagerPage> {
                           final tag = _tags[i];
                           final c =
                               parseTagHexColor(tag.color) ?? scheme.primary;
+                          final avatarPlate =
+                              tagManagerAvatarPlate(c, scheme.surface);
+                          final avatarFg = tagVibrantForeground(c);
                           return ReorderableDragStartListener(
                             key: ValueKey<Object>(
                               tag.pbRecordId ?? 'tag-${tag.tagId}',
@@ -390,9 +394,8 @@ class _TagManagerPageState extends State<TagManagerPage> {
                                     const EdgeInsets.symmetric(horizontal: 8),
                                 leading: CircleAvatar(
                                   radius: 20,
-                                  backgroundColor:
-                                      c.withValues(alpha: 0.2),
-                                  foregroundColor: c,
+                                  backgroundColor: avatarPlate,
+                                  foregroundColor: avatarFg,
                                   child: Icon(
                                       iconForTagKey(tag.icon), size: 22),
                                 ),

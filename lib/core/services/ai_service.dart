@@ -1,8 +1,9 @@
 // Groq OpenAI-compatible API for Smart Plan.
-// Paste your API key in [_apiKey] below.
+// API key: lib/core/env/env.dart (gitignored; copy from env.dart.example).
 
 import 'dart:convert';
 
+import 'package:counter/core/env/env.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:http/http.dart' as http;
 
@@ -21,34 +22,64 @@ class AiService {
   AiService._();
   static final AiService instance = AiService._();
 
-  // ---------------------------------------------------------------------------
-  // PASTE YOUR GROQ API KEY HERE (https://console.groq.com/keys).
-  // ---------------------------------------------------------------------------
-  static const String _apiKey = 'YOUR_GROQ_API_KEY_HERE';
-
   static const String _endpoint =
       'https://api.groq.com/openai/v1/chat/completions';
   static const String _model = 'llama-3.3-70b-versatile';
 
-  static const String _systemPrompt =
+  /// Groq expects `Authorization: Bearer <key>`. Trims whitespace; if the key
+  /// was pasted with a `Bearer ` prefix already, it is not doubled.
+  static String _authorizationHeader() {
+    var token = Env.groqApiKey.trim();
+    if (token.isEmpty) {
+      return 'Bearer ';
+    }
+    final lower = token.toLowerCase();
+    if (lower.startsWith('bearer ')) {
+      return token;
+    }
+    return 'Bearer $token';
+  }
+
+  static const String _systemPromptCore =
       'You are a JSON-only API. Parse the user\'s text into a daily schedule. '
       'Rules: 1. Estimate logical times if not provided (Morning=09:00, Lunch=13:00, Dinner=19:00). '
       '2. Estimate duration in minutes based on context. '
       '3. Output ONLY a valid JSON array of objects with keys: title (String), '
-      'startTime (String "HH:mm"), durationMinutes (int). '
+      'startTime (String "HH:mm"), durationMinutes (int), category (String or null). '
       'Do not include markdown formatting or explanations.';
 
+  static String _systemPromptWithCategories(List<String> allowedCategoryNames) {
+    final names = List<String>.from(allowedCategoryNames)
+      ..removeWhere((s) => s.trim().isEmpty);
+    final catalog =
+        names.isEmpty ? '[]' : jsonEncode(names);
+    final directive = names.isEmpty
+        ? 'The user has no category list loaded. Set "category" to null for every task.'
+        : 'You MUST categorize each task using EXACTLY one of the following predefined '
+            'category names (copy the string verbatim from this JSON array), or null if none fits. '
+            'Do not invent, abbreviate, or rephrase category names. '
+            'If no category fits, output null for "category" (or the literal string "Uncategorized"). '
+            'Allowed names JSON array: $catalog';
+    return '$_systemPromptCore $directive';
+  }
+
   /// Calls Groq (OpenAI-compatible) and returns normalized maps:
-  /// `title` (String), `startTime` (String "HH:mm"), `durationMinutes` (int).
+  /// `title`, `startTime`, `durationMinutes`, optional `category` (String or null).
   /// Drops entries with empty titles. Fills missing time/duration with defaults.
-  Future<List<Map<String, dynamic>>> processPlanningText(String text) async {
+  Future<List<Map<String, dynamic>>> processPlanningText(
+    String text,
+    List<String> allowedCategoryNames,
+  ) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return <Map<String, dynamic>>[];
 
     final payload = <String, dynamic>{
       'model': _model,
       'messages': <Map<String, String>>[
-        {'role': 'system', 'content': _systemPrompt},
+        {
+          'role': 'system',
+          'content': _systemPromptWithCategories(allowedCategoryNames),
+        },
         {'role': 'user', 'content': trimmed},
       ],
       'temperature': 0.2,
@@ -62,7 +93,7 @@ class AiService {
             uri,
             headers: <String, String>{
               'Content-Type': 'application/json',
-              'Authorization': 'Bearer $_apiKey',
+              'Authorization': _authorizationHeader(),
             },
             body: jsonEncode(payload),
           )
@@ -179,10 +210,29 @@ class AiService {
 
     final hhmm = _normalizeToHHmm(startRaw);
 
+    final catRaw = m['category'] ??
+        m['Category'] ??
+        m['categoryName'] ??
+        m['category_name'];
+    String? categoryLabel;
+    if (catRaw != null) {
+      final s = catRaw.toString().trim();
+      if (s.isNotEmpty) {
+        final sl = s.toLowerCase();
+        if (sl != 'uncategorized' &&
+            sl != 'null' &&
+            sl != 'none' &&
+            sl != 'n/a') {
+          categoryLabel = s;
+        }
+      }
+    }
+
     return <String, dynamic>{
       'title': title,
       'startTime': hhmm,
       'durationMinutes': durationMinutes,
+      'category': categoryLabel,
     };
   }
 

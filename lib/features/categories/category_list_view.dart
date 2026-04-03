@@ -5,6 +5,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
+import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -581,7 +582,7 @@ class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSetting
     super.initState();
     final s = DatabaseService.instance.settings;
     _activeLanguages = List<String>.from(s.effectiveActiveLanguages);
-    _primaryLanguage = s.primaryLanguage;
+    _primaryLanguage = normalizeUiLanguageCode(s.primaryLanguage);
   }
 
   Future<void> _save() async {
@@ -629,17 +630,35 @@ class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSetting
             const SizedBox(height: 16),
             ListTile(
               title: Text(t(currentLocale.value, 'primary_language')),
-              subtitle: Text(_primaryLanguage),
-              trailing: SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(value: 'en', label: Text(t(currentLocale.value, 'segment_en'))),
-                  ButtonSegment(value: 'ru', label: Text(t(currentLocale.value, 'segment_ru'))),
-                ],
-                selected: {_primaryLanguage},
-                onSelectionChanged: (Set<String> sel) {
-                  setState(() => _primaryLanguage = sel.first);
-                  _save();
-                },
+              subtitle: Text(
+                appLocaleOptionForStorageCode(_primaryLanguage)?.nativeName ??
+                    _primaryLanguage,
+              ),
+              trailing: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 200),
+                child: DropdownButtonFormField<String>(
+                  key: ValueKey<String>(_primaryLanguage),
+                  initialValue: _primaryLanguage,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  ),
+                  items: [
+                    for (final opt in appLocaleOptionsForPicker)
+                      DropdownMenuItem<String>(
+                        value: opt.storageCode,
+                        child: Text(opt.nativeName),
+                      ),
+                  ],
+                  onChanged: (String? v) {
+                    if (v == null) return;
+                    setState(() => _primaryLanguage = v);
+                    unawaited(_save());
+                  },
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -651,16 +670,12 @@ class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSetting
               spacing: 8,
               runSpacing: 8,
               children: [
-                if (!_activeLanguages.contains('ru'))
-                  FilledButton.tonal(
-                    onPressed: () => _addLanguage('ru'),
-                    child: Text(t(currentLocale.value, 'add_russian_ru')),
-                  ),
-                if (!_activeLanguages.contains('en'))
-                  FilledButton.tonal(
-                    onPressed: () => _addLanguage('en'),
-                    child: Text(t(currentLocale.value, 'add_english_en')),
-                  ),
+                for (final opt in appLocaleOptionsForPicker)
+                  if (!_activeLanguages.contains(opt.storageCode))
+                    FilledButton.tonal(
+                      onPressed: () => _addLanguage(opt.storageCode),
+                      child: Text('${opt.nativeName} (${opt.storageCode})'),
+                    ),
               ],
             ),
             const SizedBox(height: 24),

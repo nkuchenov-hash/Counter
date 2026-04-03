@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
@@ -113,7 +114,9 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   @override
   Widget build(BuildContext context) {
     try {
-      return PageView.builder(
+      return ScrollConfiguration(
+        behavior: const MouseDragScrollBehavior(),
+        child: PageView.builder(
         controller: _controller,
         itemCount: totalPageCount,
         onPageChanged: (int index) {
@@ -143,7 +146,8 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             onDateChanged: widget.onDateChanged,
           );
         },
-      );
+      ),
+    );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('PlanningSwipeWrapper: $e\n$st');
@@ -468,6 +472,13 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       _timelineHourEnd = e;
     });
     unawaited(PlanningSheetTimelinePrefs.saveStartEnd(s, e));
+  }
+
+  void _shiftPlanningDay(int days) {
+    if (_planSelectMode || days == 0) return;
+    final base = widget.selectedDate ?? _today;
+    final day = DateTime(base.year, base.month, base.day);
+    widget.onDatePicked?.call(day.add(Duration(days: days)));
   }
 
   void _openPlanningHeaderDatePicker() {
@@ -968,8 +979,12 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       final endStored =
           DatabaseService.instance.displayTimeToUtc(endWall);
 
-      final match = DatabaseService.instance.identifyCategory(title);
-      final categoryId = match?.id ??
+      final aiCategoryStr = m['category']?.toString().trim();
+      final fromAiId = DatabaseService.instance
+          .resolveCategoryIdFromSmartPlanLabel(aiCategoryStr);
+      final fromTitle = DatabaseService.instance.identifyCategory(title);
+      final categoryId = fromAiId ??
+          fromTitle?.id ??
           widget.selectedCategoryId ??
           DatabaseService.instance.defaultCategoryId ??
           (DatabaseService.instance.rules.isNotEmpty
@@ -1819,15 +1834,42 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             : null,
         title: _planSelectMode
             ? Text(t(currentLocale.value, 'plan_select_mode'))
-            : InkWell(
-                onTap: _openPlanningHeaderDatePicker,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  child: Text(
-                    '${t(currentLocale.value, 'planning')} · $dateStr',
-                    overflow: TextOverflow.ellipsis,
+            : Row(
+                children: [
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                    icon: const Icon(Icons.chevron_left_rounded),
+                    tooltip: t(currentLocale.value, 'date_previous_day'),
+                    onPressed: () => _shiftPlanningDay(-1),
                   ),
-                ),
+                  Expanded(
+                    child: InkWell(
+                      onTap: _openPlanningHeaderDatePicker,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Text(
+                          '${t(currentLocale.value, 'planning')} · $dateStr',
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                    icon: const Icon(Icons.chevron_right_rounded),
+                    tooltip: t(currentLocale.value, 'date_next_day'),
+                    onPressed: () => _shiftPlanningDay(1),
+                  ),
+                ],
               ),
         actions: [
           if (!_planSelectMode) ...[

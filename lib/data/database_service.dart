@@ -3762,6 +3762,92 @@ class DatabaseService {
     return parts.isEmpty ? 'Life' : parts.join(' > ');
   }
 
+  /// Full breadcrumb paths for Smart Plan AI (cached [_rules] only — no network).
+  List<String> smartPlanAllowedCategoryLabels() {
+    final out = <String>[];
+    void visit(List<CategoryRule> rules) {
+      for (final r in rules) {
+        if (r.isArchived) {
+          if (r.children != null) visit(r.children!);
+          continue;
+        }
+        if (r.id == CategoryRule.uncategorizedSyntheticId) {
+          if (r.children != null) visit(r.children!);
+          continue;
+        }
+        out.add(getCategoryPath(r.id));
+        if (r.children != null) visit(r.children!);
+      }
+    }
+
+    visit(_rules);
+    out.sort();
+    return out;
+  }
+
+  /// Maps a Smart Plan [category] string from the LLM to a local category id
+  /// (trimmed, case-insensitive path match, then unique leaf [CategoryRule.name]).
+  int? resolveCategoryIdFromSmartPlanLabel(String? rawLabel) {
+    if (rawLabel == null) return null;
+    final t = rawLabel.trim();
+    if (t.isEmpty) return null;
+    final lower = t.toLowerCase();
+    if (lower == 'uncategorized' || lower == 'null' || lower == 'none') {
+      return null;
+    }
+
+    int? foundId;
+    void matchPath(List<CategoryRule> rules) {
+      if (foundId != null) return;
+      for (final r in rules) {
+        if (foundId != null) return;
+        if (r.isArchived) {
+          if (r.children != null) matchPath(r.children!);
+          continue;
+        }
+        if (r.id == CategoryRule.uncategorizedSyntheticId) {
+          if (r.children != null) matchPath(r.children!);
+          continue;
+        }
+        final path = getCategoryPath(r.id);
+        if (path.trim().toLowerCase() == lower) {
+          foundId = r.id;
+          return;
+        }
+        if (r.children != null) matchPath(r.children!);
+      }
+    }
+
+    matchPath(_rules);
+    if (foundId != null) return foundId;
+
+    CategoryRule? hit;
+    var ambiguous = false;
+    void matchLeaf(List<CategoryRule> rules) {
+      if (ambiguous) return;
+      for (final r in rules) {
+        if (ambiguous) return;
+        if (r.isArchived) {
+          if (r.children != null) matchLeaf(r.children!);
+          continue;
+        }
+        if (r.id == CategoryRule.uncategorizedSyntheticId) {
+          if (r.children != null) matchLeaf(r.children!);
+          continue;
+        }
+        if (r.name.trim().toLowerCase() == lower) {
+          if (hit != null && hit!.id != r.id) ambiguous = true;
+          hit = r;
+        }
+        if (r.children != null) matchLeaf(r.children!);
+      }
+    }
+
+    matchLeaf(_rules);
+    if (!ambiguous && hit != null) return hit!.id;
+    return null;
+  }
+
   int? resolvedCategoryIdForRecord(Map<String, dynamic> rec) {
     final cid = rec['categoryId'];
     if (cid == null) return null;

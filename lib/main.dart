@@ -6,6 +6,7 @@ import 'package:counter/features/auth/auth_screen.dart';
 import 'package:counter/auth_service.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/database_service.dart';
+import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/core/constants.dart';
 import 'package:counter/core/theme.dart';
@@ -31,8 +32,9 @@ void main() async {
     await DatabaseService.instance.ensurePocketBaseReady();
   } catch (_) {}
   try {
-    await initializeDateFormatting('en', null);
-    await initializeDateFormatting('ru', null);
+    for (final loc in kAppSupportedMaterialLocales) {
+      await initializeDateFormatting(loc.toString(), null);
+    }
   } catch (_) {}
   try {
     tz_data.initializeTimeZones();
@@ -82,7 +84,7 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
             return MaterialApp(
               scaffoldMessengerKey: appSnackMessengerKey,
               title: t(locale, 'app_title'),
-              locale: Locale(locale),
+              locale: materialLocaleForUiLanguage(locale),
               debugShowCheckedModeBanner: false,
               theme: appLightTheme,
               darkTheme: appDarkTheme,
@@ -92,12 +94,9 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
-              supportedLocales: const [
-                Locale('en'),
-                Locale('ru'),
-              ],
+              supportedLocales: kAppSupportedMaterialLocales,
               builder: (context, child) {
-                Intl.defaultLocale = locale;
+                Intl.defaultLocale = materialLocaleForUiLanguage(locale).toString();
                 if (!_startupNetworkErrorShown &&
                     _startupNetworkErrorMessage != null) {
                   _startupNetworkErrorShown = true;
@@ -236,7 +235,9 @@ class _InitGuardState extends State<_InitGuard> {
           await DatabaseService.instance.loadInitialData(widget.uid.trim());
       if (ok) {
         final lang = DatabaseService.instance.settings.primaryLanguage;
-        if (lang.isNotEmpty) currentLocale.value = lang;
+        if (lang.isNotEmpty) {
+          currentLocale.value = normalizeUiLanguageCode(lang);
+        }
       }
       if (mounted) {
         setState(() {

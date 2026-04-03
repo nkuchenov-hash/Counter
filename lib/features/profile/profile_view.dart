@@ -6,6 +6,7 @@ import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
+import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -173,7 +174,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     final s = DatabaseService.instance.settings;
-    _language = s.language;
+    _language = normalizeUiLanguageCode(s.language);
     _timeZone = s.preferredTimeZone;
     _activeLanguages = List.from(s.effectiveActiveLanguages);
     _themeMode = s.themeMode;
@@ -280,7 +281,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _saveLanguage(String next) async {
     if (_savingLanguage) return;
     setState(() {
-      _language = next;
+      _language = normalizeUiLanguageCode(next);
       _savingLanguage = true;
     });
     try {
@@ -471,14 +472,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   expandedInsets: EdgeInsets.zero,
                   label: Text(t(locale, 'language_label')),
                   dropdownMenuEntries: [
-                    DropdownMenuEntry<String>(
-                      value: 'en',
-                      label: t(locale, 'language_english'),
-                    ),
-                    DropdownMenuEntry<String>(
-                      value: 'ru',
-                      label: t(locale, 'language_russian'),
-                    ),
+                    for (final opt in appLocaleOptionsForPicker)
+                      DropdownMenuEntry<String>(
+                        value: opt.storageCode,
+                        label: opt.nativeName,
+                      ),
                   ],
                   onSelected: _savingLanguage
                       ? null
@@ -517,16 +515,14 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Wrap(
               spacing: 8,
               children: [
-                if (!_activeLanguages.contains('ru'))
-                  FilledButton.tonal(
-                    onPressed: () => _addLanguage('ru'),
-                    child: Text(t(currentLocale.value, 'add_russian_ru')),
-                  ),
-                if (!_activeLanguages.contains('en'))
-                  FilledButton.tonal(
-                    onPressed: () => _addLanguage('en'),
-                    child: Text(t(currentLocale.value, 'add_english_en')),
-                  ),
+                for (final opt in appLocaleOptionsForPicker)
+                  if (!_activeLanguages.contains(opt.storageCode))
+                    FilledButton.tonal(
+                      onPressed: () => _addLanguage(opt.storageCode),
+                      child: Text(
+                        '${opt.nativeName} (${opt.storageCode})',
+                      ),
+                    ),
               ],
             ),
           ),

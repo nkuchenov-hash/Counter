@@ -1,8 +1,10 @@
-// Smart Plan: NL paragraph → AI schedule. Mic uses same package as shell, minimal STT wiring.
+// Smart Plan: NL paragraph → AI schedule. Brick-builder dictation + STT.
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:counter/core/services/ai_service.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/core/services/speech_listen_locale.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
@@ -14,7 +16,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 typedef SmartPlanCommit =
     Future<int> Function(List<Map<String, dynamic>> items);
 
-/// Bottom sheet: multiline text, mic (dictation), Generate → AI → [onCommit].
+/// Bottom sheet: stacked editable "bricks", mic dictation, Generate → AI.
 class SmartPlanSheet extends StatefulWidget {
   const SmartPlanSheet({super.key, required this.onCommit});
 
@@ -25,25 +27,85 @@ class SmartPlanSheet extends StatefulWidget {
 }
 
 class _SmartPlanSheetState extends State<SmartPlanSheet> {
-  final TextEditingController _textController = TextEditingController();
+  final List<TextEditingController> _brickControllers = [];
+  final ScrollController _scrollBricks = ScrollController();
+  final ValueNotifier<double> _micLevel = ValueNotifier<double>(0);
   final stt.SpeechToText _speech = stt.SpeechToText();
+
+  int _activeBrickIndex = 0;
   bool _listening = false;
   bool _thinking = false;
   bool _speechInitialized = false;
 
-  /// Shown inside the sheet (not via [ScaffoldMessenger]) so errors stay
-  /// visible above modal z-order issues.
   String? _inlineError;
-
-  /// Last non-null [localeId] passed to [SpeechToText.listen]; drives one-shot
-  /// fallback to `null` (device / browser default) on language errors.
   String? _lastListenLocaleIdForRetry;
+
+  @override
+  void initState() {
+    super.initState();
+    _brickControllers.add(TextEditingController());
+    _activeBrickIndex = 0;
+  }
 
   @override
   void dispose() {
     unawaited(_stopSpeechSession());
-    _textController.dispose();
+    _micLevel.dispose();
+    _scrollBricks.dispose();
+    for (final c in _brickControllers) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  String _concatenateBricks() {
+    return _brickControllers
+        .map((c) => c.text.trim())
+        .where((s) => s.isNotEmpty)
+        .join('\n');
+  }
+
+  bool get _hasBrickContent => _concatenateBricks().isNotEmpty;
+
+  void _resetMicLevel() {
+    _micLevel.value = 0;
+  }
+
+  void _onMicSoundLevel(double level) {
+    double n;
+    if (level.isNaN) {
+      n = 0;
+    } else if (level >= 0 && level <= 1.0) {
+      n = level.clamp(0.0, 1.0);
+    } else {
+      n = ((level + 45) / 45).clamp(0.0, 1.0);
+    }
+    _micLevel.value = n;
+  }
+
+  /// Before starting STT: ensure an empty editable target; append a brick if
+  /// the current active one already has text.
+  void _prepareActiveBrickForNewSession() {
+    if (_brickControllers.isEmpty) {
+      _brickControllers.add(TextEditingController());
+      _activeBrickIndex = 0;
+    } else {
+      final cur = _brickControllers[_activeBrickIndex];
+      if (cur.text.trim().isNotEmpty) {
+        _brickControllers.add(TextEditingController());
+        _activeBrickIndex = _brickControllers.length - 1;
+      }
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollBricks.hasClients) return;
+      final off = _scrollBricks.position.maxScrollExtent;
+      _scrollBricks.animateTo(
+        off,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+      );
+    });
+    setState(() {});
   }
 
   bool _isBenignSttDoubleStart(Object e) {
@@ -62,6 +124,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       case 'notListening':
       case 'done':
         setState(() => _listening = false);
+        _resetMicLevel();
         break;
       default:
         break;
@@ -81,6 +144,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   void _onSpeechError(dynamic e) {
     if (e is! SpeechRecognitionError) {
       if (mounted) setState(() => _listening = false);
+      _resetMicLevel();
       unawaited(_stopSpeechSession());
       return;
     }
@@ -90,6 +154,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     final msg = e.errorMsg.toLowerCase();
     if (msg.contains('already') && msg.contains('start')) {
       if (mounted) setState(() => _listening = false);
+      _resetMicLevel();
       unawaited(_stopSpeechSession());
       return;
     }
@@ -97,6 +162,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
         SpeechListenLocale.messageIndicatesLanguageUnsupported(e.errorMsg);
     if (langUnsupported) {
       if (mounted) setState(() => _listening = false);
+      _resetMicLevel();
       if (_lastListenLocaleIdForRetry != null) {
         unawaited(_retryListenWithDeviceDefault());
         return;
@@ -108,6 +174,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     }
     if (!mounted) return;
     setState(() => _listening = false);
+    _resetMicLevel();
     unawaited(_stopSpeechSession());
     if (msg.contains('network')) {
       _setInlineError(t(currentLocale.value, 'speech_error_network'));
@@ -119,7 +186,6 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     );
   }
 
-  /// Stops the native session and aligns UI. Safe to call when idle.
   Future<void> _stopSpeechSession() async {
     try {
       if (_speech.isListening) {
@@ -129,17 +195,23 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     try {
       await _speech.cancel();
     } catch (_) {}
+    _resetMicLevel();
     if (mounted) setState(() => _listening = false);
   }
 
-  /// One attempt to recover from `language-not-supported` after a non-null
-  /// [localeId]; clears the tag so a second error surfaces the hard message.
   Future<void> _retryListenWithDeviceDefault() async {
     await _stopSpeechSession();
     if (!mounted) return;
     final loc = currentLocale.value;
     _setInlineError(t(loc, 'speech_locale_fallback_generic'));
     await _runSpeechListen(localeId: null);
+  }
+
+  TextEditingController? get _activeController {
+    if (_activeBrickIndex < 0 || _activeBrickIndex >= _brickControllers.length) {
+      return null;
+    }
+    return _brickControllers[_activeBrickIndex];
   }
 
   Future<void> _runSpeechListen({required String? localeId}) async {
@@ -154,10 +226,16 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       }
       await _speech.listen(
         onResult: (res) {
-          if (mounted && res.recognizedWords.isNotEmpty) {
-            setState(() => _textController.text = res.recognizedWords);
-          }
+          final text = res.recognizedWords;
+          if (!mounted || text.isEmpty) return;
+          final brick = _activeController;
+          if (brick == null) return;
+          brick.value = TextEditingValue(
+            text: text,
+            selection: TextSelection.collapsed(offset: text.length),
+          );
         },
+        onSoundLevelChange: _onMicSoundLevel,
         localeId: localeId,
         listenFor: const Duration(seconds: 60),
         pauseFor: const Duration(seconds: 6),
@@ -174,6 +252,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       }
       if (mounted) {
         setState(() => _listening = false);
+        _resetMicLevel();
         _setInlineError(
           t(currentLocale.value, 'speech_error_prefix')
               .replaceFirst('%s', '$e'),
@@ -185,7 +264,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   Future<void> _toggleMic() async {
     if (kDebugMode) {
       debugPrint(
-        '[SmartPlan mic] tap registered thinking=$_thinking listening=$_listening',
+        '[SmartPlan mic] tap thinking=$_thinking listening=$_listening',
       );
     }
     _clearInlineError();
@@ -241,6 +320,8 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
     if (!mounted) return;
 
+    _prepareActiveBrickForNewSession();
+
     final String? listenLocaleId =
         await SpeechListenLocale.resolveListenLocaleId(
       speech: _speech,
@@ -252,14 +333,19 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
   Future<void> _generate() async {
     final loc = currentLocale.value;
-    final text = _textController.text.trim();
+    final text = _concatenateBricks();
     if (text.isEmpty) return;
 
     _clearInlineError();
     setState(() => _thinking = true);
     List<Map<String, dynamic>> items;
     try {
-      items = await AiService.instance.processPlanningText(text);
+      final categoryNames =
+          DatabaseService.instance.smartPlanAllowedCategoryLabels();
+      items = await AiService.instance.processPlanningText(
+        text,
+        categoryNames,
+      );
     } on AiServiceException catch (e) {
       if (mounted) {
         _setInlineError(
@@ -319,6 +405,10 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final maxListHeight = math.min(
+      320.0,
+      MediaQuery.sizeOf(context).height * 0.42,
+    );
 
     return SafeArea(
       child: Padding(
@@ -349,44 +439,93 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _textController,
-                    minLines: 4,
-                    maxLines: 8,
-                    enabled: !_thinking,
-                    decoration: InputDecoration(
-                      hintText: t(loc, 'smart_plan_hint'),
-                      filled: true,
-                      fillColor: scheme.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
+                  child: SizedBox(
+                    height: maxListHeight,
+                    child: ListView.builder(
+                      controller: _scrollBricks,
+                      itemCount: _brickControllers.length,
+                      itemBuilder: (context, index) {
+                        final isActive =
+                            index == _activeBrickIndex && _listening;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isActive
+                                    ? scheme.primary
+                                    : scheme.outlineVariant,
+                                width: isActive ? 2 : 1,
+                              ),
+                              color: scheme.surfaceContainerHighest,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              child: TextField(
+                                controller: _brickControllers[index],
+                                minLines: 2,
+                                maxLines: 6,
+                                enabled: !_thinking,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: index == 0
+                                      ? t(loc, 'smart_plan_hint')
+                                      : '${index + 1}',
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                ),
+                                onChanged: (_) {
+                                  if (_inlineError != null) {
+                                    setState(() => _inlineError = null);
+                                  }
+                                  setState(() {});
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    onChanged: (_) {
-                      if (_inlineError != null) {
-                        setState(() => _inlineError = null);
-                      }
-                      setState(() {});
-                    },
                   ),
                 ),
-                IconButton(
-                  tooltip: _listening ? t(loc, 'stop') : t(loc, 'voice_input'),
-                  icon: Icon(
-                    _listening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                    color: _listening
-                        ? scheme.primary
-                        : scheme.onSurfaceVariant,
+                const SizedBox(width: 4),
+                Material(
+                  type: MaterialType.transparency,
+                  child: ValueListenableBuilder<double>(
+                    valueListenable: _micLevel,
+                    builder: (context, level, child) {
+                      final pulse =
+                          _listening ? 1.0 + 0.28 * level.clamp(0.0, 1.0) : 1.0;
+                      return Transform.scale(scale: pulse, child: child);
+                    },
+                    child: IconButton(
+                      tooltip:
+                          _listening ? t(loc, 'stop') : t(loc, 'voice_input'),
+                      icon: Icon(
+                        _listening
+                            ? Icons.graphic_eq_rounded
+                            : Icons.mic_none_rounded,
+                        color: _listening
+                            ? scheme.primary
+                            : scheme.onSurfaceVariant,
+                      ),
+                      onPressed: _thinking
+                          ? null
+                          : () {
+                              debugPrint('[BRICK] mic tap');
+                              unawaited(_toggleMic());
+                            },
+                    ),
                   ),
-                  onPressed: _thinking
-                      ? null
-                      : () {
-                          if (kDebugMode) {
-                            debugPrint('[SmartPlan mic] IconButton onPressed');
-                          }
-                          unawaited(_toggleMic());
-                        },
                 ),
               ],
             ),
@@ -422,9 +561,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
               )
             else
               FilledButton.icon(
-                onPressed: _textController.text.trim().isEmpty
-                    ? null
-                    : _generate,
+                onPressed: !_hasBrickContent ? null : _generate,
                 icon: const Icon(Icons.bolt_rounded),
                 label: Text(t(loc, 'smart_plan_submit')),
               ),
