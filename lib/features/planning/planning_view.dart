@@ -12,6 +12,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
+import 'package:counter/features/planning/smart_plan_sheet.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/features/shared/chip_component.dart';
@@ -921,6 +922,131 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     }
   }
 
+  DateTime _wallDateTimeFromHhmm(DateTime day, String hhmm) {
+    final parts = hhmm.trim().split(':');
+    final h = int.tryParse(parts[0].trim()) ?? 9;
+    final mi = parts.length > 1 ? (int.tryParse(parts[1].trim()) ?? 0) : 0;
+    return DateTime(
+      day.year,
+      day.month,
+      day.day,
+      h.clamp(0, 23),
+      mi.clamp(0, 59),
+    );
+  }
+
+  /// Smart Plan: append AI-parsed tasks for [widget.selectedDateString] (does not remove existing).
+  Future<int> _injectSmartPlanTasks(List<Map<String, dynamic>> items) async {
+    if (items.isEmpty) return 0;
+    final taskDateKey = widget.selectedDateString;
+    final baseDay = widget.selectedDate ?? _today;
+    final wallDay = DateTime(baseDay.year, baseDay.month, baseDay.day);
+
+    var nextOrder = await DatabaseService.instance
+        .nextPlanningOrderForDate(widget.selectedDate ?? _today);
+    for (final t in _optimisticTasks) {
+      if (t.order >= nextOrder) nextOrder = t.order + 1;
+    }
+
+    var created = 0;
+    for (var i = 0; i < items.length; i++) {
+      final m = items[i];
+      final title = (m['title'] ?? '').toString().trim();
+      if (title.isEmpty) continue;
+      final hhmm = (m['startTime'] ?? '09:00').toString().trim();
+      final durRaw = m['durationMinutes'] ?? 60;
+      final minutes = durRaw is int
+          ? durRaw
+          : (durRaw is num ? durRaw.round() : int.tryParse('$durRaw') ?? 60);
+      final safeMinutes = minutes < 1 ? 1 : minutes;
+
+      final startWall = _wallDateTimeFromHhmm(wallDay, hhmm);
+      final endWall = startWall.add(Duration(minutes: safeMinutes));
+
+      final startStored =
+          DatabaseService.instance.displayTimeToUtc(startWall);
+      final endStored =
+          DatabaseService.instance.displayTimeToUtc(endWall);
+
+      final match = DatabaseService.instance.identifyCategory(title);
+      final categoryId = match?.id ??
+          widget.selectedCategoryId ??
+          DatabaseService.instance.defaultCategoryId ??
+          (DatabaseService.instance.rules.isNotEmpty
+              ? DatabaseService.instance.rules.first.id
+              : 0);
+
+      final order = nextOrder + i;
+      final optimisticId = DatabaseService.instance.newId();
+      final clientPlanId = DatabaseService.newClientUuid();
+      final optimisticRow = 'optimistic-$clientPlanId';
+      final pending = PlanningTask(
+        id: optimisticId,
+        planRowId: optimisticRow,
+        title: title,
+        categoryId: categoryId,
+        isDone: false,
+        dateKey: taskDateKey,
+        order: order,
+        startTime: startStored,
+        endDateTime: endStored,
+        checklist: const [],
+        notes: null,
+        parentPlanId: null,
+        tags: <Tag>[],
+        isSynced: false,
+      );
+      if (!mounted) return created;
+      setState(() => _optimisticTasks.add(pending));
+
+      try {
+        final ok = await DatabaseService.instance.addPlanningTask(
+          PlanningTask(
+            id: 0,
+            title: title,
+            categoryId: categoryId,
+            isDone: false,
+            dateKey: taskDateKey,
+            order: order,
+            startTime: startStored,
+            endDateTime: endStored,
+            checklist: const [],
+            notes: null,
+            parentPlanId: null,
+            tags: <Tag>[],
+            isSynced: false,
+          ),
+          clientPlanId: clientPlanId,
+        );
+        if (!mounted) return created;
+        if (ok) {
+          created++;
+        } else {
+          setState(() => _optimisticTasks
+              .removeWhere((o) => o.planRowId == optimisticRow));
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() => _optimisticTasks
+              .removeWhere((o) => o.planRowId == optimisticRow));
+        }
+      }
+    }
+    return created;
+  }
+
+  void _openSmartPlanSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (ctx) => SmartPlanSheet(
+        onCommit: _injectSmartPlanTasks,
+      ),
+    );
+  }
+
   Future<void> _toggleDone(PlanningTask task, bool currentDisplayDone) async {
     if (task.planRowIdForBackend.startsWith('optimistic-')) return;
     final key = _planKey(task);
@@ -1705,6 +1831,11 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
               ),
         actions: [
           if (!_planSelectMode) ...[
+            IconButton(
+              icon: const Icon(Icons.auto_awesome_rounded),
+              tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
+              onPressed: _openSmartPlanSheet,
+            ),
             IconButton(
               icon: const Icon(Icons.settings_rounded),
               tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
