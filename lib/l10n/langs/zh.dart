@@ -359,4 +359,5 @@ const Map<String, String> kZhL10n = {
     'auth_navigation_failed': '导航失败。请重试。',
     'auth_show_password': '显示密码',
     'auth_hide_password': '隐藏密码',
+    'speech_language_not_supported': '[TODO] Language not supported by device. Try system default.',
 };

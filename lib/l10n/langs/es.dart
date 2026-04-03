@@ -375,4 +375,5 @@ const Map<String, String> kEsL10n = {
     'auth_navigation_failed': 'Navigation failed. Please try again.',
     'auth_show_password': 'Show password',
     'auth_hide_password': 'Hide password',
+    'speech_language_not_supported': '[TODO] Language not supported by device. Try system default.',
 };

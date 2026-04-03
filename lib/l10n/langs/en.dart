@@ -293,6 +293,8 @@ const Map<String, String> kEnL10n = {
     'speech_russian_engine_fallback': 'Russian speech is unavailable on this device. Using English recognition.',
     'speech_locale_fallback_generic':
         'Speech recognition retried with the device locale. If results are wrong, check system language packs.',
+    'speech_language_not_supported':
+        'Language not supported by device. Try system default.',
     'record_link_plan_label': 'Link to plan',
     'plan_card_fact_time': 'Fact: %s',
     'record_link_plan_loading': 'Loading plans…',

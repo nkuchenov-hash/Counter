@@ -378,4 +378,6 @@ const Map<String, String> kRuL10n = {
     'auth_navigation_failed': 'Ошибка перехода. Попробуйте снова.',
     'auth_show_password': 'Показать пароль',
     'auth_hide_password': 'Скрыть пароль',
+    'speech_language_not_supported':
+        'Язык не поддерживается устройством. Попробуйте язык по умолчанию в системе.',
 };

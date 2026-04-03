@@ -310,6 +310,8 @@ const Map<String, Map<String, String>> l10n = {
     'speech_russian_engine_fallback': 'Russian speech is unavailable on this device. Using English recognition.',
     'speech_locale_fallback_generic':
         'Speech recognition retried with the device locale. If results are wrong, check system language packs.',
+    'speech_language_not_supported':
+        'Language not supported by device. Try system default.',
     'record_link_plan_label': 'Link to plan',
     'plan_card_fact_time': 'Fact: %s',
     'record_link_plan_loading': 'Loading plans…',
@@ -697,6 +699,8 @@ const Map<String, Map<String, String>> l10n = {
         'Русское распознавание недоступно на этом устройстве. Используется английский движок.',
     'speech_locale_fallback_generic':
         'Распознавание перезапущено с системной локалью. При ошибках проверьте языковые пакеты.',
+    'speech_language_not_supported':
+        'Язык не поддерживается устройством. Попробуйте язык по умолчанию в системе.',
     'record_link_plan_label': 'Привязка к плану',
     'plan_card_fact_time': 'Факт: %s',
     'record_link_plan_loading': 'Загрузка планов…',

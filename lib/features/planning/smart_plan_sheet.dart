@@ -30,9 +30,13 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   bool _thinking = false;
   bool _speechInitialized = false;
 
+  /// Last non-null [localeId] passed to [SpeechToText.listen]; drives one-shot
+  /// fallback to `null` (device / browser default) on language errors.
+  String? _lastListenLocaleIdForRetry;
+
   @override
   void dispose() {
-    unawaited(_stopSpeechSession(silent: true));
+    unawaited(_stopSpeechSession());
     _textController.dispose();
     super.dispose();
   }
@@ -42,6 +46,78 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     return s.contains('invalidstateerror') ||
         s.contains('already started') ||
         s.contains('recognition has already started');
+  }
+
+  String _primaryLanguageCode(String appLoc) {
+    final i = appLoc.indexOf(RegExp(r'[-_]'));
+    return (i < 0 ? appLoc : appLoc.substring(0, i)).toLowerCase();
+  }
+
+  String _normalizeLocaleToken(String id) =>
+      id.replaceAll('-', '_').toLowerCase();
+
+  /// Picks a [SpeechToText] locale id from [available] whose language matches
+  /// [appPrimary], preferring an exact primary match then a regional variant.
+  String? _findBestLocaleIdForLanguage(
+    List<stt.LocaleName> available,
+    String appPrimary,
+  ) {
+    final p = appPrimary.toLowerCase();
+    String? regional;
+    for (final l in available) {
+      final n = _normalizeLocaleToken(l.localeId);
+      if (n == p) {
+        return l.localeId;
+      }
+      if (regional == null && n.startsWith('${p}_')) {
+        regional = l.localeId;
+      }
+    }
+    return regional;
+  }
+
+  bool _languageAvailableInList(
+    List<stt.LocaleName> available,
+    String appPrimary,
+  ) {
+    return _findBestLocaleIdForLanguage(available, appPrimary) != null;
+  }
+
+  /// Resolves [localeId] for [listen] using [SpeechToText.locales],
+  /// [SpeechToText.systemLocale], and [PlatformDispatcher.instance.locale].
+  ///
+  /// Web: when the engine reports an empty [locales] list (typical), we only set
+  /// an explicit tag if the UI language matches the Flutter/platform locale so
+  /// we do not force e.g. `ru-RU` on a browser that only exposes English.
+  /// Otherwise [null] leaves `lang` unset so Chromium uses its default.
+  Future<String?> _resolveListenLocaleId(String appLoc) async {
+    final available = await _speech.locales();
+    final systemLc = await _speech.systemLocale();
+    final platformLocale = PlatformDispatcher.instance.locale;
+    final platformTag = platformLocale.toLanguageTag();
+    final appPrimary = _primaryLanguageCode(appLoc);
+
+    if (available.isNotEmpty) {
+      if (!_languageAvailableInList(available, appPrimary)) {
+        return systemLc?.localeId ?? platformTag;
+      }
+      final picked = _findBestLocaleIdForLanguage(available, appPrimary);
+      if (picked != null) {
+        return picked;
+      }
+      return systemLc?.localeId ?? platformTag;
+    }
+
+    if (kIsWeb) {
+      final platPrimary = platformLocale.languageCode.toLowerCase();
+      if (platPrimary == appPrimary) {
+        return platformTag.isEmpty ? null : platformTag;
+      }
+      return null;
+    }
+
+    return systemLc?.localeId ??
+        (platformTag.isEmpty ? null : platformTag);
   }
 
   void _onSpeechStatus(String status) {
@@ -72,6 +148,29 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       if (mounted) setState(() => _listening = false);
       return;
     }
+    final langUnsupported = msg.contains('language-not-supported') ||
+        msg.contains('language_not_supported') ||
+        msg.contains('error_language_not_supported') ||
+        (msg.contains('language') &&
+            msg.contains('not') &&
+            msg.contains('support'));
+    if (langUnsupported) {
+      if (_lastListenLocaleIdForRetry != null) {
+        unawaited(_retryListenWithDeviceDefault());
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _listening = false);
+      unawaited(_stopSpeechSession());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(currentLocale.value, 'speech_language_not_supported'),
+          ),
+        ),
+      );
+      return;
+    }
     if (!mounted) return;
     setState(() => _listening = false);
     if (msg.contains('network')) {
@@ -91,7 +190,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   }
 
   /// Stops the native session and aligns UI. Safe to call when idle.
-  Future<void> _stopSpeechSession({bool silent = false}) async {
+  Future<void> _stopSpeechSession() async {
     try {
       if (_speech.isListening) {
         await _speech.stop();
@@ -101,6 +200,61 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       await _speech.cancel();
     } catch (_) {}
     if (mounted) setState(() => _listening = false);
+  }
+
+  /// One attempt to recover from `language-not-supported` after a non-null
+  /// [localeId]; clears the tag so a second error surfaces the hard message.
+  Future<void> _retryListenWithDeviceDefault() async {
+    await _stopSpeechSession();
+    if (!mounted) return;
+    final loc = currentLocale.value;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(t(loc, 'speech_locale_fallback_generic'))),
+    );
+    await _runSpeechListen(localeId: null);
+  }
+
+  Future<void> _runSpeechListen({required String? localeId}) async {
+    if (!mounted) return;
+    setState(() => _listening = true);
+    try {
+      if (_speech.isListening) {
+        await _stopSpeechSession();
+        if (!mounted) return;
+        setState(() => _listening = true);
+      }
+      await _speech.listen(
+        onResult: (res) {
+          if (mounted && res.recognizedWords.isNotEmpty) {
+            setState(() => _textController.text = res.recognizedWords);
+          }
+        },
+        localeId: localeId,
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(seconds: 6),
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.dictation,
+          partialResults: true,
+          cancelOnError: false,
+        ),
+      );
+    } catch (e) {
+      if (_isBenignSttDoubleStart(e)) {
+        await _stopSpeechSession();
+        return;
+      }
+      if (mounted) {
+        setState(() => _listening = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              t(currentLocale.value, 'speech_error_prefix')
+                  .replaceFirst('%s', '$e'),
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _toggleMic() async {
@@ -161,47 +315,11 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     }
 
     if (!mounted) return;
-    setState(() => _listening = true);
 
-    final localeId = loc == 'ru' ? 'ru_RU' : 'en_US';
-
-    try {
-      if (_speech.isListening) {
-        await _stopSpeechSession();
-        if (!mounted) return;
-        setState(() => _listening = true);
-      }
-      await _speech.listen(
-        onResult: (res) {
-          if (mounted && res.recognizedWords.isNotEmpty) {
-            setState(() => _textController.text = res.recognizedWords);
-          }
-        },
-        localeId: localeId,
-        listenFor: const Duration(seconds: 60),
-        pauseFor: const Duration(seconds: 6),
-        listenOptions: stt.SpeechListenOptions(
-          listenMode: stt.ListenMode.dictation,
-          partialResults: true,
-          cancelOnError: false,
-        ),
-      );
-    } catch (e) {
-      if (_isBenignSttDoubleStart(e)) {
-        await _stopSpeechSession();
-        return;
-      }
-      if (mounted) {
-        setState(() => _listening = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t(loc, 'speech_error_prefix').replaceFirst('%s', '$e'),
-            ),
-          ),
-        );
-      }
-    }
+    final String? listenLocaleId = await _resolveListenLocaleId(loc);
+    if (!mounted) return;
+    _lastListenLocaleIdForRetry = listenLocaleId;
+    await _runSpeechListen(localeId: listenLocaleId);
   }
 
   Future<void> _generate() async {

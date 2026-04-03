@@ -363,4 +363,5 @@ const Map<String, String> kKoL10n = {
     'auth_navigation_failed': '탐색에 실패했습니다. 다시 시도하십시오.',
     'auth_show_password': '비밀번호 표시',
     'auth_hide_password': '비밀번호 숨기기',
+    'speech_language_not_supported': '[TODO] Language not supported by device. Try system default.',
 };
