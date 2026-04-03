@@ -4,6 +4,7 @@ import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/create_category_dialog.dart';
+import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -1792,36 +1793,13 @@ class _CategoriesPageState extends State<CategoriesPage> {
             Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
             Expanded(
               child: roots.isEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '0',
-                              style: TextStyle(
-                                fontSize: 120,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              t(loc, 'create_first_category'),
-                              style: textTheme.bodyMedium
-                                  ?.copyWith(color: scheme.onSurfaceVariant),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            FilledButton.icon(
-                              onPressed: () => unawaited(_addRule()),
-                              icon: const Icon(Icons.add_rounded),
-                              label: Text(t(loc, 'add_category')),
-                            ),
-                          ],
-                        ),
-                      ),
+                  ? EmptyStatePlaceholder(
+                      icon: Icons.folder_outlined,
+                      titleL10nKey: 'empty_categories_title',
+                      subtitleL10nKey: 'empty_categories_subtitle',
+                      actionLabelL10nKey: 'add_category',
+                      onAction: () => unawaited(_addRule()),
+                      useFilledAction: true,
                     )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.only(bottom: 16),

@@ -42,6 +42,17 @@ const Map<String, Map<String, String>> l10n = {
     'select_category': 'Select Category',
     'no_records': 'No records found',
     'no_data_found': 'No data found.',
+    'empty_timeline_title': 'Nothing recorded yet.',
+    'empty_timeline_subtitle':
+        'What are you doing right now? Use the microphone button or the search field above.',
+    'empty_planning_title': 'Your day is a clean slate.',
+    'empty_planning_subtitle':
+        'Add plans with the field above, or use the microphone button when you are on this tab.',
+    'empty_categories_title': 'Start by organizing your life.',
+    'empty_categories_subtitle':
+        'Create your first category (e.g. Work, Health).',
+    'empty_action_focus_search': 'Focus search',
+    'empty_action_focus_planning_field': 'Focus add task field',
     'language_english': 'English',
     'language_russian': 'Русский',
     'sign_in_again': 'Sign In Again',
@@ -408,6 +419,17 @@ const Map<String, Map<String, String>> l10n = {
     'select_category': 'Выберите категорию',
     'no_records': 'Записей не найдено',
     'no_data_found': 'Данных не найдено.',
+    'empty_timeline_title': 'Пока нет записей.',
+    'empty_timeline_subtitle':
+        'Что вы делаете сейчас? Используйте кнопку микрофона или поле поиска выше.',
+    'empty_planning_title': 'На этот день пока ничего не запланировано.',
+    'empty_planning_subtitle':
+        'Добавьте задачи в поле выше или через кнопку микрофона на вкладке «План».',
+    'empty_categories_title': 'Начните с порядка в категориях.',
+    'empty_categories_subtitle':
+        'Создайте первую категорию (например: Работа, Здоровье).',
+    'empty_action_focus_search': 'Перейти к поиску',
+    'empty_action_focus_planning_field': 'Поле для новой задачи',
     'language_english': 'English',
     'language_russian': 'Русский',
     'sign_in_again': 'Войти снова',

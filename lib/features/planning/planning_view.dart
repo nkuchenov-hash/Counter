@@ -15,6 +15,7 @@ import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/features/shared/chip_component.dart';
+import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -206,6 +207,7 @@ class PlanningPage extends StatefulWidget {
 
 class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver {
   final _textController = TextEditingController();
+  final _quickAddFocus = FocusNode();
   final Set<String> _selectedPlanKeys = {};
   final List<PlanningTask> _optimisticTasks = [];
   final Map<String, bool> _planDoneOverride = {};
@@ -571,6 +573,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     WidgetsBinding.instance.removeObserver(this);
     unawaited(DatabaseService.instance.flushPlanningOrderSyncNow());
     _textController.dispose();
+    _quickAddFocus.dispose();
     super.dispose();
   }
 
@@ -1843,6 +1846,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                         Expanded(
                           child: TextField(
                             controller: _textController,
+                            focusNode: _quickAddFocus,
                             decoration: InputDecoration(
                               labelText:
                                   t(currentLocale.value, 'task_title'),
@@ -1908,14 +1912,14 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                       planWallDay,
                     );
                     if (tasks.isEmpty) {
-                      return Center(
-                        child: Text(
-                          t(currentLocale.value, 'no_data_found'),
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyLarge
-                              ?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
+                      return EmptyStatePlaceholder(
+                        icon: Icons.track_changes_rounded,
+                        titleL10nKey: 'empty_planning_title',
+                        subtitleL10nKey: 'empty_planning_subtitle',
+                        actionLabelL10nKey:
+                            'empty_action_focus_planning_field',
+                        onAction: () =>
+                            FocusScope.of(context).requestFocus(_quickAddFocus),
                       );
                     }
                     if (_sortMode == _PlanSortMode.time) {

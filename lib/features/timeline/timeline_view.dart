@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/chip_component.dart';
+import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
@@ -392,13 +393,12 @@ class _TimelinePageState extends State<TimelinePage> {
   ) {
     if (widget.showStatsView) {
       if (records.isEmpty) {
-        return Center(
-          child: Text(
-            t(currentLocale.value, 'no_records'),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
+        return EmptyStatePlaceholder(
+          icon: Icons.schedule_rounded,
+          titleL10nKey: 'empty_timeline_title',
+          subtitleL10nKey: 'empty_timeline_subtitle',
+          actionLabelL10nKey: 'empty_action_focus_search',
+          onAction: () => widget.titleFocus.requestFocus(),
         );
       }
       return StatsView(
@@ -443,13 +443,12 @@ class _TimelinePageState extends State<TimelinePage> {
           }
         }
         if (displayList.isEmpty) {
-          return Center(
-            child: Text(
-              t(currentLocale.value, 'no_records'),
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
+          return EmptyStatePlaceholder(
+            icon: Icons.schedule_rounded,
+            titleL10nKey: 'empty_timeline_title',
+            subtitleL10nKey: 'empty_timeline_subtitle',
+            actionLabelL10nKey: 'empty_action_focus_search',
+            onAction: () => widget.titleFocus.requestFocus(),
           );
         }
         final activeRecord = activeSnap.data;

@@ -10,6 +10,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/data/pb_config.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/features/profile/wall_clock.dart' as wall_clock;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6464,6 +6465,79 @@ class DatabaseService {
         ),
       );
     } catch (_) {}
+  }
+
+  /// Planning-only voice / quick-add: same parsing as Planning UI, then [addPlanningTask].
+  Future<bool> addPlanningTaskFromVoiceText({
+    required String rawText,
+    required DateTime wallDay,
+    int? categoryIdHint,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    if (!_isPlansTableConfigured) {
+      _log('TABLE_GUARD: blocked addPlanningTaskFromVoiceText');
+      return false;
+    }
+    final ymd = DateTime(wallDay.year, wallDay.month, wallDay.day);
+    final taskDateKey =
+        '${ymd.year}-${_two(ymd.month)}-${_two(ymd.day)}';
+
+    final range = SmartInputParser.parseTitleForTimeRange(rawText);
+    SmartTimeParseResult? parsed;
+    String title;
+    DateTime? startStored;
+    DateTime? endStored;
+
+    if (range != null) {
+      title = range.cleanedTitle.trim();
+      if (title.isEmpty) {
+        title =
+            t(currentLocale.value, 'plan_title_time_range_fallback');
+      }
+      startStored = displayTimeToUtc(range.startWallOn(ymd));
+      endStored = displayTimeToUtc(range.endWallOn(ymd));
+    } else {
+      parsed = SmartInputParser.parseTitleForScheduledTime(rawText);
+      title = (parsed?.cleanedTitle ?? rawText).trim();
+      if (title.isEmpty) return false;
+      startStored = parsed != null
+          ? displayTimeToUtc(parsed.wallDateTimeOn(ymd))
+          : null;
+      endStored = null;
+    }
+
+    final match = identifyCategory(title);
+    final categoryId = match?.id ??
+        categoryIdHint ??
+        defaultCategoryId ??
+        (rules.isNotEmpty ? rules.first.id : 0);
+
+    if (getCategoryRuleById(categoryId) == null) {
+      _log('VOICE_PLAN: blocked — unknown category $categoryId');
+      return false;
+    }
+
+    final nextOrder = await nextPlanningOrderForDate(ymd);
+    final clientPlanId = newClientUuid();
+
+    return addPlanningTask(
+      PlanningTask(
+        id: 0,
+        title: title,
+        categoryId: categoryId,
+        isDone: false,
+        dateKey: taskDateKey,
+        order: nextOrder,
+        startTime: startStored,
+        endDateTime: endStored,
+        checklist: const [],
+        notes: null,
+        parentPlanId: null,
+        tags: const [],
+        isSynced: false,
+      ),
+      clientPlanId: clientPlanId,
+    );
   }
 
   Future<void> addPlan({
