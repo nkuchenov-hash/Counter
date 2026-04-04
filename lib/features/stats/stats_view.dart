@@ -123,48 +123,6 @@ class _StatsViewState extends State<StatsView> {
     });
   }
 
-  void _shiftDay(int deltaDays) {
-    final nav = widget.onDayChanged;
-    if (nav == null) return;
-    final d = widget.selectedDate;
-    nav(DateTime(d.year, d.month, d.day).add(Duration(days: deltaDays)));
-  }
-
-  Widget _buildStatsDateNavBar(BuildContext context, ColorScheme scheme) {
-    final nav = widget.onDayChanged;
-    if (nav == null) return const SizedBox.shrink();
-    final loc = currentLocale.value;
-    return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.35),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left_rounded),
-              tooltip: t(loc, 'date_previous_day'),
-              onPressed: () => _shiftDay(-1),
-            ),
-            Expanded(
-              child: Text(
-                DateFormat.yMMMd(loc).format(widget.selectedDate),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right_rounded),
-              tooltip: t(loc, 'date_next_day'),
-              onPressed: () => _shiftDay(1),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Tab 1: original time-tracker tree + day PageView (unchanged logic).
   Widget _buildTrackerTab(BuildContext context, ColorScheme scheme) {
     final key = _aggregatedCacheKey(widget.records, widget.selectedDate);
@@ -253,7 +211,6 @@ class _StatsViewState extends State<StatsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildStatsDateNavBar(context, scheme),
           TabBar(
             tabs: [
               Tab(text: t(loc, 'stats_tab_time_tracker')),

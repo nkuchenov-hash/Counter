@@ -174,7 +174,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     final s = DatabaseService.instance.settings;
-    _language = normalizeUiLanguageCode(s.language);
+    _language = resolvedUiLanguageCode(s.language);
     _timeZone = s.preferredTimeZone;
     _activeLanguages = List.from(s.effectiveActiveLanguages);
     _themeMode = s.themeMode;
@@ -281,7 +281,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _saveLanguage(String next) async {
     if (_savingLanguage) return;
     setState(() {
-      _language = normalizeUiLanguageCode(next);
+      _language = resolvedUiLanguageCode(next);
       _savingLanguage = true;
     });
     try {
@@ -472,10 +472,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   expandedInsets: EdgeInsets.zero,
                   label: Text(t(locale, 'language_label')),
                   dropdownMenuEntries: [
-                    for (final opt in appLocaleOptionsForPicker)
+                    for (final code in supportedUiLanguageCodes())
                       DropdownMenuEntry<String>(
-                        value: opt.storageCode,
-                        label: opt.nativeName,
+                        value: code,
+                        label: nativeUiLanguageLabel(code),
                       ),
                   ],
                   onSelected: _savingLanguage
@@ -510,21 +510,48 @@ class _ProfilePageState extends State<ProfilePage> {
                 .bodySmall
                 ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Wrap(
-              spacing: 8,
-              children: [
-                for (final opt in appLocaleOptionsForPicker)
-                  if (!_activeLanguages.contains(opt.storageCode))
-                    FilledButton.tonal(
-                      onPressed: () => _addLanguage(opt.storageCode),
-                      child: Text(
-                        '${opt.nativeName} (${opt.storageCode})',
+          Builder(
+            builder: (context) {
+              final addable = supportedUiLanguageCodes()
+                  .where((c) => !_activeLanguages.contains(c))
+                  .toList();
+              if (addable.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    t(locale, 'all_supported_languages_active'),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant),
+                  ),
+                );
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: DropdownButtonFormField<String?>(
+                  key: ValueKey<String>('add_lang_${addable.join()}'),
+                  initialValue: null,
+                  decoration: InputDecoration(
+                    labelText: t(locale, 'add_active_language'),
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    for (final code in addable)
+                      DropdownMenuItem<String?>(
+                        value: code,
+                        child: Text(nativeUiLanguageLabel(code)),
                       ),
-                    ),
-              ],
-            ),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) unawaited(_addLanguage(v));
+                  },
+                ),
+              );
+            },
           ),
           const Divider(),
           Row(

@@ -236,7 +236,7 @@ class _InitGuardState extends State<_InitGuard> {
       if (ok) {
         final lang = DatabaseService.instance.settings.primaryLanguage;
         if (lang.isNotEmpty) {
-          currentLocale.value = normalizeUiLanguageCode(lang);
+          currentLocale.value = resolvedUiLanguageCode(lang);
         }
       }
       if (mounted) {

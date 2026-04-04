@@ -582,7 +582,7 @@ class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSetting
     super.initState();
     final s = DatabaseService.instance.settings;
     _activeLanguages = List<String>.from(s.effectiveActiveLanguages);
-    _primaryLanguage = normalizeUiLanguageCode(s.primaryLanguage);
+    _primaryLanguage = resolvedUiLanguageCode(s.primaryLanguage);
   }
 
   Future<void> _save() async {
@@ -630,10 +630,7 @@ class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSetting
             const SizedBox(height: 16),
             ListTile(
               title: Text(t(currentLocale.value, 'primary_language')),
-              subtitle: Text(
-                appLocaleOptionForStorageCode(_primaryLanguage)?.nativeName ??
-                    _primaryLanguage,
-              ),
+              subtitle: Text(nativeUiLanguageLabel(_primaryLanguage)),
               trailing: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 200),
                 child: DropdownButtonFormField<String>(
@@ -647,10 +644,10 @@ class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSetting
                         EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   ),
                   items: [
-                    for (final opt in appLocaleOptionsForPicker)
+                    for (final code in supportedUiLanguageCodes())
                       DropdownMenuItem<String>(
-                        value: opt.storageCode,
-                        child: Text(opt.nativeName),
+                        value: code,
+                        child: Text(nativeUiLanguageLabel(code)),
                       ),
                   ],
                   onChanged: (String? v) {
@@ -666,17 +663,46 @@ class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSetting
               title: Text(t(currentLocale.value, 'active_languages')),
               subtitle: Text(_activeLanguages.join(', ')),
             ),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final opt in appLocaleOptionsForPicker)
-                  if (!_activeLanguages.contains(opt.storageCode))
-                    FilledButton.tonal(
-                      onPressed: () => _addLanguage(opt.storageCode),
-                      child: Text('${opt.nativeName} (${opt.storageCode})'),
-                    ),
-              ],
+            Builder(
+              builder: (context) {
+                final addable = supportedUiLanguageCodes()
+                    .where((c) => !_activeLanguages.contains(c))
+                    .toList();
+                if (addable.isEmpty) {
+                  return Text(
+                    t(currentLocale.value, 'all_supported_languages_active'),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant),
+                  );
+                }
+                return DropdownButtonFormField<String?>(
+                  key: ValueKey<String>('cat_add_lang_${addable.join()}'),
+                  initialValue: null,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText:
+                        t(currentLocale.value, 'add_active_language'),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 8),
+                  ),
+                  items: [
+                    for (final code in addable)
+                      DropdownMenuItem<String?>(
+                        value: code,
+                        child: Text(nativeUiLanguageLabel(code)),
+                      ),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) unawaited(_addLanguage(v));
+                  },
+                );
+              },
             ),
             const SizedBox(height: 24),
             FilledButton(

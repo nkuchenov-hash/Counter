@@ -74,7 +74,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     final s = DatabaseService.instance.settings;
-    _language = normalizeUiLanguageCode(s.language);
+    _language = resolvedUiLanguageCode(s.language);
     _timeZone = s.preferredTimeZone;
     if (_timezoneOptions.isNotEmpty && !_timezoneOptions.contains(_timeZone)) {
       _timeZone = _timezoneOptions.first;
@@ -117,10 +117,10 @@ class _SettingsPageState extends State<SettingsPage> {
               border: const OutlineInputBorder(),
             ),
             items: [
-              for (final opt in appLocaleOptionsForPicker)
+              for (final code in supportedUiLanguageCodes())
                 DropdownMenuItem<String>(
-                  value: opt.storageCode,
-                  child: Text(opt.nativeName),
+                  value: code,
+                  child: Text(nativeUiLanguageLabel(code)),
                 ),
             ],
             onChanged: (String? v) {

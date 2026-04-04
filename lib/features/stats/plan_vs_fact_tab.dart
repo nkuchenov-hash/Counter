@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 // ---------------------------------------------------------------------------
 // PLAN VS FACT — comparative planned hours vs tracked time per category (DNA).
 // UI_ISOLATION (§7). Reads via DatabaseService streams only; no new Brain APIs.
+// Hierarchy: root rows sum planned/actual for the whole subtree (same math as
+// [DatabaseService.getDurationForCategoryWithinDay] / getRecordIdsInSubtree).
 // ---------------------------------------------------------------------------
 
 String _fmtHoursOneDecimal(double hours) {
@@ -25,6 +27,29 @@ bool _planHasLinkedSeconds(
   }
   final key = DatabaseService.pocketRelationIdOrNull(raw) ?? raw;
   return (byPlanPocketId[key] ?? 0) > 0;
+}
+
+int _rollupSubtreeSeconds(int categoryId, Map<int, int> byCategorySec) {
+  var sum = 0;
+  for (final id in DatabaseService.instance.getRecordIdsInSubtree(categoryId)) {
+    sum += byCategorySec[id] ?? 0;
+  }
+  return sum;
+}
+
+Set<int> _allRuleTreeIds(Iterable<CategoryRule> roots) {
+  final out = <int>{};
+  void walk(CategoryRule r) {
+    out.add(r.id);
+    for (final c in r.children ?? const <CategoryRule>[]) {
+      walk(c);
+    }
+  }
+
+  for (final r in roots) {
+    walk(r);
+  }
+  return out;
 }
 
 /// Tab 2 under Stats: planned duration per category vs record time same day.
@@ -140,11 +165,28 @@ class PlanVsFactTab extends StatelessWidget {
             .where((t) => !_planHasLinkedSeconds(t, byPlan))
             .toList(growable: false);
 
-        final sortedKeys = allCatIds.toList()
+        final rulesRoots = DatabaseService.instance.rules;
+        final knownTreeIds = _allRuleTreeIds(rulesRoots);
+        final orphanIds = allCatIds
+            .where((id) => !knownTreeIds.contains(id))
+            .toList()
+          ..sort((a, b) => a.compareTo(b));
+
+        final rootRulesWithActivity = rulesRoots
+            .where((r) {
+              final p = _rollupSubtreeSeconds(r.id, plannedSecByCat);
+              final a = _rollupSubtreeSeconds(r.id, actualSecByCat);
+              return p > 0 || a > 0;
+            })
+            .toList()
           ..sort((a, b) {
-            final pa = DatabaseService.instance.getCategoryPath(a);
-            final pb = DatabaseService.instance.getCategoryPath(b);
-            return pa.compareTo(pb);
+            final pa = _rollupSubtreeSeconds(a.id, plannedSecByCat);
+            final aa = _rollupSubtreeSeconds(a.id, actualSecByCat);
+            final pb = _rollupSubtreeSeconds(b.id, plannedSecByCat);
+            final ab = _rollupSubtreeSeconds(b.id, actualSecByCat);
+            final ma = math.max(pa, aa);
+            final mb = math.max(pb, ab);
+            return mb.compareTo(ma);
           });
 
         return ListView(
@@ -198,12 +240,19 @@ class PlanVsFactTab extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 8),
-            ...sortedKeys.map(
-              (cid) => _categoryCompareBar(
-                context,
+            ...rootRulesWithActivity.map(
+              (rule) => _PlanFactCategoryBranch(
+                rule: rule,
+                plannedSecByCat: plannedSecByCat,
+                actualSecByCat: actualSecByCat,
+                depth: 0,
+              ),
+            ),
+            ...orphanIds.map(
+              (cid) => _PlanFactOrphanCategoryRow(
                 categoryId: cid,
-                plannedSec: plannedSecByCat[cid] ?? 0,
-                actualSec: actualSecByCat[cid] ?? 0,
+                plannedSecByCat: plannedSecByCat,
+                actualSecByCat: actualSecByCat,
               ),
             ),
             if (ghostPlans.isNotEmpty) ...[
@@ -260,106 +309,338 @@ class PlanVsFactTab extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _categoryCompareBar(
-    BuildContext context, {
-    required int categoryId,
-    required int plannedSec,
-    required int actualSec,
-  }) {
-    final loc = currentLocale.value;
-    final label = DatabaseService.instance.getCategoryPath(categoryId);
-    final base = DatabaseService.instance.getCategoryColor(categoryId);
-    final scheme = Theme.of(context).colorScheme;
+class _PlanFactOrphanCategoryRow extends StatelessWidget {
+  const _PlanFactOrphanCategoryRow({
+    required this.categoryId,
+    required this.plannedSecByCat,
+    required this.actualSecByCat,
+  });
+
+  final int categoryId;
+  final Map<int, int> plannedSecByCat;
+  final Map<int, int> actualSecByCat;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = plannedSecByCat[categoryId] ?? 0;
+    final a = actualSecByCat[categoryId] ?? 0;
+    if (p <= 0 && a <= 0) return const SizedBox.shrink();
+
+    final String label;
+    if (categoryId == CategoryRule.uncategorizedSyntheticId) {
+      label = DatabaseService.instance
+          .categoryRuleForRecordCategoryId(categoryId)
+          .name;
+    } else {
+      final r = DatabaseService.instance.getCategoryRuleById(categoryId);
+      label = r != null
+          ? DatabaseService.instance.getCategoryPath(categoryId)
+          : 'Category ($categoryId)';
+    }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _PlanFactBarBlock(
+        label: label,
+        categoryId: categoryId,
+        plannedSec: p,
+        actualSec: a,
+        titleStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+      ),
+    );
+  }
+}
+
+/// One node: [ExpansionTile] when it has active children; otherwise a simple block.
+class _PlanFactCategoryBranch extends StatelessWidget {
+  const _PlanFactCategoryBranch({
+    required this.rule,
+    required this.plannedSecByCat,
+    required this.actualSecByCat,
+    required this.depth,
+  });
+
+  final CategoryRule rule;
+  final Map<int, int> plannedSecByCat;
+  final Map<int, int> actualSecByCat;
+  final int depth;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = _rollupSubtreeSeconds(rule.id, plannedSecByCat);
+    final a = _rollupSubtreeSeconds(rule.id, actualSecByCat);
+    if (p <= 0 && a <= 0) return const SizedBox.shrink();
+
+    final rawChildren = rule.children ?? const <CategoryRule>[];
+    final activeChildren = rawChildren
+        .where((c) {
+          final cp = _rollupSubtreeSeconds(c.id, plannedSecByCat);
+          final ca = _rollupSubtreeSeconds(c.id, actualSecByCat);
+          return cp > 0 || ca > 0;
+        })
+        .toList()
+      ..sort((a, b) {
+        final pa = _rollupSubtreeSeconds(a.id, plannedSecByCat);
+        final aa = _rollupSubtreeSeconds(a.id, actualSecByCat);
+        final pb = _rollupSubtreeSeconds(b.id, plannedSecByCat);
+        final ab = _rollupSubtreeSeconds(b.id, actualSecByCat);
+        return math.max(pb, ab).compareTo(math.max(pa, aa));
+      });
+
+    final titleStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(
+          fontWeight: depth == 0 ? FontWeight.w700 : FontWeight.w600,
+          fontSize: depth == 0 ? 16 : 14,
+        );
+
+    if (activeChildren.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: _PlanFactBarBlock(
+          label: rule.name,
+          categoryId: rule.id,
+          plannedSec: p,
+          actualSec: a,
+          titleStyle: titleStyle,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Material(
+        color: Colors.transparent,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            key: PageStorageKey<String>('pvf_${rule.id}_$depth'),
+            tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+            childrenPadding: EdgeInsets.only(
+              left: depth == 0 ? 12 : 8,
+              bottom: 4,
+            ),
+            collapsedShape: const RoundedRectangleBorder(
+              side: BorderSide.none,
+            ),
+            shape: const RoundedRectangleBorder(
+              side: BorderSide.none,
+            ),
+            controlAffinity: ListTileControlAffinity.trailing,
+            dense: true,
+            title: Text(
+              rule.name,
+              style: titleStyle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 6, right: 4),
+              child: _PlanFactBarBlock(
+                label: null,
+                categoryId: rule.id,
+                plannedSec: p,
+                actualSec: a,
+                titleStyle: titleStyle,
+                compact: true,
+              ),
+            ),
+            children: activeChildren
+                .map(
+                  (c) => _PlanFactCategoryBranch(
+                    rule: c,
+                    plannedSecByCat: plannedSecByCat,
+                    actualSecByCat: actualSecByCat,
+                    depth: depth + 1,
+                  ),
+                )
+                .toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Label + modern compare bar + hour line ([label] null → bar and caption only).
+class _PlanFactBarBlock extends StatelessWidget {
+  const _PlanFactBarBlock({
+    required this.categoryId,
+    required this.plannedSec,
+    required this.actualSec,
+    this.label,
+    this.titleStyle,
+    this.compact = false,
+  });
+
+  final int categoryId;
+  final int plannedSec;
+  final int actualSec;
+  final String? label;
+  final TextStyle? titleStyle;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final scheme = Theme.of(context).colorScheme;
+    final base = DatabaseService.instance.getCategoryColor(categoryId);
+
+    final overPlan = actualSec > plannedSec && plannedSec > 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label != null) ...[
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(
-                  label,
-                  maxLines: 2,
+                  label!,
+                  maxLines: compact ? 1 : 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: titleStyle ??
+                      Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                 ),
               ),
-              if (actualSec > plannedSec && plannedSec > 0)
+              if (overPlan)
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
-                  child: Text(
-                    t(loc, 'stats_pvf_overflow'),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: scheme.error,
-                          fontWeight: FontWeight.w700,
-                        ),
+                  child: Icon(
+                    Icons.trending_up_rounded,
+                    size: 18,
+                    color: scheme.error.withValues(alpha: 0.85),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 6),
-          LayoutBuilder(
-            builder: (context, c) {
-              final w = c.maxWidth;
-              if (w <= 0) return const SizedBox.shrink();
-              final p = plannedSec / 3600.0;
-              final a = actualSec / 3600.0;
-              if (p <= 0 && a <= 0) {
-                return const SizedBox.shrink();
-              }
-              final denom = math.max(p, a);
-              if (denom <= 0) return const SizedBox.shrink();
-              final pw = w * (p / denom);
-              final aw = w * (a / denom);
-              const h = 22.0;
-              return Stack(
-                clipBehavior: Clip.none,
+          if (!compact) const SizedBox(height: 6),
+        ] else if (overPlan)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: pw.clamp(0.0, w),
-                        height: h,
-                        decoration: BoxDecoration(
-                          color: base.withValues(alpha: 0.28),
-                          borderRadius: BorderRadius.circular(6),
+                  Text(
+                    t(loc, 'stats_pvf_overflow'),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: scheme.error.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w600,
                         ),
-                      ),
-                      const Spacer(),
-                    ],
                   ),
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    child: Container(
-                      width: aw,
-                      height: h,
-                      decoration: BoxDecoration(
-                        color: a > p ? base.withValues(alpha: 1.0) : base,
-                        borderRadius: BorderRadius.circular(6),
-                        border: a > p
-                            ? Border.all(color: scheme.error, width: 1.5)
-                            : null,
-                      ),
-                    ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.trending_up_rounded,
+                    size: 16,
+                    color: scheme.error.withValues(alpha: 0.85),
                   ),
                 ],
-              );
-            },
+              ),
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '${_fmtHoursOneDecimal(plannedSec / 3600.0)} → ${_fmtHoursOneDecimal(actualSec / 3600.0)}',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
+        LayoutBuilder(
+          builder: (context, c) {
+            return _ModernPlanFactBar(
+              maxWidth: c.maxWidth,
+              categoryColor: base,
+              plannedHours: plannedSec / 3600.0,
+              actualHours: actualSec / 3600.0,
+              scheme: scheme,
+            );
+          },
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '${_fmtHoursOneDecimal(plannedSec / 3600.0)} → ${_fmtHoursOneDecimal(actualSec / 3600.0)}',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ModernPlanFactBar extends StatelessWidget {
+  const _ModernPlanFactBar({
+    required this.maxWidth,
+    required this.categoryColor,
+    required this.plannedHours,
+    required this.actualHours,
+    required this.scheme,
+  });
+
+  final double maxWidth;
+  final Color categoryColor;
+  final double plannedHours;
+  final double actualHours;
+  final ColorScheme scheme;
+
+  static const double _barHeight = 14;
+  static const double _radius = 8;
+
+  @override
+  Widget build(BuildContext context) {
+    final w = maxWidth;
+    if (w <= 0) return const SizedBox.shrink();
+
+    final p = plannedHours;
+    final a = actualHours;
+    if (p <= 0 && a <= 0) return const SizedBox.shrink();
+
+    final denom = math.max(math.max(p, a), 1e-9);
+    final pw = w * (p / denom);
+    final aw = w * (a / denom);
+
+    final over = a > p && p > 0;
+    final actualFill =
+        over ? Color.lerp(categoryColor, scheme.error, 0.36)! : categoryColor;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(_radius),
+      child: SizedBox(
+        height: _barHeight,
+        width: w,
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          alignment: Alignment.centerLeft,
+          children: [
+            if (p > 0)
+              Container(
+                width: pw.clamp(0.0, w),
+                height: _barHeight,
+                decoration: BoxDecoration(
+                  color: categoryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(_radius),
                 ),
-          ),
-        ],
+              ),
+            if (a > 0)
+              Container(
+                width: aw.clamp(0.0, w),
+                height: _barHeight,
+                decoration: BoxDecoration(
+                  color: actualFill,
+                  borderRadius: BorderRadius.circular(_radius),
+                  boxShadow: over
+                      ? [
+                          BoxShadow(
+                            color: scheme.error.withValues(alpha: 0.22),
+                            blurRadius: 6,
+                            spreadRadius: 0,
+                          ),
+                        ]
+                      : null,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
