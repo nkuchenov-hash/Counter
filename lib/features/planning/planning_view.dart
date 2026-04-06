@@ -682,16 +682,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     final sameDay = result.targetDate.year == refDay.year &&
         result.targetDate.month == refDay.month &&
         result.targetDate.day == refDay.day;
-    if (sameDay && !result.applyTimeReanchor) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
-      );
-      return;
-    }
-    if (sameDay &&
-        result.applyTimeReanchor &&
-        result.timeShift.inSeconds == 0 &&
-        !selectedList.any((x) => x.startTime == null)) {
+    if (sameDay && !result.applyTargetTime) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
       );
@@ -734,7 +725,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         startTime: wall.start,
         endDateTime: wall.end,
         endDateKey: wall.end != null ? newKey : null,
-        clearEnd: match.endDateTime == null,
+        clearEnd: wall.end == null,
         initialDateKey: initForPatch,
         isPostponed: postponed,
       );
@@ -745,7 +736,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           planBusinessId: match.planRowId,
           startTimeDisplay: wall.start,
           endDateTimeDisplay: wall.end,
-          clearEnd: match.endDateTime == null,
+          clearEnd: wall.end == null,
           initialDateKey: initForPatch,
           isPostponed: postponed,
         ),

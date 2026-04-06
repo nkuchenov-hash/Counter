@@ -1,46 +1,26 @@
-// Bulk edit: date + optional exact anchor time for selected planning tasks. UI only; Brain calls from planning_view.
+// Bulk edit: absolute target date + optional same start time for all selected plans. UI only; Brain calls from planning_view.
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Earliest task in [tasks] by wall [PlanningTask.startTime]; tasks without start are skipped.
-PlanningTask? bulkEditAnchorTask(Iterable<PlanningTask> tasks) {
-  PlanningTask? best;
-  DateTime? bestStart;
-  for (final t in tasks) {
-    final st = t.startTime;
-    if (st == null) continue;
-    if (bestStart == null || st.isBefore(bestStart)) {
-      bestStart = st;
-      best = t;
-    }
-  }
-  return best;
-}
-
-/// Result of [showBulkPlanningEditSheet]: target calendar day + optional time re-anchor.
+/// Result of [showBulkPlanningEditSheet].
 class BulkPlanningEditResult {
   const BulkPlanningEditResult({
     required this.targetDate,
-    this.applyTimeReanchor = false,
-    this.timeShift = Duration.zero,
-    this.anchorNewStart,
+    this.applyTargetTime = false,
+    this.targetTime,
   });
 
-  /// Date-only (wall); time-of-day ignored for the calendar target.
+  /// Calendar day (wall); assigned to each task’s schedule/date fields.
   final DateTime targetDate;
 
-  /// When true, [timeShift] and [anchorNewStart] define how start/end move (see [computeBulkEditWallTimes]).
-  final bool applyTimeReanchor;
+  /// When true, [targetTime] is applied as **start_time** for every selected task (see [computeBulkEditWallTimes]).
+  final bool applyTargetTime;
 
-  /// Delta from the anchor task's previous start time-of-day to [anchorNewStart]. Applied to every
-  /// task that already has a start time (+ same delta on end).
-  final Duration timeShift;
-
-  /// New start time-of-day for the anchor row; also used as the absolute start for tasks with no start time.
-  final TimeOfDay? anchorNewStart;
+  /// Same clock time for all tasks when [applyTargetTime] is true.
+  final TimeOfDay? targetTime;
 }
 
 class BulkEditWallTimes {
@@ -50,6 +30,7 @@ class BulkEditWallTimes {
   final DateTime? end;
 }
 
+/// Date move only: copy each task’s wall clock to [targetDay].
 BulkEditWallTimes _bulkEditMapDateOnly(
   PlanningTask task,
   DateTime targetDay,
@@ -61,7 +42,8 @@ BulkEditWallTimes _bulkEditMapDateOnly(
     h = st.hour;
     minute = st.minute;
   }
-  final start = DateTime(targetDay.year, targetDay.month, targetDay.day, h, minute);
+  final start =
+      DateTime(targetDay.year, targetDay.month, targetDay.day, h, minute);
   DateTime? end;
   final en = task.endDateTime;
   if (en != null) {
@@ -70,31 +52,30 @@ BulkEditWallTimes _bulkEditMapDateOnly(
   return BulkEditWallTimes(start: start, end: end);
 }
 
-/// Wall-clock start/end after applying [edit] to [task] (date move ± optional anchor time block shift).
+/// Applies [edit] to [task]: direct [targetDate]; if [applyTargetTime], same [targetTime] as start, preserves interval length when possible.
 BulkEditWallTimes computeBulkEditWallTimes(
   PlanningTask task,
   BulkPlanningEditResult edit,
 ) {
-  if (!edit.applyTimeReanchor || edit.anchorNewStart == null) {
-    return _bulkEditMapDateOnly(task, edit.targetDate);
-  }
-
-  final picked = edit.anchorNewStart!;
-  final st = task.startTime;
   final base = edit.targetDate;
-  late final DateTime start;
-  if (st != null) {
-    start = DateTime(base.year, base.month, base.day, st.hour, st.minute).add(edit.timeShift);
-  } else {
-    start = DateTime(base.year, base.month, base.day, picked.hour, picked.minute);
+  if (!edit.applyTargetTime || edit.targetTime == null) {
+    return _bulkEditMapDateOnly(task, base);
   }
 
-  DateTime? end;
-  final en = task.endDateTime;
-  if (en != null) {
-    end = DateTime(base.year, base.month, base.day, en.hour, en.minute).add(edit.timeShift);
+  final tod = edit.targetTime!;
+  final newStart =
+      DateTime(base.year, base.month, base.day, tod.hour, tod.minute);
+
+  final oldStart = task.startTime;
+  final oldEnd = task.endDateTime;
+  if (oldStart != null &&
+      oldEnd != null &&
+      oldEnd.isAfter(oldStart)) {
+    final dur = oldEnd.difference(oldStart);
+    return BulkEditWallTimes(start: newStart, end: newStart.add(dur));
   }
-  return BulkEditWallTimes(start: start, end: end);
+
+  return BulkEditWallTimes(start: newStart, end: null);
 }
 
 Future<BulkPlanningEditResult?> showBulkPlanningEditSheet(
@@ -130,7 +111,7 @@ class _BulkPlanningEditSheetBody extends StatefulWidget {
 
 class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> {
   late DateTime _date;
-  TimeOfDay? _pickedAnchorTime;
+  TimeOfDay? _pickedTargetTime;
 
   int get _selectedCount => widget.selectedTasks.length;
 
@@ -142,10 +123,11 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
   }
 
   TimeOfDay _defaultPickerSeed() {
-    final anchor = bulkEditAnchorTask(widget.selectedTasks);
-    final st = anchor?.startTime;
-    if (st != null) {
-      return TimeOfDay(hour: st.hour, minute: st.minute);
+    for (final t in widget.selectedTasks) {
+      final st = t.startTime;
+      if (st != null) {
+        return TimeOfDay(hour: st.hour, minute: st.minute);
+      }
     }
     return const TimeOfDay(hour: 9, minute: 0);
   }
@@ -163,7 +145,7 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
   }
 
   Future<void> _pickTime() async {
-    final initial = _pickedAnchorTime ?? _defaultPickerSeed();
+    final initial = _pickedTargetTime ?? _defaultPickerSeed();
     final mq = MediaQuery.of(context);
     TimeOfDay? out;
 
@@ -234,47 +216,28 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
     }
 
     if (out != null && mounted) {
-      setState(() => _pickedAnchorTime = out);
+      setState(() => _pickedTargetTime = out);
     }
   }
 
   void _resetTime() {
-    setState(() => _pickedAnchorTime = null);
+    setState(() => _pickedTargetTime = null);
   }
 
   void _confirm() {
-    final anchor = bulkEditAnchorTask(widget.selectedTasks);
-    final applyTime = _pickedAnchorTime != null;
-    Duration delta = Duration.zero;
-    TimeOfDay? anchorNewStart;
-
-    if (applyTime) {
-      final picked = _pickedAnchorTime!;
-      anchorNewStart = picked;
-      final st = anchor?.startTime;
-      if (st != null) {
-        final oldMin = st.hour * 60 + st.minute;
-        final newMin = picked.hour * 60 + picked.minute;
-        delta = Duration(minutes: newMin - oldMin);
-      } else {
-        delta = Duration.zero;
-      }
-    }
-
     Navigator.pop(
       context,
       BulkPlanningEditResult(
         targetDate: _date,
-        applyTimeReanchor: applyTime,
-        timeShift: delta,
-        anchorNewStart: anchorNewStart,
+        applyTargetTime: _pickedTargetTime != null,
+        targetTime: _pickedTargetTime,
       ),
     );
   }
 
   String _timeRowSubtitle() {
     final loc = currentLocale.value;
-    final pick = _pickedAnchorTime;
+    final pick = _pickedTargetTime;
     if (pick == null) {
       return t(loc, 'plan_bulk_edit_time_not_set');
     }
@@ -371,10 +334,10 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
           sheetCard(
             onTap: _pickTime,
             icon: Icons.schedule_rounded,
-            label: t(loc, 'plan_bulk_edit_new_start_label'),
+            label: t(loc, 'plan_bulk_edit_set_time_label'),
             value: _timeRowSubtitle(),
           ),
-          if (_pickedAnchorTime != null) ...[
+          if (_pickedTargetTime != null) ...[
             const SizedBox(height: 4),
             Align(
               alignment: Alignment.centerRight,

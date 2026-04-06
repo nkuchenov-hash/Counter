@@ -166,12 +166,13 @@ const Map<String, Map<String, String>> l10n = {
     'plan_bulk_edit': 'Edit',
     'plan_bulk_edit_sheet_title': 'Edit %s tasks',
     'plan_bulk_edit_date_label': 'Date',
-    'plan_bulk_edit_new_start_label': 'New start time',
+    'plan_bulk_edit_new_start_label': 'Set time',
+    'plan_bulk_edit_set_time_label': 'Set time',
     'plan_bulk_edit_time_not_set': 'Unchanged — only the date moves',
     'plan_bulk_edit_time_reset': 'Reset time',
     'plan_bulk_edit_time_hint':
-        'The earliest timed task is the anchor: its new start sets one exact delta for the whole block; tasks without a time use the picked start.',
-    'plan_bulk_edit_shift_section': 'Shift time',
+        'Every selected task gets this same start time on the chosen date. Tasks that had both start and end keep their original duration.',
+    'plan_bulk_edit_shift_section': 'Set time',
     'plan_bulk_edit_shift_hint':
         'Moves start and end by the same amount (tasks without a time use 09:00).',
     'plan_bulk_edit_shift_none': 'None',
@@ -598,12 +599,13 @@ const Map<String, Map<String, String>> l10n = {
     'plan_bulk_edit': 'Изменить',
     'plan_bulk_edit_sheet_title': 'Изменить задачи (%s)',
     'plan_bulk_edit_date_label': 'Дата',
-    'plan_bulk_edit_new_start_label': 'Новое время начала',
+    'plan_bulk_edit_new_start_label': 'Установить время',
+    'plan_bulk_edit_set_time_label': 'Установить время',
     'plan_bulk_edit_time_not_set': 'Без сдвига — меняется только дата',
     'plan_bulk_edit_time_reset': 'Сбросить время',
     'plan_bulk_edit_time_hint':
-        'Якорь — задача с самым ранним началом: новое время задаёт один общий сдвиг для всех; без времени начала — берётся выбранное время.',
-    'plan_bulk_edit_shift_section': 'Сдвиг времени',
+        'У всех выбранных задач будет одно и то же время начала на выбранную дату. Если у задачи были начало и конец, сохраняется исходная длительность.',
+    'plan_bulk_edit_shift_section': 'Установить время',
     'plan_bulk_edit_shift_hint':
         'Сдвигает начало и конец на одно значение (без времени — от 09:00).',
     'plan_bulk_edit_shift_none': 'Нет',
