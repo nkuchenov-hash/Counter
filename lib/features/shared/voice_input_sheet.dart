@@ -34,6 +34,9 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   bool _isPulsing = false;
   late String _statusText;
   String? _error;
+  /// Softer styling (e.g. Web STT connection blip with empty transcript).
+  bool _softErrorVisual = false;
+  bool _voiceRecoveredCue = false;
   bool _hadErrorInSession = false;
   bool _isSaving = false;
   final ValueNotifier<double> _soundLevel = ValueNotifier(0.0);
@@ -48,6 +51,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   @override
   void initState() {
     super.initState();
+    _textController.clear();
     _statusText = t(currentLocale.value, 'voice_input');
     _pulseController = AnimationController(
       vsync: this,
@@ -97,14 +101,15 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   Future<void> _start() async {
     final loc = currentLocale.value;
     setState(() {
-      _isPulsing = true;
+      _isPulsing = false;
       _statusText = t(loc, 'voice_status_say_task');
-      _isListening = true;
+      _isListening = false;
       _error = null;
+      _softErrorVisual = false;
+      _voiceRecoveredCue = false;
       _hadErrorInSession = false;
     });
-    _textController.clear();
-    widget.onListeningChanged?.call(true);
+    widget.onListeningChanged?.call(false);
     _playTone(freq: 660, duration: 0.1);
     await Future.delayed(const Duration(milliseconds: 50));
     if (!mounted) return;
@@ -117,6 +122,8 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
           if (!mounted) return;
           setState(() {
             _error = t(loc, 'microphone_permission');
+            _softErrorVisual = false;
+            _voiceRecoveredCue = false;
             _isPulsing = false;
             _isListening = false;
           });
@@ -139,6 +146,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
               '[STT sheet] initialize onError: ${e.errorMsg} (permanent=${e.permanent})',
             );
           },
+          debugLogging: false,
         );
       }
     } catch (e, st) {
@@ -150,15 +158,53 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       if (status.startsWith('error:')) {
         final msg = status.replaceFirst('error:', '').trim();
         final low = msg.toLowerCase();
-        final displayMsg = low.contains('network')
-            ? t(loc, 'speech_error_network')
-            : SpeechListenLocale.messageIndicatesLanguageUnsupported(msg)
-                ? t(loc, 'speech_language_not_supported')
-                : t(loc, 'speech_error_prefix').replaceFirst('%s', msg);
+        final isNetwork =
+            low.contains('network') || low.contains('error_network');
+        if (kIsWeb &&
+            isNetwork &&
+            _textController.text.trim().isNotEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            try {
+              widget.speech.stop();
+            } catch (_) {}
+            try {
+              widget.speech.cancel();
+            } catch (_) {}
+            setState(() {
+              _error = null;
+              _softErrorVisual = false;
+              _voiceRecoveredCue = true;
+              _hadErrorInSession = false;
+              _statusText =
+                  t(loc, 'voice_stt_recovered_hint');
+              _isPulsing = false;
+              _isListening = false;
+            });
+            widget.onListeningChanged?.call(false);
+          });
+          return;
+        }
+        final String displayMsg;
+        var softVisual = false;
+        if (kIsWeb && isNetwork && _textController.text.trim().isEmpty) {
+          displayMsg = t(loc, 'speech_error_network_soft');
+          softVisual = true;
+        } else if (isNetwork) {
+          displayMsg = t(loc, 'speech_error_network');
+        } else if (SpeechListenLocale.messageIndicatesLanguageUnsupported(
+          msg,
+        )) {
+          displayMsg = t(loc, 'speech_language_not_supported');
+        } else {
+          displayMsg =
+              t(loc, 'speech_error_prefix').replaceFirst('%s', msg);
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           setState(() {
             _error = displayMsg;
+            _softErrorVisual = softVisual;
             _hadErrorInSession = true;
             _isPulsing = false;
             _isListening = false;
@@ -170,7 +216,11 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       if (status == 'listening') {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          setState(() => _isPulsing = true);
+          setState(() {
+            _isPulsing = true;
+            _isListening = true;
+          });
+          widget.onListeningChanged?.call(true);
         });
         return;
       }
@@ -316,15 +366,19 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
                     valueListenable: _soundLevel,
                     builder: (context, level, _) {
                       final levelClamped = level.clamp(0.0, 1.0);
-                      final pulse = _isPulsing ? 0.15 * _pulseAnimation.value : 0.0;
-                      final soundScale = _isPulsing ? levelClamped * 0.35 : 0.0;
+                      final pulse =
+                          _isListening && _isPulsing ? 0.15 * _pulseAnimation.value : 0.0;
+                      final soundScale =
+                          _isListening && _isPulsing ? levelClamped * 0.35 : 0.0;
                       final scale = 1.0 + pulse + soundScale;
                       final scheme = Theme.of(context).colorScheme;
                       return Transform.scale(
                         scale: scale,
                         child: Icon(
-                          _isPulsing ? Icons.graphic_eq_rounded : Icons.mic_none_rounded,
-                          color: _isPulsing ? scheme.primary : scheme.onSurface,
+                          _isListening
+                              ? Icons.graphic_eq_rounded
+                              : Icons.mic_none_rounded,
+                          color: _isListening ? scheme.primary : scheme.onSurface,
                         ),
                       );
                     },
@@ -336,18 +390,30 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
                 child: _error != null
                     ? Text(
                         _error!,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(color: scheme.error),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: _softErrorVisual
+                                  ? scheme.onSurfaceVariant
+                                  : scheme.error,
+                            ),
                       )
                     : Text(
                         _statusText,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: _voiceRecoveredCue
+                                  ? scheme.primary
+                                  : null,
+                              fontWeight:
+                                  _voiceRecoveredCue ? FontWeight.w600 : null,
+                            ),
                       ),
               ),
-              if (_error != null)
+              if (_error != null || _voiceRecoveredCue)
                 IconButton(
                   onPressed: () {
                     setState(() {
                       _error = null;
+                      _softErrorVisual = false;
+                      _voiceRecoveredCue = false;
                       _hadErrorInSession = false;
                     });
                     _start();
@@ -374,7 +440,12 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
                 borderSide: BorderSide.none,
               ),
             ),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) {
+              if (_voiceRecoveredCue) {
+                setState(() => _voiceRecoveredCue = false);
+              }
+              setState(() {});
+            },
           ),
           const SizedBox(height: 12),
           Row(

@@ -38,6 +38,8 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   bool _speechInitialized = false;
 
   String? _inlineError;
+  /// Non-error hint (e.g. Web STT dropped mid-phrase but text is preserved).
+  String? _sttPositiveHint;
   String? _lastListenLocaleIdForRetry;
 
   @override
@@ -45,6 +47,28 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     super.initState();
     _brickControllers.add(TextEditingController());
     _activeBrickIndex = 0;
+    if (kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_prewarmWebSpeechIfNeeded());
+      });
+    }
+  }
+
+  Future<void> _prewarmWebSpeechIfNeeded() async {
+    if (!kIsWeb || !mounted || _speechInitialized) return;
+    try {
+      final ok = await _speech.initialize(
+        onError: _onSpeechError,
+        onStatus: _onSpeechStatus,
+        debugLogging: false,
+      );
+      if (!mounted) return;
+      if (ok) setState(() => _speechInitialized = true);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[SmartPlan STT prewarm] $e');
+      }
+    }
   }
 
   @override
@@ -133,12 +157,24 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
   void _setInlineError(String message) {
     if (!mounted) return;
-    setState(() => _inlineError = message);
+    setState(() {
+      _inlineError = message;
+      _sttPositiveHint = null;
+    });
   }
 
   void _clearInlineError() {
-    if (!mounted || _inlineError == null) return;
-    setState(() => _inlineError = null);
+    if (!mounted) return;
+    if (_inlineError == null && _sttPositiveHint == null) return;
+    setState(() {
+      _inlineError = null;
+      _sttPositiveHint = null;
+    });
+  }
+
+  bool _isNetworkSpeechIssue(String rawMsg) {
+    final msg = rawMsg.toLowerCase();
+    return msg.contains('network') || msg.contains('error_network');
   }
 
   void _onSpeechError(dynamic e) {
@@ -176,7 +212,20 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     setState(() => _listening = false);
     _resetMicLevel();
     unawaited(_stopSpeechSession());
-    if (msg.contains('network')) {
+    if (_isNetworkSpeechIssue(e.errorMsg)) {
+      if (kIsWeb && _hasBrickContent) {
+        if (!mounted) return;
+        setState(() {
+          _inlineError = null;
+          _sttPositiveHint =
+              t(currentLocale.value, 'smart_plan_stt_recovered_hint');
+        });
+        return;
+      }
+      if (kIsWeb && !_hasBrickContent) {
+        _setInlineError(t(currentLocale.value, 'speech_error_network_soft'));
+        return;
+      }
       _setInlineError(t(currentLocale.value, 'speech_error_network'));
       return;
     }
@@ -217,14 +266,16 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   Future<void> _runSpeechListen({required String? localeId}) async {
     if (!mounted) return;
     _lastListenLocaleIdForRetry = localeId;
-    setState(() => _listening = true);
     try {
       if (_speech.isListening) {
         await _stopSpeechSession();
         if (!mounted) return;
-        setState(() => _listening = true);
       }
-      await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (kIsWeb) {
+        await Future<void>.delayed(const Duration(milliseconds: 16));
+      } else {
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+      }
       if (!mounted) return;
       await _speech.listen(
         onResult: (res) {
@@ -299,6 +350,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
         final available = await _speech.initialize(
           onError: _onSpeechError,
           onStatus: _onSpeechStatus,
+          debugLogging: false,
         );
         if (kDebugMode) {
           debugPrint('[SmartPlan mic] initialize result available=$available');
@@ -486,8 +538,12 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
                                   ),
                                 ),
                                 onChanged: (_) {
-                                  if (_inlineError != null) {
-                                    setState(() => _inlineError = null);
+                                  if (_inlineError != null ||
+                                      _sttPositiveHint != null) {
+                                    setState(() {
+                                      _inlineError = null;
+                                      _sttPositiveHint = null;
+                                    });
                                   }
                                   setState(() {});
                                 },
@@ -537,6 +593,15 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
                 _inlineError!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: scheme.error,
+                    ),
+              ),
+            ] else if (_sttPositiveHint != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _sttPositiveHint!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
             ],

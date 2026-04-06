@@ -340,6 +340,12 @@ const Map<String, Map<String, String>> l10n = {
     'voice_status_say_task': 'Say your task now…',
     'voice_status_heard': 'Recognized. Tap to confirm.',
     'speech_error_network': 'Network error. Check your connection and try again.',
+    'speech_error_network_soft':
+        'Connection issue. Please try dictating again.',
+    'smart_plan_stt_recovered_hint':
+        'Recognition paused — your text is kept. Tap Generate when ready.',
+    'voice_stt_recovered_hint':
+        'Recognition paused — your text is kept. Tap the action button when ready.',
     'speech_error_prefix': 'Speech error: %s',
     'speech_russian_engine_fallback': 'Russian speech is unavailable on this device. Using English recognition.',
     'speech_locale_fallback_generic':
@@ -773,6 +779,12 @@ const Map<String, Map<String, String>> l10n = {
     'voice_status_say_task': 'Назовите задачу…',
     'voice_status_heard': 'Распознано. Нажмите для подтверждения.',
     'speech_error_network': 'Ошибка сети. Проверьте подключение и попробуйте снова.',
+    'speech_error_network_soft':
+        'Трудности с соединением. Попробуйте продиктовать ещё раз.',
+    'smart_plan_stt_recovered_hint':
+        'Распознавание прервано, текст сохранён. Когда будете готовы — нажмите «Создать».',
+    'voice_stt_recovered_hint':
+        'Распознавание прервано, текст сохранён. Можно нажать кнопку действия.',
     'speech_error_prefix': 'Ошибка распознавания: %s',
     'speech_russian_engine_fallback':
         'Русское распознавание недоступно на этом устройстве. Используется английский движок.',

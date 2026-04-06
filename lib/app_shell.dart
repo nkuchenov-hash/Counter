@@ -850,6 +850,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           );
           _speechStatusCallback?.call('error:$msg');
         },
+        debugLogging: false,
       );
       if (!mounted) return;
       if (available) {
