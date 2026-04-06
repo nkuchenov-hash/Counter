@@ -659,61 +659,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     });
   }
 
-  /// Half-open wall-clock overlap probe for planning cards (synthetic duration when end missing).
-  static ({DateTime s, DateTime e}) _wallRangeForOverlapProbe(
-    DateTime? start,
-    DateTime? end,
-  ) {
-    final s = start ?? DateTime.fromMillisecondsSinceEpoch(0);
-    final rawEnd = end;
-    final e = (rawEnd != null && rawEnd.isAfter(s))
-        ? rawEnd
-        : s.add(const Duration(minutes: 30));
-    return (s: s, e: e);
-  }
-
-  static bool _wallIntervalsOverlap(
-    DateTime a0,
-    DateTime a1,
-    DateTime b0,
-    DateTime b1,
-  ) {
-    return a0.isBefore(b1) && b0.isBefore(a1);
-  }
-
-  /// After date move + time shift: overlaps among selected finals vs tasks already on [destinationDay] (excluding selection).
-  bool _bulkPlanningEditWouldOverlap(
-    List<PlanningTask> currentDayTasks,
-    List<PlanningTask> destinationTasks,
-    BulkPlanningEditResult result,
-  ) {
-    final selectedKeys = _selectedPlanKeys;
-    final finals = <({DateTime s, DateTime e})>[];
-    for (final t in currentDayTasks) {
-      if (!selectedKeys.contains(_planKey(t))) continue;
-      final wall = computeBulkEditWallTimes(t, result);
-      finals.add(_wallRangeForOverlapProbe(wall.start, wall.end));
-    }
-    for (var i = 0; i < finals.length; i++) {
-      for (var j = i + 1; j < finals.length; j++) {
-        final a = finals[i];
-        final b = finals[j];
-        if (_wallIntervalsOverlap(a.s, a.e, b.s, b.e)) return true;
-      }
-    }
-    for (final o in destinationTasks) {
-      if (selectedKeys.contains(_planKey(o))) continue;
-      if (o.planRowIdForBackend.startsWith('optimistic-')) continue;
-      final st = o.startTime;
-      if (st == null) continue;
-      final oR = _wallRangeForOverlapProbe(st, o.endDateTime);
-      for (final f in finals) {
-        if (_wallIntervalsOverlap(f.s, f.e, oR.s, oR.e)) return true;
-      }
-    }
-    return false;
-  }
-
   Future<void> _openBulkPlanningEdit(List<PlanningTask> tasks) async {
     if (_selectedPlanKeys.isEmpty) return;
     final loc = currentLocale.value;
@@ -749,18 +694,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         !selectedList.any((x) => x.startTime == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
-      );
-      return;
-    }
-
-    final destTasks = await DatabaseService.instance.getPlanningTasksForWallDate(
-      result.targetDate,
-    );
-    if (!mounted) return;
-
-    if (_bulkPlanningEditWouldOverlap(tasks, destTasks, result)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'plan_bulk_overlap_warning'))),
       );
       return;
     }

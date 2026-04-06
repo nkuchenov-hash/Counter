@@ -160,8 +160,6 @@ const Map<String, Map<String, String>> l10n = {
     'plan_time_shift_plus_15m': '+15 minutes',
     'plan_time_shift_plus_30m': '+30 minutes',
     'plan_time_shift_plus_1h': '+1 hour',
-    'plan_bulk_overlap_warning':
-        'Time shift would overlap another plan. Adjust selection or times.',
     'plan_bulk_shift_no_timed_tasks':
         'No selected tasks with a start time to shift.',
     'plan_bulk_shift_applied': 'Times updated.',
@@ -594,8 +592,6 @@ const Map<String, Map<String, String>> l10n = {
     'plan_time_shift_plus_15m': '+15 минут',
     'plan_time_shift_plus_30m': '+30 минут',
     'plan_time_shift_plus_1h': '+1 час',
-    'plan_bulk_overlap_warning':
-        'Сдвиг приведёт к пересечению с другой задачей. Измените выбор или время.',
     'plan_bulk_shift_no_timed_tasks':
         'Нет выбранных задач со временем начала для сдвига.',
     'plan_bulk_shift_applied': 'Время обновлено.',
