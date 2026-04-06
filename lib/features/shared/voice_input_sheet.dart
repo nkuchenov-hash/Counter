@@ -43,6 +43,18 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
   final TextEditingController _textController = TextEditingController();
+  String _lastVoiceRecognized = '';
+
+  bool _isNetworkSttMessage(String raw) {
+    final msg = raw.toLowerCase();
+    if (msg.contains('error_network') ||
+        msg.contains('networkerror') ||
+        msg.contains('network error') ||
+        msg.contains('network')) {
+      return true;
+    }
+    return msg.contains('failed to fetch') || msg.contains('net::err');
+  }
 
   void _playTone({required double freq, required double duration}) {
     voice_audio.playTone(freq: freq, duration: duration);
@@ -65,7 +77,10 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
   void _onSpeechResult(dynamic res) {
     if (!mounted || _isSaving) return;
-    _textController.text = res.recognizedWords;
+    final raw = res.recognizedWords;
+    final w = raw == null ? '' : raw.toString();
+    if (w.isNotEmpty) _lastVoiceRecognized = w;
+    _textController.text = w;
   }
 
   @override
@@ -109,6 +124,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       _voiceRecoveredCue = false;
       _hadErrorInSession = false;
     });
+    _lastVoiceRecognized = '';
     widget.onListeningChanged?.call(false);
     _playTone(freq: 660, duration: 0.1);
     await Future.delayed(const Duration(milliseconds: 50));
@@ -157,12 +173,10 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     widget.setSpeechStatusCallback((status) {
       if (status.startsWith('error:')) {
         final msg = status.replaceFirst('error:', '').trim();
-        final low = msg.toLowerCase();
-        final isNetwork =
-            low.contains('network') || low.contains('error_network');
-        if (kIsWeb &&
-            isNetwork &&
-            _textController.text.trim().isNotEmpty) {
+        final isNetwork = _isNetworkSttMessage(msg);
+        final hasTranscript = _textController.text.trim().isNotEmpty ||
+            _lastVoiceRecognized.trim().isNotEmpty;
+        if (kIsWeb && isNetwork && hasTranscript) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             try {
@@ -187,7 +201,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
         }
         final String displayMsg;
         var softVisual = false;
-        if (kIsWeb && isNetwork && _textController.text.trim().isEmpty) {
+        if (kIsWeb && isNetwork && !hasTranscript) {
           displayMsg = t(loc, 'speech_error_network_soft');
           softVisual = true;
         } else if (isNetwork) {

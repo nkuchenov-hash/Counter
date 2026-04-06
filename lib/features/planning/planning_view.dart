@@ -659,6 +659,29 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     });
   }
 
+  bool _allVisiblePlanTasksSelected(List<PlanningTask> list) {
+    if (list.isEmpty) return false;
+    for (final t in list) {
+      if (!_selectedPlanKeys.contains(_planKey(t))) return false;
+    }
+    return true;
+  }
+
+  void _toggleSelectAllVisiblePlans(List<PlanningTask> list) {
+    if (list.isEmpty) return;
+    setState(() {
+      if (_allVisiblePlanTasksSelected(list)) {
+        for (final t in list) {
+          _selectedPlanKeys.remove(_planKey(t));
+        }
+      } else {
+        for (final t in list) {
+          _selectedPlanKeys.add(_planKey(t));
+        }
+      }
+    });
+  }
+
   Future<void> _openBulkPlanningEdit(List<PlanningTask> tasks) async {
     if (_selectedPlanKeys.isEmpty) return;
     final loc = currentLocale.value;
@@ -1971,6 +1994,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           );
         }
 
+        final visiblePlans = displayedForChrome;
         return Scaffold(
           resizeToAvoidBottomInset: true,
           appBar: AppBar(
@@ -2021,18 +2045,18 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                     ],
                   ),
             actions: [
-              if (_planSelectMode && displayedForChrome != null)
+              if (_planSelectMode && visiblePlans != null)
                 TextButton(
-                  onPressed: () {
-                    final list = displayedForChrome;
-                    if (list == null) return;
-                    setState(() {
-                      for (final t in list) {
-                        _selectedPlanKeys.add(_planKey(t));
-                      }
-                    });
-                  },
-                  child: Text(t(currentLocale.value, 'plan_select_all')),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                  ),
+                  onPressed: () => _toggleSelectAllVisiblePlans(visiblePlans),
+                  child: Text(
+                    _allVisiblePlanTasksSelected(visiblePlans)
+                        ? t(currentLocale.value, 'plan_deselect_visible')
+                        : t(currentLocale.value, 'plan_select_all'),
+                  ),
                 ),
               if (!_planSelectMode) ...[
                 IconButton(

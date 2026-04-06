@@ -37,6 +37,9 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   bool _thinking = false;
   bool _speechInitialized = false;
 
+  /// Latest engine transcript (partial or final); used with Web network blips when UI bricks lag.
+  String _lastRecognizedWords = '';
+
   String? _inlineError;
   /// Non-error hint (e.g. Web STT dropped mid-phrase but text is preserved).
   String? _sttPositiveHint;
@@ -48,9 +51,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     _brickControllers.add(TextEditingController());
     _activeBrickIndex = 0;
     if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(_prewarmWebSpeechIfNeeded());
-      });
+      unawaited(_prewarmWebSpeechIfNeeded());
     }
   }
 
@@ -90,6 +91,9 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
   }
 
   bool get _hasBrickContent => _concatenateBricks().isNotEmpty;
+
+  bool get _hasAnyRecognizedText =>
+      _hasBrickContent || _lastRecognizedWords.trim().isNotEmpty;
 
   void _resetMicLevel() {
     _micLevel.value = 0;
@@ -174,7 +178,16 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
   bool _isNetworkSpeechIssue(String rawMsg) {
     final msg = rawMsg.toLowerCase();
-    return msg.contains('network') || msg.contains('error_network');
+    if (msg.contains('error_network') ||
+        msg.contains('networkerror') ||
+        msg.contains('network error') ||
+        msg.contains('network')) {
+      return true;
+    }
+    if (msg.contains('failed to fetch') || msg.contains('net::err')) {
+      return true;
+    }
+    return false;
   }
 
   void _onSpeechError(dynamic e) {
@@ -213,7 +226,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     _resetMicLevel();
     unawaited(_stopSpeechSession());
     if (_isNetworkSpeechIssue(e.errorMsg)) {
-      if (kIsWeb && _hasBrickContent) {
+      if (kIsWeb && _hasAnyRecognizedText) {
         if (!mounted) return;
         setState(() {
           _inlineError = null;
@@ -222,7 +235,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
         });
         return;
       }
-      if (kIsWeb && !_hasBrickContent) {
+      if (kIsWeb && !_hasAnyRecognizedText) {
         _setInlineError(t(currentLocale.value, 'speech_error_network_soft'));
         return;
       }
@@ -280,7 +293,11 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       await _speech.listen(
         onResult: (res) {
           final text = res.recognizedWords;
-          if (!mounted || text.isEmpty) return;
+          if (!mounted) return;
+          if (text.isNotEmpty) {
+            _lastRecognizedWords = text;
+          }
+          if (text.isEmpty) return;
           final brick = _activeController;
           if (brick == null) return;
           brick.value = TextEditingValue(
@@ -321,6 +338,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
       );
     }
     _clearInlineError();
+    _lastRecognizedWords = '';
     final loc = currentLocale.value;
 
     if (_listening) {
