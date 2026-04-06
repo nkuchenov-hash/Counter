@@ -1,19 +1,46 @@
-// Bulk edit: date + time shift for selected planning tasks. UI only; Brain calls from planning_view.
+// Bulk edit: date + optional exact anchor time for selected planning tasks. UI only; Brain calls from planning_view.
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Result of [showBulkPlanningEditSheet]: target calendar day + additive shift on start/end.
+/// Earliest task in [tasks] by wall [PlanningTask.startTime]; tasks without start are skipped.
+PlanningTask? bulkEditAnchorTask(Iterable<PlanningTask> tasks) {
+  PlanningTask? best;
+  DateTime? bestStart;
+  for (final t in tasks) {
+    final st = t.startTime;
+    if (st == null) continue;
+    if (bestStart == null || st.isBefore(bestStart)) {
+      bestStart = st;
+      best = t;
+    }
+  }
+  return best;
+}
+
+/// Result of [showBulkPlanningEditSheet]: target calendar day + optional time re-anchor.
 class BulkPlanningEditResult {
   const BulkPlanningEditResult({
     required this.targetDate,
+    this.applyTimeReanchor = false,
     this.timeShift = Duration.zero,
+    this.anchorNewStart,
   });
 
-  /// Date-only (wall); time-of-day ignored.
+  /// Date-only (wall); time-of-day ignored for the calendar target.
   final DateTime targetDate;
+
+  /// When true, [timeShift] and [anchorNewStart] define how start/end move (see [computeBulkEditWallTimes]).
+  final bool applyTimeReanchor;
+
+  /// Delta from the anchor task's previous start time-of-day to [anchorNewStart]. Applied to every
+  /// task that already has a start time (+ same delta on end).
   final Duration timeShift;
+
+  /// New start time-of-day for the anchor row; also used as the absolute start for tasks with no start time.
+  final TimeOfDay? anchorNewStart;
 }
 
 class BulkEditWallTimes {
@@ -23,11 +50,9 @@ class BulkEditWallTimes {
   final DateTime? end;
 }
 
-/// Wall-clock start/end after moving [task] to [targetDay] (Y/M/D) and adding [shift] to both bounds.
-BulkEditWallTimes computeBulkEditWallTimes(
+BulkEditWallTimes _bulkEditMapDateOnly(
   PlanningTask task,
   DateTime targetDay,
-  Duration shift,
 ) {
   var h = 9;
   var minute = 0;
@@ -36,25 +61,38 @@ BulkEditWallTimes computeBulkEditWallTimes(
     h = st.hour;
     minute = st.minute;
   }
-  var start = DateTime(
-    targetDay.year,
-    targetDay.month,
-    targetDay.day,
-    h,
-    minute,
-  );
-  start = start.add(shift);
+  final start = DateTime(targetDay.year, targetDay.month, targetDay.day, h, minute);
   DateTime? end;
   final en = task.endDateTime;
   if (en != null) {
-    end = DateTime(
-      targetDay.year,
-      targetDay.month,
-      targetDay.day,
-      en.hour,
-      en.minute,
-    );
-    end = end.add(shift);
+    end = DateTime(targetDay.year, targetDay.month, targetDay.day, en.hour, en.minute);
+  }
+  return BulkEditWallTimes(start: start, end: end);
+}
+
+/// Wall-clock start/end after applying [edit] to [task] (date move ± optional anchor time block shift).
+BulkEditWallTimes computeBulkEditWallTimes(
+  PlanningTask task,
+  BulkPlanningEditResult edit,
+) {
+  if (!edit.applyTimeReanchor || edit.anchorNewStart == null) {
+    return _bulkEditMapDateOnly(task, edit.targetDate);
+  }
+
+  final picked = edit.anchorNewStart!;
+  final st = task.startTime;
+  final base = edit.targetDate;
+  late final DateTime start;
+  if (st != null) {
+    start = DateTime(base.year, base.month, base.day, st.hour, st.minute).add(edit.timeShift);
+  } else {
+    start = DateTime(base.year, base.month, base.day, picked.hour, picked.minute);
+  }
+
+  DateTime? end;
+  final en = task.endDateTime;
+  if (en != null) {
+    end = DateTime(base.year, base.month, base.day, en.hour, en.minute).add(edit.timeShift);
   }
   return BulkEditWallTimes(start: start, end: end);
 }
@@ -62,7 +100,7 @@ BulkEditWallTimes computeBulkEditWallTimes(
 Future<BulkPlanningEditResult?> showBulkPlanningEditSheet(
   BuildContext context, {
   required DateTime initialDay,
-  required int selectedCount,
+  required List<PlanningTask> selectedTasks,
 }) {
   return showModalBottomSheet<BulkPlanningEditResult>(
     context: context,
@@ -71,7 +109,7 @@ Future<BulkPlanningEditResult?> showBulkPlanningEditSheet(
     useSafeArea: true,
     builder: (ctx) => _BulkPlanningEditSheetBody(
       initialDay: initialDay,
-      selectedCount: selectedCount,
+      selectedTasks: selectedTasks,
     ),
   );
 }
@@ -79,11 +117,11 @@ Future<BulkPlanningEditResult?> showBulkPlanningEditSheet(
 class _BulkPlanningEditSheetBody extends StatefulWidget {
   const _BulkPlanningEditSheetBody({
     required this.initialDay,
-    required this.selectedCount,
+    required this.selectedTasks,
   });
 
   final DateTime initialDay;
-  final int selectedCount;
+  final List<PlanningTask> selectedTasks;
 
   @override
   State<_BulkPlanningEditSheetBody> createState() =>
@@ -92,13 +130,24 @@ class _BulkPlanningEditSheetBody extends StatefulWidget {
 
 class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> {
   late DateTime _date;
-  Duration _shift = Duration.zero;
+  TimeOfDay? _pickedAnchorTime;
+
+  int get _selectedCount => widget.selectedTasks.length;
 
   @override
   void initState() {
     super.initState();
     final d = widget.initialDay;
     _date = DateTime(d.year, d.month, d.day);
+  }
+
+  TimeOfDay _defaultPickerSeed() {
+    final anchor = bulkEditAnchorTask(widget.selectedTasks);
+    final st = anchor?.startTime;
+    if (st != null) {
+      return TimeOfDay(hour: st.hour, minute: st.minute);
+    }
+    return const TimeOfDay(hour: 9, minute: 0);
   }
 
   Future<void> _pickDate() async {
@@ -113,16 +162,131 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
     }
   }
 
-  void _setShift(Duration d) {
-    setState(() => _shift = d);
+  Future<void> _pickTime() async {
+    final initial = _pickedAnchorTime ?? _defaultPickerSeed();
+    final mq = MediaQuery.of(context);
+    TimeOfDay? out;
+
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      var wheel = DateTime(2020, 1, 1, initial.hour, initial.minute);
+      final loc = currentLocale.value;
+      out = await showCupertinoModalPopup<TimeOfDay>(
+        context: context,
+        builder: (ctx) {
+          return SafeArea(
+            child: Material(
+              color: CupertinoColors.systemBackground.resolveFrom(ctx),
+              child: SizedBox(
+                height: 276,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CupertinoButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: Text(t(loc, 'cancel')),
+                        ),
+                        CupertinoButton(
+                          onPressed: () {
+                            Navigator.pop(
+                              ctx,
+                              TimeOfDay(hour: wheel.hour, minute: wheel.minute),
+                            );
+                          },
+                          child: Text(t(loc, 'done')),
+                        ),
+                      ],
+                    ),
+                    Expanded(
+                      child: CupertinoTheme(
+                        data: CupertinoThemeData(
+                          brightness: Theme.of(ctx).brightness,
+                        ),
+                        child: CupertinoDatePicker(
+                          mode: CupertinoDatePickerMode.time,
+                          initialDateTime: wheel,
+                          use24hFormat: mq.alwaysUse24HourFormat,
+                          minuteInterval: 1,
+                          onDateTimeChanged: (d) => wheel = d,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      out = await showTimePicker(
+        context: context,
+        initialTime: initial,
+        initialEntryMode: TimePickerEntryMode.dial,
+        builder: (context, child) {
+          return MediaQuery(
+            data: mq.copyWith(alwaysUse24HourFormat: mq.alwaysUse24HourFormat),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
+      );
+    }
+
+    if (out != null && mounted) {
+      setState(() => _pickedAnchorTime = out);
+    }
+  }
+
+  void _resetTime() {
+    setState(() => _pickedAnchorTime = null);
+  }
+
+  void _confirm() {
+    final anchor = bulkEditAnchorTask(widget.selectedTasks);
+    final applyTime = _pickedAnchorTime != null;
+    Duration delta = Duration.zero;
+    TimeOfDay? anchorNewStart;
+
+    if (applyTime) {
+      final picked = _pickedAnchorTime!;
+      anchorNewStart = picked;
+      final st = anchor?.startTime;
+      if (st != null) {
+        final oldMin = st.hour * 60 + st.minute;
+        final newMin = picked.hour * 60 + picked.minute;
+        delta = Duration(minutes: newMin - oldMin);
+      } else {
+        delta = Duration.zero;
+      }
+    }
+
+    Navigator.pop(
+      context,
+      BulkPlanningEditResult(
+        targetDate: _date,
+        applyTimeReanchor: applyTime,
+        timeShift: delta,
+        anchorNewStart: anchorNewStart,
+      ),
+    );
+  }
+
+  String _timeRowSubtitle() {
+    final loc = currentLocale.value;
+    final pick = _pickedAnchorTime;
+    if (pick == null) {
+      return t(loc, 'plan_bulk_edit_time_not_set');
+    }
+    return pick.format(context);
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     final loc = currentLocale.value;
-    final title = t(loc, 'plan_bulk_edit_sheet_title')
-        .replaceFirst('%s', '${widget.selectedCount}');
+    final title = t(loc, 'plan_bulk_edit_sheet_title').replaceFirst('%s', '$_selectedCount');
     String dateLabel;
     try {
       dateLabel = DateFormat.yMMMMd(loc).format(_date);
@@ -133,15 +297,49 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
 
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    Widget shiftChip(String label, Duration d) {
-      final selected = _shift == d;
-      return FilterChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => _setShift(d),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        showCheckmark: false,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+    Widget sheetCard({
+      required VoidCallback onTap,
+      required IconData icon,
+      required String label,
+      required String value,
+    }) {
+      return Material(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Icon(icon, color: scheme.primary, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        value,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant, size: 22),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
@@ -150,7 +348,7 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
         left: 20,
         right: 20,
         top: 8,
-        bottom: 16 + bottomInset,
+        bottom: 12 + bottomInset,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -158,77 +356,48 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 16),
-          Material(
-            color: scheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              onTap: _pickDate,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                child: Row(
-                  children: [
-                    Icon(Icons.event_rounded, color: scheme.primary, size: 22),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            t(loc, 'plan_bulk_edit_date_label'),
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: scheme.onSurfaceVariant,
-                                ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            dateLabel,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
-                  ],
-                ),
-              ),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 20),
-          Text(
-            t(loc, 'plan_bulk_edit_shift_section'),
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            t(loc, 'plan_bulk_edit_shift_hint'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-          ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: [
-              shiftChip(t(loc, 'plan_bulk_edit_shift_none'), Duration.zero),
-              shiftChip(t(loc, 'plan_time_shift_minus_1h'), const Duration(minutes: -60)),
-              shiftChip(t(loc, 'plan_time_shift_minus_30m'), const Duration(minutes: -30)),
-              shiftChip(t(loc, 'plan_time_shift_minus_15m'), const Duration(minutes: -15)),
-              shiftChip(t(loc, 'plan_time_shift_plus_15m'), const Duration(minutes: 15)),
-              shiftChip(t(loc, 'plan_time_shift_plus_30m'), const Duration(minutes: 30)),
-              shiftChip(t(loc, 'plan_time_shift_plus_1h'), const Duration(minutes: 60)),
-            ],
+          sheetCard(
+            onTap: _pickDate,
+            icon: Icons.event_rounded,
+            label: t(loc, 'plan_bulk_edit_date_label'),
+            value: dateLabel,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
+          sheetCard(
+            onTap: _pickTime,
+            icon: Icons.schedule_rounded,
+            label: t(loc, 'plan_bulk_edit_new_start_label'),
+            value: _timeRowSubtitle(),
+          ),
+          if (_pickedAnchorTime != null) ...[
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _resetTime,
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: Text(t(loc, 'plan_bulk_edit_time_reset')),
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            t(loc, 'plan_bulk_edit_time_hint'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 14),
           FilledButton(
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -236,15 +405,7 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: () {
-              Navigator.pop(
-                context,
-                BulkPlanningEditResult(
-                  targetDate: _date,
-                  timeShift: _shift,
-                ),
-              );
-            },
+            onPressed: _confirm,
             child: Text(t(loc, 'plan_bulk_edit_apply')),
           ),
         ],

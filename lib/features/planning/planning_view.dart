@@ -284,6 +284,19 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       );
     }
     final newKey = _dateKeyFromDate(picked);
+    final anchorShort =
+        DatabaseService.instance.planningAuditAnchorDateKey(task);
+    const minKeyLen = 10;
+    final persistInitial = anchorShort.length >= minKeyLen
+        ? anchorShort
+        : DatabaseService.instance.planningWallScheduleDateKey(task);
+    final initForPatch =
+        persistInitial.length >= minKeyLen ? persistInitial : newKey;
+    final postponed = !task.isDone &&
+        DatabaseService.instance.planningShouldMarkPostponed(
+          anchorKey: initForPatch,
+          newScheduleKey: newKey,
+        );
     final updated = task.copyWith(
       dateKey: newKey,
       date: DateTime.utc(picked.year, picked.month, picked.day),
@@ -291,6 +304,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       endDateTime: wallEnd,
       endDateKey: wallEnd != null ? newKey : null,
       clearEnd: task.endDateTime == null,
+      initialDateKey: initForPatch,
+      isPostponed: postponed,
     );
     DatabaseService.instance.applyOptimisticPlanningTask(updated);
     DatabaseService.instance.notifyPlanningRefresh();
@@ -302,6 +317,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       endDateTimeDisplay: wallEnd,
       clearEnd: task.endDateTime == null,
       suppressAppSnack: true,
+      planInitialDateKey: initForPatch.length >= minKeyLen ? initForPatch : null,
+      planIsPostponed: postponed,
     );
     if (!mounted) return;
     if (!ok) {
@@ -674,7 +691,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     final finals = <({DateTime s, DateTime e})>[];
     for (final t in currentDayTasks) {
       if (!selectedKeys.contains(_planKey(t))) continue;
-      final wall = computeBulkEditWallTimes(t, result.targetDate, result.timeShift);
+      final wall = computeBulkEditWallTimes(t, result);
       finals.add(_wallRangeForOverlapProbe(wall.start, wall.end));
     }
     for (var i = 0; i < finals.length; i++) {
@@ -701,10 +718,18 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     if (_selectedPlanKeys.isEmpty) return;
     final loc = currentLocale.value;
     final initial = widget.selectedDate ?? _today;
+    final selectedList = <PlanningTask>[];
+    for (final t in tasks) {
+      if (_selectedPlanKeys.contains(_planKey(t))) {
+        selectedList.add(t);
+      }
+    }
+    if (selectedList.isEmpty) return;
+
     final result = await showBulkPlanningEditSheet(
       context,
       initialDay: initial,
-      selectedCount: _selectedPlanKeys.length,
+      selectedTasks: selectedList,
     );
     if (result == null || !mounted) return;
 
@@ -712,7 +737,16 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     final sameDay = result.targetDate.year == refDay.year &&
         result.targetDate.month == refDay.month &&
         result.targetDate.day == refDay.day;
-    if (sameDay && result.timeShift.inSeconds == 0) {
+    if (sameDay && !result.applyTimeReanchor) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
+      );
+      return;
+    }
+    if (sameDay &&
+        result.applyTimeReanchor &&
+        result.timeShift.inSeconds == 0 &&
+        !selectedList.any((x) => x.startTime == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
       );
@@ -745,13 +779,22 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       final pbId = match.pocketRecordId?.trim() ?? '';
       if (pbId.isEmpty) continue;
 
-      final wall = computeBulkEditWallTimes(
-        match,
-        result.targetDate,
-        result.timeShift,
-      );
+      final wall = computeBulkEditWallTimes(match, result);
       final d = DateTime(wall.start.year, wall.start.month, wall.start.day);
       final newKey = _dateKeyFromDate(d);
+      final anchorShort =
+          DatabaseService.instance.planningAuditAnchorDateKey(match);
+      const minKeyLen = 10;
+      final persistInitial = anchorShort.length >= minKeyLen
+          ? anchorShort
+          : DatabaseService.instance.planningWallScheduleDateKey(match);
+      final initForPatch =
+          persistInitial.length >= minKeyLen ? persistInitial : newKey;
+      final postponed = !match.isDone &&
+          DatabaseService.instance.planningShouldMarkPostponed(
+            anchorKey: initForPatch,
+            newScheduleKey: newKey,
+          );
       final updated = match.copyWith(
         dateKey: newKey,
         date: DateTime.utc(d.year, d.month, d.day),
@@ -759,6 +802,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         endDateTime: wall.end,
         endDateKey: wall.end != null ? newKey : null,
         clearEnd: match.endDateTime == null,
+        initialDateKey: initForPatch,
+        isPostponed: postponed,
       );
       DatabaseService.instance.applyOptimisticPlanningTask(updated);
       patches.add(
@@ -768,6 +813,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           startTimeDisplay: wall.start,
           endDateTimeDisplay: wall.end,
           clearEnd: match.endDateTime == null,
+          initialDateKey: initForPatch,
+          isPostponed: postponed,
         ),
       );
     }
@@ -854,6 +901,10 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       checklist: const [],
       notes: null,
       parentPlanId: null,
+      initialDateKey: widget.selectedDateString.length >= 10
+          ? widget.selectedDateString.substring(0, 10)
+          : null,
+      isPostponed: false,
     );
     widget.onEditTask(draft);
   }

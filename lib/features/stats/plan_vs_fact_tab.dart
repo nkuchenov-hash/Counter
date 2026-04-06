@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/data/database_service.dart';
@@ -8,7 +9,7 @@ import 'package:flutter/material.dart';
 
 // ---------------------------------------------------------------------------
 // PLAN VS FACT — comparative planned hours vs tracked time per category (DNA).
-// UI_ISOLATION (§7). Reads via DatabaseService streams only; no new Brain APIs.
+// UI_ISOLATION (§7). Reads via DatabaseService ([getDayAudit], record rollups); no writes.
 // Hierarchy: root rows sum planned/actual for the whole subtree (same math as
 // [DatabaseService.getDurationForCategoryWithinDay] / getRecordIdsInSubtree).
 // ---------------------------------------------------------------------------
@@ -53,8 +54,8 @@ Set<int> _allRuleTreeIds(Iterable<CategoryRule> roots) {
   return out;
 }
 
-/// Tab 2 under Stats: planned duration per category vs record time same day.
-class PlanVsFactTab extends StatelessWidget {
+/// Tab 2 under Stats: day audit + planned duration per category vs record time same day.
+class PlanVsFactTab extends StatefulWidget {
   const PlanVsFactTab({
     super.key,
     required this.selectedDate,
@@ -66,32 +67,43 @@ class PlanVsFactTab extends StatelessWidget {
   final List<Map<String, dynamic>> records;
   final bool isFutureDate;
 
-  void _rollupActualByCategory(Map<int, int> out) {
-    final offset = DatabaseService.instance.settings.timezoneOffsetHours;
-    final tz = DatabaseService.instance.settings.preferredTimeZone;
-    for (final rec in records) {
-      final sec = DatabaseService.recordDurationSecondsWithinDayFromTimestamps(
-        rec,
-        selectedDate,
-        offset,
-        tz,
-      );
-      if (sec <= 0) continue;
-      final cid = DatabaseService.instance.resolvedCategoryIdForRecord(rec) ??
-          CategoryRule.uncategorizedSyntheticId;
-      out[cid] = (out[cid] ?? 0) + sec;
+  @override
+  State<PlanVsFactTab> createState() => _PlanVsFactTabState();
+}
+
+class _PlanVsFactTabState extends State<PlanVsFactTab> {
+  StreamSubscription<void>? _planRefreshSub;
+  late Future<DayAuditSnapshot> _auditFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _auditFuture = _reloadAudit();
+    _planRefreshSub =
+        DatabaseService.instance.planningRefreshNotifications.listen((_) {
+      if (mounted) setState(() => _auditFuture = _reloadAudit());
+    });
+  }
+
+  @override
+  void dispose() {
+    _planRefreshSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant PlanVsFactTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedDate != widget.selectedDate) {
+      setState(() => _auditFuture = _reloadAudit());
     }
   }
 
-  void _rollupPlannedByCategory(
-    List<PlanningTask> plans,
-    Map<int, int> plannedSec,
-  ) {
-    for (final t in plans) {
-      final sec = DatabaseService.planningWallEstimateSeconds(t);
-      if (sec == null || sec <= 0) continue;
-      plannedSec[t.categoryId] = (plannedSec[t.categoryId] ?? 0) + sec;
-    }
+  Future<DayAuditSnapshot> _reloadAudit() {
+    return DatabaseService.instance.getDayAudit(
+      widget.selectedDate,
+      recordsForActualSec: widget.records,
+    );
   }
 
   @override
@@ -99,11 +111,10 @@ class PlanVsFactTab extends StatelessWidget {
     final loc = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
 
-    return StreamBuilder<List<PlanningTask>>(
-      stream: DatabaseService.instance.planningStream(selectedDate),
-      builder: (context, planSnap) {
-        if (planSnap.connectionState == ConnectionState.waiting &&
-            !planSnap.hasData) {
+    return FutureBuilder<DayAuditSnapshot>(
+      future: _auditFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting && !snap.hasData) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -119,26 +130,43 @@ class PlanVsFactTab extends StatelessWidget {
           );
         }
 
-        final plans = planSnap.data ?? const <PlanningTask>[];
+        final audit = snap.data;
+        if (audit == null) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                t(loc, 'no_data_found'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        final auditDayStr =
+            '${widget.selectedDate.year}-${widget.selectedDate.month.toString().padLeft(2, '0')}-${widget.selectedDate.day.toString().padLeft(2, '0')}';
+
         final byPlan = DatabaseService.instance
-            .aggregateSourcePlanActualSecondsForWallCalendarDay(selectedDate);
+            .aggregateSourcePlanActualSecondsForWallCalendarDay(
+                widget.selectedDate);
 
-        final plannedSecByCat = <int, int>{};
-        _rollupPlannedByCategory(plans, plannedSecByCat);
-
-        final actualSecByCat = <int, int>{};
-        _rollupActualByCategory(actualSecByCat);
+        final plannedSecByCat =
+            Map<int, int>.from(audit.initialPlannedSecByCategory);
+        final actualSecByCat =
+            Map<int, int>.from(audit.actualSecByCategory);
 
         final allCatIds = <int>{...plannedSecByCat.keys, ...actualSecByCat.keys};
 
-        if (plans.isEmpty && allCatIds.isEmpty) {
+        if (audit.planCount == 0 && allCatIds.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
                 t(
                   loc,
-                  isFutureDate ? 'no_planned_tasks' : 'stats_pvf_no_plans',
+                  widget.isFutureDate
+                      ? 'no_planned_tasks'
+                      : 'stats_pvf_no_plans',
                 ),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -162,8 +190,20 @@ class PlanVsFactTab extends StatelessWidget {
             ? (100.0 * totalActualSec / totalPlannedSec)
             : null;
 
-        final ghostPlans = plans
-            .where((t) => !_planHasLinkedSeconds(t, byPlan))
+        final ghostPlans = audit.anchoredTasks
+            .where(
+              (t) =>
+                  !_planHasLinkedSeconds(t, byPlan) &&
+                  !DatabaseService.instance
+                      .planningAuditPostponedOnAnchorDay(t, auditDayStr),
+            )
+            .toList(growable: false);
+
+        final postponedForDay = audit.anchoredTasks
+            .where(
+              (t) => DatabaseService.instance
+                  .planningAuditPostponedOnAnchorDay(t, auditDayStr),
+            )
             .toList(growable: false);
 
         final rulesRoots = DatabaseService.instance.rules;
@@ -193,6 +233,56 @@ class PlanVsFactTab extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t(loc, 'stats_day_audit_title'),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _auditCounterColumn(
+                            context,
+                            scheme,
+                            t(loc, 'stats_audit_plan'),
+                            '${audit.planCount}',
+                            scheme.primary,
+                          ),
+                        ),
+                        Expanded(
+                          child: _auditCounterColumn(
+                            context,
+                            scheme,
+                            t(loc, 'stats_audit_fact'),
+                            '${audit.factLinkedCount}',
+                            scheme.secondary,
+                          ),
+                        ),
+                        Expanded(
+                          child: _auditCounterColumn(
+                            context,
+                            scheme,
+                            t(loc, 'stats_audit_postponed'),
+                            '${audit.postponedCount}',
+                            scheme.outline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Card(
               margin: EdgeInsets.zero,
               child: Padding(
@@ -256,6 +346,42 @@ class PlanVsFactTab extends StatelessWidget {
                 actualSecByCat: actualSecByCat,
               ),
             ),
+            if (postponedForDay.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              Text(
+                t(loc, 'stats_audit_postponed_list'),
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              ...postponedForDay.map(
+                (task) => ListTile(
+                  dense: true,
+                  leading: Icon(
+                    Icons.event_busy_outlined,
+                    size: 22,
+                    color: scheme.outline,
+                  ),
+                  title: Text(
+                    task.title,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                        ),
+                  ),
+                  subtitle: Text(
+                    localizeCategoryBreadcrumbPath(
+                      DatabaseService.instance
+                          .getCategoryPath(task.categoryId),
+                      currentLocale.value,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
             if (ghostPlans.isNotEmpty) ...[
               const SizedBox(height: 20),
               Text(
@@ -285,6 +411,36 @@ class PlanVsFactTab extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _auditCounterColumn(
+    BuildContext context,
+    ColorScheme scheme,
+    String label,
+    String value,
+    Color accent,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: accent,
+              ),
+        ),
+      ],
     );
   }
 

@@ -1536,6 +1536,9 @@ class PlanningTask {
     List<int>? subRecordIds,
     List<Tag>? tags,
     this.isSynced = true,
+    /// Wall `YYYY-MM-DD`: audit anchor (commitment day). Set on create; preserved when postponing.
+    this.initialDateKey,
+    this.isPostponed = false,
   })  : date = date ?? _dateFromDateKey(dateKey),
         endDateKey = endDateKey ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey),
         subRecordIds = subRecordIds ?? const [],
@@ -1584,6 +1587,15 @@ class PlanningTask {
   final List<Tag> tags;
   /// Local-only: false for optimistic / outbox rows until PocketBase confirms.
   final bool isSynced;
+
+  /// PocketBase [plans.initial_date_key] — wall day the task was first planned for.
+  final String? initialDateKey;
+
+  /// PocketBase [plans.is_postponed] — scheduled day is after [initialDateKey].
+  final bool isPostponed;
+
+  /// Parsed [initialDateKey] (UTC date-only), or `null` if missing / invalid.
+  DateTime? get initialDate => _dateFromDateKey(initialDateKey ?? '');
 
   static DateTime? _dateFromDateKey(String key) {
     if (key.length < 10) return null;
@@ -1718,7 +1730,17 @@ class PlanningTask {
       subRecordIds: subRecordIds,
       tags: tagList,
       isSynced: _jsonBool(g('isSynced', 'is_synced'), true),
+      initialDateKey: _normInitialDateKey(
+        g('initialDateKey', 'initial_date_key')?.toString(),
+      ),
+      isPostponed: _jsonBool(g('isPostponed', 'is_postponed'), false),
     );
+  }
+
+  static String? _normInitialDateKey(String? raw) {
+    final s = raw?.trim() ?? '';
+    if (s.length >= 10) return s.substring(0, 10);
+    return null;
   }
 
   /// `expand.tags_link` or a list of PocketBase **tags** row maps (`id`, `tag_id`, …).
@@ -1848,6 +1870,8 @@ class PlanningTask {
     List<int>? subRecordIds,
     List<Tag>? tags,
     bool? isSynced,
+    String? initialDateKey,
+    bool? isPostponed,
   }) {
     final eDt = clearEnd ? null : (endDateTime ?? this.endDateTime);
     final eDk = endDateKey ?? (eDt != null ? _dateKeyFromDate(eDt) : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
@@ -1870,6 +1894,8 @@ class PlanningTask {
       subRecordIds: subRecordIds ?? this.subRecordIds,
       tags: tags ?? this.tags,
       isSynced: isSynced ?? this.isSynced,
+      initialDateKey: initialDateKey ?? this.initialDateKey,
+      isPostponed: isPostponed ?? this.isPostponed,
     );
   }
 }
@@ -1882,6 +1908,8 @@ class PlanningBulkPatch {
     this.startTimeDisplay,
     this.endDateTimeDisplay,
     this.clearEnd = false,
+    this.initialDateKey,
+    this.isPostponed,
   });
 
   final String planRowId;
@@ -1889,9 +1917,38 @@ class PlanningBulkPatch {
   final DateTime? startTimeDisplay;
   final DateTime? endDateTimeDisplay;
   final bool clearEnd;
+  /// Sets [plans.initial_date_key] when non-null (audit anchor).
+  final String? initialDateKey;
+  /// Sets [plans.is_postponed] when non-null.
+  final bool? isPostponed;
 }
 
 // --- Stats tree (HIERARCHICAL STATS §8). Pure data. ---
+
+/// Plan vs fact audit for one wall day ([initial_date_key] anchor).
+class DayAuditSnapshot {
+  const DayAuditSnapshot({
+    required this.planCount,
+    required this.factLinkedCount,
+    required this.postponedCount,
+    required this.anchoredTasks,
+    required this.initialPlannedSecByCategory,
+    required this.actualSecByCategory,
+  });
+
+  /// Tasks whose audit anchor is this day (initial commitment).
+  final int planCount;
+
+  /// Anchored tasks with at least one [records.source_plan_id] link.
+  final int factLinkedCount;
+
+  /// Anchored, not done, scheduled on a future wall day or [PlanningTask.isPostponed].
+  final int postponedCount;
+
+  final List<PlanningTask> anchoredTasks;
+  final Map<int, int> initialPlannedSecByCategory;
+  final Map<int, int> actualSecByCategory;
+}
 
 /// One node in the hierarchical stats tree.
 class StatsTreeNode {

@@ -66,6 +66,8 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 | `user_id` | relation | → `profiles.id`. |
 | `plan_id` | text | Business UUID / metadata; **not** a REST path segment. |
 | `title`, `is_done`, `order`, times, `checklist`, `note`, `tags` | — | See **`lib/DATA_MAP.md`**. |
+| `initial_date_key` | text | Wall day `YYYY-MM-DD` of original plan commitment; **does not change** when the task is postponed to a future day. |
+| `is_postponed` | bool | `true` when the scheduled wall day is after `initial_date_key` (bulk/single move ahead). |
 | `tags_link` | relation(s) | Expand: `kPbPlanTagsExpand`. |
 
 ### 4.4 `records` (timeline)

@@ -80,6 +80,12 @@ bool _jsonBoolFromDynamic(dynamic v) {
   return false;
 }
 
+String? _normPlanInitialDateKey(dynamic raw) {
+  final s = raw?.toString().trim() ?? '';
+  if (s.length >= 10) return s.substring(0, 10);
+  return null;
+}
+
 /// True when a flattened **categories** row should participate in the active tree / uniqueness checks.
 bool _categoryFlatRowIsActive(Map<String, dynamic> row) {
   final fields =
@@ -379,6 +385,9 @@ class DatabaseService {
       'note': t.notes,
       'parent_plan_id': t.parentPlanId,
       'isSynced': t.isSynced,
+      if (t.initialDateKey != null && t.initialDateKey!.trim().length >= 10)
+        'initial_date_key': t.initialDateKey!.trim().substring(0, 10),
+      'is_postponed': t.isPostponed,
       'tags': <Map<String, dynamic>>[
         for (final g in t.tags)
           <String, dynamic>{
@@ -440,6 +449,10 @@ class DatabaseService {
           : int.tryParse(m['parent_plan_id'].toString()),
       tags: tags,
       isSynced: _jsonBoolFromDynamic(m['isSynced'] ?? true),
+      initialDateKey: _normPlanInitialDateKey(
+        m['initial_date_key'] ?? m['initialDateKey'],
+      ),
+      isPostponed: _jsonBoolFromDynamic(m['is_postponed'] ?? m['isPostponed'] ?? false),
     );
   }
 
@@ -709,6 +722,10 @@ class DatabaseService {
       _planningRefreshController.add(null);
     }
   }
+
+  /// Stats / Plan-vs-fact audit: listen to refresh planning data (same signal as [notifyPlanningRefresh]).
+  Stream<void> get planningRefreshNotifications =>
+      _planningRefreshController.stream;
 
   /// When the device-local calendar day changes while the app stays open (midnight), ping [timeUpdates]
   /// so open timeline streams re-bucket without a manual refresh.
@@ -1488,6 +1505,129 @@ class DatabaseService {
     }
   }
 
+  /// Wall `YYYY-MM-DD` where the plan is currently scheduled (start wall, else [PlanningTask.dateKey]).
+  String planningWallScheduleDateKey(PlanningTask t) {
+    final st = t.startTime;
+    if (st != null) {
+      return '${st.year}-${_two(st.month)}-${_two(st.day)}';
+    }
+    final dk = t.dateKey.trim();
+    if (dk.length >= 10) return dk.substring(0, 10);
+    return '';
+  }
+
+  /// Audit anchor: [PlanningTask.initialDateKey] or, for legacy rows, current schedule key.
+  String planningAuditAnchorDateKey(PlanningTask t) {
+    final i = t.initialDateKey?.trim() ?? '';
+    if (i.length >= 10) return i.substring(0, 10);
+    return planningWallScheduleDateKey(t);
+  }
+
+  /// True when [newScheduleKey] is strictly after [anchorKey] (lexicographic `YYYY-MM-DD`).
+  bool planningShouldMarkPostponed({
+    required String anchorKey,
+    required String newScheduleKey,
+  }) {
+    if (anchorKey.length < 10 || newScheduleKey.length < 10) return false;
+    return newScheduleKey.compareTo(anchorKey) > 0;
+  }
+
+  /// Any cached flat record (primary rows) links to this plan’s PocketBase id via [source_plan_id].
+  bool planHasSourceRecordLink(PlanningTask t) {
+    final pid = pocketRelationIdOrNull(t.pocketRecordId);
+    if (pid == null) return false;
+    for (final row in _cachedFlatRecords) {
+      if (_rowHasNonEmptyParent(row['parent_id'])) continue;
+      if (_optimisticRowDeletedRaw(row)) continue;
+      final sp = pocketRelationIdOrNull(row['source_plan_id']?.toString());
+      if (sp == pid) return true;
+    }
+    return false;
+  }
+
+  /// Shown as “postponed” on [auditDayYmd] stats: anchored there, still open, scheduled ahead or flag set.
+  bool planningAuditPostponedOnAnchorDay(PlanningTask t, String auditDayYmd) {
+    if (t.isDone) return false;
+    if (t.planRowIdForBackend.startsWith('optimistic-')) return false;
+    final sk = planningWallScheduleDateKey(t);
+    if (sk.length >= 10 && sk.compareTo(auditDayYmd) > 0) return true;
+    return t.isPostponed;
+  }
+
+  Future<List<PlanningTask>> _fetchAllPlanningTasksForCurrentUser() async {
+    if (!_isPlansTableConfigured) return [];
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
+    final authId = _userIdForWhere;
+    if (authId == null || authId.isEmpty) return [];
+    final uid = _escapeForPbFilter(authId);
+    try {
+      final tagCatalog = await fetchTagsForCurrentUser();
+      final list = await _pb.collection(PbCollections.plans).getFullList(
+            expand: kPbPlanTagsExpand,
+            filter: 'user_id = "$uid"',
+            batch: 200,
+          );
+      return [
+        for (final r in list)
+          _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
+      ];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Plan-vs-fact **day audit**: tasks whose [planningAuditAnchorDateKey] equals this wall day.
+  ///
+  /// [recordsForActualSec]: same list as the Stats timeline tab (per-category **fact** seconds for [wallDate]).
+  Future<DayAuditSnapshot> getDayAudit(
+    DateTime wallDate, {
+    required List<Map<String, dynamic>> recordsForActualSec,
+  }) async {
+    final dk =
+        '${wallDate.year}-${_two(wallDate.month)}-${_two(wallDate.day)}';
+    final all = await _fetchAllPlanningTasksForCurrentUser();
+    final anchored = <PlanningTask>[];
+    for (final t in all) {
+      if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
+      if (planningAuditAnchorDateKey(t) != dk) continue;
+      anchored.add(t);
+    }
+    var fact = 0;
+    var postponed = 0;
+    final plannedSecByCat = <int, int>{};
+    for (final t in anchored) {
+      final sec = planningWallEstimateSeconds(t);
+      if (sec != null && sec > 0) {
+        plannedSecByCat[t.categoryId] = (plannedSecByCat[t.categoryId] ?? 0) + sec;
+      }
+      if (planHasSourceRecordLink(t)) fact++;
+      if (planningAuditPostponedOnAnchorDay(t, dk)) postponed++;
+    }
+    final actualSecByCat = <int, int>{};
+    final offset = settings.timezoneOffsetHours;
+    final tz = settings.preferredTimeZone;
+    for (final rec in recordsForActualSec) {
+      final sec = recordDurationSecondsWithinDayFromTimestamps(
+        rec,
+        wallDate,
+        offset,
+        tz,
+      );
+      if (sec <= 0) continue;
+      final cid = resolvedCategoryIdForRecord(rec) ??
+          CategoryRule.uncategorizedSyntheticId;
+      actualSecByCat[cid] = (actualSecByCat[cid] ?? 0) + sec;
+    }
+    return DayAuditSnapshot(
+      planCount: anchored.length,
+      factLinkedCount: fact,
+      postponedCount: postponed,
+      anchoredTasks: anchored,
+      initialPlannedSecByCategory: plannedSecByCat,
+      actualSecByCategory: actualSecByCat,
+    );
+  }
+
   DateTime? _wallDateKeyToLocalDate(String dateKey) {
     if (dateKey.length < 10) return null;
     final y = int.tryParse(dateKey.substring(0, 4));
@@ -1641,6 +1781,8 @@ class DatabaseService {
         'note': d['note'],
         'notes': d['note'],
         'parent_plan_id': d['parent_plan_id'],
+        'initial_date_key': d['initial_date_key'],
+        'is_postponed': d['is_postponed'],
         if (expandJson != null) 'expand': expandJson,
         'tags_link': d['tags_link'],
       },
@@ -7743,6 +7885,13 @@ class DatabaseService {
     if (task.notes != null && task.notes!.trim().isNotEmpty) {
       body['note'] = task.notes;
     }
+    final idk = task.initialDateKey?.trim() ?? '';
+    if (idk.length >= 10) {
+      body['initial_date_key'] = idk.substring(0, 10);
+    } else if (task.dateKey.length >= 10) {
+      body['initial_date_key'] = task.dateKey.substring(0, 10);
+    }
+    body['is_postponed'] = task.isPostponed;
     if (task.tags.isNotEmpty) {
       final pbIds = await _pbTagRecordIdsFromTags(task.tags);
       if (pbIds.isNotEmpty) {
@@ -8120,6 +8269,8 @@ class DatabaseService {
     DateTime? endDateTime,
     DateTime? endDateTimeDisplay,
     bool clearEnd = false,
+    String? planInitialDateKey,
+    bool? planIsPostponed,
   }) {
     final fields = <String, dynamic>{'user_id': _pidForPbFilter};
     if (title != null) fields['title'] = title;
@@ -8154,6 +8305,13 @@ class DatabaseService {
     if (bizPid.isNotEmpty && !bizPid.startsWith('optimistic-')) {
       fields['plan_id'] = bizPid;
     }
+    final initK = planInitialDateKey?.trim() ?? '';
+    if (initK.length >= 10) {
+      fields['initial_date_key'] = initK.substring(0, 10);
+    }
+    if (planIsPostponed != null) {
+      fields['is_postponed'] = planIsPostponed;
+    }
     final patchBody = <String, dynamic>{};
     for (final e in fields.entries) {
       if (e.key == 'user_id') continue;
@@ -8182,6 +8340,8 @@ class DatabaseService {
     bool suppressAppSnack = false,
     /// When non-null, replaces **tags_link** on PocketBase after successful scalar PATCH.
     List<Tag>? tags,
+    String? planInitialDateKey,
+    bool? planIsPostponed,
   }) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
@@ -8207,6 +8367,8 @@ class DatabaseService {
       endDateTime: endDateTime,
       endDateTimeDisplay: endDateTimeDisplay,
       clearEnd: clearEnd,
+      planInitialDateKey: planInitialDateKey,
+      planIsPostponed: planIsPostponed,
     );
     if (patchBody.isEmpty && tags == null) return false;
     try {
@@ -8255,6 +8417,8 @@ class DatabaseService {
           startTimeDisplay: p.startTimeDisplay,
           endDateTimeDisplay: p.endDateTimeDisplay,
           clearEnd: p.clearEnd,
+          planInitialDateKey: p.initialDateKey,
+          planIsPostponed: p.isPostponed,
         );
         if (patchBody.isEmpty) continue;
         try {

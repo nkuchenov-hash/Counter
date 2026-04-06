@@ -114,6 +114,8 @@ description: Revisions and corrections for DATA_MAP.md.
 | **note** | String | Text | NO | Personal notes or extra details. |
 | **tags** | String | Data | NO | Comma-separated tags string. |
 | **tags_link** | Relation (Mult)| **Expand** | NO | PB Relation to the `tags` collection. |
+| **initial_date_key** | String | Audit | NO | Wall day `YYYY-MM-DD` when the task was first placed on the plan (does not move when the task is postponed). |
+| **is_postponed** | Bool | Audit | NO | `true` when the scheduled wall day is after [initial_date_key] (bulk/single move to a future day). |
 
 ### 🛠 Operational Logic for `plans`:
 1. **The `order` Field (Priority):**

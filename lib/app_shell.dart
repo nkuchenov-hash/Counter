@@ -1302,6 +1302,24 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   ) async {
     final loc = currentLocale.value;
     try {
+      final anchorShort =
+          DatabaseService.instance.planningAuditAnchorDateKey(baseline);
+      const minKeyLen = 10;
+      final persistInitial = anchorShort.length >= minKeyLen
+          ? anchorShort
+          : DatabaseService.instance.planningWallScheduleDateKey(baseline);
+      final newSk =
+          DatabaseService.instance.planningWallScheduleDateKey(edited);
+      final initForPatch = persistInitial.length >= minKeyLen
+          ? persistInitial
+          : (newSk.length >= minKeyLen ? newSk : '');
+      final postponed = !edited.isDone &&
+          initForPatch.length >= minKeyLen &&
+          DatabaseService.instance.planningShouldMarkPostponed(
+            anchorKey: initForPatch,
+            newScheduleKey:
+                newSk.length >= minKeyLen ? newSk : initForPatch,
+          );
       final ok = await DatabaseService.instance.updatePlanningTask(
         edited.planRowIdForBackend,
         planBusinessId: edited.planRowId,
@@ -1316,6 +1334,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         clearEnd: edited.endDateTime == null,
         tags: edited.tags,
         suppressAppSnack: true,
+        planInitialDateKey:
+            initForPatch.length >= minKeyLen ? initForPatch : null,
+        planIsPostponed: postponed,
       );
       if (!mounted) return;
       if (!ok) {
