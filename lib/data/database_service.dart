@@ -8230,6 +8230,8 @@ class DatabaseService {
 
   /// Multiple scalar `plans` PATCH calls; clears optimistic overlays per row; **one** [notifyPlanningRefresh] at end.
   ///
+  /// Each [PlanningBulkPatch] carries the **final** wall times to persist. Callers may combine a calendar
+  /// move and a time delta in one batch by precomputing `start_time` / `end_time` on the destination day.
   /// No per-row tag sync — use [updatePlanningTask] when tags change.
   Future<bool> bulkUpdatePlans(
     List<PlanningBulkPatch> patches, {

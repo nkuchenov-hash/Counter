@@ -11,6 +11,7 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/features/planning/smart_plan_sheet.dart';
@@ -641,95 +642,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     });
   }
 
-  Future<void> _bulkMoveSelectedToDate(List<PlanningTask> tasks) async {
-    if (_selectedPlanKeys.isEmpty) return;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: widget.selectedDate ?? _today,
-      firstDate: DateTime.utc(2020),
-      lastDate: DateTime.utc(2035),
-    );
-    if (picked == null || !mounted) return;
-    final loc = currentLocale.value;
-    final patches = <PlanningBulkPatch>[];
-    for (final key in _selectedPlanKeys.toList()) {
-      PlanningTask? match;
-      for (final t in tasks) {
-        if (_planKey(t) == key) {
-          match = t;
-          break;
-        }
-      }
-      if (match == null) continue;
-      if (match.planRowIdForBackend.startsWith('optimistic-')) continue;
-      final pbId = match.pocketRecordId?.trim() ?? '';
-      if (pbId.isEmpty) continue;
-      var h = 9;
-      var min = 0;
-      if (match.startTime != null) {
-        h = match.startTime!.hour;
-        min = match.startTime!.minute;
-      }
-      final wallStart =
-          DateTime(picked.year, picked.month, picked.day, h, min);
-      DateTime? wallEnd;
-      if (match.endDateTime != null) {
-        wallEnd = DateTime(
-          picked.year,
-          picked.month,
-          picked.day,
-          match.endDateTime!.hour,
-          match.endDateTime!.minute,
-        );
-      }
-      final newKey = _dateKeyFromDate(picked);
-      final updated = match.copyWith(
-        dateKey: newKey,
-        date: DateTime.utc(picked.year, picked.month, picked.day),
-        startTime: wallStart,
-        endDateTime: wallEnd,
-        endDateKey: wallEnd != null ? newKey : null,
-        clearEnd: match.endDateTime == null,
-      );
-      DatabaseService.instance.applyOptimisticPlanningTask(updated);
-      patches.add(
-        PlanningBulkPatch(
-          planRowId: match.planRowIdForBackend,
-          planBusinessId: match.planRowId,
-          startTimeDisplay: wallStart,
-          endDateTimeDisplay: wallEnd,
-          clearEnd: match.endDateTime == null,
-        ),
-      );
-    }
-    if (patches.isEmpty) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(loc, 'plan_save_failed'))),
-        );
-      }
-      return;
-    }
-    DatabaseService.instance.notifyPlanningRefresh();
-    if (mounted) setState(() {});
-    final ok = await DatabaseService.instance.bulkUpdatePlans(
-      patches,
-      suppressAppSnack: true,
-    );
-    if (!mounted) return;
-    setState(() {
-      _selectedPlanKeys.clear();
-      _planSelectMode = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          ok ? t(loc, 'plan_bulk_moved') : t(loc, 'plan_save_failed'),
-        ),
-      ),
-    );
-  }
-
   /// Half-open wall-clock overlap probe for planning cards (synthetic duration when end missing).
   static ({DateTime s, DateTime e}) _wallRangeForOverlapProbe(
     DateTime? start,
@@ -752,97 +664,73 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     return a0.isBefore(b1) && b0.isBefore(a1);
   }
 
-  /// Returns true if applying [delta] to selected tasks would overlap another selected task or a non-selected task.
-  bool _bulkShiftWouldOverlap(
-    List<PlanningTask> tasks,
-    Set<String> selectedKeys,
-    Duration delta,
+  /// After date move + time shift: overlaps among selected finals vs tasks already on [destinationDay] (excluding selection).
+  bool _bulkPlanningEditWouldOverlap(
+    List<PlanningTask> currentDayTasks,
+    List<PlanningTask> destinationTasks,
+    BulkPlanningEditResult result,
   ) {
-    final shifted = <({DateTime s, DateTime e})>[];
-    for (final t in tasks) {
+    final selectedKeys = _selectedPlanKeys;
+    final finals = <({DateTime s, DateTime e})>[];
+    for (final t in currentDayTasks) {
       if (!selectedKeys.contains(_planKey(t))) continue;
-      if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
-      final st = t.startTime;
-      if (st == null) continue;
-      final ns = st.add(delta);
-      final rawEnd = t.endDateTime?.add(delta);
-      final r = _wallRangeForOverlapProbe(ns, rawEnd);
-      shifted.add(r);
+      final wall = computeBulkEditWallTimes(t, result.targetDate, result.timeShift);
+      finals.add(_wallRangeForOverlapProbe(wall.start, wall.end));
     }
-    for (var i = 0; i < shifted.length; i++) {
-      for (var j = i + 1; j < shifted.length; j++) {
-        final a = shifted[i];
-        final b = shifted[j];
+    for (var i = 0; i < finals.length; i++) {
+      for (var j = i + 1; j < finals.length; j++) {
+        final a = finals[i];
+        final b = finals[j];
         if (_wallIntervalsOverlap(a.s, a.e, b.s, b.e)) return true;
       }
     }
-    for (final t in tasks) {
-      if (selectedKeys.contains(_planKey(t))) continue;
-      final st = t.startTime;
+    for (final o in destinationTasks) {
+      if (selectedKeys.contains(_planKey(o))) continue;
+      if (o.planRowIdForBackend.startsWith('optimistic-')) continue;
+      final st = o.startTime;
       if (st == null) continue;
-      final o = _wallRangeForOverlapProbe(st, t.endDateTime);
-      for (final sh in shifted) {
-        if (_wallIntervalsOverlap(sh.s, sh.e, o.s, o.e)) return true;
+      final oR = _wallRangeForOverlapProbe(st, o.endDateTime);
+      for (final f in finals) {
+        if (_wallIntervalsOverlap(f.s, f.e, oR.s, oR.e)) return true;
       }
     }
     return false;
   }
 
-  Future<void> _bulkShiftSelectedTime(List<PlanningTask> tasks) async {
+  Future<void> _openBulkPlanningEdit(List<PlanningTask> tasks) async {
     if (_selectedPlanKeys.isEmpty) return;
     final loc = currentLocale.value;
-    final delta = await showModalBottomSheet<Duration>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Text(
-                  t(loc, 'plan_bulk_shift_sheet_title'),
-                  style: Theme.of(ctx).textTheme.titleMedium,
-                ),
-              ),
-              ListTile(
-                title: Text(t(loc, 'plan_time_shift_minus_1h')),
-                onTap: () => Navigator.pop(ctx, const Duration(hours: -1)),
-              ),
-              ListTile(
-                title: Text(t(loc, 'plan_time_shift_minus_30m')),
-                onTap: () => Navigator.pop(ctx, const Duration(minutes: -30)),
-              ),
-              ListTile(
-                title: Text(t(loc, 'plan_time_shift_minus_15m')),
-                onTap: () => Navigator.pop(ctx, const Duration(minutes: -15)),
-              ),
-              ListTile(
-                title: Text(t(loc, 'plan_time_shift_plus_15m')),
-                onTap: () => Navigator.pop(ctx, const Duration(minutes: 15)),
-              ),
-              ListTile(
-                title: Text(t(loc, 'plan_time_shift_plus_30m')),
-                onTap: () => Navigator.pop(ctx, const Duration(minutes: 30)),
-              ),
-              ListTile(
-                title: Text(t(loc, 'plan_time_shift_plus_1h')),
-                onTap: () => Navigator.pop(ctx, const Duration(hours: 1)),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
+    final initial = widget.selectedDate ?? _today;
+    final result = await showBulkPlanningEditSheet(
+      context,
+      initialDay: initial,
+      selectedCount: _selectedPlanKeys.length,
     );
-    if (delta == null || !mounted || delta.inSeconds == 0) return;
-    if (_bulkShiftWouldOverlap(tasks, _selectedPlanKeys, delta)) {
+    if (result == null || !mounted) return;
+
+    final refDay = widget.selectedDate ?? _today;
+    final sameDay = result.targetDate.year == refDay.year &&
+        result.targetDate.month == refDay.month &&
+        result.targetDate.day == refDay.day;
+    if (sameDay && result.timeShift.inSeconds == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
+      );
+      return;
+    }
+
+    final destTasks = await DatabaseService.instance.getPlanningTasksForWallDate(
+      result.targetDate,
+    );
+    if (!mounted) return;
+
+    if (_bulkPlanningEditWouldOverlap(tasks, destTasks, result)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(t(loc, 'plan_bulk_overlap_warning'))),
       );
       return;
     }
+
     final patches = <PlanningBulkPatch>[];
     for (final key in _selectedPlanKeys.toList()) {
       PlanningTask? match;
@@ -856,21 +744,20 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       if (match.planRowIdForBackend.startsWith('optimistic-')) continue;
       final pbId = match.pocketRecordId?.trim() ?? '';
       if (pbId.isEmpty) continue;
-      final st = match.startTime;
-      if (st == null) continue;
-      final wallStart = st.add(delta);
-      DateTime? wallEnd;
-      if (match.endDateTime != null) {
-        wallEnd = match.endDateTime!.add(delta);
-      }
-      final d = DateTime(wallStart.year, wallStart.month, wallStart.day);
+
+      final wall = computeBulkEditWallTimes(
+        match,
+        result.targetDate,
+        result.timeShift,
+      );
+      final d = DateTime(wall.start.year, wall.start.month, wall.start.day);
       final newKey = _dateKeyFromDate(d);
       final updated = match.copyWith(
         dateKey: newKey,
         date: DateTime.utc(d.year, d.month, d.day),
-        startTime: wallStart,
-        endDateTime: wallEnd,
-        endDateKey: wallEnd != null ? newKey : null,
+        startTime: wall.start,
+        endDateTime: wall.end,
+        endDateKey: wall.end != null ? newKey : null,
         clearEnd: match.endDateTime == null,
       );
       DatabaseService.instance.applyOptimisticPlanningTask(updated);
@@ -878,22 +765,22 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         PlanningBulkPatch(
           planRowId: match.planRowIdForBackend,
           planBusinessId: match.planRowId,
-          startTimeDisplay: wallStart,
-          endDateTimeDisplay: wallEnd,
+          startTimeDisplay: wall.start,
+          endDateTimeDisplay: wall.end,
           clearEnd: match.endDateTime == null,
         ),
       );
     }
+
     if (patches.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t(loc, 'plan_bulk_shift_no_timed_tasks')),
-          ),
+          SnackBar(content: Text(t(loc, 'plan_save_failed'))),
         );
       }
       return;
     }
+
     DatabaseService.instance.notifyPlanningRefresh();
     if (mounted) setState(() {});
     final ok = await DatabaseService.instance.bulkUpdatePlans(
@@ -908,9 +795,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          ok
-              ? t(loc, 'plan_bulk_shift_applied')
-              : t(loc, 'plan_save_failed'),
+          ok ? t(loc, 'plan_bulk_edit_success') : t(loc, 'plan_save_failed'),
         ),
       ),
     );
@@ -2020,14 +1905,9 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                 child: Text(t(loc, 'cancel')),
               ),
               IconButton(
-                tooltip: t(loc, 'plan_bulk_move_date'),
-                icon: const Icon(Icons.event_rounded),
-                onPressed: () => unawaited(_bulkMoveSelectedToDate(tasks)),
-              ),
-              IconButton(
-                tooltip: t(loc, 'plan_bulk_shift_time'),
-                icon: const Icon(Icons.more_time_rounded),
-                onPressed: () => unawaited(_bulkShiftSelectedTime(tasks)),
+                tooltip: t(loc, 'plan_bulk_edit'),
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => unawaited(_openBulkPlanningEdit(tasks)),
               ),
               IconButton(
                 tooltip: t(loc, 'delete'),

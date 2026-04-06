@@ -165,6 +165,16 @@ const Map<String, Map<String, String>> l10n = {
     'plan_bulk_shift_no_timed_tasks':
         'No selected tasks with a start time to shift.',
     'plan_bulk_shift_applied': 'Times updated.',
+    'plan_bulk_edit': 'Edit',
+    'plan_bulk_edit_sheet_title': 'Edit %s tasks',
+    'plan_bulk_edit_date_label': 'Date',
+    'plan_bulk_edit_shift_section': 'Shift time',
+    'plan_bulk_edit_shift_hint':
+        'Moves start and end by the same amount (tasks without a time use 09:00).',
+    'plan_bulk_edit_shift_none': 'None',
+    'plan_bulk_edit_apply': 'Apply',
+    'plan_bulk_edit_success': 'Plans updated.',
+    'plan_bulk_edit_no_changes': 'No changes to apply.',
     'record_started_message': 'Record "%s" started',
     'manage_tags': 'Manage tags',
     'planning_tag_display_style': 'Tag display style',
@@ -582,6 +592,16 @@ const Map<String, Map<String, String>> l10n = {
     'plan_bulk_shift_no_timed_tasks':
         'Нет выбранных задач со временем начала для сдвига.',
     'plan_bulk_shift_applied': 'Время обновлено.',
+    'plan_bulk_edit': 'Изменить',
+    'plan_bulk_edit_sheet_title': 'Изменить задачи (%s)',
+    'plan_bulk_edit_date_label': 'Дата',
+    'plan_bulk_edit_shift_section': 'Сдвиг времени',
+    'plan_bulk_edit_shift_hint':
+        'Сдвигает начало и конец на одно значение (без времени — от 09:00).',
+    'plan_bulk_edit_shift_none': 'Нет',
+    'plan_bulk_edit_apply': 'Применить',
+    'plan_bulk_edit_success': 'Планы обновлены.',
+    'plan_bulk_edit_no_changes': 'Нет изменений.',
     'record_started_message': 'Запись «%s» запущена',
     'manage_tags': 'Управление тегами',
     'planning_tag_display_style': 'Стиль отображения тегов',
