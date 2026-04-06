@@ -17,6 +17,7 @@ import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
 import 'package:counter/features/timeline/timeline_view.dart' hide showAppDateTimePicker;
 import 'package:counter/l10n/app_locales.dart';
+import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -587,12 +588,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     final pathTag =
         cid != null ? DatabaseService.instance.getCategoryPath(cid) : 'Life';
     if (fuzzyMatch != null && mounted) {
+      final loc = currentLocale.value;
+      final pathUi =
+          localizeCategoryBreadcrumbPath(fuzzyMatch.path, loc);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            t(currentLocale.value, 'mapped_to')
+            t(loc, 'mapped_to')
                 .replaceFirst('%s', title)
-                .replaceFirst('%s', fuzzyMatch.path),
+                .replaceFirst('%s', pathUi),
           ),
         ),
       );

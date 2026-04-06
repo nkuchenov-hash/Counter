@@ -1523,6 +1523,54 @@ class DatabaseService {
     return best;
   }
 
+  /// True when [id] is a real category (not uncategorized / unset).
+  bool _planLocalCategoryIdIsConcrete(int? id) {
+    if (id == null) return false;
+    if (id == 0) return false;
+    if (id == CategoryRule.uncategorizedSyntheticId) return false;
+    return true;
+  }
+
+  /// Cached plans only ([_tasksCache] + optimistic overlays) — for instant UI cache rows.
+  int? _tryResolveCategoryIdFromSourcePlanPbIdSync(String planPbId) {
+    final want = planPbId.trim();
+    if (want.isEmpty) return null;
+    for (final t in _tasksCache) {
+      if (pocketRelationIdOrNull(t.pocketRecordId) == want) {
+        return _planLocalCategoryIdIsConcrete(t.categoryId) ? t.categoryId : null;
+      }
+    }
+    for (final m in _planningOptimisticByDateKey.values) {
+      for (final t in m.values) {
+        if (pocketRelationIdOrNull(t.pocketRecordId) == want) {
+          return _planLocalCategoryIdIsConcrete(t.categoryId) ? t.categoryId : null;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// PocketBase **plans** row id → local [CategoryRule.id] for `records.category_id` inheritance.
+  Future<int?> _resolveCategoryIdFromSourcePlanPbId(String? planPbIdRaw) async {
+    final want = pocketRelationIdOrNull(planPbIdRaw);
+    if (want == null) return null;
+    final cached = _tryResolveCategoryIdFromSourcePlanPbIdSync(want);
+    if (cached != null) return cached;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return null;
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) return null;
+      final r = await _pb.collection(PbCollections.plans).getOne(want);
+      final d = r.data;
+      final cid = categoryIdFromRecordRow(<String, dynamic>{
+        'category_id': d['category_id'],
+      });
+      return _planLocalCategoryIdIsConcrete(cid) ? cid : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   PlanningTask _planningTaskFromPocketRecord(
     RecordModel r, {
     required List<Tag> pocketTagCatalog,
@@ -6307,6 +6355,13 @@ class DatabaseService {
       final sourcePlanForPayload = !hasParent
           ? pocketRelationIdOrNull(sourcePlanPocketRecordId)
           : null;
+      if (sourcePlanForPayload != null) {
+        final pc =
+            await _resolveCategoryIdFromSourcePlanPbId(sourcePlanForPayload);
+        if (_planLocalCategoryIdIsConcrete(pc)) {
+          cid = pc;
+        }
+      }
       if (status == 'running') {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
@@ -6681,8 +6736,20 @@ class DatabaseService {
       row['end_time'] = endTime.toUtc().toIso8601String();
       row['status'] = 'stopped';
     }
-    if (categoryId != null) {
-      row['category_id'] = _recordCategoryBusinessPkForApi(categoryId);
+    var resolvedCategoryId = categoryId;
+    var shouldWriteCategory = categoryId != null;
+    if (syncSourcePlan && !clearSourcePlan) {
+      final sp = pocketRelationIdOrNull(sourcePlanPocketRecordId);
+      if (sp != null) {
+        final ic = _tryResolveCategoryIdFromSourcePlanPbIdSync(sp);
+        if (_planLocalCategoryIdIsConcrete(ic)) {
+          resolvedCategoryId = ic;
+          shouldWriteCategory = true;
+        }
+      }
+    }
+    if (shouldWriteCategory && resolvedCategoryId != null) {
+      row['category_id'] = _recordCategoryBusinessPkForApi(resolvedCategoryId);
     }
     if (note != null) row['note'] = note;
     if (tags != null) {
@@ -6725,6 +6792,18 @@ class DatabaseService {
       final originalInput = rid;
       rid = await _resolveRecordIdForRestUrl(rid);
       _log('PATCH_ID_TRACE: updateRecord pb id=$rid');
+      var categoryForPatch = categoryId;
+      var shouldPatchCategory = categoryId != null;
+      if (syncSourcePlan && !clearSourcePlan) {
+        final sp0 = pocketRelationIdOrNull(sourcePlanPocketRecordId);
+        if (sp0 != null) {
+          final pc = await _resolveCategoryIdFromSourcePlanPbId(sp0);
+          if (_planLocalCategoryIdIsConcrete(pc)) {
+            categoryForPatch = pc;
+            shouldPatchCategory = true;
+          }
+        }
+      }
       final updates = <String, dynamic>{};
       if (title != null) updates['title'] = title;
       if (endTime != null) {
@@ -6737,8 +6816,9 @@ class DatabaseService {
           updates['status'] = 'running';
         }
       }
-      if (categoryId != null) {
-        updates['category_id'] = _recordCategoryBusinessPkForApi(categoryId);
+      if (shouldPatchCategory && categoryForPatch != null) {
+        updates['category_id'] =
+            _recordCategoryBusinessPkForApi(categoryForPatch);
       }
       if (note != null) updates['note'] = note;
       if (tags != null) {
@@ -6782,7 +6862,7 @@ class DatabaseService {
           row['end_time'] = endTime.toUtc().toIso8601String();
           row['status'] = 'stopped';
         }
-        if (categoryId != null) {
+        if (shouldPatchCategory && categoryForPatch != null) {
           row['category_id'] = updates['category_id'];
         }
         if (note != null) row['note'] = note;

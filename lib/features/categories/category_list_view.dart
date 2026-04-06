@@ -6,6 +6,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/app_locales.dart';
+import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -21,7 +22,7 @@ String _categoryTileLabel(CategoryRule r) {
   final fromMap = r.localizedNames?[loc] ?? r.localizedNames?['en'];
   final s =
       (fromMap != null && fromMap.trim().isNotEmpty) ? fromMap.trim() : r.name;
-  return s.trim();
+  return localizeCategoryDbSegment(s.trim(), loc);
 }
 
 /// Target columns per depth: roots 3, children 4, deeper 5 (drives responsive tile size).

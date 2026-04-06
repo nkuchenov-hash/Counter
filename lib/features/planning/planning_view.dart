@@ -18,6 +18,7 @@ import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
+import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -1621,7 +1622,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              k,
+              localizeCategoryBreadcrumbPath(k, currentLocale.value),
               textAlign: TextAlign.start,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: scheme.onSurfaceVariant,
@@ -2655,9 +2656,10 @@ class _PlanningTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final categoryTrail = DatabaseService.instance
-        .getCategoryPath(task.categoryId)
-        .trim();
+    final categoryTrail = localizeCategoryBreadcrumbPath(
+      DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
+      currentLocale.value,
+    );
     final categoryTone =
         DatabaseService.instance.getCategoryColor(task.categoryId);
     final bg = selectMode && isSelected

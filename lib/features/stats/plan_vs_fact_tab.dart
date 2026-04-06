@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -270,7 +271,11 @@ class PlanVsFactTab extends StatelessWidget {
                   leading: const Icon(Icons.event_note_outlined, size: 20),
                   title: Text(task.title),
                   subtitle: Text(
-                    DatabaseService.instance.getCategoryPath(task.categoryId),
+                    localizeCategoryBreadcrumbPath(
+                      DatabaseService.instance
+                          .getCategoryPath(task.categoryId),
+                      currentLocale.value,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -328,17 +333,17 @@ class _PlanFactOrphanCategoryRow extends StatelessWidget {
     final a = actualSecByCat[categoryId] ?? 0;
     if (p <= 0 && a <= 0) return const SizedBox.shrink();
 
-    final String label;
+    final String rawLabel;
     if (categoryId == CategoryRule.uncategorizedSyntheticId) {
-      label = DatabaseService.instance
-          .categoryRuleForRecordCategoryId(categoryId)
-          .name;
+      rawLabel = t(currentLocale.value, 'uncategorized');
     } else {
       final r = DatabaseService.instance.getCategoryRuleById(categoryId);
-      label = r != null
+      rawLabel = r != null
           ? DatabaseService.instance.getCategoryPath(categoryId)
           : 'Category ($categoryId)';
     }
+    final label =
+        localizeCategoryBreadcrumbPath(rawLabel, currentLocale.value);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -371,6 +376,7 @@ class _PlanFactCategoryBranch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = currentLocale.value;
     final p = _rollupSubtreeSeconds(rule.id, plannedSecByCat);
     final a = _rollupSubtreeSeconds(rule.id, actualSecByCat);
     if (p <= 0 && a <= 0) return const SizedBox.shrink();
@@ -400,7 +406,7 @@ class _PlanFactCategoryBranch extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: _PlanFactBarBlock(
-          label: rule.name,
+          label: localizeCategoryDbSegment(rule.name, loc),
           categoryId: rule.id,
           plannedSec: p,
           actualSec: a,
@@ -431,7 +437,7 @@ class _PlanFactCategoryBranch extends StatelessWidget {
             controlAffinity: ListTileControlAffinity.trailing,
             dense: true,
             title: Text(
-              rule.name,
+              localizeCategoryDbSegment(rule.name, loc),
               style: titleStyle,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

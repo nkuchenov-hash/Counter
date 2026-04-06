@@ -7,6 +7,8 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/shared/tag_contrast.dart';
+import 'package:counter/l10n/category_db_display.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
 /// **Timeline record category** — text-only breadcrumbs, not a tag chip.
@@ -26,13 +28,16 @@ class RecordCategoryHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var parts = breadcrumbPath
+    final loc = currentLocale.value;
+    final localizedPath =
+        localizeCategoryBreadcrumbPath(breadcrumbPath, loc);
+    var parts = localizedPath
         .split(RegExp(r'\s*>\s*'))
         .map((s) => s.trim())
         .where((s) => s.isNotEmpty)
         .toList();
     if (parts.isEmpty) {
-      final f = breadcrumbPath.trim();
+      final f = localizedPath.trim();
       parts = f.isEmpty ? <String>['—'] : <String>[f];
     }
 
@@ -125,9 +130,12 @@ class CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final ring = selected ? scheme.primary : Colors.transparent;
+    final displayLabel =
+        localizeCategoryBreadcrumbPath(label, currentLocale.value);
 
     final child = switch (mode) {
-      CategoryDisplayMode.letterChip => _letterChipPlanStyle(context),
+      CategoryDisplayMode.letterChip =>
+        _letterChipPlanStyle(context, displayLabel),
       CategoryDisplayMode.chip => _chipPlanStyle(context),
       CategoryDisplayMode.round => _tagRoundDot(),
       CategoryDisplayMode.icon => Center(
@@ -140,7 +148,7 @@ class CategoryChip extends StatelessWidget {
       CategoryDisplayMode.iconCircle => _iconInCircle(),
     };
     final visual = mode != CategoryDisplayMode.letterChip
-        ? Tooltip(message: label, child: child)
+        ? Tooltip(message: displayLabel, child: child)
         : child;
 
     final isPillMode =
@@ -204,8 +212,9 @@ class CategoryChip extends StatelessWidget {
   static const double _emptyChipHeight = 24;
 
   /// letter_chip: **same widget pattern** as task-card tag in [planning_view] — padded [Text] in tinted [Container] (tight wrap).
-  Widget _letterChipPlanStyle(BuildContext context) {
-    final displayLabel = label.trim().isNotEmpty ? label.trim() : '?';
+  Widget _letterChipPlanStyle(BuildContext context, String resolvedLabel) {
+    final displayLabel =
+        resolvedLabel.trim().isNotEmpty ? resolvedLabel.trim() : '?';
     final scheme = Theme.of(context).colorScheme;
     final plate = tagLetterChipPlate(color, scheme.surface);
     final fg = tagVibrantForeground(color);

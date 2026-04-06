@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 /// Exact yellow-tag palette (text, icon, stroke). No black/grey/orange overrides.
-const Color kTagYellowGold = Color(0xFFFDCF00);
+const Color kTagYellowGold = Color(0xFFF6C500);
 
 /// Pale plate tint for yellow tags (same hex, 15% alpha, blended onto [surface]).
 const double kTagYellowPlateOpacity = 0.15;
 
-/// Yellow tag: preset hexes (#FDD835, #FDCF00), or saturated hue ~gold (45°–60°).
+/// Yellow tag: preset hexes (#FDD835, legacy #FDCF00, #F6C500), or saturated hue ~gold (45°–60°).
 bool tagColorIsYellowFamily(Color tagColor) {
   final rgb = tagColor.toARGB32() & 0xFFFFFF;
-  if (rgb == 0xFDCF00 || rgb == 0xFDD835) return true;
+  if (rgb == 0xF6C500 || rgb == 0xFDCF00 || rgb == 0xFDD835) return true;
   final hsl = HSLColor.fromColor(tagColor);
   if (hsl.saturation < 0.12) return false;
   final h = hsl.hue;

@@ -238,7 +238,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
         onSoundLevelChange: _onMicSoundLevel,
         localeId: localeId,
         listenFor: const Duration(seconds: 60),
-        pauseFor: const Duration(seconds: 6),
+        pauseFor: const Duration(seconds: 15),
         listenOptions: stt.SpeechListenOptions(
           listenMode: stt.ListenMode.dictation,
           partialResults: true,

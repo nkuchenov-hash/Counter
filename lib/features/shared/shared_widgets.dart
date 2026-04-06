@@ -12,6 +12,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/features/shared/chip_component.dart';
+import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -2468,7 +2469,11 @@ class _CategoryFolderTileState extends State<CategoryFolderTile> {
     final canAddChild = widget.level < 4;
     final color = widget.rule.colorOrDefault;
 
-    final displayName = widget.rule.localizedNames?[currentLocale.value] ?? widget.rule.name;
+    final displayName = localizeCategoryDbSegment(
+      (widget.rule.localizedNames?[currentLocale.value] ?? widget.rule.name)
+          .trim(),
+      currentLocale.value,
+    );
 
     final leading = Icon(widget.rule.iconOrDefault, color: color, size: 24);
     final title = Text(
