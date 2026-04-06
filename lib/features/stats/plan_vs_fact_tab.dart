@@ -8,27 +8,16 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
 // ---------------------------------------------------------------------------
-// PLAN VS FACT — comparative planned hours vs tracked time per category (DNA).
-// UI_ISOLATION (§7). Reads via DatabaseService ([getDayAudit], record rollups); no writes.
-// Hierarchy: root rows sum planned/actual for the whole subtree (same math as
-// [DatabaseService.getDurationForCategoryWithinDay] / getRecordIdsInSubtree).
+// PLAN VS FACT — simple scheduled plan vs tracked time per category (DNA).
+// UI_ISOLATION (§7). Reads via [DatabaseService.getBasicDayStats]; no writes.
 // ---------------------------------------------------------------------------
+
+/// Accent for “fact” (logged time) — premium contrast vs plan.
+const Color _kPlanFactOrange = Color(0xFFF57C00);
 
 String _fmtHoursOneDecimal(double hours) {
   if (hours <= 0) return '0 h';
   return '${hours.toStringAsFixed(1)} h';
-}
-
-bool _planHasLinkedSeconds(
-  PlanningTask t,
-  Map<String, int> byPlanPocketId,
-) {
-  final raw = t.pocketRecordId?.trim();
-  if (raw == null || raw.isEmpty) {
-    return false;
-  }
-  final key = DatabaseService.pocketRelationIdOrNull(raw) ?? raw;
-  return (byPlanPocketId[key] ?? 0) > 0;
 }
 
 int _rollupSubtreeSeconds(int categoryId, Map<int, int> byCategorySec) {
@@ -54,7 +43,7 @@ Set<int> _allRuleTreeIds(Iterable<CategoryRule> roots) {
   return out;
 }
 
-/// Tab 2 under Stats: day audit + planned duration per category vs record time same day.
+/// Tab 2 under Stats: basic plan vs fact for the selected wall day.
 class PlanVsFactTab extends StatefulWidget {
   const PlanVsFactTab({
     super.key,
@@ -73,15 +62,15 @@ class PlanVsFactTab extends StatefulWidget {
 
 class _PlanVsFactTabState extends State<PlanVsFactTab> {
   StreamSubscription<void>? _planRefreshSub;
-  late Future<DayAuditSnapshot> _auditFuture;
+  late Future<BasicDayStats> _statsFuture;
 
   @override
   void initState() {
     super.initState();
-    _auditFuture = _reloadAudit();
+    _statsFuture = _reloadStats();
     _planRefreshSub =
         DatabaseService.instance.planningRefreshNotifications.listen((_) {
-      if (mounted) setState(() => _auditFuture = _reloadAudit());
+      if (mounted) setState(() => _statsFuture = _reloadStats());
     });
   }
 
@@ -95,14 +84,14 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
   void didUpdateWidget(covariant PlanVsFactTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedDate != widget.selectedDate) {
-      setState(() => _auditFuture = _reloadAudit());
+      setState(() => _statsFuture = _reloadStats());
     }
   }
 
-  Future<DayAuditSnapshot> _reloadAudit() {
-    return DatabaseService.instance.getDayAudit(
+  Future<BasicDayStats> _reloadStats() {
+    return DatabaseService.instance.getBasicDayStats(
       widget.selectedDate,
-      recordsForActualSec: widget.records,
+      recordsForDay: widget.records,
     );
   }
 
@@ -110,9 +99,10 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
-    return FutureBuilder<DayAuditSnapshot>(
-      future: _auditFuture,
+    return FutureBuilder<BasicDayStats>(
+      future: _statsFuture,
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting && !snap.hasData) {
           return Center(
@@ -123,15 +113,15 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
                 const SizedBox(height: 12),
                 Text(
                   t(loc, 'waiting_planetary_data'),
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: theme.textTheme.bodySmall,
                 ),
               ],
             ),
           );
         }
 
-        final audit = snap.data;
-        if (audit == null) {
+        final stats = snap.data;
+        if (stats == null) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -143,21 +133,14 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
           );
         }
 
-        final auditDayStr =
-            '${widget.selectedDate.year}-${widget.selectedDate.month.toString().padLeft(2, '0')}-${widget.selectedDate.day.toString().padLeft(2, '0')}';
-
-        final byPlan = DatabaseService.instance
-            .aggregateSourcePlanActualSecondsForWallCalendarDay(
-                widget.selectedDate);
-
         final plannedSecByCat =
-            Map<int, int>.from(audit.initialPlannedSecByCategory);
+            Map<int, int>.from(stats.plannedSecByCategory);
         final actualSecByCat =
-            Map<int, int>.from(audit.actualSecByCategory);
+            Map<int, int>.from(stats.actualSecByCategory);
 
         final allCatIds = <int>{...plannedSecByCat.keys, ...actualSecByCat.keys};
 
-        if (audit.planCount == 0 && allCatIds.isEmpty) {
+        if (stats.planTaskCount == 0 && allCatIds.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -169,42 +152,24 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
                       : 'stats_pvf_no_plans',
                 ),
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ),
           );
         }
 
-        var totalPlannedSec = 0;
-        for (final v in plannedSecByCat.values) {
-          totalPlannedSec += v;
-        }
-        var totalActualSec = 0;
-        for (final v in actualSecByCat.values) {
-          totalActualSec += v;
-        }
+        final byPlan = DatabaseService.instance
+            .aggregateSourcePlanActualSecondsForWallCalendarDay(
+                widget.selectedDate);
 
-        final completionPct = totalPlannedSec > 0
-            ? (100.0 * totalActualSec / totalPlannedSec)
-            : null;
-
-        final ghostPlans = audit.anchoredTasks
-            .where(
-              (t) =>
-                  !_planHasLinkedSeconds(t, byPlan) &&
-                  !DatabaseService.instance
-                      .planningAuditPostponedOnAnchorDay(t, auditDayStr),
-            )
-            .toList(growable: false);
-
-        final postponedForDay = audit.anchoredTasks
-            .where(
-              (t) => DatabaseService.instance
-                  .planningAuditPostponedOnAnchorDay(t, auditDayStr),
-            )
-            .toList(growable: false);
+        final ghostPlans = stats.plansScheduledThisDay.where((t) {
+          final raw = t.pocketRecordId?.trim();
+          if (raw == null || raw.isEmpty) return true;
+          final key = DatabaseService.pocketRelationIdOrNull(raw) ?? raw;
+          return (byPlan[key] ?? 0) <= 0;
+        }).toList(growable: false);
 
         final rulesRoots = DatabaseService.instance.rules;
         final knownTreeIds = _allRuleTreeIds(rulesRoots);
@@ -230,105 +195,33 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
             return mb.compareTo(ma);
           });
 
+        final planH = stats.planTimeSeconds / 3600.0;
+        final factH = stats.factTimeSeconds / 3600.0;
+
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            Card(
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t(loc, 'stats_day_audit_title'),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _auditCounterColumn(
-                            context,
-                            scheme,
-                            t(loc, 'stats_audit_plan'),
-                            '${audit.planCount}',
-                            scheme.primary,
-                          ),
-                        ),
-                        Expanded(
-                          child: _auditCounterColumn(
-                            context,
-                            scheme,
-                            t(loc, 'stats_audit_fact'),
-                            '${audit.factLinkedCount}',
-                            scheme.secondary,
-                          ),
-                        ),
-                        Expanded(
-                          child: _auditCounterColumn(
-                            context,
-                            scheme,
-                            t(loc, 'stats_audit_postponed'),
-                            '${audit.postponedCount}',
-                            scheme.outline,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+            _PlanFactSummaryRow(
+              label: t(loc, 'stats_pvf_row_tasks'),
+              planText: '${stats.planTaskCount}',
+              factText: '${stats.factDistinctPlansFromRecords}',
+              planColor: scheme.primary,
+              factColor: _kPlanFactOrange,
             ),
-            const SizedBox(height: 12),
-            Card(
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _metricBlock(
-                            context,
-                            t(loc, 'stats_pvf_planned_h'),
-                            _fmtHoursOneDecimal(totalPlannedSec / 3600.0),
-                            scheme.primary,
-                          ),
-                        ),
-                        Expanded(
-                          child: _metricBlock(
-                            context,
-                            t(loc, 'stats_pvf_actual_h'),
-                            _fmtHoursOneDecimal(totalActualSec / 3600.0),
-                            scheme.secondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (completionPct != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        '${t(loc, 'stats_pvf_completion')}: ${completionPct.toStringAsFixed(0)}%',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+            const SizedBox(height: 10),
+            _PlanFactSummaryRow(
+              label: t(loc, 'stats_pvf_row_time'),
+              planText: _fmtHoursOneDecimal(planH),
+              factText: _fmtHoursOneDecimal(factH),
+              planColor: scheme.primary,
+              factColor: _kPlanFactOrange,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               t(loc, 'stats_pvf_by_category'),
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 8),
             ...rootRulesWithActivity.map(
@@ -346,49 +239,13 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
                 actualSecByCat: actualSecByCat,
               ),
             ),
-            if (postponedForDay.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Text(
-                t(loc, 'stats_audit_postponed_list'),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              ...postponedForDay.map(
-                (task) => ListTile(
-                  dense: true,
-                  leading: Icon(
-                    Icons.event_busy_outlined,
-                    size: 22,
-                    color: scheme.outline,
-                  ),
-                  title: Text(
-                    task.title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                        ),
-                  ),
-                  subtitle: Text(
-                    localizeCategoryBreadcrumbPath(
-                      DatabaseService.instance
-                          .getCategoryPath(task.categoryId),
-                      currentLocale.value,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            ],
             if (ghostPlans.isNotEmpty) ...[
               const SizedBox(height: 20),
               Text(
                 t(loc, 'stats_pvf_ghosts'),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 8),
               ...ghostPlans.map(
@@ -413,61 +270,85 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
       },
     );
   }
+}
 
-  Widget _auditCounterColumn(
-    BuildContext context,
-    ColorScheme scheme,
-    String label,
-    String value,
-    Color accent,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: accent,
-              ),
-        ),
-      ],
-    );
-  }
+class _PlanFactSummaryRow extends StatelessWidget {
+  const _PlanFactSummaryRow({
+    required this.label,
+    required this.planText,
+    required this.factText,
+    required this.planColor,
+    required this.factColor,
+  });
 
-  Widget _metricBlock(
-    BuildContext context,
-    String label,
-    String value,
-    Color accent,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+  final String label;
+  final String planText;
+  final String factText;
+  final Color planColor;
+  final Color factColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.35),
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: accent,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
               ),
-        ),
-      ],
+            ),
+          ),
+          Baseline(
+            baseline: 28,
+            baselineType: TextBaseline.alphabetic,
+            child: RichText(
+              text: TextSpan(
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+                children: [
+                  TextSpan(
+                    text: planText,
+                    style: TextStyle(color: planColor),
+                  ),
+                  TextSpan(
+                    text: ' / ',
+                    style: TextStyle(
+                      color: scheme.outline.withValues(alpha: 0.85),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  TextSpan(
+                    text: factText,
+                    style: TextStyle(color: factColor),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -516,7 +397,6 @@ class _PlanFactOrphanCategoryRow extends StatelessWidget {
   }
 }
 
-/// One node: [ExpansionTile] when it has active children; otherwise a simple block.
 class _PlanFactCategoryBranch extends StatelessWidget {
   const _PlanFactCategoryBranch({
     required this.rule,
@@ -626,7 +506,6 @@ class _PlanFactCategoryBranch extends StatelessWidget {
   }
 }
 
-/// Label + modern compare bar + hour line ([label] null → bar and caption only).
 class _PlanFactBarBlock extends StatelessWidget {
   const _PlanFactBarBlock({
     required this.categoryId,
@@ -763,7 +642,7 @@ class _ModernPlanFactBar extends StatelessWidget {
 
     final over = a > p && p > 0;
     final actualFill =
-        over ? Color.lerp(categoryColor, scheme.error, 0.36)! : categoryColor;
+        over ? Color.lerp(_kPlanFactOrange, scheme.error, 0.45)! : _kPlanFactOrange;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(_radius),
@@ -798,7 +677,13 @@ class _ModernPlanFactBar extends StatelessWidget {
                             spreadRadius: 0,
                           ),
                         ]
-                      : null,
+                      : [
+                          BoxShadow(
+                            color: _kPlanFactOrange.withValues(alpha: 0.28),
+                            blurRadius: 5,
+                            spreadRadius: 0,
+                          ),
+                        ],
                 ),
               ),
           ],

@@ -1925,29 +1925,35 @@ class PlanningBulkPatch {
 
 // --- Stats tree (HIERARCHICAL STATS §8). Pure data. ---
 
-/// Plan vs fact audit for one wall day ([initial_date_key] anchor).
-class DayAuditSnapshot {
-  const DayAuditSnapshot({
-    required this.planCount,
-    required this.factLinkedCount,
-    required this.postponedCount,
-    required this.anchoredTasks,
-    required this.initialPlannedSecByCategory,
+/// Simple plan vs fact rollups for one wall day: current schedule vs records that day.
+class BasicDayStats {
+  const BasicDayStats({
+    required this.planTaskCount,
+    required this.factDistinctPlansFromRecords,
+    required this.planTimeSeconds,
+    required this.factTimeSeconds,
+    required this.plannedSecByCategory,
     required this.actualSecByCategory,
+    required this.plansScheduledThisDay,
   });
 
-  /// Tasks whose audit anchor is this day (initial commitment).
-  final int planCount;
+  /// All planning rows whose [planningWallScheduleDateKey] is this day.
+  final int planTaskCount;
 
-  /// Anchored tasks with at least one [records.source_plan_id] link.
-  final int factLinkedCount;
+  /// Distinct plan PocketBase ids appearing as [records.source_plan_id] on this wall day (with logged time).
+  final int factDistinctPlansFromRecords;
 
-  /// Anchored, not done, scheduled on a future wall day or [PlanningTask.isPostponed].
-  final int postponedCount;
+  /// Sum of plan start→end durations for rows on this day (omits open-ended plans).
+  final int planTimeSeconds;
 
-  final List<PlanningTask> anchoredTasks;
-  final Map<int, int> initialPlannedSecByCategory;
+  /// Sum of record durations attributed to this wall day.
+  final int factTimeSeconds;
+
+  final Map<int, int> plannedSecByCategory;
   final Map<int, int> actualSecByCategory;
+
+  /// Plans scheduled on this day (for optional “no time logged” hints in UI).
+  final List<PlanningTask> plansScheduledThisDay;
 }
 
 /// One node in the hierarchical stats tree.

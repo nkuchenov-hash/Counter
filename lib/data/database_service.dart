@@ -1532,28 +1532,6 @@ class DatabaseService {
     return newScheduleKey.compareTo(anchorKey) > 0;
   }
 
-  /// Any cached flat record (primary rows) links to this plan’s PocketBase id via [source_plan_id].
-  bool planHasSourceRecordLink(PlanningTask t) {
-    final pid = pocketRelationIdOrNull(t.pocketRecordId);
-    if (pid == null) return false;
-    for (final row in _cachedFlatRecords) {
-      if (_rowHasNonEmptyParent(row['parent_id'])) continue;
-      if (_optimisticRowDeletedRaw(row)) continue;
-      final sp = pocketRelationIdOrNull(row['source_plan_id']?.toString());
-      if (sp == pid) return true;
-    }
-    return false;
-  }
-
-  /// Shown as “postponed” on [auditDayYmd] stats: anchored there, still open, scheduled ahead or flag set.
-  bool planningAuditPostponedOnAnchorDay(PlanningTask t, String auditDayYmd) {
-    if (t.isDone) return false;
-    if (t.planRowIdForBackend.startsWith('optimistic-')) return false;
-    final sk = planningWallScheduleDateKey(t);
-    if (sk.length >= 10 && sk.compareTo(auditDayYmd) > 0) return true;
-    return t.isPostponed;
-  }
-
   Future<List<PlanningTask>> _fetchAllPlanningTasksForCurrentUser() async {
     if (!_isPlansTableConfigured) return [];
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
@@ -1576,37 +1554,40 @@ class DatabaseService {
     }
   }
 
-  /// Plan-vs-fact **day audit**: tasks whose [planningAuditAnchorDateKey] equals this wall day.
+  /// Basic plan vs fact for [wallDate]: tasks **scheduled** that day vs records that day.
   ///
-  /// [recordsForActualSec]: same list as the Stats timeline tab (per-category **fact** seconds for [wallDate]).
-  Future<DayAuditSnapshot> getDayAudit(
+  /// [recordsForDay]: same list as the Stats timeline tab (duration within day + category rollups).
+  Future<BasicDayStats> getBasicDayStats(
     DateTime wallDate, {
-    required List<Map<String, dynamic>> recordsForActualSec,
+    required List<Map<String, dynamic>> recordsForDay,
   }) async {
     final dk =
         '${wallDate.year}-${_two(wallDate.month)}-${_two(wallDate.day)}';
     final all = await _fetchAllPlanningTasksForCurrentUser();
-    final anchored = <PlanningTask>[];
+    final dayPlans = <PlanningTask>[];
     for (final t in all) {
       if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
-      if (planningAuditAnchorDateKey(t) != dk) continue;
-      anchored.add(t);
+      if (planningWallScheduleDateKey(t) != dk) continue;
+      dayPlans.add(t);
     }
-    var fact = 0;
-    var postponed = 0;
+
+    var planTimeSec = 0;
     final plannedSecByCat = <int, int>{};
-    for (final t in anchored) {
+    for (final t in dayPlans) {
       final sec = planningWallEstimateSeconds(t);
       if (sec != null && sec > 0) {
-        plannedSecByCat[t.categoryId] = (plannedSecByCat[t.categoryId] ?? 0) + sec;
+        planTimeSec += sec;
+        plannedSecByCat[t.categoryId] =
+            (plannedSecByCat[t.categoryId] ?? 0) + sec;
       }
-      if (planHasSourceRecordLink(t)) fact++;
-      if (planningAuditPostponedOnAnchorDay(t, dk)) postponed++;
     }
+
     final actualSecByCat = <int, int>{};
+    var factTimeSec = 0;
+    final linkedPlanIds = <String>{};
     final offset = settings.timezoneOffsetHours;
     final tz = settings.preferredTimeZone;
-    for (final rec in recordsForActualSec) {
+    for (final rec in recordsForDay) {
       final sec = recordDurationSecondsWithinDayFromTimestamps(
         rec,
         wallDate,
@@ -1614,17 +1595,24 @@ class DatabaseService {
         tz,
       );
       if (sec <= 0) continue;
+      factTimeSec += sec;
       final cid = resolvedCategoryIdForRecord(rec) ??
           CategoryRule.uncategorizedSyntheticId;
       actualSecByCat[cid] = (actualSecByCat[cid] ?? 0) + sec;
+      final sp = pocketRelationIdOrNull(rec['source_plan_id']?.toString());
+      if (sp != null && sp.isNotEmpty) {
+        linkedPlanIds.add(sp);
+      }
     }
-    return DayAuditSnapshot(
-      planCount: anchored.length,
-      factLinkedCount: fact,
-      postponedCount: postponed,
-      anchoredTasks: anchored,
-      initialPlannedSecByCategory: plannedSecByCat,
+
+    return BasicDayStats(
+      planTaskCount: dayPlans.length,
+      factDistinctPlansFromRecords: linkedPlanIds.length,
+      planTimeSeconds: planTimeSec,
+      factTimeSeconds: factTimeSec,
+      plannedSecByCategory: plannedSecByCat,
       actualSecByCategory: actualSecByCat,
+      plansScheduledThisDay: dayPlans,
     );
   }
 
