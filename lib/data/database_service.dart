@@ -849,6 +849,9 @@ class DatabaseService {
   /// Last successful flat fetch from Noco (same shape as [getRecords]). Timeline filters in-memory only.
   List<Map<String, dynamic>> _cachedFlatRecords = [];
 
+  /// PocketBase realtime: unsubscribe function from [RecordService.subscribe] ('*').
+  Future<void> Function()? _recordsRealtimeUnsubscribe;
+
   /// Timeline row keys (REST id / business UUID) that returned **definitive** 404 after full retry — no repeat PATCH/DELETE until row reappears in GET.
   final Set<String> _recordRestDefinitive404Keys = <String>{};
 
@@ -1202,6 +1205,7 @@ class DatabaseService {
   }
 
   void clearLocalStateOnSignOut() {
+    unawaited(_cancelRecordsRealtimeSubscription());
     try {
       _pocketBase?.authStore.clear();
     } catch (_) {}
@@ -1326,6 +1330,9 @@ class DatabaseService {
     _tasksController.add(List.from(_tasksCache));
     // Shell must not treat Brain as ready until profile settings + categories + tasks are loaded.
     _isInitialized = true;
+    try {
+      await _startRecordsRealtimeSubscription();
+    } catch (_) {}
     try {
       await runOneShotUntitledGhostRecordClean();
     } catch (_) {}
@@ -1979,6 +1986,7 @@ class DatabaseService {
     RecordModel r, {
     bool preserveExpand = true,
     bool suppressTimelineNotify = false,
+    bool logSuccessLine = true,
   }) {
     try {
       final m = _recordMapFromPb(r);
@@ -2005,7 +2013,9 @@ class DatabaseService {
           next[i] = m;
           _cachedFlatRecords = next;
           if (!suppressTimelineNotify && !silent) {
-            print('✅ Local cache updated atomically for record: ${r.id}');
+            if (logSuccessLine) {
+              print('✅ Local cache updated atomically for record: ${r.id}');
+            }
             _notifyTimelineAfterRecordCacheMutation();
           }
           return;
@@ -2014,12 +2024,169 @@ class DatabaseService {
       next.add(m);
       _cachedFlatRecords = next;
       if (!suppressTimelineNotify) {
-        print('✅ Local cache updated atomically for record: ${r.id}');
+        if (logSuccessLine) {
+          print('✅ Local cache updated atomically for record: ${r.id}');
+        }
         _notifyTimelineAfterRecordCacheMutation();
       }
     } catch (e, st) {
       _log('_upsertFlatRecordFromPbModel failed: $e');
       _log(st.toString());
+    }
+  }
+
+  void _removeCachedFlatRecordByPk(String pocketBaseRowId) {
+    final id = pocketBaseRowId.trim();
+    if (id.isEmpty) return;
+    final before = _cachedFlatRecords.length;
+    _cachedFlatRecords = [
+      for (final row in _cachedFlatRecords)
+        if (recordsTablePk(row) != id) row,
+    ];
+    if (_cachedFlatRecords.length != before) {
+      _notifyTimelineAfterRecordCacheMutation();
+    }
+  }
+
+  void _onPbRecordsSubscriptionEvent(RecordSubscriptionEvent e) {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    final action = e.action.toLowerCase().trim();
+    if (action == 'delete') {
+      final id = e.record?.id.trim() ?? '';
+      if (id.isNotEmpty) {
+        _removeCachedFlatRecordByPk(id);
+      }
+      return;
+    }
+    final rec = e.record;
+    if (rec == null) return;
+    try {
+      _upsertFlatRecordFromPbModel(
+        rec,
+        preserveExpand: true,
+        suppressTimelineNotify: false,
+        logSuccessLine: false,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _cancelRecordsRealtimeSubscription() async {
+    final unsub = _recordsRealtimeUnsubscribe;
+    _recordsRealtimeUnsubscribe = null;
+    if (unsub != null) {
+      try {
+        await unsub();
+      } catch (_) {}
+    }
+    try {
+      await _pb.collection(PbCollections.records).unsubscribe();
+    } catch (_) {}
+  }
+
+  Future<void> _startRecordsRealtimeSubscription() async {
+    await _cancelRecordsRealtimeSubscription();
+    if (!_hasAuthenticatedUserId) return;
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) return;
+      final filter = _pocketBaseOwnerFilterClauseForRecords();
+      if (filter == null || filter.isEmpty) return;
+      Future<void> Function()? unsub;
+      try {
+        unsub = await _pb.collection(PbCollections.records).subscribe(
+          '*',
+          _onPbRecordsSubscriptionEvent,
+          filter: filter,
+          expand: '$kPbRecordCategoryExpand,$kPbRecordTagsExpand',
+        );
+      } on ClientException catch (_) {
+        unsub = await _pb.collection(PbCollections.records).subscribe(
+          '*',
+          _onPbRecordsSubscriptionEvent,
+          filter: filter,
+          expand: kPbRecordCategoryExpand,
+        );
+      } catch (_) {
+        unsub = await _pb.collection(PbCollections.records).subscribe(
+          '*',
+          _onPbRecordsSubscriptionEvent,
+          filter: filter,
+        );
+      }
+      _recordsRealtimeUnsubscribe = unsub;
+    } catch (e, st) {
+      _log('_startRecordsRealtimeSubscription failed: $e');
+      _log(st.toString());
+    }
+  }
+
+  /// Server truth: no primary row still in [_isNocoRowSacredStopTarget] state.
+  Future<bool> _verifyNoOpenPrimaryOnServer() async {
+    try {
+      final owner = _pocketBaseOwnerFilterClauseForRecords();
+      if (owner == null || owner.isEmpty) return true;
+      final list = await _pb.collection(PbCollections.records).getFullList(
+        filter: owner,
+        batch: 120,
+      );
+      for (final raw in list) {
+        final m = _recordMapFromPb(raw);
+        if (_rowHasNonEmptyParent(m['parent_id'])) continue;
+        if (_isNocoRowSacredStopTarget(m)) return false;
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Stops every **primary** open interval for this user on the server (bypasses local cache).
+  /// Returns `false` if any target row could not be closed or verification still sees an open primary.
+  Future<bool> _ensureAllRemoteRecordsStopped() async {
+    if (!_hasAuthenticatedUserId) return false;
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) return false;
+      final owner = _pocketBaseOwnerFilterClauseForRecords();
+      if (owner == null || owner.isEmpty) return false;
+      final list = await _pb.collection(PbCollections.records).getFullList(
+        filter: owner,
+        batch: 500,
+      );
+      final nowIso = getPlanetaryNow().toUtc().toIso8601String();
+      final stopFields = _nocoFieldsForPatch(<String, dynamic>{
+        'end_time': nowIso,
+        'status': 'stopped',
+      });
+      for (final raw in list) {
+        final m = _recordMapFromPb(raw);
+        if (_rowHasNonEmptyParent(m['parent_id'])) continue;
+        if (!_isNocoRowSacredStopTarget(m)) continue;
+        final id = recordsTablePk(m);
+        if (id.isEmpty) continue;
+        final biz = (m['record_id'] ?? '').toString().trim();
+        final code = await _patchRecordsRowWith404Recovery(
+          originalQueryId: biz.isNotEmpty ? biz : id,
+          restId: id,
+          fields: stopFields,
+        );
+        if (code == 404) {
+          _purgeGhostRecordById(id);
+          continue;
+        }
+        if (code < 200 || code >= 300) {
+          return false;
+        }
+      }
+      if (!await _verifyNoOpenPrimaryOnServer()) {
+        return false;
+      }
+      _notifyTimelineAfterRecordCacheMutation();
+      return true;
+    } catch (e, st) {
+      _log('_ensureAllRemoteRecordsStopped: $e');
+      _log(st.toString());
+      return false;
     }
   }
 
@@ -3756,6 +3923,98 @@ class DatabaseService {
     final pb = _findBestCategoryMatch(title);
     if (pb == null) return cid;
     return getCategoryRuleByBackendRowId(pb)?.id ?? cid;
+  }
+
+  /// Dropped from title/category tokens when scoring overlap ([_smartInferCategoryId]).
+  static const Set<String> _smartInferNoiseWords = {
+    'services',
+    'call',
+    'task',
+    'app',
+    'work',
+    'project',
+  };
+
+  static final RegExp _smartInferNonWordOrUnderscore =
+      RegExp(r'[\W_]+', unicode: true);
+
+  static final RegExp _smartInferWhitespaceRun = RegExp(r'\s+');
+
+  Set<String> _smartInferMeaningfulTokens(String raw) {
+    var s = raw.toLowerCase().trim();
+    if (s.isEmpty) return {};
+    s = s.replaceAll(_smartInferNonWordOrUnderscore, ' ');
+    s = s.replaceAll(_smartInferWhitespaceRun, ' ').trim();
+    if (s.isEmpty) return {};
+    return {
+      for (final w in s.split(' '))
+        if (w.isNotEmpty && !_smartInferNoiseWords.contains(w)) w
+    };
+  }
+
+  String _smartInferCollapsedLower(String raw) {
+    var s = raw.toLowerCase().trim();
+    if (s.isEmpty) return '';
+    s = s.replaceAll(_smartInferNonWordOrUnderscore, ' ');
+    return s.replaceAll(_smartInferWhitespaceRun, ' ').trim();
+  }
+
+  /// Word-overlap + substring heuristic on cached [_rules] only (no AI / network).
+  ///
+  /// Normalizes text, tokenizes, ignores [_smartInferNoiseWords], then:
+  /// - Match if meaningful token intersection size ≥ 2, OR
+  /// - collapsed category name (length ≥ 3) is a substring of collapsed title.
+  /// Tie-break: larger intersection, then substring bonus, then longer category name.
+  int? _smartInferCategoryId(String title) {
+    final t = title.trim();
+    if (t.isEmpty) return null;
+    final titleTokens = _smartInferMeaningfulTokens(t);
+    final normTitle = _smartInferCollapsedLower(t);
+    if (normTitle.isEmpty) return null;
+
+    CategoryRule? best;
+    var bestOverlap = -1;
+    var bestSubstrBonus = 0;
+    var bestNameLen = -1;
+
+    void consider(CategoryRule r) {
+      if (r.isArchived) return;
+      if (r.id == CategoryRule.uncategorizedSyntheticId) return;
+      final pb = _categoryBackendRowIdStrict(r);
+      if (pb == null || pb.isEmpty || !_isLikelyPocketBaseRowId(pb)) return;
+      final name = r.name.trim();
+      if (name.isEmpty) return;
+      final catTokens = _smartInferMeaningfulTokens(name);
+      var overlap = 0;
+      for (final w in catTokens) {
+        if (titleTokens.contains(w)) overlap++;
+      }
+      final normCat = _smartInferCollapsedLower(name);
+      final substr = normCat.length >= 3 && normTitle.contains(normCat);
+      final isMatch = overlap >= 2 || substr;
+      if (!isMatch) return;
+      final subBonus = substr ? 1 : 0;
+      if (overlap > bestOverlap ||
+          (overlap == bestOverlap && subBonus > bestSubstrBonus) ||
+          (overlap == bestOverlap &&
+              subBonus == bestSubstrBonus &&
+              name.length > bestNameLen)) {
+        best = r;
+        bestOverlap = overlap;
+        bestSubstrBonus = subBonus;
+        bestNameLen = name.length;
+      }
+    }
+
+    void walk(List<CategoryRule> nodes) {
+      for (final r in nodes) {
+        consider(r);
+        if (r.children != null) walk(r.children!);
+      }
+    }
+
+    walk(_rules);
+    return best?.id;
   }
 
   /// Voice / quick map: deepest category match + path label.
@@ -6341,6 +6600,12 @@ class DatabaseService {
       int? cid = categoryId;
       cid = identifyCategory(parsed.title)?.id ?? cid;
       cid = _resolveRecordCategoryIdWithSmartLink(parsed.title, cid);
+      if (!_planLocalCategoryIdIsConcrete(cid)) {
+        final inferred = _smartInferCategoryId(parsed.title);
+        if (_planLocalCategoryIdIsConcrete(inferred)) {
+          cid = inferred;
+        }
+      }
       final now = getPlanetaryNow();
       final start = explicitStartTime ?? now;
       final isStartingNow = explicitStartTime != null;
@@ -6371,6 +6636,12 @@ class DatabaseService {
           _primaryRunningRecordStartChain =
               prevChain.then((_) => primaryGate.future);
           await prevChain;
+          final remoteStopped = await _ensureAllRemoteRecordsStopped();
+          if (!remoteStopped) {
+            if (!primaryGate.isCompleted) primaryGate.complete();
+            AppSnack.failed();
+            return null;
+          }
           runningRecordBizId = _newClientRecordUuid();
           final runningFields = _nocoFieldsForPatch(<String, dynamic>{
             'user_id': _pidForPbFilter,
@@ -6802,6 +7073,13 @@ class DatabaseService {
             categoryForPatch = pc;
             shouldPatchCategory = true;
           }
+        }
+      }
+      if (title != null && !shouldPatchCategory) {
+        final inferred = _smartInferCategoryId(title);
+        if (_planLocalCategoryIdIsConcrete(inferred)) {
+          categoryForPatch = inferred;
+          shouldPatchCategory = true;
         }
       }
       final updates = <String, dynamic>{};
@@ -7827,6 +8105,63 @@ class DatabaseService {
     await _persistCategoryOrdersBulkNow(pending);
   }
 
+  /// Flat `plans` scalar PATCH map (no `user_id` key). Shared by [updatePlanningTask] and [bulkUpdatePlans].
+  Map<String, dynamic> _scalarPatchBodyForPlanningRow({
+    String? planBusinessId,
+    String? title,
+    int? categoryId,
+    bool? isDone,
+    String? notes,
+    List<Map<String, dynamic>>? checklist,
+    int? parentPlanId,
+    int? order,
+    DateTime? startTime,
+    DateTime? startTimeDisplay,
+    DateTime? endDateTime,
+    DateTime? endDateTimeDisplay,
+    bool clearEnd = false,
+  }) {
+    final fields = <String, dynamic>{'user_id': _pidForPbFilter};
+    if (title != null) fields['title'] = title;
+    if (categoryId != null) {
+      final cs = _categoryStringPkForApi(getCategoryRuleById(categoryId));
+      if (cs != null && cs.isNotEmpty) {
+        fields['category_id'] = cs;
+      }
+    }
+    if (isDone != null) fields['is_done'] = isDone;
+    if (notes != null) fields['note'] = notes;
+    if (checklist != null) fields['checklist'] = checklist;
+    if (parentPlanId != null) {
+      fields['parent_plan_id'] = parentPlanId.toString();
+    }
+    if (order != null) fields['order'] = order;
+    if (startTimeDisplay != null) {
+      fields['start_time'] =
+          _profileUtcFromWall(startTimeDisplay).toIso8601String();
+    } else if (startTime != null) {
+      fields['start_time'] = startTime.toUtc().toIso8601String();
+    }
+    if (clearEnd) {
+      fields['end_time'] = null;
+    } else if (endDateTimeDisplay != null) {
+      fields['end_time'] =
+          _profileUtcFromWall(endDateTimeDisplay).toIso8601String();
+    } else if (endDateTime != null) {
+      fields['end_time'] = endDateTime.toUtc().toIso8601String();
+    }
+    final bizPid = planBusinessId?.trim() ?? '';
+    if (bizPid.isNotEmpty && !bizPid.startsWith('optimistic-')) {
+      fields['plan_id'] = bizPid;
+    }
+    final patchBody = <String, dynamic>{};
+    for (final e in fields.entries) {
+      if (e.key == 'user_id') continue;
+      patchBody[e.key] = e.value;
+    }
+    return patchBody;
+  }
+
   Future<bool> updatePlanningTask(
     String planRowId, {
     /// @DATA_MAP `plan_id` (UUID) — send inside `fields` only; outer bulk `id` must be Integer Id.
@@ -7858,46 +8193,21 @@ class DatabaseService {
     final rid = planRowId.trim();
     if (rid.isEmpty) return false;
     final restId = await _resolvePlanRestId(rid, planBusinessId: planBusinessId);
-    final fields = <String, dynamic>{'user_id': _pidForPbFilter};
-    if (title != null) fields['title'] = title;
-    if (categoryId != null) {
-      final cs = _categoryStringPkForApi(getCategoryRuleById(categoryId));
-      if (cs != null && cs.isNotEmpty) {
-        fields['category_id'] = cs;
-      }
-    }
-    if (isDone != null) fields['is_done'] = isDone;
-    if (notes != null) fields['note'] = notes;
-    if (checklist != null) fields['checklist'] = checklist;
-    if (parentPlanId != null) {
-      fields['parent_plan_id'] = parentPlanId.toString();
-    }
-    if (order != null) fields['order'] = order;
-    if (startTimeDisplay != null) {
-      fields['start_time'] =
-          _profileUtcFromWall(startTimeDisplay).toIso8601String();
-    } else if (startTime != null) {
-      fields['start_time'] = startTime.toUtc().toIso8601String();
-    }
-    if (clearEnd) {
-      fields['end_time'] = null;
-    } else if (endDateTimeDisplay != null) {
-      fields['end_time'] =
-          _profileUtcFromWall(endDateTimeDisplay).toIso8601String();
-    } else if (endDateTime != null) {
-      fields['end_time'] = endDateTime.toUtc().toIso8601String();
-    }
-    // Tags: PocketBase — [_syncPlanTagsPocket] after field PATCH when [tags] is non-null.
-    final bizPid = planBusinessId?.trim() ?? '';
-    if (bizPid.isNotEmpty && !bizPid.startsWith('optimistic-')) {
-      fields['plan_id'] = bizPid;
-    }
-
-    final patchBody = <String, dynamic>{};
-    for (final e in fields.entries) {
-      if (e.key == 'user_id') continue;
-      patchBody[e.key] = e.value;
-    }
+    final patchBody = _scalarPatchBodyForPlanningRow(
+      planBusinessId: planBusinessId,
+      title: title,
+      categoryId: categoryId,
+      isDone: isDone,
+      notes: notes,
+      checklist: checklist,
+      parentPlanId: parentPlanId,
+      order: order,
+      startTime: startTime,
+      startTimeDisplay: startTimeDisplay,
+      endDateTime: endDateTime,
+      endDateTimeDisplay: endDateTimeDisplay,
+      clearEnd: clearEnd,
+    );
     if (patchBody.isEmpty && tags == null) return false;
     try {
       if (patchBody.isNotEmpty) {
@@ -7916,6 +8226,57 @@ class DatabaseService {
       if (!suppressAppSnack) AppSnack.failed();
       return false;
     }
+  }
+
+  /// Multiple scalar `plans` PATCH calls; clears optimistic overlays per row; **one** [notifyPlanningRefresh] at end.
+  ///
+  /// No per-row tag sync — use [updatePlanningTask] when tags change.
+  Future<bool> bulkUpdatePlans(
+    List<PlanningBulkPatch> patches, {
+    bool suppressAppSnack = false,
+  }) async {
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+      return false;
+    }
+    if (!_isPlansTableConfigured) {
+      _log('TABLE_GUARD: blocked bulkUpdatePlans.');
+      return false;
+    }
+    if (patches.isEmpty) return false;
+    var allOk = true;
+    try {
+      for (final p in patches) {
+        final rid = p.planRowId.trim();
+        if (rid.isEmpty || rid.startsWith('optimistic-')) continue;
+        final patchBody = _scalarPatchBodyForPlanningRow(
+          planBusinessId: p.planBusinessId,
+          startTimeDisplay: p.startTimeDisplay,
+          endDateTimeDisplay: p.endDateTimeDisplay,
+          clearEnd: p.clearEnd,
+        );
+        if (patchBody.isEmpty) continue;
+        try {
+          final restId = await _resolvePlanRestId(rid, planBusinessId: p.planBusinessId);
+          await _pb.collection(PbCollections.plans).update(restId, body: patchBody);
+          clearOptimisticPlanningForPlanRow(rid);
+          clearOptimisticPlanningForPlanRow(restId);
+        } catch (e, st) {
+          allOk = false;
+          _log('BULK_UPDATE_PLAN_PB: $e');
+          _log(st.toString());
+        }
+      }
+    } finally {
+      notifyPlanningRefresh();
+    }
+    if (!suppressAppSnack) {
+      if (allOk) {
+        AppSnack.updated();
+      } else {
+        AppSnack.failed();
+      }
+    }
+    return allOk;
   }
 
   /// PocketBase [plans] rows: each id is a **record id** string.

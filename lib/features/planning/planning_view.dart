@@ -651,7 +651,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     );
     if (picked == null || !mounted) return;
     final loc = currentLocale.value;
-    var anyFailed = false;
+    final patches = <PlanningBulkPatch>[];
     for (final key in _selectedPlanKeys.toList()) {
       PlanningTask? match;
       for (final t in tasks) {
@@ -682,18 +682,41 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           match.endDateTime!.minute,
         );
       }
-      final ok = await DatabaseService.instance.updatePlanningTask(
-        match.planRowIdForBackend,
-        planBusinessId: match.planRowId,
-        startTimeDisplay: wallStart,
-        endDateTimeDisplay: wallEnd,
+      final newKey = _dateKeyFromDate(picked);
+      final updated = match.copyWith(
+        dateKey: newKey,
+        date: DateTime.utc(picked.year, picked.month, picked.day),
+        startTime: wallStart,
+        endDateTime: wallEnd,
+        endDateKey: wallEnd != null ? newKey : null,
         clearEnd: match.endDateTime == null,
-        suppressAppSnack: true,
       );
-      if (!ok) anyFailed = true;
+      DatabaseService.instance.applyOptimisticPlanningTask(updated);
+      patches.add(
+        PlanningBulkPatch(
+          planRowId: match.planRowIdForBackend,
+          planBusinessId: match.planRowId,
+          startTimeDisplay: wallStart,
+          endDateTimeDisplay: wallEnd,
+          clearEnd: match.endDateTime == null,
+        ),
+      );
     }
-    if (!mounted) return;
+    if (patches.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t(loc, 'plan_save_failed'))),
+        );
+      }
+      return;
+    }
     DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+    final ok = await DatabaseService.instance.bulkUpdatePlans(
+      patches,
+      suppressAppSnack: true,
+    );
+    if (!mounted) return;
     setState(() {
       _selectedPlanKeys.clear();
       _planSelectMode = false;
@@ -701,7 +724,193 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          anyFailed ? t(loc, 'plan_save_failed') : t(loc, 'plan_bulk_moved'),
+          ok ? t(loc, 'plan_bulk_moved') : t(loc, 'plan_save_failed'),
+        ),
+      ),
+    );
+  }
+
+  /// Half-open wall-clock overlap probe for planning cards (synthetic duration when end missing).
+  static ({DateTime s, DateTime e}) _wallRangeForOverlapProbe(
+    DateTime? start,
+    DateTime? end,
+  ) {
+    final s = start ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final rawEnd = end;
+    final e = (rawEnd != null && rawEnd.isAfter(s))
+        ? rawEnd
+        : s.add(const Duration(minutes: 30));
+    return (s: s, e: e);
+  }
+
+  static bool _wallIntervalsOverlap(
+    DateTime a0,
+    DateTime a1,
+    DateTime b0,
+    DateTime b1,
+  ) {
+    return a0.isBefore(b1) && b0.isBefore(a1);
+  }
+
+  /// Returns true if applying [delta] to selected tasks would overlap another selected task or a non-selected task.
+  bool _bulkShiftWouldOverlap(
+    List<PlanningTask> tasks,
+    Set<String> selectedKeys,
+    Duration delta,
+  ) {
+    final shifted = <({DateTime s, DateTime e})>[];
+    for (final t in tasks) {
+      if (!selectedKeys.contains(_planKey(t))) continue;
+      if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
+      final st = t.startTime;
+      if (st == null) continue;
+      final ns = st.add(delta);
+      final rawEnd = t.endDateTime?.add(delta);
+      final r = _wallRangeForOverlapProbe(ns, rawEnd);
+      shifted.add(r);
+    }
+    for (var i = 0; i < shifted.length; i++) {
+      for (var j = i + 1; j < shifted.length; j++) {
+        final a = shifted[i];
+        final b = shifted[j];
+        if (_wallIntervalsOverlap(a.s, a.e, b.s, b.e)) return true;
+      }
+    }
+    for (final t in tasks) {
+      if (selectedKeys.contains(_planKey(t))) continue;
+      final st = t.startTime;
+      if (st == null) continue;
+      final o = _wallRangeForOverlapProbe(st, t.endDateTime);
+      for (final sh in shifted) {
+        if (_wallIntervalsOverlap(sh.s, sh.e, o.s, o.e)) return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _bulkShiftSelectedTime(List<PlanningTask> tasks) async {
+    if (_selectedPlanKeys.isEmpty) return;
+    final loc = currentLocale.value;
+    final delta = await showModalBottomSheet<Duration>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Text(
+                  t(loc, 'plan_bulk_shift_sheet_title'),
+                  style: Theme.of(ctx).textTheme.titleMedium,
+                ),
+              ),
+              ListTile(
+                title: Text(t(loc, 'plan_time_shift_minus_1h')),
+                onTap: () => Navigator.pop(ctx, const Duration(hours: -1)),
+              ),
+              ListTile(
+                title: Text(t(loc, 'plan_time_shift_minus_30m')),
+                onTap: () => Navigator.pop(ctx, const Duration(minutes: -30)),
+              ),
+              ListTile(
+                title: Text(t(loc, 'plan_time_shift_minus_15m')),
+                onTap: () => Navigator.pop(ctx, const Duration(minutes: -15)),
+              ),
+              ListTile(
+                title: Text(t(loc, 'plan_time_shift_plus_15m')),
+                onTap: () => Navigator.pop(ctx, const Duration(minutes: 15)),
+              ),
+              ListTile(
+                title: Text(t(loc, 'plan_time_shift_plus_30m')),
+                onTap: () => Navigator.pop(ctx, const Duration(minutes: 30)),
+              ),
+              ListTile(
+                title: Text(t(loc, 'plan_time_shift_plus_1h')),
+                onTap: () => Navigator.pop(ctx, const Duration(hours: 1)),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+    if (delta == null || !mounted || delta.inSeconds == 0) return;
+    if (_bulkShiftWouldOverlap(tasks, _selectedPlanKeys, delta)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(loc, 'plan_bulk_overlap_warning'))),
+      );
+      return;
+    }
+    final patches = <PlanningBulkPatch>[];
+    for (final key in _selectedPlanKeys.toList()) {
+      PlanningTask? match;
+      for (final t in tasks) {
+        if (_planKey(t) == key) {
+          match = t;
+          break;
+        }
+      }
+      if (match == null) continue;
+      if (match.planRowIdForBackend.startsWith('optimistic-')) continue;
+      final pbId = match.pocketRecordId?.trim() ?? '';
+      if (pbId.isEmpty) continue;
+      final st = match.startTime;
+      if (st == null) continue;
+      final wallStart = st.add(delta);
+      DateTime? wallEnd;
+      if (match.endDateTime != null) {
+        wallEnd = match.endDateTime!.add(delta);
+      }
+      final d = DateTime(wallStart.year, wallStart.month, wallStart.day);
+      final newKey = _dateKeyFromDate(d);
+      final updated = match.copyWith(
+        dateKey: newKey,
+        date: DateTime.utc(d.year, d.month, d.day),
+        startTime: wallStart,
+        endDateTime: wallEnd,
+        endDateKey: wallEnd != null ? newKey : null,
+        clearEnd: match.endDateTime == null,
+      );
+      DatabaseService.instance.applyOptimisticPlanningTask(updated);
+      patches.add(
+        PlanningBulkPatch(
+          planRowId: match.planRowIdForBackend,
+          planBusinessId: match.planRowId,
+          startTimeDisplay: wallStart,
+          endDateTimeDisplay: wallEnd,
+          clearEnd: match.endDateTime == null,
+        ),
+      );
+    }
+    if (patches.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t(loc, 'plan_bulk_shift_no_timed_tasks')),
+          ),
+        );
+      }
+      return;
+    }
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+    final ok = await DatabaseService.instance.bulkUpdatePlans(
+      patches,
+      suppressAppSnack: true,
+    );
+    if (!mounted) return;
+    setState(() {
+      _selectedPlanKeys.clear();
+      _planSelectMode = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok
+              ? t(loc, 'plan_bulk_shift_applied')
+              : t(loc, 'plan_save_failed'),
         ),
       ),
     );
@@ -724,34 +933,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       ids.add(rid);
     }
     await DatabaseService.instance.deletePlanningTasksBulk(ids);
-    if (mounted) {
-      setState(() {
-        _selectedPlanKeys.clear();
-        _planSelectMode = false;
-      });
-    }
-  }
-
-  Future<void> _bulkMarkCompleted(List<PlanningTask> tasks) async {
-    final ids = <String>[];
-    for (final key in _selectedPlanKeys.toList()) {
-      PlanningTask? match;
-      for (final t in tasks) {
-        if (_planKey(t) == key) {
-          match = t;
-          break;
-        }
-      }
-      if (match == null) continue;
-      if (match.planRowIdForBackend.startsWith('optimistic-')) continue;
-      final rid = match.recordIdForBackend.trim();
-      if (rid.isEmpty) continue;
-      ids.add(rid);
-    }
-    await DatabaseService.instance.markPlanningTasksCompletedBulk(
-      ids,
-      completed: true,
-    );
     if (mounted) {
       setState(() {
         _selectedPlanKeys.clear();
@@ -1811,6 +1992,55 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     );
   }
 
+  Widget? _planningBulkBottomBar(
+    BuildContext context,
+    ColorScheme scheme,
+    List<PlanningTask> tasks,
+  ) {
+    if (_selectedPlanKeys.isEmpty) return null;
+    final loc = currentLocale.value;
+    return SafeArea(
+      child: Material(
+        elevation: 6,
+        color: scheme.surfaceContainerHigh,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  t(loc, 'selected_count')
+                      .replaceFirst('%s', '${_selectedPlanKeys.length}'),
+                  style: Theme.of(context).textTheme.labelLarge,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              TextButton(
+                onPressed: _clearSelection,
+                child: Text(t(loc, 'cancel')),
+              ),
+              IconButton(
+                tooltip: t(loc, 'plan_bulk_move_date'),
+                icon: const Icon(Icons.event_rounded),
+                onPressed: () => unawaited(_bulkMoveSelectedToDate(tasks)),
+              ),
+              IconButton(
+                tooltip: t(loc, 'plan_bulk_shift_time'),
+                icon: const Icon(Icons.more_time_rounded),
+                onPressed: () => unawaited(_bulkShiftSelectedTime(tasks)),
+              ),
+              IconButton(
+                tooltip: t(loc, 'delete'),
+                icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
+                onPressed: () => unawaited(_bulkDelete(tasks)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -1823,84 +2053,17 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           '${headerDate.year}-${headerDate.month.toString().padLeft(2, '0')}-${headerDate.day.toString().padLeft(2, '0')}';
     }
 
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        leading: _planSelectMode
-            ? IconButton(
-                icon: const Icon(Icons.close_rounded),
-                onPressed: _exitSelectMode,
-                tooltip: t(currentLocale.value, 'plan_exit_select'),
-              )
-            : null,
-        title: _planSelectMode
-            ? Text(t(currentLocale.value, 'plan_select_mode'))
-            : Row(
-                children: [
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
-                    icon: const Icon(Icons.chevron_left_rounded),
-                    tooltip: t(currentLocale.value, 'date_previous_day'),
-                    onPressed: () => _shiftPlanningDay(-1),
-                  ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: _openPlanningHeaderDatePicker,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Text(
-                          '${t(currentLocale.value, 'planning')} · $dateStr',
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 40,
-                      minHeight: 40,
-                    ),
-                    icon: const Icon(Icons.chevron_right_rounded),
-                    tooltip: t(currentLocale.value, 'date_next_day'),
-                    onPressed: () => _shiftPlanningDay(1),
-                  ),
-                ],
-              ),
-        actions: [
-          if (!_planSelectMode) ...[
-            IconButton(
-              icon: const Icon(Icons.auto_awesome_rounded),
-              tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
-              onPressed: _openSmartPlanSheet,
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings_rounded),
-              tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
-              onPressed: _showPlanningSettingsSheet,
-            ),
-            IconButton(
-              icon: const Icon(Icons.calendar_today_rounded),
-              onPressed: _openPlanningHeaderDatePicker,
-            ),
-          ],
-        ],
-      ),
-      body: StreamBuilder<List<PlanningTask>>(
-        stream: _planningStream,
-        builder: (context, snapshot) {
-          try {
-            return _buildPlanningStreamBody(context, scheme, snapshot);
-          } catch (e, st) {
-            if (kDebugMode) {
-              debugPrint('PlanningPage stream builder: $e\n$st');
-            }
-            return Center(
+    return StreamBuilder<List<PlanningTask>>(
+      stream: _planningStream,
+      builder: (context, snapshot) {
+        List<PlanningTask>? displayedForChrome;
+        late final Widget body;
+        try {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
+            body = const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            body = Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
@@ -1913,55 +2076,144 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                 ),
               ),
             );
+          } else {
+            final server = snapshot.data ?? [];
+            if (server.isNotEmpty && _optimisticTasks.isNotEmpty) {
+              final toDrop = _optimisticTasks
+                  .where((o) => server.any((s) =>
+                      s.title.trim() == o.title.trim() &&
+                      s.dateKey == o.dateKey))
+                  .toList();
+              if (toDrop.isNotEmpty) {
+                final dropIds = toDrop.map((e) => e.planRowId).toSet();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(() => _optimisticTasks
+                      .removeWhere((o) => dropIds.contains(o.planRowId)));
+                });
+              }
+            }
+            final tasks = _displayTasks(server);
+            displayedForChrome = tasks;
+            body = _buildPlanningMainColumn(context, scheme, tasks);
           }
-        },
-      ),
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('PlanningPage stream builder: $e\n$st');
+          }
+          body = Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                t(currentLocale.value, 'no_data_found'),
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ),
+          );
+        }
+
+        return Scaffold(
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            leading: _planSelectMode
+                ? IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: _exitSelectMode,
+                    tooltip: t(currentLocale.value, 'plan_exit_select'),
+                  )
+                : null,
+            title: _planSelectMode
+                ? Text(t(currentLocale.value, 'plan_select_mode'))
+                : Row(
+                    children: [
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        icon: const Icon(Icons.chevron_left_rounded),
+                        tooltip: t(currentLocale.value, 'date_previous_day'),
+                        onPressed: () => _shiftPlanningDay(-1),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: _openPlanningHeaderDatePicker,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Text(
+                              '${t(currentLocale.value, 'planning')} · $dateStr',
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
+                        icon: const Icon(Icons.chevron_right_rounded),
+                        tooltip: t(currentLocale.value, 'date_next_day'),
+                        onPressed: () => _shiftPlanningDay(1),
+                      ),
+                    ],
+                  ),
+            actions: [
+              if (_planSelectMode && displayedForChrome != null)
+                TextButton(
+                  onPressed: () {
+                    final list = displayedForChrome;
+                    if (list == null) return;
+                    setState(() {
+                      for (final t in list) {
+                        _selectedPlanKeys.add(_planKey(t));
+                      }
+                    });
+                  },
+                  child: Text(t(currentLocale.value, 'plan_select_all')),
+                ),
+              if (!_planSelectMode) ...[
+                IconButton(
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
+                  onPressed: _openSmartPlanSheet,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings_rounded),
+                  tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
+                  onPressed: _showPlanningSettingsSheet,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.calendar_today_rounded),
+                  onPressed: _openPlanningHeaderDatePicker,
+                ),
+              ],
+            ],
+          ),
+          body: body,
+          bottomNavigationBar: displayedForChrome != null
+              ? _planningBulkBottomBar(context, scheme, displayedForChrome)
+              : null,
+        );
+      },
     );
   }
 
-  Widget _buildPlanningStreamBody(
+  Widget _buildPlanningMainColumn(
     BuildContext context,
     ColorScheme scheme,
-    AsyncSnapshot<List<PlanningTask>> snapshot,
+    List<PlanningTask> tasks,
   ) {
-    if (snapshot.connectionState == ConnectionState.waiting &&
-        !snapshot.hasData) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (snapshot.hasError) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            t(currentLocale.value, 'no_data_found'),
-            textAlign: TextAlign.center,
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-        ),
-      );
-    }
-    final server = snapshot.data ?? [];
-    if (server.isNotEmpty && _optimisticTasks.isNotEmpty) {
-      final toDrop = _optimisticTasks
-          .where((o) => server.any((s) =>
-              s.title.trim() == o.title.trim() && s.dateKey == o.dateKey))
-          .toList();
-      if (toDrop.isNotEmpty) {
-        final dropIds = toDrop.map((e) => e.planRowId).toSet();
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          setState(
-              () => _optimisticTasks.removeWhere((o) => dropIds.contains(o.planRowId)));
-        });
-      }
-    }
-    final tasks = _displayTasks(server);
     return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
               if (!_planSelectMode)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -2042,40 +2294,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                   ],
                 ),
               ),
-              if (_selectedPlanKeys.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Text(t(currentLocale.value, 'selected_count')
-                          .replaceFirst('%s', '${_selectedPlanKeys.length}')),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: _clearSelection,
-                        child: Text(t(currentLocale.value, 'cancel')),
-                      ),
-                      TextButton(
-                        onPressed: () => unawaited(_bulkMoveSelectedToDate(tasks)),
-                        child: Text(
-                          t(currentLocale.value, 'plan_bulk_move_date'),
-                          style: TextStyle(color: scheme.secondary),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => _bulkMarkCompleted(tasks),
-                        child: Text(
-                          t(currentLocale.value, 'plan_bulk_mark_done'),
-                          style: TextStyle(color: scheme.primary),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => _bulkDelete(tasks),
-                        child: Text(t(currentLocale.value, 'delete'),
-                            style: TextStyle(color: scheme.error)),
-                      ),
-                    ],
-                  ),
-                ),
               Expanded(
                 child: StreamBuilder<void>(
                   stream: DatabaseService.instance.timeUpdates,

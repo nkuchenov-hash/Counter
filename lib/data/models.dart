@@ -1874,6 +1874,23 @@ class PlanningTask {
   }
 }
 
+/// One scalar PATCH for [`DatabaseService.bulkUpdatePlans`] — no tag sync; PB row id via [planRowId].
+class PlanningBulkPatch {
+  const PlanningBulkPatch({
+    required this.planRowId,
+    this.planBusinessId,
+    this.startTimeDisplay,
+    this.endDateTimeDisplay,
+    this.clearEnd = false,
+  });
+
+  final String planRowId;
+  final String? planBusinessId;
+  final DateTime? startTimeDisplay;
+  final DateTime? endDateTimeDisplay;
+  final bool clearEnd;
+}
+
 // --- Stats tree (HIERARCHICAL STATS §8). Pure data. ---
 
 /// One node in the hierarchical stats tree.

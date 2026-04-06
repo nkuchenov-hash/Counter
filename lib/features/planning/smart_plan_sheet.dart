@@ -224,6 +224,8 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
         if (!mounted) return;
         setState(() => _listening = true);
       }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
       await _speech.listen(
         onResult: (res) {
           final text = res.recognizedWords;
