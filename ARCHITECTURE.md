@@ -30,6 +30,7 @@
 - **SINGLETON_STOP:** Starting a new primary timer stops other open primaries for the same wall-clock rules before create.
 - **OWNERSHIP:** Every query filters by current user, e.g. `user_id = "<uuid>"` in PB filter strings.
 - **INSTANT_PURGE_PROTOCOL:** Optimistic UI before await where the Brain already does so; revert on failure.
+- **LAW_OF_OPTIMISTIC_UI (Shadow State):** No user-driven **Start / Stop / Update** on records may block the UI on a network round-trip. The Brain applies a **local shadow** (cache + timeline/active streams) in **&lt;100 ms**, then runs PocketBase **PATCH/POST** asynchronously; on failure it **rolls back** to the last stable snapshot and surfaces a **single** sync error (see `database_service.dart`).
 - **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.
 
 ---
@@ -65,6 +66,7 @@
 ## 8. Web / hardware
 
 - Speech and biometrics: guard with `kIsWeb` and platform capabilities as in `app_shell` / services.
+- **Records realtime:** After a valid session, the Brain subscribes to `records` (`subscribe('*', …)`) so **Web and mobile** share the same in-memory cache updates from server pushes; login flows must re-arm this subscription if init ran before auth.
 
 ---
 

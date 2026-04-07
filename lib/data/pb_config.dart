@@ -2,10 +2,37 @@
 library;
 
 import 'package:counter/core/constants.dart';
+import 'package:flutter/foundation.dart';
 
-/// Base URL of the PocketBase instance (no trailing slash).
-/// Production: HTTPS via sslip.io (required for Flutter Web on GitHub Pages — avoids mixed content).
-const String kPocketBaseUrl = 'https://217-114-0-201.sslip.io';
+/// Remote PocketBase (HTTPS). Used for release mobile builds and production web.
+const String kPocketBaseProductionUrl = 'https://217-114-0-201.sslip.io';
+
+String _pocketBaseUrlForWeb() {
+  final host = Uri.base.host;
+  final isLocalHost = host.isEmpty ||
+      host == 'localhost' ||
+      host == '127.0.0.1';
+  if (isLocalHost) {
+    return 'http://localhost:8090';
+  }
+  return kPocketBaseProductionUrl;
+}
+
+/// Resolves the PocketBase base URL (no trailing slash) for the current platform and build mode.
+String resolvePocketBaseUrl() {
+  if (kIsWeb) {
+    return _pocketBaseUrlForWeb();
+  }
+  if (!kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android &&
+      kDebugMode) {
+    return 'http://10.0.2.2:8090';
+  }
+  return kPocketBaseProductionUrl;
+}
+
+/// Effective API root — use this everywhere instead of a hard-coded host.
+String get kPocketBaseUrl => resolvePocketBaseUrl();
 
 /// PocketBase collection names (Admin → Collections). Must match server.
 abstract class PbCollections {

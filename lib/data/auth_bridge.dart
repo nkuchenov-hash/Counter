@@ -126,6 +126,7 @@ class AuthBridge {
             createData: _oauthProfileCreateData(),
           );
       await _persistProfileIdAfterAuth();
+      unawaited(DatabaseService.instance.ensureRecordsRealtimeBridge());
       return OAuthSignInResult.success;
     } on ClientException catch (e) {
       if (kDebugMode) debugPrint('[PB OAuth] $e');
@@ -175,6 +176,7 @@ class AuthBridge {
           'business user_id $sessionId @ $kPocketBaseUrl',
         );
       }
+      unawaited(DatabaseService.instance.ensureRecordsRealtimeBridge());
       return true;
     } on ClientException catch (e) {
       if (kDebugMode) debugPrint('[AUTH_PB] ${e.statusCode} $e');

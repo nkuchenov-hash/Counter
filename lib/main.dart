@@ -8,14 +8,17 @@ import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/database_service.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:counter/core/constants.dart';
 import 'package:counter/core/theme.dart';
+import 'package:counter/features/wear/wear_main_wrapper.dart';
+import 'package:counter/features/wear/wear_platform.dart';
+import 'package:counter/features/wear/wear_runtime.dart';
+import 'package:counter/features/wear/wear_timer_screen.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/web_history.dart';
 import 'package:counter/core/url_strategy_stub.dart'
     if (dart.library.html) 'package:flutter_web_plugins/url_strategy.dart'
     as url_strategy;
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
@@ -28,12 +31,28 @@ bool _startupNetworkErrorShown = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb) {
+    try {
+      appWearHost = await WearPlatform.isWearHost();
+    } catch (_) {
+      appWearHost = false;
+    }
+  } else {
+    appWearHost = false;
+  }
   try {
     await DatabaseService.instance.ensurePocketBaseReady();
   } catch (_) {}
   try {
-    for (final loc in kAppSupportedMaterialLocales) {
-      await initializeDateFormatting(loc.toString(), null);
+    if (appWearHost) {
+      await initializeDateFormatting(
+        materialLocaleForUiLanguage(currentLocale.value).toString(),
+        null,
+      );
+    } else {
+      for (final loc in kAppSupportedMaterialLocales) {
+        await initializeDateFormatting(loc.toString(), null);
+      }
     }
   } catch (_) {}
   try {
@@ -118,7 +137,11 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
                     );
                   });
                 }
-                return child ?? const SizedBox.shrink();
+                var out = child ?? const SizedBox.shrink();
+                if (appWearHost) {
+                  out = WearMainWrapper(child: out);
+                }
+                return out;
               },
               onGenerateRoute: (settings) {
                 final name = settings.name ?? '/';
@@ -231,8 +254,10 @@ class _InitGuardState extends State<_InitGuard> {
 
   Future<void> _initialize() async {
     try {
-      final ok =
-          await DatabaseService.instance.loadInitialData(widget.uid.trim());
+      final ok = appWearHost
+          ? await DatabaseService.instance
+              .loadInitialDataWearLite(widget.uid.trim())
+          : await DatabaseService.instance.loadInitialData(widget.uid.trim());
       if (ok) {
         final lang = DatabaseService.instance.settings.primaryLanguage;
         if (lang.isNotEmpty) {
@@ -309,6 +334,9 @@ class _InitGuardState extends State<_InitGuard> {
     }
     if (!DatabaseService.instance.isInitialized) {
       return const _LoadingScreen();
+    }
+    if (appWearHost) {
+      return const WearTimerScreen();
     }
     final biometricEnabled =
         DatabaseService.instance.settings.biometricEnabled;

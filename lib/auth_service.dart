@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:counter/core/constants.dart';
-import 'package:counter/data/html_stub.dart' if (dart.library.html) 'dart:html' as html;
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_login_yandex/flutter_login_yandex.dart';

@@ -1,3 +1,7 @@
+import com.android.build.gradle.BaseExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 buildscript {
     repositories {
         google()
@@ -5,6 +9,7 @@ buildscript {
     }
     dependencies {
         classpath("com.android.tools.build:gradle:8.11.1")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.20")
     }
 }
 
@@ -25,6 +30,52 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
+// Align Java + Kotlin bytecode for every Android subproject (e.g. :wear defaults to Java 8; Kotlin may target 21 — AGP rejects the mix).
+val sharedJvmVersion = JavaVersion.VERSION_17
+subprojects {
+    afterEvaluate {
+        project.extensions.findByType(BaseExtension::class.java)?.compileOptions?.apply {
+            sourceCompatibility = sharedJvmVersion
+            targetCompatibility = sharedJvmVersion
+        }
+        project.tasks.withType(KotlinCompile::class.java).configureEach {
+            compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+        }
+    }
+}
+
+// AGP 8+: Android library modules must declare `namespace`. Legacy Flutter plugins (e.g. :wear) omit it — derive from
+// `package=` in src/main/AndroidManifest.xml or from Gradle `group`. Skip :flutter_login_yandex (fixed below).
+subprojects {
+    afterEvaluate {
+        val androidLib =
+            project.extensions.findByType(com.android.build.gradle.LibraryExtension::class.java)
+                ?: return@afterEvaluate
+        val existingNs = androidLib.namespace
+        if (existingNs != null && existingNs.isNotBlank()) return@afterEvaluate
+        if (project.name == "flutter_login_yandex") return@afterEvaluate
+
+        val srcManifest = project.file("src/main/AndroidManifest.xml")
+        if (srcManifest.exists()) {
+            val pkg =
+                Regex("""package\s*=\s*"([^"]+)""")
+                    .find(srcManifest.readText())
+                    ?.groupValues
+                    ?.getOrNull(1)
+                    ?.trim().orEmpty()
+            if (pkg.isNotEmpty()) {
+                androidLib.namespace = pkg
+                return@afterEvaluate
+            }
+        }
+        val g = project.group.toString().trim()
+        if (g.isNotEmpty() && g != "unspecified") {
+            androidLib.namespace = g
+        }
+    }
+}
+
 // BUILD_STABILITY: Inject namespace and strip 'package' from manifest for flutter_login_yandex only (no Pub Cache edits).
 subprojects {
     afterEvaluate {

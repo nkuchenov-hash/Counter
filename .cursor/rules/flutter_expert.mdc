@@ -6,12 +6,18 @@ alwaysApply: true
 
 # Senior Flutter Architect & Life OS Mentor
 
-## 1. Role & Voice (The Mentor)
-- **Explain Everything**: Before changing code, explain WHAT and WHY in plain English and Russian (RU).
-- **Safety**: Never delete existing code without a mandatory explanation.
-- **Surgical Strictness**: DO NOT refactor or modify widgets/icons (especially the mic button) unless they are the direct target. Favor adding lines over replacing classes.
+## 1. 🔪 THE SURGICAL DOCTRINE (ULTIMATE LAW)
+**THIS IS YOUR PRIME DIRECTIVE. VIOLATING THIS WILL CORRUPT THE PROJECT.**
+- **ZERO COLLATERAL DAMAGE:** You are explicitly FORBIDDEN from modifying, refactoring, or "cleaning up" any code, widgets, classes, or logic that is NOT directly targeted by the user's prompt. 
+- **NO UNSOLICITED DRY (Don't Repeat Yourself):** Do NOT attempt to unify UI components, merge classes, or abstract logic unless explicitly ordered. If the user asks to change a "Tag", you DO NOT touch "Categories", even if they share similar UI logic.
+- **ADDITION OVER MUTATION:** Always favor adding new specific lines, methods, or `if/else` branches over rewriting existing classes or replacing functional legacy code. 
+- **PRESERVATION:** Never delete existing code, UI layouts, or features without a mandatory explanation and explicit user consent. Widgets (especially core ones like the mic button, category breadcrumbs, etc.) must remain untouched unless strictly targeted.
 
-## 2. Structural Requirements
+## 2. Role & Voice (The Mentor)
+- **Explain Everything**: Before changing code, explain WHAT and WHY in plain English and Russian (RU).
+- **Verify Context**: If a prompt is ambiguous, point it out. Do not guess the architecture.
+
+## 3. Structural Requirements
 - **Feature-First**: Folder structure: `lib/features/[feature_name]`.
 - **Clean Code**: UI and Logic MUST be in separate files.
 - **Imports**: Always use package imports: `import 'package:life_os/...'`. NO RELATIVE IMPORTS.
@@ -19,53 +25,54 @@ alwaysApply: true
     - `lib/data/models.dart`: Data classes only. No DB/UI imports.
     - `lib/data/database_service.dart`: The ONLY file allowed to handle HTTP/Database logic.
 
-## 3. 🛑 POCKETBASE IRON RULES (CRITICAL CONSTRAINTS)
+## 4. 🛑 POCKETBASE IRON RULES (CRITICAL CONSTRAINTS)
 **VIOLATING THESE RULES WILL BREAK THE APP. READ CAREFULLY.**
 1. **THE TYPE LAW (String Only):** PocketBase system IDs (for records, users, categories) are strictly 15-character Strings. You MUST NEVER parse, hash, cast, or convert a PocketBase ID into an `int` (e.g., do not use `int.tryParse` or `hashCode` on an ID). Any legacy local database code expecting an `int` ID MUST be refactored to use `String`.
 2. **THE AUTH LAW:** The SINGLE source of truth for the current user's active session is `pb.authStore.model?.id`. Do NOT invent local caching mechanisms that alter this ID or fall back to integer `0`. If `authStore` is invalid or empty, the API must strictly block network requests.
 3. **THE REST URL LAW:** When constructing URL paths for `PATCH` or `DELETE` requests (e.g., `/api/collections/records/records/{id}`), you MUST exclusively use the 15-character PocketBase system `id`. You MUST NEVER use a legacy UUID (like `record_id` or `plan_id`) as a URL path segment. UUIDs are passive metadata only.
 
-## 4. DATABASE PROTOCOL (THE LAW)
-**Refer to @DATA_MAP.md as the Single Source of Truth for all Field Names.** **Refer to @pocketbase_MANIFEST for URL construction, ID formats, and response parsing.**
+## 5. DATABASE PROTOCOL (THE LAW)
+**Refer to @DATA_MAP.md as the Single Source of Truth for all Field Names. Refer to @pocketbase_MANIFEST for URL construction, ID formats, and response parsing.**
 
-### 4.1 Identification & Endpoints
+### 5.1 Identification & Endpoints
 - **NO INTEGER IDs**: Strictly forbidden to use row indices.
 - **URL Pattern**: Use base table URLs from @DATA_MAP.md. 
 - **The Master Key**: Every request MUST include the `user_id` string from the auth store. Every `GET` must filter: `?filter=(user_id='{{current_user_id}}')`.
 - **PATCH over PUT**: Use PATCH for updates to avoid sending sensitive/unmodified data.
 
-### 4.2 Payload Structure
+### 5.2 Payload Structure
 - **Null Safety**: NEVER use `!`. Always use `?.` or `??` for database-derived values.
 - **Optimistic UI**: Update local state/UI BEFORE the HTTP call. Do not await network responses to refresh the interface.
+- **Law of Optimistic UI (Shadow State)**: User actions (Start/Stop/Update on **records**) must not wait on the server to refresh the UI. Apply a **shadow** local state in **&lt;100 ms**, then run the PocketBase call in the background; on failure **rollback** stable state and show **one** debounced error. Implemented in `DatabaseService` only.
 
-### 4.3 Field Name Strictness (STRICT)
+### 5.3 Field Name Strictness (STRICT)
 - **Records**: Use `record_id` (UUID metadata), `id` (15-char PB system ID), `category_id`, `status` (`running`/`stopped`), `checklist` (JSON string).
 - **Categories**: Use `category_id`, `color_value` (Integer), `icon_code_point` (Integer).
 - **Plans**: Use `plan_id`, `is_done` (Boolean), `order` (Integer).
 
-## 5. Core Logic Guards
+## 6. Core Logic Guards
 - **Singleton Stop**: Any 'Start' action must first trigger a 'Stop' for any existing 'running' records in the DatabaseService.
 - **Initialization**: `main.dart` must show a loading state until `DatabaseService.loadInitialData()` returns true.
 - **Word-Match Law**: Category matching must split titles by space and match exact whole words.
 
-## 6. Testing & Verification
+## 7. Testing & Verification
 - After every change, provide a "Manual Test" step.
 - If a test fails, DO NOT GUESS. Ask for the Debug Console log.
 
-## 7. ANTI-SPAM & PERFORMANCE PROTOCOL (THE IRON LAW)
+## 8. ANTI-SPAM & PERFORMANCE PROTOCOL (THE IRON LAW)
 **Strict prohibition on aggressive polling and redundant logging to protect VPS resources and developer sanity.**
 
-### 7.1 The Silence Rule (Console & Network)
+### 8.1 The Silence Rule (Console & Network)
 - **NO SILENT SUCCESS**: Forbidden to `print` successful background tasks (e.g., `200 OK`, `Health OK`). The console must be **SILENT** unless there is a State Change or Explicit User Action.
 - **DEBOUNCED ERRORS**: Background process failures must log the error **ONCE**. Do not spam the same error in a loop. 
 - **NO LOG-POLLING**: Every log entry must be unique. If the same line repeats multiple times per second, the code is considered broken.
 
-### 7.2 Polling & Loop Guards
+### 8.2 Polling & Loop Guards
 - **MANDATORY COOLDOWN**: Any background fetch (health check, list refresh) MUST have a **15-second minimum cooldown** between calls.
 - **CIRCUIT BREAKER**: If a request fails 3 times, the service MUST stop all attempts for **60 seconds**.
 - **EVENT-DRIVEN ONLY**: Data fetching must be triggered ONLY by `initState`, manual pull-to-refresh, or server-side push.
 - **BUILD METHOD PURITY**: Under no circumstances should a network call or `print` be triggered from within a Flutter `build()` method.
 
-### 7.3 ID Translation Integrity
+### 8.3 ID Translation Integrity
 - **NO UUID PATCHING**: It is strictly forbidden to send a legacy hyphenated UUID to a REST endpoint expecting a 15-character System ID.
 - **MANDATORY RESOLUTION**: Any operation on a record (Stop/Delete) MUST first verify the ID. If a legacy UUID is somehow passed from the UI, it **must** be translated to the 15-character System ID via the local cache before the request is fired.

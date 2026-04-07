@@ -311,8 +311,9 @@ class DatabaseService {
   Future<void> ensurePocketBaseReady() async {
     if (_pocketBase == null) {
       final prefs = await SharedPreferences.getInstance();
+      final baseUrl = kPocketBaseUrl;
       _pocketBase = PocketBase(
-        kPocketBaseUrl,
+        baseUrl,
         authStore: AsyncAuthStore(
           save: (data) async => prefs.setString(_pbAuthPrefsKey, data),
           initial: prefs.getString(_pbAuthPrefsKey),
@@ -320,13 +321,21 @@ class DatabaseService {
         ),
       );
       if (kDebugMode && !_pbHttpBackoffActive) {
+        debugPrint('[PB_BASE_URL] $baseUrl');
         debugPrint(
-          '[PB] PocketBase SDK ready — base URL $kPocketBaseUrl (auth prefs key $_pbAuthPrefsKey)',
+          '[PB] PocketBase SDK ready — base URL $baseUrl (auth prefs key $_pbAuthPrefsKey)',
         );
       }
     }
     await _maybeVerifyPocketBaseReachable();
     SyncManager.instance.attachIfNeeded();
+  }
+
+  /// Re-subscribe to `records` realtime after auth when init ran without a session (symmetric Web ↔ mobile).
+  Future<void> ensureRecordsRealtimeBridge() async {
+    try {
+      await _startRecordsRealtimeSubscription();
+    } catch (_) {}
   }
 
   String _scopedDataCacheKey(String base) {
@@ -1323,6 +1332,69 @@ class DatabaseService {
     }
   }
 
+  /// Wear OS companion: skips planning fetch, realtime, and startup maintenance.
+  Future<bool> loadInitialDataWearLite(String uid) async {
+    await ensurePocketBaseReady();
+    _isInitialized = false;
+    _loadErrorMessage = null;
+    final trimmed = uid.trim();
+    if (trimmed.isEmpty) {
+      _loadErrorMessage = 'Invalid profile';
+      _isInitialized = true;
+      return false;
+    }
+    currentProfileId = trimmed;
+    try {
+      await _loadInnerWearLite().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          final aid = _userIdForWhere ?? '';
+          _settings = UserSettings(userId: aid.isNotEmpty ? aid : trimmed);
+          _settingsController.add(_settings);
+        },
+      );
+      return true;
+    } on _ProfileFetchFailedException catch (e) {
+      try {
+        await onSessionInvalid?.call();
+      } catch (_) {}
+      clearLocalStateOnSignOut();
+      _loadErrorMessage = e.message ?? 'Session invalid or profile not found';
+      _isInitialized = true;
+      return false;
+    } catch (e) {
+      _isInitialized = true;
+      _loadErrorMessage = 'Sync Error: $e';
+      _settingsController.add(_settings);
+      return true;
+    }
+  }
+
+  Future<void> _loadInnerWearLite() async {
+    _prefs = await SharedPreferences.getInstance();
+    await _debugPocketBaseHealth();
+    if (_pbHttpBackoffActive) {
+      _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
+      _settingsController.add(_settings);
+      _categoryController.add(List.from(_rules));
+      _tasksController.add(List.from(_tasksCache));
+      _isInitialized = true;
+      return;
+    }
+    await _loadSettingsFromNoco();
+    await _loadRulesFromNoco();
+    try {
+      await _fetchRecordsIntoCache(forceNetwork: true);
+    } catch (_) {}
+    _settingsController.add(_settings);
+    _categoryController.add(List.from(_rules));
+    _tasksController.add(List.from(_tasksCache));
+    _isInitialized = true;
+    try {
+      await _startRecordsRealtimeSubscription();
+    } catch (_) {}
+  }
+
   Future<void> _loadInner() async {
     _prefs = await SharedPreferences.getInstance();
     await _debugPocketBaseHealth();
@@ -1350,9 +1422,9 @@ class DatabaseService {
     try {
       await _startRecordsRealtimeSubscription();
     } catch (_) {}
-    try {
-      await runOneShotUntitledGhostRecordClean();
-    } catch (_) {}
+    unawaited(
+      runOneShotUntitledGhostRecordClean().catchError((Object _, StackTrace __) {}),
+    );
     unawaited(flushPendingPlanCreates());
   }
 
@@ -2947,6 +3019,21 @@ class DatabaseService {
     }
 
     throw LegacyIdResolutionException(c);
+  }
+
+  /// Cache-only resolution for shadow Stop (no network) — PB row id or null.
+  String? _tryResolveRecordIdFromCacheOnly(String docId) {
+    final c = docId.trim();
+    if (c.isEmpty) return null;
+    if (_isLikelyPocketBaseRowId(c)) return c;
+    for (final r in _cachedFlatRecords) {
+      final biz = (r['record_id'] ?? '').toString().trim();
+      if (biz == c) {
+        final pb = _pbSystemIdFromCachedRecordRow(r);
+        if (pb != null && pb.isNotEmpty) return pb;
+      }
+    }
+    return null;
   }
 
   Future<String> _resolveRecordIdForRestUrl(String candidate) async {
@@ -6766,12 +6853,6 @@ class DatabaseService {
           _primaryRunningRecordStartChain =
               prevChain.then((_) => primaryGate.future);
           await prevChain;
-          final remoteStopped = await _ensureAllRemoteRecordsStopped();
-          if (!remoteStopped) {
-            if (!primaryGate.isCompleted) primaryGate.complete();
-            AppSnack.failed();
-            return null;
-          }
           runningRecordBizId = _newClientRecordUuid();
           final runningFields = _nocoFieldsForPatch(<String, dynamic>{
             'user_id': _pidForPbFilter,
@@ -6804,6 +6885,20 @@ class DatabaseService {
               );
               _printAtomicCheckRunningCount();
             });
+
+            final remoteStopped = await _ensureAllRemoteRecordsStopped();
+            if (!remoteStopped) {
+              await _runBatchedRecordCacheTimelineNotify(() async {
+                if (rollbackSnap != null) {
+                  _restoreCachedFlatRecordsDeep(rollbackSnap!);
+                }
+                clearOptimisticTimelineUi();
+                _printAtomicCheckRunningCount();
+              });
+              AppSnack.failed();
+              if (!primaryGate.isCompleted) primaryGate.complete();
+              return null;
+            }
 
             String? newPbId;
             try {
@@ -7435,6 +7530,47 @@ class DatabaseService {
     await deleteRecordByDocId(recordId);
   }
 
+  /// PocketBase PATCH stop after [resolvedPbId] is known (shadow or awaited resolve).
+  Future<bool> _patchStopRecordNetworkPhase(
+    String originalInput,
+    String resolvedPbId,
+  ) async {
+    final nowIso = getPlanetaryNow().toUtc().toIso8601String();
+    _log('PATCH_ID_TRACE: stopRecordByDocId pb id=$resolvedPbId');
+    final stopFields = _nocoFieldsForPatch(<String, dynamic>{
+      'end_time': nowIso,
+      'status': 'stopped',
+    });
+    final stopCode = await _patchRecordsRowWith404Recovery(
+      originalQueryId: originalInput,
+      restId: resolvedPbId,
+      fields: stopFields,
+      debugPbClientException: true,
+    );
+    if (stopCode == 404) {
+      _purgeGhostRecordById(resolvedPbId);
+      _clearOptimisticStopKeysForRecord(originalInput);
+      if (_lastRecordsPatchSkippedDeadLetter) {
+        _brainSnackError(
+          t(currentLocale.value, 'error_stop_dead_letter_skip'),
+        );
+      } else {
+        _snackStopHttpFailure(404);
+      }
+      return false;
+    }
+    final ok = stopCode >= 200 && stopCode < 300;
+    if (ok) {
+      _clearOptimisticStopKeysForRecord(originalInput);
+      AppSnack.updated();
+      return true;
+    }
+    _clearOptimisticStopKeysForRecord(originalInput);
+    _notifyTimelineAfterRecordCacheMutation();
+    _snackStopHttpFailure(stopCode);
+    return false;
+  }
+
   /// Stops a record via PocketBase `records` PATCH — the argument must resolve to PB row **`id`** (15-char).
   /// Legacy column `record_id` (UUID) is mapped internally but must not be passed from UI as the primary key.
   /// Returns **`true` only** for **2xx** (not 404). Optimistic UI reverts when the request fails.
@@ -7469,6 +7605,31 @@ class DatabaseService {
     _stopRecordInFlightKeys.add(rid);
     final originalInput = rid;
     _applyOptimisticStopUiSnapshot(originalInput);
+
+    final shadowRid = _tryResolveRecordIdFromCacheOnly(originalInput);
+    if (shadowRid != null && _isLikelyPocketBaseRowId(shadowRid)) {
+      unawaited(
+        _patchStopRecordNetworkPhase(originalInput, shadowRid)
+            .catchError((Object e, StackTrace st) {
+          _log('stopRecordByDocId shadow async: $e');
+          _log(st.toString());
+          _clearOptimisticStopKeysForRecord(originalInput);
+          _notifyTimelineAfterRecordCacheMutation();
+          if (e is ClientException) {
+            _snackStopHttpFailure(e.statusCode);
+          } else {
+            _brainSnackError(
+              t(currentLocale.value, 'error_prefix').replaceAll('%s', '$e'),
+            );
+          }
+          return false;
+        }).whenComplete(() {
+          _stopRecordInFlightKeys.remove(originalInput);
+        }),
+      );
+      return true;
+    }
+
     try {
       rid = await _resolveRecordIdForStopOrDelete(rid);
       if (!_isLikelyPocketBaseRowId(rid)) {
@@ -7478,49 +7639,7 @@ class DatabaseService {
         );
         throw LegacyIdResolutionException(originalInput);
       }
-      final nowIso = getPlanetaryNow().toUtc().toIso8601String();
-      _log('PATCH_ID_TRACE: stopRecordByDocId pb id=$rid');
-      final stopFields = _nocoFieldsForPatch(<String, dynamic>{
-        'end_time': nowIso,
-        'status': 'stopped',
-      });
-      final stopCode = await _patchRecordsRowWith404Recovery(
-        originalQueryId: originalInput,
-        restId: rid,
-        fields: stopFields,
-        debugPbClientException: true,
-      );
-      if (stopCode == 404) {
-        _purgeGhostRecordById(rid);
-        _clearOptimisticStopKeysForRecord(originalInput);
-        if (_lastRecordsPatchSkippedDeadLetter) {
-          print(
-            '[ABORT_REASON] stopRecordByDocId: HTTP code 404 from dead-letter skip (no network).',
-          );
-          _brainSnackError(
-            t(currentLocale.value, 'error_stop_dead_letter_skip'),
-          );
-        } else {
-          print(
-            '[ABORT_REASON] stopRecordByDocId: server returned 404 for PATCH (record missing).',
-          );
-          _snackStopHttpFailure(404);
-        }
-        return false;
-      }
-      final ok = stopCode >= 200 && stopCode < 300;
-      if (ok) {
-        _clearOptimisticStopKeysForRecord(originalInput);
-        AppSnack.updated();
-        return true;
-      }
-      _clearOptimisticStopKeysForRecord(originalInput);
-      _notifyTimelineAfterRecordCacheMutation();
-      print(
-        '[ABORT_REASON] stopRecordByDocId: PATCH returned non-success code $stopCode.',
-      );
-      _snackStopHttpFailure(stopCode);
-      return false;
+      return await _patchStopRecordNetworkPhase(originalInput, rid);
     } on LegacyIdResolutionException catch (e, st) {
       print('UI ERROR: $e');
       print(

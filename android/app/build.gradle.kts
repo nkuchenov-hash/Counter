@@ -5,6 +5,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 android {
     namespace = "com.example.counter"
     compileSdk = flutter.compileSdkVersion
@@ -24,7 +28,8 @@ android {
         applicationId = "com.example.counter"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Wear OS 3+ / current watch emulators: floor API 30.
+        minSdk = 30
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -48,4 +53,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    implementation("com.google.android.gms:play-services-wearable:18.1.0")
 }

@@ -1,0 +1,38 @@
+# Localization & Dictionary Management (SSOT)
+
+## Core Principle
+English (`lib/l10n/langs/en.dart`) is the **Single Source of Truth (SSOT)** for all UI text. 
+Never add a new key manually to other language files. All new UI elements must be defined in `en.dart` first.
+
+## The Synchronization Workflow
+When a new feature requires new UI text, follow this exact 3-step protocol:
+
+**Step 1: Add to English**
+Open `lib/l10n/langs/en.dart` and add your new keys.
+Example: `'smart_plan_btn': 'Smart Plan',`
+
+**Step 2: Run the Sync Script**
+Open the terminal and run the local development script:
+`dart run scripts/sync_locales.dart`
+
+*How it works under the hood:*
+The script parses `en.dart` to build a list of all required keys. It then iterates through all other language files (`ru.dart`, `es.dart`, etc.). If a key from `en.dart` is missing in a target file, the script injects it at the bottom of the map with a `[TODO]` prefix.
+Example output in `ru.dart`: `'smart_plan_btn': '[TODO] Smart Plan',`
+
+**Step 3: AI Translation**
+Open Cursor Chat, select the `lib/l10n/langs/` folder, and use the following prompt:
+*"Find all strings starting with `[TODO]` in the localization files and translate them into their respective languages based on the context of a productivity app. Remove the `[TODO]` prefix after translating."*
+
+---
+
+## Recovery Prompt (For Cursor)
+If the `sync_locales.dart` script is ever lost, corrupted, or needs to be rebuilt from scratch, pass this prompt to Cursor:
+
+> **CONTEXT:** `lib/l10n/langs/`
+> **PROBLEM:** We need a Dart CLI script to synchronize localization keys. `en.dart` is the Single Source of Truth.
+> **TASK:** Create `scripts/sync_locales.dart`. 
+> 1. Parse `en.dart` to extract all keys.
+> 2. Scan all other `.dart` files in `lib/l10n/langs/`.
+> 3. If a key is missing in a target file, inject it at the bottom.
+> 4. Set the injected value to: `"[TODO] " + englishValue`.
+> 5. Do not destroy existing formatting. Use pure Dart (Regex/String manipulation).
