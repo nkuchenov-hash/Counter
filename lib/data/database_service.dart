@@ -6800,6 +6800,81 @@ class DatabaseService {
     }
   }
 
+  void _logOptimisticUiReady() {
+    if (kDebugMode) {
+      debugPrint('[OPTIMISTIC_UI] UI updated locally');
+    }
+  }
+
+  /// Highlander server phase (PATCH old + POST new). Runs **after** local shadow; may log [DISPATCH].
+  Future<void> _highlanderPrimaryServerSync({
+    required List<Map<String, dynamic>>? rollbackSnap,
+    required Map<String, dynamic> runningFields,
+    required List<Map<String, String>> patchTargets,
+  }) async {
+    try {
+      final remoteStopped = await _ensureAllRemoteRecordsStopped();
+      if (!remoteStopped) {
+        await _runBatchedRecordCacheTimelineNotify(() async {
+          if (rollbackSnap != null) {
+            _restoreCachedFlatRecordsDeep(rollbackSnap);
+          }
+          clearOptimisticTimelineUi();
+          _printAtomicCheckRunningCount();
+        });
+        AppSnack.failed();
+        return;
+      }
+
+      _recordCacheTimelineNotifyBatchDepth++;
+      try {
+        final stopIso = getPlanetaryNow().toUtc().toIso8601String();
+        final stopFields = _nocoFieldsForPatch(<String, dynamic>{
+          'end_time': stopIso,
+          'status': 'stopped',
+        });
+        for (final t in patchTargets) {
+          final rid = (t['rid'] ?? '').trim();
+          final oq = (t['oq'] ?? '').trim();
+          if (rid.isEmpty) continue;
+          final code = await _patchRecordsRowWith404Recovery(
+            originalQueryId: oq.isNotEmpty ? oq : rid,
+            restId: rid,
+            fields: stopFields,
+          );
+          if (code == 404) {
+            _purgeGhostRecordById(rid);
+            continue;
+          }
+          if (code < 200 || code >= 300) {
+            throw StateError('HIGHLANDER_PATCH_FAILED_$code');
+          }
+        }
+        final createdId = await _createRecordPb(runningFields);
+        if (createdId == null || createdId.trim().isEmpty) {
+          throw StateError('HIGHLANDER_POST_FAILED');
+        }
+        await _finalizeRecordCreateHandshake(
+          pocketCreatedRecordId: createdId,
+        );
+      } finally {
+        _recordCacheTimelineNotifyBatchDepth--;
+      }
+      clearOptimisticTimelineUi(notifyTimeline: false);
+    } catch (e, st) {
+      _log('HIGHLANDER server phase failed: $e');
+      _log(st.toString());
+      await _runBatchedRecordCacheTimelineNotify(() async {
+        if (rollbackSnap != null) {
+          _restoreCachedFlatRecordsDeep(rollbackSnap);
+        }
+        clearOptimisticTimelineUi();
+        _printAtomicCheckRunningCount();
+      });
+      AppSnack.failed();
+    }
+  }
+
   Future<String?> writeRecord(
     String dateKey,
     String taskText, {
@@ -6812,6 +6887,7 @@ class DatabaseService {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
     if (_writeRecordMutationInFlight) return null;
     _writeRecordMutationInFlight = true;
+    var deferWriteRecordMutationRelease = false;
     try {
       final parsed = getCleanTitleAndTags(taskText);
       int? cid = categoryId;
@@ -6885,85 +6961,19 @@ class DatabaseService {
               );
               _printAtomicCheckRunningCount();
             });
-
-            final remoteStopped = await _ensureAllRemoteRecordsStopped();
-            if (!remoteStopped) {
-              await _runBatchedRecordCacheTimelineNotify(() async {
-                if (rollbackSnap != null) {
-                  _restoreCachedFlatRecordsDeep(rollbackSnap!);
-                }
-                clearOptimisticTimelineUi();
-                _printAtomicCheckRunningCount();
-              });
-              AppSnack.failed();
-              if (!primaryGate.isCompleted) primaryGate.complete();
-              return null;
-            }
-
-            String? newPbId;
-            try {
-              // Suppress per-PATCH/POST [timeUpdates]: optimistic handoff already notified once.
-              // POST upsert uses [_flatTimelineVisuallyEquivalent] to skip notify on id-only merge.
-              _recordCacheTimelineNotifyBatchDepth++;
-              try {
-                final stopIso =
-                    getPlanetaryNow().toUtc().toIso8601String();
-                final stopFields = _nocoFieldsForPatch(<String, dynamic>{
-                  'end_time': stopIso,
-                  'status': 'stopped',
-                });
-                for (final t in patchTargets) {
-                  final rid = (t['rid'] ?? '').trim();
-                  final oq = (t['oq'] ?? '').trim();
-                  if (rid.isEmpty) continue;
-                  final code = await _patchRecordsRowWith404Recovery(
-                    originalQueryId: oq.isNotEmpty ? oq : rid,
-                    restId: rid,
-                    fields: stopFields,
-                  );
-                  if (code == 404) {
-                    _purgeGhostRecordById(rid);
-                    continue;
-                  }
-                  if (code < 200 || code >= 300) {
-                    throw StateError('HIGHLANDER_PATCH_FAILED_$code');
-                  }
-                }
-                final createdId = await _createRecordPb(runningFields);
-                if (createdId == null || createdId.trim().isEmpty) {
-                  throw StateError('HIGHLANDER_POST_FAILED');
-                }
-                newPbId = createdId;
-                await _finalizeRecordCreateHandshake(
-                  pocketCreatedRecordId: createdId,
-                );
-              } finally {
-                _recordCacheTimelineNotifyBatchDepth--;
-              }
-              clearOptimisticTimelineUi(notifyTimeline: false);
-              try {
-                return newPbId;
-              } finally {
-                if (!primaryGate.isCompleted) {
-                  primaryGate.complete();
-                }
-              }
-            } catch (e, st) {
-              _log('HIGHLANDER server phase failed: $e');
-              _log(st.toString());
-              await _runBatchedRecordCacheTimelineNotify(() async {
-                if (rollbackSnap != null) {
-                  _restoreCachedFlatRecordsDeep(rollbackSnap!);
-                }
-                clearOptimisticTimelineUi();
-                _printAtomicCheckRunningCount();
-              });
-              AppSnack.failed();
-              if (!primaryGate.isCompleted) {
-                primaryGate.complete();
-              }
-              return null;
-            }
+            _logOptimisticUiReady();
+            if (!primaryGate.isCompleted) primaryGate.complete();
+            deferWriteRecordMutationRelease = true;
+            unawaited(
+              _highlanderPrimaryServerSync(
+                rollbackSnap: rollbackSnap,
+                runningFields: runningFields,
+                patchTargets: patchTargets,
+              ).whenComplete(() {
+                _writeRecordMutationInFlight = false;
+              }),
+            );
+            return runningRecordBizId;
           } catch (e, st) {
             _log('writeRecord primary Highlander local phase: $e');
             _log(st.toString());
@@ -7069,7 +7079,9 @@ class DatabaseService {
       return null;
     }
     finally {
-      _writeRecordMutationInFlight = false;
+      if (!deferWriteRecordMutationRelease) {
+        _writeRecordMutationInFlight = false;
+      }
     }
   }
 
