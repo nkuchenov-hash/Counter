@@ -342,17 +342,44 @@ class DatabaseService {
   }
 
   /// Re-subscribe to `records` realtime after auth when init ran without a session (symmetric Web ↔ mobile).
-  /// Debounced so unstable `/api/realtime` does not hammer subscribe; incremental events still use
-  /// [_onPbRecordsSubscriptionEvent] / [_upsertFlatRecordFromPbModel] (no full-list refetch on resubscribe).
+  /// Does **not** touch [writeRecord] / shadow state — optimistic UI is independent of socket health.
+  /// Resets backoff and attempts one subscribe (coalesced with [_startRecordsRealtimeSubscription]).
   Future<void> ensureRecordsRealtimeBridge() async {
-    _recordsRealtimeBridgeDebounceTimer?.cancel();
-    _recordsRealtimeBridgeDebounceTimer = Timer(
-      const Duration(seconds: 2),
-      () {
-        _recordsRealtimeBridgeDebounceTimer = null;
-        unawaited(_startRecordsRealtimeSubscription());
-      },
+    _recordsRealtimeReconnectTimer?.cancel();
+    _recordsRealtimeReconnectTimer = null;
+    _recordsRealtimeFailureStreak = 0;
+    unawaited(_startRecordsRealtimeSubscription());
+  }
+
+  Duration _recordsRealtimeDelayForCurrentFailureStreak() {
+    final idx = _recordsRealtimeFailureStreak.clamp(0, _kRealtimeBackoffSeconds.length - 1);
+    return Duration(seconds: _kRealtimeBackoffSeconds[idx]);
+  }
+
+  void _logRecordsRealtimeSubscribeQuiet(Object e) {
+    final now = DateTime.now();
+    if (_lastRealtimeSubscribeErrorLogAt != null &&
+        now.difference(_lastRealtimeSubscribeErrorLogAt!) <
+            const Duration(seconds: 5)) {
+      return;
+    }
+    _lastRealtimeSubscribeErrorLogAt = now;
+    _log(
+      'records realtime subscribe failed (next backoff ${_recordsRealtimeDelayForCurrentFailureStreak().inSeconds}s): $e',
     );
+  }
+
+  void _scheduleRecordsRealtimeReconnectAfterFailure() {
+    if (!_hasAuthenticatedUserId) return;
+    _recordsRealtimeReconnectTimer?.cancel();
+    final delay = _recordsRealtimeDelayForCurrentFailureStreak();
+    if (_recordsRealtimeFailureStreak < _kRealtimeBackoffSeconds.length) {
+      _recordsRealtimeFailureStreak++;
+    }
+    _recordsRealtimeReconnectTimer = Timer(delay, () {
+      _recordsRealtimeReconnectTimer = null;
+      unawaited(_startRecordsRealtimeSubscription());
+    });
   }
 
   String _scopedDataCacheKey(String base) {
@@ -908,8 +935,13 @@ class DatabaseService {
   /// PocketBase realtime: unsubscribe function from [RecordService.subscribe] ('*').
   Future<void> Function()? _recordsRealtimeUnsubscribe;
 
-  /// Coalesces [ensureRecordsRealtimeBridge] bursts when `/api/realtime` flaps (subscribe storms).
-  Timer? _recordsRealtimeBridgeDebounceTimer;
+  /// Exponential backoff for `/api/realtime` reconnects: 5s → 10s → 20s (caps spam + main-thread churn).
+  static const List<int> _kRealtimeBackoffSeconds = [5, 10, 20];
+  int _recordsRealtimeFailureStreak = 0;
+  Timer? _recordsRealtimeReconnectTimer;
+  /// Prevents overlapping subscribe attempts (avoids recursive reconnect / stacked futures).
+  Future<void>? _recordsRealtimeSubscribeFuture;
+  DateTime? _lastRealtimeSubscribeErrorLogAt;
 
   /// Timeline row keys (REST id / business UUID) that returned **definitive** 404 after full retry — no repeat PATCH/DELETE until row reappears in GET.
   final Set<String> _recordRestDefinitive404Keys = <String>{};
@@ -1264,8 +1296,10 @@ class DatabaseService {
   }
 
   void clearLocalStateOnSignOut() {
-    _recordsRealtimeBridgeDebounceTimer?.cancel();
-    _recordsRealtimeBridgeDebounceTimer = null;
+    _recordsRealtimeReconnectTimer?.cancel();
+    _recordsRealtimeReconnectTimer = null;
+    _recordsRealtimeFailureStreak = 0;
+    _lastRealtimeSubscribeErrorLogAt = null;
     unawaited(_cancelRecordsRealtimeSubscription());
     try {
       _pocketBase?.authStore.clear();
@@ -2335,11 +2369,29 @@ class DatabaseService {
   }
 
   Future<void> _startRecordsRealtimeSubscription() async {
+    final existing = _recordsRealtimeSubscribeFuture;
+    if (existing != null) {
+      return existing;
+    }
+    final f = _startRecordsRealtimeSubscriptionBody();
+    _recordsRealtimeSubscribeFuture = f;
+    try {
+      await f;
+    } finally {
+      _recordsRealtimeSubscribeFuture = null;
+    }
+  }
+
+  Future<void> _startRecordsRealtimeSubscriptionBody() async {
     await _cancelRecordsRealtimeSubscription();
     if (!_hasAuthenticatedUserId) return;
     try {
       await ensurePocketBaseReady();
-      if (_pbHttpBackoffActive) return;
+      if (_pbHttpBackoffActive) {
+        _logRecordsRealtimeSubscribeQuiet('pb_http_backoff_active');
+        _scheduleRecordsRealtimeReconnectAfterFailure();
+        return;
+      }
       final filter = _pocketBaseOwnerFilterClauseForRecords();
       if (filter == null || filter.isEmpty) return;
       Future<void> Function()? unsub;
@@ -2365,9 +2417,12 @@ class DatabaseService {
         );
       }
       _recordsRealtimeUnsubscribe = unsub;
-    } catch (e, st) {
-      _log('_startRecordsRealtimeSubscription failed: $e');
-      _log(st.toString());
+      _recordsRealtimeFailureStreak = 0;
+      _recordsRealtimeReconnectTimer?.cancel();
+      _recordsRealtimeReconnectTimer = null;
+    } catch (e) {
+      _logRecordsRealtimeSubscribeQuiet(e);
+      _scheduleRecordsRealtimeReconnectAfterFailure();
     }
   }
 
@@ -7007,32 +7062,35 @@ class DatabaseService {
             final shadowPerf = Stopwatch()..start();
             var msSnap = 0;
             var msApply = 0;
-            _runBatchedRecordCacheTimelineNotifySync(() {
-              final tSnap = Stopwatch()..start();
-              final beforeLen = _cachedFlatRecords.length;
-              final runningSnapshots =
-                  _snapshotRunningRowsForHighlanderRollback();
-              msSnap = tSnap.elapsedMilliseconds;
-              final tApply = Stopwatch()..start();
-              clearOptimisticTimelineUi();
-              _startAtomicTaskSequenceApplyLocalPrimary(
-                createBody: runningFields,
-                patchTargetsOut: patchTargets,
-              );
-              final appended = _cachedFlatRecords.length > beforeLen;
-              rollbackToken = _HighlanderRollbackToken(
-                runningSnapshotsByIndex: runningSnapshots,
-                appendedPendingRow: appended,
-              );
-              _printAtomicCheckRunningCount();
-              msApply = tApply.elapsedMilliseconds;
-            });
-            if (kDebugMode) {
-              debugPrint(
-                '[SHADOW_PERF] cache+notify=${shadowPerf.elapsedMilliseconds}ms '
-                '(snapshot_running=${msSnap}ms local_apply=${msApply}ms; '
-                'bottleneck=${msSnap >= msApply ? "_snapshotRunningRowsForHighlanderRollback" : "clearOptimistic+_startAtomicTaskSequenceApplyLocalPrimary+_printAtomicCheckRunningCount"})',
-              );
+            try {
+              _runBatchedRecordCacheTimelineNotifySync(() {
+                final tSnap = Stopwatch()..start();
+                final beforeLen = _cachedFlatRecords.length;
+                final runningSnapshots =
+                    _snapshotRunningRowsForHighlanderRollback();
+                msSnap = tSnap.elapsedMilliseconds;
+                final tApply = Stopwatch()..start();
+                clearOptimisticTimelineUi();
+                _startAtomicTaskSequenceApplyLocalPrimary(
+                  createBody: runningFields,
+                  patchTargetsOut: patchTargets,
+                );
+                final appended = _cachedFlatRecords.length > beforeLen;
+                rollbackToken = _HighlanderRollbackToken(
+                  runningSnapshotsByIndex: runningSnapshots,
+                  appendedPendingRow: appended,
+                );
+                _printAtomicCheckRunningCount();
+                msApply = tApply.elapsedMilliseconds;
+              });
+            } finally {
+              if (kDebugMode) {
+                debugPrint(
+                  '[SHADOW_PERF] cache+notify=${shadowPerf.elapsedMilliseconds}ms '
+                  '(snapshot_running=${msSnap}ms local_apply=${msApply}ms; '
+                  'bottleneck=${msSnap >= msApply ? "_snapshotRunningRowsForHighlanderRollback" : "clearOptimistic+_startAtomicTaskSequenceApplyLocalPrimary+_printAtomicCheckRunningCount"})',
+                );
+              }
             }
             deferWriteRecordMutationRelease = true;
             unawaited(
