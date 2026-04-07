@@ -651,6 +651,19 @@ class DatabaseService {
     }
   }
 
+  /// Same as [_runBatchedRecordCacheTimelineNotify] but **synchronous** — no await before UI emit.
+  void _runBatchedRecordCacheTimelineNotifySync(void Function() action) {
+    _recordCacheTimelineNotifyBatchDepth++;
+    try {
+      action();
+    } finally {
+      _recordCacheTimelineNotifyBatchDepth--;
+      if (_recordCacheTimelineNotifyBatchDepth == 0) {
+        _emitTimelineRefreshRaw();
+      }
+    }
+  }
+
   /// Planning UI: manual refresh in addition to the 2s poll (after PATCH/cross-day optimistic).
   final StreamController<void> _planningRefreshController =
       StreamController<void>.broadcast();
@@ -6800,12 +6813,6 @@ class DatabaseService {
     }
   }
 
-  void _logOptimisticUiEmitShadow(String title) {
-    if (kDebugMode) {
-      debugPrint('[OPTIMISTIC_UI] Emitting shadow state for: $title');
-    }
-  }
-
   /// Highlander server phase (PATCH old + POST new). Runs **after** local shadow; may log [DISPATCH].
   Future<void> _highlanderPrimaryServerSync({
     required List<Map<String, dynamic>>? rollbackSnap,
@@ -6813,6 +6820,18 @@ class DatabaseService {
     required List<Map<String, String>> patchTargets,
   }) async {
     try {
+      final sp = runningFields['source_plan_id'];
+      if (sp != null) {
+        final planId =
+            pocketRelationIdOrNull(sp.toString()) ?? sp.toString().trim();
+        if (planId.isNotEmpty) {
+          final pc = await _resolveCategoryIdFromSourcePlanPbId(planId);
+          if (_planLocalCategoryIdIsConcrete(pc)) {
+            runningFields['category_id'] =
+                _recordCategoryBusinessPkForApi(pc);
+          }
+        }
+      }
       final remoteStopped = await _ensureAllRemoteRecordsStopped();
       if (!remoteStopped) {
         await _runBatchedRecordCacheTimelineNotify(() async {
@@ -6889,6 +6908,7 @@ class DatabaseService {
     _writeRecordMutationInFlight = true;
     var deferWriteRecordMutationRelease = false;
     try {
+      print('[SHADOW_EMIT] UI updated locally at ${DateTime.now()}');
       final parsed = getCleanTitleAndTags(taskText);
       int? cid = categoryId;
       cid = identifyCategory(parsed.title)?.id ?? cid;
@@ -6913,7 +6933,9 @@ class DatabaseService {
       final sourcePlanForPayload = !hasParent
           ? pocketRelationIdOrNull(sourcePlanPocketRecordId)
           : null;
-      if (sourcePlanForPayload != null) {
+      final deferSourcePlanCategory =
+          status == 'running' && !hasParent && sourcePlanForPayload != null;
+      if (sourcePlanForPayload != null && !deferSourcePlanCategory) {
         final pc =
             await _resolveCategoryIdFromSourcePlanPbId(sourcePlanForPayload);
         if (_planLocalCategoryIdIsConcrete(pc)) {
@@ -6950,7 +6972,7 @@ class DatabaseService {
           final netDone = Completer<void>();
           _primaryHighlanderNetworkChain = prevNet.then((_) => netDone.future);
           try {
-            await _runBatchedRecordCacheTimelineNotify(() async {
+            _runBatchedRecordCacheTimelineNotifySync(() {
               rollbackSnap = _cloneDeepCachedFlatRecords();
               clearOptimisticTimelineUi();
               _startAtomicTaskSequenceApplyLocalPrimary(
@@ -6959,7 +6981,6 @@ class DatabaseService {
               );
               _printAtomicCheckRunningCount();
             });
-            _logOptimisticUiEmitShadow(parsed.title);
             deferWriteRecordMutationRelease = true;
             unawaited(
               () async {
