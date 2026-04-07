@@ -673,8 +673,8 @@ class DatabaseService {
     }
   }
 
-  /// Serialize primary `running` POST so rapid double-Start cannot race past [stopAllRunningRecords].
-  Future<void> _primaryRunningRecordStartChain = Future.value();
+  /// Serializes **network** for primary Highlander (PATCH/POST), not local shadow / UI emission.
+  Future<void> _primaryHighlanderNetworkChain = Future.value();
 
   /// Wall **dateKey** → (**planRowIdForBackend** → task) merged on top of server list until PATCH lands.
   final Map<String, Map<String, PlanningTask>> _planningOptimisticByDateKey =
@@ -1255,7 +1255,7 @@ class DatabaseService {
       _lastStatsNodeRoots = null;
       _recordRestDefinitive404Keys.clear();
       _planningOptimisticByDateKey.clear();
-      _primaryRunningRecordStartChain = Future.value();
+      _primaryHighlanderNetworkChain = Future.value();
       _settingsController.add(_settings);
       _categoryController.add(List.from(_rules));
       _tasksController.add(List.from(_tasksCache));
@@ -6800,9 +6800,9 @@ class DatabaseService {
     }
   }
 
-  void _logOptimisticUiReady() {
+  void _logOptimisticUiEmitShadow(String title) {
     if (kDebugMode) {
-      debugPrint('[OPTIMISTIC_UI] UI updated locally');
+      debugPrint('[OPTIMISTIC_UI] Emitting shadow state for: $title');
     }
   }
 
@@ -6924,11 +6924,6 @@ class DatabaseService {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
         if (isPrimary) {
-          final primaryGate = Completer<void>();
-          final prevChain = _primaryRunningRecordStartChain;
-          _primaryRunningRecordStartChain =
-              prevChain.then((_) => primaryGate.future);
-          await prevChain;
           runningRecordBizId = _newClientRecordUuid();
           final runningFields = _nocoFieldsForPatch(<String, dynamic>{
             'user_id': _pidForPbFilter,
@@ -6951,6 +6946,9 @@ class DatabaseService {
           }
           final patchTargets = <Map<String, String>>[];
           List<Map<String, dynamic>>? rollbackSnap;
+          final prevNet = _primaryHighlanderNetworkChain;
+          final netDone = Completer<void>();
+          _primaryHighlanderNetworkChain = prevNet.then((_) => netDone.future);
           try {
             await _runBatchedRecordCacheTimelineNotify(() async {
               rollbackSnap = _cloneDeepCachedFlatRecords();
@@ -6961,26 +6959,29 @@ class DatabaseService {
               );
               _printAtomicCheckRunningCount();
             });
-            _logOptimisticUiReady();
-            if (!primaryGate.isCompleted) primaryGate.complete();
+            _logOptimisticUiEmitShadow(parsed.title);
             deferWriteRecordMutationRelease = true;
             unawaited(
-              _highlanderPrimaryServerSync(
-                rollbackSnap: rollbackSnap,
-                runningFields: runningFields,
-                patchTargets: patchTargets,
-              ).whenComplete(() {
-                _writeRecordMutationInFlight = false;
-              }),
+              () async {
+                try {
+                  await prevNet;
+                  await _highlanderPrimaryServerSync(
+                    rollbackSnap: rollbackSnap,
+                    runningFields: runningFields,
+                    patchTargets: patchTargets,
+                  );
+                } finally {
+                  if (!netDone.isCompleted) netDone.complete();
+                  _writeRecordMutationInFlight = false;
+                }
+              }(),
             );
             return runningRecordBizId;
           } catch (e, st) {
             _log('writeRecord primary Highlander local phase: $e');
             _log(st.toString());
             clearOptimisticTimelineUi();
-            if (!primaryGate.isCompleted) {
-              primaryGate.complete();
-            }
+            if (!netDone.isCompleted) netDone.complete();
             rethrow;
           }
         }
