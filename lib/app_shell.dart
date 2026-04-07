@@ -298,6 +298,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         Timer.periodic(const Duration(minutes: 1), (_) {
       _onDeviceLocalCalendarDayWatchTick();
     });
+    unawaited(_ensureSpeechReady());
   }
 
   void _onDeviceLocalCalendarDayWatchTick() {
@@ -330,7 +331,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   Future<void> _loadTasksAndExtras() async {
     await _loadTasksForDate(_selectedDate);
-    await _ensureSpeechReady();
   }
 
   @override

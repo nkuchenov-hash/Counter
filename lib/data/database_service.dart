@@ -98,6 +98,16 @@ bool _categoryFlatRowIsActive(Map<String, dynamic> row) {
   return true;
 }
 
+/// O(#running) rollback for Highlander local apply (avoids cloning the full flat cache).
+class _HighlanderRollbackToken {
+  _HighlanderRollbackToken({
+    required this.runningSnapshotsByIndex,
+    required this.appendedPendingRow,
+  });
+  final Map<int, Map<String, dynamic>> runningSnapshotsByIndex;
+  final bool appendedPendingRow;
+}
+
 class DatabaseService {
   DatabaseService._();
   static final DatabaseService instance = DatabaseService._();
@@ -332,10 +342,17 @@ class DatabaseService {
   }
 
   /// Re-subscribe to `records` realtime after auth when init ran without a session (symmetric Web ↔ mobile).
+  /// Debounced so unstable `/api/realtime` does not hammer subscribe; incremental events still use
+  /// [_onPbRecordsSubscriptionEvent] / [_upsertFlatRecordFromPbModel] (no full-list refetch on resubscribe).
   Future<void> ensureRecordsRealtimeBridge() async {
-    try {
-      await _startRecordsRealtimeSubscription();
-    } catch (_) {}
+    _recordsRealtimeBridgeDebounceTimer?.cancel();
+    _recordsRealtimeBridgeDebounceTimer = Timer(
+      const Duration(seconds: 2),
+      () {
+        _recordsRealtimeBridgeDebounceTimer = null;
+        unawaited(_startRecordsRealtimeSubscription());
+      },
+    );
   }
 
   String _scopedDataCacheKey(String base) {
@@ -891,6 +908,9 @@ class DatabaseService {
   /// PocketBase realtime: unsubscribe function from [RecordService.subscribe] ('*').
   Future<void> Function()? _recordsRealtimeUnsubscribe;
 
+  /// Coalesces [ensureRecordsRealtimeBridge] bursts when `/api/realtime` flaps (subscribe storms).
+  Timer? _recordsRealtimeBridgeDebounceTimer;
+
   /// Timeline row keys (REST id / business UUID) that returned **definitive** 404 after full retry — no repeat PATCH/DELETE until row reappears in GET.
   final Set<String> _recordRestDefinitive404Keys = <String>{};
 
@@ -1244,6 +1264,8 @@ class DatabaseService {
   }
 
   void clearLocalStateOnSignOut() {
+    _recordsRealtimeBridgeDebounceTimer?.cancel();
+    _recordsRealtimeBridgeDebounceTimer = null;
     unawaited(_cancelRecordsRealtimeSubscription());
     try {
       _pocketBase?.authStore.clear();
@@ -2071,15 +2093,29 @@ class DatabaseService {
     return d;
   }
 
-  List<Map<String, dynamic>> _cloneDeepCachedFlatRecords() =>
-      List<Map<String, dynamic>>.from(
-        _cachedFlatRecords.map((e) => Map<String, dynamic>.from(e)),
-      );
+  Map<int, Map<String, dynamic>> _snapshotRunningRowsForHighlanderRollback() {
+    final m = <int, Map<String, dynamic>>{};
+    for (var i = 0; i < _cachedFlatRecords.length; i++) {
+      final r = _cachedFlatRecords[i];
+      final st = (r['status'] ?? '').toString().trim().toLowerCase();
+      if (st == 'running') {
+        m[i] = Map<String, dynamic>.from(r);
+      }
+    }
+    return m;
+  }
 
-  void _restoreCachedFlatRecordsDeep(List<Map<String, dynamic>> snap) {
-    _cachedFlatRecords = List<Map<String, dynamic>>.from(
-      snap.map((e) => Map<String, dynamic>.from(e)),
-    );
+  void _restoreHighlanderRollbackToken(_HighlanderRollbackToken? token) {
+    if (token == null) return;
+    if (token.appendedPendingRow && _cachedFlatRecords.isNotEmpty) {
+      _cachedFlatRecords.removeLast();
+    }
+    for (final e in token.runningSnapshotsByIndex.entries) {
+      final i = e.key;
+      if (i < _cachedFlatRecords.length) {
+        _cachedFlatRecords[i] = Map<String, dynamic>.from(e.value);
+      }
+    }
   }
 
   /// Verification: at most one `running` row should exist after local Highlander apply.
@@ -6815,7 +6851,7 @@ class DatabaseService {
 
   /// Highlander server phase (PATCH old + POST new). Runs **after** local shadow; may log [DISPATCH].
   Future<void> _highlanderPrimaryServerSync({
-    required List<Map<String, dynamic>>? rollbackSnap,
+    required _HighlanderRollbackToken? rollbackToken,
     required Map<String, dynamic> runningFields,
     required List<Map<String, String>> patchTargets,
   }) async {
@@ -6835,9 +6871,7 @@ class DatabaseService {
       final remoteStopped = await _ensureAllRemoteRecordsStopped();
       if (!remoteStopped) {
         await _runBatchedRecordCacheTimelineNotify(() async {
-          if (rollbackSnap != null) {
-            _restoreCachedFlatRecordsDeep(rollbackSnap);
-          }
+          _restoreHighlanderRollbackToken(rollbackToken);
           clearOptimisticTimelineUi();
           _printAtomicCheckRunningCount();
         });
@@ -6884,9 +6918,7 @@ class DatabaseService {
       _log('HIGHLANDER server phase failed: $e');
       _log(st.toString());
       await _runBatchedRecordCacheTimelineNotify(() async {
-        if (rollbackSnap != null) {
-          _restoreCachedFlatRecordsDeep(rollbackSnap);
-        }
+        _restoreHighlanderRollbackToken(rollbackToken);
         clearOptimisticTimelineUi();
         _printAtomicCheckRunningCount();
       });
@@ -6967,27 +6999,48 @@ class DatabaseService {
             runningFields['parent_id'] = parentId.toString();
           }
           final patchTargets = <Map<String, String>>[];
-          List<Map<String, dynamic>>? rollbackSnap;
+          _HighlanderRollbackToken? rollbackToken;
           final prevNet = _primaryHighlanderNetworkChain;
           final netDone = Completer<void>();
           _primaryHighlanderNetworkChain = prevNet.then((_) => netDone.future);
           try {
+            final shadowPerf = Stopwatch()..start();
+            var msSnap = 0;
+            var msApply = 0;
             _runBatchedRecordCacheTimelineNotifySync(() {
-              rollbackSnap = _cloneDeepCachedFlatRecords();
+              final tSnap = Stopwatch()..start();
+              final beforeLen = _cachedFlatRecords.length;
+              final runningSnapshots =
+                  _snapshotRunningRowsForHighlanderRollback();
+              msSnap = tSnap.elapsedMilliseconds;
+              final tApply = Stopwatch()..start();
               clearOptimisticTimelineUi();
               _startAtomicTaskSequenceApplyLocalPrimary(
                 createBody: runningFields,
                 patchTargetsOut: patchTargets,
               );
+              final appended = _cachedFlatRecords.length > beforeLen;
+              rollbackToken = _HighlanderRollbackToken(
+                runningSnapshotsByIndex: runningSnapshots,
+                appendedPendingRow: appended,
+              );
               _printAtomicCheckRunningCount();
+              msApply = tApply.elapsedMilliseconds;
             });
+            if (kDebugMode) {
+              debugPrint(
+                '[SHADOW_PERF] cache+notify=${shadowPerf.elapsedMilliseconds}ms '
+                '(snapshot_running=${msSnap}ms local_apply=${msApply}ms; '
+                'bottleneck=${msSnap >= msApply ? "_snapshotRunningRowsForHighlanderRollback" : "clearOptimistic+_startAtomicTaskSequenceApplyLocalPrimary+_printAtomicCheckRunningCount"})',
+              );
+            }
             deferWriteRecordMutationRelease = true;
             unawaited(
               () async {
                 try {
                   await prevNet;
                   await _highlanderPrimaryServerSync(
-                    rollbackSnap: rollbackSnap,
+                    rollbackToken: rollbackToken,
                     runningFields: runningFields,
                     patchTargets: patchTargets,
                   );
