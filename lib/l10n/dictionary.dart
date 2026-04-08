@@ -1,5 +1,13 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:counter/l10n/langs/ar.dart' show kArL10n;
+import 'package:counter/l10n/langs/de.dart' show kDeL10n;
+import 'package:counter/l10n/langs/es.dart' show kEsL10n;
+import 'package:counter/l10n/langs/fr.dart' show kFrL10n;
+import 'package:counter/l10n/langs/it.dart' show kItL10n;
+import 'package:counter/l10n/langs/ko.dart' show kKoL10n;
+import 'package:counter/l10n/langs/zh.dart' show kZhL10n;
+
 /// Voice Vault: single source of truth for app locale and translations.
 /// GLOBALIZATION ENGINE (§7). Used by Shell (main.dart) only; no Brain/DB imports.
 
@@ -7,7 +15,7 @@ final ValueNotifier<String> currentLocale = ValueNotifier<String>('en');
 
 /// Translation map: locale code -> (key -> string).
 /// Use: l10n[currentLocale.value]?['key'] ?? l10n['en']!['key']! for safe lookup.
-const Map<String, Map<String, String>> l10n = {
+const Map<String, Map<String, String>> _l10nCore = {
   'en': {
     'app_title': 'Life OS',
     'save': 'Save',
@@ -19,6 +27,8 @@ const Map<String, Map<String, String>> l10n = {
     'categories': 'Categories',
     'stats': 'Statistics',
     'profile': 'Profile',
+    'pro_badge_label': 'PRO',
+    'pro_badge_tooltip': 'Pro tier active',
     'tab_timeline': 'Timeline',
     'tab_planning': 'Planning',
     'tab_stats': 'Stats',
@@ -463,6 +473,8 @@ const Map<String, Map<String, String>> l10n = {
     'categories': 'Категории',
     'stats': 'Статистика',
     'profile': 'Профиль',
+    'pro_badge_label': 'PRO',
+    'pro_badge_tooltip': 'Активен уровень Pro',
     'tab_timeline': 'Таймлайн',
     'tab_planning': 'План',
     'tab_stats': 'Статистика',
@@ -899,6 +911,27 @@ const Map<String, Map<String, String>> l10n = {
     'auth_hide_password': 'Скрыть пароль',
   },
 };
+
+/// Partial bundles (e.g. `ar`, `zh`) are layered on **canonical English** so missing
+/// keys still render (English fallback) and [MaterialApp.supportedLocales] stays complete.
+Map<String, String> _layerOnEnglish(Map<String, String> partial) {
+  final en = _l10nCore['en']!;
+  return Map<String, String>.unmodifiable({...en, ...partial});
+}
+
+/// Full catalog: canonical `en`/`ru` plus merged regional bundles for RTL (e.g. `ar`).
+final Map<String, Map<String, String>> l10n =
+    Map<String, Map<String, String>>.unmodifiable({
+  'en': _l10nCore['en']!,
+  'ru': _l10nCore['ru']!,
+  'ar': _layerOnEnglish(kArL10n),
+  'de': _layerOnEnglish(kDeL10n),
+  'es': _layerOnEnglish(kEsL10n),
+  'fr': _layerOnEnglish(kFrL10n),
+  'it': _layerOnEnglish(kItL10n),
+  'ko': _layerOnEnglish(kKoL10n),
+  'zh': _layerOnEnglish(kZhL10n),
+});
 
 /// Safe lookup: [locale] then fallback to 'en'. Returns key if missing.
 String t(String locale, String key) {

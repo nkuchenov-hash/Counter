@@ -66,11 +66,13 @@ class SmartTimeRangeParseResult {
 /// Parses times from free text without treating unrelated numbers as times.
 ///
 /// **Regex strategy (strict):**
+/// 0. [sanitizeSttTimeArtifacts] + RU spoken phrases + spaced `H mm` (STT often gives `9 0-0`, `9 00`).
 /// 1. Word-bounded `HH:mm` / `HH.mm` (and comma or fullwidth dot normalized to `.` first).
-/// 2. Trailing ` … HH[:.]mm` at EOL (after one or more spaces), not glued to another number/date chunk.
-/// 3. Trailing **four digits** `HHmm` (e.g. `1230` → 12:30).
-/// 4. Trailing hour only: `[\s]+(2[0-3]|1[0-9]|[0-9])\s*$` (e.g. `Ужин 12`).
-/// 5. `at` / `@` / **в** / **на** after start or whitespace, optional `:` or `.` before minutes.
+/// 2. **Spaced** `H mm` / `H m` (e.g. STT `9 00` without colon).
+/// 3. Trailing ` … HH[:.]mm` at EOL (after one or more spaces), not glued to another number/date chunk.
+/// 4. Trailing **four digits** `HHmm` (e.g. `1230` → 12:30).
+/// 5. Trailing hour only: `[\s]+(2[0-3]|1[0-9]|[0-9])\s*$` (e.g. `Ужин 12`).
+/// 6. `at` / `@` / **в** / **на** after start or whitespace, optional `:` or `.` before minutes.
 ///
 /// Dot form is always **clock time** (minute 00–59), not `dd.mm` calendar shorthand.
 /// First matching rule wins.
@@ -105,10 +107,114 @@ abstract final class SmartInputParser {
     return t;
   }
 
+  /// STT often outputs minute `00` as `0-0`. Collapse that **before** clock regexes.
+  ///
+  /// Also fixes `9-00` → `9:00` when minutes are `00` only (avoids clobbering range `10-12`).
+  static String sanitizeSttTimeArtifacts(String raw) {
+    var t = raw;
+    t = t.replaceAllMapped(
+      RegExp(r'\b([01]?\d|2[0-3])\s+0\s*[-–—]\s*0\b'),
+      (m) => '${m[1]} 00',
+    );
+    t = t.replaceAllMapped(
+      RegExp(r'\b0\s*[-–—]\s*0\b'),
+      (_) => '00',
+    );
+    t = t.replaceAllMapped(
+      RegExp(r'\b([01]?\d|2[0-3])[-–—]00\b'),
+      (m) => '${m[1]}:00',
+    );
+    return t;
+  }
+
+  /// RU wall-clock phrases → numeric fragment (longest keys first so `двадцать один` wins over `двадцать`).
+  static const Map<String, int> _ruHourWords = {
+    'двадцать три': 23,
+    'двадцать два': 22,
+    'двадцать один': 21,
+    'девятнадцать': 19,
+    'восемнадцать': 18,
+    'семнадцать': 17,
+    'шестнадцать': 16,
+    'пятнадцать': 15,
+    'четырнадцать': 14,
+    'тринадцать': 13,
+    'двенадцать': 12,
+    'одиннадцать': 11,
+    'десять': 10,
+    'девять': 9,
+    'восемь': 8,
+    'семь': 7,
+    'шесть': 6,
+    'пять': 5,
+    'четыре': 4,
+    'три': 3,
+    'два': 2,
+    'один': 1,
+    'двадцать': 20,
+    'ноль': 0,
+  };
+
+  static final List<(RegExp, String)> _ruSpokenClockReplacements =
+      _buildRuSpokenClockReplacements();
+
+  static List<(RegExp, String)> _buildRuSpokenClockReplacements() {
+    final keys = _ruHourWords.keys.toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
+    final out = <(RegExp, String)>[];
+    for (final k in keys) {
+      if (k == 'ноль') continue;
+      final h = _ruHourWords[k]!;
+      final esc = k.split(RegExp(r'\s+')).map(RegExp.escape).join(r'\s+');
+      out.add((
+        RegExp('\\bв\\s+$esc\\s+ноль\\s+ноль\\b', caseSensitive: false),
+        ' $h:00 ',
+      ),);
+      out.add((
+        RegExp('\\b$esc\\s+ноль\\s+ноль\\b', caseSensitive: false),
+        ' $h:00 ',
+      ),);
+      out.add((
+        RegExp('\\bв\\s+$esc\\s+нуль\\s+нуль\\b', caseSensitive: false),
+        ' $h:00 ',
+      ),);
+      out.add((
+        RegExp('\\bв\\s+$esc\\s+час(?:а|ов)?\\b', caseSensitive: false),
+        ' $h:00 ',
+      ),);
+    }
+    return out;
+  }
+
+  /// Expands common Russian spoken times; then [sanitizeSttTimeArtifacts]; then [normalizeClockSeparators].
+  static String normalizeForTimeParsing(String raw) {
+    var s = raw.replaceAll('\u00A0', ' ');
+    for (final pair in _ruSpokenClockReplacements) {
+      s = s.replaceAll(pair.$1, pair.$2);
+    }
+    s = s.replaceAllMapped(
+      RegExp(r'\bв\s+([01]?\d|2[0-3])\s+час(?:а|ов)?\b', caseSensitive: false),
+      (m) => ' ${m[1]}:00 ',
+    );
+    s = sanitizeSttTimeArtifacts(s);
+    s = normalizeClockSeparators(s);
+    return s;
+  }
+
   /// Word-bounded HH:mm or HH.mm (same semantics; `.` is not a decimal separator here).
   /// Minutes may be one digit (`13.4` → 13:04) or two; separator is `:` or `.` only (comma normalized earlier).
   static final RegExp _clockTime = RegExp(
     r'\b([01]?\d|2[0-3])(?::|\.)([0-5]?\d)\b',
+  );
+
+  /// STT / casual: `9 00`, `9 0` as minutes (wall clock), not only `9:00`.
+  static final RegExp _spacedHourMinute = RegExp(
+    r'\b([01]?\d|2[0-3])\s+([0-5]\d)\b',
+  );
+
+  /// Single-digit minute after space (`9 0` → 9:00).
+  static final RegExp _spacedHourMinuteSingleDigit = RegExp(
+    r'\b([01]?\d|2[0-3])\s+(\d)(?=\s|$|[,.;:!?)])',
   );
 
   /// Trailing ` … HH:mm` / ` … HH.mm` at end (space before clock).
@@ -120,8 +226,9 @@ abstract final class SmartInputParser {
   static final RegExp _trailingHhmmCompact = RegExp(r'[\s\u00A0]+(\d{4})\s*$');
 
   /// `at` / `@` / **в** / **на** only after start or whitespace (no splitting Cyrillic words on `в` mid-token).
+  /// Allows **space** before minutes for STT (`в 9 00`); group 2 = `:`/`.` minutes, group 3 = spaced minutes.
   static final RegExp _atWordTime = RegExp(
-    r'(?:^|[\s\u00A0])(?:at|@|в|на)\s*([01]?\d|2[0-3])(?:(?::|\.)([0-5]?\d))?(?=\s|$)',
+    r'(?:^|[\s\u00A0])(?:at|@|в|на)\s*([01]?\d|2[0-3])(?:(?::|\.)([0-5]?\d)|\s+([0-5]?\d))?(?=\s|$)',
     caseSensitive: false,
   );
 
@@ -137,7 +244,7 @@ abstract final class SmartInputParser {
 
   /// Returns null if no time token matched (caller should not mutate the field).
   static SmartTimeParseResult? parseTitleForScheduledTime(String raw) {
-    final input = normalizeClockSeparators(raw.replaceAll('\u00A0', ' '));
+    final input = normalizeForTimeParsing(raw);
     if (input.trim().isEmpty) return null;
 
     Match? m = _clockTime.firstMatch(input);
@@ -147,6 +254,49 @@ abstract final class SmartInputParser {
       final cleaned =
           _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
       return SmartTimeParseResult(cleanedTitle: cleaned, hour: h, minute: min);
+    }
+
+    m = _atWordTime.firstMatch(input);
+    if (m != null) {
+      final h = int.parse(m.group(1)!);
+      final min = _minuteGroupToInt(m.group(2) ?? m.group(3));
+      final cleaned =
+          _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
+      return SmartTimeParseResult(
+        cleanedTitle: cleaned,
+        hour: h,
+        minute: min,
+      );
+    }
+
+    m = _spacedHourMinute.firstMatch(input);
+    if (m != null) {
+      final h = int.parse(m.group(1)!);
+      final min = int.parse(m.group(2)!);
+      if (h >= 0 && h <= 23 && min >= 0 && min <= 59) {
+        final cleaned =
+            _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
+        return SmartTimeParseResult(
+          cleanedTitle: cleaned,
+          hour: h,
+          minute: min,
+        );
+      }
+    }
+
+    m = _spacedHourMinuteSingleDigit.firstMatch(input);
+    if (m != null) {
+      final h = int.parse(m.group(1)!);
+      final min = _minuteGroupToInt(m.group(2));
+      if (h >= 0 && h <= 23) {
+        final cleaned =
+            _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
+        return SmartTimeParseResult(
+          cleanedTitle: cleaned,
+          hour: h,
+          minute: min,
+        );
+      }
     }
 
     final trimmedRight = input.trimRight();
@@ -198,19 +348,6 @@ abstract final class SmartInputParser {
       return SmartTimeParseResult(cleanedTitle: cleaned, hour: h, minute: 0);
     }
 
-    m = _atWordTime.firstMatch(input);
-    if (m != null) {
-      final h = int.parse(m.group(1)!);
-      final min = _minuteGroupToInt(m.group(2));
-      final cleaned =
-          _collapseSpace(input.replaceRange(m.start, m.end, '')).trim();
-      return SmartTimeParseResult(
-        cleanedTitle: cleaned,
-        hour: h,
-        minute: min,
-      );
-    }
-
     return null;
   }
 
@@ -249,7 +386,7 @@ abstract final class SmartInputParser {
   /// (e.g. `from 10 to 2` → 14:00).
   static SmartTimeRangeParseResult? parseTitleForTimeRange(String raw) {
     try {
-      final input = normalizeClockSeparators(raw.replaceAll('\u00A0', ' '));
+      final input = normalizeForTimeParsing(raw);
       if (input.trim().isEmpty) return null;
 
       SmartTimeRangeParseResult? try4(

@@ -528,7 +528,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     )
                                   : _availableTags.isEmpty
                                       ? Align(
-                                          alignment: Alignment.centerLeft,
+                                          alignment:
+                                              AlignmentDirectional.centerStart,
                                           child: OutlinedButton.icon(
                                             onPressed: _openTagManagerAndReload,
                                             icon:
@@ -2542,14 +2543,16 @@ class _CategoryFolderTileState extends State<CategoryFolderTile> {
     final content = ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: kMaxTileHeight),
       child: Padding(
-        padding: EdgeInsets.only(left: 16.0 * (widget.level - 1)),
+        padding: EdgeInsetsDirectional.only(
+          start: 16.0 * (widget.level - 1),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (widget.level > 1)
               Container(
                 width: 2,
-                margin: const EdgeInsets.only(right: 8),
+                margin: const EdgeInsetsDirectional.only(end: 8),
                 color: scheme.outline,
               ),
             Expanded(

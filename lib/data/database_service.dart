@@ -8,7 +8,9 @@ import 'package:counter/data/local_sync/plan_create_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/pb_config.dart';
+import 'package:http/http.dart' as http;
 import 'package:pocketbase/pocketbase.dart';
+import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/features/profile/wall_clock.dart' as wall_clock;
@@ -65,6 +67,14 @@ class _ProfileFetchFailedException implements Exception {
 class AuthenticatedUserIdRequiredException implements Exception {
   AuthenticatedUserIdRequiredException([this.message =
       'PocketBase auth record id is null or empty; refusing mutating request.']);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+/// App backend AI route returned an error or unusable payload (e.g. Smart Plan batch).
+class AiBackendException implements Exception {
+  AiBackendException(this.message);
   final String message;
   @override
   String toString() => message;
@@ -1336,6 +1346,7 @@ class DatabaseService {
       _settingsController.add(_settings);
       _categoryController.add(List.from(_rules));
       _tasksController.add(List.from(_tasksCache));
+      currentLocale.value = 'en';
       clearOptimisticTimelineUi();
       _stopRecordInFlightKeys.clear();
       _writeRecordMutationInFlight = false;
@@ -3929,6 +3940,7 @@ class DatabaseService {
       );
       _mergeDeviceProfilePreferenceOverridesSync();
       _settingsController.add(_settings);
+      _syncMaterialAppLocaleFromSettings(_settings);
     } on _ProfileFetchFailedException {
       rethrow;
     } catch (_) {
@@ -4062,6 +4074,16 @@ class DatabaseService {
   static String _dateKeyFromDate(DateTime date) =>
       '${date.year}-${_two(date.month)}-${_two(date.day)}';
 
+  void _syncMaterialAppLocaleFromSettings(UserSettings s) {
+    final raw = s.primaryLanguage.trim().isNotEmpty
+        ? s.primaryLanguage
+        : s.language;
+    final code = resolvedUiLanguageCode(raw);
+    if (currentLocale.value != code) {
+      currentLocale.value = code;
+    }
+  }
+
   /// UI-first: update state immediately; then PocketBase PATCH on **profiles** auth row.
   Future<bool> saveSettings(UserSettings s) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
@@ -4069,6 +4091,7 @@ class DatabaseService {
     final authId = _requireAuthUserIdForWrite();
     _settings = s.copyWith(userId: authId);
     _settingsController.add(_settings);
+    _syncMaterialAppLocaleFromSettings(_settings);
     _notifyTimelineAfterRecordCacheMutation();
 
     try {
@@ -4105,6 +4128,205 @@ class DatabaseService {
     }
   }
 
+  /// Natural-language → structured task hints via `POST …/api/ai/parse-task` only.
+  /// Flutter stays **LLM-agnostic**; routing and provider live on the server.
+  Future<AiParsedTaskHint?> parseTaskViaAiBackend({
+    required String rawUtterance,
+    String? wallDateKey,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return null;
+    final text = rawUtterance.trim();
+    if (text.isEmpty) return null;
+    try {
+      await ensurePocketBaseReady();
+      final token = _pb.authStore.token.trim();
+      if (token.isEmpty) return null;
+      final base = kPocketBaseUrl.replaceAll(RegExp(r'/$'), '');
+      final uri = Uri.parse('$base${PbAppApiRoutes.aiParseTask}');
+      final payload = <String, dynamic>{
+        'text': text,
+        'ui_locale': currentLocale.value,
+        if (wallDateKey != null && wallDateKey.trim().isNotEmpty)
+          'wall_date_key': wallDateKey.trim(),
+      };
+      final res = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      );
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        return null;
+      }
+      final decoded = jsonDecode(res.body);
+      if (decoded is! Map) return null;
+      final map = Map<String, dynamic>.from(decoded);
+      int? ih(dynamic v) => v == null ? null : int.tryParse(v.toString());
+      return AiParsedTaskHint(
+        cleanedTitle: map['cleaned_title']?.toString() ??
+            map['title']?.toString(),
+        startHour: ih(map['start_hour'] ?? map['hour']),
+        startMinute: ih(map['start_minute'] ?? map['minute']),
+        endHour: ih(map['end_hour']),
+        endMinute: ih(map['end_minute']),
+        rawJson: map,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static final RegExp _aiPlanningHhmm =
+      RegExp(r'^(\d{1,2}):(\d{2})$');
+
+  static String _normalizeAiPlanningTimeHHmm(String raw) {
+    final t = raw.trim();
+    final m = _aiPlanningHhmm.firstMatch(t);
+    if (m != null) {
+      final h = int.tryParse(m.group(1) ?? '') ?? 9;
+      final mi = int.tryParse(m.group(2) ?? '') ?? 0;
+      final hh = h.clamp(0, 23);
+      final mm = mi.clamp(0, 59);
+      return '${hh.toString().padLeft(2, '0')}:${mm.toString().padLeft(2, '0')}';
+    }
+    return '09:00';
+  }
+
+  /// Accept alternate key casing / missing fields; defaults match Smart Plan expectations.
+  static Map<String, dynamic> _normalizeAiPlanningItem(
+    Map<String, dynamic> m,
+  ) {
+    final title =
+        (m['title'] ?? m['Title'] ?? '').toString().trim();
+
+    var startRaw =
+        (m['startTime'] ?? m['start_time'] ?? m['time'] ?? '09:00').toString();
+    startRaw = startRaw.trim();
+    if (startRaw.isEmpty) startRaw = '09:00';
+
+    final durRaw = m['durationMinutes'] ??
+        m['duration_minutes'] ??
+        m['duration'] ??
+        60;
+    var durationMinutes = 60;
+    if (durRaw is int) {
+      durationMinutes = durRaw;
+    } else if (durRaw is num) {
+      durationMinutes = durRaw.round();
+    } else {
+      durationMinutes = int.tryParse(durRaw.toString().trim()) ?? 60;
+    }
+    if (durationMinutes < 1) durationMinutes = 1;
+    if (durationMinutes > 24 * 60) durationMinutes = 24 * 60;
+
+    final hhmm = _normalizeAiPlanningTimeHHmm(startRaw);
+
+    final catRaw = m['category'] ??
+        m['Category'] ??
+        m['categoryName'] ??
+        m['category_name'];
+    String? categoryLabel;
+    if (catRaw != null) {
+      final s = catRaw.toString().trim();
+      if (s.isNotEmpty) {
+        final sl = s.toLowerCase();
+        if (sl != 'uncategorized' &&
+            sl != 'null' &&
+            sl != 'none' &&
+            sl != 'n/a') {
+          categoryLabel = s;
+        }
+      }
+    }
+
+    return <String, dynamic>{
+      'title': title,
+      'startTime': hhmm,
+      'durationMinutes': durationMinutes,
+      'category': categoryLabel,
+    };
+  }
+
+  static List<dynamic>? _aiPlanningItemsListFromDecoded(dynamic decoded) {
+    if (decoded is List<dynamic>) return decoded;
+    if (decoded is! Map) return null;
+    final map = Map<String, dynamic>.from(decoded);
+    final raw = map['items'] ??
+        map['tasks'] ??
+        map['planning_items'] ??
+        map['schedule'];
+    if (raw is List<dynamic>) return raw;
+    return null;
+  }
+
+  /// Smart Plan: natural-language batch via `POST …/api/ai/parse-task` with `output: planning_items`.
+  /// Server returns a JSON object whose `items` / `tasks` / `planning_items` / `schedule` key holds
+  /// the task list. Client stays vendor-neutral.
+  Future<List<Map<String, dynamic>>> parsePlanningItemsViaAiBackend({
+    required String rawText,
+    required List<String> allowedCategoryNames,
+  }) async {
+    final text = rawText.trim();
+    if (text.isEmpty) return <Map<String, dynamic>>[];
+    if (!_isInitialized || !_hasAuthenticatedUserId) {
+      throw AiBackendException('Not signed in');
+    }
+    await ensurePocketBaseReady();
+    final token = _pb.authStore.token.trim();
+    if (token.isEmpty) {
+      throw AiBackendException('Not signed in');
+    }
+    final base = kPocketBaseUrl.replaceAll(RegExp(r'/$'), '');
+    final uri = Uri.parse('$base${PbAppApiRoutes.aiParseTask}');
+    final names = List<String>.from(allowedCategoryNames)
+      ..removeWhere((s) => s.trim().isEmpty);
+    final payload = <String, dynamic>{
+      'text': text,
+      'ui_locale': currentLocale.value,
+      'output': 'planning_items',
+      'allowed_category_names': names,
+    };
+    late final http.Response res;
+    try {
+      res = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(payload),
+      );
+    } catch (e) {
+      throw AiBackendException('Network error: $e');
+    }
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw AiBackendException('Request failed (${res.statusCode})');
+    }
+    late final dynamic decoded;
+    try {
+      decoded = jsonDecode(utf8.decode(res.bodyBytes));
+    } catch (e) {
+      throw AiBackendException('Invalid response: $e');
+    }
+    final rawList = _aiPlanningItemsListFromDecoded(decoded);
+    if (rawList == null) {
+      throw AiBackendException('No planning items in response');
+    }
+    final out = <Map<String, dynamic>>[];
+    for (final item in rawList) {
+      if (item is! Map) continue;
+      final m = _normalizeAiPlanningItem(Map<String, dynamic>.from(
+        item.map((k, v) => MapEntry(k.toString(), v)),
+      ));
+      final title = (m['title'] as String).trim();
+      if (title.isEmpty) continue;
+      out.add(m);
+    }
+    return out;
+  }
+
   Future<bool> updateTimeZone(String label) async {
     final ok = await saveSettings(_settings.copyWith(
         preferredTimeZone: label,
@@ -4126,6 +4348,27 @@ class DatabaseService {
   String _tasksKeyForDate(DateTime date) {
     final d = DateTime(date.year, date.month, date.day);
     return 'tasks_${d.year}_${_two(d.month)}_${_two(d.day)}';
+  }
+
+  /// Planning [SegmentedButton] sort segment: 0=category, 1=time, 2=tags, 3=custom (my order).
+  static const String kPrefsPlanActiveTab = 'prefs_plan_active_tab';
+
+  /// Sync read for [PlanningPage.initState] — no flicker when [_prefs] is already loaded.
+  int? getPlanActiveTabIndexOrNull() {
+    final prefs = _prefs;
+    if (prefs == null) return null;
+    final raw = prefs.getInt(kPrefsPlanActiveTab);
+    if (raw == null) return null;
+    if (raw < 0 || raw > 3) return null;
+    return raw;
+  }
+
+  Future<void> persistPlanActiveTabIndex(int index) async {
+    final clamped = index < 0 ? 0 : (index > 3 ? 3 : index);
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await prefs.setInt(kPrefsPlanActiveTab, clamped);
+    } catch (_) {}
   }
 
   /// **Deprecated:** Full-tree category PATCH is disabled. Use [patchCategoryDelta], [updateCategory],

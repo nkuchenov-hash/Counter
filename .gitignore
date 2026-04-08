@@ -23,7 +23,7 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
-# Local secrets (Groq API key — copy from lib/core/env/env.dart.example)
+# Local optional secrets (copy from lib/core/env/env.dart.example)
 lib/core/env/env.dart
 
 # Flutter/Dart/Pub related

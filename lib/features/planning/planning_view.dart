@@ -28,6 +28,33 @@ import 'package:intl/intl.dart';
 
 enum _PlanSortMode { category, time, tags, custom }
 
+/// Order matches [SegmentedButton] segments (persisted as [DatabaseService.kPrefsPlanActiveTab]).
+int _planSortModeToPersistedIndex(_PlanSortMode m) {
+  switch (m) {
+    case _PlanSortMode.category:
+      return 0;
+    case _PlanSortMode.time:
+      return 1;
+    case _PlanSortMode.tags:
+      return 2;
+    case _PlanSortMode.custom:
+      return 3;
+  }
+}
+
+_PlanSortMode _planSortModeFromPersistedIndex(int i) {
+  switch (i) {
+    case 0:
+      return _PlanSortMode.category;
+    case 1:
+      return _PlanSortMode.time;
+    case 2:
+      return _PlanSortMode.tags;
+    default:
+      return _PlanSortMode.custom;
+  }
+}
+
 /// Planning tab: swipeable day view, task list, add/edit/delete. Shell provides [onEditTask] to show the task edit sheet.
 class PlanningSwipeWrapper extends StatefulWidget {
   const PlanningSwipeWrapper({
@@ -361,6 +388,10 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   @override
   void initState() {
     super.initState();
+    final persisted = DatabaseService.instance.getPlanActiveTabIndexOrNull();
+    if (persisted != null) {
+      _sortMode = _planSortModeFromPersistedIndex(persisted);
+    }
     WidgetsBinding.instance.addObserver(this);
     _planningStream = _createPlanningStream();
     _activeRecordingTitleNorm = DatabaseService.instance.cachedPrimaryRunningTitle
@@ -467,7 +498,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     }
     if (_quickAddAvailableTags.isEmpty) {
       return Align(
-        alignment: Alignment.centerLeft,
+        alignment: AlignmentDirectional.centerStart,
         child: TextButton(
           onPressed: _openTagManagerFromQuickAdd,
           child: Text(t(loc, 'plan_quick_add_no_tags')),
@@ -1689,7 +1720,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Align(
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             child: Text(
               localizeCategoryBreadcrumbPath(k, currentLocale.value),
               textAlign: TextAlign.start,
@@ -2106,7 +2137,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                     width: double.infinity,
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
+                      alignment: AlignmentDirectional.centerStart,
                       child: SegmentedButton<_PlanSortMode>(
                         segments: [
                           ButtonSegment<_PlanSortMode>(
@@ -2137,6 +2168,11 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                           setState(() {
                             _sortMode = mode;
                           });
+                          unawaited(
+                            DatabaseService.instance.persistPlanActiveTabIndex(
+                              _planSortModeToPersistedIndex(mode),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -2797,7 +2833,7 @@ class _PlanningTaskCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 2, top: 4),
+                  padding: const EdgeInsetsDirectional.only(start: 2, top: 4),
                   child: selectMode
                       ? Checkbox(
                           value: isSelected,
@@ -2814,7 +2850,11 @@ class _PlanningTaskCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 6, bottom: 2, right: 4),
+                    padding: const EdgeInsetsDirectional.only(
+                      top: 6,
+                      bottom: 2,
+                      end: 4,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,

@@ -74,6 +74,33 @@ String tagDisplayModeWireForPatch(UserSettings s) {
 // Other: `category_id` / `plan_id` where applicable; profiles → user_id (String).
 // ---------------------------------------------------------------------------
 
+/// Structured payload from the app backend `POST …/api/ai/parse-task` route (no vendor fields).
+class AiParsedTaskHint {
+  const AiParsedTaskHint({
+    this.cleanedTitle,
+    this.startHour,
+    this.startMinute,
+    this.endHour,
+    this.endMinute,
+    this.rawJson,
+  });
+
+  final String? cleanedTitle;
+  final int? startHour;
+  final int? startMinute;
+  final int? endHour;
+  final int? endMinute;
+  final Map<String, dynamic>? rawJson;
+
+  bool get hasClockStart =>
+      startHour != null &&
+      startMinute != null &&
+      startHour! >= 0 &&
+      startHour! <= 23 &&
+      startMinute! >= 0 &&
+      startMinute! <= 59;
+}
+
 int _jsonInt(dynamic v, [int fallback = 0]) {
   if (v == null) return fallback;
   if (v is int) return v;

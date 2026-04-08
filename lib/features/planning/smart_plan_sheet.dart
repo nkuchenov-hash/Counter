@@ -3,7 +3,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 
-import 'package:counter/core/services/ai_service.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/core/services/speech_listen_locale.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -414,11 +413,11 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     try {
       final categoryNames =
           DatabaseService.instance.smartPlanAllowedCategoryLabels();
-      items = await AiService.instance.processPlanningText(
-        text,
-        categoryNames,
+      items = await DatabaseService.instance.parsePlanningItemsViaAiBackend(
+        rawText: text,
+        allowedCategoryNames: categoryNames,
       );
-    } on AiServiceException catch (e) {
+    } on AiBackendException catch (e) {
       if (mounted) {
         _setInlineError(
           t(loc, 'smart_plan_failed_detail').replaceFirst('%s', '$e'),

@@ -108,12 +108,24 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
               theme: appLightTheme,
               darkTheme: appDarkTheme,
               themeMode: parseAppThemeMode(s.themeMode),
-              localizationsDelegates: [
+              localizationsDelegates: const [
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
               ],
               supportedLocales: kAppSupportedMaterialLocales,
+              localeResolutionCallback: (deviceLocale, supported) {
+                if (supported.isEmpty) {
+                  return const Locale('en', 'US');
+                }
+                if (deviceLocale == null) return supported.first;
+                for (final l in supported) {
+                  if (l.languageCode == deviceLocale.languageCode) {
+                    return l;
+                  }
+                }
+                return supported.first;
+              },
               builder: (context, child) {
                 Intl.defaultLocale = materialLocaleForUiLanguage(locale).toString();
                 if (!_startupNetworkErrorShown &&

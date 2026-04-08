@@ -2,7 +2,9 @@
 
 This file is the **single source of truth** for how this app talks to **PocketBase**: URL, collection names, auth, **relation fields**, **expand** paths, and **API rule intent** (what the server should enforce). Semantic field names stay aligned with **`lib/DATA_MAP.md`**.
 
-**Code anchors:** `lib/data/pb_config.dart` (`kPocketBaseUrl`, `PbCollections`, `kPbRecordCategoryExpand`, `kPbPlanTagsExpand`, `kPbRecordTagsExpand`), `lib/data/database_service.dart`, `lib/data/auth_bridge.dart`.
+**Code anchors:** `lib/data/pb_config.dart` (`kPocketBaseUrl`, `PbCollections`, `PbAppApiRoutes`, `kPbRecordCategoryExpand`, `kPbPlanTagsExpand`, `kPbRecordTagsExpand`), `lib/data/database_service.dart`, `lib/data/auth_bridge.dart`.
+
+**App-owned HTTP (same host):** `POST /api/ai/parse-task` — optional structured parsing for voice/plan text; implemented behind the reverse proxy. Client calls `DatabaseService.parseTaskViaAiBackend` only (no vendor-specific SDKs).
 
 ---
 

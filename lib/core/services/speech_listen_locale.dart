@@ -5,6 +5,23 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 /// Shared [SpeechToText.listen] locale resolution for Voice + Smart Plan.
 ///
+/// **Single language per session:** [SpeechToText.listen] accepts one [localeId].
+/// The platform speech APIs used on Android ([SpeechRecognizer]) and iOS
+/// ([SFSpeechRecognizer]) do **not** expose true simultaneous bilingual dictation
+/// in one recognition pass. If the app UI is `ru` but the user mixes English words,
+/// the engine may still run in Russian and garble Latin words (or the reverse).
+///
+/// **Dual-locale (not implemented):** options would be (a) two sequential
+/// [listen] sessions with different [localeId]s and merged text, (b) an OS-level
+/// “multilingual keyboard” that still reports one primary language to the engine,
+/// or (c) a cloud STT that declares multiple expected languages. The
+/// `speech_to_text` plugin does not surface Android 13+ optional extras beyond
+/// [localeId] for standard use.
+///
+/// **Fallback:** On mobile, if the app UI language has **no** installed STT pack,
+/// [resolveListenLocaleId] falls back to [SpeechToText.systemLocale] then the
+/// process [PlatformDispatcher] locale (see implementation).
+///
 /// **Web:** the Web Speech `lang` attribute expects **BCP-47 with hyphens**
 /// (e.g. `ru-RU`). Underscore ids from the plugin (e.g. `ru_RU`) often trigger
 /// `language-not-supported`. The **first** [listen] uses an explicit hyphen tag

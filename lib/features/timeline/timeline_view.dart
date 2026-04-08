@@ -990,7 +990,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
     );
 
     final paddedRow = Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 8, 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1041,7 +1041,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
           const SizedBox(width: 8),
           if (isRunning)
             Padding(
-              padding: const EdgeInsets.only(right: 4),
+              padding: const EdgeInsetsDirectional.only(end: 4),
               child: FilledButton.icon(
                 onPressed: () {
                   widget.onStop(widget.systemRowId);
@@ -1068,36 +1068,39 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
     );
 
     const cardRadius = 12.0;
+    final layoutDirection = Directionality.of(context);
+    final stripeCornerRadius = BorderRadiusDirectional.only(
+      topStart: const Radius.circular(cardRadius),
+      bottomStart: const Radius.circular(cardRadius),
+    ).resolve(layoutDirection);
+    final contentInkRadius = BorderRadiusDirectional.only(
+      topEnd: const Radius.circular(cardRadius),
+      bottomEnd: const Radius.circular(cardRadius),
+    ).resolve(layoutDirection);
     // Non-positioned child sizes the Stack; stripe is Positioned top/bottom to match (no Row stretch).
     final cardBody = IntrinsicHeight(
       child: Stack(
         fit: StackFit.passthrough,
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            left: 0,
+          PositionedDirectional(
+            start: 0,
             top: 0,
             bottom: 0,
             child: Container(
               width: 4,
               decoration: BoxDecoration(
                 color: categoryColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(cardRadius),
-                  bottomLeft: Radius.circular(cardRadius),
-                ),
+                borderRadius: stripeCornerRadius,
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 4),
+            padding: const EdgeInsetsDirectional.only(start: 4),
             child: widget.onEdit != null
                 ? InkWell(
                     onTap: widget.onEdit,
-                    borderRadius: const BorderRadius.only(
-                      topRight: Radius.circular(cardRadius),
-                      bottomRight: Radius.circular(cardRadius),
-                    ),
+                    borderRadius: contentInkRadius,
                     child: Theme(
                       data: suppressInnerInk,
                       child: paddedRow,

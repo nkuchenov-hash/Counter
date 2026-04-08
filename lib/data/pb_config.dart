@@ -34,6 +34,14 @@ String resolvePocketBaseUrl() {
 /// Effective API root — use this everywhere instead of a hard-coded host.
 String get kPocketBaseUrl => resolvePocketBaseUrl();
 
+/// Non-collection HTTP routes served by the same app backend (reverse proxy / edge).
+/// Client code must stay **vendor-neutral** — no LLM provider names in Flutter.
+abstract class PbAppApiRoutes {
+  /// POST: natural-language task utterance → structured hints (title, optional clock).
+  /// Body and schema are defined server-side; see POCKETBASE_MANIFEST / deployment docs.
+  static const String aiParseTask = '/api/ai/parse-task';
+}
+
 /// PocketBase collection names (Admin → Collections). Must match server.
 abstract class PbCollections {
   static const String profiles = TableNames.profiles;

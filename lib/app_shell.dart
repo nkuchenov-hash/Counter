@@ -12,6 +12,7 @@ import 'package:counter/features/categories/category_list_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/subscription/app_tier.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
@@ -19,7 +20,7 @@ import 'package:counter/features/timeline/timeline_view.dart' hide showAppDateTi
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show Listenable, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -112,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             key: ValueKey<String>(_language),
-            initialValue: _language,
+            value: _language,
             decoration: InputDecoration(
               labelText: t(locale, 'language_label'),
               border: const OutlineInputBorder(),
@@ -125,13 +126,10 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
             ],
             onChanged: (String? v) {
-              if (v != null) setState(() => _language = v);
+              if (v == null) return;
+              setState(() => _language = v);
+              unawaited(_save());
             },
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () async => await _save(),
-            child: Text(t(locale, 'save')),
           ),
           const Divider(),
           ListTile(
@@ -840,6 +838,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
   }
 
+  /// Initializes the global [SpeechToText] instance. Actual [listen] [localeId] is chosen
+  /// per session in [VoiceInputSheet] via [SpeechListenLocale.resolveListenLocaleId]
+  /// (app UI language first; device/system locale when that pack is missing; then
+  /// null / en_US retries). One locale per listen — no plugin API for bilingual
+  /// recognition in a single pass (see [SpeechListenLocale] class doc).
   Future<void> _ensureSpeechReady() async {
     if (_speechReady) return;
     _speechLastInitError = null;
@@ -1506,85 +1509,137 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     ];
 
     final showVoiceFab = _tabIndex == 1 || !_isFutureDate;
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-      },
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        body: Stack(
-          children: [
-            pages[_tabIndex],
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 8,
-              right: 8,
-              child: _SyncStatusIcon(
-                connected: _connected,
-                onTap: () => _showSyncMenu(context),
-              ),
+    return AnimatedBuilder(
+      animation: Listenable.merge([currentLocale, appIsProUser]),
+      builder: (context, _) {
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) {
+            ScaffoldMessenger.of(context).clearSnackBars();
+          },
+          child: Scaffold(
+            resizeToAvoidBottomInset: true,
+            body: Stack(
+              children: [
+                pages[_tabIndex],
+                PositionedDirectional(
+                  top: MediaQuery.of(context).padding.top + 8,
+                  end: 8,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (appIsProUser.value) ...[
+                        Padding(
+                          padding:
+                              const EdgeInsetsDirectional.only(end: 8),
+                          child: Tooltip(
+                            message:
+                                t(currentLocale.value, 'pro_badge_tooltip'),
+                            child: Material(
+                              elevation: 1,
+                              shadowColor: Theme.of(context)
+                                  .colorScheme
+                                  .shadow
+                                  .withValues(alpha: 0.35),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .tertiaryContainer,
+                              borderRadius: BorderRadius.circular(10),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                child: Text(
+                                  t(currentLocale.value, 'pro_badge_label'),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.6,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onTertiaryContainer,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      _SyncStatusIcon(
+                        connected: _connected,
+                        onTap: () => _showSyncMenu(context),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-        floatingActionButton: !showVoiceFab
+            floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+            floatingActionButton: !showVoiceFab
             ? null
             : FloatingActionButton(
                 onPressed: _startVoiceInput,
                 tooltip: _isVoiceListening ? t(currentLocale.value, 'listening') : t(currentLocale.value, 'voice_input'),
                 child: Icon(_isVoiceListening ? Icons.graphic_eq_rounded : Icons.mic_rounded),
               ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _tabIndex,
-          onDestinationSelected: (i) {
-            setState(() {
-              _tabIndex = i;
-            });
-            if (i == 0) {
-              final target = DatabaseService.instance.getTimelineDeviceLocalToday();
-              setState(() {
-                _selectedDate = target;
-                _focusedDay = target;
-              });
-              unawaited(_loadTasksForDate(target));
-            } else if (i == 1) {
-              final target = DatabaseService.instance.getTimelineDeviceLocalToday();
-              setState(() {
-                _selectedDate = target;
-                _focusedDay = target;
-              });
-              unawaited(_loadTasksForDate(target));
-            }
-          },
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(Icons.timeline_outlined),
-              selectedIcon: const Icon(Icons.timeline_rounded),
-              label: t(currentLocale.value, 'tab_timeline'),
+            bottomNavigationBar: NavigationBar(
+              selectedIndex: _tabIndex,
+              onDestinationSelected: (i) {
+                setState(() {
+                  _tabIndex = i;
+                });
+                if (i == 0) {
+                  final target =
+                      DatabaseService.instance.getTimelineDeviceLocalToday();
+                  setState(() {
+                    _selectedDate = target;
+                    _focusedDay = target;
+                  });
+                  unawaited(_loadTasksForDate(target));
+                } else if (i == 1) {
+                  final target =
+                      DatabaseService.instance.getTimelineDeviceLocalToday();
+                  setState(() {
+                    _selectedDate = target;
+                    _focusedDay = target;
+                  });
+                  unawaited(_loadTasksForDate(target));
+                }
+              },
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.timeline_outlined),
+                  selectedIcon: const Icon(Icons.timeline_rounded),
+                  label: t(currentLocale.value, 'tab_timeline'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.checklist_outlined),
+                  selectedIcon: const Icon(Icons.checklist_rounded),
+                  label: t(currentLocale.value, 'tab_planning'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  selectedIcon: const Icon(Icons.calendar_month_rounded),
+                  label: t(currentLocale.value, 'calendar'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.category_outlined),
+                  selectedIcon: const Icon(Icons.category_rounded),
+                  label: t(currentLocale.value, 'categories'),
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.person_outline_rounded),
+                  selectedIcon: const Icon(Icons.person_rounded),
+                  label: t(currentLocale.value, 'profile'),
+                ),
+              ],
             ),
-            NavigationDestination(
-              icon: const Icon(Icons.checklist_outlined),
-              selectedIcon: const Icon(Icons.checklist_rounded),
-              label: t(currentLocale.value, 'tab_planning'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.calendar_month_outlined),
-              selectedIcon: const Icon(Icons.calendar_month_rounded),
-              label: t(currentLocale.value, 'calendar'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.category_outlined),
-              selectedIcon: const Icon(Icons.category_rounded),
-              label: t(currentLocale.value, 'categories'),
-            ),
-            NavigationDestination(
-              icon: const Icon(Icons.person_outline_rounded),
-              selectedIcon: const Icon(Icons.person_rounded),
-              label: t(currentLocale.value, 'profile'),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
