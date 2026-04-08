@@ -455,6 +455,13 @@ class _TimelinePageState extends State<TimelinePage> {
             onAction: () => widget.titleFocus.requestFocus(),
           );
         }
+        final indexByBizId = <String, int>{};
+        for (var i = 0; i < displayList.length; i++) {
+          final b = _timelineBusinessRecordId(displayList[i]);
+          if (b.isNotEmpty) {
+            indexByBizId[b] = i;
+          }
+        }
         final activeRecord = activeSnap.data;
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
@@ -473,10 +480,8 @@ class _TimelinePageState extends State<TimelinePage> {
               }
               return null;
             }
-            final i = displayList.indexWhere(
-              (e) => _timelineBusinessRecordId(e) == v,
-            );
-            return i >= 0 ? i : null;
+            final i = indexByBizId[v];
+            return i;
           },
           itemCount: displayList.length,
           separatorBuilder: (_, _) => const SizedBox(height: 10),

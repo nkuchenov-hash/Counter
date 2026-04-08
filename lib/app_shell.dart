@@ -576,7 +576,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   Future<bool> _voiceSubmitTimeline(String recognized) async {
     final title = recognized.trim();
     if (title.isEmpty) return false;
-    await _stopAnyActiveTask();
+    unawaited(_stopAnyActiveTask());
     final now = DatabaseService.getPlanetaryNow();
     final alreadyExists = _tasks.any((t) =>
         t.title == title &&
@@ -601,20 +601,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         ),
       );
     }
-    String? voiceSourcePlanId;
-    if (mounted) {
-      voiceSourcePlanId = await _promptSourcePlanLinkIfEligible(
-        title: title,
-        dateKey: _timelineVoiceDateKey,
-      );
-    }
     try {
       final serverId = await DatabaseService.instance.writeRecord(
         _timelineVoiceDateKey,
         title,
         categoryId: cid,
         explicitStartTime: now,
-        sourcePlanPocketRecordId: voiceSourcePlanId,
+        sourcePlanPocketRecordId: null,
       );
       if (!mounted) return false;
       if (serverId == null || serverId.trim().isEmpty) {
@@ -623,7 +616,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             title,
             cid,
             pathTag,
-            sourcePlanPocketRecordId: voiceSourcePlanId,
+            sourcePlanPocketRecordId: null,
           )),
         );
         return false;
@@ -640,7 +633,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         );
         _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
-      await _saveTasks();
+      unawaited(_saveTasks());
+      if (mounted) {
+        unawaited(_deferSourcePlanLinkAfterFreeStart(
+          title: title,
+          dateKey: _timelineVoiceDateKey,
+          recordBusinessId: serverId,
+        ));
+      }
       return true;
     } catch (e) {
       print('UI ERROR: $e');
@@ -650,7 +650,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             title,
             cid,
             pathTag,
-            sourcePlanPocketRecordId: voiceSourcePlanId,
+            sourcePlanPocketRecordId: null,
           )),
         );
       }
@@ -696,7 +696,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
     _lastPlayOrStartAction = tick;
 
-    await _stopAnyActiveTask();
+    unawaited(_stopAnyActiveTask());
 
     final now = DatabaseService.getPlanetaryNow();
     final cid = _effectiveCategoryId;
@@ -706,20 +706,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _titleController.clear();
     _titleFocus.requestFocus();
 
-    String? chosenSourcePlanId;
     try {
-      if (mounted) {
-        chosenSourcePlanId = await _promptSourcePlanLinkIfEligible(
-          title: title,
-          dateKey: _selectedDateString,
-        );
-      }
       final serverId = await DatabaseService.instance.writeRecord(
         _selectedDateString,
         title,
         categoryId: cid,
         explicitStartTime: now,
-        sourcePlanPocketRecordId: chosenSourcePlanId,
+        sourcePlanPocketRecordId: null,
       );
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
@@ -728,7 +721,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             title,
             cid,
             pathTag,
-            sourcePlanPocketRecordId: chosenSourcePlanId,
+            sourcePlanPocketRecordId: null,
           )),
         );
         return;
@@ -745,7 +738,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         );
         _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
       });
-      await _saveTasks();
+      unawaited(_saveTasks());
+      if (mounted) {
+        unawaited(_deferSourcePlanLinkAfterFreeStart(
+          title: title,
+          dateKey: _selectedDateString,
+          recordBusinessId: serverId,
+        ));
+      }
     } catch (e) {
       print('UI ERROR: $e');
       if (mounted) {
@@ -754,7 +754,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             title,
             cid,
             pathTag,
-            sourcePlanPocketRecordId: chosenSourcePlanId,
+            sourcePlanPocketRecordId: null,
           )),
         );
       }
@@ -765,16 +765,20 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await DatabaseService.instance.addPlannedTask(
-        _selectedDateString,
-        title,
-        categoryId: _effectiveCategoryId,
-        isManual: false,
-      );
-    });
+    final dateKey = _selectedDateString;
+    final cat = _effectiveCategoryId;
     _titleController.clear();
     _titleFocus.requestFocus();
+    unawaited(() async {
+      try {
+        await DatabaseService.instance.addPlannedTask(
+          dateKey,
+          title,
+          categoryId: cat,
+          isManual: false,
+        );
+      } catch (_) {}
+    }());
   }
 
   Future<void> _stopTask(Task t) async {
@@ -918,6 +922,34 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
     if (link == true) return sugg.planPocketRecordId;
     return null;
+  }
+
+  /// Plan-link dialog + PATCH run **after** [writeRecord] shadow (was blocking Start on `_fetchPlanningTasksForDate`).
+  Future<void> _deferSourcePlanLinkAfterFreeStart({
+    required String title,
+    required String dateKey,
+    required String recordBusinessId,
+  }) async {
+    final rid = recordBusinessId.trim();
+    if (rid.isEmpty) return;
+    if (!mounted) return;
+    final chosen = await _promptSourcePlanLinkIfEligible(
+      title: title,
+      dateKey: dateKey,
+    );
+    if (chosen == null || !mounted) return;
+    try {
+      await DatabaseService.instance.primaryRecordWriteNetworkChain;
+    } catch (_) {}
+    if (!mounted) return;
+    try {
+      await DatabaseService.instance.patchRecordSourcePlanLink(
+        recordId: rid,
+        sourcePlanPocketRecordId: chosen,
+      );
+    } catch (e) {
+      print('UI ERROR: $e');
+    }
   }
 
   Future<void> _startRecordFromPlanning(

@@ -217,6 +217,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   final _quickAddFocus = FocusNode();
   final Set<String> _selectedPlanKeys = {};
   final List<PlanningTask> _optimisticTasks = [];
+  /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
+  List<PlanningTask> _latestPlanningDayTasks = const [];
   final Map<String, bool> _planDoneOverride = {};
   Stream<List<PlanningTask>>? _planningStream;
   List<PlanningTask>? _dragOrder;
@@ -238,6 +240,17 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   List<Tag> _creationSelectedTags = [];
 
   DateTime get _today => DatabaseService.instance.getTimelineDeviceLocalToday();
+
+  int _nextPlanOrderForQuickAdd() {
+    var m = -1;
+    for (final t in _latestPlanningDayTasks) {
+      if (t.order > m) m = t.order;
+    }
+    for (final t in _optimisticTasks) {
+      if (t.order > m) m = t.order;
+    }
+    return m + 1;
+  }
 
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -937,11 +950,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         (DatabaseService.instance.rules.isNotEmpty
             ? DatabaseService.instance.rules.first.id
             : 0);
-    var nextOrder = await DatabaseService.instance
-        .nextPlanningOrderForDate(widget.selectedDate ?? _today);
-    for (final t in _optimisticTasks) {
-      if (t.order >= nextOrder) nextOrder = t.order + 1;
-    }
+    var nextOrder = _nextPlanOrderForQuickAdd();
     final optimisticId = -DateTime.now().millisecondsSinceEpoch;
     final clientPlanId = DatabaseService.newClientUuid();
     final optimisticRow = 'optimistic-$clientPlanId';
@@ -1018,11 +1027,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     final baseDay = widget.selectedDate ?? _today;
     final wallDay = DateTime(baseDay.year, baseDay.month, baseDay.day);
 
-    var nextOrder = await DatabaseService.instance
-        .nextPlanningOrderForDate(widget.selectedDate ?? _today);
-    for (final t in _optimisticTasks) {
-      if (t.order >= nextOrder) nextOrder = t.order + 1;
-    }
+    var nextOrder = _nextPlanOrderForQuickAdd();
 
     var created = 0;
     for (var i = 0; i < items.length; i++) {
@@ -1956,6 +1961,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             );
           } else {
             final server = snapshot.data ?? [];
+            _latestPlanningDayTasks = server;
             if (server.isNotEmpty && _optimisticTasks.isNotEmpty) {
               final toDrop = _optimisticTasks
                   .where((o) => server.any((s) =>

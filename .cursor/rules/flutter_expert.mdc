@@ -76,3 +76,16 @@ alwaysApply: true
 ### 8.3 ID Translation Integrity
 - **NO UUID PATCHING**: It is strictly forbidden to send a legacy hyphenated UUID to a REST endpoint expecting a 15-character System ID.
 - **MANDATORY RESOLUTION**: Any operation on a record (Stop/Delete) MUST first verify the ID. If a legacy UUID is somehow passed from the UI, it **must** be translated to the 15-character System ID via the local cache before the request is fired.
+
+## 9. LAW OF THE MAIN THREAD (IRON RULES)
+**Non-negotiable. Any violation is a critical bug.**
+
+1. **The 100ms rule:** No user-initiated action (tap, swipe, key) may take more than **~100ms** before the user sees a **visible** UI update (optimistic / shadow state). Measure against frame budget; target one frame at 60fps where practical.
+
+2. **Zero-await UI policy:** **Never** `await` network I/O, PocketBase writes, Wear OS sync, or heavy disk before updating UI for that user intent. Apply local/shadow state first; run synchronization with **`unawaited(...)`** (or equivalent fire-and-forget) and rollback on failure.
+
+3. **Main-thread isolation:** Large JSON parsing, full-list transforms, deep category-tree walks, and heavy record-history filtering **must not** block the UI isolate’s event loop for long stretches. Prefer chunking, `Future`/`scheduleMicrotask` yields, or **`Isolate.run` / `compute`** when work is CPU-heavy or data is large.
+
+4. **No blocking initializers on record path:** Speech-to-Text prewarm, one-shot ghost cleanup, plan flush, and Wear **must not** sit on the critical **start/stop record** code path. Schedule them **after** the user-visible update (delayed/zero-duration yield + `unawaited`).
+
+5. **Wear / platform bridge:** `DatabaseService` does **not** own `MethodChannel` Wear I/O (that lives under `lib/features/wear/`). The Brain’s **Wear-lite** load path must **not** await realtime subscription or other optional background hooks that are not required for the watch UI to render.

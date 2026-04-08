@@ -17,6 +17,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Brain: PocketBase for profiles, records, categories, plans, tags.
+// Wear OS DataClient / MethodChannel: only under lib/features/wear/ — nothing here sends to the watch.
+
+/// Isolate target for prefs snapshot encoding (keeps main isolate clear during large jsonEncode).
+String _encodeRecordsFlatForPrefs(List<Map<String, dynamic>> rows) => jsonEncode(rows);
 
 class _BuildNode {
   _BuildNode(this.label);
@@ -733,6 +737,10 @@ class DatabaseService {
   /// Serializes **network** for primary Highlander (PATCH/POST), not local shadow / UI emission.
   Future<void> _primaryHighlanderNetworkChain = Future.value();
 
+  /// After optimistic [writeRecord] returns, await this before REST PATCH on the new row (PB id must exist).
+  Future<void> get primaryRecordWriteNetworkChain =>
+      _primaryHighlanderNetworkChain;
+
   /// Wall **dateKey** → (**planRowIdForBackend** → task) merged on top of server list until PATCH lands.
   final Map<String, Map<String, PlanningTask>> _planningOptimisticByDateKey =
       {};
@@ -1401,7 +1409,8 @@ class DatabaseService {
     }
   }
 
-  /// Wear OS companion: skips planning fetch, realtime, and startup maintenance.
+  /// Wear OS companion: skips planning fetch and startup maintenance.
+  /// Platform Wear I/O (`MethodChannel`) lives in `lib/features/wear/` — not here.
   Future<bool> loadInitialDataWearLite(String uid) async {
     await ensurePocketBaseReady();
     _isInitialized = false;
@@ -1459,9 +1468,10 @@ class DatabaseService {
     _categoryController.add(List.from(_rules));
     _tasksController.add(List.from(_tasksCache));
     _isInitialized = true;
-    try {
-      await _startRecordsRealtimeSubscription();
-    } catch (_) {}
+    // LAW_OF_THE_MAIN_THREAD / Wear-lite: do not block watch bootstrap on realtime socket.
+    unawaited(
+      _startRecordsRealtimeSubscription().catchError((Object _, StackTrace __) {}),
+    );
   }
 
   Future<void> _loadInner() async {
@@ -1492,7 +1502,8 @@ class DatabaseService {
       await _startRecordsRealtimeSubscription();
     } catch (_) {}
     unawaited(
-      runOneShotUntitledGhostRecordClean().catchError((Object _, StackTrace __) {}),
+      _runOneShotUntitledGhostRecordCleanDeferred()
+          .catchError((Object _, StackTrace __) {}),
     );
     unawaited(flushPendingPlanCreates());
   }
@@ -2544,6 +2555,7 @@ class DatabaseService {
           );
         }
       }
+      await Future<void>.delayed(Duration.zero);
       final kept = <Map<String, dynamic>>[];
       try {
         for (final r in list) {
@@ -2575,13 +2587,14 @@ class DatabaseService {
           '[PB] fetchRecords: ${kept.length} rows (expand $expandRel) @ $kPocketBaseUrl',
         );
       }
-      try {
-        final prefs = _prefs ?? await SharedPreferences.getInstance();
-        await prefs.setString(
-          _scopedDataCacheKey(_cacheRecordsFlatKey),
-          jsonEncode(kept),
-        );
-      } catch (_) {}
+      final cacheKey = _scopedDataCacheKey(_cacheRecordsFlatKey);
+      final keptJson = await compute(_encodeRecordsFlatForPrefs, kept);
+      unawaited(() async {
+        try {
+          final prefs = _prefs ?? await SharedPreferences.getInstance();
+          await prefs.setString(cacheKey, keptJson);
+        } catch (_) {}
+      }());
       return _cachedFlatRecords;
     } catch (e) {
       _maybeOpenPbCircuitFromListFailure(e, 'fetchRecords');
@@ -4121,6 +4134,12 @@ class DatabaseService {
     _log(
       'CATEGORY_FULL_SYNC_DISABLED: persistRules() is a no-op — use targeted category APIs (single id per PATCH).',
     );
+  }
+
+  /// Defers ghost sweep to after the current synchronous work yields — keeps init off the critical UI slice.
+  Future<void> _runOneShotUntitledGhostRecordCleanDeferred() async {
+    await Future<void>.delayed(Duration.zero);
+    await runOneShotUntitledGhostRecordClean();
   }
 
   /// One-shot: drop title-empty / "Untitled" rows from in-memory record cache so reboot + polling do not keep syncing ghosts.
@@ -7020,15 +7039,7 @@ class DatabaseService {
       final sourcePlanForPayload = !hasParent
           ? pocketRelationIdOrNull(sourcePlanPocketRecordId)
           : null;
-      final deferSourcePlanCategory =
-          status == 'running' && !hasParent && sourcePlanForPayload != null;
-      if (sourcePlanForPayload != null && !deferSourcePlanCategory) {
-        final pc =
-            await _resolveCategoryIdFromSourcePlanPbId(sourcePlanForPayload);
-        if (_planLocalCategoryIdIsConcrete(pc)) {
-          cid = pc;
-        }
-      }
+      // Plan category from PocketBase must not run before primary Highlander shadow (§9 main thread).
       if (status == 'running') {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
@@ -7118,7 +7129,7 @@ class DatabaseService {
           }
         }
         runningRecordBizId = _newClientRecordUuid();
-        final rows = await getRecords();
+        final rows = List<Map<String, dynamic>>.from(_cachedFlatRecords);
         for (final r in rows) {
           var sameParent = false;
           if (pr != null && pr.isNotEmpty) {
@@ -7173,6 +7184,15 @@ class DatabaseService {
         _notifyTimelineAfterRecordCacheMutation();
         return newId;
       } else {
+        var cidForCompleted = cid;
+        if (sourcePlanForPayload != null) {
+          final pc = await _resolveCategoryIdFromSourcePlanPbId(
+            sourcePlanForPayload,
+          );
+          if (_planLocalCategoryIdIsConcrete(pc)) {
+            cidForCompleted = pc;
+          }
+        }
         final completedFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,
           'record_id': _newClientRecordUuid(),
@@ -7180,7 +7200,7 @@ class DatabaseService {
           'title': parsed.title,
           'start_time': startIso,
           'end_time': endTime?.toUtc().toIso8601String(),
-          'category_id': _recordCategoryBusinessPkForApi(cid),
+          'category_id': _recordCategoryBusinessPkForApi(cidForCompleted),
           'type': 'record',
           'checklist': <Map<String, dynamic>>[],
           if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
@@ -7577,6 +7597,90 @@ class DatabaseService {
       }
       AppSnack.failed();
       return null;
+    }
+  }
+
+  /// Links `source_plan_id` after the Start tap (plan suggestion moved off the critical path).
+  /// Does not run a full records refresh on success — local cache + one PATCH only.
+  Future<bool> patchRecordSourcePlanLink({
+    required String recordId,
+    required String sourcePlanPocketRecordId,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    final originalInput = recordId.trim();
+    if (originalInput.isEmpty) return false;
+    final sp = pocketRelationIdOrNull(sourcePlanPocketRecordId);
+    if (sp == null || sp.isEmpty) return false;
+    Map<String, dynamic>? rollbackRow;
+    var rollbackIndex = -1;
+    try {
+      var rid = _tryResolveRecordIdFromCacheOnly(originalInput);
+      if (rid == null ||
+          rid.isEmpty ||
+          !_isLikelyPocketBaseRowId(rid)) {
+        final resolved = await _resolveRecordIdForRestUrl(originalInput);
+        rid = _isLikelyPocketBaseRowId(resolved) ? resolved : null;
+      }
+      if (rid == null || rid.isEmpty) {
+        _log(
+          'patchRecordSourcePlanLink: no PocketBase id yet for recordId=$originalInput',
+        );
+        return false;
+      }
+      _log('PATCH_ID_TRACE: patchRecordSourcePlanLink pb id=$rid');
+      final pc = await _resolveCategoryIdFromSourcePlanPbId(sp);
+      final shouldPatchCategory = _planLocalCategoryIdIsConcrete(pc);
+      final updates = <String, dynamic>{
+        'source_plan_id': sp,
+      };
+      if (shouldPatchCategory && pc != null) {
+        updates['category_id'] = _recordCategoryBusinessPkForApi(pc);
+      }
+      rollbackIndex = _indexOfCachedRecordRow(rid, originalInput);
+      if (rollbackIndex >= 0) {
+        rollbackRow =
+            Map<String, dynamic>.from(_cachedFlatRecords[rollbackIndex]);
+        final row = _cachedFlatRecords[rollbackIndex];
+        row['source_plan_id'] = sp;
+        if (shouldPatchCategory && pc != null) {
+          row['category_id'] = updates['category_id'];
+        }
+        _notifyTimelineAfterRecordCacheMutation();
+      }
+      final patchCode = await _patchRecordsRowWith404Recovery(
+        originalQueryId: originalInput,
+        restId: rid,
+        fields: _nocoFieldsForPatch(Map<String, dynamic>.from(updates)),
+      );
+      if (patchCode == 404) {
+        if (rollbackRow != null && rollbackIndex >= 0) {
+          _cachedFlatRecords[rollbackIndex] = rollbackRow;
+          _notifyTimelineAfterRecordCacheMutation();
+        }
+        _purgeGhostRecordById(rid);
+        return false;
+      }
+      if (patchCode < 200 || patchCode >= 300) {
+        if (rollbackRow != null && rollbackIndex >= 0) {
+          _cachedFlatRecords[rollbackIndex] = rollbackRow;
+          _notifyTimelineAfterRecordCacheMutation();
+        }
+        AppSnack.failed();
+        return false;
+      }
+      _notifyTimelineAfterRecordCacheMutation();
+      return true;
+    } catch (e, st) {
+      _log('patchRecordSourcePlanLink failed: $e');
+      _log(st.toString());
+      if (rollbackRow != null && rollbackIndex >= 0) {
+        if (rollbackIndex < _cachedFlatRecords.length) {
+          _cachedFlatRecords[rollbackIndex] = rollbackRow;
+          _notifyTimelineAfterRecordCacheMutation();
+        }
+      }
+      AppSnack.failed();
+      return false;
     }
   }
 

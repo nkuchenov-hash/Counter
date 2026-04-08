@@ -31,6 +31,12 @@
 - **OWNERSHIP:** Every query filters by current user, e.g. `user_id = "<uuid>"` in PB filter strings.
 - **INSTANT_PURGE_PROTOCOL:** Optimistic UI before await where the Brain already does so; revert on failure.
 - **LAW_OF_OPTIMISTIC_UI (Shadow State):** No user-driven **Start / Stop / Update** on records may block the UI on a network round-trip. The Brain applies a **local shadow** (cache + timeline/active streams) in **&lt;100 ms**, then runs PocketBase **PATCH/POST** asynchronously; on failure it **rolls back** to the last stable snapshot and surfaces a **single** sync error (see `database_service.dart`).
+- **LAW_OF_THE_MAIN_THREAD (Iron Rules):**
+  - **~100ms visual feedback:** User gestures must reflect in the UI within about **100ms** (optimistic/shadow first).
+  - **Zero-await UI:** Do not `await` network, DB writes, or Wear sync **before** the UI updates for that action; use **`unawaited`** background sync with rollback on failure.
+  - **Heavy work off the hot path:** Large JSON parsing, big list scans, and expensive filters should yield or run in a **background isolate** when they would stall frames.
+  - **No blocking init on record path:** STT prewarm, ghost cleanup, plan outbox flush, and optional realtime **must not** block start/stop of a record.
+  - **Wear:** Phone↔watch `MethodChannel` lives in `lib/features/wear/`; `DatabaseService` only has a **Wear-lite** bootstrap that avoids awaiting non-essential work (e.g. records realtime on watch).
 - **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.
 
 ---
