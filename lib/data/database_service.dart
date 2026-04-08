@@ -2449,76 +2449,6 @@ class DatabaseService {
     }
   }
 
-  /// Server truth: no primary row still in [_isNocoRowSacredStopTarget] state.
-  Future<bool> _verifyNoOpenPrimaryOnServer() async {
-    try {
-      final owner = _pocketBaseOwnerFilterClauseForRecords();
-      if (owner == null || owner.isEmpty) return true;
-      final list = await _pb.collection(PbCollections.records).getFullList(
-        filter: owner,
-        batch: 120,
-      );
-      for (final raw in list) {
-        final m = _recordMapFromPb(raw);
-        if (_rowHasNonEmptyParent(m['parent_id'])) continue;
-        if (_isNocoRowSacredStopTarget(m)) return false;
-      }
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Stops every **primary** open interval for this user on the server (bypasses local cache).
-  /// Returns `false` if any target row could not be closed or verification still sees an open primary.
-  Future<bool> _ensureAllRemoteRecordsStopped() async {
-    if (!_hasAuthenticatedUserId) return false;
-    try {
-      await ensurePocketBaseReady();
-      if (_pbHttpBackoffActive) return false;
-      final owner = _pocketBaseOwnerFilterClauseForRecords();
-      if (owner == null || owner.isEmpty) return false;
-      final list = await _pb.collection(PbCollections.records).getFullList(
-        filter: owner,
-        batch: 500,
-      );
-      final nowIso = getPlanetaryNow().toUtc().toIso8601String();
-      final stopFields = _nocoFieldsForPatch(<String, dynamic>{
-        'end_time': nowIso,
-        'status': 'stopped',
-      });
-      for (final raw in list) {
-        final m = _recordMapFromPb(raw);
-        if (_rowHasNonEmptyParent(m['parent_id'])) continue;
-        if (!_isNocoRowSacredStopTarget(m)) continue;
-        final id = recordsTablePk(m);
-        if (id.isEmpty) continue;
-        final biz = (m['record_id'] ?? '').toString().trim();
-        final code = await _patchRecordsRowWith404Recovery(
-          originalQueryId: biz.isNotEmpty ? biz : id,
-          restId: id,
-          fields: stopFields,
-        );
-        if (code == 404) {
-          _purgeGhostRecordById(id);
-          continue;
-        }
-        if (code < 200 || code >= 300) {
-          return false;
-        }
-      }
-      if (!await _verifyNoOpenPrimaryOnServer()) {
-        return false;
-      }
-      _notifyTimelineAfterRecordCacheMutation();
-      return true;
-    } catch (e, st) {
-      _log('_ensureAllRemoteRecordsStopped: $e');
-      _log(st.toString());
-      return false;
-    }
-  }
-
   /// PocketBase: **records** for the current user with category + tags expands (@POCKETBASE_MANIFEST).
   /// Updates [_cachedFlatRecords] for timeline filtering without repeated GETs.
   ///
@@ -3575,6 +3505,33 @@ class DatabaseService {
     } catch (_) {
       return [];
     }
+  }
+
+  /// Fresh server map `pocketbase_row_id -> row` for **primary** rows in sacred running state.
+  Future<Map<String, Map<String, dynamic>>> _fetchServerRunningSacredPrimariesByPbId() async {
+    final rows = await _fetchRunningRecordsFromNoco();
+    final byId = <String, Map<String, dynamic>>{};
+    for (final r in rows) {
+      if (_rowHasNonEmptyParent(r['parent_id'])) continue;
+      if (!_isNocoRowSacredStopTarget(r)) continue;
+      final id = recordsTablePk(r);
+      if (id.isEmpty) continue;
+      byId[id] = r;
+    }
+    return byId;
+  }
+
+  /// `end_time` for stopping [serverRow] when handing off to a new record that starts at [handoffIsoUtc].
+  /// Never returns a value before the row's own [start_time] (avoids 400 / hook rejection).
+  String _highlanderStopIsoForServerRow({
+    required String handoffIsoUtc,
+    required Map<String, dynamic> serverRow,
+  }) {
+    final handoff = _parseDateTimeUtc(handoffIsoUtc) ?? getPlanetaryNow().toUtc();
+    final rowStart = _parseDateTimeUtc(serverRow['start_time']);
+    final t =
+        rowStart != null && handoff.isBefore(rowStart) ? rowStart : handoff;
+    return t.toUtc().toIso8601String();
   }
 
   /// ISO UTC for start of a calendar [dateKey] (`YYYY-MM-DD`) in profile wall-clock, then stored as UTC.
@@ -7227,7 +7184,6 @@ class DatabaseService {
   Future<void> _highlanderPrimaryServerSync({
     required _HighlanderRollbackToken? rollbackToken,
     required Map<String, dynamic> runningFields,
-    required List<Map<String, String>> patchTargets,
   }) async {
     try {
       final sp = runningFields['source_plan_id'];
@@ -7242,8 +7198,8 @@ class DatabaseService {
           }
         }
       }
-      final remoteStopped = await _ensureAllRemoteRecordsStopped();
-      if (!remoteStopped) {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) {
         await _runBatchedRecordCacheTimelineNotify(() async {
           _restoreHighlanderRollbackToken(rollbackToken);
           clearOptimisticTimelineUi();
@@ -7255,15 +7211,32 @@ class DatabaseService {
 
       _recordCacheTimelineNotifyBatchDepth++;
       try {
-        final stopIso = getPlanetaryNow().toUtc().toIso8601String();
-        final stopFields = _nocoFieldsForPatch(<String, dynamic>{
-          'end_time': stopIso,
-          'status': 'stopped',
-        });
-        for (final t in patchTargets) {
-          final rid = (t['rid'] ?? '').trim();
-          final oq = (t['oq'] ?? '').trim();
-          if (rid.isEmpty) continue;
+        final handoffIso = (runningFields['start_time'] ?? '')
+            .toString()
+            .trim();
+        if (handoffIso.isEmpty) {
+          throw StateError('HIGHLANDER_MISSING_START_TIME');
+        }
+        final serverPrimaries = await _fetchServerRunningSacredPrimariesByPbId();
+        if (serverPrimaries.isEmpty) {
+          _log('SACRED_PREFLIGHT: no running primaries on server (POST new only)');
+        } else {
+          _log(
+            'SACRED_PREFLIGHT: server running primaries=${serverPrimaries.length} (PATCH to handoff start)',
+          );
+        }
+        for (final e in serverPrimaries.entries) {
+          final rid = e.key;
+          final row = e.value;
+          final oq = (row['record_id'] ?? '').toString().trim();
+          final stopIso = _highlanderStopIsoForServerRow(
+            handoffIsoUtc: handoffIso,
+            serverRow: row,
+          );
+          final stopFields = _nocoFieldsForPatch(<String, dynamic>{
+            'end_time': stopIso,
+            'status': 'stopped',
+          });
           final code = await _patchRecordsRowWith404Recovery(
             originalQueryId: oq.isNotEmpty ? oq : rid,
             restId: rid,
@@ -7284,6 +7257,10 @@ class DatabaseService {
         await _finalizeRecordCreateHandshake(
           pocketCreatedRecordId: createdId,
         );
+        try {
+          await _fetchRecordsIntoCache(forceNetwork: true);
+        } catch (_) {}
+        _notifyTimelineAfterRecordCacheMutation();
       } finally {
         _recordCacheTimelineNotifyBatchDepth--;
       }
@@ -7411,7 +7388,6 @@ class DatabaseService {
                   await _highlanderPrimaryServerSync(
                     rollbackToken: rollbackToken,
                     runningFields: runningFields,
-                    patchTargets: patchTargets,
                   );
                 } finally {
                   if (!netDone.isCompleted) netDone.complete();

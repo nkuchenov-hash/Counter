@@ -71,12 +71,25 @@
 
 ## 8. Web / hardware
 
-- Speech and biometrics: guard with `kIsWeb` and platform capabilities as in `app_shell` / services.
+- **Voice / STT:** Immutable rules in **§9 Voice Input Protocol** — do not “clean up” without preserving bilingual toggle, session persistence, and web BCP-47 bypass semantics.
+- **Biometrics and other capabilities:** guard with `kIsWeb` and platform capabilities as in `app_shell` / services.
 - **Records realtime:** After a valid session, the Brain subscribes to `records` (`subscribe('*', …)`) so **Web and mobile** share the same in-memory cache updates from server pushes; login flows must re-arm this subscription if init ran before auth.
 
 ---
 
-## 9. Cross-references
+## 9. Voice Input Protocol (Immutable)
+
+Voice Input Protocol (Immutable):
+
+Bilingual Toggle: STT operates on a strict [App Primary Language] <-> English toggle.
+
+Session Persistence: Switching languages mid-dictation MUST preserve the existing transcript, restart the session with the new localeId, and append new text.
+
+Web vs. Mobile STT: Web (kIsWeb) MUST use strict BCP-47 tags (e.g., ru-RU) bypassing the plugin's empty locale list. The UI toggle visibility depends ONLY on the app's currentLocale state, never on the STT plugin's initialized locales.
+
+---
+
+## 10. Cross-references
 
 | Document | Role |
 | :--- | :--- |
