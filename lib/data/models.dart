@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' show max;
 
+import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:flutter/material.dart';
 
@@ -798,23 +799,23 @@ class CategoryRule {
     if (b > 0) onScore(b);
   }
 
-  /// Highest word-bounded match length for [name] / **keywords** vs [title] (case-insensitive).
+  /// Highest word-bounded match length for [name] / **keywords** vs [title]
+  /// using [normalizeCategoryLabel] for both sides (exact substring at token boundaries).
   /// Longer matches win over shorter ones (e.g. "NIS SOLUTIONS" beats "CRM" in the same title).
-  int categoryMatchScoreForTitle(String title) {
-    final t = title.trim();
-    if (t.isEmpty) return 0;
-    final tLower = t.toLowerCase();
+  int categoryExactMatchScoreForTitle(String title) {
+    final nt = normalizeCategoryLabel(title);
+    if (nt.isEmpty) return 0;
     var best = 0;
-    final selfName = name.trim().toLowerCase();
+    final selfName = normalizeCategoryLabel(name);
     if (selfName.isNotEmpty) {
-      _accumulatePairScores(tLower, selfName, (len) => best = max(best, len));
+      _accumulatePairScores(nt, selfName, (len) => best = max(best, len));
     }
     if (keywords != null) {
       for (final list in keywords!.values) {
         for (final kw in list) {
-          final k = kw.trim().toLowerCase();
+          final k = normalizeCategoryLabel(kw);
           if (k.isNotEmpty) {
-            _accumulatePairScores(tLower, k, (len) => best = max(best, len));
+            _accumulatePairScores(nt, k, (len) => best = max(best, len));
           }
         }
       }
@@ -822,11 +823,28 @@ class CategoryRule {
     return best;
   }
 
-  /// True when [categoryMatchScoreForTitle] > 0 (word-bounded phrase / token match only).
-  bool matchesTitleWholeWordKeywords(String title) =>
-      categoryMatchScoreForTitle(title) > 0;
+  /// Fuzzy (Levenshtein-gated) score when [categoryExactMatchScoreForTitle] is zero.
+  int categoryFuzzyMatchScoreForTitle(String title) {
+    final nt = normalizeCategoryLabel(title);
+    if (nt.isEmpty) return 0;
+    final frags = <String>[name];
+    if (keywords != null) {
+      for (final list in keywords!.values) {
+        frags.addAll(list);
+      }
+    }
+    return fuzzyMatchScoreForNormalizedTitle(nt, frags);
+  }
 
-  CategoryRule? findDeepestMatch(String title) {
+  /// True when exact or fuzzy word match applies.
+  bool matchesTitleWholeWordKeywords(String title) =>
+      categoryExactMatchScoreForTitle(title) > 0 ||
+      categoryFuzzyMatchScoreForTitle(title) > 0;
+
+  CategoryRule? findDeepestMatch(
+    String title, {
+    required int Function(CategoryRule rule, String title) scoreFor,
+  }) {
     if (title.trim().isEmpty) return null;
     CategoryRule? best;
     var bestScore = -1;
@@ -836,7 +854,7 @@ class CategoryRule {
     void visit(CategoryRule r, int depth) {
       if (depth > 4) return;
       if (!r.isArchived) {
-        final sc = r.categoryMatchScoreForTitle(title);
+        final sc = scoreFor(r, title);
         if (sc > 0) {
           final nameLen = r.name.trim().length;
           if (best == null ||

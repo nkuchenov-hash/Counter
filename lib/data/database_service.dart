@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/link_scalar.dart';
+import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/local_sync/plan_create_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
 import 'package:counter/data/models.dart';
@@ -4438,30 +4439,44 @@ class DatabaseService {
       return -1;
     }
 
-    for (final root in _rules) {
-      final m = root.findDeepestMatch(title);
-      if (m != null) {
-        final d = depthOf(m, _rules, 0);
-        final sc = m.categoryMatchScoreForTitle(title);
-        final mLen = m.name.trim().length;
-        if (best == null ||
-            sc > bestScore ||
-            (sc == bestScore && d > bestDepth) ||
-            (sc == bestScore &&
-                d == bestDepth &&
-                mLen > best.name.trim().length)) {
-          best = m;
-          bestScore = sc;
-          bestDepth = d;
+    void considerPhase(int Function(CategoryRule m) scoreOf) {
+      for (final root in _rules) {
+        final m = root.findDeepestMatch(
+          title,
+          scoreFor: (r, t) => scoreOf(r),
+        );
+        if (m != null) {
+          final d = depthOf(m, _rules, 0);
+          final sc = scoreOf(m);
+          final mLen = m.name.trim().length;
+          if (best == null ||
+              sc > bestScore ||
+              (sc == bestScore && d > bestDepth) ||
+              (sc == bestScore &&
+                  d == bestDepth &&
+                  mLen > best!.name.trim().length)) {
+            best = m;
+            bestScore = sc;
+            bestDepth = d;
+          }
         }
       }
     }
+
+    considerPhase((m) => m.categoryExactMatchScoreForTitle(title));
+    if (best != null) return best;
+
+    best = null;
+    bestScore = -1;
+    bestDepth = -1;
+    considerPhase((m) => m.categoryFuzzyMatchScoreForTitle(title));
     return best;
   }
 
   CategoryRule? identifyCategory(String input) => findDeepestMatchForTitle(input);
 
-  /// Smart link: best [CategoryRule.categoryMatchScoreForTitle], then longest [CategoryRule.name] tie-break;
+  /// Smart link: best exact [CategoryRule.categoryExactMatchScoreForTitle], else fuzzy
+  /// [CategoryRule.categoryFuzzyMatchScoreForTitle]; then longest [CategoryRule.name] tie-break;
   /// requires valid PocketBase **categories** row id.
   String? _findBestCategoryMatch(String title) {
     if (title.trim().isEmpty) return null;
@@ -4482,7 +4497,7 @@ class DatabaseService {
     CategoryRule? bestRule;
     var bestScore = -1;
     for (final r in candidates) {
-      final sc = r.categoryMatchScoreForTitle(title);
+      final sc = r.categoryExactMatchScoreForTitle(title);
       if (sc <= 0) continue;
       final pb = _categoryBackendRowIdStrict(r);
       if (pb == null || pb.isEmpty || !_isLikelyPocketBaseRowId(pb)) {
@@ -4494,6 +4509,24 @@ class DatabaseService {
               r.name.trim().length > bestRule.name.trim().length)) {
         bestRule = r;
         bestScore = sc;
+      }
+    }
+    if (bestRule == null) {
+      bestScore = -1;
+      for (final r in candidates) {
+        final sc = r.categoryFuzzyMatchScoreForTitle(title);
+        if (sc <= 0) continue;
+        final pb = _categoryBackendRowIdStrict(r);
+        if (pb == null || pb.isEmpty || !_isLikelyPocketBaseRowId(pb)) {
+          continue;
+        }
+        if (bestRule == null ||
+            sc > bestScore ||
+            (sc == bestScore &&
+                r.name.trim().length > bestRule.name.trim().length)) {
+          bestRule = r;
+          bestScore = sc;
+        }
       }
     }
     if (bestRule != null) {
@@ -4694,6 +4727,8 @@ class DatabaseService {
       return null;
     }
 
+    final normLabel = normalizeCategoryLabel(t);
+
     int? foundId;
     void matchPath(List<CategoryRule> rules) {
       if (foundId != null) return;
@@ -4708,7 +4743,7 @@ class DatabaseService {
           continue;
         }
         final path = getCategoryPath(r.id);
-        if (path.trim().toLowerCase() == lower) {
+        if (normalizeCategoryLabel(path) == normLabel) {
           foundId = r.id;
           return;
         }
@@ -4733,7 +4768,7 @@ class DatabaseService {
           if (r.children != null) matchLeaf(r.children!);
           continue;
         }
-        if (r.name.trim().toLowerCase() == lower) {
+        if (normalizeCategoryLabel(r.name) == normLabel) {
           if (hit != null && hit!.id != r.id) ambiguous = true;
           hit = r;
         }
@@ -4743,6 +4778,36 @@ class DatabaseService {
 
     matchLeaf(_rules);
     if (!ambiguous && hit != null) return hit!.id;
+
+    final atBest = <CategoryRule>[];
+    var bestFuzzy = -1;
+    void matchLeafFuzzy(List<CategoryRule> rules) {
+      for (final r in rules) {
+        if (r.isArchived) {
+          if (r.children != null) matchLeafFuzzy(r.children!);
+          continue;
+        }
+        if (r.id == CategoryRule.uncategorizedSyntheticId) {
+          if (r.children != null) matchLeafFuzzy(r.children!);
+          continue;
+        }
+        final sc =
+            fuzzyPhraseScoreAgainstTitle(normLabel, normalizeCategoryLabel(r.name));
+        if (sc <= 0) continue;
+        if (sc > bestFuzzy) {
+          bestFuzzy = sc;
+          atBest
+            ..clear()
+            ..add(r);
+        } else if (sc == bestFuzzy) {
+          atBest.add(r);
+        }
+        if (r.children != null) matchLeafFuzzy(r.children!);
+      }
+    }
+
+    matchLeafFuzzy(_rules);
+    if (bestFuzzy > 0 && atBest.length == 1) return atBest.first.id;
     return null;
   }
 
