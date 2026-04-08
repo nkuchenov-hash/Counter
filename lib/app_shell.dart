@@ -12,6 +12,7 @@ import 'package:counter/features/categories/category_list_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/subscription/app_tier.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
@@ -237,6 +238,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   StreamSubscription<List<CategoryRule>>? _categoryRulesSub;
 
   stt.SpeechToText? _speech;
+  SpeechEngineHandle? _speechHandle;
   bool _speechReady = false;
   /// Last engine init failure (shown with [speech_unavailable] snackbar detail).
   String? _speechLastInitError;
@@ -845,8 +847,29 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   /// recognition in a single pass (see [SpeechListenLocale] class doc).
   Future<void> _ensureSpeechReady() async {
     if (_speechReady) return;
-    _speechLastInitError = null;
     _speech ??= stt.SpeechToText();
+    await _initializeSpeechInstance();
+  }
+
+  /// New [SpeechToText] instance + [initialize] after Web errors (`no_speech`, network).
+  Future<void> _speechEngineHardReset() async {
+    if (!mounted) return;
+    try {
+      await _speech?.stop();
+    } catch (_) {}
+    try {
+      await _speech?.cancel();
+    } catch (_) {}
+    _speech = stt.SpeechToText();
+    _speechHandle?.speech = _speech!;
+    _speechReady = false;
+    _speechLastInitError = null;
+    if (!mounted) return;
+    await _initializeSpeechInstance();
+  }
+
+  Future<void> _initializeSpeechInstance() async {
+    _speechLastInitError = null;
     try {
       final available = await _speech!.initialize(
         onStatus: (s) => _speechStatusCallback?.call(s),
@@ -1134,16 +1157,19 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
     if (!mounted) return;
     final voiceSurfaceIsPlanning = _tabIndex == 1;
+    _speechHandle ??= SpeechEngineHandle(_speech!);
+    _speechHandle!.speech = _speech!;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (ctx) {
         return VoiceInputSheet(
-          speech: _speech!,
+          speechHandle: _speechHandle!,
           setSpeechStatusCallback: (cb) {
             if (mounted) setState(() => _speechStatusCallback = cb);
           },
+          onSpeechEngineHardReset: _speechEngineHardReset,
           onListeningChanged: (listening) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) setState(() => _isVoiceListening = listening);

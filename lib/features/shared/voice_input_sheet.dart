@@ -1,6 +1,7 @@
 // Shared mic / speech-to-text bottom sheet. Routing is defined by [VoiceCaptureConfig.submitIntent].
 import 'dart:async';
 
+import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/services/speech_listen_locale.dart';
 import 'package:counter/data/voice_audio_stub.dart' if (dart.library.html) 'package:counter/data/voice_audio_web.dart' as voice_audio;
 import 'package:counter/features/shared/voice_capture_config.dart';
@@ -15,14 +16,16 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 class VoiceInputSheet extends StatefulWidget {
   const VoiceInputSheet({
     super.key,
-    required this.speech,
+    required this.speechHandle,
     required this.setSpeechStatusCallback,
     required this.config,
+    this.onSpeechEngineHardReset,
     this.onListeningChanged,
   });
 
-  final stt.SpeechToText speech;
+  final SpeechEngineHandle speechHandle;
   final void Function(void Function(String)?) setSpeechStatusCallback;
+  final Future<void> Function()? onSpeechEngineHardReset;
   final VoiceCaptureConfig config;
   final void Function(bool listening)? onListeningChanged;
 
@@ -57,6 +60,8 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
   bool get _webEnglishAccumStt => kIsWeb && _speechUiCode == 'en';
 
+  stt.SpeechToText get _engine => widget.speechHandle.speech;
+
   static String _collapseWs(String s) =>
       s.replaceAll(RegExp(r'\s+'), ' ').trim();
 
@@ -80,6 +85,47 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       return true;
     }
     return msg.contains('failed to fetch') || msg.contains('net::err');
+  }
+
+  /// Web Speech / plugin: empty audio or timeout — engine needs [stop] + fresh [initialize].
+  bool _messageIndicatesNoSpeech(String raw) {
+    final m = raw.toLowerCase();
+    return m.contains('no_speech') ||
+        m.contains('no speech') ||
+        m.contains('speech_not_detected') ||
+        m.contains('no-match') ||
+        (m.contains('aborted') && m.contains('audio'));
+  }
+
+  Future<void> _performSpeechEngineHardReset() async {
+    if (!mounted) return;
+    try {
+      await _engine.stop();
+    } catch (_) {}
+    try {
+      await _engine.cancel();
+    } catch (_) {}
+    final reset = widget.onSpeechEngineHardReset;
+    if (reset != null) {
+      try {
+        await reset();
+      } catch (e, st) {
+        debugPrint('[STT sheet] onSpeechEngineHardReset failed: $e\n$st');
+      }
+    } else {
+      try {
+        await _engine.initialize(
+          onError: (e) {
+            debugPrint(
+              '[STT sheet] re-init onError: ${e.errorMsg} (permanent=${e.permanent})',
+            );
+          },
+          debugLogging: false,
+        );
+      } catch (e, st) {
+        debugPrint('[STT sheet] re-init (same instance) failed: $e\n$st');
+      }
+    }
   }
 
   void _playTone({required double freq, required double duration}) {
@@ -155,8 +201,8 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   @override
   void dispose() {
     currentLocale.removeListener(_onAppLocaleChanged);
-    widget.speech.stop();
-    widget.speech.cancel();
+    _engine.stop();
+    _engine.cancel();
     _textController.dispose();
     _pulseController.dispose();
     _soundLevel.dispose();
@@ -168,9 +214,11 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   }
 
   Future<void> _runSpeechListen(String? localeId) async {
-    await widget.speech.listen(
+    await _engine.listen(
       onResult: _onSpeechResult,
-      onSoundLevelChange: (level) => _soundLevel.value = level,
+      onSoundLevelChange: (level) {
+        _soundLevel.value = level;
+      },
       localeId: localeId,
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 20),
@@ -240,8 +288,8 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     if (!mounted) return;
 
     try {
-      if (!widget.speech.isAvailable) {
-        await widget.speech.initialize(
+      if (!_engine.isAvailable) {
+        await _engine.initialize(
           onError: (e) {
             debugPrint(
               '[STT sheet] initialize onError: ${e.errorMsg} (permanent=${e.permanent})',
@@ -255,10 +303,10 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     }
     if (!mounted) return;
 
-    if (kIsWeb && widget.speech.isAvailable) {
+    if (kIsWeb && _engine.isAvailable) {
       await Future.delayed(const Duration(milliseconds: 120));
       if (!mounted) return;
-      await SpeechListenLocale.warmUpWebLocalesForDebug(widget.speech);
+      await SpeechListenLocale.warmUpWebLocalesForDebug(_engine);
       if (!mounted) return;
     }
 
@@ -271,16 +319,21 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       if (status.startsWith('error:')) {
         final msg = status.replaceFirst('error:', '').trim();
         final isNetwork = _isNetworkSttMessage(msg);
+        final wantsHardReset =
+            _messageIndicatesNoSpeech(msg) || isNetwork;
+        if (wantsHardReset) {
+          unawaited(_performSpeechEngineHardReset());
+        }
         final hasTranscript = _textController.text.trim().isNotEmpty ||
             _lastVoiceRecognized.trim().isNotEmpty;
         if (kIsWeb && isNetwork && hasTranscript) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             try {
-              widget.speech.stop();
+              _engine.stop();
             } catch (_) {}
             try {
-              widget.speech.cancel();
+              _engine.cancel();
             } catch (_) {}
             setState(() {
               _error = null;
@@ -366,8 +419,8 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       } catch (e, st) {
         debugPrint('[STT listen] localeId=$localeId failed: $e\n$st');
         try {
-          await widget.speech.stop();
-          await widget.speech.cancel();
+          await _engine.stop();
+          await _engine.cancel();
         } catch (_) {}
         return false;
       }
@@ -386,7 +439,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     final String? chosen = kIsWeb
         ? SpeechListenLocale.webVoiceListenLocaleId(_speechUiCode)
         : await SpeechListenLocale.resolveListenLocaleId(
-            speech: widget.speech,
+            speech: _engine,
             speechUiCode: _speechUiCode,
           );
     if (kDebugMode) {
@@ -397,17 +450,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
     try {
       var ok = await attemptListen(chosen);
-      if (!ok &&
-          kIsWeb &&
-          _speechUiCode == 'en' &&
-          chosen == 'en') {
-        if (kDebugMode) {
-          debugPrint('[STT listen] web EN retry localeId=en-US');
-        }
-        ok = await attemptListen(
-          SpeechListenLocale.webListenLocaleIdBcp47('en'),
-        );
-      }
       if (!ok && chosen != null) {
         if (kDebugMode) {
           debugPrint('[STT listen] retry localeId=null (device default)');
@@ -474,7 +516,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   Future<void> _onSpeechSttLocaleSelected(String nextCode) async {
     final resolvedNext = resolvedUiLanguageCode(nextCode);
     if (resolvedNext == _speechUiCode) return;
-    final wasListening = _isListening || widget.speech.isListening;
+    final wasListening = _isListening || _engine.isListening;
     final preserved = _textController.text.trim();
     setState(() => _speechUiCode = resolvedNext);
 
@@ -482,8 +524,8 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
     _transcriptPrefixForSttSession = preserved.isEmpty ? null : preserved;
     try {
-      await widget.speech.stop();
-      await widget.speech.cancel();
+      await _engine.stop();
+      await _engine.cancel();
     } catch (_) {}
 
     if (!mounted) return;
@@ -500,7 +542,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
         _lastVoiceRecognized = d;
       }
     }
-    await widget.speech.stop();
+    await _engine.stop();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       setState(() {
@@ -510,6 +552,85 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       });
       widget.onListeningChanged?.call(false);
     });
+  }
+
+  Widget _buildTranscriptTextField({
+    required ColorScheme scheme,
+    required String loc,
+  }) {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, _) {
+        return ValueListenableBuilder<double>(
+          valueListenable: _soundLevel,
+          builder: (context, level, _) {
+            final listening = _isListening && _isPulsing;
+            final v = level.clamp(0.0, 1.0);
+            final pulse = listening ? _pulseAnimation.value : 0.0;
+            final borderW = listening ? 1.2 + 2.8 * v + 0.6 * pulse : 1.0;
+            final borderColor = listening
+                ? Color.lerp(
+                    scheme.outline.withValues(alpha: 0.45),
+                    scheme.primary,
+                    0.2 + 0.75 * v,
+                  )!
+                : scheme.outline.withValues(alpha: 0.22);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 90),
+                    curve: Curves.easeOut,
+                    decoration: BoxDecoration(
+                      color: scheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: borderColor, width: borderW),
+                    ),
+                    child: TextField(
+                      controller: _textController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        hintText: t(loc, 'say_task_title'),
+                        filled: false,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                      ),
+                      onChanged: (_) {
+                        if (_voiceRecoveredCue) {
+                          setState(() => _voiceRecoveredCue = false);
+                        }
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ),
+                if (listening) ...[
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: SizedBox(
+                      height: 4,
+                      child: LinearProgressIndicator(
+                        value: v < 0.02 ? null : v,
+                        backgroundColor:
+                            scheme.surfaceContainerHighest.withValues(alpha: 0.9),
+                        color: scheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -678,25 +799,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
               );
             },
           ),
-          TextField(
-            controller: _textController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: t(loc, 'say_task_title'),
-              filled: true,
-              fillColor: scheme.surfaceContainerHighest,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            onChanged: (_) {
-              if (_voiceRecoveredCue) {
-                setState(() => _voiceRecoveredCue = false);
-              }
-              setState(() {});
-            },
-          ),
+          _buildTranscriptTextField(scheme: scheme, loc: loc),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -707,8 +810,8 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
                           if (_isSaving || !mounted) return;
                           final text = _textController.text.trim();
                           if (text.isEmpty) return;
-                          widget.speech.stop();
-                          widget.speech.cancel();
+                          _engine.stop();
+                          _engine.cancel();
                           setState(() => _isSaving = true);
                           var ok = false;
                           try {
