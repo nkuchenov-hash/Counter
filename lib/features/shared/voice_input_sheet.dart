@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:counter/core/services/speech_listen_locale.dart';
 import 'package:counter/data/voice_audio_stub.dart' if (dart.library.html) 'package:counter/data/voice_audio_web.dart' as voice_audio;
 import 'package:counter/features/shared/voice_capture_config.dart';
+import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +45,10 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   late Animation<double> _pulseAnimation;
   final TextEditingController _textController = TextEditingController();
   String _lastVoiceRecognized = '';
+  /// STT language for this sheet (toggle); independent of app UI locale for bilingual input.
+  late String _speechUiCode;
+  /// When switching locale mid-listen, new session partials are shown after this prefix.
+  String? _transcriptPrefixForSttSession;
 
   bool _isNetworkSttMessage(String raw) {
     final msg = raw.toLowerCase();
@@ -65,6 +70,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     super.initState();
     _textController.clear();
     _statusText = t(currentLocale.value, 'voice_input');
+    _speechUiCode = resolvedUiLanguageCode(currentLocale.value);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -78,7 +84,15 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   void _onSpeechResult(dynamic res) {
     if (!mounted || _isSaving) return;
     final raw = res.recognizedWords;
-    final w = raw == null ? '' : raw.toString();
+    var w = raw == null ? '' : raw.toString();
+    final pfx = _transcriptPrefixForSttSession;
+    if (pfx != null && pfx.trim().isNotEmpty) {
+      if (w.trim().isNotEmpty) {
+        w = '${pfx.trim()} $w';
+      } else {
+        w = pfx.trim();
+      }
+    }
     if (w.isNotEmpty) _lastVoiceRecognized = w;
     _textController.text = w;
   }
@@ -113,8 +127,19 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     );
   }
 
+  void _coerceSpeechUiCodeToPrimaryOrEnglish(String appPrimaryResolved) {
+    if (appPrimaryResolved == 'en') {
+      _speechUiCode = 'en';
+      return;
+    }
+    if (_speechUiCode != 'en' && _speechUiCode != appPrimaryResolved) {
+      _speechUiCode = appPrimaryResolved;
+    }
+  }
+
   Future<void> _start() async {
     final loc = currentLocale.value;
+    _coerceSpeechUiCodeToPrimaryOrEnglish(resolvedUiLanguageCode(loc));
     setState(() {
       _isPulsing = false;
       _statusText = t(loc, 'voice_status_say_task');
@@ -125,6 +150,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       _hadErrorInSession = false;
     });
     _lastVoiceRecognized = '';
+    _transcriptPrefixForSttSession = null;
     widget.onListeningChanged?.call(false);
     _playTone(freq: 660, duration: 0.1);
     await Future.delayed(const Duration(milliseconds: 50));
@@ -170,6 +196,11 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     }
     if (!mounted) return;
 
+    await _attachStatusAndListen(loc: loc);
+  }
+
+  Future<void> _attachStatusAndListen({required String loc}) async {
+    _coerceSpeechUiCodeToPrimaryOrEnglish(resolvedUiLanguageCode(loc));
     widget.setSpeechStatusCallback((status) {
       if (status.startsWith('error:')) {
         final msg = status.replaceFirst('error:', '').trim();
@@ -245,6 +276,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
             _isPulsing = false;
             _isListening = false;
             if (!_hadErrorInSession) {
+              _transcriptPrefixForSttSession = null;
               _statusText = t(loc, 'voice_status_heard');
             }
           });
@@ -269,10 +301,12 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
     final chosen = await SpeechListenLocale.resolveListenLocaleId(
       speech: widget.speech,
-      appLoc: loc,
+      speechUiCode: _speechUiCode,
     );
     if (kDebugMode) {
-      debugPrint('[STT] speech.listen primary localeId=$chosen');
+      debugPrint(
+        '[STT] speech.listen speechUi=$_speechUiCode localeId=$chosen web=$kIsWeb',
+      );
     }
 
     try {
@@ -340,7 +374,27 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     }
   }
 
+  Future<void> _onSpeechSttLocaleSelected(String nextCode) async {
+    final resolvedNext = resolvedUiLanguageCode(nextCode);
+    if (resolvedNext == _speechUiCode) return;
+    final wasListening = _isListening || widget.speech.isListening;
+    final preserved = _textController.text.trim();
+    setState(() => _speechUiCode = resolvedNext);
+
+    if (!wasListening) return;
+
+    _transcriptPrefixForSttSession = preserved.isEmpty ? null : preserved;
+    try {
+      await widget.speech.stop();
+      await widget.speech.cancel();
+    } catch (_) {}
+
+    if (!mounted) return;
+    await _attachStatusAndListen(loc: currentLocale.value);
+  }
+
   Future<void> _stop() async {
+    _transcriptPrefixForSttSession = null;
     await widget.speech.stop();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -441,7 +495,73 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          if (resolvedUiLanguageCode(currentLocale.value) != 'en') ...[
+            const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                final appUi = resolvedUiLanguageCode(currentLocale.value);
+                final segPrimary = appUi;
+                const segEn = 'en';
+                final scheme = Theme.of(context).colorScheme;
+                return Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Tooltip(
+                    message:
+                        '${nativeUiLanguageLabel(segPrimary)} · ${nativeUiLanguageLabel(segEn)}',
+                    child: Material(
+                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(22),
+                      child: Padding(
+                        padding: const EdgeInsets.all(3),
+                        child: SegmentedButton<String>(
+                          showSelectedIcon: false,
+                          style: SegmentedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            side: BorderSide.none,
+                            backgroundColor: Colors.transparent,
+                          ),
+                          segments: [
+                            ButtonSegment<String>(
+                              value: segPrimary,
+                              label: Text(
+                                segPrimary.toUpperCase(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ),
+                            ButtonSegment<String>(
+                              value: segEn,
+                              label: Text(
+                                segEn.toUpperCase(),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                            ),
+                          ],
+                          selected: {_speechUiCode},
+                          onSelectionChanged: (set) {
+                            if (set.isEmpty) return;
+                            unawaited(_onSpeechSttLocaleSelected(set.first));
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+          ] else
+            const SizedBox(height: 10),
           TextField(
             controller: _textController,
             maxLines: 3,

@@ -396,7 +396,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
     final String? listenLocaleId =
         await SpeechListenLocale.resolveListenLocaleId(
       speech: _speech,
-      appLoc: loc,
+      speechUiCode: loc,
     );
     if (!mounted) return;
     await _runSpeechListen(localeId: listenLocaleId);

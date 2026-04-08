@@ -45,6 +45,10 @@ abstract final class SpeechListenLocale {
     return (i < 0 ? appLoc : appLoc.substring(0, i)).toLowerCase();
   }
 
+  /// Bilingual STT partner: **always** UI English (`en`). Primary ⟷ English only.
+  /// Call sites pass the resolved primary code for a stable API; the UI hides the toggle when primary is `en`.
+  static String speechSttAlternateUiCode(String _) => 'en';
+
   static String _normalizeLocaleToken(String id) =>
       id.replaceAll('-', '_').toLowerCase();
 
@@ -169,23 +173,34 @@ abstract final class SpeechListenLocale {
     return null;
   }
 
-  /// First-attempt locale for [listen]. On **web**, always a **hyphenated**
-  /// BCP-47 string when possible. On **mobile/desktop**, uses engine [locales]
-  /// / [systemLocale] ids as provided by the platform (often underscores).
+  /// First-attempt locale for [listen].
+  ///
+  /// [speechUiCode] is the **speech session** language (may differ from app UI via toggle).
+  ///
+  /// On **web**, when [webPreferLooseLanguageTag] is true (default), returns a short
+  /// BCP-47 primary subtag only (e.g. `en`, `ru`) so Chrome’s Web Speech API can favor
+  /// cloud models with broader code-mixing; set false to force a full regional tag from
+  /// [locales] / [Locale.toLanguageTag] when needed.
+  ///
+  /// On **mobile/desktop**, uses engine [locales] / [systemLocale] ids (often underscores).
   static Future<String?> resolveListenLocaleId({
     required stt.SpeechToText speech,
-    required String appLoc,
+    required String speechUiCode,
+    bool webPreferLooseLanguageTag = true,
   }) async {
     final available = await speech.locales();
     final systemLc = await speech.systemLocale();
     final platformLocale = PlatformDispatcher.instance.locale;
     final platformTag = platformLocale.toLanguageTag();
-    final appPrimary = _primaryLanguageCode(appLoc);
+    final appPrimary = _primaryLanguageCode(speechUiCode);
 
     if (kIsWeb) {
+      if (webPreferLooseLanguageTag && appPrimary.isNotEmpty) {
+        return appPrimary;
+      }
       return _resolveWebExplicitTag(
         available: available,
-        appLoc: appLoc,
+        appLoc: speechUiCode,
         appPrimary: appPrimary,
         platformTag: platformTag,
       );
