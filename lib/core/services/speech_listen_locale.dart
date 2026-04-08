@@ -1,6 +1,7 @@
 import 'dart:ui' show PlatformDispatcher;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/material.dart' show debugPrint;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 /// Shared [SpeechToText.listen] locale resolution for Voice + Smart Plan.
@@ -116,24 +117,24 @@ abstract final class SpeechListenLocale {
   ///
   /// [speechUiCode] is the **speech session** language (may differ from app UI via toggle).
   ///
-  /// On **web**, always returns [webListenLocaleIdBcp47] — same stable hyphen tags as
-  /// `VoiceInputSheet` (e.g. `en-US`, `ru-RU`). No `PlatformDispatcher` or unknown-locale
-  /// branching here.
+  /// On **web**, returns [webListenLocaleIdBcp47] **without** calling [SpeechToText.locales]
+  /// first — Chrome often reports `(0)` until after the first interaction; resolution must
+  /// not depend on a non-empty list. [listen] still receives a valid BCP-47 [localeId].
   ///
   /// On **mobile/desktop**, uses engine [locales] / [systemLocale] ids (often underscores).
   static Future<String?> resolveListenLocaleId({
     required stt.SpeechToText speech,
     required String speechUiCode,
   }) async {
+    if (kIsWeb) {
+      return webListenLocaleIdBcp47(speechUiCode);
+    }
+
     final available = await speech.locales();
     final systemLc = await speech.systemLocale();
     final platformLocale = PlatformDispatcher.instance.locale;
     final platformTag = platformLocale.toLanguageTag();
     final appPrimary = _primaryLanguageCode(speechUiCode);
-
-    if (kIsWeb) {
-      return webListenLocaleIdBcp47(speechUiCode);
-    }
 
     if (available.isNotEmpty) {
       if (!_languageAvailableInList(available, appPrimary)) {
@@ -150,5 +151,20 @@ abstract final class SpeechListenLocale {
 
     return systemLc?.localeId ??
         (platformTag.isEmpty ? null : platformTag);
+  }
+
+  /// After [SpeechToText.initialize] on web: optional warm-up; never required for [listen].
+  static Future<void> warmUpWebLocalesForDebug(stt.SpeechToText speech) async {
+    if (!kIsWeb) return;
+    try {
+      final list = await speech.locales();
+      if (kDebugMode) {
+        debugPrint('[STT] web locales (${list.length}) (warm-up; listen optional)');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[STT] web locales() warm-up failed (ignored): $e');
+      }
+    }
   }
 }

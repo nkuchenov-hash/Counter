@@ -117,9 +117,9 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     final raw = res.recognizedWords;
     var w = raw.trim();
 
-    if (kDebugMode && _webEnglishAccumStt) {
+    if (kDebugMode) {
       debugPrint(
-        '[STT EN web] final=${res.finalResult} words="${res.recognizedWords}"',
+        '[STT DEBUG] words: "$raw" final: ${res.finalResult}',
       );
     }
 
@@ -130,11 +130,12 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
         }
         _partialSttText = '';
       } else {
-        _partialSttText = res.recognizedWords;
+        _partialSttText = raw.trim().isEmpty ? '' : raw;
       }
       final display = _composeWebEnDisplay();
       if (display.isNotEmpty) _lastVoiceRecognized = display;
       _textController.text = display;
+      if (kIsWeb) setState(() {});
       return;
     }
 
@@ -148,6 +149,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     }
     if (w.isNotEmpty) _lastVoiceRecognized = w;
     _textController.text = w;
+    if (kIsWeb) setState(() {});
   }
 
   @override
@@ -252,6 +254,13 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       debugPrint('[STT sheet] initialize in sheet failed: $e\n$st');
     }
     if (!mounted) return;
+
+    if (kIsWeb && widget.speech.isAvailable) {
+      await Future.delayed(const Duration(milliseconds: 120));
+      if (!mounted) return;
+      await SpeechListenLocale.warmUpWebLocalesForDebug(widget.speech);
+      if (!mounted) return;
+    }
 
     await _attachStatusAndListen(loc: loc);
   }
@@ -388,6 +397,17 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
     try {
       var ok = await attemptListen(chosen);
+      if (!ok &&
+          kIsWeb &&
+          _speechUiCode == 'en' &&
+          chosen == 'en') {
+        if (kDebugMode) {
+          debugPrint('[STT listen] web EN retry localeId=en-US');
+        }
+        ok = await attemptListen(
+          SpeechListenLocale.webListenLocaleIdBcp47('en'),
+        );
+      }
       if (!ok && chosen != null) {
         if (kDebugMode) {
           debugPrint('[STT listen] retry localeId=null (device default)');
