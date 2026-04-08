@@ -33,13 +33,13 @@ description: Revisions and corrections for DATA_MAP.md.
 | **title** | String | Data | **YES** | Name of the activity/task. |
 | **start_time** | ISO8601 String | Time | **YES** | Start timestamp (UTC). (PB `date` field). |
 | **end_time** | ISO8601 String | Time | NO | Null if status is `running`. (PB `date` field). |
-| **category_id** | Relation | **Data** | **YES** | Relation to `categories.id` (15-char). |
-| **category_link**| Relation | **Expand** | **YES** | Relation to `categories.id`. **REQUIRED** for timeline: `expand: category_link`. |
+| **category_id** | String (UUID/slug) | **Data** | **YES** | Business category identifier (matches `categories.category_id`). **Not** the 15-char PocketBase `categories.id`. |
+| **category_link**| Relation | **Expand** | **YES** | PocketBase relation to `categories.id` (15-char). **REQUIRED** for timeline and native `expand: category_link`. |
 | **status** | Select | State | **YES** | Allowed: `running`, `stopped`, `completed`. |
 | **type** | String | Constant | **YES** | Always set to `'record'`. |
 | **created** | ISO8601 String | Metadata | **YES** | System timestamp (PocketBase auto-managed). |
 | **updated** | ISO8601 String | Metadata | NO | System timestamp (PocketBase auto-managed). |
-| **parent_id** | String | Hierarchy | NO | Optional hierarchy text ID. |
+| **parent_id** | Relation | Hierarchy | NO | Relation to **records** `id` (15-char, **self-collection**). Optional parent row for nested trees; use `expand` for nested record hierarchies. |
 | **source_plan_id** | Relation | **Link** | NO | Optional relation to **plans** `id` (15-char). Many records may reference one plan. |
 | **tags** | String | Metadata | NO | Comma-separated tags string. |
 | **checklist** | JSON | Complex | **YES** | Default is `[]`. Encoded as JSON string in API layer. |
@@ -49,6 +49,7 @@ description: Revisions and corrections for DATA_MAP.md.
 1. **The ID Duality Law**: The Brain MUST distinguish between the **System ID** (`id`) and the **Business UUID** (`record_id`).
    - Use `id` (15-char String) strictly for REST URL segments (PATCH/DELETE).
    - Use `record_id` (UUID) for internal data logic and client-side syncing.
+   - **Category duality:** `category_id` is the **business** key (string; same family as `categories.category_id`). `category_link` is the **system** relation to `categories.id` for PocketBase filters and `expand`. Keep both consistent on PATCH.
 2. **REST URL segment**: Use `/api/collections/records/records/{id}` for PATCH/DELETE.
 3. **Sacred Singleton Law**: Before starting a new record, the Brain MUST stop open intervals for **projected today**, then optionally merge **at most one** oldest **pre-today** open row. Fire concurrent standard PATCH requests.
 4. **Clean Slate**: `date_key` and `is_manual` are strictly banned.
@@ -69,7 +70,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **name** | String | Data | **YES** | Display name of the category. |
 | **normalized_id** | String | System | **YES** | Search-optimized ID (lowercase, no spaces). |
 | **keywords** | JSON | Metadata | NO | Array of search terms/keywords. |
-| **parent_id** | String | Hierarchy | NO | Hierarchy text ID (relation to a parent category). |
+| **parent_id** | Relation | Hierarchy | NO | Relation to **categories** `id` (15-char, **self-collection**). Optional parent category; enables nested `expand` for category trees. |
 | **localized_names** | JSON | Data | NO | Multi-language mapping (e.g., `{"ru": "Работа"}`). |
 | **color** | String | UI | NO | Optional human-readable color label. |
 | **color_value** | Number | UI | NO | Flutter-compatible color integer (AARRGGBB). |
@@ -79,7 +80,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **is_archived** | Bool | State | **YES** | Soft delete flag. `true` = hidden from UI, `false` = active. Default: `false`. |
 
 ### 🛠 Operational Rules for `categories`:
-1. **Relationship:** Relations to `records` should use the system `id`, while internal app logic can map `category_id`.
+1. **Relationship:** Relations to `records` should use the system `id` on `category_link`; internal app logic maps **`category_id`** (business string) on both `categories` and `records`. **`parent_id`** is a **Relation** to another row’s system `id` in this collection (self-parent).
 2. **UI Rendering (The Centering Law):** Prioritize `color_value` and `icon_code_point` for the Flutter UI. Icon and Text MUST be a tight vertical cluster, aligned to the **Absolute Center** of the square. No spacers.
 3. **Data Parsing:** Ensure PocketBase number fields are safely cast to integers in Dart.
 4. **THE REST MANDATE:** **PATCH** = `PATCH /api/collections/categories/records/{id}`. **DELETE** = `DELETE /api/collections/categories/records/{id}`.
@@ -108,7 +109,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **is_done** | Bool | State | **YES** | `true` = completed; `false` = pending. |
 | **start_time** | ISO8601 String | Time | NO | Scheduled start time (PocketBase `date`). |
 | **end_time** | ISO8601 String | Time | NO | Scheduled deadline/finish time (PocketBase `date`). |
-| **parent_plan_id**| String | Hierarchy | NO | Relation text ID to another `plans` record for sub-tasks. |
+| **parent_plan_id**| Relation | Hierarchy | NO | Relation to **plans** `id` (15-char, **self-collection**). Optional parent plan for sub-tasks; use `expand` for nested plan trees. |
 | **checklist** | JSON | Complex | **YES** | Array of sub-items (default: `[]`). |
 | **order** | Number | UI | **YES** | Manual sorting index (default: `0`). |
 | **note** | String | Text | NO | Personal notes or extra details. |
@@ -128,7 +129,7 @@ description: Revisions and corrections for DATA_MAP.md.
    * These timestamps represent **intent**, not actual work duration.
    * **Rule:** When converting a "Plan" into a "Record", `plan.start_time` is a suggestion; `record.start_time` is the actual moment the user hits "Start".
 4. **Hierarchical Plans:**
-   * The `parent_plan_id` relation allows for nested task lists.
+   * **`parent_plan_id`** is a **Relation** to another row’s system `id` in **plans** (self-collection). Use `expand` for nested task lists.
 5. **REST Construction**: Plans MUST use the PocketBase **System `id`** for `PATCH` and `DELETE` URL paths. Do not use the `plan_id` UUID in the URL.
 
 ## 4. Collection: `profiles`
@@ -149,6 +150,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **preferred_timezone**| String | Time | **YES** | Textual timezone name (e.g., "New York (UTC-5)"). |
 | **timezone_offset** | Number | Time | **YES** | Numerical offset from UTC (e.g., -5). |
 | **biometric_enabled**| Bool | Security | **YES** | Toggle for FaceID/Fingerprint authentication. |
+| **tier** | Select | Monetization | **YES** | Subscription tier for server-side gating (e.g. AI parse routes). Allowed: `free`, `pro`. Default: `free`. |
 | **default_category_id** | String | Setting | NO | ID of the default category. |
 | **active_languages**| JSON | Setting | NO | Array/List of active languages. |
 | **data_region** | String | Setting | NO | Region for data storage preference. |
@@ -165,6 +167,8 @@ description: Revisions and corrections for DATA_MAP.md.
    * Use `PATCH /api/collections/profiles/records/{id}` for updating settings like `theme_mode`. Passwords and emails should use native PocketBase auth update endpoints.
 4. **Extensibility:**
    * Add new fields as new fields in the PocketBase collection dashboard. Existing API payloads won't break.
+5. **Monetization / AI:**
+   * **`tier`** MUST be enforced on the server for privileged routes (e.g. `POST /api/ai/parse-task`). Clients treat tier as read-only from the profile record.
 
 ## 5. Collection: `tags`
 **Business PK:** `tag_id` | **System PK (REST):** `id` (15-char String)
@@ -172,7 +176,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | Field (Column) | Type | Role | Required | Description / Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | **id** | String (15 chars) | **REST URL PK** | **YES** | System-generated index. REQUIRED for row URL. |
-| **tag_id** | Number | **Legacy** | **YES** | Primary key mapping for the tag (legacy/offline mapping). DO NOT USE FOR PB REST URL. |
+| **tag_id** | String (UUID) | **Data** | **YES** | Stable business identifier for the tag (same Iron Law family as `category_id` / `record_id` metadata). REST row URLs use system **`id` only**. |
 | **user_id** | Relation | **Owner** | **YES** | Relation to `profiles.id` (15-char). |
 | **name** | String | Data | **YES** | Display name of the tag (e.g., "Dinner", "#1"). |
 | **color** | String | UI | NO | Hex color code (e.g., "#FF0000"). |

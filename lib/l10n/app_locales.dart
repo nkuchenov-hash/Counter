@@ -4,6 +4,19 @@ import 'package:counter/l10n/dictionary.dart' as app_dictionary;
 
 const _nativeNameKey = 'locale_native_name';
 
+/// Endonyms for supported UI codes (avoids merged-English fallbacks from partial `l10n` bundles).
+const Map<String, String> kUiLanguageNativeDisplayNames = {
+  'en': 'English',
+  'ru': 'Русский',
+  'ar': 'العربية',
+  'de': 'Deutsch',
+  'es': 'Español',
+  'fr': 'Français',
+  'it': 'Italiano',
+  'ko': '한국어',
+  'zh': '中文',
+};
+
 /// Every language with a `l10n` entry under [app_dictionary.l10n]. Order is stable for pickers and tests.
 const List<String> kRegisteredUiLanguageCodes = <String>[
   'ar',
@@ -28,12 +41,16 @@ List<String> supportedUiLanguageCodes() {
   return List<String>.unmodifiable(kRegisteredUiLanguageCodes);
 }
 
-/// Display name from the locale's own dictionary entry (e.g. Русский for `ru`).
+/// Native display label for a UI language code (pickers, category hints).
 String nativeUiLanguageLabel(String code) {
-  final map = app_dictionary.l10n[code];
-  final n = map?[_nativeNameKey];
-  if (n != null && n.isNotEmpty) return n;
-  return code;
+  final n = normalizeUiLanguageCode(code);
+  if (n != null) {
+    final canonical = kUiLanguageNativeDisplayNames[n];
+    if (canonical != null) return canonical;
+  }
+  final fromDict = app_dictionary.l10n[code]?[_nativeNameKey];
+  if (fromDict != null && fromDict.isNotEmpty) return fromDict;
+  return n ?? code;
 }
 
 /// Material [Locale] list for [MaterialApp.supportedLocales] and intl formatting.

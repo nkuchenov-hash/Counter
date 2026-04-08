@@ -4089,7 +4089,15 @@ class DatabaseService {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
 
     final authId = _requireAuthUserIdForWrite();
-    _settings = s.copyWith(userId: authId);
+    final lang = resolvedUiLanguageCode(
+      s.primaryLanguage.trim().isNotEmpty ? s.primaryLanguage : s.language,
+    );
+    final coerced = s.copyWith(
+      primaryLanguage: lang,
+      language: lang,
+      activeLanguages: <String>[lang],
+    );
+    _settings = coerced.copyWith(userId: authId);
     _settingsController.add(_settings);
     _syncMaterialAppLocaleFromSettings(_settings);
     _notifyTimelineAfterRecordCacheMutation();
@@ -4098,7 +4106,7 @@ class DatabaseService {
       await ensurePocketBaseReady();
       final pbId = (_profilePbRecordId ?? _pb.authStore.record?.id)?.trim();
       if (pbId == null || pbId.isEmpty) return false;
-      final profileBody = ProfileUpdate.fromSettings(s).toJson();
+      final profileBody = ProfileUpdate.fromSettings(coerced).toJson();
       await _pb.collection(PbCollections.profiles).update(
             pbId,
             body: profileBody,
@@ -4113,9 +4121,9 @@ class DatabaseService {
       _log('Timezone synced to PocketBase.');
       try {
         final prefs = _prefs ?? await SharedPreferences.getInstance();
-        await prefs.setString(_profileThemeModeKey, s.themeMode);
-        await prefs.setString(_profileTzLabelKey, s.preferredTimeZone);
-        await prefs.setInt(_profileTzOffsetKey, s.timezoneOffsetHours);
+        await prefs.setString(_profileThemeModeKey, coerced.themeMode);
+        await prefs.setString(_profileTzLabelKey, coerced.preferredTimeZone);
+        await prefs.setInt(_profileTzOffsetKey, coerced.timezoneOffsetHours);
       } catch (_) {}
       return true;
     } on ClientException catch (e) {
@@ -5836,22 +5844,6 @@ class DatabaseService {
     }
 
     visit(_rules);
-  }
-
-  Future<void> addLanguageToAllCategories(String langCode) async {
-    Future<void> walk(CategoryRule r) async {
-      final kw = Map<String, List<String>>.from(r.keywords ?? {});
-      kw.putIfAbsent(langCode, () => [r.name]);
-      await updateCategoryKeywords(r.id, kw);
-      for (final c in r.children ?? []) {
-        await walk(c);
-      }
-    }
-
-    for (final root in _rules) {
-      await walk(root);
-    }
-    await _loadRulesFromNoco();
   }
 
   Future<String?> translateKeyword(String text,

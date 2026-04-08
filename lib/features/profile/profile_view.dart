@@ -155,7 +155,6 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late String _language;
   late String _timeZone;
-  late List<String> _activeLanguages;
   late String _themeMode;
   late final TextEditingController _displayNameController;
   late final FocusNode _displayNameFocus;
@@ -176,7 +175,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final s = DatabaseService.instance.settings;
     _language = resolvedUiLanguageCode(s.language);
     _timeZone = s.preferredTimeZone;
-    _activeLanguages = List.from(s.effectiveActiveLanguages);
     _themeMode = s.themeMode;
     _lastSavedDisplayName = s.displayName?.trim() ?? '';
     _displayNameController =
@@ -342,32 +340,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _addLanguage(String langCode) async {
-    if (_activeLanguages.contains(langCode)) return;
-    setState(() => _activeLanguages = [..._activeLanguages, langCode]);
-    try {
-      await DatabaseService.instance.addLanguageToAllCategories(langCode);
-      final ok = await DatabaseService.instance.saveSettings(
-        DatabaseService.instance.settings.copyWith(activeLanguages: _activeLanguages),
-      );
-      if (mounted && ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              t(currentLocale.value, 'added_language_categories')
-                  .replaceFirst('%s', langCode),
-            ),
-          ),
-        );
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _activeLanguages =
-            List.from(DatabaseService.instance.settings.effectiveActiveLanguages));
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final validTimezones = tz_settings.kTimezoneOptions.map((e) => e.label).toList();
@@ -496,62 +468,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            t(locale, 'active_primary')
-                .replaceFirst('%s', _activeLanguages.join(', '))
-                .replaceFirst(
-                  '%s',
-                  DatabaseService.instance.settings.primaryLanguage,
-                ),
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-          ),
-          Builder(
-            builder: (context) {
-              final addable = supportedUiLanguageCodes()
-                  .where((c) => !_activeLanguages.contains(c))
-                  .toList();
-              if (addable.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    t(locale, 'all_supported_languages_active'),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant),
-                  ),
-                );
-              }
-              return Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: DropdownButtonFormField<String?>(
-                  key: ValueKey<String>('add_lang_${addable.join()}'),
-                  initialValue: null,
-                  decoration: InputDecoration(
-                    labelText: t(locale, 'add_active_language'),
-                    border: const OutlineInputBorder(),
-                  ),
-                  items: [
-                    for (final code in addable)
-                      DropdownMenuItem<String?>(
-                        value: code,
-                        child: Text(nativeUiLanguageLabel(code)),
-                      ),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) unawaited(_addLanguage(v));
-                  },
-                ),
-              );
-            },
           ),
           const Divider(),
           Row(

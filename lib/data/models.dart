@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' show max;
 
+import 'package:counter/l10n/app_locales.dart';
 import 'package:flutter/material.dart';
 
 /// How profile categories/tags render in Timeline & Planning (`profiles.tag_display_mode`).
@@ -1294,6 +1295,9 @@ class ProfileUpdate {
         'timezone_offset': timezoneOffsetHours,
         'theme_mode': themeMode,
         'primary_language': primaryLanguage,
+        'active_languages': <String>[
+          resolvedUiLanguageCode(primaryLanguage),
+        ],
         'tag_display_mode': tagDisplayMode,
         if (displayName != null && displayName!.trim().isNotEmpty)
           'display_name': displayName!.trim(),
@@ -1338,7 +1342,12 @@ class UserSettings {
   /// Exact string last read from PocketBase for [tagDisplayMode] (Select option spelling).
   final String? tagDisplayModeWireRaw;
 
-  List<String> get effectiveActiveLanguages => activeLanguages ?? ['en', 'ru'];
+  /// Single UI language: derived from [primaryLanguage] / [language] (multi-active UI removed).
+  List<String> get effectiveActiveLanguages => <String>[
+        resolvedUiLanguageCode(
+          primaryLanguage.trim().isNotEmpty ? primaryLanguage : language,
+        ),
+      ];
 
   Map<String, dynamic> toJson() => <String, dynamic>{
         'user_id': userId,

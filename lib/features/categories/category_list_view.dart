@@ -5,7 +5,6 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
-import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -561,158 +560,6 @@ class CategoryRowWidget extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(left: depth * _kStaggerIndentPerDepth),
       child: inner,
-    );
-  }
-}
-
-/// Modal bottom sheet to manage activeLanguages and primaryLanguage (UserSettings).
-class _CategoryLanguageSettingsSheet extends StatefulWidget {
-  const _CategoryLanguageSettingsSheet({required this.onSaved});
-  final VoidCallback onSaved;
-
-  @override
-  State<_CategoryLanguageSettingsSheet> createState() => _CategoryLanguageSettingsSheetState();
-}
-
-class _CategoryLanguageSettingsSheetState extends State<_CategoryLanguageSettingsSheet> {
-  late List<String> _activeLanguages;
-  late String _primaryLanguage;
-
-  @override
-  void initState() {
-    super.initState();
-    final s = DatabaseService.instance.settings;
-    _activeLanguages = List<String>.from(s.effectiveActiveLanguages);
-    _primaryLanguage = resolvedUiLanguageCode(s.primaryLanguage);
-  }
-
-  Future<void> _save() async {
-    await DatabaseService.instance.saveSettings(
-      DatabaseService.instance.settings.copyWith(
-        activeLanguages: _activeLanguages,
-        primaryLanguage: _primaryLanguage,
-      ),
-    );
-    widget.onSaved();
-  }
-
-  Future<void> _addLanguage(String langCode) async {
-    if (_activeLanguages.contains(langCode)) return;
-    setState(() => _activeLanguages = [..._activeLanguages, langCode]);
-    try {
-      await DatabaseService.instance.addLanguageToAllCategories(langCode);
-      await _save();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'added_language_categories').replaceFirst('%s', langCode))),
-        );
-      }
-    } catch (_) {
-      if (mounted) setState(() => _activeLanguages = List.from(DatabaseService.instance.settings.effectiveActiveLanguages));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(t(currentLocale.value, 'tagging_languages'), style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              t(currentLocale.value, 'active_languages_hint'),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: Text(t(currentLocale.value, 'primary_language')),
-              subtitle: Text(nativeUiLanguageLabel(_primaryLanguage)),
-              trailing: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 200),
-                child: DropdownButtonFormField<String>(
-                  key: ValueKey<String>(_primaryLanguage),
-                  initialValue: _primaryLanguage,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  ),
-                  items: [
-                    for (final code in supportedUiLanguageCodes())
-                      DropdownMenuItem<String>(
-                        value: code,
-                        child: Text(nativeUiLanguageLabel(code)),
-                      ),
-                  ],
-                  onChanged: (String? v) {
-                    if (v == null) return;
-                    setState(() => _primaryLanguage = v);
-                    unawaited(_save());
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              title: Text(t(currentLocale.value, 'active_languages')),
-              subtitle: Text(_activeLanguages.join(', ')),
-            ),
-            Builder(
-              builder: (context) {
-                final addable = supportedUiLanguageCodes()
-                    .where((c) => !_activeLanguages.contains(c))
-                    .toList();
-                if (addable.isEmpty) {
-                  return Text(
-                    t(currentLocale.value, 'all_supported_languages_active'),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant),
-                  );
-                }
-                return DropdownButtonFormField<String?>(
-                  key: ValueKey<String>('cat_add_lang_${addable.join()}'),
-                  initialValue: null,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText:
-                        t(currentLocale.value, 'add_active_language'),
-                    border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                  ),
-                  items: [
-                    for (final code in addable)
-                      DropdownMenuItem<String?>(
-                        value: code,
-                        child: Text(nativeUiLanguageLabel(code)),
-                      ),
-                  ],
-                  onChanged: (v) {
-                    if (v != null) unawaited(_addLanguage(v));
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(t(currentLocale.value, 'done')),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -1715,17 +1562,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
   }
 
-  void _showLanguageSettingsSheet(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) => _CategoryLanguageSettingsSheet(
-        onSaved: () {},
-      ),
-    );
-  }
-
   Future<void> _addRule() async {
     await _showAddCategoryDialog(parentId: null);
   }
@@ -1796,11 +1632,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
                 : t(loc, 'switch_to_scrollable'),
             onPressed: () => setState(
                 () => _useHorizontalScrollLayout = !_useHorizontalScrollLayout),
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_rounded),
-            tooltip: t(loc, 'languages_tagging'),
-            onPressed: () => _showLanguageSettingsSheet(context),
           ),
           IconButton(
             tooltip: t(loc, 'add_category'),
