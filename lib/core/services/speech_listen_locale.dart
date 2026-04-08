@@ -49,6 +49,34 @@ abstract final class SpeechListenLocale {
   /// Call sites pass the resolved primary code for a stable API; the UI hides the toggle when primary is `en`.
   static String speechSttAlternateUiCode(String _) => 'en';
 
+  /// Web Speech API `lang` (BCP-47, hyphens). **Does not** call [SpeechToText.locales] —
+  /// use on **web** when the plugin reports an empty locale list so [listen] still gets a valid tag.
+  static String webListenLocaleIdBcp47(String speechUiCode) {
+    final p = _primaryLanguageCode(speechUiCode);
+    switch (p) {
+      case 'en':
+        return 'en-US';
+      case 'ru':
+        return 'ru-RU';
+      case 'de':
+        return 'de-DE';
+      case 'es':
+        return 'es-ES';
+      case 'fr':
+        return 'fr-FR';
+      case 'it':
+        return 'it-IT';
+      case 'ar':
+        return 'ar-SA';
+      case 'ko':
+        return 'ko-KR';
+      case 'zh':
+        return 'zh-CN';
+      default:
+        return p;
+    }
+  }
+
   static String _normalizeLocaleToken(String id) =>
       id.replaceAll('-', '_').toLowerCase();
 

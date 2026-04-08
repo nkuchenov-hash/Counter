@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/core/services/speech_listen_locale.dart';
+import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -393,11 +394,13 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
 
     _prepareActiveBrickForNewSession();
 
-    final String? listenLocaleId =
-        await SpeechListenLocale.resolveListenLocaleId(
-      speech: _speech,
-      speechUiCode: loc,
-    );
+    final resolvedSpeechUi = resolvedUiLanguageCode(loc);
+    final String? listenLocaleId = kIsWeb
+        ? SpeechListenLocale.webListenLocaleIdBcp47(resolvedSpeechUi)
+        : await SpeechListenLocale.resolveListenLocaleId(
+            speech: _speech,
+            speechUiCode: resolvedSpeechUi,
+          );
     if (!mounted) return;
     await _runSpeechListen(localeId: listenLocaleId);
   }

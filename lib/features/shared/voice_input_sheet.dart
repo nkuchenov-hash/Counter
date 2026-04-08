@@ -65,12 +65,22 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     voice_audio.playTone(freq: freq, duration: duration);
   }
 
+  void _onAppLocaleChanged() {
+    if (!mounted) return;
+    _coerceSpeechUiCodeToPrimaryOrEnglish(
+      resolvedUiLanguageCode(currentLocale.value),
+    );
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
+    currentLocale.addListener(_onAppLocaleChanged);
     _textController.clear();
     _statusText = t(currentLocale.value, 'voice_input');
     _speechUiCode = resolvedUiLanguageCode(currentLocale.value);
+    _coerceSpeechUiCodeToPrimaryOrEnglish(_speechUiCode);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -99,6 +109,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
   @override
   void dispose() {
+    currentLocale.removeListener(_onAppLocaleChanged);
     widget.speech.stop();
     widget.speech.cancel();
     _textController.dispose();
@@ -299,10 +310,12 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       }
     }
 
-    final chosen = await SpeechListenLocale.resolveListenLocaleId(
-      speech: widget.speech,
-      speechUiCode: _speechUiCode,
-    );
+    final String? chosen = kIsWeb
+        ? SpeechListenLocale.webListenLocaleIdBcp47(_speechUiCode)
+        : await SpeechListenLocale.resolveListenLocaleId(
+            speech: widget.speech,
+            speechUiCode: _speechUiCode,
+          );
     if (kDebugMode) {
       debugPrint(
         '[STT] speech.listen speechUi=$_speechUiCode localeId=$chosen web=$kIsWeb',
@@ -495,73 +508,84 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
               ),
             ],
           ),
-          if (resolvedUiLanguageCode(currentLocale.value) != 'en') ...[
-            const SizedBox(height: 8),
-            Builder(
-              builder: (context) {
-                final appUi = resolvedUiLanguageCode(currentLocale.value);
-                final segPrimary = appUi;
-                const segEn = 'en';
-                final scheme = Theme.of(context).colorScheme;
-                return Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Tooltip(
-                    message:
-                        '${nativeUiLanguageLabel(segPrimary)} · ${nativeUiLanguageLabel(segEn)}',
-                    child: Material(
-                      color: scheme.surfaceContainerHighest.withValues(alpha: 0.9),
-                      borderRadius: BorderRadius.circular(22),
-                      child: Padding(
-                        padding: const EdgeInsets.all(3),
-                        child: SegmentedButton<String>(
-                          showSelectedIcon: false,
-                          style: SegmentedButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
+          ValueListenableBuilder<String>(
+            valueListenable: currentLocale,
+            builder: (context, appLangRaw, __) {
+              final appPrimary = resolvedUiLanguageCode(appLangRaw);
+              final showSttLangToggle = appPrimary != 'en';
+              if (!showSttLangToggle) {
+                return const SizedBox(height: 10);
+              }
+              const segEn = 'en';
+              final scheme = Theme.of(context).colorScheme;
+              final primaryLabel =
+                  kUiLanguageNativeDisplayNames[appPrimary] ?? appPrimary.toUpperCase();
+              final englishLabel =
+                  kUiLanguageNativeDisplayNames[segEn] ?? segEn.toUpperCase();
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Tooltip(
+                      message: '$primaryLabel · $englishLabel',
+                      child: Material(
+                        color:
+                            scheme.surfaceContainerHighest.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(22),
+                        child: Padding(
+                          padding: const EdgeInsets.all(3),
+                          child: SegmentedButton<String>(
+                            showSelectedIcon: false,
+                            style: SegmentedButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              side: BorderSide.none,
+                              backgroundColor: Colors.transparent,
                             ),
-                            side: BorderSide.none,
-                            backgroundColor: Colors.transparent,
+                            segments: [
+                              ButtonSegment<String>(
+                                value: appPrimary,
+                                label: Text(
+                                  appPrimary.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                              ),
+                              ButtonSegment<String>(
+                                value: segEn,
+                                label: Text(
+                                  segEn.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            selected: {_speechUiCode},
+                            onSelectionChanged: (set) {
+                              if (set.isEmpty) return;
+                              unawaited(_onSpeechSttLocaleSelected(set.first));
+                            },
                           ),
-                          segments: [
-                            ButtonSegment<String>(
-                              value: segPrimary,
-                              label: Text(
-                                segPrimary.toUpperCase(),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.6,
-                                ),
-                              ),
-                            ),
-                            ButtonSegment<String>(
-                              value: segEn,
-                              label: Text(
-                                segEn.toUpperCase(),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.6,
-                                ),
-                              ),
-                            ),
-                          ],
-                          selected: {_speechUiCode},
-                          onSelectionChanged: (set) {
-                            if (set.isEmpty) return;
-                            unawaited(_onSpeechSttLocaleSelected(set.first));
-                          },
                         ),
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-          ] else
-            const SizedBox(height: 10),
+                  const SizedBox(height: 10),
+                ],
+              );
+            },
+          ),
           TextField(
             controller: _textController,
             maxLines: 3,
