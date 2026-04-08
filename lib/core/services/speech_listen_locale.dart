@@ -1,4 +1,4 @@
-import 'dart:ui' show Locale, PlatformDispatcher;
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -22,11 +22,9 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 /// [resolveListenLocaleId] falls back to [SpeechToText.systemLocale] then the
 /// process [PlatformDispatcher] locale (see implementation).
 ///
-/// **Web:** the Web Speech `lang` attribute expects **BCP-47 with hyphens**
-/// (e.g. `ru-RU`). Underscore ids from the plugin (e.g. `ru_RU`) often trigger
-/// `language-not-supported`. The **first** [listen] uses an explicit hyphen tag
-/// derived from the app UI locale and [Locale.toLanguageTag]; reactive retry
-/// with `localeId: null` stays in the widgets.
+/// **Web:** [listen] MUST use stable hyphen BCP-47 tags from [webListenLocaleIdBcp47]
+/// (`ru-RU`, `en-US`, …). Do not use short subtags or [PlatformDispatcher] sniffing
+/// for locale selection — Chrome empty `locales` and cloud STT need explicit tags.
 abstract final class SpeechListenLocale {
   static bool messageIndicatesLanguageUnsupported(String raw) {
     final msg = raw.toLowerCase().trim();
@@ -80,82 +78,6 @@ abstract final class SpeechListenLocale {
   static String _normalizeLocaleToken(String id) =>
       id.replaceAll('-', '_').toLowerCase();
 
-  static String _toBcp47Hyphens(String raw) {
-    final t = raw.trim();
-    if (t.isEmpty) {
-      return t;
-    }
-    return t.replaceAll('_', '-');
-  }
-
-  /// UI locale code → [Locale] with a typical region for STT (hyphen tag via
-  /// [Locale.toLanguageTag]).
-  static Locale _localeForAppUi(String appLoc) {
-    final primary = _primaryLanguageCode(appLoc);
-    switch (primary) {
-      case 'ru':
-        return const Locale('ru', 'RU');
-      case 'en':
-        return const Locale('en', 'US');
-      case 'fr':
-        return const Locale('fr', 'FR');
-      case 'de':
-        return const Locale('de', 'DE');
-      case 'es':
-        return const Locale('es', 'ES');
-      case 'it':
-        return const Locale('it', 'IT');
-      case 'ar':
-        return const Locale('ar');
-      case 'ko':
-        return const Locale('ko', 'KR');
-      case 'zh':
-        return const Locale('zh', 'CN');
-      case 'ja':
-        return const Locale('ja', 'JP');
-      case 'pt':
-        return const Locale('pt', 'BR');
-      case 'hi':
-        return const Locale('hi', 'IN');
-      case 'pl':
-        return const Locale('pl', 'PL');
-      case 'tr':
-        return const Locale('tr', 'TR');
-      case 'uk':
-        return const Locale('uk', 'UA');
-      case 'nl':
-        return const Locale('nl', 'NL');
-      case 'vi':
-        return const Locale('vi', 'VN');
-      case 'th':
-        return const Locale('th', 'TH');
-      case 'id':
-        return const Locale('id', 'ID');
-      case 'he':
-        return const Locale('he', 'IL');
-      case 'el':
-        return const Locale('el', 'GR');
-      case 'cs':
-        return const Locale('cs', 'CZ');
-      case 'sv':
-        return const Locale('sv', 'SE');
-      case 'da':
-        return const Locale('da', 'DK');
-      case 'fi':
-        return const Locale('fi', 'FI');
-      case 'nb':
-        return const Locale('nb', 'NO');
-      case 'ro':
-        return const Locale('ro', 'RO');
-      case 'hu':
-        return const Locale('hu', 'HU');
-      case 'ms':
-        return const Locale('ms', 'MY');
-      default:
-        return Locale(primary);
-    }
-  }
-
   static String? _findBestLocaleIdForLanguage(
     List<stt.LocaleName> available,
     String appPrimary,
@@ -181,40 +103,18 @@ abstract final class SpeechListenLocale {
     return _findBestLocaleIdForLanguage(available, appPrimary) != null;
   }
 
-  static String? _resolveWebExplicitTag({
-    required List<stt.LocaleName> available,
-    required String appLoc,
-    required String appPrimary,
-    required String platformTag,
-  }) {
-    final fromList = _findBestLocaleIdForLanguage(available, appPrimary);
-    if (fromList != null) {
-      return _toBcp47Hyphens(fromList);
-    }
-    final uiTag = _localeForAppUi(appLoc).toLanguageTag();
-    if (uiTag.isNotEmpty) {
-      return _toBcp47Hyphens(uiTag);
-    }
-    if (platformTag.isNotEmpty) {
-      return _toBcp47Hyphens(platformTag);
-    }
-    return null;
-  }
-
   /// First-attempt locale for [listen].
   ///
   /// [speechUiCode] is the **speech session** language (may differ from app UI via toggle).
   ///
-  /// On **web**, when [webPreferLooseLanguageTag] is true (default), returns a short
-  /// BCP-47 primary subtag only (e.g. `en`, `ru`) so Chrome’s Web Speech API can favor
-  /// cloud models with broader code-mixing; set false to force a full regional tag from
-  /// [locales] / [Locale.toLanguageTag] when needed.
+  /// On **web**, always returns [webListenLocaleIdBcp47] — same stable hyphen tags as
+  /// `VoiceInputSheet` (e.g. `en-US`, `ru-RU`). No `PlatformDispatcher` or unknown-locale
+  /// branching here.
   ///
   /// On **mobile/desktop**, uses engine [locales] / [systemLocale] ids (often underscores).
   static Future<String?> resolveListenLocaleId({
     required stt.SpeechToText speech,
     required String speechUiCode,
-    bool webPreferLooseLanguageTag = true,
   }) async {
     final available = await speech.locales();
     final systemLc = await speech.systemLocale();
@@ -223,15 +123,7 @@ abstract final class SpeechListenLocale {
     final appPrimary = _primaryLanguageCode(speechUiCode);
 
     if (kIsWeb) {
-      if (webPreferLooseLanguageTag && appPrimary.isNotEmpty) {
-        return appPrimary;
-      }
-      return _resolveWebExplicitTag(
-        available: available,
-        appLoc: speechUiCode,
-        appPrimary: appPrimary,
-        platformTag: platformTag,
-      );
+      return webListenLocaleIdBcp47(speechUiCode);
     }
 
     if (available.isNotEmpty) {

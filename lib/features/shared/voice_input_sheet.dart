@@ -128,7 +128,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       onSoundLevelChange: (level) => _soundLevel.value = level,
       localeId: localeId,
       listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 15),
+      pauseFor: const Duration(seconds: 20),
       listenOptions: stt.SpeechListenOptions(
         listenMode: stt.ListenMode.dictation,
         partialResults: true,

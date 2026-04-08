@@ -193,7 +193,17 @@ abstract final class SmartInputParser {
       s = s.replaceAll(pair.$1, pair.$2);
     }
     s = s.replaceAllMapped(
-      RegExp(r'\bв\s+([01]?\d|2[0-3])\s+час(?:а|ов)?\b', caseSensitive: false),
+      RegExp(
+        r'(?:^|[\s\u00A0])в\s+([01]?\d|2[0-3])(?:\s+(?:часов|часа|час|минут|мин))?(?=\s|$|[,.;:!?)])',
+        caseSensitive: false,
+      ),
+      (m) => ' ${m[1]}:00 ',
+    );
+    s = s.replaceAllMapped(
+      RegExp(
+        r'(?:^|[\s\u00A0])at\s+([01]?\d|2[0-3])(?:\s+(?:hours?|mins?|[hm]))?(?=\s|$|[,.;:!?)])',
+        caseSensitive: false,
+      ),
       (m) => ' ${m[1]}:00 ',
     );
     s = sanitizeSttTimeArtifacts(s);
@@ -227,8 +237,12 @@ abstract final class SmartInputParser {
 
   /// `at` / `@` / **в** / **на** only after start or whitespace (no splitting Cyrillic words on `в` mid-token).
   /// Allows **space** before minutes for STT (`в 9 00`); group 2 = `:`/`.` minutes, group 3 = spaced minutes.
+  /// Optional trailing time units only immediately after the `at`/`в`/… hour (or hour+minute) token.
   static final RegExp _atWordTime = RegExp(
-    r'(?:^|[\s\u00A0])(?:at|@|в|на)\s*([01]?\d|2[0-3])(?:(?::|\.)([0-5]?\d)|\s+([0-5]?\d))?(?=\s|$)',
+    r'(?:^|[\s\u00A0])(?:at|@|в|на)\s*([01]?\d|2[0-3])'
+    r'(?:(?::|\.)([0-5]?\d)|\s+([0-5]?\d))?'
+    r'(?:\s+(?:часов|часа|час|минут|мин|hours?|mins?|[hm]))?'
+    r'(?=\s|$|[,.;:!?)])',
     caseSensitive: false,
   );
 
