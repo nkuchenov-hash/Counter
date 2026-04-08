@@ -9,6 +9,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class VoiceInputSheet extends StatefulWidget {
@@ -49,6 +50,26 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   late String _speechUiCode;
   /// When switching locale mid-listen, new session partials are shown after this prefix.
   String? _transcriptPrefixForSttSession;
+  /// Web + English only: finalized segments from the engine (see [_onSpeechResult]).
+  String _finalizedSttText = '';
+  /// Web + English only: latest partial hypothesis for the current utterance.
+  String _partialSttText = '';
+
+  bool get _webEnglishAccumStt => kIsWeb && _speechUiCode == 'en';
+
+  static String _collapseWs(String s) =>
+      s.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+  String _composeWebEnDisplay() =>
+      _collapseWs('$_finalizedSttText $_partialSttText'.trim());
+
+  void _flushPartialSttIntoFinalized() {
+    if (!_webEnglishAccumStt) return;
+    final p = _partialSttText.trim();
+    if (p.isEmpty) return;
+    _finalizedSttText = _collapseWs('$_finalizedSttText $p');
+    _partialSttText = '';
+  }
 
   bool _isNetworkSttMessage(String raw) {
     final msg = raw.toLowerCase();
@@ -91,13 +112,35 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     unawaited(_start());
   }
 
-  void _onSpeechResult(dynamic res) {
+  void _onSpeechResult(SpeechRecognitionResult res) {
     if (!mounted || _isSaving) return;
     final raw = res.recognizedWords;
-    var w = raw == null ? '' : raw.toString();
+    var w = raw.trim();
+
+    if (kDebugMode && _webEnglishAccumStt) {
+      debugPrint(
+        '[STT EN web] final=${res.finalResult} words="${res.recognizedWords}"',
+      );
+    }
+
+    if (_webEnglishAccumStt) {
+      if (res.finalResult) {
+        if (w.isNotEmpty) {
+          _finalizedSttText = _collapseWs('$_finalizedSttText $w');
+        }
+        _partialSttText = '';
+      } else {
+        _partialSttText = res.recognizedWords;
+      }
+      final display = _composeWebEnDisplay();
+      if (display.isNotEmpty) _lastVoiceRecognized = display;
+      _textController.text = display;
+      return;
+    }
+
     final pfx = _transcriptPrefixForSttSession;
     if (pfx != null && pfx.trim().isNotEmpty) {
-      if (w.trim().isNotEmpty) {
+      if (w.isNotEmpty) {
         w = '${pfx.trim()} $w';
       } else {
         w = pfx.trim();
@@ -130,6 +173,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 20),
       listenOptions: stt.SpeechListenOptions(
+        // English (and RU): dictation — do not use confirmation mode (short-phrase bias).
         listenMode: stt.ListenMode.dictation,
         partialResults: true,
         cancelOnError: false,
@@ -162,6 +206,8 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     });
     _lastVoiceRecognized = '';
     _transcriptPrefixForSttSession = null;
+    _finalizedSttText = '';
+    _partialSttText = '';
     widget.onListeningChanged?.call(false);
     _playTone(freq: 660, duration: 0.1);
     await Future.delayed(const Duration(milliseconds: 50));
@@ -283,6 +329,14 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       if (status == 'done' || status == 'notListening') {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
+          if (_webEnglishAccumStt) {
+            _flushPartialSttIntoFinalized();
+            final d = _composeWebEnDisplay();
+            if (d.isNotEmpty) {
+              _lastVoiceRecognized = d;
+              _textController.text = d;
+            }
+          }
           setState(() {
             _isPulsing = false;
             _isListening = false;
@@ -310,8 +364,18 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       }
     }
 
+    if (_webEnglishAccumStt) {
+      final pfx = _transcriptPrefixForSttSession?.trim();
+      _finalizedSttText = (pfx != null && pfx.isNotEmpty) ? pfx : '';
+      _partialSttText = '';
+      _transcriptPrefixForSttSession = null;
+    } else {
+      _finalizedSttText = '';
+      _partialSttText = '';
+    }
+
     final String? chosen = kIsWeb
-        ? SpeechListenLocale.webListenLocaleIdBcp47(_speechUiCode)
+        ? SpeechListenLocale.webVoiceListenLocaleId(_speechUiCode)
         : await SpeechListenLocale.resolveListenLocaleId(
             speech: widget.speech,
             speechUiCode: _speechUiCode,
@@ -408,6 +472,14 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
   Future<void> _stop() async {
     _transcriptPrefixForSttSession = null;
+    if (_webEnglishAccumStt) {
+      _flushPartialSttIntoFinalized();
+      final d = _composeWebEnDisplay();
+      if (d.isNotEmpty) {
+        _textController.text = d;
+        _lastVoiceRecognized = d;
+      }
+    }
     await widget.speech.stop();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
