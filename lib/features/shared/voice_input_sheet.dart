@@ -58,6 +58,11 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   /// Web + English only: latest partial hypothesis for the current utterance.
   String _partialSttText = '';
 
+  /// Last [listen] [localeId] used for this attach (Web network relisten).
+  String? _lastListenLocaleId;
+  bool _heardListeningThisSession = false;
+  bool _webNetworkSilentRelistenConsumed = false;
+
   bool get _webEnglishAccumStt => kIsWeb && _speechUiCode == 'en';
 
   stt.SpeechToText get _engine => widget.speechHandle.speech;
@@ -85,6 +90,25 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       return true;
     }
     return msg.contains('failed to fetch') || msg.contains('net::err');
+  }
+
+  /// [SpeechToText.onSoundLevelChange] uses **dB**: Android positive RMS, iOS negative [avgPower].
+  static const double _soundUiDeadZoneDbPositive = 5.0;
+  static const double _soundUiCeilDbPositive = 22.0;
+  static const double _soundUiDeadZoneDbNegative = -48.0;
+  static const double _soundUiCeilDbNegative = -15.0;
+
+  /// Maps raw dB to [0,1] for UI; below floor → **0** (no “ghost” stripe / pulse).
+  double _normalizeSoundLevelForUi(double rawDb) {
+    if (rawDb.isNaN || rawDb.isInfinite) return 0.0;
+    if (rawDb < 0) {
+      if (rawDb <= _soundUiDeadZoneDbNegative) return 0.0;
+      final span = _soundUiCeilDbNegative - _soundUiDeadZoneDbNegative;
+      return ((rawDb - _soundUiDeadZoneDbNegative) / span).clamp(0.0, 1.0);
+    }
+    if (rawDb < _soundUiDeadZoneDbPositive) return 0.0;
+    final span = _soundUiCeilDbPositive - _soundUiDeadZoneDbPositive;
+    return ((rawDb - _soundUiDeadZoneDbPositive) / span).clamp(0.0, 1.0);
   }
 
   /// Web Speech / plugin: empty audio or timeout — engine needs [stop] + fresh [initialize].
@@ -125,6 +149,36 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       } catch (e, st) {
         debugPrint('[STT sheet] re-init (same instance) failed: $e\n$st');
       }
+    }
+  }
+
+  Future<void> _silentNetworkRelisten(String loc) async {
+    try {
+      await _engine.stop();
+    } catch (_) {}
+    try {
+      await _engine.cancel();
+    } catch (_) {}
+    if (!mounted) return;
+    final localeId = _lastListenLocaleId;
+    try {
+      await _runSpeechListen(localeId);
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[STT] silent network relisten failed: $e\n$st');
+      }
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _error = t(loc, 'speech_error_network_soft');
+          _softErrorVisual = true;
+          _hadErrorInSession = true;
+          _isPulsing = false;
+          _isListening = false;
+        });
+        widget.onListeningChanged?.call(false);
+      });
     }
   }
 
@@ -217,7 +271,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     await _engine.listen(
       onResult: _onSpeechResult,
       onSoundLevelChange: (level) {
-        _soundLevel.value = level;
+        _soundLevel.value = _normalizeSoundLevelForUi(level);
       },
       localeId: localeId,
       listenFor: const Duration(seconds: 30),
@@ -258,6 +312,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     _transcriptPrefixForSttSession = null;
     _finalizedSttText = '';
     _partialSttText = '';
+    _soundLevel.value = 0.0;
     widget.onListeningChanged?.call(false);
     _playTone(freq: 660, duration: 0.1);
     await Future.delayed(const Duration(milliseconds: 50));
@@ -303,27 +358,18 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     }
     if (!mounted) return;
 
-    if (kIsWeb && _engine.isAvailable) {
-      await Future.delayed(const Duration(milliseconds: 120));
-      if (!mounted) return;
-      await SpeechListenLocale.warmUpWebLocalesForDebug(_engine);
-      if (!mounted) return;
-    }
-
     await _attachStatusAndListen(loc: loc);
   }
 
   Future<void> _attachStatusAndListen({required String loc}) async {
     _coerceSpeechUiCodeToPrimaryOrEnglish(resolvedUiLanguageCode(loc));
+    _heardListeningThisSession = false;
+    _webNetworkSilentRelistenConsumed = false;
+    _soundLevel.value = 0.0;
     widget.setSpeechStatusCallback((status) {
       if (status.startsWith('error:')) {
         final msg = status.replaceFirst('error:', '').trim();
         final isNetwork = _isNetworkSttMessage(msg);
-        final wantsHardReset =
-            _messageIndicatesNoSpeech(msg) || isNetwork;
-        if (wantsHardReset) {
-          unawaited(_performSpeechEngineHardReset());
-        }
         final hasTranscript = _textController.text.trim().isNotEmpty ||
             _lastVoiceRecognized.trim().isNotEmpty;
         if (kIsWeb && isNetwork && hasTranscript) {
@@ -347,6 +393,28 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
             });
             widget.onListeningChanged?.call(false);
           });
+          return;
+        }
+        if (kIsWeb &&
+            isNetwork &&
+            !_webNetworkSilentRelistenConsumed &&
+            _heardListeningThisSession) {
+          _webNetworkSilentRelistenConsumed = true;
+          unawaited(_silentNetworkRelisten(loc));
+          return;
+        }
+        if (_messageIndicatesNoSpeech(msg)) {
+          unawaited(_performSpeechEngineHardReset());
+        }
+        if (SpeechListenLocale.messageIndicatesLanguageUnsupported(msg) &&
+            kIsWeb &&
+            _speechUiCode == 'en') {
+          if (kDebugMode) {
+            debugPrint(
+              '[STT] web EN: ignoring language-not-supported ($msg); '
+              '[SpeechListenLocale.webEnglishForcedLocaleId] stays forced',
+            );
+          }
           return;
         }
         final String displayMsg;
@@ -378,6 +446,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
         return;
       }
       if (status == 'listening') {
+        _heardListeningThisSession = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           setState(() {
@@ -449,11 +518,13 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     }
 
     try {
+      _lastListenLocaleId = chosen;
       var ok = await attemptListen(chosen);
       if (!ok && chosen != null) {
         if (kDebugMode) {
           debugPrint('[STT listen] retry localeId=null (device default)');
         }
+        _lastListenLocaleId = null;
         ok = await attemptListen(null);
         if (ok && mounted) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -470,6 +541,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       }
       if (!ok && !kIsWeb) {
         try {
+          _lastListenLocaleId = 'en_US';
           ok = await attemptListen('en_US');
           if (ok && mounted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -566,8 +638,12 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
           builder: (context, level, _) {
             final listening = _isListening && _isPulsing;
             final v = level.clamp(0.0, 1.0);
-            final pulse = listening ? _pulseAnimation.value : 0.0;
-            final borderW = listening ? 1.2 + 2.8 * v + 0.6 * pulse : 1.0;
+            final hasSignal = v > 0.001;
+            final pulse =
+                listening && hasSignal ? _pulseAnimation.value : 0.0;
+            final borderW = listening
+                ? 1.2 + 2.8 * v + (hasSignal ? 0.6 * pulse : 0.0)
+                : 1.0;
             final borderColor = listening
                 ? Color.lerp(
                     scheme.outline.withValues(alpha: 0.45),
@@ -617,7 +693,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
                     child: SizedBox(
                       height: 4,
                       child: LinearProgressIndicator(
-                        value: v < 0.02 ? null : v,
+                        value: listening ? v : 0.0,
                         backgroundColor:
                             scheme.surfaceContainerHighest.withValues(alpha: 0.9),
                         color: scheme.primary,
@@ -660,10 +736,17 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
                     valueListenable: _soundLevel,
                     builder: (context, level, _) {
                       final levelClamped = level.clamp(0.0, 1.0);
-                      final pulse =
-                          _isListening && _isPulsing ? 0.15 * _pulseAnimation.value : 0.0;
-                      final soundScale =
-                          _isListening && _isPulsing ? levelClamped * 0.35 : 0.0;
+                      final hasSignal = levelClamped > 0.001;
+                      final pulse = _isListening &&
+                              _isPulsing &&
+                              hasSignal
+                          ? 0.15 * _pulseAnimation.value
+                          : 0.0;
+                      final soundScale = _isListening &&
+                              _isPulsing &&
+                              hasSignal
+                          ? levelClamped * 0.35
+                          : 0.0;
                       final scale = 1.0 + pulse + soundScale;
                       final scheme = Theme.of(context).colorScheme;
                       return Transform.scale(

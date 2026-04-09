@@ -49,13 +49,17 @@ abstract final class SpeechListenLocale {
   /// Call sites pass the resolved primary code for a stable API; the UI hides the toggle when primary is `en`.
   static String speechSttAlternateUiCode(String _) => 'en';
 
+  /// Hard **en-US** tag for Web English sessions: never consult [SpeechToText.locales]; Chrome
+  /// may omit `en` in the synthetic list while still accepting this `lang` on [listen].
+  static const String webEnglishForcedLocaleId = 'en-US';
+
   /// Web Speech API `lang` (BCP-47, hyphens). **Does not** call [SpeechToText.locales] —
   /// use on **web** when the plugin reports an empty locale list so [listen] still gets a valid tag.
   static String webListenLocaleIdBcp47(String speechUiCode) {
     final p = _primaryLanguageCode(speechUiCode);
     switch (p) {
       case 'en':
-        return 'en-US';
+        return webEnglishForcedLocaleId;
       case 'ru':
         return 'ru-RU';
       case 'de':
@@ -81,7 +85,7 @@ abstract final class SpeechListenLocale {
   /// other languages use [webListenLocaleIdBcp47] — **no** dependency on [locales].
   static String webVoiceListenLocaleId(String speechUiCode) {
     if (kIsWeb && _primaryLanguageCode(speechUiCode) == 'en') {
-      return 'en-US';
+      return webEnglishForcedLocaleId;
     }
     return webListenLocaleIdBcp47(speechUiCode);
   }

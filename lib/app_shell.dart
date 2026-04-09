@@ -884,16 +884,21 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       );
       if (!mounted) return;
       if (available) {
-        try {
-          final locales = await _speech!.locales();
-          final ids = <String>[
-            for (final l in locales) l.localeId.toString(),
-          ];
-          debugPrint(
-            '[STT] initialize OK; locales (${locales.length}): ${ids.join(", ")}',
-          );
-        } catch (e, st) {
-          debugPrint('[STT] locales() after init failed: $e\n$st');
+        if (kIsWeb) {
+          // Web: never block ready state on [locales] (often 0 or 1 synthetic tag until post-listen).
+          unawaited(_logSttLocalesBestEffortWeb());
+        } else {
+          try {
+            final locales = await _speech!.locales();
+            final ids = <String>[
+              for (final l in locales) l.localeId.toString(),
+            ];
+            debugPrint(
+              '[STT] initialize OK; locales (${locales.length}): ${ids.join(", ")}',
+            );
+          } catch (e, st) {
+            debugPrint('[STT] locales() after init failed: $e\n$st');
+          }
         }
         setState(() {
           _speechReady = true;
@@ -910,6 +915,20 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       _speechLastInitError = e.toString();
       if (!mounted) return;
       setState(() => _speechReady = false);
+    }
+  }
+
+  Future<void> _logSttLocalesBestEffortWeb() async {
+    try {
+      final locales = await _speech!.locales();
+      final ids = <String>[
+        for (final l in locales) l.localeId.toString(),
+      ];
+      debugPrint(
+        '[STT] Web init OK; locales async (${locales.length}): ${ids.join(", ")}',
+      );
+    } catch (e, st) {
+      debugPrint('[STT] Web locales() log failed: $e\n$st');
     }
   }
 
