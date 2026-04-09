@@ -186,10 +186,12 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
     var text = res.recognizedWords;
     final pfx = _transcriptPrefixForSttSession;
     if (pfx != null && pfx.trim().isNotEmpty) {
-      text = text.trim().isEmpty ? pfx.trim() : '${pfx.trim()} ${text.trim()}';
+      final p = pfx.trim();
+      text = text.isEmpty ? p : '$p $text';
     }
-    if (text.trim().isNotEmpty) {
-      _lastVoiceRecognized = text.trim();
+    final trimmed = text.trim();
+    if (trimmed.isNotEmpty) {
+      _lastVoiceRecognized = trimmed;
     }
     _textController.text = text;
     setState(() {});
@@ -537,9 +539,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
         children: [
           Material(
             color: Colors.transparent,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 90),
-              curve: Curves.easeOut,
+            child: Container(
               decoration: BoxDecoration(
                 color: scheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),

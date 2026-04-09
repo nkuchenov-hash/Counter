@@ -23,10 +23,9 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 /// [resolveListenLocaleId] falls back to [SpeechToText.systemLocale] then the
 /// process [PlatformDispatcher] locale (see implementation).
 ///
-/// **Web:** `ru-RU` and other primaries use stable hyphen tags from [webListenLocaleIdBcp47].
-/// **English on Web (voice sheet only):** [webVoiceListenLocaleId] returns **`null`** so
-/// Chrome picks the default cloud English model; [resolveListenLocaleId] uses plain **`en`**
-/// for other Web call sites.
+/// **Web:** [webListenLocaleIdBcp47] uses **`ru-RU`** for Russian and stable BCP-47 tags for others.
+/// **VoiceInputSheet:** [webVoiceListenLocaleId] returns **`null`** for English (browser default);
+/// Russian on Web uses **`ru-RU`**. No locale-list blocking.
 abstract final class SpeechListenLocale {
   static bool messageIndicatesLanguageUnsupported(String raw) {
     final msg = raw.toLowerCase().trim();
