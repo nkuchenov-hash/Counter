@@ -1,5 +1,6 @@
 // Shared mic / speech-to-text bottom sheet. Routing is defined by [VoiceCaptureConfig.submitIntent].
 import 'dart:async';
+import 'dart:math' show max;
 
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/services/speech_listen_locale.dart';
@@ -53,33 +54,13 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   late String _speechUiCode;
   /// When switching locale mid-listen, new session partials are shown after this prefix.
   String? _transcriptPrefixForSttSession;
-  /// Web + English only: finalized segments from the engine (see [_onSpeechResult]).
-  String _finalizedSttText = '';
-  /// Web + English only: latest partial hypothesis for the current utterance.
-  String _partialSttText = '';
 
   /// Last [listen] [localeId] used for this attach (Web network relisten).
   String? _lastListenLocaleId;
   bool _heardListeningThisSession = false;
   bool _webNetworkSilentRelistenConsumed = false;
 
-  bool get _webEnglishAccumStt => kIsWeb && _speechUiCode == 'en';
-
   stt.SpeechToText get _engine => widget.speechHandle.speech;
-
-  static String _collapseWs(String s) =>
-      s.replaceAll(RegExp(r'\s+'), ' ').trim();
-
-  String _composeWebEnDisplay() =>
-      _collapseWs('$_finalizedSttText $_partialSttText'.trim());
-
-  void _flushPartialSttIntoFinalized() {
-    if (!_webEnglishAccumStt) return;
-    final p = _partialSttText.trim();
-    if (p.isEmpty) return;
-    _finalizedSttText = _collapseWs('$_finalizedSttText $p');
-    _partialSttText = '';
-  }
 
   bool _isNetworkSttMessage(String raw) {
     final msg = raw.toLowerCase();
@@ -93,14 +74,19 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
   }
 
   /// [SpeechToText.onSoundLevelChange] uses **dB**: Android positive RMS, iOS negative [avgPower].
-  static const double _soundUiDeadZoneDbPositive = 5.0;
+  /// Web often omits callbacks; [listen] path adds a small breathing cue in the widget layer.
+  static const double _soundUiDeadZoneDbPositive = 2.5;
   static const double _soundUiCeilDbPositive = 22.0;
-  static const double _soundUiDeadZoneDbNegative = -48.0;
+  static const double _soundUiDeadZoneDbNegative = -52.0;
   static const double _soundUiCeilDbNegative = -15.0;
 
-  /// Maps raw dB to [0,1] for UI; below floor → **0** (no “ghost” stripe / pulse).
+  /// Maps raw dB to [0,1] for UI; **Web** uses a softer curve when levels arrive.
   double _normalizeSoundLevelForUi(double rawDb) {
     if (rawDb.isNaN || rawDb.isInfinite) return 0.0;
+    if (kIsWeb) {
+      if (rawDb <= 0) return 0.0;
+      return (rawDb / 6.0).clamp(0.0, 1.0);
+    }
     if (rawDb < 0) {
       if (rawDb <= _soundUiDeadZoneDbNegative) return 0.0;
       final span = _soundUiCeilDbNegative - _soundUiDeadZoneDbNegative;
@@ -109,6 +95,15 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     if (rawDb < _soundUiDeadZoneDbPositive) return 0.0;
     final span = _soundUiCeilDbPositive - _soundUiDeadZoneDbPositive;
     return ((rawDb - _soundUiDeadZoneDbPositive) / span).clamp(0.0, 1.0);
+  }
+
+  /// Web: combine normalized level with a subtle pulse so the stripe shows “mic alive”.
+  double _micVisualLevel(double normalized01, bool listening, double pulseT) {
+    final v = normalized01.clamp(0.0, 1.0);
+    if (kIsWeb && listening) {
+      return max(v, 0.06 + 0.12 * pulseT);
+    }
+    return v;
   }
 
   /// Web Speech / plugin: empty audio or timeout — engine needs [stop] + fresh [initialize].
@@ -223,22 +218,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       );
     }
 
-    if (_webEnglishAccumStt) {
-      if (res.finalResult) {
-        if (w.isNotEmpty) {
-          _finalizedSttText = _collapseWs('$_finalizedSttText $w');
-        }
-        _partialSttText = '';
-      } else {
-        _partialSttText = raw.trim().isEmpty ? '' : raw;
-      }
-      final display = _composeWebEnDisplay();
-      if (display.isNotEmpty) _lastVoiceRecognized = display;
-      _textController.text = display;
-      if (kIsWeb) setState(() {});
-      return;
-    }
-
     final pfx = _transcriptPrefixForSttSession;
     if (pfx != null && pfx.trim().isNotEmpty) {
       if (w.isNotEmpty) {
@@ -277,7 +256,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 20),
       listenOptions: stt.SpeechListenOptions(
-        // English (and RU): dictation — do not use confirmation mode (short-phrase bias).
+        // All locales: dictation + no auto-cancel on transient errors (esp. Web cloud).
         listenMode: stt.ListenMode.dictation,
         partialResults: true,
         cancelOnError: false,
@@ -310,8 +289,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     });
     _lastVoiceRecognized = '';
     _transcriptPrefixForSttSession = null;
-    _finalizedSttText = '';
-    _partialSttText = '';
     _soundLevel.value = 0.0;
     widget.onListeningChanged?.call(false);
     _playTone(freq: 660, duration: 0.1);
@@ -406,17 +383,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
         if (_messageIndicatesNoSpeech(msg)) {
           unawaited(_performSpeechEngineHardReset());
         }
-        if (SpeechListenLocale.messageIndicatesLanguageUnsupported(msg) &&
-            kIsWeb &&
-            _speechUiCode == 'en') {
-          if (kDebugMode) {
-            debugPrint(
-              '[STT] web EN: ignoring language-not-supported ($msg); '
-              '[SpeechListenLocale.webEnglishForcedLocaleId] stays forced',
-            );
-          }
-          return;
-        }
         final String displayMsg;
         var softVisual = false;
         if (kIsWeb && isNetwork && !hasTranscript) {
@@ -460,14 +426,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       if (status == 'done' || status == 'notListening') {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          if (_webEnglishAccumStt) {
-            _flushPartialSttIntoFinalized();
-            final d = _composeWebEnDisplay();
-            if (d.isNotEmpty) {
-              _lastVoiceRecognized = d;
-              _textController.text = d;
-            }
-          }
           setState(() {
             _isPulsing = false;
             _isListening = false;
@@ -495,16 +453,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
       }
     }
 
-    if (_webEnglishAccumStt) {
-      final pfx = _transcriptPrefixForSttSession?.trim();
-      _finalizedSttText = (pfx != null && pfx.isNotEmpty) ? pfx : '';
-      _partialSttText = '';
-      _transcriptPrefixForSttSession = null;
-    } else {
-      _finalizedSttText = '';
-      _partialSttText = '';
-    }
-
     final String? chosen = kIsWeb
         ? SpeechListenLocale.webVoiceListenLocaleId(_speechUiCode)
         : await SpeechListenLocale.resolveListenLocaleId(
@@ -520,6 +468,13 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
     try {
       _lastListenLocaleId = chosen;
       var ok = await attemptListen(chosen);
+      if (!ok && kIsWeb && _speechUiCode == 'en' && chosen == null) {
+        if (kDebugMode) {
+          debugPrint('[STT listen] web EN retry localeId=en');
+        }
+        _lastListenLocaleId = 'en';
+        ok = await attemptListen('en');
+      }
       if (!ok && chosen != null) {
         if (kDebugMode) {
           debugPrint('[STT listen] retry localeId=null (device default)');
@@ -606,14 +561,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
 
   Future<void> _stop() async {
     _transcriptPrefixForSttSession = null;
-    if (_webEnglishAccumStt) {
-      _flushPartialSttIntoFinalized();
-      final d = _composeWebEnDisplay();
-      if (d.isNotEmpty) {
-        _textController.text = d;
-        _lastVoiceRecognized = d;
-      }
-    }
     await _engine.stop();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -637,10 +584,11 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
           valueListenable: _soundLevel,
           builder: (context, level, _) {
             final listening = _isListening && _isPulsing;
-            final v = level.clamp(0.0, 1.0);
+            final pulseT = _pulseAnimation.value;
+            final v = _micVisualLevel(level, listening, pulseT);
             final hasSignal = v > 0.001;
             final pulse =
-                listening && hasSignal ? _pulseAnimation.value : 0.0;
+                listening && hasSignal ? pulseT : 0.0;
             final borderW = listening
                 ? 1.2 + 2.8 * v + (hasSignal ? 0.6 * pulse : 0.0)
                 : 1.0;
@@ -693,7 +641,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
                     child: SizedBox(
                       height: 4,
                       child: LinearProgressIndicator(
-                        value: listening ? v : 0.0,
+                        value: listening ? v.clamp(0.0, 1.0) : 0.0,
                         backgroundColor:
                             scheme.surfaceContainerHighest.withValues(alpha: 0.9),
                         color: scheme.primary,
@@ -735,18 +683,15 @@ class _VoiceInputSheetState extends State<VoiceInputSheet>
                   return ValueListenableBuilder<double>(
                     valueListenable: _soundLevel,
                     builder: (context, level, _) {
-                      final levelClamped = level.clamp(0.0, 1.0);
+                      final listening = _isListening && _isPulsing;
+                      final pulseT = _pulseAnimation.value;
+                      final levelClamped =
+                          _micVisualLevel(level, listening, pulseT);
                       final hasSignal = levelClamped > 0.001;
-                      final pulse = _isListening &&
-                              _isPulsing &&
-                              hasSignal
-                          ? 0.15 * _pulseAnimation.value
-                          : 0.0;
-                      final soundScale = _isListening &&
-                              _isPulsing &&
-                              hasSignal
-                          ? levelClamped * 0.35
-                          : 0.0;
+                      final pulse =
+                          listening && hasSignal ? 0.15 * pulseT : 0.0;
+                      final soundScale =
+                          listening && hasSignal ? levelClamped * 0.35 : 0.0;
                       final scale = 1.0 + pulse + soundScale;
                       final scheme = Theme.of(context).colorScheme;
                       return Transform.scale(
