@@ -13,9 +13,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-/// Solid bar when Web provides no real sound levels (no fake animation).
-const Color _kWebListeningLevelColor = Color(0xFFFF9800);
-
 class VoiceInputSheet extends StatefulWidget {
   const VoiceInputSheet({
     super.key,
@@ -48,8 +45,9 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
   final ValueNotifier<double> _soundLevel = ValueNotifier(0.0);
   final TextEditingController _textController = TextEditingController();
   String _lastVoiceRecognized = '';
+  /// Finalized speech for this listen session (seeded from the field on start / locale switch).
+  String _committedText = '';
   late String _speechUiCode;
-  String? _transcriptPrefixForSttSession;
 
   String? _lastListenLocaleId;
   bool _heardListeningThisSession = false;
@@ -68,7 +66,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
     return msg.contains('failed to fetch') || msg.contains('net::err');
   }
 
-  /// Native only: plugin reports dB. Web does not use this for UI (solid bar).
+  /// Maps plugin dB/RMS to [0,1] for border/stripe/mic (all platforms; Web may stay 0 if no levels).
   double _normalizeSoundLevelForUi(double rawDb) {
     if (rawDb.isNaN || rawDb.isInfinite) return 0.0;
     if (rawDb < 0) {
@@ -183,17 +181,29 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
         '[STT DEBUG] words: "${res.recognizedWords}" final: ${res.finalResult}',
       );
     }
-    var text = res.recognizedWords;
-    final pfx = _transcriptPrefixForSttSession;
-    if (pfx != null && pfx.trim().isNotEmpty) {
-      final p = pfx.trim();
-      text = text.isEmpty ? p : '$p $text';
+    final chunk = res.recognizedWords.trim();
+    if (res.finalResult) {
+      if (chunk.isNotEmpty) {
+        _committedText = _committedText.isEmpty
+            ? chunk
+            : '$_committedText $chunk';
+      }
+      _textController.text = _committedText;
+    } else {
+      final rawPartial = res.recognizedWords;
+      final partialTrim = rawPartial.trim();
+      if (partialTrim.isEmpty) {
+        _textController.text = _committedText;
+      } else if (_committedText.isEmpty) {
+        _textController.text = rawPartial;
+      } else {
+        _textController.text = '$_committedText $partialTrim';
+      }
     }
-    final trimmed = text.trim();
+    final trimmed = _textController.text.trim();
     if (trimmed.isNotEmpty) {
       _lastVoiceRecognized = trimmed;
     }
-    _textController.text = text;
     setState(() {});
   }
 
@@ -202,6 +212,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
     currentLocale.removeListener(_onAppLocaleChanged);
     _engine.stop();
     _engine.cancel();
+    _committedText = '';
     _textController.dispose();
     _soundLevel.dispose();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -214,11 +225,9 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
   Future<void> _runSpeechListen(String? localeId) async {
     await _engine.listen(
       onResult: _onSpeechResult,
-      onSoundLevelChange: kIsWeb
-          ? null
-          : (level) {
-              _soundLevel.value = _normalizeSoundLevelForUi(level);
-            },
+      onSoundLevelChange: (level) {
+        _soundLevel.value = _normalizeSoundLevelForUi(level);
+      },
       localeId: localeId,
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 20),
@@ -254,7 +263,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
       _hadErrorInSession = false;
     });
     _lastVoiceRecognized = '';
-    _transcriptPrefixForSttSession = null;
+    _committedText = _textController.text.trim();
     _soundLevel.value = 0.0;
     widget.onListeningChanged?.call(false);
     _playTone(freq: 660, duration: 0.1);
@@ -391,7 +400,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
             _isPulsing = false;
             _isListening = false;
             if (!_hadErrorInSession) {
-              _transcriptPrefixForSttSession = null;
+              _committedText = _textController.text.trim();
               _statusText = t(loc, 'voice_status_heard');
             }
           });
@@ -503,7 +512,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
 
     if (!wasListening) return;
 
-    _transcriptPrefixForSttSession = preserved.isEmpty ? null : preserved;
+    _committedText = preserved;
     try {
       await _engine.stop();
       await _engine.cancel();
@@ -514,7 +523,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
   }
 
   Future<void> _stop() async {
-    _transcriptPrefixForSttSession = null;
+    _committedText = '';
     await _engine.stop();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -527,84 +536,33 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
     });
   }
 
+  static final Color _sttReactiveGreen = Colors.green.shade700;
+
   Widget _buildTranscriptTextField({
     required ColorScheme scheme,
     required String loc,
   }) {
     final listening = _isListening && _isPulsing;
-    if (kIsWeb) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: Container(
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: listening
-                      ? _kWebListeningLevelColor
-                      : scheme.outline.withValues(alpha: 0.22),
-                  width: listening ? 2.0 : 1.0,
-                ),
-              ),
-              child: TextField(
-                controller: _textController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: t(loc, 'say_task_title'),
-                  filled: false,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                ),
-                onChanged: (_) {
-                  if (_voiceRecoveredCue) {
-                    setState(() => _voiceRecoveredCue = false);
-                  }
-                  setState(() {});
-                },
-              ),
-            ),
-          ),
-          if (listening) ...[
-            const SizedBox(height: 6),
-            SizedBox(
-              height: 4,
-              child: ColoredBox(
-                color: _kWebListeningLevelColor,
-              ),
-            ),
-          ],
-        ],
-      );
-    }
-
     return ValueListenableBuilder<double>(
       valueListenable: _soundLevel,
       builder: (context, level, _) {
         final v = level.clamp(0.0, 1.0);
-        final borderW = listening ? 1.2 + 2.8 * v : 1.0;
+        final borderW = listening ? 1.0 + 2.8 * v : 1.0;
         final borderColor = listening
             ? Color.lerp(
-                scheme.outline.withValues(alpha: 0.45),
-                scheme.primary,
-                0.2 + 0.75 * v,
+                scheme.outline.withValues(alpha: 0.4),
+                _sttReactiveGreen,
+                0.12 + 0.88 * v,
               )!
             : scheme.outline.withValues(alpha: 0.22);
+        final stripeH = listening ? 3.0 + v * 5.0 : 0.0;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
             Material(
               color: Colors.transparent,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 90),
-                curve: Curves.easeOut,
+              child: Container(
                 decoration: BoxDecoration(
                   color: scheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
@@ -632,19 +590,21 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
               ),
             ),
             if (listening) ...[
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: SizedBox(
-                  height: 4,
-                  child: LinearProgressIndicator(
-                    value: v <= 0.001 ? null : v,
-                    backgroundColor:
-                        scheme.surfaceContainerHighest.withValues(alpha: 0.9),
-                    color: scheme.primary,
+              SizedBox(height: stripeH > 0 ? 6 : 0),
+              if (stripeH > 0)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: SizedBox(
+                    height: stripeH,
+                    child: LinearProgressIndicator(
+                      value: v,
+                      minHeight: stripeH,
+                      backgroundColor:
+                          scheme.surfaceContainerHighest.withValues(alpha: 0.9),
+                      color: _sttReactiveGreen,
+                    ),
                   ),
                 ),
-              ),
             ],
           ],
         );
@@ -673,30 +633,28 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
         children: [
           Row(
             children: [
-              if (kIsWeb)
-                Icon(
-                  _isListening ? Icons.graphic_eq_rounded : Icons.mic_none_rounded,
-                  color: _isListening
-                      ? _kWebListeningLevelColor
-                      : scheme.onSurface,
-                )
-              else
-                ValueListenableBuilder<double>(
-                  valueListenable: _soundLevel,
-                  builder: (context, level, _) {
-                    final v = level.clamp(0.0, 1.0);
-                    final scale = 1.0 + (listening ? v * 0.35 : 0.0);
-                    return Transform.scale(
-                      scale: scale,
-                      child: Icon(
-                        _isListening
-                            ? Icons.graphic_eq_rounded
-                            : Icons.mic_none_rounded,
-                        color: _isListening ? scheme.primary : scheme.onSurface,
-                      ),
-                    );
-                  },
-                ),
+              ValueListenableBuilder<double>(
+                valueListenable: _soundLevel,
+                builder: (context, level, _) {
+                  final v = level.clamp(0.0, 1.0);
+                  final scale = 1.0 + (listening ? v * 0.35 : 0.0);
+                  return Transform.scale(
+                    scale: scale,
+                    child: Icon(
+                      _isListening
+                          ? Icons.graphic_eq_rounded
+                          : Icons.mic_none_rounded,
+                      color: _isListening
+                          ? Color.lerp(
+                              scheme.onSurface,
+                              _sttReactiveGreen,
+                              0.35 + 0.65 * v,
+                            )!
+                          : scheme.onSurface,
+                    ),
+                  );
+                },
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: _error != null
@@ -830,6 +788,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
                           if (text.isEmpty) return;
                           _engine.stop();
                           _engine.cancel();
+                          _committedText = '';
                           setState(() => _isSaving = true);
                           var ok = false;
                           try {
