@@ -27,22 +27,17 @@ class _AlarmCandidate {
   final int reminderMinutes;
 }
 
-/// 64-bit FNV-1a over UTF-16 code units, folded to a **positive 31-bit** int.
+/// 32-bit FNV-1a over UTF-16 code units, masked to a **positive 31-bit** int (dart2js-safe).
 ///
 /// Stable across app restarts (unlike relying on VM [Object.hashCode] quirks).
 /// [stableKey] must be [PlanningTask.recordIdForBackend] (PocketBase row id or `virt-…`).
 int planAlarmNotificationIdFromStableKey(String stableKey) {
-  var h = 0xcbf29ce484222325;
+  var hash = 0x811c9dc5;
   for (final u in stableKey.codeUnits) {
-    h ^= u;
-    h = (h * 0x100000001b3) & 0xffffffffffffffff;
+    hash = hash ^ u;
+    hash = (hash * 0x01000193) & 0xffffffff;
   }
-  final hi = (h >> 32) & 0xffffffff;
-  final lo = h & 0xffffffff;
-  var x = hi ^ lo;
-  x ^= x >> 16;
-  x ^= x >> 8;
-  return x & 0x7fffffff;
+  return hash & 0x7fffffff;
 }
 
 /// Singleton: timezone init, permissions, [syncAlarms] (@ARCHITECTURE.md — Brain calls only).
