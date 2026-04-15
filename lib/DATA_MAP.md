@@ -124,6 +124,9 @@ description: Revisions and corrections for DATA_MAP.md.
 | **tags_link** | Relation (Mult)| **Expand** | NO | PB Relation to the `tags` collection. |
 | **initial_date_key** | String | Audit | NO | Wall day `YYYY-MM-DD` when the task was first placed on the plan (does not move when the task is postponed). |
 | **is_postponed** | Bool | Audit | NO | `true` when the scheduled wall day is after [initial_date_key] (bulk/single move to a future day). |
+| **rrule** | String | Recurrence | NO | RFC 5545 recurrence rule (e.g. `FREQ=WEEKLY;BYDAY=TU`). Store with or without `RRULE:` prefix; client normalizes. Null / empty = non-recurring. |
+| **exception_dates** | JSON Array | Recurrence | NO | Array of ISO-8601 **date** strings (`YYYY-MM-DD`) for instances to **omit** when expanding [rrule] (skipped or materially changed elsewhere). Default `[]`. |
+| **reminder_offset** | Number | UI / alarms | NO | Minutes before [start_time] for a local reminder; null = no reminder. Client: [NotificationService] maps expanded [PlanningTask]s inside a 7-day window to at most 50 OS-scheduled notifications (`flutter_local_notifications`). |
 
 ### 🛠 Operational Logic for `plans`:
 1. **The `order` Field (Priority):**
@@ -138,6 +141,7 @@ description: Revisions and corrections for DATA_MAP.md.
 4. **Hierarchical Plans:**
    * **`parent_plan_id`** is a **Relation** to another row’s system `id` in **plans** (self-collection). Use `expand` for nested task lists.
 5. **REST Construction**: Plans MUST use the PocketBase **System `id`** for `PATCH` and `DELETE` URL paths. Do not use the `plan_id` UUID in the URL.
+6. **JIT recurring (rrule):** The client keeps **one** row per series. [DatabaseService] expands [rrule] into **virtual** [PlanningTask] copies for the visible calendar window; dates in [exception_dates] produce no instance. The stored row’s [start_time] / [end_time] define duration and DTSTART anchor. Do not pre-insert future rows for each occurrence.
 
 ## 4. Collection: `profiles`
 **Business PK:** `user_id` | **System PK (REST):** `id` (15-char String)

@@ -834,6 +834,29 @@ class _TimelinePageState extends State<TimelinePage> {
   }
 }
 
+List<Widget> _timelineRecordMetaIcons(BuildContext context, Record r) {
+  final base = Theme.of(context).iconTheme.color;
+  final color = base?.withValues(alpha: 0.48);
+  if (color == null) return const [];
+  if (!r.hasNotes &&
+      !r.hasChecklist &&
+      !r.hasParentRecord &&
+      !r.hasLinkedSubRecords) {
+    return const [];
+  }
+  final out = <Widget>[];
+  void add(IconData icon) {
+    if (out.isNotEmpty) out.add(const SizedBox(width: 4));
+    out.add(Icon(icon, size: 15, color: color));
+  }
+
+  if (r.hasNotes) add(Icons.sticky_note_2_outlined);
+  if (r.hasChecklist) add(Icons.checklist_rounded);
+  if (r.hasParentRecord) add(Icons.account_tree_outlined);
+  if (r.hasLinkedSubRecords) add(Icons.layers_outlined);
+  return out;
+}
+
 /// Single timeline card: running shows live timer + Stop, completed shows duration, planned shows label.
 class _TimelineRecordCard extends StatefulWidget {
   const _TimelineRecordCard({
@@ -989,6 +1012,9 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
       hoverColor: Colors.transparent,
     );
 
+    final recordIndicators = Record.forTimelineCard(widget.data);
+    final metaIcons = _timelineRecordMetaIcons(context, recordIndicators);
+
     final paddedRow = Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 8, 12),
       child: Row(
@@ -1010,9 +1036,25 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
                   ),
                   const SizedBox(height: 4),
                 ],
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    if (metaIcons.isNotEmpty)
+                      Padding(
+                        padding:
+                            const EdgeInsetsDirectional.only(start: 4, top: 1),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: metaIcons,
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Theme(

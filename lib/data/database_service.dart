@@ -9,8 +9,10 @@ import 'package:counter/data/local_sync/plan_create_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/pb_config.dart';
+import 'package:counter/services/notification_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:pocketbase/pocketbase.dart';
+import 'package:rrule/rrule.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
@@ -471,6 +473,13 @@ class DatabaseService {
       if (t.initialDateKey != null && t.initialDateKey!.trim().length >= 10)
         'initial_date_key': t.initialDateKey!.trim().substring(0, 10),
       'is_postponed': t.isPostponed,
+      if (t.rrule != null && t.rrule!.trim().isNotEmpty) 'rrule': t.rrule,
+      if (t.exceptionDates.isNotEmpty) 'exception_dates': t.exceptionDates,
+      if (t.reminderOffset != null) 'reminder_offset': t.reminderOffset,
+      if (t.recurrenceInstanceDateKey != null &&
+          t.recurrenceInstanceDateKey!.trim().length >= 10)
+        'recurrence_instance_date_key':
+            t.recurrenceInstanceDateKey!.trim().substring(0, 10),
       'tags': <Map<String, dynamic>>[
         for (final g in t.tags)
           <String, dynamic>{
@@ -536,7 +545,32 @@ class DatabaseService {
         m['initial_date_key'] ?? m['initialDateKey'],
       ),
       isPostponed: _jsonBoolFromDynamic(m['is_postponed'] ?? m['isPostponed'] ?? false),
+      rrule: () {
+        final s = (m['rrule'] ?? '').toString().trim();
+        return s.isEmpty ? null : s;
+      }(),
+      exceptionDates: _parsePlanExceptionDatesForOffline(m['exception_dates']),
+      reminderOffset: int.tryParse((m['reminder_offset'] ?? '').toString()),
+      recurrenceInstanceDateKey: _normPlanRecurrenceInstanceKey(
+        m['recurrence_instance_date_key'] ?? m['recurrenceInstanceDateKey'],
+      ),
     );
+  }
+
+  static List<String> _parsePlanExceptionDatesForOffline(dynamic raw) {
+    if (raw == null) return const [];
+    if (raw is! List) return const [];
+    return [
+      for (final e in raw)
+        if (e.toString().trim().length >= 10)
+          e.toString().trim().substring(0, 10),
+    ];
+  }
+
+  static String? _normPlanRecurrenceInstanceKey(dynamic raw) {
+    final s = raw?.toString().trim() ?? '';
+    if (s.length >= 10) return s.substring(0, 10);
+    return null;
   }
 
   Future<void> _persistPlanningTasksDayCache(
@@ -704,6 +738,62 @@ class DatabaseService {
 
   void _emitTimelineRefreshRaw() {
     _timeUpdateController.add(null);
+    _requestPlanAlarmReschedule();
+  }
+
+  /// Debounced: reschedules OS plan reminders after timeline/plan cache refresh (no await on callers).
+  void _requestPlanAlarmReschedule() {
+    if (kIsWeb) return;
+    _planAlarmRescheduleDebounceTimer?.cancel();
+    _planAlarmRescheduleDebounceTimer = Timer(const Duration(seconds: 2), () {
+      unawaited(_reschedulePlanAlarmsWork());
+    });
+  }
+
+  Future<void> _reschedulePlanAlarmsWork() async {
+    if (kIsWeb) return;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return;
+    if (!_isPlansTableConfigured) return;
+    try {
+      await NotificationService.instance.ensureInitialized();
+    } catch (_) {
+      return;
+    }
+    try {
+      final all = await _fetchAllPlanningTasksForCurrentUser();
+      final today = getTimelineDeviceLocalToday();
+      final todayWall =
+          DateTime(today.year, today.month, today.day);
+      final endWall = todayWall.add(const Duration(days: 6));
+      final windowTasks =
+          _collectPlanningTasksForWallRange(all, todayWall, endWall);
+      await NotificationService.instance.syncAlarms(windowTasks);
+    } catch (_) {}
+  }
+
+  /// Merges non-recurring day matches + JIT [expandRecurringPlans] for each wall day in [startWall]…[endWall] inclusive.
+  List<PlanningTask> _collectPlanningTasksForWallRange(
+    List<PlanningTask> allTemplates,
+    DateTime startWall,
+    DateTime endWall,
+  ) {
+    DateTime wallOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+    var d = wallOnly(startWall);
+    final last = wallOnly(endWall);
+    if (last.isBefore(d)) return [];
+    final out = <PlanningTask>[];
+    while (!d.isAfter(last)) {
+      final dk = '${d.year}-${_two(d.month)}-${_two(d.day)}';
+      for (final t in allTemplates) {
+        if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
+        if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
+        if (planningWallScheduleDateKey(t) != dk) continue;
+        out.add(t);
+      }
+      out.addAll(expandRecurringPlans(allTemplates, d, d));
+      d = d.add(const Duration(days: 1));
+    }
+    return out;
   }
 
   void _notifyTimelineAfterRecordCacheMutation() {
@@ -821,6 +911,7 @@ class DatabaseService {
     if (!_planningRefreshController.isClosed) {
       _planningRefreshController.add(null);
     }
+    _requestPlanAlarmReschedule();
   }
 
   /// Stats / Plan-vs-fact audit: listen to refresh planning data (same signal as [notifyPlanningRefresh]).
@@ -973,6 +1064,7 @@ class DatabaseService {
   static const List<int> _kRealtimeBackoffSeconds = [5, 10, 20];
   int _recordsRealtimeFailureStreak = 0;
   Timer? _recordsRealtimeReconnectTimer;
+  Timer? _planAlarmRescheduleDebounceTimer;
   /// Prevents overlapping subscribe attempts (avoids recursive reconnect / stacked futures).
   Future<void>? _recordsRealtimeSubscribeFuture;
   DateTime? _lastRealtimeSubscribeErrorLogAt;
@@ -1331,6 +1423,8 @@ class DatabaseService {
 
   void clearLocalStateOnSignOut() {
     _unregisterAppLifecycleObserver();
+    _planAlarmRescheduleDebounceTimer?.cancel();
+    _planAlarmRescheduleDebounceTimer = null;
     _recordsRealtimeReconnectTimer?.cancel();
     _recordsRealtimeReconnectTimer = null;
     _recordsRealtimeFailureStreak = 0;
@@ -1652,16 +1746,30 @@ class DatabaseService {
               expand: kPbPlanTagsExpand,
               filter: 'user_id = "$uid"',
             );
+        final allTasks = <PlanningTask>[
+          for (final r in list)
+            _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
+        ];
         final plans = <PlanningTask>[];
-        for (final r in list) {
-          var anchorUtc = _parseDateTimeUtc(r.data['start_time']);
-          anchorUtc ??= _parseDateTimeUtc(r.data['end_time']);
+        for (final t in allTasks) {
+          if (t.rrule != null && t.rrule!.trim().isNotEmpty) {
+            continue;
+          }
+          var anchorUtc = t.startTime != null
+              ? _profileUtcFromWall(t.startTime!).toUtc()
+              : null;
+          anchorUtc ??= t.endDateTime != null
+              ? _profileUtcFromWall(t.endDateTime!).toUtc()
+              : null;
           if (anchorUtc == null) continue;
           final w = _profileWallFromUtc(anchorUtc);
           final planDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
           if (planDayStr != targetDayStr) continue;
-          plans.add(_planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog));
+          plans.add(t);
         }
+        plans.addAll(
+          expandRecurringPlans(allTasks, selectedDate, selectedDate),
+        );
         plans.sort((a, b) {
           if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
           final o = a.order.compareTo(b.order);
@@ -1749,9 +1857,11 @@ class DatabaseService {
     final dayPlans = <PlanningTask>[];
     for (final t in all) {
       if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
+      if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
       if (planningWallScheduleDateKey(t) != dk) continue;
       dayPlans.add(t);
     }
+    dayPlans.addAll(expandRecurringPlans(all, wallDate, wallDate));
 
     var planTimeSec = 0;
     final plannedSecByCat = <int, int>{};
@@ -1953,11 +2063,142 @@ class DatabaseService {
         'parent_plan_id': d['parent_plan_id'],
         'initial_date_key': d['initial_date_key'],
         'is_postponed': d['is_postponed'],
+        'rrule': d['rrule'],
+        'exception_dates': d['exception_dates'],
+        'reminder_offset': d['reminder_offset'],
         if (expandJson != null) 'expand': expandJson,
         'tags_link': d['tags_link'],
       },
       pocketTagCatalog: pocketTagCatalog,
     );
+  }
+
+  String _normalizeRruleStringForDecoder(String raw) {
+    var s = raw.trim();
+    if (s.isEmpty) return s;
+    if (!s.toUpperCase().startsWith('RRULE:')) {
+      s = 'RRULE:$s';
+    }
+    return s;
+  }
+
+  DateTime? _utcDateOnlyFromPlanDateKey(String dk) {
+    if (dk.length < 10) return null;
+    final y = int.tryParse(dk.substring(0, 4));
+    final m = int.tryParse(dk.substring(5, 7));
+    final d = int.tryParse(dk.substring(8, 10));
+    if (y == null || m == null || d == null) return null;
+    return DateTime.utc(y, m, d);
+  }
+
+  /// JIT: expand [PlanningTask.rrule] into virtual rows between [viewStart] and [viewEnd] (wall dates).
+  List<PlanningTask> expandRecurringPlans(
+    List<PlanningTask> allPlans,
+    DateTime viewStart,
+    DateTime viewEnd,
+  ) {
+    final out = <PlanningTask>[];
+    final templates = allPlans
+        .where((p) => (p.rrule?.trim().isNotEmpty ?? false))
+        .toList();
+    if (templates.isEmpty) return out;
+
+    DateTime wallOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+    final startWall = wallOnly(viewStart);
+    final endWall = wallOnly(viewEnd);
+    if (endWall.isBefore(startWall)) return out;
+
+    final windowStartUtc = wall_clock.utcWallClockDayBoundsUtc(
+      startWall,
+      _settings.timezoneOffsetHours,
+      _settings.preferredTimeZone,
+    ).$1;
+    final windowEndUtc = wall_clock.utcWallClockDayBoundsUtc(
+      endWall,
+      _settings.timezoneOffsetHours,
+      _settings.preferredTimeZone,
+    ).$2;
+
+    for (final template in templates) {
+      if (template.isDone) continue;
+      final pr = template.pocketRecordId?.trim() ?? '';
+      if (pr.isEmpty) continue;
+      final st = template.startTime;
+      if (st == null) continue;
+      RecurrenceRule rule;
+      try {
+        rule = RecurrenceRule.fromString(
+          _normalizeRruleStringForDecoder(template.rrule!.trim()),
+          options: const RecurrenceRuleFromStringOptions.lenient(),
+        );
+      } catch (_) {
+        if (kDebugMode) {
+          debugPrint(
+            '[RRULE] skip plan $pr: parse failed for "${template.rrule}"',
+          );
+        }
+        continue;
+      }
+
+      final baseStartUtc = _profileUtcFromWall(st);
+      final dur = template.endDateTime != null
+          ? _profileUtcFromWall(template.endDateTime!)
+              .difference(baseStartUtc)
+          : Duration.zero;
+      final durClamped = dur.isNegative ? Duration.zero : dur;
+
+      final ex = <String>{
+        for (final e in template.exceptionDates)
+          if (e.trim().length >= 10) e.trim().substring(0, 10),
+      };
+
+      final List<DateTime> instances;
+      try {
+        instances = rule.getAllInstances(
+          start: baseStartUtc.toUtc(),
+          after: windowStartUtc,
+          includeAfter: true,
+          before: windowEndUtc,
+          includeBefore: true,
+        );
+      } catch (_) {
+        if (kDebugMode) {
+          debugPrint('[RRULE] skip plan $pr: iteration failed');
+        }
+        continue;
+      }
+
+      for (final instanceUtc in instances) {
+        final wall = _profileWallFromUtc(instanceUtc);
+        final wallDay = wallOnly(wall);
+        if (wallDay.isBefore(startWall) || wallDay.isAfter(endWall)) {
+          continue;
+        }
+        final dk =
+            '${wall.year}-${_two(wall.month)}-${_two(wall.day)}';
+        if (ex.contains(dk)) continue;
+
+        final startWallInstance = _profileWallFromUtc(instanceUtc);
+        DateTime? endWallInstance;
+        if (durClamped.inSeconds > 0) {
+          endWallInstance = _profileWallFromUtc(instanceUtc.add(durClamped));
+        }
+
+        out.add(
+          template.copyWith(
+            planRowId: 'virt-$pr-$dk',
+            dateKey: dk,
+            startTime: startWallInstance,
+            date: _utcDateOnlyFromPlanDateKey(dk),
+            endDateTime: endWallInstance,
+            recurrenceInstanceDateKey: dk,
+            clearRrule: true,
+            exceptionDates: const [],
+          ),
+        );
+      }
+    }
+    return out;
   }
 
   /// Returns a positive count when the server sent a numeric link rollup (not expanded rows).
@@ -8634,6 +8875,14 @@ class DatabaseService {
       body['initial_date_key'] = task.dateKey.substring(0, 10);
     }
     body['is_postponed'] = task.isPostponed;
+    final rruleTrim = task.rrule?.trim() ?? '';
+    if (rruleTrim.isNotEmpty) {
+      body['rrule'] = rruleTrim;
+      body['exception_dates'] = List<String>.from(task.exceptionDates);
+    }
+    if (task.reminderOffset != null) {
+      body['reminder_offset'] = task.reminderOffset;
+    }
     if (task.tags.isNotEmpty) {
       final pbIds = await _pbTagRecordIdsFromTags(task.tags);
       if (pbIds.isNotEmpty) {

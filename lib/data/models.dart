@@ -477,6 +477,8 @@ class Record {
     this.endTime,
     this.date,
     this.isSynced = true,
+    this.checklist = const [],
+    this.linkedSubRecordIds = const [],
   });
 
   /// PocketBase / Noco **row** id for REST (`.../records/{id}`). **Never** use [recordId] (UUID) in the URL.
@@ -501,6 +503,24 @@ class Record {
 
   /// Local-only: false when a row is queued for PocketBase retry (not a PB column).
   final bool isSynced;
+
+  /// @DATA_MAP `records.checklist` — JSON list; empty when absent.
+  final List<Map<String, dynamic>> checklist;
+
+  /// Optional nested row ids when present on the row (legacy / expand); drives [hasLinkedSubRecords].
+  final List<int> linkedSubRecordIds;
+
+  /// @DATA_MAP `records.note` (merged legacy `notes` in [fromJson]).
+  bool get hasNotes => note != null && note!.trim().isNotEmpty;
+
+  bool get hasChecklist => checklist.isNotEmpty;
+
+  /// Child row: @DATA_MAP `records.parent_id` (legacy int in some paths).
+  bool get hasParentRecord =>
+      parentId != null && parentId != 0;
+
+  /// Parent of nested / parallel child rows when ids are available on the payload.
+  bool get hasLinkedSubRecords => linkedSubRecordIds.isNotEmpty;
 
   /// Running only when there is no end timestamp and DB status is running.
   bool get isActuallyRunning {
@@ -569,6 +589,15 @@ class Record {
     final date = _recordLocalCalendarDate(startRaw);
     final endRaw = data['end_time'] ?? data['endTime'];
     final String? endTimeStr = normalizeRecordIsoToUtcSecondPrecision(endRaw);
+    List<int> parseLinkedSubIds(dynamic raw) {
+      if (raw == null) return const [];
+      if (raw is! List) return const [];
+      return [
+        for (final e in raw)
+          if (_jsonInt(e) != 0) _jsonInt(e),
+      ];
+    }
+
     return Record(
       id: systemIdStr,
       recordId: bizId,
@@ -587,6 +616,51 @@ class Record {
       endTime: endTimeStr,
       date: date,
       isSynced: _jsonBool(data['isSynced'] ?? data['is_synced'], true),
+      checklist: parseChecklistFromNocoList(data['checklist']),
+      linkedSubRecordIds: parseLinkedSubIds(
+        data['sub_record_ids'] ?? data['subRecordIds'],
+      ),
+    );
+  }
+
+  /// Merged timeline row from [DatabaseService] / [timeline_view] (no async).
+  factory Record.forTimelineCard(Map<String, dynamic> data) {
+    int? parentFrom(dynamic raw) {
+      if (raw == null) return null;
+      if (raw is int) return raw == 0 ? null : raw;
+      final s = raw.toString().trim();
+      if (s.isEmpty || s == '0') return null;
+      return int.tryParse(s);
+    }
+
+    List<int> linkedIds(dynamic raw) {
+      if (raw == null) return const [];
+      if (raw is! List) return const [];
+      return [
+        for (final e in raw)
+          if (_jsonInt(e) != 0) _jsonInt(e),
+      ];
+    }
+
+    final cat = data['categoryId'];
+    return Record(
+      id: data['id']?.toString(),
+      recordId: (data['record_id'] ?? '').toString(),
+      userId: (data['user_id'] ?? '').toString(),
+      sourcePlanId: data['source_plan_id']?.toString(),
+      title: data['title']?.toString(),
+      note: data['note']?.toString(),
+      type: data['type']?.toString(),
+      status: data['status']?.toString(),
+      categoryId: cat?.toString(),
+      parentId: parentFrom(data['parentId'] ?? data['parent_id']),
+      startTime: null,
+      endTime: null,
+      date: null,
+      checklist: parseChecklistFromNocoList(data['checklist']),
+      linkedSubRecordIds: linkedIds(
+        data['subRecordIds'] ?? data['sub_record_ids'],
+      ),
     );
   }
 
@@ -604,6 +678,8 @@ class Record {
         'parent_id': parentId,
         'start_time': startTime,
         'end_time': endTime,
+        if (checklist.isNotEmpty) 'checklist': checklist,
+        if (linkedSubRecordIds.isNotEmpty) 'sub_record_ids': linkedSubRecordIds,
         if (date != null)
           'date': '${date!.year}-${date!.month.toString().padLeft(2, '0')}-${date!.day.toString().padLeft(2, '0')}',
       };
@@ -1148,6 +1224,17 @@ class TimelineRecord {
   /// Basta: [endTime] set ⇒ not running, regardless of [status] string.
   bool get isActuallyRunning =>
       endTime == null && status == 'running';
+
+  bool get hasNotes => note != null && note!.trim().isNotEmpty;
+
+  bool get hasChecklist => (checklist?.isNotEmpty ?? false);
+
+  bool get hasParentRecord =>
+      parentId != null && parentId != 0;
+
+  /// When [subRecordIds] is populated on the row / map.
+  bool get hasLinkedSubRecords =>
+      subRecordIds != null && subRecordIds!.isNotEmpty;
 
   static dynamic _get(Map<String, dynamic> data, String camel, String snake) =>
       data[camel] ?? data[snake];
@@ -1712,6 +1799,10 @@ class PlanningTask {
     /// Wall `YYYY-MM-DD`: audit anchor (commitment day). Set on create; preserved when postponing.
     this.initialDateKey,
     this.isPostponed = false,
+    this.rrule,
+    this.exceptionDates = const [],
+    this.reminderOffset,
+    this.recurrenceInstanceDateKey,
   })  : date = date ?? _dateFromDateKey(dateKey),
         endDateKey = endDateKey ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey),
         subRecordIds = subRecordIds ?? const [],
@@ -1725,19 +1816,22 @@ class PlanningTask {
   final String? pocketRecordId;
 
   /// Stable id for bulk delete / patch: PocketBase row id, else legacy Noco int as string.
+  /// JIT [recurrenceInstanceDateKey] rows use `virt-…` [planRowId] so list merges stay unique.
   String get recordIdForBackend {
+    final p = planRowId?.trim() ?? '';
+    if (p.startsWith('virt-')) return p;
     final pb = pocketRecordId?.trim() ?? '';
     if (pb.isNotEmpty) return pb;
     if (id > 0) return id.toString();
-    final p = planRowId?.trim() ?? '';
     return p;
   }
 
   /// Stable plan row id for PocketBase CRUD (`pocketRecordId`, else legacy int / `planRowId`).
-  /// Stays `optimistic-…` for optimistic rows only.
+  /// Stays `optimistic-…` for optimistic rows only; `virt-…` for expanded recurrence instances.
   String get planRowIdForBackend {
     final p = planRowId?.trim() ?? '';
     if (p.startsWith('optimistic-')) return p;
+    if (p.startsWith('virt-')) return p;
     final pr = pocketRecordId?.trim() ?? '';
     if (pr.isNotEmpty) return pr;
     if (id > 0) return id.toString();
@@ -1767,6 +1861,28 @@ class PlanningTask {
   /// PocketBase [plans.is_postponed] — scheduled day is after [initialDateKey].
   final bool isPostponed;
 
+  /// PocketBase [plans.rrule] — RFC 5545 recurrence; null/empty = non-recurring.
+  final String? rrule;
+
+  /// PocketBase [plans.exception_dates] — wall dates (`YYYY-MM-DD`) to skip when expanding [rrule].
+  final List<String> exceptionDates;
+
+  /// PocketBase [plans.reminder_offset] — minutes before start for reminders.
+  final int? reminderOffset;
+
+  /// JIT expansion only: which wall day this virtual row represents; not stored on PB.
+  final String? recurrenceInstanceDateKey;
+
+  /// @DATA_MAP `plans.note`.
+  bool get hasNotes => notes != null && notes!.trim().isNotEmpty;
+
+  /// @DATA_MAP `plans.checklist`.
+  bool get hasChecklist => checklist.isNotEmpty;
+
+  /// Sub-task: @DATA_MAP `plans.parent_plan_id`.
+  bool get hasParentPlan =>
+      parentPlanId != null && parentPlanId != 0;
+
   /// Parsed [initialDateKey] (UTC date-only), or `null` if missing / invalid.
   DateTime? get initialDate => _dateFromDateKey(initialDateKey ?? '');
 
@@ -1793,6 +1909,13 @@ class PlanningTask {
         if (checklist.isNotEmpty) 'checklist': checklist,
         if (startTime != null) 'start_time': startTime!.toUtc().toIso8601String(),
         if (endDateTime != null) 'end_time': endDateTime!.toUtc().toIso8601String(),
+        if (rrule != null && rrule!.trim().isNotEmpty) 'rrule': rrule!.trim(),
+        if (exceptionDates.isNotEmpty) 'exception_dates': exceptionDates,
+        if (reminderOffset != null) 'reminder_offset': reminderOffset,
+        if (recurrenceInstanceDateKey != null &&
+            recurrenceInstanceDateKey!.trim().length >= 10)
+          'recurrence_instance_date_key':
+              recurrenceInstanceDateKey!.trim().substring(0, 10),
       };
 
   /// Same as [fromJson]; use when the source is a Noco row `fields` map / REST object.
@@ -1907,7 +2030,62 @@ class PlanningTask {
         g('initialDateKey', 'initial_date_key')?.toString(),
       ),
       isPostponed: _jsonBool(g('isPostponed', 'is_postponed'), false),
+      rrule: _normRruleField(g('rrule', 'rrule')?.toString()),
+      exceptionDates: _parsePlanningExceptionDates(g('exceptionDates', 'exception_dates')),
+      reminderOffset: _jsonIntNullable(g('reminderOffset', 'reminder_offset')),
+      recurrenceInstanceDateKey: _normRecurrenceInstanceKey(
+        g('recurrenceInstanceDateKey', 'recurrence_instance_date_key')?.toString(),
+      ),
     );
+  }
+
+  static String? _normRruleField(String? raw) {
+    final s = raw?.trim() ?? '';
+    return s.isEmpty ? null : s;
+  }
+
+  static String? _normRecurrenceInstanceKey(String? raw) {
+    final s = raw?.trim() ?? '';
+    if (s.length >= 10) return s.substring(0, 10);
+    return null;
+  }
+
+  static List<String> _parsePlanningExceptionDates(dynamic raw) {
+    if (raw == null) return const [];
+    Iterable<dynamic> items;
+    if (raw is List) {
+      items = raw;
+    } else if (raw is String) {
+      final t = raw.trim();
+      if (t.isEmpty) return const [];
+      try {
+        final d = jsonDecode(t);
+        if (d is List) {
+          items = d;
+        } else {
+          return const [];
+        }
+      } catch (_) {
+        return const [];
+      }
+    } else {
+      return const [];
+    }
+    final out = <String>[];
+    for (final e in items) {
+      final s = e?.toString().trim() ?? '';
+      if (s.length >= 10) {
+        out.add(s.substring(0, 10));
+      }
+    }
+    return out;
+  }
+
+  static int? _jsonIntNullable(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString());
   }
 
   static String? _normInitialDateKey(String? raw) {
@@ -2045,6 +2223,11 @@ class PlanningTask {
     bool? isSynced,
     String? initialDateKey,
     bool? isPostponed,
+    String? rrule,
+    List<String>? exceptionDates,
+    int? reminderOffset,
+    String? recurrenceInstanceDateKey,
+    bool clearRrule = false,
   }) {
     final eDt = clearEnd ? null : (endDateTime ?? this.endDateTime);
     final eDk = endDateKey ?? (eDt != null ? _dateKeyFromDate(eDt) : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
@@ -2069,6 +2252,11 @@ class PlanningTask {
       isSynced: isSynced ?? this.isSynced,
       initialDateKey: initialDateKey ?? this.initialDateKey,
       isPostponed: isPostponed ?? this.isPostponed,
+      rrule: clearRrule ? null : (rrule ?? this.rrule),
+      exceptionDates: exceptionDates ?? this.exceptionDates,
+      reminderOffset: reminderOffset ?? this.reminderOffset,
+      recurrenceInstanceDateKey:
+          recurrenceInstanceDateKey ?? this.recurrenceInstanceDateKey,
     );
   }
 }

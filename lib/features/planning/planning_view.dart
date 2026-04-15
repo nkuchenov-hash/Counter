@@ -2703,6 +2703,25 @@ class _PlanningDatePickerDialog extends StatelessWidget {
   }
 }
 
+List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
+  final base = Theme.of(context).iconTheme.color;
+  final color = base?.withValues(alpha: 0.48);
+  if (color == null) return const [];
+  if (!task.hasNotes && !task.hasChecklist && !task.hasParentPlan) {
+    return const [];
+  }
+  final out = <Widget>[];
+  void add(IconData icon) {
+    if (out.isNotEmpty) out.add(const SizedBox(width: 4));
+    out.add(Icon(icon, size: 15, color: color));
+  }
+
+  if (task.hasNotes) add(Icons.sticky_note_2_outlined);
+  if (task.hasChecklist) add(Icons.checklist_rounded);
+  if (task.hasParentPlan) add(Icons.account_tree_outlined);
+  return out;
+}
+
 /// Single planning task card. Uses Theme.of(context). No hardcoded colors.
 class _PlanningTaskCard extends StatelessWidget {
   const _PlanningTaskCard({
@@ -2794,6 +2813,7 @@ class _PlanningTaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final metaIcons = _planningTaskMetaIcons(context, task);
     final scheme = Theme.of(context).colorScheme;
     final categoryTrail = localizeCategoryBreadcrumbPath(
       DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
@@ -2880,20 +2900,38 @@ class _PlanningTaskCard extends StatelessWidget {
                                   ),
                             ),
                           ),
-                        Text(
-                          task.title,
-                          textAlign: TextAlign.start,
-                          style: TextStyle(
-                            fontSize: 16,
-                            decoration: displayIsDone
-                                ? TextDecoration.lineThrough
-                                : null,
-                            color: displayIsDone
-                                ? scheme.onSurface
-                                    .withValues(alpha: 0.62)
-                                : null,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                task.title,
+                                textAlign: TextAlign.start,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  decoration: displayIsDone
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                  color: displayIsDone
+                                      ? scheme.onSurface
+                                          .withValues(alpha: 0.62)
+                                      : null,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (metaIcons.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsetsDirectional.only(
+                                  start: 4,
+                                  top: 1,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: metaIcons,
+                                ),
+                              ),
+                          ],
                         ),
                         if ((planEstimatedSeconds ?? 0) > 0) ...[
                           const SizedBox(height: 6),

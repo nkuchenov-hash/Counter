@@ -6,6 +6,7 @@ import 'package:counter/features/auth/auth_screen.dart';
 import 'package:counter/auth_service.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/database_service.dart';
+import 'package:counter/services/notification_service.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/core/theme.dart';
@@ -32,6 +33,7 @@ bool _startupNetworkErrorShown = false;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
+    unawaited(NotificationService.instance.ensureInitialized());
     try {
       appWearHost = await WearPlatform.isWearHost();
     } catch (_) {
