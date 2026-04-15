@@ -227,6 +227,37 @@ class EmptyStatePlaceholder extends StatelessWidget {
 
 enum ActivityDetailKind { timelineRecord, planningTask }
 
+/// Local repeat presets for plan edit sheet (maps to @DATA_MAP `plans.rrule`).
+enum _PlanRepeatUi { none, daily, weekly, monthly, custom }
+
+_PlanRepeatUi _planRepeatUiFromTask(PlanningTask t) {
+  final r = t.rrule?.trim() ?? '';
+  if (r.isEmpty) return _PlanRepeatUi.none;
+  final u = r.toUpperCase();
+  if (u.contains('FREQ') && u.contains('DAILY')) return _PlanRepeatUi.daily;
+  if (u.contains('FREQ') && u.contains('WEEKLY')) return _PlanRepeatUi.weekly;
+  if (u.contains('FREQ') && u.contains('MONTHLY')) {
+    return _PlanRepeatUi.monthly;
+  }
+  return _PlanRepeatUi.custom;
+}
+
+String? _rruleWireFromRepeatUi(_PlanRepeatUi choice, String? customRaw) {
+  switch (choice) {
+    case _PlanRepeatUi.none:
+      return null;
+    case _PlanRepeatUi.daily:
+      return 'FREQ=DAILY';
+    case _PlanRepeatUi.weekly:
+      return 'FREQ=WEEKLY';
+    case _PlanRepeatUi.monthly:
+      return 'FREQ=MONTHLY';
+    case _PlanRepeatUi.custom:
+      final s = customRaw?.trim() ?? '';
+      return s.isEmpty ? null : s;
+  }
+}
+
 class ActivityDetailSheet extends StatelessWidget {
   const ActivityDetailSheet({
     super.key,
@@ -305,6 +336,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   /// True until [DatabaseService.fetchTagsForCurrentUser] completes (strip stays visible).
   bool _tagsLoading = true;
   late List<Tag> _selectedTags;
+  int? _reminderMinutes;
+  late _PlanRepeatUi _repeatUi;
+  String? _rruleCustomRaw;
 
   @override
   void initState() {
@@ -314,6 +348,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _notesController = TextEditingController(text: widget.task.notes ?? '');
     _categoryId = widget.task.categoryId;
     _selectedTags = List<Tag>.from(widget.task.tags);
+    _reminderMinutes = widget.task.reminderOffset;
+    _repeatUi = _planRepeatUiFromTask(widget.task);
+    _rruleCustomRaw =
+        _repeatUi == _PlanRepeatUi.custom ? widget.task.rrule?.trim() : null;
     DatabaseService.instance.fetchTagsForCurrentUser().then((List<Tag> result) {
       if (!mounted) return;
       setState(() {
@@ -429,6 +467,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         'isDone': i < _checklistDone.length ? _checklistDone[i] : false,
       });
     }
+    final rruleWire = _rruleWireFromRepeatUi(_repeatUi, _rruleCustomRaw);
+    final clearR = rruleWire == null;
     final updated = widget.task.copyWith(
       title: title,
       categoryId: catId,
@@ -442,6 +482,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       checklist: checklist,
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       tags: List<Tag>.from(_selectedTags),
+      rrule: rruleWire,
+      clearRrule: clearR,
+      exceptionDates:
+          clearR ? const <String>[] : List<String>.from(widget.task.exceptionDates),
+      reminderOffset: _reminderMinutes,
+      clearReminderOffset: _reminderMinutes == null,
     );
     if (widget.onSaved != null) {
       widget.onSaved!(updated);
@@ -607,6 +653,112 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 setState(() => _endTime = DateTime(
                                     _date.year, _date.month, _date.day, picked.hour, picked.minute));
                               }
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<int?>(
+                            value: _reminderMinutes,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: t(
+                                currentLocale.value,
+                                'plan_reminder_label',
+                              ),
+                            ),
+                            items: [
+                              DropdownMenuItem<int?>(
+                                value: null,
+                                child: Text(
+                                  t(currentLocale.value, 'plan_reminder_none'),
+                                ),
+                              ),
+                              DropdownMenuItem<int?>(
+                                value: 5,
+                                child: Text(
+                                  t(currentLocale.value, 'plan_reminder_5m'),
+                                ),
+                              ),
+                              DropdownMenuItem<int?>(
+                                value: 15,
+                                child: Text(
+                                  t(currentLocale.value, 'plan_reminder_15m'),
+                                ),
+                              ),
+                              DropdownMenuItem<int?>(
+                                value: 30,
+                                child: Text(
+                                  t(currentLocale.value, 'plan_reminder_30m'),
+                                ),
+                              ),
+                              DropdownMenuItem<int?>(
+                                value: 60,
+                                child: Text(
+                                  t(currentLocale.value, 'plan_reminder_1h'),
+                                ),
+                              ),
+                            ],
+                            onChanged: (v) =>
+                                setState(() => _reminderMinutes = v),
+                          ),
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<_PlanRepeatUi>(
+                            value: _repeatUi,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: t(
+                                currentLocale.value,
+                                'plan_repeat_label',
+                              ),
+                            ),
+                            items: [
+                              DropdownMenuItem(
+                                value: _PlanRepeatUi.none,
+                                child: Text(
+                                  t(currentLocale.value, 'plan_repeat_none'),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: _PlanRepeatUi.daily,
+                                child: Text(
+                                  t(currentLocale.value, 'plan_repeat_daily'),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: _PlanRepeatUi.weekly,
+                                child: Text(
+                                  t(currentLocale.value, 'plan_repeat_weekly'),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: _PlanRepeatUi.monthly,
+                                child: Text(
+                                  t(
+                                    currentLocale.value,
+                                    'plan_repeat_monthly',
+                                  ),
+                                ),
+                              ),
+                              if (_repeatUi == _PlanRepeatUi.custom)
+                                DropdownMenuItem(
+                                  value: _PlanRepeatUi.custom,
+                                  child: Text(
+                                    t(
+                                      currentLocale.value,
+                                      'plan_repeat_custom',
+                                    ),
+                                  ),
+                                ),
+                            ],
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setState(() {
+                                _repeatUi = v;
+                                if (v != _PlanRepeatUi.custom) {
+                                  _rruleCustomRaw = null;
+                                } else {
+                                  _rruleCustomRaw = widget.task.rrule?.trim();
+                                }
+                              });
                             },
                           ),
                         ],

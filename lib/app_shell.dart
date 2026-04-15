@@ -1418,6 +1418,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         planInitialDateKey:
             initForPatch.length >= minKeyLen ? initForPatch : null,
         planIsPostponed: postponed,
+        patchPlanAlarmRecurrence: true,
+        planRrule: edited.rrule,
+        planReminderOffset: edited.reminderOffset,
+        planExceptionDates: (edited.rrule != null &&
+                edited.rrule!.trim().isNotEmpty)
+            ? edited.exceptionDates
+            : const <String>[],
       );
       if (!mounted) return;
       if (!ok) {

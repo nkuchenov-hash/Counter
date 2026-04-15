@@ -9262,6 +9262,10 @@ class DatabaseService {
     bool clearEnd = false,
     String? planInitialDateKey,
     bool? planIsPostponed,
+    bool patchPlanAlarmRecurrence = false,
+    String? planRrule,
+    int? planReminderOffset,
+    List<String>? planExceptionDates,
   }) {
     final fields = <String, dynamic>{'user_id': _pidForPbFilter};
     if (title != null) fields['title'] = title;
@@ -9303,6 +9307,18 @@ class DatabaseService {
     if (planIsPostponed != null) {
       fields['is_postponed'] = planIsPostponed;
     }
+    if (patchPlanAlarmRecurrence) {
+      final rt = (planRrule ?? '').trim();
+      if (rt.isNotEmpty) {
+        fields['rrule'] = rt;
+        fields['exception_dates'] =
+            List<String>.from(planExceptionDates ?? const <String>[]);
+      } else {
+        fields['rrule'] = null;
+        fields['exception_dates'] = const <String>[];
+      }
+      fields['reminder_offset'] = planReminderOffset;
+    }
     final patchBody = <String, dynamic>{};
     for (final e in fields.entries) {
       if (e.key == 'user_id') continue;
@@ -9333,6 +9349,10 @@ class DatabaseService {
     List<Tag>? tags,
     String? planInitialDateKey,
     bool? planIsPostponed,
+    bool patchPlanAlarmRecurrence = false,
+    String? planRrule,
+    int? planReminderOffset,
+    List<String>? planExceptionDates,
   }) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
@@ -9360,6 +9380,10 @@ class DatabaseService {
       clearEnd: clearEnd,
       planInitialDateKey: planInitialDateKey,
       planIsPostponed: planIsPostponed,
+      patchPlanAlarmRecurrence: patchPlanAlarmRecurrence,
+      planRrule: planRrule,
+      planReminderOffset: planReminderOffset,
+      planExceptionDates: planExceptionDates,
     );
     if (patchBody.isEmpty && tags == null) return false;
     try {

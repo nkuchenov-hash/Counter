@@ -8,13 +8,114 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/services/notification_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // ---------------------------------------------------------------------------
 // PROFILE FEATURE — UI_ISOLATION (§7). All strings via t() from dictionary.
 // No hardcoded UI text. No direct DB writes (use DatabaseService).
 // ---------------------------------------------------------------------------
+
+/// OS notification permission + local plan reminders (Android / iOS).
+class _ProfileNotificationsSection extends StatefulWidget {
+  @override
+  State<_ProfileNotificationsSection> createState() =>
+      _ProfileNotificationsSectionState();
+}
+
+class _ProfileNotificationsSectionState
+    extends State<_ProfileNotificationsSection> {
+  Future<bool?>? _statusFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statusFuture = _loadAndroidNotificationEnabled();
+  }
+
+  Future<bool?> _loadAndroidNotificationEnabled() async {
+    if (kIsWeb) return null;
+    try {
+      final plugin = FlutterLocalNotificationsPlugin();
+      final android = plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      return android?.areNotificationsEnabled();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _refreshStatus() {
+    setState(() {
+      _statusFuture = _loadAndroidNotificationEnabled();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final theme = Theme.of(context);
+    if (kIsWeb) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t(loc, 'profile_notifications_section'),
+            style: theme.textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            t(loc, 'profile_notifications_web_hint'),
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          t(loc, 'profile_notifications_section'),
+          style: theme.textTheme.titleSmall,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          t(loc, 'profile_notifications_subtitle'),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
+        FutureBuilder<bool?>(
+          future: _statusFuture,
+          builder: (context, snap) {
+            final v = snap.data;
+            final line = v == null
+                ? t(loc, 'notif_status_unknown')
+                : (v
+                    ? t(loc, 'notif_status_allowed')
+                    : t(loc, 'notif_status_denied'));
+            return Text(line, style: theme.textTheme.bodyMedium);
+          },
+        ),
+        const SizedBox(height: 12),
+        FilledButton.tonalIcon(
+          onPressed: () {
+            unawaited(NotificationService.instance.requestPermissionsIfNeeded());
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _refreshStatus();
+            });
+          },
+          icon: const Icon(Icons.notifications_active_outlined),
+          label: Text(t(loc, 'profile_notifications_request_button')),
+        ),
+      ],
+    );
+  }
+}
 
 /// Security (Profile): Biometric lock toggle. Persists to profiles.biometric_enabled.
 class _SecuritySection extends StatelessWidget {
@@ -362,6 +463,8 @@ class _ProfilePageState extends State<ProfilePage> {
           _AccountSecuritySection(),
           const Divider(),
           _SecuritySection(onSaved: widget.onSaved),
+          const Divider(),
+          _ProfileNotificationsSection(),
           const Divider(),
           Text(t(locale, 'appearance'),
               style: Theme.of(context).textTheme.titleSmall),

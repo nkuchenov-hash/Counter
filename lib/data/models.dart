@@ -2228,6 +2228,7 @@ class PlanningTask {
     int? reminderOffset,
     String? recurrenceInstanceDateKey,
     bool clearRrule = false,
+    bool clearReminderOffset = false,
   }) {
     final eDt = clearEnd ? null : (endDateTime ?? this.endDateTime);
     final eDk = endDateKey ?? (eDt != null ? _dateKeyFromDate(eDt) : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
@@ -2253,8 +2254,10 @@ class PlanningTask {
       initialDateKey: initialDateKey ?? this.initialDateKey,
       isPostponed: isPostponed ?? this.isPostponed,
       rrule: clearRrule ? null : (rrule ?? this.rrule),
-      exceptionDates: exceptionDates ?? this.exceptionDates,
-      reminderOffset: reminderOffset ?? this.reminderOffset,
+      exceptionDates: exceptionDates ??
+          (clearRrule ? const <String>[] : this.exceptionDates),
+      reminderOffset:
+          clearReminderOffset ? null : (reminderOffset ?? this.reminderOffset),
       recurrenceInstanceDateKey:
           recurrenceInstanceDateKey ?? this.recurrenceInstanceDateKey,
     );
