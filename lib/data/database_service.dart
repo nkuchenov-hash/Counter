@@ -101,6 +101,17 @@ String? _normPlanInitialDateKey(dynamic raw) {
   return null;
 }
 
+/// Re-subscribes PocketBase `records` realtime and refreshes cache after OS resume (mobile WebSocket drop).
+class _DatabaseServiceLifecycleObserver with WidgetsBindingObserver {
+  void Function()? onResumed;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      onResumed?.call();
+    }
+  }
+}
+
 /// True when a flattened **categories** row should participate in the active tree / uniqueness checks.
 bool _categoryFlatRowIsActive(Map<String, dynamic> row) {
   final fields =
@@ -126,6 +137,10 @@ class _HighlanderRollbackToken {
 class DatabaseService {
   DatabaseService._();
   static final DatabaseService instance = DatabaseService._();
+
+  static final _DatabaseServiceLifecycleObserver _appLifecycleObserver =
+      _DatabaseServiceLifecycleObserver();
+  static bool _appLifecycleObserverRegistered = false;
 
   /// Sacred Law: at most this many **pre-today** open rows merged after today’s candidates (singleton
   /// implies ≤1 in a healthy DB; cap handles rare duplicate ghosts — oldest first).
@@ -1315,6 +1330,7 @@ class DatabaseService {
   }
 
   void clearLocalStateOnSignOut() {
+    _unregisterAppLifecycleObserver();
     _recordsRealtimeReconnectTimer?.cancel();
     _recordsRealtimeReconnectTimer = null;
     _recordsRealtimeFailureStreak = 0;
@@ -1480,6 +1496,7 @@ class DatabaseService {
     _categoryController.add(List.from(_rules));
     _tasksController.add(List.from(_tasksCache));
     _isInitialized = true;
+    _registerAppLifecycleObserverOnce();
     // LAW_OF_THE_MAIN_THREAD / Wear-lite: do not block watch bootstrap on realtime socket.
     unawaited(
       _startRecordsRealtimeSubscription().catchError((Object _, StackTrace __) {}),
@@ -1510,6 +1527,7 @@ class DatabaseService {
     _tasksController.add(List.from(_tasksCache));
     // Shell must not treat Brain as ready until profile settings + categories + tasks are loaded.
     _isInitialized = true;
+    _registerAppLifecycleObserverOnce();
     try {
       await _startRecordsRealtimeSubscription();
     } catch (_) {}
@@ -2378,6 +2396,45 @@ class DatabaseService {
     } catch (_) {}
   }
 
+  void _registerAppLifecycleObserverOnce() {
+    if (_appLifecycleObserverRegistered) return;
+    _appLifecycleObserver.onResumed = _onAppLifecycleResumed;
+    try {
+      WidgetsBinding.instance.addObserver(_appLifecycleObserver);
+      _appLifecycleObserverRegistered = true;
+    } catch (_) {}
+  }
+
+  void _unregisterAppLifecycleObserver() {
+    if (!_appLifecycleObserverRegistered) return;
+    try {
+      WidgetsBinding.instance.removeObserver(_appLifecycleObserver);
+    } catch (_) {}
+    _appLifecycleObserver.onResumed = null;
+    _appLifecycleObserverRegistered = false;
+  }
+
+  void _onAppLifecycleResumed() {
+    if (!(currentProfileId?.isNotEmpty ?? false)) return;
+    if (!_hasAuthenticatedUserId) return;
+    _recordsRealtimeFailureStreak = 0;
+    unawaited(_resyncRecordsRealtimeAfterAppResume());
+  }
+
+  Future<void> _resyncRecordsRealtimeAfterAppResume() async {
+    try {
+      await _cancelRecordsRealtimeSubscription();
+    } catch (_) {}
+    unawaited(
+      _startRecordsRealtimeSubscription()
+          .catchError((Object _, StackTrace __) {}),
+    );
+    unawaited(
+      fetchRecords(forceNetwork: true)
+          .catchError((Object _, StackTrace __) {}),
+    );
+  }
+
   Future<void> _cancelRecordsRealtimeSubscription() async {
     final unsub = _recordsRealtimeUnsubscribe;
     _recordsRealtimeUnsubscribe = null;
@@ -2528,6 +2585,9 @@ class DatabaseService {
         debugPrint(
           '[PB] fetchRecords: ${kept.length} rows (expand $expandRel) @ $kPocketBaseUrl',
         );
+      }
+      if (forceNetwork && _isInitialized) {
+        _notifyTimelineAfterRecordCacheMutation();
       }
       final cacheKey = _scopedDataCacheKey(_cacheRecordsFlatKey);
       final keptJson = await compute(_encodeRecordsFlatForPrefs, kept);
@@ -4426,6 +4486,18 @@ class DatabaseService {
     best = null;
     bestScore = -1;
     bestDepth = -1;
+    considerPhase((m) => m.categoryConsecutiveTokenMatchScoreForTitle(title));
+    if (best != null) return best;
+
+    best = null;
+    bestScore = -1;
+    bestDepth = -1;
+    considerPhase((m) => m.categoryTokenSetOverlapScoreForTitle(title));
+    if (best != null) return best;
+
+    best = null;
+    bestScore = -1;
+    bestDepth = -1;
     considerPhase((m) => m.categoryFuzzyMatchScoreForTitle(title));
     return best;
   }
@@ -4466,6 +4538,42 @@ class DatabaseService {
               r.name.trim().length > bestRule.name.trim().length)) {
         bestRule = r;
         bestScore = sc;
+      }
+    }
+    if (bestRule == null) {
+      bestScore = -1;
+      for (final r in candidates) {
+        final sc = r.categoryConsecutiveTokenMatchScoreForTitle(title);
+        if (sc <= 0) continue;
+        final pb = _categoryBackendRowIdStrict(r);
+        if (pb == null || pb.isEmpty || !_isLikelyPocketBaseRowId(pb)) {
+          continue;
+        }
+        if (bestRule == null ||
+            sc > bestScore ||
+            (sc == bestScore &&
+                r.name.trim().length > bestRule.name.trim().length)) {
+          bestRule = r;
+          bestScore = sc;
+        }
+      }
+    }
+    if (bestRule == null) {
+      bestScore = -1;
+      for (final r in candidates) {
+        final sc = r.categoryTokenSetOverlapScoreForTitle(title);
+        if (sc <= 0) continue;
+        final pb = _categoryBackendRowIdStrict(r);
+        if (pb == null || pb.isEmpty || !_isLikelyPocketBaseRowId(pb)) {
+          continue;
+        }
+        if (bestRule == null ||
+            sc > bestScore ||
+            (sc == bestScore &&
+                r.name.trim().length > bestRule.name.trim().length)) {
+          bestRule = r;
+          bestScore = sc;
+        }
       }
     }
     if (bestRule == null) {
@@ -4514,6 +4622,8 @@ class DatabaseService {
     'app',
     'work',
     'project',
+    'add',
+    'sin',
   };
 
   static final RegExp _smartInferNonWordOrUnderscore =

@@ -44,14 +44,15 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
   bool _isSaving = false;
   final ValueNotifier<double> _soundLevel = ValueNotifier(0.0);
   final TextEditingController _textController = TextEditingController();
-  String _lastVoiceRecognized = '';
   /// Finalized speech for this listen session (seeded from the field on start / locale switch).
   String _committedText = '';
   late String _speechUiCode;
 
-  String? _lastListenLocaleId;
-  bool _heardListeningThisSession = false;
-  bool _webNetworkSilentRelistenConsumed = false;
+  /// Field + committed text at the start of this listen attempt (restore on Web network failure).
+  String _sttListenBaseline = '';
+  /// After a Web STT network error, drop mixed-script results until the next session.
+  bool _postWebNetworkSpeechGarbageFilter = false;
+  String? _activeListenLocaleId;
 
   stt.SpeechToText get _engine => widget.speechHandle.speech;
 
@@ -64,6 +65,98 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
       return true;
     }
     return msg.contains('failed to fetch') || msg.contains('net::err');
+  }
+
+  /// Web Speech API: treat plugin/network disconnect errors aggressively (avoid broad "network" substring).
+  bool _isWebSttHardNetworkFailure(String raw) {
+    final m = raw.toLowerCase();
+    final trimmed = m.trim();
+    return trimmed == 'network' ||
+        m.contains('error_network') ||
+        m.contains('networkerror') ||
+        m.contains('network error') ||
+        m.contains('failed to fetch') ||
+        m.contains('net::err');
+  }
+
+  bool _hasLatinLetters(String s) => RegExp(r'[A-Za-z]').hasMatch(s);
+
+  bool _hasCyrillicLetters(String s) => RegExp(r'[\u0400-\u04FF]').hasMatch(s);
+
+  bool _isMixedLatinAndCyrillicScript(String s) =>
+      _hasLatinLetters(s) && _hasCyrillicLetters(s);
+
+  bool _shouldDiscardWebPostNetworkHallucination(String words) {
+    if (!kIsWeb || !_postWebNetworkSpeechGarbageFilter) return false;
+    if (words.trim().isEmpty) return false;
+    return _isMixedLatinAndCyrillicScript(words);
+  }
+
+  Future<void> _abortWebSpeechDueToNetwork(String loc) async {
+    _postWebNetworkSpeechGarbageFilter = true;
+    try {
+      await _engine.stop();
+    } catch (_) {}
+    try {
+      await _engine.cancel();
+    } catch (_) {}
+    if (!mounted) return;
+    final baseline = _sttListenBaseline;
+    _committedText = baseline;
+    _textController.value = TextEditingValue(
+      text: baseline,
+      selection: TextSelection.collapsed(offset: baseline.length),
+    );
+    setState(() {
+      _error = t(loc, 'speech_error_network_browser');
+      _softErrorVisual = false;
+      _voiceRecoveredCue = false;
+      _hadErrorInSession = true;
+      _isPulsing = false;
+      _isListening = false;
+    });
+    widget.onListeningChanged?.call(false);
+    final snack = t(loc, 'speech_error_network_browser');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(snack)),
+      );
+    });
+  }
+
+  void _onSpeechSttPluginError(String msg, String loc) {
+    final isNetwork = _isNetworkSttMessage(msg);
+
+    if (kIsWeb && _isWebSttHardNetworkFailure(msg)) {
+      unawaited(_abortWebSpeechDueToNetwork(loc));
+      return;
+    }
+
+    if (_messageIndicatesNoSpeech(msg)) {
+      unawaited(_performSpeechEngineHardReset());
+    }
+    final String displayMsg;
+    if (isNetwork) {
+      displayMsg = t(loc, 'speech_error_network');
+    } else if (SpeechListenLocale.messageIndicatesLanguageUnsupported(
+      msg,
+    )) {
+      displayMsg = t(loc, 'speech_language_not_supported');
+    } else {
+      displayMsg = t(loc, 'speech_error_prefix').replaceFirst('%s', msg);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _error = displayMsg;
+        _softErrorVisual = false;
+        _hadErrorInSession = true;
+        _isPulsing = false;
+        _isListening = false;
+      });
+      widget.onListeningChanged?.call(false);
+    });
   }
 
   /// Maps plugin dB/RMS to [0,1] for border/stripe/mic (all platforms; Web may stay 0 if no levels).
@@ -121,36 +214,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
     }
   }
 
-  Future<void> _silentNetworkRelisten(String loc) async {
-    try {
-      await _engine.stop();
-    } catch (_) {}
-    try {
-      await _engine.cancel();
-    } catch (_) {}
-    if (!mounted) return;
-    final localeId = _lastListenLocaleId;
-    try {
-      await _runSpeechListen(localeId);
-    } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('[STT] silent network relisten failed: $e\n$st');
-      }
-      if (!mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() {
-          _error = t(loc, 'speech_error_network_soft');
-          _softErrorVisual = true;
-          _hadErrorInSession = true;
-          _isPulsing = false;
-          _isListening = false;
-        });
-        widget.onListeningChanged?.call(false);
-      });
-    }
-  }
-
   void _playTone({required double freq, required double duration}) {
     voice_audio.playTone(freq: freq, duration: duration);
   }
@@ -178,8 +241,18 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
     if (!mounted || _isSaving) return;
     if (kDebugMode) {
       debugPrint(
-        '[STT DEBUG] words: "${res.recognizedWords}" final: ${res.finalResult}',
+        '[STT DEBUG] localeId=$_activeListenLocaleId speechUi=$_speechUiCode '
+        'words: "${res.recognizedWords}" final: ${res.finalResult}',
       );
+    }
+    if (_shouldDiscardWebPostNetworkHallucination(res.recognizedWords)) {
+      if (kDebugMode) {
+        debugPrint(
+          '[STT DEBUG] discarded post-network mixed-script localeId=$_activeListenLocaleId '
+          'speechUi=$_speechUiCode words: "${res.recognizedWords}"',
+        );
+      }
+      return;
     }
     final chunk = res.recognizedWords.trim();
     if (res.finalResult) {
@@ -200,10 +273,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
         _textController.text = '$_committedText $partialTrim';
       }
     }
-    final trimmed = _textController.text.trim();
-    if (trimmed.isNotEmpty) {
-      _lastVoiceRecognized = trimmed;
-    }
     setState(() {});
   }
 
@@ -223,6 +292,18 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
   }
 
   Future<void> _runSpeechListen(String? localeId) async {
+    _activeListenLocaleId = localeId;
+    try {
+      await _engine.stop();
+    } catch (_) {}
+    try {
+      await _engine.cancel();
+    } catch (_) {}
+    if (kDebugMode) {
+      debugPrint(
+        '[STT DEBUG] listen() after cancel/stop localeId=$localeId speechUi=$_speechUiCode web=$kIsWeb',
+      );
+    }
     await _engine.listen(
       onResult: _onSpeechResult,
       onSoundLevelChange: (level) {
@@ -262,8 +343,12 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
       _voiceRecoveredCue = false;
       _hadErrorInSession = false;
     });
-    _lastVoiceRecognized = '';
-    _committedText = _textController.text.trim();
+    if (kIsWeb) {
+      _postWebNetworkSpeechGarbageFilter = false;
+    }
+    final baseline = _textController.text.trim();
+    _committedText = baseline;
+    _sttListenBaseline = baseline;
     _soundLevel.value = 0.0;
     widget.onListeningChanged?.call(false);
     _playTone(freq: 660, duration: 0.1);
@@ -311,78 +396,14 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
 
   Future<void> _attachStatusAndListen({required String loc}) async {
     _coerceSpeechUiCodeToPrimaryOrEnglish(resolvedUiLanguageCode(loc));
-    _heardListeningThisSession = false;
-    _webNetworkSilentRelistenConsumed = false;
     _soundLevel.value = 0.0;
     widget.setSpeechStatusCallback((status) {
       if (status.startsWith('error:')) {
         final msg = status.replaceFirst('error:', '').trim();
-        final isNetwork = _isNetworkSttMessage(msg);
-        final hasTranscript = _textController.text.trim().isNotEmpty ||
-            _lastVoiceRecognized.trim().isNotEmpty;
-        if (kIsWeb && isNetwork && hasTranscript) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            try {
-              _engine.stop();
-            } catch (_) {}
-            try {
-              _engine.cancel();
-            } catch (_) {}
-            setState(() {
-              _error = null;
-              _softErrorVisual = false;
-              _voiceRecoveredCue = true;
-              _hadErrorInSession = false;
-              _statusText = t(loc, 'voice_stt_recovered_hint');
-              _isPulsing = false;
-              _isListening = false;
-            });
-            widget.onListeningChanged?.call(false);
-          });
-          return;
-        }
-        if (kIsWeb &&
-            isNetwork &&
-            !_webNetworkSilentRelistenConsumed &&
-            _heardListeningThisSession) {
-          _webNetworkSilentRelistenConsumed = true;
-          unawaited(_silentNetworkRelisten(loc));
-          return;
-        }
-        if (_messageIndicatesNoSpeech(msg)) {
-          unawaited(_performSpeechEngineHardReset());
-        }
-        final String displayMsg;
-        var softVisual = false;
-        if (kIsWeb && isNetwork && !hasTranscript) {
-          displayMsg = t(loc, 'speech_error_network_soft');
-          softVisual = true;
-        } else if (isNetwork) {
-          displayMsg = t(loc, 'speech_error_network');
-        } else if (SpeechListenLocale.messageIndicatesLanguageUnsupported(
-          msg,
-        )) {
-          displayMsg = t(loc, 'speech_language_not_supported');
-        } else {
-          displayMsg =
-              t(loc, 'speech_error_prefix').replaceFirst('%s', msg);
-        }
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          setState(() {
-            _error = displayMsg;
-            _softErrorVisual = softVisual;
-            _hadErrorInSession = true;
-            _isPulsing = false;
-            _isListening = false;
-          });
-          widget.onListeningChanged?.call(false);
-        });
+        _onSpeechSttPluginError(msg, loc);
         return;
       }
       if (status == 'listening') {
-        _heardListeningThisSession = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
           setState(() {
@@ -436,13 +457,11 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
     }
 
     try {
-      _lastListenLocaleId = chosen;
       var ok = await attemptListen(chosen);
       if (!ok && chosen != null) {
         if (kDebugMode) {
           debugPrint('[STT listen] retry localeId=null (device default)');
         }
-        _lastListenLocaleId = null;
         ok = await attemptListen(null);
         if (ok && mounted) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -459,7 +478,6 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
       }
       if (!ok && !kIsWeb) {
         try {
-          _lastListenLocaleId = 'en_US';
           ok = await attemptListen('en_US');
           if (ok && mounted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -513,6 +531,7 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
     if (!wasListening) return;
 
     _committedText = preserved;
+    _sttListenBaseline = preserved;
     try {
       await _engine.stop();
       await _engine.cancel();
@@ -524,6 +543,9 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
 
   Future<void> _stop() async {
     _committedText = '';
+    if (kIsWeb) {
+      _postWebNetworkSpeechGarbageFilter = false;
+    }
     await _engine.stop();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

@@ -1,5 +1,9 @@
 import 'dart:math' show max;
 
+/// Optional STT/abbreviation hints for [CategoryRule] token scoring (keys and values lowercase).
+/// Example: `'ts': 'teamspace'` if your tree uses that convention. Empty by default.
+const Map<String, String> kCategoryMatchingTokenAliases = <String, String>{};
+
 /// Lowercase, trim, drop punctuation/symbols, collapse to space-separated tokens.
 String normalizeCategoryLabel(String input) {
   final s = input.toLowerCase().trim();

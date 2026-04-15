@@ -799,6 +799,123 @@ class CategoryRule {
     if (b > 0) onScore(b);
   }
 
+  static String _categoryTokenAliasOrSelf(String tok) =>
+      kCategoryMatchingTokenAliases[tok] ?? tok;
+
+  /// Aligns normalized title tokens with a category phrase (name or keyword tokens).
+  /// Skips numeric-only title tokens so `laredo 10` can still match `laredo ts`.
+  /// Exact token equality scores higher than prefix-of-category-token ([ct.startsWith(tt)]).
+  static int _consecutiveCategoryTokenScore(
+    List<String> titleToks,
+    List<String> catToks,
+  ) {
+    if (catToks.isEmpty) return 0;
+    var i = 0;
+    var j = 0;
+    var sc = 0;
+    while (i < titleToks.length && j < catToks.length) {
+      final rawTt = titleToks[i];
+      if (rawTt.isEmpty) {
+        i++;
+        continue;
+      }
+      if (rawTt.length < 2 || RegExp(r'^\d+$').hasMatch(rawTt)) {
+        i++;
+        continue;
+      }
+      final tt = _categoryTokenAliasOrSelf(rawTt);
+      final ct = catToks[j];
+      if (ct.length < 2) {
+        j++;
+        continue;
+      }
+      if (tt == ct) {
+        sc += 200000 + tt.length * 1000 + ct.length;
+        i++;
+        j++;
+      } else if (ct.startsWith(tt)) {
+        sc += 100000 + tt.length * 1000;
+        i++;
+        j++;
+      } else if (tt.startsWith(ct)) {
+        sc += 80000 + ct.length * 1000;
+        i++;
+        j++;
+      } else {
+        break;
+      }
+    }
+    return sc;
+  }
+
+  /// Case-insensitive token / prefix match (uses [normalizeCategoryLabel]).
+  /// Runs after substring [categoryExactMatchScoreForTitle], before fuzzy Levenshtein.
+  int categoryConsecutiveTokenMatchScoreForTitle(String title) {
+    final nt = normalizeCategoryLabel(title);
+    if (nt.isEmpty) return 0;
+    final titleToks = nt.split(' ').where((t) => t.isNotEmpty).toList();
+    if (titleToks.isEmpty) return 0;
+    var best = 0;
+    void considerFrag(String raw) {
+      final frag = normalizeCategoryLabel(raw);
+      if (frag.isEmpty) return;
+      final catToks = frag.split(' ').where((t) => t.isNotEmpty).toList();
+      best = max(best, _consecutiveCategoryTokenScore(titleToks, catToks));
+    }
+
+    considerFrag(name);
+    if (keywords != null) {
+      for (final list in keywords!.values) {
+        for (final kw in list) {
+          considerFrag(kw);
+        }
+      }
+    }
+    return best;
+  }
+
+  /// ≥60% of unique category tokens (whole words, [normalizeCategoryLabel]) appear in [title].
+  /// Score band below consecutive-token matches; use when strict ordering misses (e.g. missing "Services").
+  int categoryTokenSetOverlapScoreForTitle(String title) {
+    final nt = normalizeCategoryLabel(title);
+    if (nt.isEmpty) return 0;
+    final titleToks = <String>{};
+    for (final raw in nt.split(' ').where((x) => x.isNotEmpty)) {
+      if (raw.length < 2 || RegExp(r'^\d+$').hasMatch(raw)) continue;
+      titleToks.add(_categoryTokenAliasOrSelf(raw));
+    }
+    if (titleToks.isEmpty) return 0;
+
+    var best = 0;
+    void considerFrag(String raw) {
+      final frag = normalizeCategoryLabel(raw);
+      if (frag.isEmpty) return;
+      final catToks = frag
+          .split(' ')
+          .where((x) => x.isNotEmpty && x.length >= 2)
+          .map(_categoryTokenAliasOrSelf)
+          .toList();
+      if (catToks.isEmpty) return;
+      final catSet = catToks.toSet();
+      final n = catSet.length;
+      final need = ((n * 60) + 99) ~/ 100;
+      final inter = titleToks.intersection(catSet);
+      if (inter.length < need) return;
+      final sc = 30000 + inter.length * 5000 + n * 100 + frag.length;
+      best = max(best, sc);
+    }
+
+    considerFrag(name);
+    if (keywords != null) {
+      for (final list in keywords!.values) {
+        for (final kw in list) {
+          considerFrag(kw);
+        }
+      }
+    }
+    return best;
+  }
+
   /// Highest word-bounded match length for [name] / **keywords** vs [title]
   /// using [normalizeCategoryLabel] for both sides (exact substring at token boundaries).
   /// Longer matches win over shorter ones (e.g. "NIS SOLUTIONS" beats "CRM" in the same title).
@@ -836,9 +953,11 @@ class CategoryRule {
     return fuzzyMatchScoreForNormalizedTitle(nt, frags);
   }
 
-  /// True when exact or fuzzy word match applies.
+  /// True when substring, consecutive-token, token-set majority, or fuzzy match applies.
   bool matchesTitleWholeWordKeywords(String title) =>
       categoryExactMatchScoreForTitle(title) > 0 ||
+      categoryConsecutiveTokenMatchScoreForTitle(title) > 0 ||
+      categoryTokenSetOverlapScoreForTitle(title) > 0 ||
       categoryFuzzyMatchScoreForTitle(title) > 0;
 
   CategoryRule? findDeepestMatch(

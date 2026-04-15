@@ -1,6 +1,10 @@
 // ---------------------------------------------------------------------------
 // SMART INPUT — Parse natural time hints from a planning task title (Phase 1).
 // Uses profile-agnostic wall hour/minute; caller binds to [baseDate] for the day.
+//
+// Category detection (whole-word tokens; consecutive + ≥60% token-set overlap;
+// [kCategoryMatchingTokenAliases]) lives in [CategoryRule] and
+// [DatabaseService.findDeepestMatchForTitle], not in this time-only parser.
 // ---------------------------------------------------------------------------
 
 /// Result of parsing a draft title for an embedded clock time.

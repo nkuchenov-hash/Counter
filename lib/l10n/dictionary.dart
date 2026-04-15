@@ -357,6 +357,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'speech_error_network': 'Network error. Check your connection and try again.',
     'speech_error_network_soft':
         'Connection issue. Please try dictating again.',
+    'speech_error_network_browser':
+        'Network error: Browser lost connection to Speech Server.',
     'smart_plan_stt_recovered_hint':
         'Recognition paused — your text is kept. Tap Generate when ready.',
     'voice_stt_recovered_hint':
@@ -803,6 +805,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'speech_error_network': 'Ошибка сети. Проверьте подключение и попробуйте снова.',
     'speech_error_network_soft':
         'Трудности с соединением. Попробуйте продиктовать ещё раз.',
+    'speech_error_network_browser':
+        'Ошибка сети: браузер потерял связь с сервером распознавания.',
     'smart_plan_stt_recovered_hint':
         'Распознавание прервано, текст сохранён. Когда будете готовы — нажмите «Создать».',
     'voice_stt_recovered_hint':
