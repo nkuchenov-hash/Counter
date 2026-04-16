@@ -573,6 +573,21 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
   }
 
+  Future<void> _retryVoiceBacklogTask(String rawText) async {
+    final ok = await DatabaseService.instance.addPlanningTaskFromVoiceText(
+      rawText: rawText,
+      wallDay: _dateOnly(_selectedDate),
+      categoryIdHint: _effectiveCategoryId,
+      isBacklog: true,
+    );
+    if (!mounted) return;
+    if (!ok) {
+      _showSyncFailedSnackBar(
+        onRetry: () => unawaited(_retryVoiceBacklogTask(rawText)),
+      );
+    }
+  }
+
   Future<bool> _voiceSubmitTimeline(String recognized) async {
     final title = recognized.trim();
     if (title.isEmpty) return false;
@@ -679,6 +694,34 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryVoicePlanningTask(recognized)),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<bool> _voiceSubmitBacklog(String recognized) async {
+    final title = recognized.trim();
+    if (title.isEmpty) return false;
+    try {
+      final ok = await DatabaseService.instance.addPlanningTaskFromVoiceText(
+        rawText: recognized,
+        wallDay: _dateOnly(_selectedDate),
+        categoryIdHint: _effectiveCategoryId,
+        isBacklog: true,
+      );
+      if (!mounted) return false;
+      if (!ok) {
+        _showSyncFailedSnackBar(
+          onRetry: () => unawaited(_retryVoiceBacklogTask(recognized)),
+        );
+      }
+      return ok;
+    } catch (e) {
+      print('UI ERROR: $e');
+      if (mounted) {
+        _showSyncFailedSnackBar(
+          onRetry: () => unawaited(_retryVoiceBacklogTask(recognized)),
         );
       }
       return false;
@@ -1175,7 +1218,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
 
     if (!mounted) return;
-    final voiceSurfaceIsPlanning = _tabIndex == 1;
+    final Future<bool> Function(String) voiceSubmitIntent = _tabIndex == 1
+        ? _voiceSubmitPlanning
+        : _tabIndex == 3
+            ? _voiceSubmitBacklog
+            : _voiceSubmitTimeline;
+    final voiceSuccessKey =
+        _tabIndex == 1 || _tabIndex == 3 ? 'task_added_to_plan' : 'record_synced';
+    final voicePrimaryKey =
+        _tabIndex == 1 || _tabIndex == 3 ? 'add_task' : 'start_task';
     _speechHandle ??= SpeechEngineHandle(_speech!);
     _speechHandle!.speech = _speech!;
     await showModalBottomSheet<void>(
@@ -1195,14 +1246,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             });
           },
           config: VoiceCaptureConfig(
-            submitIntent: voiceSurfaceIsPlanning
-                ? _voiceSubmitPlanning
-                : _voiceSubmitTimeline,
-            successL10nKey: voiceSurfaceIsPlanning
-                ? 'task_added_to_plan'
-                : 'record_synced',
-            primaryActionL10nKey:
-                voiceSurfaceIsPlanning ? 'add_task' : 'start_task',
+            submitIntent: voiceSubmitIntent,
+            successL10nKey: voiceSuccessKey,
+            primaryActionL10nKey: voicePrimaryKey,
           ),
         );
       },
@@ -1557,7 +1603,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       ),
     ];
 
-    final showVoiceFab = _tabIndex == 1 || !_isFutureDate;
+    final showVoiceFab =
+        _tabIndex == 1 || _tabIndex == 3 || !_isFutureDate;
     return AnimatedBuilder(
       animation: Listenable.merge([currentLocale, appIsProUser]),
       builder: (context, _) {

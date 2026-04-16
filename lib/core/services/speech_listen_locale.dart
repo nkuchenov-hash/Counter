@@ -23,9 +23,9 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 /// [resolveListenLocaleId] falls back to [SpeechToText.systemLocale] then the
 /// process [PlatformDispatcher] locale (see implementation).
 ///
-/// **Web:** [webListenLocaleIdBcp47] uses **`ru-RU`** for Russian and stable BCP-47 tags for others.
-/// **VoiceInputSheet:** [webVoiceListenLocaleId] returns **`null`** for English (browser default);
-/// Russian on Web uses **`ru-RU`**. No locale-list blocking.
+/// **Web:** [webListenLocaleIdBcp47] passes stable BCP-47 tags to the Web Speech API (`lang`), e.g.
+/// **`en-US`** for English and **`ru-RU`** for Russian — never rely on `null` (browser default often
+/// follows OS locale and breaks EN | RU toggle). No locale-list blocking.
 abstract final class SpeechListenLocale {
   static bool messageIndicatesLanguageUnsupported(String raw) {
     final msg = raw.toLowerCase().trim();
@@ -54,7 +54,7 @@ abstract final class SpeechListenLocale {
     final p = _primaryLanguageCode(speechUiCode);
     switch (p) {
       case 'en':
-        return 'en';
+        return 'en-US';
       case 'ru':
         return 'ru-RU';
       case 'de':
@@ -74,15 +74,6 @@ abstract final class SpeechListenLocale {
       default:
         return p;
     }
-  }
-
-  /// Web **VoiceInputSheet** only: English uses **`null`** [localeId] first so Chrome selects
-  /// a stable default; other languages use [webListenLocaleIdBcp47].
-  static String? webVoiceListenLocaleId(String speechUiCode) {
-    if (kIsWeb && _primaryLanguageCode(speechUiCode) == 'en') {
-      return null;
-    }
-    return webListenLocaleIdBcp47(speechUiCode);
   }
 
   static String _normalizeLocaleToken(String id) =>

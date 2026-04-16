@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-04-19] - Strike 1: Lists friction + optimistic tags
+* **Lists / planning cache:** Fixed Optimistic UI cache for tags by removing the server-override branch in `_mergePlanningOptimistic`. Added inline quick-add with `_pendingInline` state and a delete button with confirmation dialog to the ListsView. (`database_service.dart` `applyOptimisticPlanningTask` dateKey fallback for short keys; `lists_view.dart` optimistic `optimistic-inline-*` rows + `addPlanningTask` / `deletePlanningTasksBulk`; l10n `lists_inline_add_hint` / `lists_delete_backlog_confirm`.)
+
 ## [2026-04-18] - Recurring: instance materialization (virt- complete)
 * **Planning / recurrence:** Refactored virtual clone mutation in `database_service.dart`. Separated Delete (adds `exception_dates` to parent) from Complete (Instance Materialization: adds exception to parent AND creates a concrete `isDone: true` record). Added a strict rollback mechanism if the materialization POST fails. (`_parseVirtualPlanRowId`; delete path → `_patchRecurringTemplateExceptionDates` only; complete path → `_completeVirtualRecurringInstance` = parent PATCH + `_createPlanningTaskPocketStrict` / `_buildPocketPlanCreateBody`; rollback removes the exception; `updatePlanningTask` / `markPlanningTasksCompletedBulk` vs `deletePlanningTasksBulk`.)
 

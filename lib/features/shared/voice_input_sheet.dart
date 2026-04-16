@@ -444,12 +444,10 @@ class _VoiceInputSheetState extends State<VoiceInputSheet> {
       }
     }
 
-    final String? chosen = kIsWeb
-        ? SpeechListenLocale.webVoiceListenLocaleId(_speechUiCode)
-        : await SpeechListenLocale.resolveListenLocaleId(
-            speech: _engine,
-            speechUiCode: _speechUiCode,
-          );
+    final String? chosen = await SpeechListenLocale.resolveListenLocaleId(
+      speech: _engine,
+      speechUiCode: _speechUiCode,
+    );
     if (kDebugMode) {
       debugPrint(
         '[STT] speech.listen speechUi=$_speechUiCode localeId=$chosen web=$kIsWeb',

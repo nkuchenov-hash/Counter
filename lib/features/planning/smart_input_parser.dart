@@ -76,7 +76,9 @@ class SmartTimeRangeParseResult {
 /// 3. Trailing ` … HH[:.]mm` at EOL (after one or more spaces), not glued to another number/date chunk.
 /// 4. Trailing **four digits** `HHmm` (e.g. `1230` → 12:30).
 /// 5. Trailing hour only: `[\s]+(2[0-3]|1[0-9]|[0-9])\s*$` (e.g. `Ужин 12`).
-/// 6. `at` / `@` / **в** / **на** after start or whitespace, optional `:` or `.` before minutes.
+/// 6. **Leading** hour at line start + space + title (e.g. `10 call Carlos` → 10:00), after spaced `H mm`
+///    so `10 30 call` still resolves as 10:30, not hour 10.
+/// 7. `at` / `@` / **в** / **на** after start or whitespace, optional `:` or `.` before minutes.
 ///
 /// Dot form is always **clock time** (minute 00–59), not `dd.mm` calendar shorthand.
 /// First matching rule wins.
@@ -255,13 +257,44 @@ abstract final class SmartInputParser {
     r'[\s\u00A0]+(2[0-3]|1[0-9]|[0-9])\s*$',
   );
 
+  /// Line-start hour + space + remainder title (`10 call Carlos` → 10:00, `call Carlos`).
+  static final RegExp _leadingHourAtStart = RegExp(r'^([01]?\d|2[0-3])\s+(.+)$');
+
   static bool _charSuggestsGluedClockPrefix(String s, int indexBeforeSpace) {
     if (indexBeforeSpace < 0 || indexBeforeSpace >= s.length) return false;
     return RegExp(r'[\d:.]').hasMatch(s[indexBeforeSpace]);
   }
 
+  /// Title-only cleanup for backlog / Lists: strips common scheduling words so the stored
+  /// title is not littered with ignored time phrases.
+  static String backlogTitleFromRaw(String raw) {
+    var s = raw.replaceAll('\u00A0', ' ').trim();
+    if (s.isEmpty) return s;
+    s = s.replaceAll(
+      RegExp(r'\s+at\s+[01]?\d(?:\s*:\s*[0-5]?\d)?\b', caseSensitive: false),
+      '',
+    );
+    s = s.replaceAll(
+      RegExp(r'\bat\s+[01]?\d(?:\s*:\s*[0-5]?\d)?\b', caseSensitive: false),
+      '',
+    );
+    s = s.replaceAll(
+      RegExp(r'\b(tomorrow|today|сегодня|завтра)\b', caseSensitive: false),
+      '',
+    );
+    return _collapseSpace(s).trim();
+  }
+
   /// Returns null if no time token matched (caller should not mutate the field).
-  static SmartTimeParseResult? parseTitleForScheduledTime(String raw) {
+  ///
+  /// When [isBacklog] is true (Lists / backlog), skips all time extraction — returns null;
+  /// use [backlogTitleFromRaw] and caller-side title/tag cleanup for backlog rows.
+  static SmartTimeParseResult? parseTitleForScheduledTime(
+    String raw, {
+    bool isBacklog = false,
+  }) {
+    if (isBacklog) return null;
+
     final input = normalizeForTimeParsing(raw);
     if (input.trim().isEmpty) return null;
 
@@ -313,6 +346,20 @@ abstract final class SmartInputParser {
           cleanedTitle: cleaned,
           hour: h,
           minute: min,
+        );
+      }
+    }
+
+    final trimmedForLead = input.trim();
+    m = _leadingHourAtStart.firstMatch(trimmedForLead);
+    if (m != null) {
+      final h = int.parse(m.group(1)!);
+      final rest = m.group(2)!.trim();
+      if (rest.isNotEmpty && h >= 0 && h <= 23) {
+        return SmartTimeParseResult(
+          cleanedTitle: rest,
+          hour: h,
+          minute: 0,
         );
       }
     }
@@ -402,7 +449,13 @@ abstract final class SmartInputParser {
   ///
   /// Applies **+12h on the end** when end is strictly before start the same day
   /// (e.g. `from 10 to 2` → 14:00).
-  static SmartTimeRangeParseResult? parseTitleForTimeRange(String raw) {
+  ///
+  /// When [isBacklog] is true, returns null without matching (backlog stays dateless).
+  static SmartTimeRangeParseResult? parseTitleForTimeRange(
+    String raw, {
+    bool isBacklog = false,
+  }) {
+    if (isBacklog) return null;
     try {
       final input = normalizeForTimeParsing(raw);
       if (input.trim().isEmpty) return null;

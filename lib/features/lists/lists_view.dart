@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -122,10 +123,15 @@ class _ListsPageState extends State<ListsPage>
   }
 
   void _submitInline() {
-    final title = _inlineController.text.trim();
+    final raw = _inlineController.text.trim();
+    if (raw.isEmpty) return;
+    final stripped = SmartInputParser.backlogTitleFromRaw(raw);
+    final gt = DatabaseService.instance.getCleanTitleAndTags(stripped);
+    final title = gt.title.trim();
     if (title.isEmpty) return;
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
-    final cat = _effectiveCategoryIdForNewTask(pairs);
+    final match = DatabaseService.instance.identifyCategory(title);
+    final cat = match?.id ?? _effectiveCategoryIdForNewTask(pairs);
     if (cat == null) return;
 
     final optId =

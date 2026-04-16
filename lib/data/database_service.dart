@@ -7931,12 +7931,57 @@ class DatabaseService {
     required String rawText,
     required DateTime wallDay,
     int? categoryIdHint,
+    bool isBacklog = false,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     if (!_isPlansTableConfigured) {
       _log('TABLE_GUARD: blocked addPlanningTaskFromVoiceText');
       return false;
     }
+
+    if (isBacklog) {
+      final stripped = SmartInputParser.backlogTitleFromRaw(rawText);
+      final gt = getCleanTitleAndTags(stripped);
+      final title = gt.title.trim();
+      if (title.isEmpty) return false;
+      final todayWall = getTimelineDeviceLocalToday();
+      final ymd = DateTime(todayWall.year, todayWall.month, todayWall.day);
+      final taskDateKey =
+          '${ymd.year}-${_two(ymd.month)}-${_two(ymd.day)}';
+      final match = identifyCategory(title);
+      final categoryId = match?.id ??
+          categoryIdHint ??
+          defaultCategoryId ??
+          (rules.isNotEmpty ? rules.first.id : 0);
+
+      if (getCategoryRuleById(categoryId) == null) {
+        _log('VOICE_PLAN: blocked — unknown category $categoryId');
+        return false;
+      }
+
+      final nextOrder = await nextPlanningOrderForDate(ymd);
+      final clientPlanId = newClientUuid();
+
+      return addPlanningTask(
+        PlanningTask(
+          id: 0,
+          title: title,
+          categoryId: categoryId,
+          isDone: false,
+          dateKey: taskDateKey,
+          order: nextOrder,
+          startTime: null,
+          endDateTime: null,
+          checklist: const [],
+          notes: null,
+          parentPlanId: null,
+          tags: const [],
+          isSynced: false,
+        ),
+        clientPlanId: clientPlanId,
+      );
+    }
+
     final ymd = DateTime(wallDay.year, wallDay.month, wallDay.day);
     final taskDateKey =
         '${ymd.year}-${_two(ymd.month)}-${_two(ymd.day)}';
