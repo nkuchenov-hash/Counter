@@ -228,16 +228,75 @@ class EmptyStatePlaceholder extends StatelessWidget {
 enum ActivityDetailKind { timelineRecord, planningTask }
 
 /// Local repeat presets for plan edit sheet (maps to @DATA_MAP `plans.rrule`).
-enum _PlanRepeatUi { none, daily, weekly, monthly, custom }
+enum _PlanRepeatUi {
+  none,
+  daily,
+  weekdays,
+  weekly,
+  monthly,
+  yearly,
+  custom,
+}
+
+String _planRruleForUiParse(String? raw) {
+  var s = (raw ?? '').trim();
+  if (s.isEmpty) return s;
+  if (s.toUpperCase().startsWith('RRULE:')) {
+    s = s.substring(6).trim();
+  }
+  return s;
+}
+
+bool _rruleHasFreqWeekly(String r) {
+  return RegExp(r'FREQ\s*=\s*WEEKLY', caseSensitive: false).hasMatch(r);
+}
+
+bool _rruleHasBydayClause(String r) {
+  return RegExp(r'\bBYDAY\s*=', caseSensitive: false).hasMatch(r);
+}
+
+String? _bydayClauseValue(String raw) {
+  final m = RegExp(
+    r'BYDAY\s*=\s*([^;]+)',
+    caseSensitive: false,
+  ).firstMatch(raw);
+  return m?.group(1)?.trim();
+}
+
+/// RFC 5545: Mon–Fri bundle (office weekdays), distinct from plain `FREQ=WEEKLY`.
+bool _isWeekdaysMoToFrRrule(String r) {
+  if (!_rruleHasFreqWeekly(r)) return false;
+  final val = _bydayClauseValue(r);
+  if (val == null || val.isEmpty) return false;
+  final tokens = val
+      .split(',')
+      .map((e) => e.trim().toUpperCase())
+      .where((e) => e.isNotEmpty)
+      .toSet();
+  const want = {'MO', 'TU', 'WE', 'TH', 'FR'};
+  return tokens.length == 5 && tokens.containsAll(want);
+}
 
 _PlanRepeatUi _planRepeatUiFromTask(PlanningTask t) {
-  final r = t.rrule?.trim() ?? '';
+  final r = _planRruleForUiParse(t.rrule);
   if (r.isEmpty) return _PlanRepeatUi.none;
-  final u = r.toUpperCase();
-  if (u.contains('FREQ') && u.contains('DAILY')) return _PlanRepeatUi.daily;
-  if (u.contains('FREQ') && u.contains('WEEKLY')) return _PlanRepeatUi.weekly;
-  if (u.contains('FREQ') && u.contains('MONTHLY')) {
+  if (RegExp(r'FREQ\s*=\s*YEARLY', caseSensitive: false).hasMatch(r)) {
+    return _PlanRepeatUi.yearly;
+  }
+  if (RegExp(r'FREQ\s*=\s*DAILY', caseSensitive: false).hasMatch(r)) {
+    return _PlanRepeatUi.daily;
+  }
+  if (_isWeekdaysMoToFrRrule(r)) {
+    return _PlanRepeatUi.weekdays;
+  }
+  if (RegExp(r'FREQ\s*=\s*MONTHLY', caseSensitive: false).hasMatch(r)) {
     return _PlanRepeatUi.monthly;
+  }
+  if (_rruleHasFreqWeekly(r)) {
+    if (_rruleHasBydayClause(r) && !_isWeekdaysMoToFrRrule(r)) {
+      return _PlanRepeatUi.custom;
+    }
+    return _PlanRepeatUi.weekly;
   }
   return _PlanRepeatUi.custom;
 }
@@ -248,10 +307,14 @@ String? _rruleWireFromRepeatUi(_PlanRepeatUi choice, String? customRaw) {
       return null;
     case _PlanRepeatUi.daily:
       return 'FREQ=DAILY';
+    case _PlanRepeatUi.weekdays:
+      return 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR';
     case _PlanRepeatUi.weekly:
       return 'FREQ=WEEKLY';
     case _PlanRepeatUi.monthly:
       return 'FREQ=MONTHLY';
+    case _PlanRepeatUi.yearly:
+      return 'FREQ=YEARLY';
     case _PlanRepeatUi.custom:
       final s = customRaw?.trim() ?? '';
       return s.isEmpty ? null : s;
@@ -724,6 +787,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 ),
                               ),
                               DropdownMenuItem(
+                                value: _PlanRepeatUi.weekdays,
+                                child: Text(
+                                  t(
+                                    currentLocale.value,
+                                    'plan_repeat_weekdays',
+                                  ),
+                                ),
+                              ),
+                              DropdownMenuItem(
                                 value: _PlanRepeatUi.weekly,
                                 child: Text(
                                   t(currentLocale.value, 'plan_repeat_weekly'),
@@ -735,6 +807,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                   t(
                                     currentLocale.value,
                                     'plan_repeat_monthly',
+                                  ),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: _PlanRepeatUi.yearly,
+                                child: Text(
+                                  t(
+                                    currentLocale.value,
+                                    'plan_repeat_yearly',
                                   ),
                                 ),
                               ),

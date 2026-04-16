@@ -128,8 +128,10 @@ const Map<String, String> kRuL10n = {
     'plan_repeat_label': 'Повтор',
     'plan_repeat_none': 'Один раз',
     'plan_repeat_daily': 'Каждый день',
+    'plan_repeat_weekdays': 'По будням',
     'plan_repeat_weekly': 'Каждую неделю',
     'plan_repeat_monthly': 'Каждый месяц',
+    'plan_repeat_yearly': 'Каждый год',
     'plan_repeat_custom': 'Своё правило (с сервера)',
     'profile_notifications_section': 'Уведомления',
     'profile_notifications_subtitle':

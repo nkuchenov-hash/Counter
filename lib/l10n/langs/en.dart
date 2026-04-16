@@ -128,8 +128,10 @@ const Map<String, String> kEnL10n = {
     'plan_repeat_label': 'Repeat',
     'plan_repeat_none': 'One-time',
     'plan_repeat_daily': 'Every day',
+    'plan_repeat_weekdays': 'Every weekday',
     'plan_repeat_weekly': 'Every week',
     'plan_repeat_monthly': 'Every month',
+    'plan_repeat_yearly': 'Every year',
     'plan_repeat_custom': 'Custom rule (from server)',
     'profile_notifications_section': 'Notifications',
     'profile_notifications_subtitle':
