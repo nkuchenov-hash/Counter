@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-04-18] - Recurring: instance materialization (virt- complete)
+* **Planning / recurrence:** Refactored virtual clone mutation in `database_service.dart`. Separated Delete (adds `exception_dates` to parent) from Complete (Instance Materialization: adds exception to parent AND creates a concrete `isDone: true` record). Added a strict rollback mechanism if the materialization POST fails. (`_parseVirtualPlanRowId`; delete path → `_patchRecurringTemplateExceptionDates` only; complete path → `_completeVirtualRecurringInstance` = parent PATCH + `_createPlanningTaskPocketStrict` / `_buildPocketPlanCreateBody`; rollback removes the exception; `updatePlanningTask` / `markPlanningTasksCompletedBulk` vs `deletePlanningTasksBulk`.)
+
 ## [2026-04-17] - Phase 4–5: Zero-Table Lists & More navigation
 * **Backlog / shell:** Implemented 'Zero-Table' Lists using dateless PlanningTask rows in database_service.dart with 1-tap Play/Complete execution. Restructured App Shell navigation using IndexedStack, adding ListsView and collapsing Profile/Categories into a new MoreView. (Implementation: `fetchBacklogPlans` / `startRecordFromPlanTask` / `startTimerWithCategory` dateKey fallback; day-scoped plan fetches require `startTime`; `lists_view.dart`, `more_view.dart`, `app_shell.dart`.)
 

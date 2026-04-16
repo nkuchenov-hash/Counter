@@ -17,6 +17,8 @@ const Map<String, String> kRuL10n = {
     'lists_empty': 'Нет задач без даты',
     'lists_filter_category': 'Категория',
     'lists_filter_all': 'Все категории',
+    'lists_inline_add_hint': 'Добавить задачу…',
+    'lists_delete_backlog_confirm': 'Удалить эту задачу из списка?',
     'more_menu_profile': 'Профиль и настройки',
     'more_menu_categories': 'Категории',
     'tab_stats': 'Статистика',

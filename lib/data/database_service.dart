@@ -934,8 +934,10 @@ class DatabaseService {
     for (final m in _planningOptimisticByDateKey.values) {
       m.remove(pid);
     }
-    final dk = task.dateKey.trim();
-    if (dk.length < 10) return;
+    var dk = task.dateKey.trim();
+    if (dk.length < 10) {
+      dk = getTimelineDeviceLocalTodayDateKey();
+    }
     _planningOptimisticByDateKey.putIfAbsent(dk, () => {})[pid] = task;
   }
 
@@ -964,21 +966,9 @@ class DatabaseService {
     final byId = <String, PlanningTask>{
       for (final t in filtered) t.planRowIdForBackend: t,
     };
+    // Overlay wins for any row id present (tags/title edits until PATCH clears the overlay).
     for (final e in overlay.entries) {
-      final existing = byId[e.key];
-      final overlayTask = e.value;
-      final overlayChips = overlayTask.tags.any((t) => t.rendersAsChip);
-      final existingChips = existing != null &&
-          existing.tags.any((t) => t.rendersAsChip);
-      // Optimistic chips win over an empty / count-only list row until single-row expand runs.
-      if (overlayChips && !existingChips) {
-        byId[e.key] = overlayTask;
-        continue;
-      }
-      if (existingChips) {
-        continue;
-      }
-      byId[e.key] = overlayTask;
+      byId[e.key] = e.value;
     }
     final merged = byId.values.toList();
     merged.sort((a, b) {
@@ -9453,6 +9443,197 @@ class DatabaseService {
     }
   }
 
+  /// Wall times for [day] using parent template’s clock (same as JIT [expandRecurringPlans] instance shape).
+  (DateTime?, DateTime?) _materializedWallStartEndForDay(
+    PlanningTask parent,
+    DateTime wallDay,
+  ) {
+    final pst = parent.startTime;
+    if (pst == null) {
+      return (null, null);
+    }
+    final start = DateTime(
+      wallDay.year,
+      wallDay.month,
+      wallDay.day,
+      pst.hour,
+      pst.minute,
+      pst.second,
+      pst.millisecond,
+      pst.microsecond,
+    );
+    final pend = parent.endDateTime;
+    if (pend == null) {
+      return (start, null);
+    }
+    final dur = pend.difference(pst);
+    final end = dur.isNegative ? start : start.add(dur);
+    return (start, end);
+  }
+
+  List<Map<String, dynamic>> _copyChecklistForMaterialize(
+    List<Map<String, dynamic>> src,
+  ) {
+    return [
+      for (final m in src) Map<String, dynamic>.from(m),
+    ];
+  }
+
+  /// POST a new real plan row; returns **false** on any failure (no outbox “success”).
+  Future<bool> _createPlanningTaskPocketStrict(PlanningTask task) async {
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+      return false;
+    }
+    if (!_isPlansTableConfigured) {
+      return false;
+    }
+    try {
+      final catRule = getCategoryRuleById(task.categoryId);
+      if (catRule == null) {
+        _log('MATERIALIZE_PLAN: unknown category ${task.categoryId}');
+        return false;
+      }
+      final Object categoryFieldForPlan;
+      final catNocoSys = _categoryBackendRowIdStrict(catRule);
+      if (catNocoSys != null) {
+        categoryFieldForPlan = catNocoSys;
+      } else {
+        final catStr = _categoryStringPkForApi(catRule);
+        if (catStr != null && catStr.isNotEmpty) {
+          categoryFieldForPlan = catStr;
+        } else {
+          categoryFieldForPlan =
+              _recordCategoryBusinessPkForApi(task.categoryId);
+        }
+      }
+      final titleTrimmed = task.title.trim();
+      if (titleTrimmed.isEmpty) {
+        _log('MATERIALIZE_PLAN: empty title');
+        return false;
+      }
+      final clientPlanId = _newClientRecordUuid();
+      final body = await _buildPocketPlanCreateBody(
+        task,
+        titleTrimmed: titleTrimmed,
+        clientPlanId: clientPlanId,
+        categoryFieldForPlan: categoryFieldForPlan,
+      );
+      final record =
+          await _pb.collection(PbCollections.plans).create(body: body);
+      if (task.tags.isNotEmpty) {
+        await _syncPlanTagsPocket(record.id, task.tags);
+      }
+      return true;
+    } catch (e, st) {
+      _log('MATERIALIZE_PLAN_PB: $e');
+      _log(st.toString());
+      return false;
+    }
+  }
+
+  /// Complete a recurring **virtual** row: PATCH parent [exception_dates] + POST one-off done plan on that wall day.
+  Future<bool> _completeVirtualRecurringInstance({
+    required String parentPlanPocketId,
+    required String instanceDateKey,
+    bool suppressAppSnack = false,
+    bool deferPlanningNotify = false,
+  }) async {
+    final pid = parentPlanPocketId.trim();
+    if (pid.isEmpty || !_isLikelyPocketBaseRowId(pid)) return false;
+    var day = instanceDateKey.trim();
+    if (day.length < 10) return false;
+    day = day.substring(0, 10);
+
+    final y = int.tryParse(day.substring(0, 4));
+    final mo = int.tryParse(day.substring(5, 7));
+    final d = int.tryParse(day.substring(8, 10));
+    if (y == null || mo == null || d == null) return false;
+    final wallDay = DateTime(y, mo, d);
+    if (wallDay.year != y || wallDay.month != mo || wallDay.day != d) {
+      return false;
+    }
+
+    final patched = await _patchRecurringTemplateExceptionDates(
+      parentPlanPocketId: pid,
+      instanceDateKey: day,
+      addException: true,
+      suppressAppSnack: suppressAppSnack,
+      deferPlanningNotify: true,
+    );
+    if (!patched) return false;
+
+    try {
+      final tagCatalog = await fetchTagsForCurrentUser();
+      final rec = await _pb.collection(PbCollections.plans).getOne(
+            pid,
+            expand: kPbPlanTagsExpand,
+          );
+      final parent =
+          _planningTaskFromPocketRecord(rec, pocketTagCatalog: tagCatalog);
+      if (parent.rrule?.trim().isEmpty ?? true) {
+        await _patchRecurringTemplateExceptionDates(
+          parentPlanPocketId: pid,
+          instanceDateKey: day,
+          addException: false,
+          suppressAppSnack: true,
+          deferPlanningNotify: true,
+        );
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+
+      final wallTimes = _materializedWallStartEndForDay(parent, wallDay);
+      final ord = await nextPlanningOrderForDate(wallDay);
+
+      final material = PlanningTask(
+        id: 0,
+        title: parent.title,
+        categoryId: parent.categoryId,
+        isDone: true,
+        dateKey: day,
+        order: ord,
+        startTime: wallTimes.$1,
+        endDateTime: wallTimes.$2,
+        checklist: _copyChecklistForMaterialize(parent.checklist),
+        notes: parent.notes,
+        tags: List<Tag>.from(parent.tags),
+        initialDateKey: day,
+        isPostponed: false,
+      );
+
+      final created = await _createPlanningTaskPocketStrict(material);
+      if (!created) {
+        await _patchRecurringTemplateExceptionDates(
+          parentPlanPocketId: pid,
+          instanceDateKey: day,
+          addException: false,
+          suppressAppSnack: true,
+          deferPlanningNotify: true,
+        );
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+
+      if (!deferPlanningNotify) {
+        notifyPlanningRefresh();
+        _notifyTimelineAfterRecordCacheMutation();
+      }
+      return true;
+    } catch (e, st) {
+      _log('VIRT_MATERIALIZE: $e');
+      _log(st.toString());
+      await _patchRecurringTemplateExceptionDates(
+        parentPlanPocketId: pid,
+        instanceDateKey: day,
+        addException: false,
+        suppressAppSnack: true,
+        deferPlanningNotify: true,
+      );
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    }
+  }
+
   Future<bool> updatePlanningTask(
     String planRowId, {
     /// @DATA_MAP `plan_id` (UUID) — send inside `fields` only; outer bulk `id` must be Integer Id.
@@ -9519,15 +9700,22 @@ class DatabaseService {
       if (isDone == null || disallowedExtras) {
         _log(
           'VIRT_PLAN_UPDATE: blocked — virtual clone supports only is_done toggle '
-          '(maps to parent exception_dates); no direct field edits yet.',
+          '(complete materializes a real row; uncomplete uses exception_dates only).',
         );
         if (!suppressAppSnack) AppSnack.failed();
         return false;
       }
+      if (isDone) {
+        return _completeVirtualRecurringInstance(
+          parentPlanPocketId: virt.parentPocketId,
+          instanceDateKey: effectiveDay,
+          suppressAppSnack: suppressAppSnack,
+        );
+      }
       return _patchRecurringTemplateExceptionDates(
         parentPlanPocketId: virt.parentPocketId,
         instanceDateKey: effectiveDay,
-        addException: isDone,
+        addException: false,
         suppressAppSnack: suppressAppSnack,
       );
     }
@@ -9707,13 +9895,23 @@ class DatabaseService {
           final trimmed = id.trim();
           final virt = _parseVirtualPlanRowId(trimmed);
           if (virt != null) {
-            final ok = await _patchRecurringTemplateExceptionDates(
-              parentPlanPocketId: virt.parentPocketId,
-              instanceDateKey: virt.instanceDateKey,
-              addException: completed,
-              suppressAppSnack: true,
-              deferPlanningNotify: true,
-            );
+            final bool ok;
+            if (completed) {
+              ok = await _completeVirtualRecurringInstance(
+                parentPlanPocketId: virt.parentPocketId,
+                instanceDateKey: virt.instanceDateKey,
+                suppressAppSnack: true,
+                deferPlanningNotify: true,
+              );
+            } else {
+              ok = await _patchRecurringTemplateExceptionDates(
+                parentPlanPocketId: virt.parentPocketId,
+                instanceDateKey: virt.instanceDateKey,
+                addException: false,
+                suppressAppSnack: true,
+                deferPlanningNotify: true,
+              );
+            }
             if (!ok) {
               allOk = false;
             } else {

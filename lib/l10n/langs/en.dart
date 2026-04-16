@@ -17,6 +17,8 @@ const Map<String, String> kEnL10n = {
     'lists_empty': 'No undated tasks',
     'lists_filter_category': 'Category',
     'lists_filter_all': 'All categories',
+    'lists_inline_add_hint': 'Add new item...',
+    'lists_delete_backlog_confirm': 'Remove this backlog task?',
     'more_menu_profile': 'Profile & settings',
     'more_menu_categories': 'Categories',
     'tab_stats': 'Stats',

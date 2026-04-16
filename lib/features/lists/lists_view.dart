@@ -9,7 +9,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
-/// Backlog screen: grouped headers by category path, Play + Done actions (optimistic Done).
+/// Backlog screen: grouped headers by category path, Play + Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
   const ListsPage({super.key});
 
@@ -23,15 +23,20 @@ class _ListsPageState extends State<ListsPage>
   bool get wantKeepAlive => true;
 
   List<PlanningTask> _flat = [];
+  /// Local-only rows until [fetchBacklogPlans] returns the server copy (inline add).
+  final List<PlanningTask> _pendingInline = [];
   bool _loading = true;
   int? _filterCategoryId;
   StreamSubscription<void>? _planRefreshSub;
   DateTime? _lastPlayDebounce;
   static const Duration _playDebounce = Duration(milliseconds: 500);
+  late final TextEditingController _inlineController;
+  final FocusNode _inlineFocus = FocusNode();
 
   @override
   void initState() {
     super.initState();
+    _inlineController = TextEditingController();
     _planRefreshSub =
         DatabaseService.instance.planningRefreshNotifications.listen((_) {
       if (mounted) unawaited(_reload());
@@ -42,7 +47,25 @@ class _ListsPageState extends State<ListsPage>
   @override
   void dispose() {
     _planRefreshSub?.cancel();
+    _inlineController.dispose();
+    _inlineFocus.dispose();
     super.dispose();
+  }
+
+  List<PlanningTask> get _displayFlat {
+    final seen = <String>{};
+    final out = <PlanningTask>[];
+    for (final t in _pendingInline) {
+      final k = t.planRowIdForBackend.trim();
+      if (k.isEmpty) continue;
+      if (seen.add(k)) out.add(t);
+    }
+    for (final t in _flat) {
+      final k = t.planRowIdForBackend.trim();
+      if (k.isEmpty) continue;
+      if (seen.add(k)) out.add(t);
+    }
+    return out;
   }
 
   Future<void> _reload() async {
@@ -51,6 +74,18 @@ class _ListsPageState extends State<ListsPage>
     if (!mounted) return;
     setState(() {
       _flat = list;
+      _pendingInline.removeWhere((p) {
+        if (!p.planRowIdForBackend.startsWith('optimistic-inline-')) {
+          return false;
+        }
+        return list.any(
+          (s) =>
+              s.title == p.title &&
+              s.categoryId == p.categoryId &&
+              s.startTime == null &&
+              !s.planRowIdForBackend.startsWith('optimistic-'),
+        );
+      });
       _loading = false;
     });
   }
@@ -78,7 +113,70 @@ class _ListsPageState extends State<ListsPage>
     return {for (final k in keys) k: map[k]!};
   }
 
+  int? _effectiveCategoryIdForNewTask(List<({int id, String path})> pairs) {
+    if (_filterCategoryId != null) return _filterCategoryId;
+    final d = DatabaseService.instance.defaultCategoryId;
+    if (d != null && pairs.any((p) => p.id == d)) return d;
+    if (pairs.isNotEmpty) return pairs.first.id;
+    return null;
+  }
+
+  void _submitInline() {
+    final title = _inlineController.text.trim();
+    if (title.isEmpty) return;
+    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
+    final cat = _effectiveCategoryIdForNewTask(pairs);
+    if (cat == null) return;
+
+    final optId =
+        'optimistic-inline-${DateTime.now().microsecondsSinceEpoch}';
+    final pending = PlanningTask(
+      id: 0,
+      planRowId: optId,
+      title: title,
+      categoryId: cat,
+      dateKey: DatabaseService.instance.getTimelineDeviceLocalTodayDateKey(),
+      order: 0,
+      startTime: null,
+    );
+    setState(() {
+      _pendingInline.insert(0, pending);
+      _inlineController.clear();
+    });
+    unawaited(_persistInlineAdd(pending));
+  }
+
+  Future<void> _persistInlineAdd(PlanningTask optimistic) async {
+    final wall = DatabaseService.instance.getTimelineDeviceLocalToday();
+    final ord = await DatabaseService.instance.nextPlanningOrderForDate(wall);
+    final ok = await DatabaseService.instance.addPlanningTask(
+      PlanningTask(
+        id: 0,
+        title: optimistic.title.trim(),
+        categoryId: optimistic.categoryId,
+        dateKey:
+            DatabaseService.instance.getTimelineDeviceLocalTodayDateKey(),
+        order: ord,
+        startTime: null,
+      ),
+    );
+    if (!mounted) return;
+    if (!ok) {
+      setState(() {
+        _pendingInline.removeWhere(
+          (t) => t.planRowIdForBackend == optimistic.planRowIdForBackend,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
+      );
+      return;
+    }
+    unawaited(_reload());
+  }
+
   void _onPlay(PlanningTask task) {
+    if (task.planRowIdForBackend.startsWith('optimistic-inline-')) return;
     final tick = DateTime.now();
     if (_lastPlayDebounce != null &&
         tick.difference(_lastPlayDebounce!) < _playDebounce) {
@@ -131,12 +229,64 @@ class _ListsPageState extends State<ListsPage>
     }());
   }
 
+  Future<void> _confirmAndDelete(PlanningTask task) async {
+    final loc = currentLocale.value;
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(t(loc, 'delete')),
+        content: Text(t(loc, 'lists_delete_backlog_confirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(t(loc, 'cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(t(loc, 'delete')),
+          ),
+        ],
+      ),
+    );
+    if (go != true || !mounted) return;
+    _onDelete(task);
+  }
+
+  void _onDelete(PlanningTask task) {
+    final id = task.planRowIdForBackend.trim();
+    if (id.startsWith('optimistic-inline-')) {
+      setState(() {
+        _pendingInline.removeWhere((t) => t.planRowIdForBackend == id);
+      });
+      return;
+    }
+
+    final backup = task;
+    setState(() {
+      _flat = _flat.where((x) => x.planRowIdForBackend != id).toList();
+    });
+    unawaited(() async {
+      final ok =
+          await DatabaseService.instance.deletePlanningTasksBulk([id]);
+      if (!mounted) return;
+      if (!ok) {
+        setState(() {
+          _flat = [..._flat, backup]..sort(_sortTasks);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
+        );
+      }
+    }());
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final loc = currentLocale.value;
     final theme = Theme.of(context);
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
+    final canInlineAdd = pairs.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -174,21 +324,44 @@ class _ListsPageState extends State<ListsPage>
               },
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: TextField(
+              controller: _inlineController,
+              focusNode: _inlineFocus,
+              enabled: canInlineAdd,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                hintText: t(loc, 'lists_inline_add_hint'),
+                border: const OutlineInputBorder(),
+                isDense: true,
+                suffixIcon: IconButton(
+                  tooltip: t(loc, 'add'),
+                  onPressed: canInlineAdd ? _submitInline : null,
+                  icon: const Icon(Icons.add_rounded),
+                ),
+              ),
+              onSubmitted: (_) {
+                if (canInlineAdd) _submitInline();
+              },
+            ),
+          ),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : Builder(
                     builder: (context) {
-                      final grouped = _groupByCategoryPath(_flat);
+                      final display = _displayFlat;
+                      final grouped = _groupByCategoryPath(display);
                       return RefreshIndicator(
                         onRefresh: _reload,
-                        child: _flat.isEmpty
+                        child: display.isEmpty
                             ? ListView(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 children: [
                                   SizedBox(
                                     height:
-                                        MediaQuery.sizeOf(context).height * 0.3,
+                                        MediaQuery.sizeOf(context).height * 0.25,
                                   ),
                                   Center(
                                     child: Text(
@@ -262,6 +435,9 @@ class _ListsPageState extends State<ListsPage>
           locale: loc,
           onPlay: () => _onPlay(task),
           onComplete: () => _onComplete(task),
+          onDelete: () {
+            unawaited(_confirmAndDelete(task));
+          },
         );
       }
       i -= e.value.length;
@@ -276,16 +452,19 @@ class _BacklogPlanCard extends StatelessWidget {
     required this.locale,
     required this.onPlay,
     required this.onComplete,
+    required this.onDelete,
   });
 
   final PlanningTask task;
   final String locale;
   final VoidCallback onPlay;
   final VoidCallback onComplete;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final err = theme.colorScheme.error;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -313,6 +492,13 @@ class _BacklogPlanCard extends StatelessWidget {
               child: IconButton(
                 icon: const Icon(Icons.check_rounded),
                 onPressed: onComplete,
+              ),
+            ),
+            Tooltip(
+              message: t(locale, 'delete'),
+              child: IconButton(
+                icon: Icon(Icons.delete_outline_rounded, color: err),
+                onPressed: onDelete,
               ),
             ),
           ],
