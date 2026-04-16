@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-04-21] - Strike 2 & 2.5: Context-aware parser + STT locale
+* **Parser / STT:** Upgraded smart_input_parser.dart with a leading-hour regex and an isBacklog bypass for dateless plans. Enforced strict EN/RU localeId binding (using en-US for Web) in the STT listener, fixing legacy locale hardcodes.
+
+## [2026-04-20] - Strike 2: Context-aware parser & STT locale
+* **Parser / STT:** Upgraded smart_input_parser.dart with a leading-hour regex (^([01]?\d|2[0-3])\s+) and an isBacklog bypass that forces startTime: null and strips scheduling junk. Enforced strict EN/RU localeId binding in the STT listener, removing legacy Web locale hardcodes.
+
 ## [2026-04-19] - Strike 1: Lists friction + optimistic tags
 * **Lists / planning cache:** Fixed Optimistic UI cache for tags by removing the server-override branch in `_mergePlanningOptimistic`. Added inline quick-add with `_pendingInline` state and a delete button with confirmation dialog to the ListsView. (`database_service.dart` `applyOptimisticPlanningTask` dateKey fallback for short keys; `lists_view.dart` optimistic `optimistic-inline-*` rows + `addPlanningTask` / `deletePlanningTasksBulk`; l10n `lists_inline_add_hint` / `lists_delete_backlog_confirm`.)
 

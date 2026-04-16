@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -303,24 +304,13 @@ class _ListsPageState extends State<ListsPage>
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: DropdownButtonFormField<int?>(
-              initialValue: _filterCategoryId,
+            child: CategoryFilterTreeField(
+              value: _filterCategoryId,
               decoration: InputDecoration(
                 labelText: t(loc, 'lists_filter_category'),
                 border: const OutlineInputBorder(),
                 isDense: true,
               ),
-              items: [
-                DropdownMenuItem<int?>(
-                  value: null,
-                  child: Text(t(loc, 'lists_filter_all')),
-                ),
-                for (final p in pairs)
-                  DropdownMenuItem<int?>(
-                    value: p.id,
-                    child: Text(p.path),
-                  ),
-              ],
               onChanged: (v) {
                 setState(() {
                   _filterCategoryId = v;

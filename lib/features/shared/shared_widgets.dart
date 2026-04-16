@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
@@ -658,26 +659,18 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                           Row(
                             children: [
                               Expanded(
-                                child: DropdownButtonFormField<int>(
-                                  initialValue: pairs.any((p) => p.id == dropdownValue)
+                                child: CategoryTreeFormField(
+                                  value: pairs.any((p) => p.id == dropdownValue)
                                       ? dropdownValue
-                                      : (pairs.isNotEmpty ? pairs.first.id : null),
-                                  isExpanded: true,
-                                  menuMaxHeight: 360,
+                                      : (pairs.isNotEmpty
+                                          ? pairs.first.id
+                                          : null),
                                   decoration: InputDecoration(
-                                      labelText:
-                                          t(currentLocale.value, 'category_label')),
-                                  items: pairs
-                                      .map((p) => DropdownMenuItem<int>(
-                                          value: p.id,
-                                          child: Text(
-                                            p.path,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          )))
-                                      .toList(),
-                                  onChanged: (id) =>
-                                      setState(() => _categoryId = id ?? _categoryId),
+                                    labelText: t(
+                                        currentLocale.value, 'category_label'),
+                                  ),
+                                  onChanged: (id) => setState(
+                                      () => _categoryId = id ?? _categoryId),
                                 ),
                               ),
                             ],
@@ -1442,27 +1435,6 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
   Widget build(BuildContext context) {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final isRunning = widget.record.endTime == null;
-    final categoryItems = pairs.isEmpty
-        ? <DropdownMenuItem<int>>[
-            DropdownMenuItem<int>(
-              value: CategoryRule.uncategorizedSyntheticId,
-              child: Text(
-                t(currentLocale.value, 'uncategorized'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ]
-        : pairs
-            .map((p) => DropdownMenuItem<int>(
-                  value: p.id,
-                  child: Text(
-                    p.path,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ))
-            .toList();
     final int catVal;
     if (_categoryId != null &&
         pairs.any((p) => p.id == _categoryId)) {
@@ -1532,21 +1504,19 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                           const SizedBox(height: 8),
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8),
-                            child: DropdownButtonFormField<int>(
-                              initialValue: catVal,
-                              isExpanded: true,
-                              menuMaxHeight: 250,
+                            child: CategoryTreeFormField(
+                              value: catVal,
+                              enabled: pairs.isNotEmpty,
                               decoration: InputDecoration(
                                 isDense: true,
                                 labelText: t(
                                     currentLocale.value,
                                     'category_label'),
                               ),
-                              items: categoryItems,
                               onChanged: pairs.isEmpty
-                                  ? null
-                                  : (id) => setState(() =>
-                                      _categoryId = id ?? catVal),
+                                  ? (_) {}
+                                  : (id) => setState(
+                                      () => _categoryId = id ?? catVal),
                             ),
                           ),
                           Padding(
@@ -2433,31 +2403,14 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
                     decoration: InputDecoration(labelText: t(currentLocale.value, 'title_label'), hintText: t(currentLocale.value, 'hint_task_example')),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<int>(
-                          initialValue: catVal,
-                          isExpanded: true,
-                          menuMaxHeight: 360,
-                          decoration: InputDecoration(
-                              labelText:
-                                  t(currentLocale.value, 'category_label')),
-                          items: pairs
-                              .map((p) => DropdownMenuItem<int>(
-                                    value: p.id,
-                                    child: Text(
-                                      p.path,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ))
-                              .toList(),
-                          onChanged: (id) =>
-                              setState(() => _categoryId = id ?? catVal),
-                        ),
-                      ),
-                    ],
+                  CategoryTreeFormField(
+                    value: catVal,
+                    decoration: InputDecoration(
+                      labelText:
+                          t(currentLocale.value, 'category_label'),
+                    ),
+                    onChanged: (id) =>
+                        setState(() => _categoryId = id ?? catVal),
                   ),
                   const SizedBox(height: 16),
                   ListTile(

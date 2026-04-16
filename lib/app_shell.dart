@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:counter/database_service.dart';
 import 'package:counter/models.dart';
+import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/calendar/calendar_view.dart';
 import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/more/more_view.dart';
@@ -1851,13 +1852,12 @@ class _ManualEntryDialogState extends State<_ManualEntryDialog> {
               ),
             ),
             const SizedBox(height: 16),
-            DropdownButtonFormField<int>(
-              initialValue: effectiveId,
-              decoration: InputDecoration(labelText: t(currentLocale.value, 'category_label')),
-              items: pairs
-                  .map((p) => DropdownMenuItem<int>(value: p.id, child: Text(p.path)))
-                  .toList(),
-              onChanged: (v) => setState(() => _selectedCategoryId = v ?? effectiveId),
+            CategoryTreeFormField(
+              value: effectiveId,
+              enabled: pairs.isNotEmpty,
+              decoration:
+                  InputDecoration(labelText: t(currentLocale.value, 'category_label')),
+              onChanged: (id) => setState(() => _selectedCategoryId = id),
             ),
             const SizedBox(height: 16),
             ListTile(

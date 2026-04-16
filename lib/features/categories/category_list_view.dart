@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/category_db_display.dart';
@@ -1421,7 +1422,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
   }
 }
 
-/// Categories tab: list/manage categories. Uses CategoryRowWidget and CategoryEditorSheet.
+/// Categories tab: recursive tree browser + CategoryEditorSheet.
 class CategoriesPage extends StatefulWidget {
   const CategoriesPage({
     super.key,
@@ -1437,46 +1438,13 @@ class CategoriesPage extends StatefulWidget {
 }
 
 class _CategoriesPageState extends State<CategoriesPage> {
-  final List<int?> _selectedPath = [null, null, null, null];
+  int? _selectedCategoryId;
   bool _categoryEditMode = false;
-  /// false = vertical wrap grid; true = horizontal strip with peeking next tile.
-  bool _useHorizontalScrollLayout = false;
-  static const int _maxDepth = 4;
 
   @override
   void dispose() {
     unawaited(DatabaseService.instance.flushCategoryOrderSyncNow());
     super.dispose();
-  }
-
-  void _onCategoryBandReorder(int depth, int oldIndex, int newIndex) {
-    if (!_categoryEditMode) return;
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
-    final parentId = depth == 0 ? null : _selectedPath[depth - 1];
-    final baselineBefore = List<CategoryRule>.from(_getItemsForDepth(depth));
-    if (oldIndex < 0 ||
-        oldIndex >= baselineBefore.length ||
-        newIndex < 0 ||
-        newIndex > baselineBefore.length) {
-      return;
-    }
-    final items = List<CategoryRule>.from(baselineBefore);
-    final moved = items.removeAt(oldIndex);
-    items.insert(newIndex, moved);
-    setState(() {
-      DatabaseService.instance.applyLocalCategorySiblingOrder(parentId, items);
-    });
-    final after =
-        List<CategoryRule>.from(DatabaseService.instance.getChildrenOf(parentId));
-    unawaited(
-      DatabaseService.instance.persistCategorySiblingOrder(
-        parentId,
-        after,
-        baselineBeforeReorder: baselineBefore,
-      ),
-    );
   }
 
   /// Refreshes local UI only. Category mutations must use targeted APIs (no full-tree PATCH).
@@ -1486,27 +1454,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
     widget.onChanged();
   }
 
-  List<CategoryRule> _getItemsForDepth(int depth) {
-    if (depth == 0) return DatabaseService.instance.getChildrenOf(null);
-    final parentId = _selectedPath[depth - 1];
-    if (parentId == null) return [];
-    return DatabaseService.instance.getChildrenOf(parentId);
-  }
-
-  void _selectAtDepth(int depth, int? id) {
-    setState(() {
-      _selectedPath[depth] = id;
-      for (var i = depth + 1; i < _maxDepth; i++) {
-        _selectedPath[i] = null;
-      }
-    });
-  }
-
   void _navigateToCategoryPath(List<int> path) {
     setState(() {
-      for (var d = 0; d < _maxDepth; d++) {
-        _selectedPath[d] = d < path.length ? path[d] : null;
-      }
+      _selectedCategoryId = path.isNotEmpty ? path.last : null;
     });
   }
 
@@ -1525,15 +1475,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   void _clearSelectionIfDeleted(int deletedId) {
-    for (var i = 0; i < _maxDepth; i++) {
-      if (_selectedPath[i] == deletedId) {
-        setState(() {
-          for (var j = i; j < _maxDepth; j++) {
-            _selectedPath[j] = null;
-          }
-        });
-        return;
-      }
+    if (_selectedCategoryId == deletedId) {
+      setState(() => _selectedCategoryId = null);
     }
   }
 
@@ -1566,49 +1509,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
     await _showAddCategoryDialog(parentId: null);
   }
 
-  Future<void> _addSubcategoryAtDepth(int depth) async {
-    final parentId = depth == 0 ? null : _selectedPath[depth - 1];
-    await _showAddCategoryDialog(parentId: parentId);
-  }
-
-  Widget buildTabRow(BuildContext context, int depth, List<CategoryRule> items) {
-    final selectedId = depth < _maxDepth ? _selectedPath[depth] : null;
-    final canAddAtThisLevel =
-        depth < _maxDepth && (depth == 0 || _selectedPath[depth - 1] != null);
-
-    final band = CategoryRowWidget(
-      depth: depth,
-      items: items,
-      immediateParentId: depth == 0 ? null : _selectedPath[depth - 1],
-      selectedId: selectedId,
-      onSelect: (id) => _selectAtDepth(depth, id),
-      onFullSettingsTap: (r) => _showCategoryEditorSheet(context, r),
-      onAppearanceTap: (r) => _showCategoryAppearanceSheet(context, r),
-      onLongPressOpenEditor: (r) => _showCategoryEditorSheet(context, r),
-      onReorder: _categoryEditMode
-          ? (oldI, newI) => _onCategoryBandReorder(depth, oldI, newI)
-          : null,
-      layout: _useHorizontalScrollLayout
-          ? CategoryBandLayout.horizontalPeek
-          : CategoryBandLayout.wrapGrid,
-      showAdd: canAddAtThisLevel,
-      onAddTap: () => unawaited(_addSubcategoryAtDepth(depth)),
-      editMode: _categoryEditMode,
-    );
-
-    final hasSelection = depth < _maxDepth && selectedId != null;
-    final nextItems =
-        hasSelection ? _getItemsForDepth(depth + 1) : <CategoryRule>[];
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        band,
-        if (hasSelection && depth + 1 < _maxDepth)
-          buildTabRow(context, depth + 1, nextItems),
-      ],
-    );
+  Future<void> _addSubcategoryUnder(CategoryRule parent) async {
+    await _showAddCategoryDialog(parentId: parent.id);
   }
 
   @override
@@ -1623,16 +1525,6 @@ class _CategoriesPageState extends State<CategoriesPage> {
       appBar: AppBar(
         title: Text(t(loc, 'categories_title')),
         actions: [
-          IconButton(
-            icon: Icon(_useHorizontalScrollLayout
-                ? Icons.grid_view_rounded
-                : Icons.view_week_rounded),
-            tooltip: _useHorizontalScrollLayout
-                ? t(loc, 'switch_to_wrap')
-                : t(loc, 'switch_to_scrollable'),
-            onPressed: () => setState(
-                () => _useHorizontalScrollLayout = !_useHorizontalScrollLayout),
-          ),
           IconButton(
             tooltip: t(loc, 'add_category'),
             onPressed: () => unawaited(_addRule()),
@@ -1676,7 +1568,18 @@ class _CategoriesPageState extends State<CategoriesPage> {
                     )
                   : SingleChildScrollView(
                       padding: const EdgeInsets.only(bottom: 16),
-                      child: buildTabRow(context, 0, roots),
+                      child: CategoryRecursiveBrowsePanel(
+                        selectedCategoryId: _selectedCategoryId,
+                        editMode: _categoryEditMode,
+                        onSelect: (id) =>
+                            setState(() => _selectedCategoryId = id),
+                        onFullSettingsTap: (r) =>
+                            _showCategoryEditorSheet(context, r),
+                        onAppearanceTap: (r) =>
+                            _showCategoryAppearanceSheet(context, r),
+                        onAddChild: (parent) =>
+                            unawaited(_addSubcategoryUnder(parent)),
+                      ),
                     ),
             ),
           ],
