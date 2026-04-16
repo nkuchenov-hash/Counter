@@ -10,6 +10,8 @@ const Map<String, String> kEsL10n = {
     'profile': 'Profile',
     'tab_timeline': 'Timeline',
     'tab_planning': 'Planning',
+    'tab_lists': 'Lists',
+    'tab_more': 'More',
     'tab_stats': 'Stats',
     'settings': 'Settings',
     'start': 'Start',

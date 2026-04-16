@@ -10,6 +10,8 @@ const Map<String, String> kItL10n = {
     'profile': 'Profilo',
     'tab_timeline': 'Timeline',
     'tab_planning': 'Pianificazione',
+    'tab_lists': 'Lists',
+    'tab_more': 'More',
     'tab_stats': 'Statistiche',
     'settings': 'Impostazioni',
     'start': 'Avvia',

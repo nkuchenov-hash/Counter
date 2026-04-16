@@ -10,6 +10,8 @@ const Map<String, String> kFrL10n = {
     'profile': 'Profil',
     'tab_timeline': 'Chronologie',
     'tab_planning': 'Planification',
+    'tab_lists': 'Lists',
+    'tab_more': 'More',
     'tab_stats': 'Stats',
     'settings': 'Paramètres',
     'start': 'Démarrer',

@@ -787,7 +787,10 @@ class DatabaseService {
       for (final t in allTemplates) {
         if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
         if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
-        if (planningWallScheduleDateKey(t) != dk) continue;
+        if (t.startTime == null) continue;
+        final taskDk =
+            '${t.startTime!.year}-${_two(t.startTime!.month)}-${_two(t.startTime!.day)}';
+        if (taskDk != dk) continue;
         out.add(t);
       }
       out.addAll(expandRecurringPlans(allTemplates, d, d));
@@ -1755,13 +1758,8 @@ class DatabaseService {
           if (t.rrule != null && t.rrule!.trim().isNotEmpty) {
             continue;
           }
-          var anchorUtc = t.startTime != null
-              ? _profileUtcFromWall(t.startTime!).toUtc()
-              : null;
-          anchorUtc ??= t.endDateTime != null
-              ? _profileUtcFromWall(t.endDateTime!).toUtc()
-              : null;
-          if (anchorUtc == null) continue;
+          if (t.startTime == null) continue;
+          final anchorUtc = _profileUtcFromWall(t.startTime!).toUtc();
           final w = _profileWallFromUtc(anchorUtc);
           final planDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
           if (planDayStr != targetDayStr) continue;
@@ -1844,6 +1842,32 @@ class DatabaseService {
     }
   }
 
+  /// Undated plans (`start_time` unset): backlog / Lists tab. Excludes done, virtual, optimistic rows.
+  Future<List<PlanningTask>> fetchBacklogPlans({int? categoryId}) async {
+    try {
+      final all = await _fetchAllPlanningTasksForCurrentUser();
+      final out = <PlanningTask>[];
+      for (final t in all) {
+        final pid = t.planRowIdForBackend.trim();
+        if (pid.startsWith('optimistic-') || pid.startsWith('virt-')) {
+          continue;
+        }
+        if (t.isDone) continue;
+        if (t.startTime != null) continue;
+        if (categoryId != null && t.categoryId != categoryId) continue;
+        out.add(t);
+      }
+      out.sort((a, b) {
+        final o = a.order.compareTo(b.order);
+        if (o != 0) return o;
+        return a.title.compareTo(b.title);
+      });
+      return out;
+    } catch (_) {
+      return [];
+    }
+  }
+
   /// Basic plan vs fact for [wallDate]: tasks **scheduled** that day vs records that day.
   ///
   /// [recordsForDay]: same list as the Stats timeline tab (duration within day + category rollups).
@@ -1858,7 +1882,10 @@ class DatabaseService {
     for (final t in all) {
       if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
       if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
-      if (planningWallScheduleDateKey(t) != dk) continue;
+      if (t.startTime == null) continue;
+      final taskDk =
+          '${t.startTime!.year}-${_two(t.startTime!.month)}-${_two(t.startTime!.day)}';
+      if (taskDk != dk) continue;
       dayPlans.add(t);
     }
     dayPlans.addAll(expandRecurringPlans(all, wallDate, wallDate));
@@ -7391,11 +7418,24 @@ class DatabaseService {
   Future<String?> startTimerWithCategory(String title,
       {int? categoryId, String? dateKey, String? sourcePlanPocketRecordId}) async {
     final now = getPlanetaryNow();
-    final key = dateKey ?? getTimelineDeviceLocalTodayDateKey();
+    final trimmed = dateKey?.trim() ?? '';
+    final key = trimmed.length >= 10
+        ? trimmed.substring(0, 10)
+        : getTimelineDeviceLocalTodayDateKey();
     return writeRecord(key, title,
         categoryId: categoryId,
         explicitStartTime: now,
         sourcePlanPocketRecordId: sourcePlanPocketRecordId);
+  }
+
+  /// One-tap start from a backlog row ([PlanningTask.startTime] may be null). Uses “now” on the server record.
+  Future<String?> startRecordFromPlanTask(PlanningTask plan) {
+    return startTimerWithCategory(
+      plan.title,
+      categoryId: plan.categoryId,
+      dateKey: plan.dateKey,
+      sourcePlanPocketRecordId: pocketRelationIdOrNull(plan.pocketRecordId),
+    );
   }
 
   Future<String?> startTimer(String title) async {
@@ -9327,6 +9367,92 @@ class DatabaseService {
     return patchBody;
   }
 
+  /// JIT expanded row id: `virt-<parentPocketId>-YYYY-MM-DD`. Never pass [virt-] IDs to PocketBase REST.
+  static ({String parentPocketId, String instanceDateKey})? _parseVirtualPlanRowId(
+    String raw,
+  ) {
+    final s = raw.trim();
+    final m = RegExp(r'^virt-(.+)-(\d{4}-\d{2}-\d{2})$').firstMatch(s);
+    if (m == null) return null;
+    final pid = m.group(1)!.trim();
+    final dk = m.group(2)!.trim();
+    if (!_isLikelyPocketBaseRowId(pid)) return null;
+    final y = int.tryParse(dk.substring(0, 4));
+    final mo = int.tryParse(dk.substring(5, 7));
+    final d = int.tryParse(dk.substring(8, 10));
+    if (y == null || mo == null || d == null) return null;
+    final dt = DateTime(y, mo, d);
+    if (dt.year != y || dt.month != mo || dt.day != d) return null;
+    return (parentPocketId: pid, instanceDateKey: dk);
+  }
+
+  /// Skip or restore one recurring instance by mutating the template’s [exception_dates] only.
+  Future<bool> _patchRecurringTemplateExceptionDates({
+    required String parentPlanPocketId,
+    required String instanceDateKey,
+    required bool addException,
+    bool suppressAppSnack = false,
+    bool deferPlanningNotify = false,
+  }) async {
+    final pid = parentPlanPocketId.trim();
+    if (pid.isEmpty || !_isLikelyPocketBaseRowId(pid)) return false;
+    var day = instanceDateKey.trim();
+    if (day.length < 10) return false;
+    day = day.substring(0, 10);
+
+    try {
+      final tagCatalog = await fetchTagsForCurrentUser();
+      final rec = await _pb.collection(PbCollections.plans).getOne(
+            pid,
+            expand: kPbPlanTagsExpand,
+          );
+      final parent =
+          _planningTaskFromPocketRecord(rec, pocketTagCatalog: tagCatalog);
+      final rrule = parent.rrule?.trim() ?? '';
+      if (rrule.isEmpty) {
+        _log('VIRT_PLAN_PATCH: parent $pid has no rrule');
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+
+      final next = <String>{
+        for (final e in parent.exceptionDates)
+          if (e.trim().length >= 10) e.trim().substring(0, 10),
+      };
+      if (addException) {
+        next.add(day);
+      } else {
+        next.remove(day);
+      }
+
+      final restId = await _resolvePlanRestId(
+        pid,
+        planBusinessId: parent.planRowId,
+      );
+      final patchBody = _scalarPatchBodyForPlanningRow(
+        planBusinessId: parent.planRowId,
+        patchPlanAlarmRecurrence: true,
+        planRrule: parent.rrule,
+        planReminderOffset: parent.reminderOffset,
+        planExceptionDates: next.toList()..sort(),
+      );
+      if (patchBody.isEmpty) return false;
+      await _pb.collection(PbCollections.plans).update(restId, body: patchBody);
+      clearOptimisticPlanningForPlanRow(pid);
+      clearOptimisticPlanningForPlanRow(restId);
+      if (!deferPlanningNotify) {
+        notifyPlanningRefresh();
+        _notifyTimelineAfterRecordCacheMutation();
+      }
+      return true;
+    } catch (e, st) {
+      _log('VIRT_PLAN_PATCH: $e');
+      _log(st.toString());
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    }
+  }
+
   Future<bool> updatePlanningTask(
     String planRowId, {
     /// @DATA_MAP `plan_id` (UUID) — send inside `fields` only; outer bulk `id` must be Integer Id.
@@ -9353,6 +9479,8 @@ class DatabaseService {
     String? planRrule,
     int? planReminderOffset,
     List<String>? planExceptionDates,
+    /// When [planRowId] is `virt-…`, prefer this wall `YYYY-MM-DD` over the id suffix (Phase 1 JIT rows).
+    String? recurrenceInstanceDateKey,
   }) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
@@ -9363,6 +9491,47 @@ class DatabaseService {
     }
     final rid = planRowId.trim();
     if (rid.isEmpty) return false;
+
+    final virt = _parseVirtualPlanRowId(rid);
+    if (virt != null) {
+      final hint = recurrenceInstanceDateKey?.trim() ?? '';
+      final effectiveDay = hint.length >= 10 ? hint.substring(0, 10) : virt.instanceDateKey;
+
+      final disallowedExtras = title != null ||
+          categoryId != null ||
+          notes != null ||
+          checklist != null ||
+          parentPlanId != null ||
+          order != null ||
+          startTime != null ||
+          startTimeDisplay != null ||
+          endDateTime != null ||
+          endDateTimeDisplay != null ||
+          clearEnd ||
+          planInitialDateKey != null ||
+          planIsPostponed != null ||
+          patchPlanAlarmRecurrence ||
+          tags != null ||
+          planRrule != null ||
+          planReminderOffset != null ||
+          planExceptionDates != null;
+
+      if (isDone == null || disallowedExtras) {
+        _log(
+          'VIRT_PLAN_UPDATE: blocked — virtual clone supports only is_done toggle '
+          '(maps to parent exception_dates); no direct field edits yet.',
+        );
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+      return _patchRecurringTemplateExceptionDates(
+        parentPlanPocketId: virt.parentPocketId,
+        instanceDateKey: effectiveDay,
+        addException: isDone,
+        suppressAppSnack: suppressAppSnack,
+      );
+    }
+
     final restId = await _resolvePlanRestId(rid, planBusinessId: planBusinessId);
     final patchBody = _scalarPatchBodyForPlanningRow(
       planBusinessId: planBusinessId,
@@ -9427,6 +9596,13 @@ class DatabaseService {
       for (final p in patches) {
         final rid = p.planRowId.trim();
         if (rid.isEmpty || rid.startsWith('optimistic-')) continue;
+        if (rid.startsWith('virt-')) {
+          allOk = false;
+          _log(
+            'BULK_UPDATE_PLANS: skipped virtual clone $rid — use single-row update or exception_dates flow.',
+          );
+          continue;
+        }
         final patchBody = _scalarPatchBodyForPlanningRow(
           planBusinessId: p.planBusinessId,
           startTimeDisplay: p.startTimeDisplay,
@@ -9471,11 +9647,34 @@ class DatabaseService {
     if (raw.isEmpty) return false;
 
     try {
+      var deferredNotify = false;
       for (final id in raw) {
+        final trimmed = id.trim();
+        final virt = _parseVirtualPlanRowId(trimmed);
+        if (virt != null) {
+          final ok = await _patchRecurringTemplateExceptionDates(
+            parentPlanPocketId: virt.parentPocketId,
+            instanceDateKey: virt.instanceDateKey,
+            addException: true,
+            suppressAppSnack: true,
+            deferPlanningNotify: true,
+          );
+          if (!ok) {
+            AppSnack.failed();
+            return false;
+          }
+          deferredNotify = true;
+          continue;
+        }
         final restId = await _resolvePlanRestId(id);
         await _pb.collection(PbCollections.plans).delete(restId);
         clearOptimisticPlanningForPlanRow(id);
         clearOptimisticPlanningForPlanRow(restId);
+        deferredNotify = true;
+      }
+      if (deferredNotify) {
+        notifyPlanningRefresh();
+        _notifyTimelineAfterRecordCacheMutation();
       }
     } catch (e, st) {
       _log('DELETE_PLAN_PB_BULK: $e');
@@ -9484,7 +9683,6 @@ class DatabaseService {
       return false;
     }
     AppSnack.deleted();
-    notifyPlanningRefresh();
     return true;
   }
 
@@ -9500,16 +9698,35 @@ class DatabaseService {
 
     const chunkSize = 10;
     var allOk = true;
+    var needsNotify = false;
     for (var i = 0; i < raw.length; i += chunkSize) {
       final end = min(i + chunkSize, raw.length);
       final chunk = raw.sublist(i, end);
       for (final id in chunk) {
         try {
+          final trimmed = id.trim();
+          final virt = _parseVirtualPlanRowId(trimmed);
+          if (virt != null) {
+            final ok = await _patchRecurringTemplateExceptionDates(
+              parentPlanPocketId: virt.parentPocketId,
+              instanceDateKey: virt.instanceDateKey,
+              addException: completed,
+              suppressAppSnack: true,
+              deferPlanningNotify: true,
+            );
+            if (!ok) {
+              allOk = false;
+            } else {
+              needsNotify = true;
+            }
+            continue;
+          }
           final restId = await _resolvePlanRestId(id);
           await _pb.collection(PbCollections.plans).update(
                 restId,
                 body: <String, dynamic>{'is_done': completed},
               );
+          needsNotify = true;
         } catch (e, st) {
           allOk = false;
           _log('MARK_PLANS_DONE_PB: $e');
@@ -9517,9 +9734,12 @@ class DatabaseService {
         }
       }
     }
+    if (needsNotify) {
+      notifyPlanningRefresh();
+      _notifyTimelineAfterRecordCacheMutation();
+    }
     if (allOk) {
       AppSnack.updated();
-      notifyPlanningRefresh();
     } else {
       AppSnack.failed();
     }

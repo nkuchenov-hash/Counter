@@ -1360,10 +1360,13 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
               });
             },
       onPlay: () async {
+        final dateKeyForRecord = task.startTime != null
+            ? task.dateKey
+            : DatabaseService.instance.getTimelineDeviceLocalTodayDateKey();
         await widget.onStartRecordFromTask(
           task.title,
           task.categoryId,
-          task.dateKey,
+          dateKeyForRecord,
           sourcePlanPocketRecordId:
               DatabaseService.pocketRelationIdOrNull(task.pocketRecordId),
         );

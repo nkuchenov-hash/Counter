@@ -10,6 +10,8 @@ const Map<String, String> kZhL10n = {
     'profile': '我的',
     'tab_timeline': '时间轴',
     'tab_planning': '计划',
+    'tab_lists': 'Lists',
+    'tab_more': 'More',
     'tab_stats': '统计',
     'settings': '设置',
     'start': '开始',

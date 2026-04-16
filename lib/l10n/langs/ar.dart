@@ -10,6 +10,8 @@ const Map<String, String> kArL10n = {
     'profile': 'الملف الشخصي',
     'tab_timeline': 'الجدول الزمني',
     'tab_planning': 'الخطط',
+    'tab_lists': 'Lists',
+    'tab_more': 'More',
     'tab_stats': 'الإحصائيات',
     'settings': 'الإعدادات',
     'start': 'بدء',

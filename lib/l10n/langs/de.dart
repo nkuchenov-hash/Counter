@@ -10,6 +10,8 @@ const Map<String, String> kDeL10n = {
     'profile': 'Profil',
     'tab_timeline': 'Zeitachse',
     'tab_planning': 'Planung',
+    'tab_lists': 'Lists',
+    'tab_more': 'More',
     'tab_stats': 'Statistiken',
     'settings': 'Einstellungen',
     'start': 'Start',

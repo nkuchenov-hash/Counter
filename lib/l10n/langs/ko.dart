@@ -10,6 +10,8 @@ const Map<String, String> kKoL10n = {
     'profile': '프로필',
     'tab_timeline': '일정',
     'tab_planning': '계획 (Planning)',
+    'tab_lists': 'Lists',
+    'tab_more': 'More',
     'tab_stats': '스탯',
     'settings': '설정',
     'start': '시작',

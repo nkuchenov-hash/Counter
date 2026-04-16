@@ -8,9 +8,9 @@ import 'dart:async';
 import 'package:counter/database_service.dart';
 import 'package:counter/models.dart';
 import 'package:counter/features/calendar/calendar_view.dart';
-import 'package:counter/features/categories/category_list_view.dart';
+import 'package:counter/features/lists/lists_view.dart';
+import 'package:counter/features/more/more_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
-import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/subscription/app_tier.dart';
@@ -209,7 +209,7 @@ class _SyncStatusIcon extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// LifeOS Dashboard: 5 tabs (Timeline, Planning, Calendar, Categories, Profile).
+// LifeOS Dashboard: 5 tabs (Timeline, Planning, Calendar, Lists, More).
 // Active record live-timer in Timeline; Sync icon in shell.
 // ---------------------------------------------------------------------------
 
@@ -1541,23 +1541,20 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         },
         onJumpToTimeline: () => setState(() => _tabIndex = 0),
       ),
-      StreamBuilder<List<CategoryRule>>(
-        stream: DatabaseService.instance.categoryStream,
-        builder: (context, snapshot) {
-          final rules = snapshot.data ?? DatabaseService.instance.rules;
-          return CategoriesPage(
-            rules: rules,
-            onChanged: () async {
-              if (mounted) {
-                setState(() {
-                  _rules = List.from(DatabaseService.instance.rules);
-                });
-              }
-            },
-          );
+      const ListsPage(),
+      MoreMenuPage(
+        rules: _rules,
+        onCategoriesChanged: () async {
+          if (mounted) {
+            setState(() {
+              _rules = List.from(DatabaseService.instance.rules);
+            });
+          }
+        },
+        onProfileSaved: () {
+          if (mounted) setState(() {});
         },
       ),
-      ProfilePage(onSaved: () => setState(() {})),
     ];
 
     final showVoiceFab = _tabIndex == 1 || !_isFutureDate;
@@ -1573,7 +1570,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             resizeToAvoidBottomInset: true,
             body: Stack(
               children: [
-                pages[_tabIndex],
+                IndexedStack(
+                  index: _tabIndex,
+                  sizing: StackFit.expand,
+                  children: pages,
+                ),
                 PositionedDirectional(
                   top: MediaQuery.of(context).padding.top + 8,
                   end: 8,
@@ -1678,14 +1679,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                   label: t(currentLocale.value, 'calendar'),
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.category_outlined),
-                  selectedIcon: const Icon(Icons.category_rounded),
-                  label: t(currentLocale.value, 'categories'),
+                  icon: const Icon(Icons.format_list_bulleted_outlined),
+                  selectedIcon: const Icon(Icons.format_list_bulleted_rounded),
+                  label: t(currentLocale.value, 'tab_lists'),
                 ),
                 NavigationDestination(
-                  icon: const Icon(Icons.person_outline_rounded),
-                  selectedIcon: const Icon(Icons.person_rounded),
-                  label: t(currentLocale.value, 'profile'),
+                  icon: const Icon(Icons.menu_rounded),
+                  selectedIcon: const Icon(Icons.menu_rounded),
+                  label: t(currentLocale.value, 'tab_more'),
                 ),
               ],
             ),
