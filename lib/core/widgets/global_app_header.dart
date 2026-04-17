@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Unified app bar title: section label + weekday + calendar date + live clock.
+// Unified app bar title: weekday + calendar date + live clock (no section label).
 // Tap opens the same day picker flow as Timeline (web + native).
 // ---------------------------------------------------------------------------
 
@@ -52,17 +52,15 @@ Future<void> _pickDayForGlobalHeader(
   }
 }
 
-/// Shared header row: `{section} · {Weekday} · {date} · {HH:mm}`.
+/// Shared header row: `{Weekday} · {date} · {HH:mm}`.
 class GlobalAppHeader extends StatelessWidget {
   const GlobalAppHeader({
     super.key,
-    required this.sectionTitle,
     required this.selectedDate,
     required this.onDateSelected,
     this.enabled = true,
   });
 
-  final String sectionTitle;
   final DateTime selectedDate;
   final void Function(DateTime date) onDateSelected;
   final bool enabled;
@@ -100,7 +98,7 @@ class GlobalAppHeader extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  '$sectionTitle · $weekday · $dateStr',
+                  '$weekday · $dateStr',
                   style: titleStyle,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,

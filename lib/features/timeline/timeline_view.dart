@@ -484,7 +484,6 @@ class _TimelinePageState extends State<TimelinePage> {
           children: [
             Expanded(
               child: GlobalAppHeader(
-                sectionTitle: t(currentLocale.value, 'tab_timeline'),
                 selectedDate: widget.selectedDate,
                 enabled: widget.onNavigateToDate != null,
                 onDateSelected: (d) => widget.onNavigateToDate?.call(d),

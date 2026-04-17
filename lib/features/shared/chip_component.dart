@@ -302,6 +302,8 @@ class TagQuickPickStrip extends StatelessWidget {
     this.fallbackColor,
     /// When set, the strip uses a horizontal [ReorderableListView]; indices match [tags].
     this.onReorder,
+    /// Long-press on a chip (only when [onReorder] is null — avoids clashing with drag).
+    this.onTagLongPress,
   });
 
   final List<Tag> tags;
@@ -309,6 +311,7 @@ class TagQuickPickStrip extends StatelessWidget {
   final void Function(Tag tag) onToggle;
   final Color? fallbackColor;
   final void Function(int oldIndex, int newIndex)? onReorder;
+  final void Function(Tag tag)? onTagLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -384,7 +387,8 @@ class TagQuickPickStrip extends StatelessWidget {
             final c = parseTagHexColor(tag.color) ?? fb;
             final ic = iconForTagKey(tag.icon);
             final isSel = selected.any((x) => x.tagId == tag.tagId);
-            return CategoryChip(
+            final lp = onTagLongPress;
+            Widget chip = CategoryChip(
               mode: mode,
               label: tag.name,
               color: c,
@@ -392,6 +396,14 @@ class TagQuickPickStrip extends StatelessWidget {
               selected: isSel,
               onTap: () => onToggle(tag),
             );
+            if (lp != null) {
+              chip = GestureDetector(
+                onLongPress: () => lp(tag),
+                behavior: HitTestBehavior.opaque,
+                child: chip,
+              );
+            }
+            return chip;
           },
         );
       },

@@ -266,9 +266,16 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   static const String _prefsKeyQuickBarTagOrder =
       'planning_quick_bar_tag_ids_v1';
 
+  /// Local-only prefs for the synthetic “No Tags” chip (not PocketBase).
+  static const String _prefsKeyNoTagsVisible = 'no_tags_visible';
+  static const String _prefsKeyNoTagsColor = 'no_tags_color';
+  static const String _defaultNoTagsColorHex = '#9E9E9E';
+
   /// Tags for quick-add row; reloaded after returning from [TagSettingsHub].
   List<Tag> _quickAddAvailableTags = [];
   bool _quickAddTagsLoading = true;
+  bool _noTagsChipVisible = true;
+  String _noTagsColorHex = _defaultNoTagsColorHex;
   /// M2M tags selected before submitting the inline task.
   List<Tag> _creationSelectedTags = [];
 
@@ -427,6 +434,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     return Tag(
       tagId: _kUntaggedPlanGroupId,
       name: t(loc, 'plan_filter_no_tags'),
+      color: _noTagsColorHex,
       sortOrder: 0,
       isSynced: true,
     );
@@ -483,10 +491,19 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   Future<void> _reloadQuickAddTags() async {
     if (!mounted) return;
     setState(() => _quickAddTagsLoading = true);
+    final prefs = await SharedPreferences.getInstance();
+    final visible = prefs.getBool(_prefsKeyNoTagsVisible) ?? true;
+    final cr = prefs.getString(_prefsKeyNoTagsColor)?.trim();
+    final colorHex = (cr != null &&
+            cr.startsWith('#') &&
+            cr.length >= 7 &&
+            parseTagHexColor(cr) != null)
+        ? cr
+        : _defaultNoTagsColorHex;
+
     final list = await DatabaseService.instance.fetchTagsForCurrentUser();
     List<int>? order;
     try {
-      final prefs = await SharedPreferences.getInstance();
       final raw = prefs.getString(_prefsKeyQuickBarTagOrder);
       if (raw != null && raw.isNotEmpty) {
         final decoded = jsonDecode(raw);
@@ -499,11 +516,111 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       }
     } catch (_) {}
     if (!mounted) return;
-    final merged = _mergeQuickBarTagsFromServer(list, order);
+    _noTagsChipVisible = visible;
+    _noTagsColorHex = colorHex;
+    var merged = _mergeQuickBarTagsFromServer(list, order);
+    if (!visible) {
+      merged = merged
+          .where((t) => t.tagId != _kUntaggedPlanGroupId)
+          .toList();
+    }
     setState(() {
       _quickAddAvailableTags = merged;
       _quickAddTagsLoading = false;
     });
+  }
+
+  Future<void> _openNoTagsChipSettingsSheet() async {
+    final loc = currentLocale.value;
+    var visible = _noTagsChipVisible;
+    var colorHex = _noTagsColorHex;
+    const presets = <String>[
+      '#000000',
+      '#FFFFFF',
+      '#9E9E9E',
+      '#F44336',
+      '#2196F3',
+      '#4CAF50',
+      '#FF9800',
+    ];
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            final scheme = Theme.of(ctx).colorScheme;
+            return AlertDialog(
+              title: Text(t(loc, 'plan_filter_no_tags')),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SwitchListTile(
+                      title: Text(t(loc, 'plan_filter_no_tags')),
+                      subtitle: Text(t(loc, 'category_visibility_toggle')),
+                      value: visible,
+                      onChanged: (v) => setModal(() => visible = v),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      t(loc, 'category_color'),
+                      style: Theme.of(ctx).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final h in presets)
+                          GestureDetector(
+                            onTap: () => setModal(() => colorHex = h),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: parseTagHexColor(h),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: colorHex == h
+                                      ? scheme.primary
+                                      : (h == '#FFFFFF'
+                                          ? scheme.outline
+                                          : Colors.transparent),
+                                  width: colorHex == h ? 3 : 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(t(loc, 'cancel')),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    unawaited(() async {
+                      final p = await SharedPreferences.getInstance();
+                      await p.setBool(_prefsKeyNoTagsVisible, visible);
+                      await p.setString(_prefsKeyNoTagsColor, colorHex);
+                      if (!mounted) return;
+                      await _reloadQuickAddTags();
+                    }());
+                  },
+                  child: Text(t(loc, 'save')),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _openTagManagerFromQuickAdd() async {
@@ -586,22 +703,55 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       );
     }
     if (_quickAddAvailableTags.isEmpty) {
-      return Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: TextButton(
-          onPressed: _openTagManagerFromQuickAdd,
-          child: Text(t(loc, 'plan_quick_add_no_tags')),
-        ),
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton(
+                onPressed: _openTagManagerFromQuickAdd,
+                child: Text(t(loc, 'plan_quick_add_no_tags')),
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip:
+                '${t(loc, 'plan_filter_no_tags')} · ${t(loc, 'settings')}',
+            icon: const Icon(Icons.tune_rounded),
+            visualDensity: VisualDensity.compact,
+            onPressed: _openNoTagsChipSettingsSheet,
+          ),
+        ],
       );
     }
-    return TagQuickPickStrip(
-      tags: _quickAddAvailableTags,
-      selected: _creationSelectedTags,
-      onToggle: _toggleCreationTag,
-      fallbackColor: scheme.primary,
-      onReorder: _quickAddAvailableTags.length >= 2
-          ? _onPlanningQuickBarReorder
-          : null,
+    final canReorder = _quickAddAvailableTags.length >= 2;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: TagQuickPickStrip(
+            tags: _quickAddAvailableTags,
+            selected: _creationSelectedTags,
+            onToggle: _toggleCreationTag,
+            fallbackColor: scheme.primary,
+            onReorder: canReorder ? _onPlanningQuickBarReorder : null,
+            onTagLongPress: canReorder
+                ? null
+                : (tag) {
+                    if (tag.tagId == _kUntaggedPlanGroupId) {
+                      unawaited(_openNoTagsChipSettingsSheet());
+                    }
+                  },
+          ),
+        ),
+        IconButton(
+          tooltip: '${t(loc, 'plan_filter_no_tags')} · ${t(loc, 'settings')}',
+          icon: const Icon(Icons.tune_rounded),
+          visualDensity: VisualDensity.compact,
+          onPressed: _openNoTagsChipSettingsSheet,
+        ),
+      ],
     );
   }
 
@@ -2159,8 +2309,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                       ),
                       Expanded(
                         child: GlobalAppHeader(
-                          sectionTitle:
-                              t(currentLocale.value, 'planning'),
                           selectedDate: headerDate,
                           onDateSelected: (d) =>
                               widget.onDatePicked?.call(d),

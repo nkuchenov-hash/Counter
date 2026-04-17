@@ -257,11 +257,6 @@ class _ListsPageState extends State<ListsPage>
       db.allCategoryIdPathPairs,
       (p) => p.id,
     );
-    pairs.sort(
-      (a, b) => _categoryRawName(a.id).toLowerCase().compareTo(
-            _categoryRawName(b.id).toLowerCase(),
-          ),
-    );
 
     await showModalBottomSheet<void>(
       context: context,
@@ -316,21 +311,27 @@ class _ListsPageState extends State<ListsPage>
                         child: ListView(
                           children: [
                             for (final p in pairs)
-                              CheckboxListTile(
-                                value: sel.contains(p.id),
-                                onChanged: (v) {
-                                  setModal(() {
-                                    if (v == true) {
-                                      sel.add(p.id);
-                                    } else {
-                                      sel.remove(p.id);
-                                    }
-                                  });
-                                },
-                                title: Text(_categoryRawName(p.id)),
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                                dense: true,
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  left: _categoryTreeDepthFromPath(p.path) *
+                                      16.0,
+                                ),
+                                child: CheckboxListTile(
+                                  value: sel.contains(p.id),
+                                  onChanged: (v) {
+                                    setModal(() {
+                                      if (v == true) {
+                                        sel.add(p.id);
+                                      } else {
+                                        sel.remove(p.id);
+                                      }
+                                    });
+                                  },
+                                  title: Text(_categoryRawName(p.id)),
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
+                                  dense: true,
+                                ),
                               ),
                           ],
                         ),
@@ -633,7 +634,6 @@ class _ListsPageState extends State<ListsPage>
         return Scaffold(
       appBar: AppBar(
         title: GlobalAppHeader(
-          sectionTitle: t(loc, 'tab_lists'),
           selectedDate: headerDay,
           enabled: widget.onDateChanged != null,
           onDateSelected: (d) => widget.onDateChanged?.call(d),
@@ -655,21 +655,20 @@ class _ListsPageState extends State<ListsPage>
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               children: [
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 8),
-                  child: _ListsQuadraticChip(
-                    label: t(loc, 'lists_filter_all'),
-                    selected: filterId == null,
-                    onTap: () => _onFilterChanged(null),
-                  ),
-                ),
                 for (final id in chipIds)
                   Padding(
                     padding: const EdgeInsetsDirectional.only(end: 8),
                     child: _ListsQuadraticChip(
                       label: _categoryRawName(id),
+                      categoryColor: _listsCategoryAccentColor(id),
                       selected: filterId == id,
-                      onTap: () => _onFilterChanged(id),
+                      onTap: () {
+                        if (filterId == id) {
+                          _onFilterChanged(null);
+                        } else {
+                          _onFilterChanged(id);
+                        }
+                      },
                     ),
                   ),
               ],
@@ -741,10 +740,11 @@ class _ListsPageState extends State<ListsPage>
                     onSubmitted: (_) => _submitInline(),
                   ),
                 ),
-                IconButton(
-                  tooltip: t(loc, 'add'),
+                const SizedBox(width: 8),
+                FilledButton.icon(
                   onPressed: _submitInline,
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(t(loc, 'add')),
                 ),
               ],
             ),
@@ -804,42 +804,52 @@ class _ListsPageState extends State<ListsPage>
 }
 
 /// Fast filter chip: rounded rect (~8px), horizontal scroll row.
+/// Fill and border use the category’s [categoryColor] (from [CategoryRule.colorValue]).
 class _ListsQuadraticChip extends StatelessWidget {
   const _ListsQuadraticChip({
     required this.label,
+    required this.categoryColor,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
+  final Color categoryColor;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final base = categoryColor;
     return Material(
-      color: selected
-          ? scheme.primaryContainer
-          : scheme.surfaceContainerHighest,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 200),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: selected
-                        ? scheme.onPrimaryContainer
-                        : scheme.onSurfaceVariant,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: base.withValues(alpha: selected ? 0.38 : 0.22),
+            border: Border.all(
+              color: base,
+              width: selected ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 200),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: scheme.onSurface,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+              ),
             ),
           ),
         ),
@@ -854,6 +864,22 @@ String _categoryRawName(int categoryId) {
   if (r == null) return '—';
   final n = r.name.trim();
   return n.isEmpty ? '—' : n;
+}
+
+/// Indent depth for tree-shaped checklists (0 = root category in path).
+int _categoryTreeDepthFromPath(String path) {
+  final parts = path
+      .split(RegExp(r'\s*>\s*'))
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+  if (parts.length <= 1) return 0;
+  return parts.length - 1;
+}
+
+Color _listsCategoryAccentColor(int categoryId) {
+  final r = DatabaseService.instance.getCategoryRuleById(categoryId);
+  return r?.colorOrDefault ?? Colors.grey;
 }
 
 class _CategorySubcategoryPill extends StatelessWidget {
