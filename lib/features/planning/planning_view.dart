@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
@@ -25,6 +26,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum _PlanSortMode { category, time, tags, custom }
 
@@ -260,14 +262,15 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
 
   static const int _kUntaggedPlanGroupId = -1;
 
+  /// Persisted order of tag ids in the quick-add strip, including [_kUntaggedPlanGroupId] for “No Tags”.
+  static const String _prefsKeyQuickBarTagOrder =
+      'planning_quick_bar_tag_ids_v1';
+
   /// Tags for quick-add row; reloaded after returning from [TagSettingsHub].
   List<Tag> _quickAddAvailableTags = [];
   bool _quickAddTagsLoading = true;
   /// M2M tags selected before submitting the inline task.
   List<Tag> _creationSelectedTags = [];
-
-  /// null = show all; [_kUntaggedPlanGroupId] = tasks with no renderable tags; else match [Tag.tagId].
-  int? _planningTagFilterId;
 
   DateTime get _today => DatabaseService.instance.getTimelineDeviceLocalToday();
 
@@ -419,13 +422,86 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     unawaited(_reloadQuickAddTags());
   }
 
+  Tag _syntheticNoTagsTag() {
+    final loc = currentLocale.value;
+    return Tag(
+      tagId: _kUntaggedPlanGroupId,
+      name: t(loc, 'plan_filter_no_tags'),
+      sortOrder: 0,
+      isSynced: true,
+    );
+  }
+
+  List<Tag> _mergeQuickBarTagsFromServer(
+    List<Tag> serverTags,
+    List<int>? savedOrder,
+  ) {
+    final synthetic = _syntheticNoTagsTag();
+    if (savedOrder == null || savedOrder.isEmpty) {
+      return [...serverTags, synthetic];
+    }
+    final byId = {for (final t in serverTags) t.tagId: t};
+    final out = <Tag>[];
+    final usedServer = <int>{};
+    var placedSynthetic = false;
+    for (final id in savedOrder) {
+      if (id == 0) continue;
+      if (id == _kUntaggedPlanGroupId) {
+        if (!placedSynthetic) {
+          out.add(synthetic);
+          placedSynthetic = true;
+        }
+        continue;
+      }
+      final t = byId[id];
+      if (t != null) {
+        out.add(t);
+        usedServer.add(id);
+      }
+    }
+    for (final t in serverTags) {
+      if (!usedServer.contains(t.tagId)) {
+        out.add(t);
+      }
+    }
+    if (!placedSynthetic) {
+      out.add(synthetic);
+    }
+    return out;
+  }
+
+  Future<void> _persistQuickBarTagIdOrderPrefs(List<Tag> ordered) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _prefsKeyQuickBarTagOrder,
+        jsonEncode(ordered.map((t) => t.tagId).toList()),
+      );
+    } catch (_) {}
+  }
+
   Future<void> _reloadQuickAddTags() async {
     if (!mounted) return;
     setState(() => _quickAddTagsLoading = true);
     final list = await DatabaseService.instance.fetchTagsForCurrentUser();
+    List<int>? order;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_prefsKeyQuickBarTagOrder);
+      if (raw != null && raw.isNotEmpty) {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          order = decoded
+              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+              .where((id) => id != 0)
+              .toList();
+        }
+      }
+    } catch (_) {}
     if (!mounted) return;
+    final merged = _mergeQuickBarTagsFromServer(list, order);
     setState(() {
-      _quickAddAvailableTags = list;
+      _quickAddAvailableTags = merged;
       _quickAddTagsLoading = false;
     });
   }
@@ -438,6 +514,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   }
 
   void _toggleCreationTag(Tag tag) {
+    if (tag.tagId == _kUntaggedPlanGroupId) return;
     setState(() {
       final next = List<Tag>.from(_creationSelectedTags);
       final i = next.indexWhere((x) => x.tagId == tag.tagId);
@@ -467,6 +544,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       for (var i = 0; i < next.length; i++) next[i].copyWith(sortOrder: i),
     ];
     setState(() => _quickAddAvailableTags = withSort);
+    unawaited(_persistQuickBarTagIdOrderPrefs(withSort));
     unawaited(_persistPlanningQuickBarSortOrder(previous, withSort));
   }
 
@@ -474,10 +552,18 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     List<Tag> previousUiOrder,
     List<Tag> ordered,
   ) async {
+    final persistable = ordered
+        .where((t) => t.tagId != _kUntaggedPlanGroupId)
+        .toList();
+    final withSort = <Tag>[
+      for (var i = 0; i < persistable.length; i++)
+        persistable[i].copyWith(sortOrder: i),
+    ];
     final ok = await DatabaseService.instance
-        .persistTagsSortOrderForCurrentUser(ordered);
+        .persistTagsSortOrderForCurrentUser(withSort);
     if (!mounted) return;
     if (ok) {
+      await _persistQuickBarTagIdOrderPrefs(ordered);
       DatabaseService.instance.notifyPlanningRefresh();
       return;
     }
@@ -639,7 +725,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           _selectedPlanKeys.clear();
           _planSelectMode = false;
           _sortMode = _PlanSortMode.custom;
-          _planningTagFilterId = null;
         }
       });
     }
@@ -681,69 +766,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       }
     }
     return merged;
-  }
-
-  List<PlanningTask> _applyPlanningTagFilter(List<PlanningTask> tasks) {
-    final fid = _planningTagFilterId;
-    if (fid == null) return tasks;
-    if (fid == _kUntaggedPlanGroupId) {
-      return tasks
-          .where((t) => !t.tags.any((x) => x.rendersAsChip))
-          .toList();
-    }
-    return tasks
-        .where(
-          (t) => t.tags.any((x) => x.rendersAsChip && x.tagId == fid),
-        )
-        .toList();
-  }
-
-  Widget _buildPlanningTagFilterBar(ColorScheme scheme) {
-    final loc = currentLocale.value;
-    final noTagsSelected = _planningTagFilterId == _kUntaggedPlanGroupId;
-    return ListView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      children: [
-        Padding(
-          padding: const EdgeInsetsDirectional.only(end: 8),
-          child: FilterChip(
-            avatar: Icon(
-              Icons.label_off_outlined,
-              size: 18,
-              color: noTagsSelected
-                  ? scheme.onSecondaryContainer
-                  : scheme.onSurfaceVariant,
-            ),
-            label: Text(t(loc, 'plan_filter_no_tags')),
-            selected: noTagsSelected,
-            showCheckmark: false,
-            onSelected: (_) {
-              setState(() {
-                _planningTagFilterId =
-                    noTagsSelected ? null : _kUntaggedPlanGroupId;
-              });
-            },
-          ),
-        ),
-        for (final tag in _quickAddAvailableTags)
-          if (tag.tagId != 0)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: FilterChip(
-                label: Text(tag.name),
-                selected: _planningTagFilterId == tag.tagId,
-                showCheckmark: false,
-                onSelected: (_) {
-                  setState(() {
-                    final cur = _planningTagFilterId;
-                    _planningTagFilterId = cur == tag.tagId ? null : tag.tagId;
-                  });
-                },
-              ),
-            ),
-      ],
-    );
   }
 
   void _exitSelectMode() {
@@ -1339,10 +1361,13 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   }
 
   List<Tag> _tagSortMasterBarOrder() {
-    if (_quickAddAvailableTags.isNotEmpty) {
-      return _quickAddAvailableTags;
+    final raw = _quickAddAvailableTags.isNotEmpty
+        ? _quickAddAvailableTags
+        : List<Tag>.from(DatabaseService.instance.cachedUserTagsCatalog);
+    if (raw.any((t) => t.tagId == _kUntaggedPlanGroupId)) {
+      return raw;
     }
-    return DatabaseService.instance.cachedUserTagsCatalog;
+    return [...raw, _syntheticNoTagsTag()];
   }
 
   Map<int, List<PlanningTask>> _groupTasksByMasterBar(
@@ -1361,7 +1386,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     return groups;
   }
 
-  /// Group column order: follow [masterBarOrder], then orphan tag ids (by id), then “No tags”.
+  /// Group column order: follow [masterBarOrder] (including synthetic “No Tags” at [-1]),
+  /// then orphan tag ids (by id). Untagged tasks appear where [-1] sits in the bar order.
   List<int> _groupIdsInMasterBarSequence(
     Map<int, List<PlanningTask>> groups,
     List<Tag> masterBarOrder,
@@ -1371,6 +1397,16 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     for (final t in masterBarOrder) {
       final id = t.tagId;
       if (id == 0) continue;
+      if (id == _kUntaggedPlanGroupId) {
+        final bucket = groups[_kUntaggedPlanGroupId];
+        if (bucket != null &&
+            bucket.isNotEmpty &&
+            !seen.contains(_kUntaggedPlanGroupId)) {
+          seen.add(_kUntaggedPlanGroupId);
+          out.add(_kUntaggedPlanGroupId);
+        }
+        continue;
+      }
       final bucket = groups[id];
       if (bucket != null && bucket.isNotEmpty && !seen.contains(id)) {
         seen.add(id);
@@ -1382,9 +1418,11 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         .toList()
       ..sort();
     out.addAll(orphan);
-    final untagged = groups[_kUntaggedPlanGroupId];
-    if (untagged != null && untagged.isNotEmpty) {
-      out.add(_kUntaggedPlanGroupId);
+    if (!seen.contains(_kUntaggedPlanGroupId)) {
+      final untagged = groups[_kUntaggedPlanGroupId];
+      if (untagged != null && untagged.isNotEmpty) {
+        out.add(_kUntaggedPlanGroupId);
+      }
     }
     return out;
   }
@@ -2078,7 +2116,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                 });
               }
             }
-            final tasks = _applyPlanningTagFilter(_displayTasks(server));
+            final tasks = _displayTasks(server);
             displayedForChrome = tasks;
             body = _buildPlanningMainColumn(context, scheme, tasks);
           }
@@ -2200,14 +2238,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-              if (!_planSelectMode)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-                  child: SizedBox(
-                    height: 44,
-                    child: _buildPlanningTagFilterBar(scheme),
-                  ),
-                ),
               if (!_planSelectMode)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
