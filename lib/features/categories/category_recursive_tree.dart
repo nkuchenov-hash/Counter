@@ -3,6 +3,7 @@
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -54,7 +55,11 @@ Future<CategoryTreeSheetResult?> _showCategoryTreeSheet(
   bool showAllCategoriesRow = false,
 }) async {
   final loc = currentLocale.value;
-  final roots = DatabaseService.instance.getChildrenOf(null);
+  final rootsRaw = DatabaseService.instance.getChildrenOf(null);
+  final roots = [
+    for (final r in rootsRaw)
+      if (!CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) r
+  ];
   if (roots.isEmpty) return null;
 
   return showModalBottomSheet<CategoryTreeSheetResult>(
@@ -373,7 +378,11 @@ class _CategoryTreeNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final children = rule.children ?? const <CategoryRule>[];
+    final childrenRaw = rule.children ?? const <CategoryRule>[];
+    final children = [
+      for (final c in childrenRaw)
+        if (!CategoryVisibilityPrefs.isHiddenOrAncestor(c.id)) c
+    ];
     final hasChildren = children.isNotEmpty;
     final expanded = expandedIds.contains(rule.id);
     final opacity = categoryBranchOpacityForSelection(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/category_db_display.dart';
@@ -183,6 +184,7 @@ class CategoryRowWidget extends StatelessWidget {
     this.showAdd = false,
     this.editMode = false,
     this.layout = CategoryBandLayout.wrapGrid,
+    this.onToggleCategoryVisibility,
   });
 
   final List<CategoryRule> items;
@@ -199,6 +201,8 @@ class CategoryRowWidget extends StatelessWidget {
   final bool showAdd;
   final bool editMode;
   final CategoryBandLayout layout;
+  /// Edit mode: eye toggles [CategoryVisibilityPrefs] (client-side quarantine).
+  final void Function(int categoryId)? onToggleCategoryVisibility;
 
   /// Single category cell: glass fill; fixed [layout.side]×[layout.side] square (no stretch).
   static Widget _buildCategoryTile({
@@ -212,6 +216,8 @@ class CategoryRowWidget extends StatelessWidget {
     required void Function(CategoryRule r) onLongPressOpenEditor,
     required void Function(CategoryRule r) onFullSettingsTap,
     required void Function(CategoryRule r) onAppearanceTap,
+    VoidCallback? onVisibilityToggle,
+    bool isQuarantined = false,
   }) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -234,6 +240,10 @@ class CategoryRowWidget extends StatelessWidget {
       fontWeight: layout.fontWeight,
       height: 1.15,
       color: textTheme.bodyLarge?.color,
+      decoration: (editMode && isQuarantined)
+          ? TextDecoration.lineThrough
+          : null,
+      decorationColor: scheme.onSurfaceVariant,
     );
 
     final iconWidget = Icon(
@@ -271,9 +281,27 @@ class CategoryRowWidget extends StatelessWidget {
           )
         : null;
 
+    final visibilityBtn = editMode && onVisibilityToggle != null
+        ? IconButton(
+            icon: Icon(
+              isQuarantined
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+            ),
+            iconSize: layout.gearIconSize,
+            style: IconButton.styleFrom(
+              minimumSize: Size(minTap, minTap),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: EdgeInsets.zero,
+            ),
+            onPressed: onVisibilityToggle,
+            tooltip: t(loc, 'category_visibility_toggle'),
+          )
+        : null;
+
     final radius = layout.borderRadius;
 
-    return SizedBox(
+    Widget tileCore = SizedBox(
       width: layout.side,
       height: layout.side,
       child: Material(
@@ -304,7 +332,11 @@ class CategoryRowWidget extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: [iconHitTarget, gear],
+                        children: [
+                          iconHitTarget,
+                          if (visibilityBtn != null) visibilityBtn,
+                          gear,
+                        ],
                       ),
                     )
                   else
@@ -333,6 +365,11 @@ class CategoryRowWidget extends StatelessWidget {
         ),
       ),
     );
+
+    if (editMode && onVisibilityToggle != null && isQuarantined) {
+      tileCore = Opacity(opacity: 0.55, child: tileCore);
+    }
+    return tileCore;
   }
 
   Widget _addTile(
@@ -415,6 +452,8 @@ class CategoryRowWidget extends StatelessWidget {
 
           Widget cell(CategoryRule r) {
             final isSelected = selectedId == r.id;
+            final quarantined =
+                CategoryVisibilityPrefs.isHiddenOrAncestor(r.id);
             return _buildCategoryTile(
               context: context,
               r: r,
@@ -426,6 +465,10 @@ class CategoryRowWidget extends StatelessWidget {
               onLongPressOpenEditor: onLongPressOpenEditor,
               onFullSettingsTap: onFullSettingsTap,
               onAppearanceTap: onAppearanceTap,
+              onVisibilityToggle: onToggleCategoryVisibility != null
+                  ? () => onToggleCategoryVisibility!(r.id)
+                  : null,
+              isQuarantined: quarantined,
             );
           }
 
@@ -1442,8 +1485,32 @@ class _CategoriesPageState extends State<CategoriesPage> {
   bool _useHorizontalScrollLayout = false;
   static const int _maxDepth = 4;
 
+  void _categoryVisibilityListener() {
+    if (!mounted) return;
+    var changed = false;
+    for (var d = 0; d < _maxDepth; d++) {
+      final id = _selectedPath[d];
+      if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
+        for (var j = d; j < _maxDepth; j++) {
+          _selectedPath[j] = null;
+        }
+        changed = true;
+        break;
+      }
+    }
+    if (changed) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(CategoryVisibilityPrefs.ensureLoaded());
+    CategoryVisibilityPrefs.hiddenIds.addListener(_categoryVisibilityListener);
+  }
+
   @override
   void dispose() {
+    CategoryVisibilityPrefs.hiddenIds.removeListener(_categoryVisibilityListener);
     unawaited(DatabaseService.instance.flushCategoryOrderSyncNow());
     super.dispose();
   }
@@ -1485,10 +1552,18 @@ class _CategoriesPageState extends State<CategoriesPage> {
   }
 
   List<CategoryRule> _getItemsForDepth(int depth) {
-    if (depth == 0) return DatabaseService.instance.getChildrenOf(null);
-    final parentId = _selectedPath[depth - 1];
-    if (parentId == null) return [];
-    return DatabaseService.instance.getChildrenOf(parentId);
+    final List<CategoryRule> raw;
+    if (depth == 0) {
+      raw = DatabaseService.instance.getChildrenOf(null);
+    } else {
+      final parentId = _selectedPath[depth - 1];
+      if (parentId == null) return [];
+      raw = DatabaseService.instance.getChildrenOf(parentId);
+    }
+    if (_categoryEditMode) return raw;
+    return raw
+        .where((r) => !CategoryVisibilityPrefs.isHiddenOrAncestor(r.id))
+        .toList();
   }
 
   void _selectAtDepth(int depth, int? id) {
@@ -1592,6 +1667,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
       showAdd: canAddAtThisLevel,
       onAddTap: () => unawaited(_addSubcategoryAtDepth(depth)),
       editMode: _categoryEditMode,
+      onToggleCategoryVisibility: _categoryEditMode
+          ? (id) => unawaited(CategoryVisibilityPrefs.toggle(id))
+          : null,
     );
 
     final hasSelection = depth < _maxDepth && selectedId != null;
@@ -1614,9 +1692,12 @@ class _CategoriesPageState extends State<CategoriesPage> {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final loc = currentLocale.value;
-    final roots = DatabaseService.instance.getChildrenOf(null);
 
-    return Scaffold(
+    return ValueListenableBuilder<List<int>>(
+      valueListenable: CategoryVisibilityPrefs.hiddenIds,
+      builder: (context, _, __) {
+        final roots = _getItemsForDepth(0);
+        return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(t(loc, 'categories_title')),
@@ -1680,6 +1761,8 @@ class _CategoriesPageState extends State<CategoriesPage> {
           ],
         ),
       ),
+    );
+      },
     );
   }
 }

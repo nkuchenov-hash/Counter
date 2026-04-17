@@ -3522,6 +3522,48 @@ class DatabaseService {
     }
   }
 
+  /// True when [id] maps to a PocketBase **categories** system id for outgoing record POST/PATCH
+  /// (same conditions as [_mapCategoryIdToLinkForPb] before [merged.remove] strips the field).
+  bool _categoryIdResolvableForPbRecordPost(int? id) {
+    if (!_planLocalCategoryIdIsConcrete(id)) return false;
+    final rule = getCategoryRuleById(id!);
+    if (rule == null || rule.isArchived) return false;
+    final bid = _categoryBackendRowIdStrict(rule);
+    if (bid == null || bid.isEmpty) return false;
+    if (!_isLikelyPocketBaseRowId(bid)) return false;
+    return _categoryPbRowIdKnownInRules(bid);
+  }
+
+  /// Prefer a leaf (no children) with a resolvable PB id; else first resolvable category in tree order.
+  int? _firstLeafCategoryIdFromRules() {
+    final pairs = allCategoryIdPathPairs;
+    for (final p in pairs) {
+      if (p.id == CategoryRule.uncategorizedSyntheticId) continue;
+      if (getChildrenOf(p.id).isEmpty &&
+          _categoryIdResolvableForPbRecordPost(p.id)) {
+        return p.id;
+      }
+    }
+    for (final p in pairs) {
+      if (p.id == CategoryRule.uncategorizedSyntheticId) continue;
+      if (_categoryIdResolvableForPbRecordPost(p.id)) {
+        return p.id;
+      }
+    }
+    return null;
+  }
+
+  /// Cold-start: when [preferred] is not a concrete local choice, use [defaultCategoryId] then first leaf.
+  /// Does not replace a concrete [preferred] (even if it cannot be sent to PocketBase — caller may fail).
+  int? _resolveColdStartRecordCategoryId(int? preferred) {
+    if (_categoryIdResolvableForPbRecordPost(preferred)) return preferred;
+    if (_planLocalCategoryIdIsConcrete(preferred)) return preferred;
+
+    final d = defaultCategoryId;
+    if (_categoryIdResolvableForPbRecordPost(d)) return d;
+    return _firstLeafCategoryIdFromRules();
+  }
+
   /// PocketBase **records** PATCH. Returns HTTP-style status (200, 404, …).
   Future<int> _patchRecordsRowWith404Recovery({
     required String originalQueryId,
@@ -7546,7 +7588,8 @@ class DatabaseService {
       var cid = categoryId ?? defaultCategoryId;
       cid = identifyCategory(parsed.title)?.id ?? cid;
       cid = _resolveRecordCategoryIdWithSmartLink(parsed.title, cid);
-      if (cid == null || cid == 0) {
+      cid = _resolveColdStartRecordCategoryId(cid);
+      if (!_categoryIdResolvableForPbRecordPost(cid)) {
         _log('writeCompletedRecord: no resolvable category_id');
         AppSnack.failed();
         return false;
@@ -7593,8 +7636,11 @@ class DatabaseService {
         if (planId.isNotEmpty) {
           final pc = await _resolveCategoryIdFromSourcePlanPbId(planId);
           if (_planLocalCategoryIdIsConcrete(pc)) {
-            runningFields['category_id'] =
-                _recordCategoryBusinessPkForApi(pc);
+            final resolved = _resolveColdStartRecordCategoryId(pc);
+            if (_categoryIdResolvableForPbRecordPost(resolved)) {
+              runningFields['category_id'] =
+                  _recordCategoryBusinessPkForApi(resolved);
+            }
           }
         }
       }
@@ -7701,6 +7747,12 @@ class DatabaseService {
         if (_planLocalCategoryIdIsConcrete(inferred)) {
           cid = inferred;
         }
+      }
+      cid = _resolveColdStartRecordCategoryId(cid);
+      if (!_categoryIdResolvableForPbRecordPost(cid)) {
+        _log('writeRecord: cold-start could not resolve category_id');
+        AppSnack.failed();
+        return null;
       }
       final now = getPlanetaryNow();
       final start = explicitStartTime ?? now;
@@ -7868,6 +7920,12 @@ class DatabaseService {
           if (_planLocalCategoryIdIsConcrete(pc)) {
             cidForCompleted = pc;
           }
+        }
+        cidForCompleted = _resolveColdStartRecordCategoryId(cidForCompleted);
+        if (!_categoryIdResolvableForPbRecordPost(cidForCompleted)) {
+          _log('writeRecord completed branch: cold-start could not resolve category_id');
+          AppSnack.failed();
+          return null;
         }
         final completedFields = _nocoFieldsForPatch(<String, dynamic>{
           'user_id': _pidForPbFilter,

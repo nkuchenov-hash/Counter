@@ -3,9 +3,12 @@
 // ---------------------------------------------------------------------------
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/categories/category_recursive_tree.dart';
+import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -25,22 +28,37 @@ class _ListsPageState extends State<ListsPage>
   bool get wantKeepAlive => true;
 
   static const String _prefsKeyListsCategoryId = 'last_lists_category_id';
+  static const String _prefsKeyPinnedListChipIds = 'pinned_list_chip_ids';
 
   List<PlanningTask> _flat = [];
   /// Local-only rows until [fetchBacklogPlans] returns the server copy (inline add).
   final List<PlanningTask> _pendingInline = [];
   bool _loading = true;
   int? _filterCategoryId;
+  /// Leaf category IDs shown as chips (besides All); persisted as JSON in [_prefsKeyPinnedListChipIds].
+  List<int> _pinnedChipIds = [];
+  int? _inlineAddCategoryId;
   StreamSubscription<void>? _planRefreshSub;
   DateTime? _lastPlayDebounce;
   static const Duration _playDebounce = Duration(milliseconds: 500);
   late final TextEditingController _inlineController;
   final FocusNode _inlineFocus = FocusNode();
 
+  void _listsVisibilityListener() {
+    if (!mounted) return;
+    final id = _filterCategoryId;
+    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
+      setState(() => _filterCategoryId = null);
+      unawaited(_persistFilterCategoryId(null));
+      unawaited(_reload());
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _inlineController = TextEditingController();
+    CategoryVisibilityPrefs.hiddenIds.addListener(_listsVisibilityListener);
     _planRefreshSub =
         DatabaseService.instance.planningRefreshNotifications.listen((_) {
       if (mounted) unawaited(_reload());
@@ -49,7 +67,9 @@ class _ListsPageState extends State<ListsPage>
   }
 
   Future<void> _bootstrap() async {
+    await CategoryVisibilityPrefs.ensureLoaded();
     await _loadPersistedFilter();
+    await _loadPinnedChipIds();
     if (!mounted) return;
     await _reload();
   }
@@ -58,11 +78,58 @@ class _ListsPageState extends State<ListsPage>
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getInt(_prefsKeyListsCategoryId);
     if (!mounted) return;
-    if (raw != null &&
-        raw >= 0 &&
-        DatabaseService.instance.categoryExists(raw)) {
-      setState(() => _filterCategoryId = raw);
+    setState(() {
+      if (raw != null &&
+          raw >= 0 &&
+          DatabaseService.instance.categoryExists(raw)) {
+        _filterCategoryId = raw;
+      }
+      _syncInlinePickerToFilter();
+    });
+  }
+
+  void _syncInlinePickerToFilter() {
+    final fid = _filterCategoryId;
+    if (fid != null && _isLeafCategory(fid)) {
+      _inlineAddCategoryId = fid;
+    } else {
+      _inlineAddCategoryId = _defaultLeafCategoryIdForAll();
     }
+  }
+
+  Future<void> _loadPinnedChipIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_prefsKeyPinnedListChipIds);
+    if (!mounted) return;
+    if (raw == null || raw.isEmpty) {
+      setState(() => _pinnedChipIds = []);
+      return;
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) {
+        setState(() => _pinnedChipIds = []);
+        return;
+      }
+      final db = DatabaseService.instance;
+      final cleaned = <int>[];
+      for (final e in decoded) {
+        final id = e is int ? e : int.tryParse(e.toString());
+        if (id == null) continue;
+        if (!db.categoryExists(id)) continue;
+        if (!_isLeafCategory(id)) continue;
+        if (CategoryVisibilityPrefs.isHiddenOrAncestor(id)) continue;
+        cleaned.add(id);
+      }
+      setState(() => _pinnedChipIds = cleaned);
+    } catch (_) {
+      setState(() => _pinnedChipIds = []);
+    }
+  }
+
+  Future<void> _persistPinnedChipIds(List<int> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKeyPinnedListChipIds, jsonEncode(ids));
   }
 
   Future<void> _persistFilterCategoryId(int? id) async {
@@ -80,8 +147,16 @@ class _ListsPageState extends State<ListsPage>
   int? _defaultLeafCategoryIdForAll() {
     final db = DatabaseService.instance;
     final d = db.defaultCategoryId;
-    if (d != null && _isLeafCategory(d)) return d;
-    for (final p in db.allCategoryIdPathPairs) {
+    if (d != null &&
+        _isLeafCategory(d) &&
+        !CategoryVisibilityPrefs.isHiddenOrAncestor(d)) {
+      return d;
+    }
+    final pairs = CategoryVisibilityPrefs.filterPairs(
+      db.allCategoryIdPathPairs,
+      (p) => p.id,
+    );
+    for (final p in pairs) {
       if (_isLeafCategory(p.id)) return p.id;
     }
     return null;
@@ -91,13 +166,92 @@ class _ListsPageState extends State<ListsPage>
     setState(() {
       _filterCategoryId = id;
       _loading = true;
+      _syncInlinePickerToFilter();
     });
     unawaited(_persistFilterCategoryId(id));
     unawaited(_reload());
   }
 
+  void _applyPinnedChipIds(List<int> next) {
+    final sorted = [...next]..sort();
+    setState(() => _pinnedChipIds = sorted);
+    unawaited(_persistPinnedChipIds(sorted));
+    final fid = _filterCategoryId;
+    if (fid != null && !sorted.contains(fid)) {
+      _onFilterChanged(null);
+    }
+  }
+
+  Future<void> _openChipPinSettings() async {
+    final loc = currentLocale.value;
+    final pairs = CategoryVisibilityPrefs.filterPairs(
+      DatabaseService.instance.allCategoryIdPathPairs,
+      (p) => p.id,
+    );
+    final leaves = pairs.where((p) => _isLeafCategory(p.id)).toList();
+    leaves.sort((a, b) => a.path.compareTo(b.path));
+    final sel = Set<int>.from(_pinnedChipIds);
+
+    final result = await showDialog<Set<int>>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            return AlertDialog(
+              title: Text(t(loc, 'lists_pin_chips_title')),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      t(loc, 'lists_pin_chips_subtitle'),
+                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 12),
+                    for (final p in leaves)
+                      CheckboxListTile(
+                        value: sel.contains(p.id),
+                        onChanged: (v) {
+                          setModal(() {
+                            if (v == true) {
+                              sel.add(p.id);
+                            } else {
+                              sel.remove(p.id);
+                            }
+                          });
+                        },
+                        title: Text(_leafCategoryLabel(p.id)),
+                        controlAffinity: ListTileControlAffinity.leading,
+                        dense: true,
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(t(loc, 'cancel')),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(ctx).pop(sel),
+                  child: Text(t(loc, 'confirm')),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    if (result == null || !mounted) return;
+    _applyPinnedChipIds(result.toList());
+  }
+
   @override
   void dispose() {
+    CategoryVisibilityPrefs.hiddenIds.removeListener(_listsVisibilityListener);
     _planRefreshSub?.cancel();
     _inlineController.dispose();
     _inlineFocus.dispose();
@@ -165,15 +319,6 @@ class _ListsPageState extends State<ListsPage>
     return {for (final k in keys) k: map[k]!};
   }
 
-  int? _effectiveCategoryIdForNewTask() {
-    final fid = _filterCategoryId;
-    if (fid != null) {
-      if (!_isLeafCategory(fid)) return null;
-      return fid;
-    }
-    return _defaultLeafCategoryIdForAll();
-  }
-
   void _submitInline() {
     final raw = _inlineController.text.trim();
     if (raw.isEmpty) return;
@@ -181,8 +326,7 @@ class _ListsPageState extends State<ListsPage>
     final gt = DatabaseService.instance.getCleanTitleAndTags(stripped);
     final title = gt.title.trim();
     if (title.isEmpty) return;
-    final match = DatabaseService.instance.identifyCategory(title);
-    final cat = match?.id ?? _effectiveCategoryIdForNewTask();
+    final cat = _inlineAddCategoryId;
     if (cat == null) return;
     if (!_isLeafCategory(cat)) return;
 
@@ -345,14 +489,20 @@ class _ListsPageState extends State<ListsPage>
     super.build(context);
     final loc = currentLocale.value;
     final theme = Theme.of(context);
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final filterId = _filterCategoryId;
     final parentSelected =
         filterId != null && !_isLeafCategory(filterId);
     final leafTarget = _effectiveCategoryIdForNewTask();
     final canInlineAdd = leafTarget != null && !parentSelected;
 
-    return Scaffold(
+    return ValueListenableBuilder<List<int>>(
+      valueListenable: CategoryVisibilityPrefs.hiddenIds,
+      builder: (context, _, __) {
+        final pairs = CategoryVisibilityPrefs.filterPairs(
+          DatabaseService.instance.allCategoryIdPathPairs,
+          (p) => p.id,
+        );
+        return Scaffold(
       appBar: AppBar(
         title: Text(t(loc, 'lists_title')),
       ),
@@ -459,6 +609,8 @@ class _ListsPageState extends State<ListsPage>
           ),
         ],
       ),
+    );
+      },
     );
   }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/app_bar_live_clock.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -7,11 +8,10 @@ import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/core/picker_entry_modes.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:omni_datetime_picker/omni_datetime_picker.dart';
-
 // ---------------------------------------------------------------------------
 // TIMELINE FEATURE — UI_ISOLATION (§7). PLANETARY TIME PROTOCOL (§5). ACTIVE_STATUS_LAW (§2).
 // All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] §8).
@@ -94,66 +94,6 @@ bool _timelineSameRecordRow(
 
 DateTime _displayNow() =>
     DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
-
-Future<DateTime?> showAppDateTimePicker(
-  BuildContext context, {
-  DateTime? initial,
-  DateTime? firstDate,
-  DateTime? lastDate,
-}) async {
-  final theme = Theme.of(context);
-  final defaultInitial =
-      DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
-  return showOmniDateTimePicker(
-    context: context,
-    initialDate: initial ?? defaultInitial,
-    firstDate: firstDate ?? DateTime.utc(2020),
-    lastDate: lastDate ?? DateTime.utc(2030),
-    is24HourMode: true,
-    theme: theme,
-  );
-}
-
-/// App bar live clock. Updates on timeUpdates stream (profile timezone). No .toLocal().
-class _AppBarLiveClock extends StatefulWidget {
-  const _AppBarLiveClock({this.textStyle});
-  final TextStyle? textStyle;
-
-  @override
-  State<_AppBarLiveClock> createState() => _AppBarLiveClockState();
-}
-
-class _AppBarLiveClockState extends State<_AppBarLiveClock> {
-  StreamSubscription<void>? _timeUpdateSub;
-
-  @override
-  void initState() {
-    super.initState();
-    _timeUpdateSub = DatabaseService.instance.timeUpdates.listen((_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  @override
-  void dispose() {
-    _timeUpdateSub?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<void>(
-      stream: DatabaseService.instance.timeUpdates,
-      builder: (context, _) {
-        return Text(
-          DateFormat.Hm(currentLocale.value).format(_displayNow()),
-          style: widget.textStyle ??
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
-        );
-      },
-    );
-  }
-}
 
 /// Wraps Timeline in a PageView for swipe-to-change date. Exported for LifeOSDashboard.
 class TimelineSwipeWrapper extends StatefulWidget {
@@ -552,7 +492,6 @@ class _TimelinePageState extends State<TimelinePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isToday = _isToday(widget.selectedDate);
     final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ??
         const TextStyle(fontSize: 20, fontWeight: FontWeight.w500);
 
@@ -561,22 +500,6 @@ class _TimelinePageState extends State<TimelinePage> {
       appBar: AppBar(
         title: Row(
           children: [
-            if (widget.onNavigateToDate != null)
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
-                icon: const Icon(Icons.chevron_left_rounded),
-                tooltip: t(currentLocale.value, 'date_previous_day'),
-                onPressed: () {
-                  widget.onNavigateToDate!(
-                    _dateOnlyCalendar(widget.selectedDate)
-                        .subtract(const Duration(days: 1)),
-                  );
-                },
-              ),
             Expanded(
               child: Material(
                 color: Colors.transparent,
@@ -585,6 +508,26 @@ class _TimelinePageState extends State<TimelinePage> {
                       ? null
                       : () async {
                           final loc = currentLocale.value;
+                          if (kIsWeb) {
+                            final picked = await showDatePicker(
+                              context: context,
+                              locale: Locale(loc),
+                              initialDate: widget.selectedDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime(2035),
+                              initialEntryMode: appDatePickerEntryMode(),
+                            );
+                            if (picked != null && context.mounted) {
+                              widget.onNavigateToDate?.call(
+                                DateTime(
+                                  picked.year,
+                                  picked.month,
+                                  picked.day,
+                                ),
+                              );
+                            }
+                            return;
+                          }
                           final picked = await showDialog<DateTime>(
                             context: context,
                             builder: (ctx) => AlertDialog(
@@ -623,45 +566,19 @@ class _TimelinePageState extends State<TimelinePage> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isToday) ...[
-                          Text(' • ', style: titleStyle),
-                          _AppBarLiveClock(
-                            textStyle: titleStyle.copyWith(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w400,
-                            ),
+                        Text(' • ', style: titleStyle),
+                        AppBarLiveClock(
+                          textStyle: titleStyle.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
                           ),
-                        ],
-                        if (widget.onNavigateToDate != null) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.calendar_month_rounded,
-                            size: 20,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ],
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-            if (widget.onNavigateToDate != null)
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
-                icon: const Icon(Icons.chevron_right_rounded),
-                tooltip: t(currentLocale.value, 'date_next_day'),
-                onPressed: () {
-                  widget.onNavigateToDate!(
-                    _dateOnlyCalendar(widget.selectedDate)
-                        .add(const Duration(days: 1)),
-                  );
-                },
-              ),
           ],
         ),
         actions: [

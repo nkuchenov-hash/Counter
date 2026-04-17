@@ -9,13 +9,13 @@ import 'package:counter/database_service.dart';
 import 'package:counter/models.dart';
 import 'package:counter/features/categories/category_list_view.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
+import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/calendar/calendar_view.dart';
 import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
-import 'package:counter/core/subscription/app_tier.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
@@ -271,9 +271,26 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   DateTime? _lastSyncFailedSnackAt;
   static const Duration _syncFailedSnackThrottle = Duration(seconds: 4);
 
+  void _categoryVisibilityShellListener() {
+    if (!mounted) return;
+    final id = _selectedCategoryId;
+    if (id != null && CategoryVisibilityPrefs.isHiddenOrAncestor(id)) {
+      int? firstVisible;
+      for (final p in DatabaseService.instance.allCategoryIdPathPairs) {
+        if (!CategoryVisibilityPrefs.isHiddenOrAncestor(p.id)) {
+          firstVisible = p.id;
+          break;
+        }
+      }
+      setState(() => _selectedCategoryId = firstVisible);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    unawaited(CategoryVisibilityPrefs.ensureLoaded());
+    CategoryVisibilityPrefs.hiddenIds.addListener(_categoryVisibilityShellListener);
     _selectedDate = DatabaseService.instance.getTimelineDeviceLocalToday();
     _focusedDay = DatabaseService.instance.getTimelineDeviceLocalToday();
     _rules = List.from(DatabaseService.instance.rules);
@@ -341,6 +358,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   @override
   void dispose() {
+    CategoryVisibilityPrefs.hiddenIds.removeListener(_categoryVisibilityShellListener);
     _deviceLocalMidnightWatchTimer?.cancel();
     _syncSub?.cancel();
     _notificationSub?.cancel();
@@ -1651,8 +1669,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
     final showVoiceFab =
         _shellPageIndex == 1 || _shellPageIndex == 3 || !_isFutureDate;
-    return AnimatedBuilder(
-      animation: Listenable.merge([currentLocale, appIsProUser]),
+        return AnimatedBuilder(
+      animation: currentLocale,
       builder: (context, _) {
         return Listener(
           behavior: HitTestBehavior.translucent,
@@ -1674,46 +1692,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (appIsProUser.value) ...[
-                        Padding(
-                          padding:
-                              const EdgeInsetsDirectional.only(end: 8),
-                          child: Tooltip(
-                            message:
-                                t(currentLocale.value, 'pro_badge_tooltip'),
-                            child: Material(
-                              elevation: 1,
-                              shadowColor: Theme.of(context)
-                                  .colorScheme
-                                  .shadow
-                                  .withValues(alpha: 0.35),
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .tertiaryContainer,
-                              borderRadius: BorderRadius.circular(10),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
-                                child: Text(
-                                  t(currentLocale.value, 'pro_badge_label'),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: 0.6,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onTertiaryContainer,
-                                      ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                       _SyncStatusIcon(
                         connected: _connected,
                         onTap: () => _showSyncMenu(context),

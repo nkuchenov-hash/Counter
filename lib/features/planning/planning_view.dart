@@ -266,6 +266,9 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   /// M2M tags selected before submitting the inline task.
   List<Tag> _creationSelectedTags = [];
 
+  /// null = show all; [_kUntaggedPlanGroupId] = tasks with no renderable tags; else match [Tag.tagId].
+  int? _planningTagFilterId;
+
   DateTime get _today => DatabaseService.instance.getTimelineDeviceLocalToday();
 
   int _nextPlanOrderForQuickAdd() {
@@ -636,6 +639,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           _selectedPlanKeys.clear();
           _planSelectMode = false;
           _sortMode = _PlanSortMode.custom;
+          _planningTagFilterId = null;
         }
       });
     }
@@ -677,6 +681,69 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       }
     }
     return merged;
+  }
+
+  List<PlanningTask> _applyPlanningTagFilter(List<PlanningTask> tasks) {
+    final fid = _planningTagFilterId;
+    if (fid == null) return tasks;
+    if (fid == _kUntaggedPlanGroupId) {
+      return tasks
+          .where((t) => !t.tags.any((x) => x.rendersAsChip))
+          .toList();
+    }
+    return tasks
+        .where(
+          (t) => t.tags.any((x) => x.rendersAsChip && x.tagId == fid),
+        )
+        .toList();
+  }
+
+  Widget _buildPlanningTagFilterBar(ColorScheme scheme) {
+    final loc = currentLocale.value;
+    final noTagsSelected = _planningTagFilterId == _kUntaggedPlanGroupId;
+    return ListView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.only(end: 8),
+          child: FilterChip(
+            avatar: Icon(
+              Icons.label_off_outlined,
+              size: 18,
+              color: noTagsSelected
+                  ? scheme.onSecondaryContainer
+                  : scheme.onSurfaceVariant,
+            ),
+            label: Text(t(loc, 'plan_filter_no_tags')),
+            selected: noTagsSelected,
+            showCheckmark: false,
+            onSelected: (_) {
+              setState(() {
+                _planningTagFilterId =
+                    noTagsSelected ? null : _kUntaggedPlanGroupId;
+              });
+            },
+          ),
+        ),
+        for (final tag in _quickAddAvailableTags)
+          if (tag.tagId != 0)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: FilterChip(
+                label: Text(tag.name),
+                selected: _planningTagFilterId == tag.tagId,
+                showCheckmark: false,
+                onSelected: (_) {
+                  setState(() {
+                    final cur = _planningTagFilterId;
+                    _planningTagFilterId = cur == tag.tagId ? null : tag.tagId;
+                  });
+                },
+              ),
+            ),
+      ],
+    );
   }
 
   void _exitSelectMode() {
@@ -2011,7 +2078,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                 });
               }
             }
-            final tasks = _displayTasks(server);
+            final tasks = _applyPlanningTagFilter(_displayTasks(server));
             displayedForChrome = tasks;
             body = _buildPlanningMainColumn(context, scheme, tasks);
           }
@@ -2136,6 +2203,14 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
               if (!_planSelectMode)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                  child: SizedBox(
+                    height: 44,
+                    child: _buildPlanningTagFilterBar(scheme),
+                  ),
+                ),
+              if (!_planSelectMode)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
                   child: SizedBox(
                     width: double.infinity,
                     child: FittedBox(
