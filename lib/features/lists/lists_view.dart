@@ -162,6 +162,27 @@ class _ListsPageState extends State<ListsPage>
     return null;
   }
 
+  /// Target leaf for a new inline backlog row: dropdown (picker) first, then filter chip,
+  /// then profile default / first visible leaf (same as [_defaultLeafCategoryIdForAll]).
+  int? _effectiveCategoryIdForNewTask() {
+    // Priority 1: value shown in the inline category dropdown ([_inlineAddCategoryId]).
+    final inline = _inlineAddCategoryId;
+    if (inline != null &&
+        _isLeafCategory(inline) &&
+        !CategoryVisibilityPrefs.isHiddenOrAncestor(inline)) {
+      return inline;
+    }
+    // Priority 2: horizontal filter chip is a specific leaf category.
+    final chip = _filterCategoryId;
+    if (chip != null &&
+        _isLeafCategory(chip) &&
+        !CategoryVisibilityPrefs.isHiddenOrAncestor(chip)) {
+      return chip;
+    }
+    // Priority 3: "All" (or non-leaf filter with no valid picker) — default or first leaf.
+    return _defaultLeafCategoryIdForAll();
+  }
+
   void _onFilterChanged(int? id) {
     setState(() {
       _filterCategoryId = id;
@@ -326,9 +347,8 @@ class _ListsPageState extends State<ListsPage>
     final gt = DatabaseService.instance.getCleanTitleAndTags(stripped);
     final title = gt.title.trim();
     if (title.isEmpty) return;
-    final cat = _inlineAddCategoryId;
+    final cat = _effectiveCategoryIdForNewTask();
     if (cat == null) return;
-    if (!_isLeafCategory(cat)) return;
 
     final optId =
         'optimistic-inline-${DateTime.now().microsecondsSinceEpoch}';
