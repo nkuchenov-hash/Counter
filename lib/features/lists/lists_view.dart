@@ -7,7 +7,6 @@ import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -28,16 +27,21 @@ class _ListsPageState extends State<ListsPage>
   bool get wantKeepAlive => true;
 
   static const String _prefsKeyListsCategoryId = 'last_lists_category_id';
-  static const String _prefsKeyPinnedListChipIds = 'pinned_list_chip_ids';
+  static const String _prefsKeyChipMode = 'list_chip_mode';
+  static const String _prefsKeyPinnedIds = 'list_pinned_ids';
+  static const String _legacyPrefsKeyPinnedListChipIds = 'pinned_list_chip_ids';
 
   List<PlanningTask> _flat = [];
   /// Local-only rows until [fetchBacklogPlans] returns the server copy (inline add).
   final List<PlanningTask> _pendingInline = [];
+  /// Full backlog snapshot for frequency-based chips (same rules as [fetchBacklogPlans] with no filter).
+  List<PlanningTask> _allBacklogForFrequency = [];
   bool _loading = true;
   int? _filterCategoryId;
-  /// Leaf category IDs shown as chips (besides All); persisted as JSON in [_prefsKeyPinnedListChipIds].
+  /// `'manual'` = user-pinned IDs; `'frequent'` = top categories by local backlog counts.
+  String _chipMode = 'frequent';
+  /// Manual mode: category IDs persisted under [_prefsKeyPinnedIds].
   List<int> _pinnedChipIds = [];
-  int? _inlineAddCategoryId;
   StreamSubscription<void>? _planRefreshSub;
   DateTime? _lastPlayDebounce;
   static const Duration _playDebounce = Duration(milliseconds: 500);
@@ -69,7 +73,7 @@ class _ListsPageState extends State<ListsPage>
   Future<void> _bootstrap() async {
     await CategoryVisibilityPrefs.ensureLoaded();
     await _loadPersistedFilter();
-    await _loadPinnedChipIds();
+    await _loadChipModeAndPinnedIds();
     if (!mounted) return;
     await _reload();
   }
@@ -84,52 +88,70 @@ class _ListsPageState extends State<ListsPage>
           DatabaseService.instance.categoryExists(raw)) {
         _filterCategoryId = raw;
       }
-      _syncInlinePickerToFilter();
     });
   }
 
-  void _syncInlinePickerToFilter() {
-    final fid = _filterCategoryId;
-    if (fid != null && _isLeafCategory(fid)) {
-      _inlineAddCategoryId = fid;
-    } else {
-      _inlineAddCategoryId = _defaultLeafCategoryIdForAll();
+  Future<void> _loadChipModeAndPinnedIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final modeRaw = prefs.getString(_prefsKeyChipMode)?.trim().toLowerCase();
+    final mode =
+        (modeRaw == 'manual' || modeRaw == 'frequent') ? modeRaw! : 'frequent';
+
+    var rawPinned = prefs.getString(_prefsKeyPinnedIds);
+    if (rawPinned == null || rawPinned.isEmpty) {
+      rawPinned = prefs.getString(_legacyPrefsKeyPinnedListChipIds);
+      if (rawPinned != null && rawPinned.isNotEmpty) {
+        await prefs.setString(_prefsKeyPinnedIds, rawPinned);
+      }
+    }
+
+    final pinned = _decodePinnedIdsList(rawPinned);
+    if (!mounted) return;
+    setState(() {
+      _chipMode = mode;
+      _pinnedChipIds = pinned;
+    });
+  }
+
+  List<int> _decodePinnedIdsList(String? raw) {
+    if (raw == null || raw.isEmpty) return [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      return _sanitizeCategoryIdsForChips(decoded);
+    } catch (_) {
+      return [];
     }
   }
 
-  Future<void> _loadPinnedChipIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKeyPinnedListChipIds);
-    if (!mounted) return;
-    if (raw == null || raw.isEmpty) {
-      setState(() => _pinnedChipIds = []);
-      return;
+  List<int> _sanitizeCategoryIdsForChips(List<dynamic> decoded) {
+    final ids = <int>[];
+    for (final e in decoded) {
+      final id = e is int ? e : int.tryParse(e.toString());
+      if (id != null) ids.add(id);
     }
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) {
-        setState(() => _pinnedChipIds = []);
-        return;
-      }
-      final db = DatabaseService.instance;
-      final cleaned = <int>[];
-      for (final e in decoded) {
-        final id = e is int ? e : int.tryParse(e.toString());
-        if (id == null) continue;
-        if (!db.categoryExists(id)) continue;
-        if (!_isLeafCategory(id)) continue;
-        if (CategoryVisibilityPrefs.isHiddenOrAncestor(id)) continue;
-        cleaned.add(id);
-      }
-      setState(() => _pinnedChipIds = cleaned);
-    } catch (_) {
-      setState(() => _pinnedChipIds = []);
+    return _sanitizeIntCategoryIds(ids);
+  }
+
+  List<int> _sanitizeIntCategoryIds(List<int> ids) {
+    final db = DatabaseService.instance;
+    final out = <int>[];
+    for (final id in ids) {
+      if (!db.categoryExists(id)) continue;
+      if (CategoryVisibilityPrefs.isHiddenOrAncestor(id)) continue;
+      out.add(id);
     }
+    return out;
   }
 
   Future<void> _persistPinnedChipIds(List<int> ids) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsKeyPinnedListChipIds, jsonEncode(ids));
+    await prefs.setString(_prefsKeyPinnedIds, jsonEncode(ids));
+  }
+
+  Future<void> _persistChipMode(String mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsKeyChipMode, mode);
   }
 
   Future<void> _persistFilterCategoryId(int? id) async {
@@ -141,133 +163,202 @@ class _ListsPageState extends State<ListsPage>
     }
   }
 
-  bool _isLeafCategory(int categoryId) =>
-      DatabaseService.instance.getChildrenOf(categoryId).isEmpty;
-
-  int? _defaultLeafCategoryIdForAll() {
+  /// Default category when filter is "All" (any node, not leaf-only).
+  int? _defaultCategoryWhenFilterAll() {
     final db = DatabaseService.instance;
     final d = db.defaultCategoryId;
-    if (d != null &&
-        _isLeafCategory(d) &&
-        !CategoryVisibilityPrefs.isHiddenOrAncestor(d)) {
+    if (d != null && !CategoryVisibilityPrefs.isHiddenOrAncestor(d)) {
       return d;
     }
     final pairs = CategoryVisibilityPrefs.filterPairs(
       db.allCategoryIdPathPairs,
       (p) => p.id,
     );
-    for (final p in pairs) {
-      if (_isLeafCategory(p.id)) return p.id;
-    }
-    return null;
+    if (pairs.isEmpty) return null;
+    return pairs.first.id;
   }
 
-  /// Target leaf for a new inline backlog row: dropdown (picker) first, then filter chip,
-  /// then profile default / first visible leaf (same as [_defaultLeafCategoryIdForAll]).
+  /// New backlog row uses the active filter category, or [ _defaultCategoryWhenFilterAll ] when "All".
   int? _effectiveCategoryIdForNewTask() {
-    // Priority 1: value shown in the inline category dropdown ([_inlineAddCategoryId]).
-    final inline = _inlineAddCategoryId;
-    if (inline != null &&
-        _isLeafCategory(inline) &&
-        !CategoryVisibilityPrefs.isHiddenOrAncestor(inline)) {
-      return inline;
+    final fid = _filterCategoryId;
+    final db = DatabaseService.instance;
+    if (fid != null &&
+        db.categoryExists(fid) &&
+        !CategoryVisibilityPrefs.isHiddenOrAncestor(fid)) {
+      return fid;
     }
-    // Priority 2: horizontal filter chip is a specific leaf category.
-    final chip = _filterCategoryId;
-    if (chip != null &&
-        _isLeafCategory(chip) &&
-        !CategoryVisibilityPrefs.isHiddenOrAncestor(chip)) {
-      return chip;
+    return _defaultCategoryWhenFilterAll();
+  }
+
+  /// Counts [categoryId] on undated backlog tasks (server snapshot + optimistic inline rows).
+  List<int> _computeTopFrequentCategoryIds({int maxN = 5}) {
+    final counts = <int, int>{};
+    for (final t in _allBacklogForFrequency) {
+      counts[t.categoryId] = (counts[t.categoryId] ?? 0) + 1;
     }
-    // Priority 3: "All" (or non-leaf filter with no valid picker) — default or first leaf.
-    return _defaultLeafCategoryIdForAll();
+    for (final t in _pendingInline) {
+      if (t.startTime == null) {
+        counts[t.categoryId] = (counts[t.categoryId] ?? 0) + 1;
+      }
+    }
+    final entries = counts.entries.toList()
+      ..sort((a, b) {
+        final byCount = b.value.compareTo(a.value);
+        if (byCount != 0) return byCount;
+        return a.key.compareTo(b.key);
+      });
+    final db = DatabaseService.instance;
+    final out = <int>[];
+    for (final e in entries) {
+      if (out.length >= maxN) break;
+      if (!db.categoryExists(e.key)) continue;
+      if (CategoryVisibilityPrefs.isHiddenOrAncestor(e.key)) continue;
+      out.add(e.key);
+    }
+    return out;
+  }
+
+  List<int> _chipIdsForBar() {
+    final List<int> raw;
+    if (_chipMode == 'frequent') {
+      raw = _computeTopFrequentCategoryIds(maxN: 5);
+    } else {
+      raw = [..._pinnedChipIds]..sort();
+    }
+    return raw
+        .where((id) => !CategoryVisibilityPrefs.isHiddenOrAncestor(id))
+        .toList();
   }
 
   void _onFilterChanged(int? id) {
     setState(() {
       _filterCategoryId = id;
       _loading = true;
-      _syncInlinePickerToFilter();
     });
     unawaited(_persistFilterCategoryId(id));
     unawaited(_reload());
   }
 
-  void _applyPinnedChipIds(List<int> next) {
-    final sorted = [...next]..sort();
-    setState(() => _pinnedChipIds = sorted);
-    unawaited(_persistPinnedChipIds(sorted));
-    final fid = _filterCategoryId;
-    if (fid != null && !sorted.contains(fid)) {
-      _onFilterChanged(null);
-    }
-  }
-
-  Future<void> _openChipPinSettings() async {
+  Future<void> _openChipBarSettingsSheet() async {
     final loc = currentLocale.value;
+    final db = DatabaseService.instance;
+    var mode = _chipMode;
+    final sel = Set<int>.from(_pinnedChipIds);
     final pairs = CategoryVisibilityPrefs.filterPairs(
-      DatabaseService.instance.allCategoryIdPathPairs,
+      db.allCategoryIdPathPairs,
       (p) => p.id,
     );
-    final leaves = pairs.where((p) => _isLeafCategory(p.id)).toList();
-    leaves.sort((a, b) => a.path.compareTo(b.path));
-    final sel = Set<int>.from(_pinnedChipIds);
+    pairs.sort(
+      (a, b) => _categoryRawName(a.id).toLowerCase().compareTo(
+            _categoryRawName(b.id).toLowerCase(),
+          ),
+    );
 
-    final result = await showDialog<Set<int>>(
+    await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModal) {
-            return AlertDialog(
-              title: Text(t(loc, 'lists_pin_chips_title')),
-              content: SingleChildScrollView(
+            final manualListHeight =
+                (MediaQuery.sizeOf(ctx).height * 0.45).clamp(200.0, 520.0);
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+              ),
+              child: SafeArea(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      t(loc, 'lists_pin_chips_subtitle'),
-                      style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(ctx).colorScheme.onSurfaceVariant,
-                          ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Text(
+                        t(loc, 'lists_chip_bar_sheet_title'),
+                        style: Theme.of(ctx).textTheme.titleLarge,
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    for (final p in leaves)
-                      CheckboxListTile(
-                        value: sel.contains(p.id),
-                        onChanged: (v) {
-                          setModal(() {
-                            if (v == true) {
-                              sel.add(p.id);
-                            } else {
-                              sel.remove(p.id);
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: SegmentedButton<String>(
+                        segments: [
+                          ButtonSegment<String>(
+                            value: 'frequent',
+                            label: Text(t(loc, 'lists_chip_mode_frequent')),
+                          ),
+                          ButtonSegment<String>(
+                            value: 'manual',
+                            label: Text(t(loc, 'lists_chip_mode_manual')),
+                          ),
+                        ],
+                        emptySelectionAllowed: false,
+                        showSelectedIcon: false,
+                        selected: {mode},
+                        onSelectionChanged: (Set<String> next) {
+                          if (next.isEmpty) return;
+                          setModal(() => mode = next.first);
+                        },
+                      ),
+                    ),
+                    if (mode == 'manual')
+                      SizedBox(
+                        height: manualListHeight,
+                        child: ListView(
+                          children: [
+                            for (final p in pairs)
+                              CheckboxListTile(
+                                value: sel.contains(p.id),
+                                onChanged: (v) {
+                                  setModal(() {
+                                    if (v == true) {
+                                      sel.add(p.id);
+                                    } else {
+                                      sel.remove(p.id);
+                                    }
+                                  });
+                                },
+                                title: Text(_categoryRawName(p.id)),
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
+                                dense: true,
+                              ),
+                          ],
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          final nextPinned =
+                              _sanitizeIntCategoryIds(sel.toList());
+                          setState(() {
+                            _chipMode = mode;
+                            if (mode == 'manual') {
+                              _pinnedChipIds = nextPinned;
                             }
                           });
+                          unawaited(_persistChipMode(mode));
+                          if (mode == 'manual') {
+                            unawaited(_persistPinnedChipIds(_pinnedChipIds));
+                            final fid = _filterCategoryId;
+                            if (fid != null && !_pinnedChipIds.contains(fid)) {
+                              _onFilterChanged(null);
+                            }
+                          }
                         },
-                        title: Text(_leafCategoryLabel(p.id)),
-                        controlAffinity: ListTileControlAffinity.leading,
-                        dense: true,
+                        child: Text(t(loc, 'save')),
                       ),
+                    ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text(t(loc, 'cancel')),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(ctx).pop(sel),
-                  child: Text(t(loc, 'confirm')),
-                ),
-              ],
             );
           },
         );
       },
     );
-    if (result == null || !mounted) return;
-    _applyPinnedChipIds(result.toList());
   }
 
   @override
@@ -296,11 +387,17 @@ class _ListsPageState extends State<ListsPage>
   }
 
   Future<void> _reload() async {
-    final list = await DatabaseService.instance
-        .fetchBacklogPlans(categoryId: _filterCategoryId);
+    final db = DatabaseService.instance;
+    final results = await Future.wait<List<PlanningTask>>([
+      db.fetchBacklogPlans(categoryId: _filterCategoryId),
+      db.fetchBacklogPlans(categoryId: null),
+    ]);
+    final list = results[0];
+    final allBacklog = results[1];
     if (!mounted) return;
     setState(() {
       _flat = list;
+      _allBacklogForFrequency = allBacklog;
       _pendingInline.removeWhere((p) {
         if (!p.planRowIdForBackend.startsWith('optimistic-inline-')) {
           return false;
@@ -348,7 +445,13 @@ class _ListsPageState extends State<ListsPage>
     final title = gt.title.trim();
     if (title.isEmpty) return;
     final cat = _effectiveCategoryIdForNewTask();
-    if (cat == null) return;
+    if (cat == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(currentLocale.value, 'lists_inline_add_no_category'))),
+      );
+      return;
+    }
 
     final optId =
         'optimistic-inline-${DateTime.now().microsecondsSinceEpoch}';
@@ -510,21 +613,21 @@ class _ListsPageState extends State<ListsPage>
     final loc = currentLocale.value;
     final theme = Theme.of(context);
     final filterId = _filterCategoryId;
-    final parentSelected =
-        filterId != null && !_isLeafCategory(filterId);
-    final leafTarget = _effectiveCategoryIdForNewTask();
-    final canInlineAdd = leafTarget != null && !parentSelected;
 
     return ValueListenableBuilder<List<int>>(
       valueListenable: CategoryVisibilityPrefs.hiddenIds,
-      builder: (context, _, __) {
-        final pairs = CategoryVisibilityPrefs.filterPairs(
-          DatabaseService.instance.allCategoryIdPathPairs,
-          (p) => p.id,
-        );
+      builder: (context, _, _) {
+        final chipIds = _chipIdsForBar();
         return Scaffold(
       appBar: AppBar(
         title: Text(t(loc, 'lists_title')),
+        actions: [
+          IconButton(
+            tooltip: t(loc, 'lists_chip_bar_settings_tooltip'),
+            onPressed: _openChipBarSettingsSheet,
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -543,13 +646,13 @@ class _ListsPageState extends State<ListsPage>
                     onTap: () => _onFilterChanged(null),
                   ),
                 ),
-                for (final p in pairs)
+                for (final id in chipIds)
                   Padding(
                     padding: const EdgeInsetsDirectional.only(end: 8),
                     child: _ListsQuadraticChip(
-                      label: p.path,
-                      selected: filterId == p.id,
-                      onTap: () => _onFilterChanged(p.id),
+                      label: _categoryRawName(id),
+                      selected: filterId == id,
+                      onTap: () => _onFilterChanged(id),
                     ),
                   ),
               ],
@@ -557,26 +660,28 @@ class _ListsPageState extends State<ListsPage>
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: TextField(
-              controller: _inlineController,
-              focusNode: _inlineFocus,
-              enabled: canInlineAdd,
-              textInputAction: TextInputAction.done,
-              decoration: InputDecoration(
-                hintText: parentSelected
-                    ? t(loc, 'lists_select_leaf_hint')
-                    : t(loc, 'lists_inline_add_hint'),
-                border: const OutlineInputBorder(),
-                isDense: true,
-                suffixIcon: IconButton(
-                  tooltip: t(loc, 'add'),
-                  onPressed: canInlineAdd ? _submitInline : null,
-                  icon: const Icon(Icons.add_rounded),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _inlineController,
+                    focusNode: _inlineFocus,
+                    textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(
+                      hintText: t(loc, 'lists_inline_add_hint'),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) => _submitInline(),
+                  ),
                 ),
-              ),
-              onSubmitted: (_) {
-                if (canInlineAdd) _submitInline();
-              },
+                IconButton(
+                  tooltip: t(loc, 'add'),
+                  onPressed: _submitInline,
+                  icon: const Icon(Icons.add),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -726,11 +831,12 @@ class _ListsQuadraticChip extends StatelessWidget {
   }
 }
 
-String _leafCategoryLabel(int categoryId) {
-  final path = DatabaseService.instance.getCategoryPath(categoryId).trim();
-  if (path.isEmpty) return '—';
-  final parts = path.split(' > ').where((s) => s.isNotEmpty).toList();
-  return parts.isNotEmpty ? parts.last : path;
+/// Chip bar: strict raw [CategoryRule.name] only (no breadcrumb path).
+String _categoryRawName(int categoryId) {
+  final r = DatabaseService.instance.getCategoryRuleById(categoryId);
+  if (r == null) return '—';
+  final n = r.name.trim();
+  return n.isEmpty ? '—' : n;
 }
 
 class _CategorySubcategoryPill extends StatelessWidget {
@@ -779,7 +885,7 @@ class _BacklogPlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final err = theme.colorScheme.error;
-    final pillLabel = _leafCategoryLabel(task.categoryId);
+    final pillLabel = _categoryRawName(task.categoryId);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(

@@ -45,7 +45,11 @@ const Map<String, Map<String, String>> _l10nCore = {
     'lists_pin_chips_title': 'Filter chips',
     'lists_pin_chips_subtitle':
         'Pick which categories appear as quick filters (besides All).',
-    'lists_chip_bar_settings_tooltip': 'Choose filter chips',
+    'lists_chip_bar_settings_tooltip': 'Lists section: filter chips (manual or frequent)',
+    'lists_chip_mode_frequent': 'Most frequent',
+    'lists_chip_mode_manual': 'Manual',
+    'lists_chip_bar_sheet_title': 'Quick filters',
+    'lists_inline_add_no_category': 'No category available to assign.',
     'more_menu_profile': 'Profile & settings',
     'more_menu_categories': 'Categories',
     'tab_stats': 'Stats',
@@ -533,7 +537,12 @@ const Map<String, Map<String, String>> _l10nCore = {
     'lists_pin_chips_title': 'Быстрые фильтры',
     'lists_pin_chips_subtitle':
         'Выберите категории для чипов рядом с «Все».',
-    'lists_chip_bar_settings_tooltip': 'Настроить чипы фильтра',
+    'lists_chip_bar_settings_tooltip':
+        'Раздел «Списки»: быстрые фильтры (вручную или по частоте)',
+    'lists_chip_mode_frequent': 'Чаще всего',
+    'lists_chip_mode_manual': 'Вручную',
+    'lists_chip_bar_sheet_title': 'Быстрые фильтры',
+    'lists_inline_add_no_category': 'Нет категории для назначения.',
     'more_menu_profile': 'Профиль и настройки',
     'more_menu_categories': 'Категории',
     'tab_stats': 'Статистика',
