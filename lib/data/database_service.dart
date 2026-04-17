@@ -936,7 +936,12 @@ class DatabaseService {
     }
     var dk = task.dateKey.trim();
     if (dk.length < 10) {
-      dk = getTimelineDeviceLocalTodayDateKey();
+      final st = task.startTime;
+      if (st == null) {
+        // Dateless backlog: never merge into a calendar-day overlay.
+        return;
+      }
+      dk = '${st.year}-${_two(st.month)}-${_two(st.day)}';
     }
     _planningOptimisticByDateKey.putIfAbsent(dk, () => {})[pid] = task;
   }
@@ -1855,6 +1860,9 @@ class DatabaseService {
         }
         if (t.isDone) continue;
         if (t.startTime != null) continue;
+        if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
+        final dk = t.dateKey.trim();
+        if (dk.length >= 10) continue;
         if (categoryId != null && t.categoryId != categoryId) continue;
         out.add(t);
       }
@@ -8936,9 +8944,11 @@ class DatabaseService {
           : <dynamic>[],
       'order': task.order,
     };
+    final isDatelessBacklog =
+        task.startTime == null && task.dateKey.trim().length < 10;
     if (task.startTime != null) {
       body['start_time'] = task.startTime!.toUtc().toIso8601String();
-    } else {
+    } else if (!isDatelessBacklog) {
       final dk = task.dateKey.trim();
       if (dk.length >= 10) {
         final iso = _planStartUtcIsoFromDateKey(dk);

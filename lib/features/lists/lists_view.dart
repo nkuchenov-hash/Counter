@@ -6,10 +6,10 @@ import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Backlog screen: grouped headers by category path, Play + Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
@@ -23,6 +23,8 @@ class _ListsPageState extends State<ListsPage>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+
+  static const String _prefsKeyListsCategoryId = 'last_lists_category_id';
 
   List<PlanningTask> _flat = [];
   /// Local-only rows until [fetchBacklogPlans] returns the server copy (inline add).
@@ -43,6 +45,54 @@ class _ListsPageState extends State<ListsPage>
         DatabaseService.instance.planningRefreshNotifications.listen((_) {
       if (mounted) unawaited(_reload());
     });
+    unawaited(_bootstrap());
+  }
+
+  Future<void> _bootstrap() async {
+    await _loadPersistedFilter();
+    if (!mounted) return;
+    await _reload();
+  }
+
+  Future<void> _loadPersistedFilter() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getInt(_prefsKeyListsCategoryId);
+    if (!mounted) return;
+    if (raw != null &&
+        raw >= 0 &&
+        DatabaseService.instance.categoryExists(raw)) {
+      setState(() => _filterCategoryId = raw);
+    }
+  }
+
+  Future<void> _persistFilterCategoryId(int? id) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (id == null) {
+      await prefs.remove(_prefsKeyListsCategoryId);
+    } else {
+      await prefs.setInt(_prefsKeyListsCategoryId, id);
+    }
+  }
+
+  bool _isLeafCategory(int categoryId) =>
+      DatabaseService.instance.getChildrenOf(categoryId).isEmpty;
+
+  int? _defaultLeafCategoryIdForAll() {
+    final db = DatabaseService.instance;
+    final d = db.defaultCategoryId;
+    if (d != null && _isLeafCategory(d)) return d;
+    for (final p in db.allCategoryIdPathPairs) {
+      if (_isLeafCategory(p.id)) return p.id;
+    }
+    return null;
+  }
+
+  void _onFilterChanged(int? id) {
+    setState(() {
+      _filterCategoryId = id;
+      _loading = true;
+    });
+    unawaited(_persistFilterCategoryId(id));
     unawaited(_reload());
   }
 
@@ -115,12 +165,13 @@ class _ListsPageState extends State<ListsPage>
     return {for (final k in keys) k: map[k]!};
   }
 
-  int? _effectiveCategoryIdForNewTask(List<({int id, String path})> pairs) {
-    if (_filterCategoryId != null) return _filterCategoryId;
-    final d = DatabaseService.instance.defaultCategoryId;
-    if (d != null && pairs.any((p) => p.id == d)) return d;
-    if (pairs.isNotEmpty) return pairs.first.id;
-    return null;
+  int? _effectiveCategoryIdForNewTask() {
+    final fid = _filterCategoryId;
+    if (fid != null) {
+      if (!_isLeafCategory(fid)) return null;
+      return fid;
+    }
+    return _defaultLeafCategoryIdForAll();
   }
 
   void _submitInline() {
@@ -130,10 +181,10 @@ class _ListsPageState extends State<ListsPage>
     final gt = DatabaseService.instance.getCleanTitleAndTags(stripped);
     final title = gt.title.trim();
     if (title.isEmpty) return;
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final match = DatabaseService.instance.identifyCategory(title);
-    final cat = match?.id ?? _effectiveCategoryIdForNewTask(pairs);
+    final cat = match?.id ?? _effectiveCategoryIdForNewTask();
     if (cat == null) return;
+    if (!_isLeafCategory(cat)) return;
 
     final optId =
         'optimistic-inline-${DateTime.now().microsecondsSinceEpoch}';
@@ -295,7 +346,11 @@ class _ListsPageState extends State<ListsPage>
     final loc = currentLocale.value;
     final theme = Theme.of(context);
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
-    final canInlineAdd = pairs.isNotEmpty;
+    final filterId = _filterCategoryId;
+    final parentSelected =
+        filterId != null && !_isLeafCategory(filterId);
+    final leafTarget = _effectiveCategoryIdForNewTask();
+    final canInlineAdd = leafTarget != null && !parentSelected;
 
     return Scaffold(
       appBar: AppBar(
@@ -304,33 +359,43 @@ class _ListsPageState extends State<ListsPage>
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: CategoryFilterTreeField(
-              value: _filterCategoryId,
-              decoration: InputDecoration(
-                labelText: t(loc, 'lists_filter_category'),
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-              onChanged: (v) {
-                setState(() {
-                  _filterCategoryId = v;
-                  _loading = true;
-                });
-                unawaited(_reload());
-              },
+          SizedBox(
+            height: 48,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              children: [
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 8),
+                  child: _ListsQuadraticChip(
+                    label: t(loc, 'lists_filter_all'),
+                    selected: filterId == null,
+                    onTap: () => _onFilterChanged(null),
+                  ),
+                ),
+                for (final p in pairs)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 8),
+                    child: _ListsQuadraticChip(
+                      label: p.path,
+                      selected: filterId == p.id,
+                      onTap: () => _onFilterChanged(p.id),
+                    ),
+                  ),
+              ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: TextField(
               controller: _inlineController,
               focusNode: _inlineFocus,
               enabled: canInlineAdd,
               textInputAction: TextInputAction.done,
               decoration: InputDecoration(
-                hintText: t(loc, 'lists_inline_add_hint'),
+                hintText: parentSelected
+                    ? t(loc, 'lists_select_leaf_hint')
+                    : t(loc, 'lists_inline_add_hint'),
                 border: const OutlineInputBorder(),
                 isDense: true,
                 suffixIcon: IconButton(
@@ -444,10 +509,55 @@ class _ListsPageState extends State<ListsPage>
   }
 }
 
+/// Fast filter chip: rounded rect (~8px), horizontal scroll row.
+class _ListsQuadraticChip extends StatelessWidget {
+  const _ListsQuadraticChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected
+          ? scheme.primaryContainer
+          : scheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: selected
+                        ? scheme.onPrimaryContainer
+                        : scheme.onSurfaceVariant,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 String _leafCategoryLabel(int categoryId) {
   final path = DatabaseService.instance.getCategoryPath(categoryId).trim();
   if (path.isEmpty) return '—';
-  final parts = path.split(RegExp(r'\s*/\s*')).where((s) => s.isNotEmpty).toList();
+  final parts = path.split(' > ').where((s) => s.isNotEmpty).toList();
   return parts.isNotEmpty ? parts.last : path;
 }
 
