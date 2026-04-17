@@ -532,99 +532,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     });
   }
 
-  Future<void> _openNoTagsChipSettingsSheet() async {
-    final loc = currentLocale.value;
-    var visible = _noTagsChipVisible;
-    var colorHex = _noTagsColorHex;
-    const presets = <String>[
-      '#000000',
-      '#FFFFFF',
-      '#9E9E9E',
-      '#F44336',
-      '#2196F3',
-      '#4CAF50',
-      '#FF9800',
-    ];
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModal) {
-            final scheme = Theme.of(ctx).colorScheme;
-            return AlertDialog(
-              title: Text(t(loc, 'plan_filter_no_tags')),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SwitchListTile(
-                      title: Text(t(loc, 'plan_filter_no_tags')),
-                      subtitle: Text(t(loc, 'category_visibility_toggle')),
-                      value: visible,
-                      onChanged: (v) => setModal(() => visible = v),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      t(loc, 'category_color'),
-                      style: Theme.of(ctx).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        for (final h in presets)
-                          GestureDetector(
-                            onTap: () => setModal(() => colorHex = h),
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: parseTagHexColor(h),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: colorHex == h
-                                      ? scheme.primary
-                                      : (h == '#FFFFFF'
-                                          ? scheme.outline
-                                          : Colors.transparent),
-                                  width: colorHex == h ? 3 : 1,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text(t(loc, 'cancel')),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    unawaited(() async {
-                      final p = await SharedPreferences.getInstance();
-                      await p.setBool(_prefsKeyNoTagsVisible, visible);
-                      await p.setString(_prefsKeyNoTagsColor, colorHex);
-                      if (!mounted) return;
-                      await _reloadQuickAddTags();
-                    }());
-                  },
-                  child: Text(t(loc, 'save')),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
   Future<void> _openTagManagerFromQuickAdd() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (ctx) => const TagSettingsHub()),
@@ -808,6 +715,22 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _PlanningNoTagsSettingsBlock(
+                    initialVisible: _noTagsChipVisible,
+                    initialColorHex: _noTagsColorHex,
+                    onApply: (visible, colorHex) async {
+                      final p = await SharedPreferences.getInstance();
+                      await p.setBool(_prefsKeyNoTagsVisible, visible);
+                      await p.setString(_prefsKeyNoTagsColor, colorHex);
+                      if (!mounted) return;
+                      setState(() {
+                        _noTagsChipVisible = visible;
+                        _noTagsColorHex = colorHex;
+                      });
+                      await _reloadQuickAddTags();
+                    },
+                  ),
+                  const Divider(height: 1),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.label_outline_rounded),
@@ -2333,12 +2256,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                   onPressed: _openSmartPlanSheet,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.settings_outlined),
-                  tooltip:
-                      '${t(currentLocale.value, 'plan_filter_no_tags')} · ${t(currentLocale.value, 'settings')}',
-                  onPressed: _openNoTagsChipSettingsSheet,
-                ),
-                IconButton(
                   icon: const Icon(Icons.settings_rounded),
                   tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
                   onPressed: _showPlanningSettingsSheet,
@@ -2755,6 +2672,107 @@ class _SemicirclePlanningMenuOverlayState
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// “No Tags” synthetic chip: visibility + B/W presets (Planning settings sheet only).
+class _PlanningNoTagsSettingsBlock extends StatefulWidget {
+  const _PlanningNoTagsSettingsBlock({
+    required this.initialVisible,
+    required this.initialColorHex,
+    required this.onApply,
+  });
+
+  final bool initialVisible;
+  final String initialColorHex;
+  final Future<void> Function(bool visible, String colorHex) onApply;
+
+  @override
+  State<_PlanningNoTagsSettingsBlock> createState() =>
+      _PlanningNoTagsSettingsBlockState();
+}
+
+class _PlanningNoTagsSettingsBlockState extends State<_PlanningNoTagsSettingsBlock> {
+  static const List<String> _presets = <String>[
+    '#000000',
+    '#FFFFFF',
+    '#9E9E9E',
+    '#F44336',
+    '#2196F3',
+    '#4CAF50',
+    '#FF9800',
+  ];
+
+  late bool _visible;
+  late String _colorHex;
+
+  @override
+  void initState() {
+    super.initState();
+    _visible = widget.initialVisible;
+    _colorHex = widget.initialColorHex;
+  }
+
+  Future<void> _persist() async {
+    await widget.onApply(_visible, _colorHex);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(t(loc, 'plan_filter_no_tags')),
+            subtitle: Text(t(loc, 'category_visibility_toggle')),
+            value: _visible,
+            onChanged: (v) {
+              setState(() => _visible = v);
+              unawaited(_persist());
+            },
+          ),
+          Text(
+            t(loc, 'category_color'),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final h in _presets)
+                GestureDetector(
+                  onTap: () {
+                    setState(() => _colorHex = h);
+                    unawaited(_persist());
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: parseTagHexColor(h),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _colorHex == h
+                            ? scheme.primary
+                            : (h == '#FFFFFF'
+                                ? scheme.outline
+                                : Colors.transparent),
+                        width: _colorHex == h ? 3 : 1,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -3260,6 +3278,8 @@ class _PlanningTaskCard extends StatelessWidget {
                                         icon:
                                             iconForTagKey(tag.icon),
                                         compactGlyphLayout: true,
+                                        syntheticNoTagsMonochrome:
+                                            tag.tagId == -1,
                                       ),
                                 ],
                               );

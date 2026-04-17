@@ -8,8 +8,10 @@ import 'dart:convert';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
+import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,6 +61,319 @@ class _ListsPageState extends State<ListsPage>
   static const Duration _playDebounce = Duration(milliseconds: 500);
   late final TextEditingController _inlineController;
   final FocusNode _inlineFocus = FocusNode();
+
+  bool _listsSelectMode = false;
+  final Set<String> _selectedListKeys = <String>{};
+
+  /// Stable key for backlog rows (matches Planning bulk selection).
+  static String _listKey(PlanningTask t) {
+    final p = t.planRowIdForBackend.trim();
+    if (p.isNotEmpty) return p;
+    return 'plan-fallback-${t.id}-${t.order}-${t.dateKey}-${t.categoryId}-${t.title}';
+  }
+
+  void _exitListsSelectMode() {
+    setState(() {
+      _listsSelectMode = false;
+      _selectedListKeys.clear();
+    });
+  }
+
+  void _toggleListKey(String key) {
+    setState(() {
+      if (_selectedListKeys.contains(key)) {
+        _selectedListKeys.remove(key);
+      } else {
+        _selectedListKeys.add(key);
+      }
+    });
+  }
+
+  void _toggleSelectAllVisibleLists(List<PlanningTask> visible) {
+    if (visible.isEmpty) return;
+    setState(() {
+      if (_allVisibleListsSelected(visible)) {
+        for (final t in visible) {
+          _selectedListKeys.remove(_listKey(t));
+        }
+      } else {
+        for (final t in visible) {
+          _selectedListKeys.add(_listKey(t));
+        }
+      }
+    });
+  }
+
+  bool _allVisibleListsSelected(List<PlanningTask> visible) {
+    if (visible.isEmpty) return false;
+    for (final t in visible) {
+      if (!_selectedListKeys.contains(_listKey(t))) return false;
+    }
+    return true;
+  }
+
+  List<PlanningTask> _tasksMatchingSelectedKeys(List<PlanningTask> display) {
+    final out = <PlanningTask>[];
+    for (final t in display) {
+      if (_selectedListKeys.contains(_listKey(t))) out.add(t);
+    }
+    return out;
+  }
+
+  void _applyBulkCategoryToSelected(List<PlanningTask> display, int categoryId) {
+    final tasks = _tasksMatchingSelectedKeys(display);
+    if (tasks.isEmpty) return;
+    for (final task in tasks) {
+      if (task.planRowIdForBackend.startsWith('optimistic-inline-')) continue;
+      final updated = task.copyWith(categoryId: categoryId);
+      DatabaseService.instance.applyOptimisticPlanningTask(updated);
+    }
+    setState(() {});
+    DatabaseService.instance.notifyPlanningRefresh();
+    for (final task in tasks) {
+      if (task.planRowIdForBackend.startsWith('optimistic-inline-')) continue;
+      unawaited(
+        DatabaseService.instance.updatePlanningTask(
+          task.planRowIdForBackend,
+          planBusinessId: task.planRowId,
+          categoryId: categoryId,
+          suppressAppSnack: true,
+        ),
+      );
+    }
+    _exitListsSelectMode();
+  }
+
+  void _applyBulkTagsToSelected(List<PlanningTask> display, List<Tag> tags) {
+    final tasks = _tasksMatchingSelectedKeys(display);
+    if (tasks.isEmpty) return;
+    final tagList = List<Tag>.from(tags);
+    for (final task in tasks) {
+      if (task.planRowIdForBackend.startsWith('optimistic-inline-')) continue;
+      final updated = task.copyWith(tags: tagList);
+      DatabaseService.instance.applyOptimisticPlanningTask(updated);
+    }
+    setState(() {});
+    DatabaseService.instance.notifyPlanningRefresh();
+    for (final task in tasks) {
+      if (task.planRowIdForBackend.startsWith('optimistic-inline-')) continue;
+      unawaited(
+        DatabaseService.instance.updatePlanningTask(
+          task.planRowIdForBackend,
+          planBusinessId: task.planRowId,
+          tags: tagList,
+          suppressAppSnack: true,
+        ),
+      );
+    }
+    _exitListsSelectMode();
+  }
+
+  Future<void> _openListsBulkCategorySheet(List<PlanningTask> display) async {
+    final loc = currentLocale.value;
+    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
+    if (pairs.isEmpty) return;
+    var picked = pairs.first.id;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      t(loc, 'select_category'),
+                      style: Theme.of(ctx).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    CategoryTreeFormField(
+                      value: pairs.any((p) => p.id == picked)
+                          ? picked
+                          : pairs.first.id,
+                      decoration: InputDecoration(
+                        labelText: t(loc, 'category_label'),
+                      ),
+                      onChanged: (id) =>
+                          setModal(() => picked = id ?? picked),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: () {
+                        Navigator.of(sheetCtx).pop();
+                        _applyBulkCategoryToSelected(display, picked);
+                      },
+                      child: Text(t(loc, 'save')),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _openListsBulkTagsSheet(List<PlanningTask> display) async {
+    final loc = currentLocale.value;
+    final catalog = await DatabaseService.instance.fetchTagsForCurrentUser();
+    if (!mounted) return;
+    var selected = <Tag>[];
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setModal) {
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(ctx).bottom,
+                ),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          t(loc, 'plan_sort_tags'),
+                          style: Theme.of(ctx).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        if (catalog.isEmpty)
+                          Text(t(loc, 'tags_empty_create_first'))
+                        else
+                          SizedBox(
+                            height: 120,
+                            child: TagQuickPickStrip(
+                              tags: catalog,
+                              selected: selected,
+                              onToggle: (tag) {
+                                setModal(() {
+                                  final next = List<Tag>.from(selected);
+                                  final i =
+                                      next.indexWhere((x) => x.tagId == tag.tagId);
+                                  if (i >= 0) {
+                                    next.removeAt(i);
+                                  } else {
+                                    next.add(tag);
+                                  }
+                                  selected = next;
+                                });
+                              },
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () {
+                            Navigator.of(sheetCtx).pop();
+                            _applyBulkTagsToSelected(display, selected);
+                          },
+                          child: Text(t(loc, 'save')),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _listsBulkDelete(List<PlanningTask> display) async {
+    final tasks = _tasksMatchingSelectedKeys(display);
+    if (tasks.isEmpty) return;
+    final ids = <String>[];
+    for (final t in tasks) {
+      if (t.planRowIdForBackend.startsWith('optimistic-inline-')) {
+        setState(() {
+          _pendingInline.removeWhere(
+            (x) => x.planRowIdForBackend == t.planRowIdForBackend,
+          );
+        });
+        continue;
+      }
+      final rid = t.recordIdForBackend.trim();
+      if (rid.isNotEmpty) ids.add(rid);
+    }
+    if (ids.isEmpty) {
+      _exitListsSelectMode();
+      return;
+    }
+    setState(() {
+      _flat = _flat
+          .where(
+            (x) => !tasks.any(
+              (s) => s.planRowIdForBackend == x.planRowIdForBackend,
+            ),
+          )
+          .toList();
+    });
+    await DatabaseService.instance.deletePlanningTasksBulk(ids);
+    if (mounted) _exitListsSelectMode();
+  }
+
+  Widget? _listsBulkBottomBar(
+    BuildContext context,
+    ColorScheme scheme,
+    List<PlanningTask> display,
+  ) {
+    if (_selectedListKeys.isEmpty) return null;
+    final loc = currentLocale.value;
+    return SafeArea(
+      child: Material(
+        elevation: 6,
+        color: scheme.surfaceContainerHigh,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  t(loc, 'selected_count')
+                      .replaceFirst('%s', '${_selectedListKeys.length}'),
+                  style: Theme.of(context).textTheme.labelLarge,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              TextButton(
+                onPressed: _exitListsSelectMode,
+                child: Text(t(loc, 'cancel')),
+              ),
+              IconButton(
+                tooltip: t(loc, 'plan_sort_tags'),
+                icon: const Icon(Icons.label_outline_rounded),
+                onPressed: () => unawaited(_openListsBulkTagsSheet(display)),
+              ),
+              IconButton(
+                tooltip: t(loc, 'category_label'),
+                icon: const Icon(Icons.category_outlined),
+                onPressed: () =>
+                    unawaited(_openListsBulkCategorySheet(display)),
+              ),
+              IconButton(
+                tooltip: t(loc, 'delete'),
+                icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
+                onPressed: () => unawaited(_listsBulkDelete(display)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   void _listsVisibilityListener() {
     if (!mounted) return;
@@ -246,6 +561,8 @@ class _ListsPageState extends State<ListsPage>
     setState(() {
       _filterCategoryId = id;
       _loading = true;
+      _listsSelectMode = false;
+      _selectedListKeys.clear();
     });
     unawaited(_persistFilterCategoryId(id));
     unawaited(_reload());
@@ -669,19 +986,49 @@ class _ListsPageState extends State<ListsPage>
       valueListenable: CategoryVisibilityPrefs.hiddenIds,
       builder: (context, _, _) {
         final chipIds = _chipIdsForBar();
+        final display = _displayFlat;
         return Scaffold(
       appBar: AppBar(
-        title: GlobalAppHeader(
-          selectedDate: headerDay,
-          enabled: widget.onDateChanged != null,
-          onDateSelected: (d) => widget.onDateChanged?.call(d),
-        ),
+        leading: _listsSelectMode
+            ? IconButton(
+                icon: const Icon(Icons.close_rounded),
+                onPressed: _exitListsSelectMode,
+                tooltip: t(loc, 'plan_exit_select'),
+              )
+            : null,
+        title: _listsSelectMode
+            ? Text(t(loc, 'plan_select_mode'))
+            : GlobalAppHeader(
+                selectedDate: headerDay,
+                enabled: widget.onDateChanged != null,
+                onDateSelected: (d) => widget.onDateChanged?.call(d),
+              ),
         actions: [
-          IconButton(
-            tooltip: t(loc, 'lists_chip_bar_settings_tooltip'),
-            onPressed: _openChipBarSettingsSheet,
-            icon: const Icon(Icons.settings_outlined),
-          ),
+          if (_listsSelectMode && filterId != null && display.isNotEmpty)
+            TextButton(
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              onPressed: () => _toggleSelectAllVisibleLists(display),
+              child: Text(
+                _allVisibleListsSelected(display)
+                    ? t(loc, 'plan_deselect_visible')
+                    : t(loc, 'plan_select_all'),
+              ),
+            ),
+          if (!_listsSelectMode)
+            IconButton(
+              tooltip: t(loc, 'lists_chip_bar_settings_tooltip'),
+              onPressed: _openChipBarSettingsSheet,
+              icon: const Icon(Icons.settings_outlined),
+            ),
+          if (filterId != null && !_listsSelectMode)
+            IconButton(
+              tooltip: t(loc, 'plan_sheet_select'),
+              icon: const Icon(Icons.checklist_rounded),
+              onPressed: () => setState(() => _listsSelectMode = true),
+            ),
         ],
       ),
       body: Column(
@@ -738,7 +1085,6 @@ class _ListsPageState extends State<ListsPage>
                     ? const Center(child: CircularProgressIndicator())
                     : Builder(
                         builder: (context) {
-                          final display = _displayFlat;
                           final grouped = _groupByCategoryPath(display);
                           return RefreshIndicator(
                             onRefresh: _reload,
@@ -830,6 +1176,9 @@ class _ListsPageState extends State<ListsPage>
             ),
         ],
       ),
+      bottomNavigationBar: filterId != null && _selectedListKeys.isNotEmpty
+          ? _listsBulkBottomBar(context, theme.colorScheme, display)
+          : null,
     );
       },
     );
@@ -866,10 +1215,27 @@ class _ListsPageState extends State<ListsPage>
       i--;
       if (i < e.value.length) {
         final task = e.value[i];
+        final key = _listKey(task);
         return _BacklogPlanCard(
           task: task,
           locale: loc,
-          onTap: () => widget.onEditTask?.call(task),
+          selectionMode: _listsSelectMode,
+          isSelected: _selectedListKeys.contains(key),
+          onBodyTap: () {
+            if (_listsSelectMode) {
+              _toggleListKey(key);
+            } else {
+              widget.onEditTask?.call(task);
+            }
+          },
+          onLongPress: _listsSelectMode
+              ? null
+              : () {
+                  setState(() {
+                    _listsSelectMode = true;
+                    _selectedListKeys.add(key);
+                  });
+                },
           onPlay: () => _onPlay(task),
           onComplete: () => _onComplete(task),
           onDelete: () {
@@ -955,7 +1321,10 @@ class _BacklogPlanCard extends StatelessWidget {
   const _BacklogPlanCard({
     required this.task,
     required this.locale,
-    required this.onTap,
+    required this.selectionMode,
+    required this.isSelected,
+    required this.onBodyTap,
+    this.onLongPress,
     required this.onPlay,
     required this.onComplete,
     required this.onDelete,
@@ -963,7 +1332,10 @@ class _BacklogPlanCard extends StatelessWidget {
 
   final PlanningTask task;
   final String locale;
-  final VoidCallback onTap;
+  final bool selectionMode;
+  final bool isSelected;
+  final VoidCallback onBodyTap;
+  final VoidCallback? onLongPress;
   final VoidCallback onPlay;
   final VoidCallback onComplete;
   final VoidCallback onDelete;
@@ -971,12 +1343,17 @@ class _BacklogPlanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final err = theme.colorScheme.error;
+    final scheme = theme.colorScheme;
+    final err = scheme.error;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
+      color: isSelected
+          ? scheme.primaryContainer.withValues(alpha: 0.35)
+          : null,
       child: InkWell(
-        onTap: onTap,
+        onTap: onBodyTap,
+        onLongPress: onLongPress,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           child: Row(
@@ -984,12 +1361,17 @@ class _BacklogPlanCard extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: Checkbox(
-                  value: false,
-                  onChanged: (v) {
-                    if (v == true) onComplete();
-                  },
-                ),
+                child: selectionMode
+                    ? Checkbox(
+                        value: isSelected,
+                        onChanged: (_) => onBodyTap(),
+                      )
+                    : Checkbox(
+                        value: false,
+                        onChanged: (v) {
+                          if (v == true) onComplete();
+                        },
+                      ),
               ),
               Expanded(
                 child: Padding(
@@ -1002,25 +1384,26 @@ class _BacklogPlanCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Tooltip(
-                    message: t(locale, 'start'),
-                    child: IconButton(
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      onPressed: onPlay,
+              if (!selectionMode)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Tooltip(
+                      message: t(locale, 'start'),
+                      child: IconButton(
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        onPressed: onPlay,
+                      ),
                     ),
-                  ),
-                  Tooltip(
-                    message: t(locale, 'delete'),
-                    child: IconButton(
-                      icon: Icon(Icons.delete_outline_rounded, color: err),
-                      onPressed: onDelete,
+                    Tooltip(
+                      message: t(locale, 'delete'),
+                      child: IconButton(
+                        icon: Icon(Icons.delete_outline_rounded, color: err),
+                        onPressed: onDelete,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
         ),

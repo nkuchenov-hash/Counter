@@ -104,6 +104,9 @@ class CategoryChip extends StatelessWidget {
     /// layout at their **visual** size (not 44×44), keeping the glyph left-aligned
     /// with adjacent title text. Tappable strips should leave this false.
     this.compactGlyphLayout = false,
+    /// Synthetic “No Tags” strip id ([Tag.tagId] == -1): solid B/W + inverted text.
+    /// All other tags (even #000000) use translucent letter-chip styling.
+    this.syntheticNoTagsMonochrome = false,
   });
 
   final CategoryDisplayMode mode;
@@ -113,6 +116,7 @@ class CategoryChip extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
   final bool compactGlyphLayout;
+  final bool syntheticNoTagsMonochrome;
 
   /// Square tap target for dot / raw icon / icon-in-circle only.
   static const double _glyphTapExtent = 44;
@@ -135,7 +139,8 @@ class CategoryChip extends StatelessWidget {
 
     final child = switch (mode) {
       CategoryDisplayMode.letterChip =>
-        _letterChipPlanStyle(context, displayLabel),
+        _letterChipPlanStyle(context, displayLabel,
+            syntheticNoTagsMonochrome: syntheticNoTagsMonochrome),
       CategoryDisplayMode.chip => _chipPlanStyle(context),
       CategoryDisplayMode.round => _tagRoundDot(),
       CategoryDisplayMode.icon => Center(
@@ -212,12 +217,16 @@ class CategoryChip extends StatelessWidget {
   static const double _emptyChipHeight = 24;
 
   /// letter_chip: **same widget pattern** as task-card tag in [planning_view] — padded [Text] in tinted [Container] (tight wrap).
-  Widget _letterChipPlanStyle(BuildContext context, String resolvedLabel) {
+  Widget _letterChipPlanStyle(
+    BuildContext context,
+    String resolvedLabel, {
+    required bool syntheticNoTagsMonochrome,
+  }) {
     final displayLabel =
         resolvedLabel.trim().isNotEmpty ? resolvedLabel.trim() : '?';
     final scheme = Theme.of(context).colorScheme;
     final rgb = color.toARGB32() & 0xFFFFFF;
-    if (rgb == 0x000000) {
+    if (syntheticNoTagsMonochrome && rgb == 0x000000) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
@@ -234,7 +243,7 @@ class CategoryChip extends StatelessWidget {
         ),
       );
     }
-    if (rgb == 0xFFFFFF) {
+    if (syntheticNoTagsMonochrome && rgb == 0xFFFFFF) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
@@ -318,7 +327,10 @@ class CategoryChip extends StatelessWidget {
         child: Center(
           child: Icon(
             icon,
-            color: tagIconOnFilledTagColor(color),
+            color: tagIconOnFilledTagColor(
+              color,
+              syntheticNoTags: syntheticNoTagsMonochrome,
+            ),
             size: 18,
           ),
         ),
@@ -396,6 +408,7 @@ class TagQuickPickStrip extends StatelessWidget {
                 color: c,
                 icon: ic,
                 selected: isSel,
+                syntheticNoTagsMonochrome: tag.tagId == -1,
                 onTap: () => onToggle(tag),
               );
               return ReorderableDragStartListener(
@@ -429,6 +442,7 @@ class TagQuickPickStrip extends StatelessWidget {
               color: c,
               icon: ic,
               selected: isSel,
+              syntheticNoTagsMonochrome: tag.tagId == -1,
               onTap: () => onToggle(tag),
             );
             if (lp != null) {

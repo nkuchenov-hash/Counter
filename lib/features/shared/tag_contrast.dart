@@ -54,12 +54,15 @@ Color tagGlyphOnCanvas(Color tagColor) {
 }
 
 /// Icon on a solid tag-colored disk (yellow → gold glyph, never black/grey).
-/// Pure #000000 / #FFFFFF fills: force white / black glyphs for contrast.
-Color tagIconOnFilledTagColor(Color tagFill) {
+/// Hard pure B/W glyph inversion applies **only** to the synthetic “No Tags” chip
+/// ([syntheticNoTags]); user tags with #000000 / #FFFFFF use luminance / fill color.
+Color tagIconOnFilledTagColor(Color tagFill, {bool syntheticNoTags = false}) {
   if (tagColorIsYellowFamily(tagFill)) return kTagYellowGold;
   final rgb = tagFill.toARGB32() & 0xFFFFFF;
-  if (rgb == 0x000000) return Colors.white;
-  if (rgb == 0xFFFFFF) return Colors.black;
+  if (syntheticNoTags) {
+    if (rgb == 0x000000) return Colors.white;
+    if (rgb == 0xFFFFFF) return Colors.black;
+  }
   if (tagFill.computeLuminance() < 0.45) return Colors.white;
   return tagFill;
 }

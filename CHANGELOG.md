@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-04-17] - Strike 17: Omni-Picker refinement
+* **Platform / omni-picker (`lib/core/widgets/omni_date_time_picker_dialog.dart`, `showAppDateTimePicker` keyboard path in `shared_widgets.dart`):** Refined the Web/Desktop Omni-Picker into a hybrid UI, combining Flutter's native CalendarDatePicker for visual day selection with a custom-styled, large-format digital text input for time. Maintained the single-dialog Omni-Picker Law while drastically improving visual hierarchy and desktop input ergonomics. Replaced `InputDatePickerFormField` with `CalendarDatePicker` + `ValueKey` sync; soft rounded HH:mm fields, divider, ~350px content width; mobile/touch path unchanged (`omni_datetime_picker`).
+
+## [2026-04-17] - Strike 16: Authentication gates
+* **Auth / routing (`auth_bridge.dart`, `auth_view.dart`, `main.dart` `RootAuthWrapper`, `pb_config.dart` `PbCollections.profiles`):** Implemented secure authentication flow targeting the profiles collection with a unified AuthView UI (Sign In, Register, Password Reset, OAuth). Hardened checkSession() to strictly trust pb.authStore.isValid, removing stale local fallbacks, and wired the global routing gate to protect the AppShell. Added `loginWithPassword` / `register` / `requestPasswordReset` / `loginWithOAuth2` (`AuthBridgeException` / `AuthBridgeCancelled`); all PocketBase auth uses `profiles` only; `auth_screen.dart` re-exports `AuthView`.
+
 ## [2026-04-17] - Strike 15: Unified Omni-Picker
 * **Platform / omni-picker (`ARCHITECTURE.md` §8.1, `lib/core/widgets/omni_date_time_picker_dialog.dart`, `shared_widgets.dart` `showAppDateTimePicker`, `picker_entry_modes.dart`):** Codified the Omni-Picker Law in ARCHITECTURE.md and implemented a unified, keyboard-first Date & Time AlertDialog for Web/Desktop, replacing the sequential picker flow to eliminate UX friction while preserving mobile touch flows. The `useKeyboardFriendlyMaterialPickers()` path now opens `showOmniDateTimePickerDialog` (`InputDatePickerFormField` + 24h hour/minute `TextFormField`s, single Save) instead of chained `showDatePicker`→`showTimePicker`; touch/mobile still uses `showOmniDateTimePicker` from `omni_datetime_picker`.
 

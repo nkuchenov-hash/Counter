@@ -59,6 +59,9 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_graduate_warning':
         'Adding a date or time moves this item from your list into your plan for that day.',
     'plan_graduate_from_idea': 'Create a plan from this idea',
+    'plan_idea_tab_content': 'Content',
+    'plan_idea_tab_schedule': 'Schedule',
+    'plan_idea_link_label': 'Link (URL)',
     'more_menu_profile': 'Profile & settings',
     'more_menu_categories': 'Categories',
     'tab_stats': 'Stats',
@@ -565,6 +568,9 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_graduate_warning':
         'Дата или время перенесут эту задачу из списка в план на этот день.',
     'plan_graduate_from_idea': 'Создать план из этой идеи',
+    'plan_idea_tab_content': 'Содержание',
+    'plan_idea_tab_schedule': 'Расписание',
+    'plan_idea_link_label': 'Ссылка (URL)',
     'more_menu_profile': 'Профиль и настройки',
     'more_menu_categories': 'Категории',
     'tab_stats': 'Статистика',
