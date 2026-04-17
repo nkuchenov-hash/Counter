@@ -4,6 +4,9 @@
 
 import 'package:flutter/material.dart';
 
+/// Max width for sign-in / register forms.
+const double kAuthFormMaxWidth = 420;
+
 /// Light theme (default). Material 3 with green seed.
 ThemeData get appLightTheme => ThemeData(
       useMaterial3: true,

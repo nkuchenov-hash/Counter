@@ -498,11 +498,6 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_confirm_password_label': 'Confirm password',
     'auth_sign_in': 'Sign in',
     'auth_create_account': 'Create account',
-    'auth_forgot_password': 'Forgot password?',
-    'auth_password_reset_sent':
-        'If an account exists for this email, we sent a reset link.',
-    'auth_password_reset_failed': 'Could not send reset email. Try again.',
-    'auth_oauth_apple': 'Continue with Apple',
     'auth_or_divider': 'or',
     'auth_oauth_google': 'Continue with Google',
     'auth_oauth_yandex': 'Continue with Yandex',
@@ -521,6 +516,10 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_navigation_failed': 'Navigation failed. Please try again.',
     'auth_show_password': 'Show password',
     'auth_hide_password': 'Hide password',
+    'auth_forgot_password': 'Forgot password?',
+    'auth_reset_email_sent':
+        'If an account exists for this email, you will receive reset instructions.',
+    'auth_oauth_apple': 'Continue with Apple',
   },
   'ru': {
     'app_title': 'Life OS',
@@ -1007,11 +1006,6 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_confirm_password_label': 'Подтвердите пароль',
     'auth_sign_in': 'Войти',
     'auth_create_account': 'Создать аккаунт',
-    'auth_forgot_password': 'Забыли пароль?',
-    'auth_password_reset_sent':
-        'Если аккаунт с таким email есть, мы отправили ссылку для сброса.',
-    'auth_password_reset_failed': 'Не удалось отправить письмо. Попробуйте снова.',
-    'auth_oauth_apple': 'Войти через Apple',
     'auth_or_divider': 'или',
     'auth_oauth_google': 'Войти через Google',
     'auth_oauth_yandex': 'Войти через Яндекс',
@@ -1031,6 +1025,10 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_navigation_failed': 'Ошибка перехода. Попробуйте снова.',
     'auth_show_password': 'Показать пароль',
     'auth_hide_password': 'Скрыть пароль',
+    'auth_forgot_password': 'Забыли пароль?',
+    'auth_reset_email_sent':
+        'Если аккаунт существует, на email придут инструкции по сбросу.',
+    'auth_oauth_apple': 'Войти через Apple',
   },
 };
 
