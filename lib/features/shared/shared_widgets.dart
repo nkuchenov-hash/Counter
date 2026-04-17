@@ -444,10 +444,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     super.initState();
     _startedAsUndatedBacklog = widget.task.startTime == null &&
         widget.task.dateKey.trim().length < 10;
-    _tabController = TabController(
-      length: _startedAsUndatedBacklog ? 2 : 3,
-      vsync: this,
-    );
+    _tabController = TabController(length: 3, vsync: this);
     _titleController = TextEditingController(text: widget.task.title);
     final parsedNotes = _parseStoredNotesForLink(widget.task.notes);
     _notesController = TextEditingController(text: parsedNotes.body);
@@ -458,13 +455,17 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _repeatUi = _planRepeatUiFromTask(widget.task);
     _rruleCustomRaw =
         _repeatUi == _PlanRepeatUi.custom ? widget.task.rrule?.trim() : null;
-    DatabaseService.instance.fetchTagsForCurrentUser().then((List<Tag> result) {
-      if (!mounted) return;
-      setState(() {
-        _availableTags = result;
-        _tagsLoading = false;
+    if (!_startedAsUndatedBacklog) {
+      DatabaseService.instance.fetchTagsForCurrentUser().then((List<Tag> result) {
+        if (!mounted) return;
+        setState(() {
+          _availableTags = result;
+          _tagsLoading = false;
+        });
       });
-    });
+    } else {
+      _tagsLoading = false;
+    }
     // [PlanningTask.startTime] / [endDateTime] from Brain are profile wall components, not UTC.
     _scheduledTime = widget.task.startTime;
     _endTime = widget.task.endDateTime;
@@ -588,6 +589,138 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   String _dateKeyFromDate(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   String _shortMonth(int month) => month >= 1 && month <= 12 ? _shortMonths[month - 1] : '';
 
+  void _notesInsertAt(int start, int end, String replacement) {
+    final c = _notesController;
+    final text = c.text;
+    final s = start.clamp(0, text.length);
+    final e = end.clamp(0, text.length);
+    final newText = text.replaceRange(s, e, replacement);
+    final newOff = s + replacement.length;
+    c.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newOff),
+    );
+    setState(() {});
+  }
+
+  void _notesWrapSelection(String left, String right) {
+    final c = _notesController;
+    final text = c.text;
+    final sel = c.selection;
+    if (!sel.isValid) return;
+    final start = sel.start.clamp(0, text.length);
+    final end = sel.end.clamp(0, text.length);
+    final inner = text.substring(start, end);
+    final replacement = '$left$inner$right';
+    _notesInsertAt(start, end, replacement);
+  }
+
+  void _injectNotesMarkdownBold() {
+    final c = _notesController;
+    final sel = c.selection;
+    if (sel.isValid && !sel.isCollapsed) {
+      _notesWrapSelection('**', '**');
+      return;
+    }
+    final text = c.text;
+    final start = sel.isValid ? sel.start.clamp(0, text.length) : text.length;
+    const ins = '****';
+    final newText = text.replaceRange(start, start, ins);
+    c.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: start + 2),
+    );
+    setState(() {});
+  }
+
+  void _injectNotesMarkdownItalic() {
+    final c = _notesController;
+    final sel = c.selection;
+    if (sel.isValid && !sel.isCollapsed) {
+      _notesWrapSelection('*', '*');
+      return;
+    }
+    final text = c.text;
+    final start = sel.isValid ? sel.start.clamp(0, text.length) : text.length;
+    const ins = '**';
+    final newText = text.replaceRange(start, start, ins);
+    c.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: start + 1),
+    );
+    setState(() {});
+  }
+
+  void _injectNotesMarkdownBullet() {
+    final c = _notesController;
+    final text = c.text;
+    final sel = c.selection;
+    final pos = sel.isValid ? sel.start.clamp(0, text.length) : text.length;
+    final ins = pos == 0 ? '- ' : '\n- ';
+    _notesInsertAt(pos, pos, ins);
+  }
+
+  void _injectNotesMarkdownCheckbox() {
+    final c = _notesController;
+    final text = c.text;
+    final sel = c.selection;
+    final pos = sel.isValid ? sel.start.clamp(0, text.length) : text.length;
+    final ins = pos == 0 ? '- [ ] ' : '\n- [ ] ';
+    _notesInsertAt(pos, pos, ins);
+  }
+
+  Widget _buildNotesMarkdownToolbar(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          IconButton(
+            tooltip: t(currentLocale.value, 'notes_md_bold'),
+            icon: const Icon(Icons.format_bold, size: 22),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            onPressed: _injectNotesMarkdownBold,
+          ),
+          IconButton(
+            tooltip: t(currentLocale.value, 'notes_md_italic'),
+            icon: const Icon(Icons.format_italic, size: 22),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            onPressed: _injectNotesMarkdownItalic,
+          ),
+          IconButton(
+            tooltip: t(currentLocale.value, 'notes_md_bullet'),
+            icon: const Icon(Icons.format_list_bulleted, size: 22),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            onPressed: _injectNotesMarkdownBullet,
+          ),
+          IconButton(
+            tooltip: t(currentLocale.value, 'notes_md_checkbox'),
+            icon: const Icon(Icons.check_box_outlined, size: 22),
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            onPressed: _injectNotesMarkdownCheckbox,
+          ),
+        ],
+      ),
+    );
+  }
+
   void _commitSave() {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final title = _titleController.text.trim();
@@ -627,7 +760,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
           : (_notesController.text.trim().isEmpty
               ? null
               : _notesController.text.trim()),
-      tags: List<Tag>.from(_selectedTags),
+      tags: _startedAsUndatedBacklog
+          ? <Tag>[]
+          : List<Tag>.from(_selectedTags),
       rrule: rruleWire,
       clearRrule: clearR,
       exceptionDates:
@@ -655,88 +790,84 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                    child: Text(t(currentLocale.value, 'edit_record'),
-                        style: Theme.of(context).textTheme.titleLarge)),
+                  child: TextFormField(
+                    controller: _titleController,
+                    autofocus: _startedAsUndatedBacklog,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                    minLines: 1,
+                    maxLines: 4,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: t(currentLocale.value, 'title_label'),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: _onTitleChangedForSmartTime,
+                  ),
+                ),
                 IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.of(context).pop<PlanningTask?>(null)),
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () =>
+                      Navigator.of(context).pop<PlanningTask?>(null),
+                ),
               ],
             ),
           ),
           const Divider(height: 1),
-          if (_startedAsUndatedBacklog)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: CategoryTreeFormField(
+              value: pairs.any((p) => p.id == dropdownValue)
+                  ? dropdownValue
+                  : (pairs.isNotEmpty ? pairs.first.id : null),
+              decoration: InputDecoration(
+                labelText: t(currentLocale.value, 'category_label'),
+              ),
+              onChanged: (id) =>
+                  setState(() => _categoryId = id ?? _categoryId),
+            ),
+          ),
+          if (!_startedAsUndatedBacklog)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: t(currentLocale.value, 'title_label'),
-                    ),
-                    controller: _titleController,
-                    textCapitalization: TextCapitalization.sentences,
-                    onChanged: (String value) =>
-                        _onTitleChangedForSmartTime(value),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, bottom: 4),
-                    child: SizedBox(
-                      height: 52,
-                      child: _tagsLoading
-                          ? Center(
-                              child: SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                            )
-                          : _availableTags.isEmpty
-                              ? Align(
-                                  alignment: AlignmentDirectional.centerStart,
-                                  child: OutlinedButton.icon(
-                                    onPressed: _openTagManagerAndReload,
-                                    icon: const Icon(Icons.add_rounded, size: 20),
-                                    label: Text(
-                                      t(currentLocale.value,
-                                          'tags_empty_create_first'),
-                                    ),
-                                  ),
-                                )
-                              : TagQuickPickStrip(
-                                  tags: _availableTags,
-                                  selected: _selectedTags,
-                                  onToggle: _toggleTag,
-                                ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CategoryTreeFormField(
-                          value: pairs.any((p) => p.id == dropdownValue)
-                              ? dropdownValue
-                              : (pairs.isNotEmpty ? pairs.first.id : null),
-                          decoration: InputDecoration(
-                            labelText:
-                                t(currentLocale.value, 'category_label'),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: SizedBox(
+                height: 52,
+                child: _tagsLoading
+                    ? Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
-                          onChanged: (id) =>
-                              setState(() => _categoryId = id ?? _categoryId),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      )
+                    : _availableTags.isEmpty
+                        ? Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: OutlinedButton.icon(
+                              onPressed: _openTagManagerAndReload,
+                              icon: const Icon(Icons.add_rounded, size: 20),
+                              label: Text(
+                                t(currentLocale.value,
+                                    'tags_empty_create_first'),
+                              ),
+                            ),
+                          )
+                        : TagQuickPickStrip(
+                            tags: _availableTags,
+                            selected: _selectedTags,
+                            onToggle: _toggleTag,
+                          ),
               ),
             ),
           Expanded(
@@ -744,375 +875,16 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
               children: [
                 TabBar(
                   controller: _tabController,
-                  tabs: _startedAsUndatedBacklog
-                      ? [
-                          Tab(
-                            text: t(
-                              currentLocale.value,
-                              'plan_idea_tab_content',
-                            ),
-                          ),
-                          Tab(
-                            text: t(
-                              currentLocale.value,
-                              'plan_idea_tab_schedule',
-                            ),
-                          ),
-                        ]
-                      : [
-                          Tab(text: t(currentLocale.value, 'tab_details')),
-                          Tab(text: t(currentLocale.value, 'notes_tab')),
-                          Tab(text: t(currentLocale.value, 'checklist_tab')),
-                        ],
+                  tabs: [
+                    Tab(text: t(currentLocale.value, 'notes_tab')),
+                    Tab(text: t(currentLocale.value, 'checklist_tab')),
+                    Tab(text: t(currentLocale.value, 'plan_idea_tab_schedule')),
+                  ],
                 ),
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
-                    children: _startedAsUndatedBacklog
-                        ? [
-                            ListView(
-                              controller: widget.scrollController,
-                              padding: EdgeInsets.fromLTRB(
-                                16,
-                                12,
-                                16,
-                                24 +
-                                    MediaQuery.of(context).viewInsets.bottom,
-                              ),
-                              children: [
-                                TextField(
-                                  controller: _notesController,
-                                  minLines: 3,
-                                  maxLines: 10,
-                                  decoration: InputDecoration(
-                                    labelText:
-                                        t(currentLocale.value, 'notes'),
-                                    hintText: t(
-                                      currentLocale.value,
-                                      'notes_hint_flat',
-                                    ),
-                                    border: InputBorder.none,
-                                  ),
-                                  textCapitalization:
-                                      TextCapitalization.sentences,
-                                ),
-                                const SizedBox(height: 16),
-                                ...List.generate(_checklistControllers.length,
-                                    (i) {
-                                  final scheme =
-                                      Theme.of(context).colorScheme;
-                                  final rowDone = i < _checklistDone.length &&
-                                      _checklistDone[i];
-                                  return ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 4),
-                                    horizontalTitleGap: 4,
-                                    leading: Checkbox(
-                                      value: rowDone,
-                                      onChanged: (v) => setState(() {
-                                        _syncChecklistDoneLength(
-                                            _checklistControllers,
-                                            _checklistDone);
-                                        _checklistDone[i] = v ?? false;
-                                        _partitionChecklistRowsByDone(
-                                          controllers: _checklistControllers,
-                                          done: _checklistDone,
-                                        );
-                                      }),
-                                    ),
-                                    title: TextField(
-                                      controller: _checklistControllers[i],
-                                      style: TextStyle(
-                                        decoration: rowDone
-                                            ? TextDecoration.lineThrough
-                                            : TextDecoration.none,
-                                        color: rowDone
-                                            ? scheme.onSurface
-                                                .withValues(alpha: 0.5)
-                                            : scheme.onSurface,
-                                        decorationColor: rowDone
-                                            ? scheme.onSurface
-                                                .withValues(alpha: 0.5)
-                                            : null,
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: t(
-                                          currentLocale.value,
-                                          'checklist_item',
-                                        ),
-                                        hintStyle: TextStyle(
-                                          color: scheme.onSurfaceVariant
-                                              .withValues(
-                                                  alpha:
-                                                      rowDone ? 0.35 : 0.5),
-                                        ),
-                                        border: InputBorder.none,
-                                        isDense: true,
-                                        filled: true,
-                                        fillColor: scheme
-                                            .surfaceContainerHighest
-                                            .withValues(alpha: 0.35),
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 12,
-                                        ),
-                                      ),
-                                    ),
-                                    trailing: IconButton(
-                                      icon: Icon(
-                                        Icons.delete_outline_rounded,
-                                        color: scheme.error,
-                                      ),
-                                      tooltip:
-                                          t(currentLocale.value, 'delete'),
-                                      onPressed: () => setState(() {
-                                        _removeChecklistRowAt(
-                                          i,
-                                          controllers:
-                                              _checklistControllers,
-                                          done: _checklistDone,
-                                        );
-                                      }),
-                                    ),
-                                  );
-                                }),
-                                ListTile(
-                                  leading: Icon(
-                                    Icons.add_circle_outline_rounded,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary,
-                                  ),
-                                  title: Text(
-                                    t(currentLocale.value,
-                                        'add_checklist_item'),
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  onTap: () => setState(() {
-                                    _checklistControllers
-                                        .add(TextEditingController());
-                                    _checklistDone.add(false);
-                                  }),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  controller: _linkController,
-                                  keyboardType: TextInputType.url,
-                                  textInputAction: TextInputAction.done,
-                                  decoration: InputDecoration(
-                                    labelText: t(
-                                      currentLocale.value,
-                                      'plan_idea_link_label',
-                                    ),
-                                    border: const OutlineInputBorder(),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            ListView(
-                              padding: EdgeInsets.fromLTRB(
-                                16,
-                                12,
-                                16,
-                                24 +
-                                    MediaQuery.of(context).viewInsets.bottom,
-                              ),
-                              children: [
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(_scheduledTime == null
-                                      ? t(currentLocale.value, 'scheduled')
-                                      : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}'),
-                                  trailing: const Icon(Icons.schedule_rounded),
-                                  onTap: () async {
-                                    final initial = DateTime(
-                                        _date.year,
-                                        _date.month,
-                                        _date.day,
-                                        _scheduledTime?.hour ?? 9,
-                                        _scheduledTime?.minute ?? 0);
-                                    final picked = await showAppDateTimePicker(
-                                        context,
-                                        initial: initial);
-                                    if (picked != null && mounted) {
-                                      setState(() {
-                                        _date = DateTime(picked.year,
-                                            picked.month, picked.day);
-                                        _scheduledTime = picked;
-                                      });
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 8),
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(_endTime == null
-                                      ? t(currentLocale.value, 'no_end_time')
-                                      : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'),
-                                  trailing: const Icon(Icons.schedule_rounded),
-                                  onTap: () async {
-                                    final initial = DateTime(
-                                        _date.year,
-                                        _date.month,
-                                        _date.day,
-                                        _endTime?.hour ?? 10,
-                                        _endTime?.minute ?? 0);
-                                    final picked = await showAppDateTimePicker(
-                                        context,
-                                        initial: initial);
-                                    if (picked != null && mounted) {
-                                      setState(() => _endTime = DateTime(
-                                          _date.year,
-                                          _date.month,
-                                          _date.day,
-                                          picked.hour,
-                                          picked.minute));
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                DropdownButtonFormField<int?>(
-                                  value: _reminderMinutes,
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    labelText: t(
-                                      currentLocale.value,
-                                      'plan_reminder_label',
-                                    ),
-                                  ),
-                                  items: [
-                                    DropdownMenuItem<int?>(
-                                      value: null,
-                                      child: Text(
-                                        t(currentLocale.value,
-                                            'plan_reminder_none'),
-                                      ),
-                                    ),
-                                    DropdownMenuItem<int?>(
-                                      value: 5,
-                                      child: Text(
-                                        t(currentLocale.value,
-                                            'plan_reminder_5m'),
-                                      ),
-                                    ),
-                                    DropdownMenuItem<int?>(
-                                      value: 15,
-                                      child: Text(
-                                        t(currentLocale.value,
-                                            'plan_reminder_15m'),
-                                      ),
-                                    ),
-                                    DropdownMenuItem<int?>(
-                                      value: 30,
-                                      child: Text(
-                                        t(currentLocale.value,
-                                            'plan_reminder_30m'),
-                                      ),
-                                    ),
-                                    DropdownMenuItem<int?>(
-                                      value: 60,
-                                      child: Text(
-                                        t(currentLocale.value,
-                                            'plan_reminder_1h'),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (v) =>
-                                      setState(() => _reminderMinutes = v),
-                                ),
-                                const SizedBox(height: 12),
-                                DropdownButtonFormField<_PlanRepeatUi>(
-                                  value: _repeatUi,
-                                  isExpanded: true,
-                                  decoration: InputDecoration(
-                                    labelText: t(
-                                      currentLocale.value,
-                                      'plan_repeat_label',
-                                    ),
-                                  ),
-                                  items: [
-                                    DropdownMenuItem(
-                                      value: _PlanRepeatUi.none,
-                                      child: Text(
-                                        t(currentLocale.value,
-                                            'plan_repeat_none'),
-                                      ),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: _PlanRepeatUi.daily,
-                                      child: Text(
-                                        t(currentLocale.value,
-                                            'plan_repeat_daily'),
-                                      ),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: _PlanRepeatUi.weekdays,
-                                      child: Text(
-                                        t(
-                                          currentLocale.value,
-                                          'plan_repeat_weekdays',
-                                        ),
-                                      ),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: _PlanRepeatUi.weekly,
-                                      child: Text(
-                                        t(currentLocale.value,
-                                            'plan_repeat_weekly'),
-                                      ),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: _PlanRepeatUi.monthly,
-                                      child: Text(
-                                        t(
-                                          currentLocale.value,
-                                          'plan_repeat_monthly',
-                                        ),
-                                      ),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: _PlanRepeatUi.yearly,
-                                      child: Text(
-                                        t(
-                                          currentLocale.value,
-                                          'plan_repeat_yearly',
-                                        ),
-                                      ),
-                                    ),
-                                    if (_repeatUi == _PlanRepeatUi.custom)
-                                      DropdownMenuItem(
-                                        value: _PlanRepeatUi.custom,
-                                        child: Text(
-                                          t(
-                                            currentLocale.value,
-                                            'plan_repeat_custom',
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                  onChanged: (v) {
-                                    if (v == null) return;
-                                    setState(() {
-                                      _repeatUi = v;
-                                      if (v != _PlanRepeatUi.custom) {
-                                        _rruleCustomRaw = null;
-                                      } else {
-                                        _rruleCustomRaw =
-                                            widget.task.rrule?.trim();
-                                      }
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ]
-                        : [
+                    children: [
                       ListView(
                         controller: widget.scrollController,
                         padding: EdgeInsets.fromLTRB(
@@ -1122,72 +894,141 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                           24 + MediaQuery.of(context).viewInsets.bottom,
                         ),
                         children: [
+                          _buildNotesMarkdownToolbar(context),
+                          const SizedBox(height: 8),
                           TextField(
-                            autofocus: true,
-                            decoration:
-                                InputDecoration(labelText: t(currentLocale.value, 'title_label')),
-                            controller: _titleController,
-                            textCapitalization: TextCapitalization.sentences,
-                            onChanged: (String value) =>
-                                _onTitleChangedForSmartTime(value),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8, bottom: 4),
-                            child: SizedBox(
-                              height: 52,
-                              child: _tagsLoading
-                                  ? Center(
-                                      child: SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                        ),
-                                      ),
-                                    )
-                                  : _availableTags.isEmpty
-                                      ? Align(
-                                          alignment:
-                                              AlignmentDirectional.centerStart,
-                                          child: OutlinedButton.icon(
-                                            onPressed: _openTagManagerAndReload,
-                                            icon:
-                                                const Icon(Icons.add_rounded, size: 20),
-                                            label: Text(t(currentLocale.value,
-                                                'tags_empty_create_first')),
-                                          ),
-                                        )
-                                      : TagQuickPickStrip(
-                                          tags: _availableTags,
-                                          selected: _selectedTags,
-                                          onToggle: _toggleTag,
-                                        ),
+                            controller: _notesController,
+                            minLines: 4,
+                            maxLines: 18,
+                            decoration: InputDecoration(
+                              labelText: t(currentLocale.value, 'notes'),
+                              hintText:
+                                  t(currentLocale.value, 'notes_hint_flat'),
+                              border: const OutlineInputBorder(),
                             ),
+                            textCapitalization: TextCapitalization.sentences,
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CategoryTreeFormField(
-                                  value: pairs.any((p) => p.id == dropdownValue)
-                                      ? dropdownValue
-                                      : (pairs.isNotEmpty
-                                          ? pairs.first.id
-                                          : null),
-                                  decoration: InputDecoration(
-                                    labelText: t(
-                                        currentLocale.value, 'category_label'),
+                          if (_startedAsUndatedBacklog) ...[
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: _linkController,
+                              keyboardType: TextInputType.url,
+                              textInputAction: TextInputAction.done,
+                              decoration: InputDecoration(
+                                labelText: t(
+                                  currentLocale.value,
+                                  'plan_idea_link_label',
+                                ),
+                                border: const OutlineInputBorder(),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      ListView(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          24 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
+                        children: [
+                          ...List.generate(_checklistControllers.length, (i) {
+                            final scheme = Theme.of(context).colorScheme;
+                            final rowDone =
+                                i < _checklistDone.length && _checklistDone[i];
+                            return ListTile(
+                              contentPadding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              horizontalTitleGap: 4,
+                              leading: Checkbox(
+                                value: rowDone,
+                                onChanged: (v) => setState(() {
+                                  _syncChecklistDoneLength(
+                                      _checklistControllers, _checklistDone);
+                                  _checklistDone[i] = v ?? false;
+                                  _partitionChecklistRowsByDone(
+                                    controllers: _checklistControllers,
+                                    done: _checklistDone,
+                                  );
+                                }),
+                              ),
+                              title: TextField(
+                                controller: _checklistControllers[i],
+                                style: TextStyle(
+                                  decoration: rowDone
+                                      ? TextDecoration.lineThrough
+                                      : TextDecoration.none,
+                                  color: rowDone
+                                      ? scheme.onSurface.withValues(alpha: 0.5)
+                                      : scheme.onSurface,
+                                  decorationColor: rowDone
+                                      ? scheme.onSurface.withValues(alpha: 0.5)
+                                      : null,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText:
+                                      t(currentLocale.value, 'checklist_item'),
+                                  hintStyle: TextStyle(
+                                    color: scheme.onSurfaceVariant
+                                        .withValues(
+                                            alpha: rowDone ? 0.35 : 0.5),
                                   ),
-                                  onChanged: (id) => setState(
-                                      () => _categoryId = id ?? _categoryId),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  filled: true,
+                                  fillColor:
+                                      scheme.surfaceContainerHighest.withValues(
+                                          alpha: 0.35),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
                                 ),
                               ),
-                            ],
+                              trailing: IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: scheme.error,
+                                ),
+                                tooltip: t(currentLocale.value, 'delete'),
+                                onPressed: () => setState(() {
+                                  _removeChecklistRowAt(
+                                    i,
+                                    controllers: _checklistControllers,
+                                    done: _checklistDone,
+                                  );
+                                }),
+                              ),
+                            );
+                          }),
+                          ListTile(
+                            leading: Icon(
+                              Icons.add_circle_outline_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            title: Text(
+                              t(currentLocale.value, 'add_checklist_item'),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            onTap: () => setState(() {
+                              _checklistControllers.add(TextEditingController());
+                              _checklistDone.add(false);
+                            }),
                           ),
-                          const SizedBox(height: 16),
+                        ],
+                      ),
+                      ListView(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          12,
+                          16,
+                          24 + MediaQuery.of(context).viewInsets.bottom,
+                        ),
+                        children: [
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text(_scheduledTime == null
@@ -1195,12 +1036,19 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}'),
                             trailing: const Icon(Icons.schedule_rounded),
                             onTap: () async {
-                              final initial = DateTime(_date.year, _date.month, _date.day,
-                                  _scheduledTime?.hour ?? 9, _scheduledTime?.minute ?? 0);
-                              final picked = await showAppDateTimePicker(context, initial: initial);
+                              final initial = DateTime(
+                                  _date.year,
+                                  _date.month,
+                                  _date.day,
+                                  _scheduledTime?.hour ?? 9,
+                                  _scheduledTime?.minute ?? 0);
+                              final picked = await showAppDateTimePicker(
+                                  context,
+                                  initial: initial);
                               if (picked != null && mounted) {
                                 setState(() {
-                                  _date = DateTime(picked.year, picked.month, picked.day);
+                                  _date = DateTime(picked.year, picked.month,
+                                      picked.day);
                                   _scheduledTime = picked;
                                 });
                               }
@@ -1214,12 +1062,22 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'),
                             trailing: const Icon(Icons.schedule_rounded),
                             onTap: () async {
-                              final initial = DateTime(_date.year, _date.month, _date.day,
-                                  _endTime?.hour ?? 10, _endTime?.minute ?? 0);
-                              final picked = await showAppDateTimePicker(context, initial: initial);
+                              final initial = DateTime(
+                                  _date.year,
+                                  _date.month,
+                                  _date.day,
+                                  _endTime?.hour ?? 10,
+                                  _endTime?.minute ?? 0);
+                              final picked = await showAppDateTimePicker(
+                                  context,
+                                  initial: initial);
                               if (picked != null && mounted) {
                                 setState(() => _endTime = DateTime(
-                                    _date.year, _date.month, _date.day, picked.hour, picked.minute));
+                                    _date.year,
+                                    _date.month,
+                                    _date.day,
+                                    picked.hour,
+                                    picked.minute));
                               }
                             },
                           ),
@@ -1342,130 +1200,11 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 if (v != _PlanRepeatUi.custom) {
                                   _rruleCustomRaw = null;
                                 } else {
-                                  _rruleCustomRaw = widget.task.rrule?.trim();
+                                  _rruleCustomRaw =
+                                      widget.task.rrule?.trim();
                                 }
                               });
                             },
-                          ),
-                        ],
-                      ),
-                      ListView(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          12,
-                          16,
-                          24 + MediaQuery.of(context).viewInsets.bottom,
-                        ),
-                        children: [
-                          TextField(
-                            controller: _notesController,
-                            minLines: 1,
-                            maxLines: 4,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: t(currentLocale.value, 'notes_hint_flat'),
-                              hintStyle: TextStyle(
-                                color: Colors.grey.withOpacity(0.5),
-                                fontWeight: FontWeight.w400,
-                              ),
-                              labelText: null,
-                            ),
-                            textCapitalization: TextCapitalization.sentences,
-                          ),
-                        ],
-                      ),
-                      ListView(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          12,
-                          16,
-                          24 + MediaQuery.of(context).viewInsets.bottom,
-                        ),
-                        children: [
-                          ...List.generate(_checklistControllers.length, (i) {
-                            final scheme = Theme.of(context).colorScheme;
-                            final rowDone =
-                                i < _checklistDone.length && _checklistDone[i];
-                            return ListTile(
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              horizontalTitleGap: 4,
-                              leading: Checkbox(
-                                value: rowDone,
-                                onChanged: (v) => setState(() {
-                                  _syncChecklistDoneLength(
-                                      _checklistControllers, _checklistDone);
-                                  _checklistDone[i] = v ?? false;
-                                  _partitionChecklistRowsByDone(
-                                    controllers: _checklistControllers,
-                                    done: _checklistDone,
-                                  );
-                                }),
-                              ),
-                              title: TextField(
-                                controller: _checklistControllers[i],
-                                style: TextStyle(
-                                  decoration: rowDone
-                                      ? TextDecoration.lineThrough
-                                      : TextDecoration.none,
-                                  color: rowDone
-                                      ? scheme.onSurface.withValues(alpha: 0.5)
-                                      : scheme.onSurface,
-                                  decorationColor: rowDone
-                                      ? scheme.onSurface.withValues(alpha: 0.5)
-                                      : null,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText:
-                                      t(currentLocale.value, 'checklist_item'),
-                                  hintStyle: TextStyle(
-                                    color: scheme.onSurfaceVariant
-                                        .withValues(alpha: rowDone ? 0.35 : 0.5),
-                                  ),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  filled: true,
-                                  fillColor:
-                                      scheme.surfaceContainerHighest.withValues(
-                                          alpha: 0.35),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 12,
-                                  ),
-                                ),
-                              ),
-                              trailing: IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline_rounded,
-                                  color: scheme.error,
-                                ),
-                                tooltip: t(currentLocale.value, 'delete'),
-                                onPressed: () => setState(() {
-                                  _removeChecklistRowAt(
-                                    i,
-                                    controllers: _checklistControllers,
-                                    done: _checklistDone,
-                                  );
-                                }),
-                              ),
-                            );
-                          }),
-                          ListTile(
-                            leading: Icon(
-                              Icons.add_circle_outline_rounded,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            title: Text(
-                              t(currentLocale.value, 'add_checklist_item'),
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            onTap: () => setState(() {
-                              _checklistControllers.add(TextEditingController());
-                              _checklistDone.add(false);
-                            }),
                           ),
                         ],
                       ),
