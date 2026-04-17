@@ -54,6 +54,8 @@ abstract class PbCollections {
 /// PocketBase Admin → OAuth2 provider **names** must match these strings exactly.
 abstract class PbOauthProviderNames {
   static const String google = 'google';
+  /// Stub name — must match PocketBase Admin OAuth provider name when enabled.
+  static const String apple = 'apple';
   static const String yandex = 'yandex';
 }
 

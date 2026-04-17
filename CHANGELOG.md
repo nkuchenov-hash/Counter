@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-04-17] - Strike 15: Unified Omni-Picker
+* **Platform / omni-picker (`ARCHITECTURE.md` §8.1, `lib/core/widgets/omni_date_time_picker_dialog.dart`, `shared_widgets.dart` `showAppDateTimePicker`, `picker_entry_modes.dart`):** Codified the Omni-Picker Law in ARCHITECTURE.md and implemented a unified, keyboard-first Date & Time AlertDialog for Web/Desktop, replacing the sequential picker flow to eliminate UX friction while preserving mobile touch flows. The `useKeyboardFriendlyMaterialPickers()` path now opens `showOmniDateTimePickerDialog` (`InputDatePickerFormField` + 24h hour/minute `TextFormField`s, single Save) instead of chained `showDatePicker`→`showTimePicker`; touch/mobile still uses `showOmniDateTimePicker` from `omni_datetime_picker`.
+
 ## [2026-04-06] - Strike 14: Inbox gating & UI polish
 * **Lists / Timeline / Planning / shell (`lists_view.dart` `_filterCategoryId` gate, `timeline_view.dart` / `planning_view.dart` `kIsWeb` chevrons, `app_shell.dart`, `dictionary.dart` `input_placeholder_*`, `tag_contrast.dart` / `chip_component.dart`):** Enforced strict GTD Inbox gating with empty states. Purged redundant manual-add UI/dead code from app_shell, standardized inline placeholders, relocated 'No Tags' settings with dynamic B/W contrast, and implemented Web-only chevron date navigation.
 

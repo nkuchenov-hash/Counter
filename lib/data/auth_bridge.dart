@@ -30,6 +30,18 @@ enum BiometricLoginResult {
   unknown,
 }
 
+/// Thrown by [AuthBridge.loginWithPassword], [register], [requestPasswordReset],
+/// [loginWithOAuth2] so UI can map messages without parsing booleans.
+class AuthBridgeException implements Exception {
+  AuthBridgeException(this.message, [this.statusCode]);
+
+  final String message;
+  final int? statusCode;
+
+  @override
+  String toString() => message;
+}
+
 class AuthBridge {
   AuthBridge._();
 
@@ -39,28 +51,31 @@ class AuthBridge {
 
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  /// Stored profile id (UUID string used as `user_id` on rows) or null.
+  /// Returns the business profile id only when [PocketBase.authStore] has a
+  /// **valid** session (token not expired). Does not treat cached storage alone
+  /// as signed-in — gate the app on [authStore.isValid].
   static Future<String?> checkSession() async {
     try {
       await DatabaseService.instance.ensurePocketBaseReady();
       final pb = DatabaseService.instance.pocketBase;
-      if (pb.authStore.isValid && pb.authStore.record != null) {
-        final data = pb.authStore.record!.data;
-        final uid = (data['user_id'] ?? '').toString().trim();
-        final id = uid.isNotEmpty ? uid : pb.authStore.record!.id;
-        if (id.isNotEmpty) {
-          await _storage.write(key: _profileIdKey, value: id);
-          return id;
-        }
+      if (!pb.authStore.isValid || pb.authStore.record == null) {
+        try {
+          await _storage.delete(key: _profileIdKey);
+        } catch (_) {}
+        return null;
+      }
+      final data = pb.authStore.record!.data;
+      final uid = (data['user_id'] ?? '').toString().trim();
+      final id = uid.isNotEmpty ? uid : pb.authStore.record!.id;
+      if (id.isNotEmpty) {
+        await _storage.write(key: _profileIdKey, value: id);
+        return id;
       }
     } catch (_) {}
     try {
-      final v = await _storage.read(key: _profileIdKey);
-      if (v == null || v.isEmpty) return null;
-      return v;
-    } catch (_) {
-      return null;
-    }
+      await _storage.delete(key: _profileIdKey);
+    } catch (_) {}
+    return null;
   }
 
   static Future<void> _launchOAuthUrl(Uri url) async {
@@ -155,18 +170,40 @@ class AuthBridge {
     }
   }
 
-  static Future<bool> signIn(String email, String password) async {
+  /// OAuth2 via [PbCollections.profiles] only. Throws [AuthBridgeException] on failure.
+  static Future<void> loginWithOAuth2(String provider) async {
+    final result = await signInWithOAuth(provider);
+    switch (result) {
+      case OAuthSignInResult.success:
+        return;
+      case OAuthSignInResult.cancelled:
+        throw AuthBridgeException('oauth_cancelled', null);
+      case OAuthSignInResult.providerMissing:
+        throw AuthBridgeException('oauth_provider_missing', 404);
+      case OAuthSignInResult.networkError:
+        throw AuthBridgeException('oauth_network', null);
+      case OAuthSignInResult.unknown:
+        throw AuthBridgeException('oauth_unknown', null);
+    }
+  }
+
+  /// Email/password against [PbCollections.profiles] (`authWithPassword`).
+  static Future<void> loginWithPassword(String email, String password) async {
+    await DatabaseService.instance.ensurePocketBaseReady();
+    final pb = DatabaseService.instance.pocketBase;
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty) {
+      throw AuthBridgeException('empty_email', 400);
+    }
     try {
-      await DatabaseService.instance.ensurePocketBaseReady();
-      final pb = DatabaseService.instance.pocketBase;
-      final cleanEmail = email.trim();
-      if (cleanEmail.isEmpty) return false;
       await pb.collection(PbCollections.profiles).authWithPassword(
             cleanEmail,
             password,
           );
       final rec = pb.authStore.record;
-      if (rec == null) return false;
+      if (rec == null) {
+        throw AuthBridgeException('auth_failed', null);
+      }
       final uid = (rec.data['user_id'] ?? '').toString().trim();
       final sessionId = uid.isNotEmpty ? uid : rec.id;
       await _storage.write(key: _profileIdKey, value: sessionId);
@@ -177,29 +214,42 @@ class AuthBridge {
         );
       }
       unawaited(DatabaseService.instance.ensureRecordsRealtimeBridge());
-      return true;
     } on ClientException catch (e) {
       if (kDebugMode) debugPrint('[AUTH_PB] ${e.statusCode} $e');
-      return false;
+      throw AuthBridgeException(e.toString(), e.statusCode);
     } catch (e, stack) {
+      if (e is AuthBridgeException) rethrow;
       if (kDebugMode) {
         debugPrint('[AUTH_CRITICAL_ERROR] $e');
         debugPrint('$stack');
       }
+      throw AuthBridgeException(e.toString(), null);
+    }
+  }
+
+  /// Same as [loginWithPassword] but returns [bool] for biometric / legacy call sites.
+  static Future<bool> signIn(String email, String password) async {
+    try {
+      await loginWithPassword(email, password);
+      return true;
+    } on AuthBridgeException {
       return false;
     }
   }
 
-  /// Creates a new auth record when email is free, then signs in.
-  /// [passwordConfirm] must match [password] before any request is sent.
-  static Future<bool> registerAccount(
+  /// Register then sign in; all requests use [PbCollections.profiles] only.
+  static Future<void> register(
     String email,
     String password,
     String passwordConfirm,
   ) async {
     final trimmedEmail = email.trim();
-    if (trimmedEmail.isEmpty || password.isEmpty) return false;
-    if (password != passwordConfirm) return false;
+    if (trimmedEmail.isEmpty || password.isEmpty) {
+      throw AuthBridgeException('missing_fields', 400);
+    }
+    if (password != passwordConfirm) {
+      throw AuthBridgeException('password_mismatch', 400);
+    }
 
     try {
       await DatabaseService.instance.ensurePocketBaseReady();
@@ -222,19 +272,52 @@ class AuthBridge {
               'biometric_enabled': false,
             },
           );
-      return signIn(trimmedEmail, password);
+      await loginWithPassword(trimmedEmail, password);
     } on ClientException catch (e) {
       if (kDebugMode) debugPrint('[REGISTER_PB] ${e.statusCode} $e');
       if (e.statusCode == 400) {
-        return signIn(trimmedEmail, password);
+        await loginWithPassword(trimmedEmail, password);
+        return;
       }
-      return false;
+      throw AuthBridgeException(e.toString(), e.statusCode);
     } catch (e, stack) {
+      if (e is AuthBridgeException) rethrow;
       if (kDebugMode) {
         debugPrint('[AUTH_CRITICAL_ERROR] $e');
         debugPrint('$stack');
       }
+      throw AuthBridgeException(e.toString(), null);
+    }
+  }
+
+  /// Creates a new auth record when email is free, then signs in.
+  /// [passwordConfirm] must match [password] before any request is sent.
+  static Future<bool> registerAccount(
+    String email,
+    String password,
+    String passwordConfirm,
+  ) async {
+    try {
+      await register(email, password, passwordConfirm);
+      return true;
+    } on AuthBridgeException {
       return false;
+    }
+  }
+
+  /// POST …/collections/profiles/request-password-reset
+  static Future<void> requestPasswordReset(String email) async {
+    final e = email.trim();
+    if (e.isEmpty) {
+      throw AuthBridgeException('empty_email', 400);
+    }
+    try {
+      await DatabaseService.instance.ensurePocketBaseReady();
+      await DatabaseService.instance.pocketBase
+          .collection(PbCollections.profiles)
+          .requestPasswordReset(e);
+    } on ClientException catch (ex) {
+      throw AuthBridgeException(ex.toString(), ex.statusCode);
     }
   }
 
