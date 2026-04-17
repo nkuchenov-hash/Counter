@@ -97,6 +97,7 @@ Future<CategoryTreeSheetResult?> _showCategoryTreeSheet(
                       _CategoryTreeBody(
                         roots: roots,
                         selectedCategoryId: initialCategoryId,
+                        expandSelectionPath: false,
                         onSelect: (id) => Navigator.of(ctx).pop(
                           CategoryTreeSheetPicked(id),
                         ),
@@ -257,6 +258,7 @@ class _CategoryTreeBody extends StatefulWidget {
   const _CategoryTreeBody({
     required this.roots,
     required this.selectedCategoryId,
+    this.expandSelectionPath = true,
     required this.onSelect,
     required this.showEditChrome,
     this.onFullSettingsTap,
@@ -266,6 +268,8 @@ class _CategoryTreeBody extends StatefulWidget {
 
   final List<CategoryRule> roots;
   final int? selectedCategoryId;
+  /// When false (picker / [CategoryTreeFormField]), tree opens fully collapsed.
+  final bool expandSelectionPath;
   final ValueChanged<int> onSelect;
   final bool showEditChrome;
   final void Function(CategoryRule r)? onFullSettingsTap;
@@ -282,15 +286,20 @@ class _CategoryTreeBodyState extends State<_CategoryTreeBody> {
   @override
   void initState() {
     super.initState();
-    _expandedIds = _initialExpandedForSelection(widget.selectedCategoryId);
+    _expandedIds = widget.expandSelectionPath
+        ? _initialExpandedForSelection(widget.selectedCategoryId)
+        : <int>{};
   }
 
   @override
   void didUpdateWidget(covariant _CategoryTreeBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedCategoryId != widget.selectedCategoryId) {
+    if (oldWidget.selectedCategoryId != widget.selectedCategoryId ||
+        oldWidget.expandSelectionPath != widget.expandSelectionPath) {
       setState(() {
-        _expandedIds = _initialExpandedForSelection(widget.selectedCategoryId);
+        _expandedIds = widget.expandSelectionPath
+            ? _initialExpandedForSelection(widget.selectedCategoryId)
+            : <int>{};
       });
     }
   }
@@ -508,6 +517,7 @@ class CategoryRecursiveBrowsePanel extends StatelessWidget {
     return _CategoryTreeBody(
       roots: roots,
       selectedCategoryId: selectedCategoryId,
+      expandSelectionPath: true,
       onSelect: onSelect,
       showEditChrome: editMode,
       onFullSettingsTap: onFullSettingsTap,

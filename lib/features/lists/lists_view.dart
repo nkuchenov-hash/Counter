@@ -142,9 +142,11 @@ class _ListsPageState extends State<ListsPage>
       planRowId: optId,
       title: title,
       categoryId: cat,
-      dateKey: DatabaseService.instance.getTimelineDeviceLocalTodayDateKey(),
+      dateKey: '',
       order: 0,
       startTime: null,
+      endDateTime: null,
+      rrule: null,
     );
     setState(() {
       _pendingInline.insert(0, pending);
@@ -154,17 +156,17 @@ class _ListsPageState extends State<ListsPage>
   }
 
   Future<void> _persistInlineAdd(PlanningTask optimistic) async {
-    final wall = DatabaseService.instance.getTimelineDeviceLocalToday();
-    final ord = await DatabaseService.instance.nextPlanningOrderForDate(wall);
+    final ord = await DatabaseService.instance.nextBacklogPlanningOrder();
     final ok = await DatabaseService.instance.addPlanningTask(
       PlanningTask(
         id: 0,
         title: optimistic.title.trim(),
         categoryId: optimistic.categoryId,
-        dateKey:
-            DatabaseService.instance.getTimelineDeviceLocalTodayDateKey(),
+        dateKey: '',
         order: ord,
         startTime: null,
+        endDateTime: null,
+        rrule: null,
       ),
     );
     if (!mounted) return;
@@ -442,6 +444,40 @@ class _ListsPageState extends State<ListsPage>
   }
 }
 
+String _leafCategoryLabel(int categoryId) {
+  final path = DatabaseService.instance.getCategoryPath(categoryId).trim();
+  if (path.isEmpty) return '—';
+  final parts = path.split(RegExp(r'\s*/\s*')).where((s) => s.isNotEmpty).toList();
+  return parts.isNotEmpty ? parts.last : path;
+}
+
+class _CategorySubcategoryPill extends StatelessWidget {
+  const _CategorySubcategoryPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BacklogPlanCard extends StatelessWidget {
   const _BacklogPlanCard({
     required this.task,
@@ -461,17 +497,26 @@ class _BacklogPlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final err = theme.colorScheme.error;
+    final pillLabel = _leafCategoryLabel(task.categoryId);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        title: Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-        subtitle: Text(
-          DatabaseService.instance.getCategoryPath(task.categoryId),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        title: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                task.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 120),
+              child: _CategorySubcategoryPill(label: pillLabel),
+            ),
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

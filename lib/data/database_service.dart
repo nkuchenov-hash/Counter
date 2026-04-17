@@ -1720,6 +1720,17 @@ class DatabaseService {
     return m + 1;
   }
 
+  /// Next [PlanningTask.order] for undated backlog plans (Lists tab). Not tied to calendar day.
+  Future<int> nextBacklogPlanningOrder() async {
+    final list = await fetchBacklogPlans(categoryId: null);
+    if (list.isEmpty) return 0;
+    var m = 0;
+    for (final t in list) {
+      if (t.order > m) m = t.order;
+    }
+    return m + 1;
+  }
+
   Future<List<PlanningTask>> _fetchPlanningTasksForDate(DateTime selectedDate) async {
     try {
       if (!_isPlansTableConfigured) {
@@ -7944,10 +7955,6 @@ class DatabaseService {
       final gt = getCleanTitleAndTags(stripped);
       final title = gt.title.trim();
       if (title.isEmpty) return false;
-      final todayWall = getTimelineDeviceLocalToday();
-      final ymd = DateTime(todayWall.year, todayWall.month, todayWall.day);
-      final taskDateKey =
-          '${ymd.year}-${_two(ymd.month)}-${_two(ymd.day)}';
       final match = identifyCategory(title);
       final categoryId = match?.id ??
           categoryIdHint ??
@@ -7959,7 +7966,7 @@ class DatabaseService {
         return false;
       }
 
-      final nextOrder = await nextPlanningOrderForDate(ymd);
+      final nextOrder = await nextBacklogPlanningOrder();
       final clientPlanId = newClientUuid();
 
       return addPlanningTask(
@@ -7968,10 +7975,11 @@ class DatabaseService {
           title: title,
           categoryId: categoryId,
           isDone: false,
-          dateKey: taskDateKey,
+          dateKey: '',
           order: nextOrder,
           startTime: null,
           endDateTime: null,
+          rrule: null,
           checklist: const [],
           notes: null,
           parentPlanId: null,
@@ -8930,9 +8938,12 @@ class DatabaseService {
     };
     if (task.startTime != null) {
       body['start_time'] = task.startTime!.toUtc().toIso8601String();
-    } else if (task.dateKey.length >= 10) {
-      final iso = _planStartUtcIsoFromDateKey(task.dateKey);
-      if (iso != null) body['start_time'] = iso;
+    } else {
+      final dk = task.dateKey.trim();
+      if (dk.length >= 10) {
+        final iso = _planStartUtcIsoFromDateKey(dk);
+        if (iso != null) body['start_time'] = iso;
+      }
     }
     if (task.endDateTime != null) {
       body['end_time'] = task.endDateTime!.toUtc().toIso8601String();
@@ -8946,8 +8957,11 @@ class DatabaseService {
     final idk = task.initialDateKey?.trim() ?? '';
     if (idk.length >= 10) {
       body['initial_date_key'] = idk.substring(0, 10);
-    } else if (task.dateKey.length >= 10) {
-      body['initial_date_key'] = task.dateKey.substring(0, 10);
+    } else {
+      final dk = task.dateKey.trim();
+      if (dk.length >= 10) {
+        body['initial_date_key'] = dk.substring(0, 10);
+      }
     }
     body['is_postponed'] = task.isPostponed;
     final rruleTrim = task.rrule?.trim() ?? '';

@@ -7,11 +7,12 @@ import 'dart:async';
 
 import 'package:counter/database_service.dart';
 import 'package:counter/models.dart';
+import 'package:counter/features/categories/category_list_view.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/calendar/calendar_view.dart';
 import 'package:counter/features/lists/lists_view.dart';
-import 'package:counter/features/more/more_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
+import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/subscription/app_tier.dart';
@@ -210,7 +211,7 @@ class _SyncStatusIcon extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// LifeOS Dashboard: 5 tabs (Timeline, Planning, Calendar, Lists, More).
+// LifeOS Dashboard: 5 nav destinations; stack index 4–5 = Categories / Profile (More menu).
 // Active record live-timer in Timeline; Sync icon in shell.
 // ---------------------------------------------------------------------------
 
@@ -222,7 +223,11 @@ class LifeOSDashboard extends StatefulWidget {
 }
 
 class _LifeOSDashboardState extends State<LifeOSDashboard> {
-  int _tabIndex = 0;
+  /// 0 Timeline, 1 Planning, 2 Calendar, 3 Lists, 4 Categories, 5 Profile.
+  int _shellPageIndex = 0;
+
+  int get _navBarSelectedIndex =>
+      _shellPageIndex <= 3 ? _shellPageIndex : 4;
 
   late DateTime _selectedDate;
   late DateTime _focusedDay;
@@ -320,7 +325,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     final wasFollowingLiveToday = sel.year == oldToday.year &&
         sel.month == oldToday.month &&
         sel.day == oldToday.day;
-    if (wasFollowingLiveToday && _tabIndex == 0) {
+    if (wasFollowingLiveToday && _shellPageIndex == 0) {
       final today = DatabaseService.instance.getTimelineDeviceLocalToday();
       setState(() {
         _selectedDate = today;
@@ -1219,15 +1224,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
 
     if (!mounted) return;
-    final Future<bool> Function(String) voiceSubmitIntent = _tabIndex == 1
+    final Future<bool> Function(String) voiceSubmitIntent = _shellPageIndex == 1
         ? _voiceSubmitPlanning
-        : _tabIndex == 3
+        : _shellPageIndex == 3
             ? _voiceSubmitBacklog
             : _voiceSubmitTimeline;
     final voiceSuccessKey =
-        _tabIndex == 1 || _tabIndex == 3 ? 'task_added_to_plan' : 'record_synced';
+        _shellPageIndex == 1 || _shellPageIndex == 3 ? 'task_added_to_plan' : 'record_synced';
     final voicePrimaryKey =
-        _tabIndex == 1 || _tabIndex == 3 ? 'add_task' : 'start_task';
+        _shellPageIndex == 1 || _shellPageIndex == 3 ? 'add_task' : 'start_task';
     _speechHandle ??= SpeechEngineHandle(_speech!);
     _speechHandle!.speech = _speech!;
     await showModalBottomSheet<void>(
@@ -1264,9 +1269,40 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   void _jumpToConflictDate(DateTime d) {
     setState(() {
       _selectedDate = DateTime(d.year, d.month, d.day);
-      _tabIndex = 0;
+      _shellPageIndex = 0;
     });
     _loadTasksForDate(_selectedDate);
+  }
+
+  void _openMoreMenu() {
+    final loc = currentLocale.value;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.person_rounded),
+              title: Text(t(loc, 'more_menu_profile')),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                setState(() => _shellPageIndex = 5);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.label_rounded),
+              title: Text(t(loc, 'more_menu_categories')),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                setState(() => _shellPageIndex = 4);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showEditRecordSheetForTimeline(
@@ -1586,26 +1622,35 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           await _loadTasksForDate(_selectedDate);
           if (!mounted) return;
         },
-        onJumpToTimeline: () => setState(() => _tabIndex = 0),
+        onJumpToTimeline: () => setState(() => _shellPageIndex = 0),
       ),
       const ListsPage(),
-      MoreMenuPage(
-        rules: _rules,
-        onCategoriesChanged: () async {
-          if (mounted) {
-            setState(() {
-              _rules = List.from(DatabaseService.instance.rules);
-            });
-          }
+      StreamBuilder<List<CategoryRule>>(
+        stream: DatabaseService.instance.categoryStream,
+        initialData: _rules,
+        builder: (context, snapshot) {
+          final r = snapshot.data ?? _rules;
+          return CategoriesPage(
+            rules: r,
+            onChanged: () async {
+              if (mounted) {
+                setState(() {
+                  _rules = List.from(DatabaseService.instance.rules);
+                });
+              }
+            },
+          );
         },
-        onProfileSaved: () {
+      ),
+      ProfilePage(
+        onSaved: () {
           if (mounted) setState(() {});
         },
       ),
     ];
 
     final showVoiceFab =
-        _tabIndex == 1 || _tabIndex == 3 || !_isFutureDate;
+        _shellPageIndex == 1 || _shellPageIndex == 3 || !_isFutureDate;
     return AnimatedBuilder(
       animation: Listenable.merge([currentLocale, appIsProUser]),
       builder: (context, _) {
@@ -1619,7 +1664,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             body: Stack(
               children: [
                 IndexedStack(
-                  index: _tabIndex,
+                  index: _shellPageIndex,
                   sizing: StackFit.expand,
                   children: pages,
                 ),
@@ -1687,10 +1732,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 child: Icon(_isVoiceListening ? Icons.graphic_eq_rounded : Icons.mic_rounded),
               ),
             bottomNavigationBar: NavigationBar(
-              selectedIndex: _tabIndex,
+              selectedIndex: _navBarSelectedIndex,
               onDestinationSelected: (i) {
+                if (i == 4) {
+                  _openMoreMenu();
+                  return;
+                }
                 setState(() {
-                  _tabIndex = i;
+                  _shellPageIndex = i;
                 });
                 if (i == 0) {
                   final target =
