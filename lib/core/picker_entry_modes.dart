@@ -1,6 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// Omni-Picker Law (see ARCHITECTURE.md §8.1): whenever **both** date and time
+/// are required, use a single unified dialog (`showAppDateTimePicker` →
+/// `showOmniDateTimePickerDialog` on keyboard-friendly surfaces). Never chain
+/// `showDatePicker` then `showTimePicker` in one user flow.
+///
 /// Web / desktop (Windows, macOS, Linux): keyboard-friendly Material pickers.
 /// Mobile (iOS, Android, Fuchsia): calendar / dial.
 bool _keyboardFriendlyPickerSurfaces() {

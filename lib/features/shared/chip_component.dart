@@ -216,6 +216,41 @@ class CategoryChip extends StatelessWidget {
     final displayLabel =
         resolvedLabel.trim().isNotEmpty ? resolvedLabel.trim() : '?';
     final scheme = Theme.of(context).colorScheme;
+    final rgb = color.toARGB32() & 0xFFFFFF;
+    if (rgb == 0x000000) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.black),
+        ),
+        child: Text(
+          displayLabel,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+        ),
+      );
+    }
+    if (rgb == 0xFFFFFF) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade400),
+        ),
+        child: Text(
+          displayLabel,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+        ),
+      );
+    }
     final plate = tagLetterChipPlate(color, scheme.surface);
     final fg = tagVibrantForeground(color);
     final stroke = tagLetterChipBorder(color, scheme.surface);

@@ -6,6 +6,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/category_color_palette.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
@@ -40,34 +41,24 @@ Future<DateTime?> showAppDateTimePicker(
   final defaultInitial = DatabaseService.instance
       .applyUserOffset(DatabaseService.getPlanetaryNow());
   final base = initial ?? defaultInitial;
-  final loc = currentLocale.value;
 
   if (useKeyboardFriendlyMaterialPickers()) {
     final fd = firstDate ?? DateTime.utc(2020);
     final ld = lastDate ?? DateTime.utc(2030);
-    final day = await showDatePicker(
-      context: context,
-      locale: Locale(loc),
-      initialDate: _clampDay(base, fd, ld),
+    final clampedDay = _clampDay(base, fd, ld);
+    final initialCombined = DateTime(
+      clampedDay.year,
+      clampedDay.month,
+      clampedDay.day,
+      base.hour,
+      base.minute,
+    );
+    return showOmniDateTimePickerDialog(
+      context,
+      initial: initialCombined,
       firstDate: DateTime(fd.year, fd.month, fd.day),
       lastDate: DateTime(ld.year, ld.month, ld.day),
-      initialEntryMode: appDatePickerEntryMode(),
     );
-    if (day == null || !context.mounted) return null;
-    final mq = MediaQuery.of(context);
-    final tod = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(base),
-      initialEntryMode: appTimePickerEntryMode(),
-      builder: (context, child) {
-        return MediaQuery(
-          data: mq.copyWith(alwaysUse24HourFormat: true),
-          child: child ?? const SizedBox.shrink(),
-        );
-      },
-    );
-    if (tod == null || !context.mounted) return null;
-    return DateTime(day.year, day.month, day.day, tod.hour, tod.minute);
   }
 
   final theme = Theme.of(context);

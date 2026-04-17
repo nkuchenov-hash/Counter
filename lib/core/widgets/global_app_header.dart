@@ -14,6 +14,8 @@ Future<void> _pickDayForGlobalHeader(
   DateTime initialDate,
   void Function(DateTime day) onSelected,
 ) async {
+  // Date-only: Omni-Picker Law (ARCHITECTURE §8.1) applies when both date and
+  // time are selected; see showAppDateTimePicker in shared_widgets.dart.
   final loc = currentLocale.value;
   if (useKeyboardFriendlyMaterialPickers()) {
     final picked = await showDatePicker(

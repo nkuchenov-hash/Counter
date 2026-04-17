@@ -20,6 +20,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'app_title': 'Life OS',
     'save': 'Save',
     'cancel': 'Cancel',
+    'omni_picker_dialog_title': 'Date & time',
     'timeline': 'Timeline',
     'planning': 'Planning',
     'date_previous_day': 'Previous day',
@@ -54,7 +55,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'input_placeholder_plan': 'Add a new plan',
     'input_placeholder_list': 'Add to a list',
     'lists_no_category_chosen':
-        'No lists chosen. Choose a category to start filling it with ideas.',
+        'No lists are chosen. Choose a category to add ideas to your list.',
     'plan_graduate_warning':
         'Adding a date or time moves this item from your list into your plan for that day.',
     'plan_graduate_from_idea': 'Create a plan from this idea',
@@ -520,6 +521,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'app_title': 'Life OS',
     'save': 'Сохранить',
     'cancel': 'Отмена',
+    'omni_picker_dialog_title': 'Дата и время',
     'timeline': 'Таймлайн',
     'planning': 'План',
     'date_previous_day': 'Предыдущий день',
@@ -555,7 +557,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'input_placeholder_plan': 'Добавить план',
     'input_placeholder_list': 'Добавить в список',
     'lists_no_category_chosen':
-        'Списки не выбраны. Выберите категорию, чтобы начать собирать идеи.',
+        'Списки не выбраны. Выберите категорию, чтобы добавлять идеи в список.',
     'plan_graduate_warning':
         'Дата или время перенесут эту задачу из списка в план на этот день.',
     'plan_graduate_from_idea': 'Создать план из этой идеи',

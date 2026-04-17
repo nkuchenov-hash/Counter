@@ -75,6 +75,11 @@
 - **Biometrics and other capabilities:** guard with `kIsWeb` and platform capabilities as in `app_shell` / services.
 - **Records realtime:** After a valid session, the Brain subscribes to `records` (`subscribe('*', …)`) so **Web and mobile** share the same in-memory cache updates from server pushes; login flows must re-arm this subscription if init ran before auth.
 
+### 8.1 Omni-Picker (UI Iron Rule)
+
+- **Omni-Picker Law:** Date and Time selection must always happen simultaneously within a single unified dialog or sheet. Never chain `showDatePicker` and `showTimePicker` consecutively.
+- **Implementation:** `lib/core/widgets/omni_date_time_picker_dialog.dart` (keyboard / desktop text-first path); entry point `showAppDateTimePicker` in `lib/features/shared/shared_widgets.dart`; keyboard vs touch modes in `lib/core/picker_entry_modes.dart` (`useKeyboardFriendlyMaterialPickers`, `appDatePickerEntryMode` / `appTimePickerEntryMode`, retained for any future Material surfaces). **Date-only** navigation (e.g. changing the timeline day) may use a single `showDatePicker` with no time component.
+
 ---
 
 ## 9. Voice Input Protocol (Immutable)

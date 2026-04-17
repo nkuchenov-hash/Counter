@@ -705,55 +705,21 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       );
     }
     if (_quickAddAvailableTags.isEmpty) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: TextButton(
-                onPressed: _openTagManagerFromQuickAdd,
-                child: Text(t(loc, 'plan_quick_add_no_tags')),
-              ),
-            ),
-          ),
-          IconButton(
-            tooltip:
-                '${t(loc, 'plan_filter_no_tags')} · ${t(loc, 'settings')}',
-            icon: const Icon(Icons.tune_rounded),
-            visualDensity: VisualDensity.compact,
-            onPressed: _openNoTagsChipSettingsSheet,
-          ),
-        ],
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton(
+          onPressed: _openTagManagerFromQuickAdd,
+          child: Text(t(loc, 'plan_quick_add_no_tags')),
+        ),
       );
     }
     final canReorder = _quickAddAvailableTags.length >= 2;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: TagQuickPickStrip(
-            tags: _quickAddAvailableTags,
-            selected: _creationSelectedTags,
-            onToggle: _toggleCreationTag,
-            fallbackColor: scheme.primary,
-            onReorder: canReorder ? _onPlanningQuickBarReorder : null,
-            onTagLongPress: canReorder
-                ? null
-                : (tag) {
-                    if (tag.tagId == _kUntaggedPlanGroupId) {
-                      unawaited(_openNoTagsChipSettingsSheet());
-                    }
-                  },
-          ),
-        ),
-        IconButton(
-          tooltip: '${t(loc, 'plan_filter_no_tags')} · ${t(loc, 'settings')}',
-          icon: const Icon(Icons.tune_rounded),
-          visualDensity: VisualDensity.compact,
-          onPressed: _openNoTagsChipSettingsSheet,
-        ),
-      ],
+    return TagQuickPickStrip(
+      tags: _quickAddAvailableTags,
+      selected: _creationSelectedTags,
+      onToggle: _toggleCreationTag,
+      fallbackColor: scheme.primary,
+      onReorder: canReorder ? _onPlanningQuickBarReorder : null,
     );
   }
 
@@ -2315,16 +2281,17 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                 ? Text(t(currentLocale.value, 'plan_select_mode'))
                 : Row(
                     children: [
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
+                      if (kIsWeb)
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          icon: const Icon(Icons.chevron_left_rounded),
+                          tooltip: t(currentLocale.value, 'date_previous_day'),
+                          onPressed: () => _shiftPlanningDay(-1),
                         ),
-                        icon: const Icon(Icons.chevron_left_rounded),
-                        tooltip: t(currentLocale.value, 'date_previous_day'),
-                        onPressed: () => _shiftPlanningDay(-1),
-                      ),
                       Expanded(
                         child: GlobalAppHeader(
                           selectedDate: headerDate,
@@ -2332,16 +2299,17 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                               widget.onDatePicked?.call(d),
                         ),
                       ),
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 40,
-                          minHeight: 40,
+                      if (kIsWeb)
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          icon: const Icon(Icons.chevron_right_rounded),
+                          tooltip: t(currentLocale.value, 'date_next_day'),
+                          onPressed: () => _shiftPlanningDay(1),
                         ),
-                        icon: const Icon(Icons.chevron_right_rounded),
-                        tooltip: t(currentLocale.value, 'date_next_day'),
-                        onPressed: () => _shiftPlanningDay(1),
-                      ),
                     ],
                   ),
             actions: [
@@ -2363,6 +2331,12 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                   icon: const Icon(Icons.auto_awesome_rounded),
                   tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
                   onPressed: _openSmartPlanSheet,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  tooltip:
+                      '${t(currentLocale.value, 'plan_filter_no_tags')} · ${t(currentLocale.value, 'settings')}',
+                  onPressed: _openNoTagsChipSettingsSheet,
                 ),
                 IconButton(
                   icon: const Icon(Icons.settings_rounded),
@@ -2458,8 +2432,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                             controller: _textController,
                             focusNode: _quickAddFocus,
                             decoration: InputDecoration(
-                              labelText:
-                                  t(currentLocale.value, 'task_title'),
                               hintText: t(
                                   currentLocale.value, 'input_placeholder_plan'),
                             ),

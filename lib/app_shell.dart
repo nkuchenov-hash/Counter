@@ -8,7 +8,6 @@ import 'dart:async';
 import 'package:counter/database_service.dart';
 import 'package:counter/models.dart';
 import 'package:counter/features/categories/category_list_view.dart';
-import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/calendar/calendar_view.dart';
 import 'package:counter/features/lists/lists_view.dart';
@@ -26,7 +25,6 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
@@ -37,14 +35,8 @@ String _two(int n) => n.toString().padLeft(2, '0');
 
 DateTime _localToday() => DatabaseService.instance.getTimelineDeviceLocalToday();
 
-DateTime _utcToDisplay(DateTime utc) =>
-    DatabaseService.instance.applyUserOffset(utc);
-
 DateTime _displayToUtc(DateTime displayNaive) =>
     DatabaseService.instance.displayTimeToUtc(displayNaive);
-
-String _formatTimeOfDay(DateTime dt) =>
-    DateFormat.Hm(currentLocale.value).format(dt);
 
 /// Planning task opened from quick-add / draft: not yet on server (no PATCH id).
 bool _shellIsNewPlanningDraft(PlanningTask t) {
@@ -1051,75 +1043,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
   }
 
-  Future<void> _openManualAddDialog() async {
-    final selectedDate = _selectedDate;
-    final displayNow = _utcToDisplay(DatabaseService.getPlanetaryNow());
-    final startDefault = DateTime(selectedDate.year, selectedDate.month, selectedDate.day, displayNow.hour, displayNow.minute);
-    final endDefault = startDefault.add(Duration.zero);
-    if (!mounted) return;
-    final result = await showDialog<_ManualEntryResult>(
-      context: context,
-      builder: (ctx) => _ManualEntryDialog(
-        selectedDate: selectedDate,
-        rules: _rules,
-        initialStart: startDefault,
-        initialEnd: endDefault,
-      ),
-    );
-    if (result == null || !mounted) return;
-    try {
-      final manualStart = result.start;
-      final manualEnd = result.end;
-      final running = _tasks.where((t) => t.isRunning).toList();
-      final nowDisplay = _utcToDisplay(DatabaseService.getPlanetaryNow());
-      bool overlaps(Task t) =>
-          manualStart.isBefore(nowDisplay) && manualEnd.isAfter(_utcToDisplay(t.startTime));
-      final toTruncate = running.where(overlaps).toList();
-      for (final t in toTruncate) {
-        if (!mounted) return;
-        setState(() {
-          t.endTime = _displayToUtc(DateTime(manualStart.year, manualStart.month, manualStart.day, manualStart.hour, manualStart.minute));
-          t.isActive = false;
-        });
-      }
-      if (running.isNotEmpty && toTruncate.isEmpty) {
-        await _stopAnyActiveTask();
-      }
-      if (!mounted) return;
-      final taskTitle = result.title.trim().isEmpty ? 'Manual entry' : result.title.trim();
-      final startUtc = _displayToUtc(manualStart);
-      final endUtc = _displayToUtc(manualEnd);
-      setState(() {
-        _tasks.add(
-          Task(
-            title: taskTitle,
-            startTime: startUtc,
-            endTime: endUtc,
-            tags: result.tags,
-            isActive: false,
-          ),
-        );
-        _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        await _saveTasks();
-        if (!mounted) return;
-        await DatabaseService.instance.writeCompletedRecord(
-          taskTitle,
-          startUtc,
-          endUtc,
-          categoryId: result.categoryId ?? _effectiveCategoryId,
-        );
-      });
-    } catch (e) {
-      print('UI ERROR: $e');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'failed_to_save_manual'))),
-      );
-    }
-  }
-
   Future<void> _startVoiceInput() async {
     if (!kIsWeb) {
       final mic = await Permission.microphone.status;
@@ -1527,7 +1450,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         onNewTaskForPastDate: _openNewTaskForPastDate,
         onStopRecord: _stopRecordByDocId,
         onDeleteRecord: _deleteRecordByDocId,
-        onManualAdd: _openManualAddDialog,
         rules: _rules,
         onShowEditRecordSheet: _showEditRecordSheetForTimeline,
       ),
@@ -1665,167 +1587,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           ),
         );
       },
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Manual add dialog (used from Calendar/Timeline).
-// ---------------------------------------------------------------------------
-
-class _ManualEntryResult {
-  _ManualEntryResult({
-    required this.title,
-    required this.start,
-    required this.end,
-    required this.tags,
-    required this.categoryId,
-  });
-  final String title;
-  final DateTime start;
-  final DateTime end;
-  final List<String> tags;
-  final int? categoryId;
-}
-
-class _ManualEntryDialog extends StatefulWidget {
-  const _ManualEntryDialog({
-    required this.selectedDate,
-    required this.rules,
-    required this.initialStart,
-    required this.initialEnd,
-  });
-
-  final DateTime selectedDate;
-  final List<CategoryRule> rules;
-  final DateTime initialStart;
-  final DateTime initialEnd;
-
-  @override
-  State<_ManualEntryDialog> createState() => _ManualEntryDialogState();
-}
-
-class _ManualEntryDialogState extends State<_ManualEntryDialog> {
-  late TextEditingController _titleController;
-  late DateTime _start;
-  late DateTime _end;
-  int? _selectedCategoryId;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController();
-    _start = widget.initialStart;
-    _end = widget.initialEnd;
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
-    _selectedCategoryId = pairs.isNotEmpty ? pairs.first.id : null;
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickStartTime() async {
-    final picked = await showAppDateTimePicker(
-      context,
-      initial: _start,
-      firstDate: DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day),
-      lastDate: DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, 23, 59),
-    );
-    if (picked == null || !mounted) return;
-    setState(() {
-      _start = picked;
-      if (_end.isBefore(_start) || _end.isAtSameMomentAs(_start)) {
-        _end = _start.add(Duration.zero);
-      }
-    });
-  }
-
-  Future<void> _pickEndTime() async {
-    final picked = await showAppDateTimePicker(
-      context,
-      initial: _end,
-      firstDate: DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day),
-      lastDate: DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, 23, 59),
-    );
-    if (picked == null || !mounted) return;
-    setState(() => _end = picked);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
-    final effectiveId = pairs.any((p) => p.id == _selectedCategoryId)
-        ? _selectedCategoryId
-        : (pairs.isNotEmpty ? pairs.first.id : null);
-
-    return AlertDialog(
-      title: Text(t(currentLocale.value, 'manual_add')),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(
-                labelText: t(currentLocale.value, 'title_label'),
-                hintText: t(currentLocale.value, 'hint_meeting'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            CategoryTreeFormField(
-              value: effectiveId,
-              enabled: pairs.isNotEmpty,
-              decoration:
-                  InputDecoration(labelText: t(currentLocale.value, 'category_label')),
-              onChanged: (id) => setState(() => _selectedCategoryId = id),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              title: Text(t(currentLocale.value, 'start_time')),
-              subtitle: Text(_formatTimeOfDay(_start)),
-              trailing: const Icon(Icons.access_time_rounded),
-              onTap: _pickStartTime,
-            ),
-            ListTile(
-              title: Text(t(currentLocale.value, 'end_time')),
-              subtitle: Text(_formatTimeOfDay(_end)),
-              trailing: const Icon(Icons.access_time_rounded),
-              onTap: _pickEndTime,
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(t(currentLocale.value, 'cancel')),
-        ),
-        FilledButton(
-          onPressed: () {
-            if (_end.isBefore(_start) || _end.isAtSameMomentAs(_start)) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(t(currentLocale.value, 'end_time_after_start'))),
-              );
-              return;
-            }
-            final path = effectiveId != null
-                ? DatabaseService.instance.getCategoryPath(effectiveId)
-                : 'Life';
-            Navigator.of(context).pop(_ManualEntryResult(
-              title: _titleController.text.trim(),
-              start: _start,
-              end: _end,
-              tags: [path],
-              categoryId: effectiveId,
-            ));
-          },
-          child: Text(t(currentLocale.value, 'add')),
-        ),
-      ],
     );
   }
 }

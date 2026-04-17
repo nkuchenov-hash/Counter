@@ -713,100 +713,121 @@ class _ListsPageState extends State<ListsPage>
             ),
           ),
           Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : Builder(
-                    builder: (context) {
-                      final display = _displayFlat;
-                      final grouped = _groupByCategoryPath(display);
-                      return RefreshIndicator(
-                        onRefresh: _reload,
-                        child: display.isEmpty
-                            ? ListView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                children: [
-                                  SizedBox(
-                                    height:
-                                        MediaQuery.sizeOf(context).height * 0.25,
-                                  ),
-                                  Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 24),
-                                      child: Text(
-                                        t(loc, 'lists_no_category_chosen'),
-                                        style:
-                                            theme.textTheme.bodyLarge?.copyWith(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                        textAlign: TextAlign.center,
+            child: filterId == null
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(
+                        height: MediaQuery.sizeOf(context).height * 0.25,
+                      ),
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Text(
+                            t(loc, 'lists_no_category_chosen'),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : Builder(
+                        builder: (context) {
+                          final display = _displayFlat;
+                          final grouped = _groupByCategoryPath(display);
+                          return RefreshIndicator(
+                            onRefresh: _reload,
+                            child: display.isEmpty
+                                ? ListView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(
+                                        height: MediaQuery.sizeOf(context)
+                                                .height *
+                                            0.25,
                                       ),
-                                    ),
+                                      Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 24),
+                                          child: Text(
+                                            t(loc, 'lists_empty'),
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              color: theme.colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : ListView.builder(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16, 12, 16, 24),
+                                    itemCount: _itemCountForGrouped(grouped),
+                                    itemBuilder: (context, index) {
+                                      return _buildGroupedItem(
+                                        context,
+                                        index,
+                                        grouped,
+                                        loc,
+                                      );
+                                    },
                                   ),
-                                ],
-                              )
-                            : ListView.builder(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding:
-                                    const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                                itemCount: _itemCountForGrouped(grouped),
-                                itemBuilder: (context, index) {
-                                  return _buildGroupedItem(
-                                    context,
-                                    index,
-                                    grouped,
-                                    loc,
-                                  );
-                                },
-                              ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _inlineController,
-                    focusNode: _inlineFocus,
-                    textInputAction: TextInputAction.done,
-                    decoration: InputDecoration(
-                      hintText: t(loc, 'input_placeholder_list'),
-                      isDense: true,
-                      border: InputBorder.none,
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: theme.colorScheme.outline
-                              .withValues(alpha: 0.45),
+          if (filterId != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _inlineController,
+                      focusNode: _inlineFocus,
+                      textInputAction: TextInputAction.done,
+                      decoration: InputDecoration(
+                        hintText: t(loc, 'input_placeholder_list'),
+                        isDense: true,
+                        border: InputBorder.none,
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: theme.colorScheme.outline
+                                .withValues(alpha: 0.45),
+                          ),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: theme.colorScheme.primary,
+                            width: 2,
+                          ),
                         ),
                       ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(
-                          color: theme.colorScheme.primary,
-                          width: 2,
-                        ),
-                      ),
+                      onSubmitted: (_) => _submitInline(),
                     ),
-                    onSubmitted: (_) => _submitInline(),
                   ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF43A047),
-                    foregroundColor: Colors.white,
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: _submitInline,
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(t(loc, 'add')),
                   ),
-                  onPressed: _submitInline,
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(t(loc, 'add')),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
         ],
       ),
     );

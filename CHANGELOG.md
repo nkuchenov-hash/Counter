@@ -11,13 +11,19 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
-## [2026-04-20] - Strike 12: Web accelerator (keyboard-first pickers)
+## [2026-04-06] - Strike 14: Inbox gating & UI polish
+* **Lists / Timeline / Planning / shell (`lists_view.dart` `_filterCategoryId` gate, `timeline_view.dart` / `planning_view.dart` `kIsWeb` chevrons, `app_shell.dart`, `dictionary.dart` `input_placeholder_*`, `tag_contrast.dart` / `chip_component.dart`):** Enforced strict GTD Inbox gating with empty states. Purged redundant manual-add UI/dead code from app_shell, standardized inline placeholders, relocated 'No Tags' settings with dynamic B/W contrast, and implemented Web-only chevron date navigation.
+
+## [2026-04-17] - Strike 13: Inbox paradigm & UI purge
+* **Shell / Lists / task editor:** Purged redundant cloud sync UI. Overhauled Inbox/Lists paradigm: updated localized placeholders, implemented collapsible category tree in Lists settings, restyled cards (leading checkbox, no category pill), and added GTD 'graduate to plan' logic for dating backlog items. (`app_shell.dart` removed `_SyncStatusIcon` / connection overlay; `lists_view.dart` `ListsPage.onEditTask`, `_buildManualCategoryTreeTile` + `ExpansionTile`, underline + green inline add, `_BacklogPlanCard`; `timeline_view.dart` / `planning_view.dart` / `dictionary.dart` `input_placeholder_*`; `shared_widgets.dart` `_PlanningTaskEditSheet` `_startedAsUndatedBacklog` / `plan_graduate_*`.)
+
+## [2026-04-17] - Strike 12: Web accelerator (keyboard-first pickers)
 * **Platform / pickers:** Centralized platform-aware picker logic in picker_entry_modes.dart. Forced all showDatePicker and showTimePicker invocations across the app to default to input mode on Web/Desktop for rapid keyboard entry, while preserving calendar/dial modes for mobile. (`appDatePickerEntryMode` / `appTimePickerEntryMode`, `useKeyboardFriendlyMaterialPickers()`; `global_app_header.dart`, `shared_widgets.dart` `showAppDateTimePicker` + record date pickers, `planning_view.dart` `_changeSingleTaskDate` / `_openPlanningHeaderDatePicker`, `bulk_planning_edit_sheet.dart`.)
 
-## [2026-04-19] - Strike 11: UI reclamation & six critical fixes
+## [2026-04-17] - Strike 11: UI reclamation & six critical fixes
 * **Lists / Planning / shell:** Standardized GlobalAppHeader (Day · Date · Time) and restored Lists inline-add UI. Enforced category colors on filter chips, implemented toggle-to-clear filtering to replace the 'All' chip, indented the Lists category settings tree, and added SharedPreferences persistence for customizable 'No Tags' visibility and color (including pure black/white). (`global_app_header.dart` removes `sectionTitle`; `lists_view.dart` `FilledButton.icon` inline add, `_ListsQuadraticChip` category tints, `_categoryTreeDepthFromPath` manual sheet; `timeline_view.dart` / `planning_view.dart` header call sites; `planning_view.dart` + `chip_component.dart` `TagQuickPickStrip.onTagLongPress` when non-reorder; prefs `no_tags_visible` / `no_tags_color`.)
 
-## [2026-04-18] - Strike 8: Sortable pseudo-tag & UI purge
+## [2026-04-17] - Strike 8: Sortable pseudo-tag & UI purge
 * **Planning / tags:** Purged redundant static tag filter UI. Injected a draggable, synthetic 'No Tags' pseudo-tag (ID -1) into the existing tag prioritization strip, persisting its custom sort order via SharedPreferences to dynamically route untagged tasks in the timeline view. (`planning_view.dart`, prefs key `planning_quick_bar_tag_ids_v1`, `_groupIdsInMasterBarSequence`.)
 
 ## [2026-04-17] - Strike 4: Backlog quarantine & Lists UX

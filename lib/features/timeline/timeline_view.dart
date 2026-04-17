@@ -98,7 +98,6 @@ class TimelineSwipeWrapper extends StatefulWidget {
     required this.onNewTaskForPastDate,
     required this.onStopRecord,
     required this.onDeleteRecord,
-  required this.onManualAdd,
   required this.rules,
   required this.onShowEditRecordSheet,
   });
@@ -118,7 +117,6 @@ class TimelineSwipeWrapper extends StatefulWidget {
   /// PocketBase `records.id` (not legacy `record_id` UUID).
   final Future<void> Function(String systemRowId) onStopRecord;
   final Future<void> Function(String systemRowId) onDeleteRecord;
-  final VoidCallback onManualAdd;
   final List<CategoryRule> rules;
   final void Function(BuildContext context, Map<String, dynamic> data)
       onShowEditRecordSheet;
@@ -216,7 +214,6 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
           onNewTaskForPastDate: widget.onNewTaskForPastDate,
           onStopRecord: widget.onStopRecord,
           onDeleteRecord: widget.onDeleteRecord,
-          onManualAdd: widget.onManualAdd,
           onJumpToConflictDate: widget.onJumpToConflict,
           rules: widget.rules,
           onShowEditRecordSheet: widget.onShowEditRecordSheet,
@@ -248,7 +245,6 @@ class TimelinePage extends StatefulWidget {
     required this.onNewTaskForPastDate,
     required this.onStopRecord,
     required this.onDeleteRecord,
-  required this.onManualAdd,
   required this.rules,
   this.onJumpToConflictDate,
   required this.onShowEditRecordSheet,
@@ -279,7 +275,6 @@ class TimelinePage extends StatefulWidget {
   /// PocketBase `records.id` (not legacy `record_id` UUID).
   final Future<void> Function(String systemRowId) onStopRecord;
   final Future<void> Function(String systemRowId) onDeleteRecord;
-  final VoidCallback onManualAdd;
   final List<CategoryRule> rules;
   final void Function(DateTime date)? onJumpToConflictDate;
   /// Called when user taps a record to edit. Host (e.g. main) shows ActivityDetailSheet.
@@ -482,6 +477,25 @@ class _TimelinePageState extends State<TimelinePage> {
       appBar: AppBar(
         title: Row(
           children: [
+            if (kIsWeb)
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 40,
+                ),
+                icon: const Icon(Icons.chevron_left_rounded),
+                tooltip: t(currentLocale.value, 'date_previous_day'),
+                onPressed: widget.onNavigateToDate == null
+                    ? null
+                    : () {
+                        final d = widget.selectedDate
+                            .subtract(const Duration(days: 1));
+                        widget.onNavigateToDate!(
+                          DateTime(d.year, d.month, d.day),
+                        );
+                      },
+              ),
             Expanded(
               child: GlobalAppHeader(
                 selectedDate: widget.selectedDate,
@@ -489,16 +503,27 @@ class _TimelinePageState extends State<TimelinePage> {
                 onDateSelected: (d) => widget.onNavigateToDate?.call(d),
               ),
             ),
+            if (kIsWeb)
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 40,
+                ),
+                icon: const Icon(Icons.chevron_right_rounded),
+                tooltip: t(currentLocale.value, 'date_next_day'),
+                onPressed: widget.onNavigateToDate == null
+                    ? null
+                    : () {
+                        final d =
+                            widget.selectedDate.add(const Duration(days: 1));
+                        widget.onNavigateToDate!(
+                          DateTime(d.year, d.month, d.day),
+                        );
+                      },
+              ),
           ],
         ),
-        actions: [
-          IconButton(
-            onPressed: widget.onManualAdd,
-            tooltip: t(currentLocale.value, 'add_task'),
-            icon: const Icon(Icons.add_rounded),
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: SafeArea(
         child: Column(
@@ -542,7 +567,6 @@ class _TimelinePageState extends State<TimelinePage> {
                         }
                       },
                       decoration: InputDecoration(
-                        labelText: t(currentLocale.value, 'task_title'),
                         hintText:
                             t(currentLocale.value, 'input_placeholder_record'),
                       ),
