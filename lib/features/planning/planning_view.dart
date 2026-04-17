@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
@@ -316,6 +317,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       initialDate: DateTime.utc(initial.year, initial.month, initial.day),
       firstDate: DateTime.utc(2020),
       lastDate: DateTime.utc(2035),
+      initialEntryMode: appDatePickerEntryMode(),
     );
     if (picked == null || !mounted) return;
     var h = 9;
@@ -783,9 +785,25 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     widget.onDatePicked?.call(day.add(Duration(days: days)));
   }
 
-  void _openPlanningHeaderDatePicker() {
+  Future<void> _openPlanningHeaderDatePicker() async {
     if (_planSelectMode) return;
     final d = widget.selectedDate ?? _today;
+    if (useKeyboardFriendlyMaterialPickers()) {
+      final loc = currentLocale.value;
+      final picked = await showDatePicker(
+        context: context,
+        locale: Locale(loc),
+        initialDate: d,
+        firstDate: DateTime(2020),
+        lastDate: DateTime(2030),
+        initialEntryMode: appDatePickerEntryMode(),
+      );
+      if (picked != null && mounted) {
+        widget.onDatePicked?.call(picked);
+      }
+      return;
+    }
+    if (!mounted) return;
     showDialog<void>(
       context: context,
       builder: (ctx) => _PlanningDatePickerDialog(
@@ -2443,7 +2461,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                               labelText:
                                   t(currentLocale.value, 'task_title'),
                               hintText: t(
-                                  currentLocale.value, 'hint_task_example'),
+                                  currentLocale.value, 'input_placeholder_plan'),
                             ),
                             textInputAction: TextInputAction.done,
                             onSubmitted: (_) => _addTask(),

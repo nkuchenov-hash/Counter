@@ -16,7 +16,6 @@ import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -43,7 +42,7 @@ Future<DateTime?> showAppDateTimePicker(
   final base = initial ?? defaultInitial;
   final loc = currentLocale.value;
 
-  if (kIsWeb) {
+  if (useKeyboardFriendlyMaterialPickers()) {
     final fd = firstDate ?? DateTime.utc(2020);
     final ld = lastDate ?? DateTime.utc(2030);
     final day = await showDatePicker(
@@ -435,6 +434,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   DateTime? _scheduledTime;
   DateTime? _endTime;
   late DateTime _date;
+  /// Undated backlog / list item before any schedule is set (no wall date in [dateKey]).
+  late final bool _startedAsUndatedBacklog;
   final List<TextEditingController> _checklistControllers = [];
   final List<bool> _checklistDone = [];
   late TabController _tabController;
@@ -449,6 +450,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   @override
   void initState() {
     super.initState();
+    _startedAsUndatedBacklog = widget.task.startTime == null &&
+        widget.task.dateKey.trim().length < 10;
     _tabController = TabController(length: 3, vsync: this);
     _titleController = TextEditingController(text: widget.task.title);
     _notesController = TextEditingController(text: widget.task.notes ?? '');
@@ -485,6 +488,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       done: _checklistDone,
     );
   }
+
+  bool get _shouldShowGraduateUi =>
+      _startedAsUndatedBacklog && _scheduledTime != null;
 
   @override
   void dispose() {
@@ -1002,6 +1008,20 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                     ],
                   ),
                 ),
+                if (_shouldShowGraduateUi)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        t(currentLocale.value, 'plan_graduate_warning'),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(
                     16,
@@ -1026,7 +1046,14 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                       const SizedBox(width: 8),
                       FilledButton(
                         onPressed: _commitSave,
-                        child: Text(t(currentLocale.value, 'save')),
+                        child: Text(
+                          t(
+                            currentLocale.value,
+                            _shouldShowGraduateUi
+                                ? 'plan_graduate_from_idea'
+                                : 'save',
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -2304,6 +2331,7 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
       initialDate: _recordDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
+      initialEntryMode: appDatePickerEntryMode(),
     );
     if (d != null && mounted) {
       setState(() {
@@ -2321,6 +2349,7 @@ class _EditRecordSheetState extends State<EditRecordSheet> {
       initialDate: _endDate,
       firstDate: _recordDate,
       lastDate: DateTime(2030),
+      initialEntryMode: appDatePickerEntryMode(),
     );
     if (d != null && mounted) setState(() => _endDate = d);
   }

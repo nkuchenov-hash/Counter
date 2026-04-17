@@ -50,6 +50,14 @@ const Map<String, Map<String, String>> _l10nCore = {
     'lists_chip_mode_manual': 'Manual',
     'lists_chip_bar_sheet_title': 'Quick filters',
     'lists_inline_add_no_category': 'No category available to assign.',
+    'input_placeholder_record': 'Add a new record',
+    'input_placeholder_plan': 'Add a new plan',
+    'input_placeholder_list': 'Add to a list',
+    'lists_no_category_chosen':
+        'No lists chosen. Choose a category to start filling it with ideas.',
+    'plan_graduate_warning':
+        'Adding a date or time moves this item from your list into your plan for that day.',
+    'plan_graduate_from_idea': 'Create a plan from this idea',
     'more_menu_profile': 'Profile & settings',
     'more_menu_categories': 'Categories',
     'tab_stats': 'Stats',
@@ -543,6 +551,14 @@ const Map<String, Map<String, String>> _l10nCore = {
     'lists_chip_mode_manual': 'Вручную',
     'lists_chip_bar_sheet_title': 'Быстрые фильтры',
     'lists_inline_add_no_category': 'Нет категории для назначения.',
+    'input_placeholder_record': 'Добавить запись',
+    'input_placeholder_plan': 'Добавить план',
+    'input_placeholder_list': 'Добавить в список',
+    'lists_no_category_chosen':
+        'Списки не выбраны. Выберите категорию, чтобы начать собирать идеи.',
+    'plan_graduate_warning':
+        'Дата или время перенесут эту задачу из списка в план на этот день.',
+    'plan_graduate_from_idea': 'Создать план из этой идеи',
     'more_menu_profile': 'Профиль и настройки',
     'more_menu_categories': 'Категории',
     'tab_stats': 'Статистика',

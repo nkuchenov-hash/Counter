@@ -6,7 +6,6 @@
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_bar_live_clock.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -16,7 +15,7 @@ Future<void> _pickDayForGlobalHeader(
   void Function(DateTime day) onSelected,
 ) async {
   final loc = currentLocale.value;
-  if (kIsWeb) {
+  if (useKeyboardFriendlyMaterialPickers()) {
     final picked = await showDatePicker(
       context: context,
       locale: Locale(loc),

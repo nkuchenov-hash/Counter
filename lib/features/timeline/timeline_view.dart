@@ -543,7 +543,8 @@ class _TimelinePageState extends State<TimelinePage> {
                       },
                       decoration: InputDecoration(
                         labelText: t(currentLocale.value, 'task_title'),
-                        hintText: t(currentLocale.value, 'hint_task_example'),
+                        hintText:
+                            t(currentLocale.value, 'input_placeholder_record'),
                       ),
                     ),
                   ),

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// APP SHELL — Sovereign Vault Architecture. Dashboard, navigation, FAB, Sync.
+// APP SHELL — Sovereign Vault Architecture. Dashboard, navigation, FAB.
 // UI_ISOLATION (§7). All tab labels via t(). No UI in main.dart.
 // ---------------------------------------------------------------------------
 
@@ -165,54 +165,8 @@ class _SettingsPageState extends State<SettingsPage> {
 }
 
 // ---------------------------------------------------------------------------
-// Sync status icon: green = connected, red = offline.
-// ---------------------------------------------------------------------------
-
-class _SyncStatusIcon extends StatelessWidget {
-  const _SyncStatusIcon({
-    required this.connected,
-    required this.onTap,
-  });
-
-  final bool? connected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = connected == null
-        ? Colors.grey
-        : connected!
-            ? Colors.green
-            : Colors.red;
-    final tooltip = connected == null
-        ? t(currentLocale.value, 'sync_checking')
-        : connected!
-            ? t(currentLocale.value, 'sync_connected')
-            : t(currentLocale.value, 'sync_offline');
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(6),
-            child: Icon(
-              Icons.cloud_rounded,
-              size: 24,
-              color: color,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
 // LifeOS Dashboard: 5 nav destinations; stack index 4–5 = Categories / Profile (More menu).
-// Active record live-timer in Timeline; Sync icon in shell.
+// Active record live-timer in Timeline.
 // ---------------------------------------------------------------------------
 
 class LifeOSDashboard extends StatefulWidget {
@@ -250,9 +204,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   String? _speechLastInitError;
   bool _isVoiceListening = false;
   void Function(String)? _speechStatusCallback;
-
-  bool? _connected;
-  StreamSubscription<bool>? _syncSub;
 
   /// Tracks device-local calendar day so an open session can follow midnight without restart.
   Timer? _deviceLocalMidnightWatchTimer;
@@ -296,10 +247,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _rules = List.from(DatabaseService.instance.rules);
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     unawaited(_loadTasksAndExtras());
-    _syncSub = DatabaseService.instance.connectionStream.listen((connected) {
-      if (!mounted) return;
-      setState(() => _connected = connected);
-    });
 
     _notificationSub = DatabaseService.instance.notifications.listen((msg) {
       if (!mounted || msg == null || msg.isEmpty) return;
@@ -360,48 +307,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   void dispose() {
     CategoryVisibilityPrefs.hiddenIds.removeListener(_categoryVisibilityShellListener);
     _deviceLocalMidnightWatchTimer?.cancel();
-    _syncSub?.cancel();
     _notificationSub?.cancel();
     _categoryRulesSub?.cancel();
     _titleController.dispose();
     _titleFocus.dispose();
     super.dispose();
-  }
-
-  void _showSyncMenu(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t(currentLocale.value, 'sync')),
-        content: Text(t(currentLocale.value, 'refresh_categories_server')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(t(currentLocale.value, 'close')),
-          ),
-          FilledButton(
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              try {
-                await DatabaseService.instance.forceRefreshFromServer();
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(t(currentLocale.value, 'refreshed_from_server'))),
-                  );
-                }
-              } catch (_) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(t(currentLocale.value, 'refresh_failed'))),
-                  );
-                }
-              }
-            },
-            child: Text(t(currentLocale.value, 'refresh_now')),
-          ),
-        ],
-      ),
-    );
   }
 
   String get _selectedDateString =>
@@ -1645,6 +1555,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       ListsPage(
         selectedDate: _selectedDate,
         onDateChanged: (d) => setState(() => _selectedDate = _dateOnly(d)),
+        onEditTask: _openEditDialog,
       ),
       StreamBuilder<List<CategoryRule>>(
         stream: DatabaseService.instance.categoryStream,
@@ -1682,27 +1593,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           },
           child: Scaffold(
             resizeToAvoidBottomInset: true,
-            body: Stack(
-              children: [
-                IndexedStack(
-                  index: _shellPageIndex,
-                  sizing: StackFit.expand,
-                  children: pages,
-                ),
-                PositionedDirectional(
-                  top: MediaQuery.of(context).padding.top + 8,
-                  start: 8,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _SyncStatusIcon(
-                        connected: _connected,
-                        onTap: () => _showSyncMenu(context),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            body: IndexedStack(
+              index: _shellPageIndex,
+              sizing: StackFit.expand,
+              children: pages,
             ),
             floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
             floatingActionButton: !showVoiceFab

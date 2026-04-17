@@ -20,11 +20,14 @@ class ListsPage extends StatefulWidget {
     super.key,
     this.selectedDate,
     this.onDateChanged,
+    this.onEditTask,
   });
 
   /// Wall day for the unified global header (Lists content stays backlog / undated).
   final DateTime? selectedDate;
   final ValueChanged<DateTime>? onDateChanged;
+  /// Opens the shared planning task editor ([ActivityDetailSheet]).
+  final ValueChanged<PlanningTask>? onEditTask;
 
   @override
   State<ListsPage> createState() => _ListsPageState();
@@ -248,16 +251,71 @@ class _ListsPageState extends State<ListsPage>
     unawaited(_reload());
   }
 
+  /// Manual chip picker: tree of [CategoryRule] — parents collapsed by default.
+  Widget _buildManualCategoryTreeTile(
+    CategoryRule r,
+    Set<int> sel,
+    void Function(void Function()) setModal,
+  ) {
+    if (CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) {
+      return const SizedBox.shrink();
+    }
+    final rawKids = r.children ?? const <CategoryRule>[];
+    final kids = rawKids
+        .where((c) => !CategoryVisibilityPrefs.isHiddenOrAncestor(c.id))
+        .toList();
+    final titleName = _categoryRawName(r.id);
+    void toggleSel(bool? v) {
+      setModal(() {
+        if (v == true) {
+          sel.add(r.id);
+        } else {
+          sel.remove(r.id);
+        }
+      });
+    }
+    if (kids.isEmpty) {
+      return CheckboxListTile(
+        value: sel.contains(r.id),
+        onChanged: toggleSel,
+        title: Text(titleName),
+        controlAffinity: ListTileControlAffinity.leading,
+        dense: true,
+      );
+    }
+    return ExpansionTile(
+      key: PageStorageKey<int>(r.id),
+      initiallyExpanded: false,
+      tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+      title: Row(
+        children: [
+          Checkbox(
+            value: sel.contains(r.id),
+            onChanged: toggleSel,
+          ),
+          Expanded(
+            child: Text(
+              titleName,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
+        ],
+      ),
+      children: [
+        for (final c in kids)
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: _buildManualCategoryTreeTile(c, sel, setModal),
+          ),
+      ],
+    );
+  }
+
   Future<void> _openChipBarSettingsSheet() async {
     final loc = currentLocale.value;
     final db = DatabaseService.instance;
     var mode = _chipMode;
     final sel = Set<int>.from(_pinnedChipIds);
-    final pairs = CategoryVisibilityPrefs.filterPairs(
-      db.allCategoryIdPathPairs,
-      (p) => p.id,
-    );
-
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -309,30 +367,10 @@ class _ListsPageState extends State<ListsPage>
                       SizedBox(
                         height: manualListHeight,
                         child: ListView(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
                           children: [
-                            for (final p in pairs)
-                              Padding(
-                                padding: EdgeInsets.only(
-                                  left: _categoryTreeDepthFromPath(p.path) *
-                                      16.0,
-                                ),
-                                child: CheckboxListTile(
-                                  value: sel.contains(p.id),
-                                  onChanged: (v) {
-                                    setModal(() {
-                                      if (v == true) {
-                                        sel.add(p.id);
-                                      } else {
-                                        sel.remove(p.id);
-                                      }
-                                    });
-                                  },
-                                  title: Text(_categoryRawName(p.id)),
-                                  controlAffinity:
-                                      ListTileControlAffinity.leading,
-                                  dense: true,
-                                ),
-                              ),
+                            for (final r in db.rules)
+                              _buildManualCategoryTreeTile(r, sel, setModal),
                           ],
                         ),
                       ),
@@ -692,14 +730,18 @@ class _ListsPageState extends State<ListsPage>
                                         MediaQuery.sizeOf(context).height * 0.25,
                                   ),
                                   Center(
-                                    child: Text(
-                                      t(loc, 'lists_empty'),
-                                      style:
-                                          theme.textTheme.bodyLarge?.copyWith(
-                                        color: theme
-                                            .colorScheme.onSurfaceVariant,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24),
+                                      child: Text(
+                                        t(loc, 'lists_no_category_chosen'),
+                                        style:
+                                            theme.textTheme.bodyLarge?.copyWith(
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                        textAlign: TextAlign.center,
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
                                   ),
                                 ],
@@ -725,7 +767,7 @@ class _ListsPageState extends State<ListsPage>
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
                   child: TextField(
@@ -733,15 +775,31 @@ class _ListsPageState extends State<ListsPage>
                     focusNode: _inlineFocus,
                     textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
-                      hintText: t(loc, 'lists_inline_add_hint'),
-                      border: const OutlineInputBorder(),
+                      hintText: t(loc, 'input_placeholder_list'),
                       isDense: true,
+                      border: InputBorder.none,
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.outline
+                              .withValues(alpha: 0.45),
+                        ),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
                     ),
                     onSubmitted: (_) => _submitInline(),
                   ),
                 ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF43A047),
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: _submitInline,
                   icon: const Icon(Icons.add_rounded),
                   label: Text(t(loc, 'add')),
@@ -790,6 +848,7 @@ class _ListsPageState extends State<ListsPage>
         return _BacklogPlanCard(
           task: task,
           locale: loc,
+          onTap: () => widget.onEditTask?.call(task),
           onPlay: () => _onPlay(task),
           onComplete: () => _onComplete(task),
           onDelete: () {
@@ -866,53 +925,16 @@ String _categoryRawName(int categoryId) {
   return n.isEmpty ? '—' : n;
 }
 
-/// Indent depth for tree-shaped checklists (0 = root category in path).
-int _categoryTreeDepthFromPath(String path) {
-  final parts = path
-      .split(RegExp(r'\s*>\s*'))
-      .map((s) => s.trim())
-      .where((s) => s.isNotEmpty)
-      .toList();
-  if (parts.length <= 1) return 0;
-  return parts.length - 1;
-}
-
 Color _listsCategoryAccentColor(int categoryId) {
   final r = DatabaseService.instance.getCategoryRuleById(categoryId);
   return r?.colorOrDefault ?? Colors.grey;
-}
-
-class _CategorySubcategoryPill extends StatelessWidget {
-  const _CategorySubcategoryPill({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: scheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-      ),
-    );
-  }
 }
 
 class _BacklogPlanCard extends StatelessWidget {
   const _BacklogPlanCard({
     required this.task,
     required this.locale,
+    required this.onTap,
     required this.onPlay,
     required this.onComplete,
     required this.onDelete,
@@ -920,6 +942,7 @@ class _BacklogPlanCard extends StatelessWidget {
 
   final PlanningTask task;
   final String locale;
+  final VoidCallback onTap;
   final VoidCallback onPlay;
   final VoidCallback onComplete;
   final VoidCallback onDelete;
@@ -928,52 +951,57 @@ class _BacklogPlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final err = theme.colorScheme.error;
-    final pillLabel = _categoryRawName(task.categoryId);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Text(
-                task.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Checkbox(
+                  value: false,
+                  onChanged: (v) {
+                    if (v == true) onComplete();
+                  },
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 120),
-              child: _CategorySubcategoryPill(label: pillLabel),
-            ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Tooltip(
-              message: t(locale, 'start'),
-              child: IconButton(
-                icon: const Icon(Icons.play_arrow_rounded),
-                onPressed: onPlay,
+              Expanded(
+                child: Padding(
+                  padding:
+                      const EdgeInsets.only(top: 10, bottom: 10, right: 8),
+                  child: Text(
+                    task.title,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ),
-            ),
-            Tooltip(
-              message: t(locale, 'mark_done'),
-              child: IconButton(
-                icon: const Icon(Icons.check_rounded),
-                onPressed: onComplete,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Tooltip(
+                    message: t(locale, 'start'),
+                    child: IconButton(
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      onPressed: onPlay,
+                    ),
+                  ),
+                  Tooltip(
+                    message: t(locale, 'delete'),
+                    child: IconButton(
+                      icon: Icon(Icons.delete_outline_rounded, color: err),
+                      onPressed: onDelete,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            Tooltip(
-              message: t(locale, 'delete'),
-              child: IconButton(
-                icon: Icon(Icons.delete_outline_rounded, color: err),
-                onPressed: onDelete,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

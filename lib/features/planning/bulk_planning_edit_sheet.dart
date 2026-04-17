@@ -1,4 +1,5 @@
 // Bulk edit: absolute target date + optional same start time for all selected plans. UI only; Brain calls from planning_view.
+import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/cupertino.dart';
@@ -138,6 +139,7 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
       initialDate: _date,
       firstDate: DateTime.utc(2020),
       lastDate: DateTime.utc(2035),
+      initialEntryMode: appDatePickerEntryMode(),
     );
     if (picked != null && mounted) {
       setState(() => _date = DateTime(picked.year, picked.month, picked.day));
@@ -205,7 +207,7 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
       out = await showTimePicker(
         context: context,
         initialTime: initial,
-        initialEntryMode: TimePickerEntryMode.dial,
+        initialEntryMode: appTimePickerEntryMode(),
         builder: (context, child) {
           return MediaQuery(
             data: mq.copyWith(alwaysUse24HourFormat: mq.alwaysUse24HourFormat),
