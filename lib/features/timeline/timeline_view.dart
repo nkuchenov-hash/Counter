@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:counter/core/widgets/app_bar_live_clock.dart';
+import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -8,7 +8,6 @@ import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:counter/core/picker_entry_modes.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -19,9 +18,6 @@ import 'package:intl/intl.dart';
 
 // --- Time helpers: device-local calendar for day strip; profile offset for clock labels only ---
 DateTime _localToday() => DatabaseService.instance.getTimelineDeviceLocalToday();
-
-String _formatDate(DateTime date) =>
-    DateFormat.yMMMd(currentLocale.value).format(date);
 
 bool _isToday(DateTime date) {
   final today = DatabaseService.instance.getTimelineDeviceLocalToday();
@@ -45,14 +41,6 @@ String _formatTimeOfDay(DateTime dt) =>
 
 DateTime _utcToDisplay(DateTime utc) =>
     DatabaseService.instance.applyUserOffset(utc);
-
-DateTime _displayToUtc(DateTime displayNaive) =>
-    DatabaseService.instance.displayTimeToUtc(displayNaive);
-
-String _formatTimeRange(DateTime start, DateTime? end) {
-  if (end == null) return '${_formatTimeOfDay(start)} – now';
-  return '${_formatTimeOfDay(start)} – ${_formatTimeOfDay(end)}';
-}
 
 String _formatDuration(Duration d) {
   final totalSeconds = d.inSeconds;
@@ -91,9 +79,6 @@ bool _timelineSameRecordRow(
   final sysB = _timelineRowSystemId(b);
   return sysA.isNotEmpty && sysA == sysB;
 }
-
-DateTime _displayNow() =>
-    DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
 
 /// Wraps Timeline in a PageView for swipe-to-change date. Exported for LifeOSDashboard.
 class TimelineSwipeWrapper extends StatefulWidget {
@@ -492,91 +477,17 @@ class _TimelinePageState extends State<TimelinePage> {
 
   @override
   Widget build(BuildContext context) {
-    final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ??
-        const TextStyle(fontSize: 20, fontWeight: FontWeight.w500);
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Row(
           children: [
             Expanded(
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: widget.onNavigateToDate == null
-                      ? null
-                      : () async {
-                          final loc = currentLocale.value;
-                          if (kIsWeb) {
-                            final picked = await showDatePicker(
-                              context: context,
-                              locale: Locale(loc),
-                              initialDate: widget.selectedDate,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2035),
-                              initialEntryMode: appDatePickerEntryMode(),
-                            );
-                            if (picked != null && context.mounted) {
-                              widget.onNavigateToDate?.call(
-                                DateTime(
-                                  picked.year,
-                                  picked.month,
-                                  picked.day,
-                                ),
-                              );
-                            }
-                            return;
-                          }
-                          final picked = await showDialog<DateTime>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text(t(loc, 'calendar')),
-                              content: SizedBox(
-                                width: 320,
-                                child: CalendarDatePicker(
-                                  initialDate: widget.selectedDate,
-                                  firstDate: DateTime(2020),
-                                  lastDate: DateTime(2035),
-                                  onDateChanged: (d) {
-                                    Navigator.of(ctx).pop(
-                                      DateTime(d.year, d.month, d.day),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                          if (picked != null && context.mounted) {
-                            widget.onNavigateToDate?.call(picked);
-                          }
-                        },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            '${t(currentLocale.value, 'tab_timeline')} • ${_formatDate(widget.selectedDate)}',
-                            style: titleStyle,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(' • ', style: titleStyle),
-                        AppBarLiveClock(
-                          textStyle: titleStyle.copyWith(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              child: GlobalAppHeader(
+                sectionTitle: t(currentLocale.value, 'tab_timeline'),
+                selectedDate: widget.selectedDate,
+                enabled: widget.onNavigateToDate != null,
+                onDateSelected: (d) => widget.onNavigateToDate?.call(d),
               ),
             ),
           ],

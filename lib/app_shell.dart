@@ -19,11 +19,11 @@ import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
-import 'package:counter/features/timeline/timeline_view.dart' hide showAppDateTimePicker;
+import 'package:counter/features/timeline/timeline_view.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart' show Listenable, kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -1642,7 +1642,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         },
         onJumpToTimeline: () => setState(() => _shellPageIndex = 0),
       ),
-      const ListsPage(),
+      ListsPage(
+        selectedDate: _selectedDate,
+        onDateChanged: (d) => setState(() => _selectedDate = _dateOnly(d)),
+      ),
       StreamBuilder<List<CategoryRule>>(
         stream: DatabaseService.instance.categoryStream,
         initialData: _rules,
@@ -1688,7 +1691,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 ),
                 PositionedDirectional(
                   top: MediaQuery.of(context).padding.top + 8,
-                  end: 8,
+                  start: 8,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

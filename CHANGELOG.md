@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-04-18] - Strike 8: Sortable pseudo-tag & UI purge
+* **Planning / tags:** Purged redundant static tag filter UI. Injected a draggable, synthetic 'No Tags' pseudo-tag (ID -1) into the existing tag prioritization strip, persisting its custom sort order via SharedPreferences to dynamically route untagged tasks in the timeline view. (`planning_view.dart`, prefs key `planning_quick_bar_tag_ids_v1`, `_groupIdsInMasterBarSequence`.)
+
 ## [2026-04-17] - Strike 4: Backlog quarantine & Lists UX
 * **Backlog / Lists:** Quarantined backlog data by bypassing the dateKey/startTime optimistic defaults in database_service.dart. Implemented horizontal quadratic category chips with SharedPreferences persistence and enforced leaf-node strictness for inline item creation.
 

@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
@@ -15,7 +16,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Backlog screen: grouped headers by category path, Play + Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
-  const ListsPage({super.key});
+  const ListsPage({
+    super.key,
+    this.selectedDate,
+    this.onDateChanged,
+  });
+
+  /// Wall day for the unified global header (Lists content stays backlog / undated).
+  final DateTime? selectedDate;
+  final ValueChanged<DateTime>? onDateChanged;
 
   @override
   State<ListsPage> createState() => _ListsPageState();
@@ -347,6 +356,7 @@ class _ListsPageState extends State<ListsPage>
                               _onFilterChanged(null);
                             }
                           }
+                          unawaited(_reload());
                         },
                         child: Text(t(loc, 'save')),
                       ),
@@ -613,6 +623,8 @@ class _ListsPageState extends State<ListsPage>
     final loc = currentLocale.value;
     final theme = Theme.of(context);
     final filterId = _filterCategoryId;
+    final headerDay = widget.selectedDate ??
+        DatabaseService.instance.getTimelineDeviceLocalToday();
 
     return ValueListenableBuilder<List<int>>(
       valueListenable: CategoryVisibilityPrefs.hiddenIds,
@@ -620,7 +632,12 @@ class _ListsPageState extends State<ListsPage>
         final chipIds = _chipIdsForBar();
         return Scaffold(
       appBar: AppBar(
-        title: Text(t(loc, 'lists_title')),
+        title: GlobalAppHeader(
+          sectionTitle: t(loc, 'tab_lists'),
+          selectedDate: headerDay,
+          enabled: widget.onDateChanged != null,
+          onDateSelected: (d) => widget.onDateChanged?.call(d),
+        ),
         actions: [
           IconButton(
             tooltip: t(loc, 'lists_chip_bar_settings_tooltip'),
@@ -655,32 +672,6 @@ class _ListsPageState extends State<ListsPage>
                       onTap: () => _onFilterChanged(id),
                     ),
                   ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _inlineController,
-                    focusNode: _inlineFocus,
-                    textInputAction: TextInputAction.done,
-                    decoration: InputDecoration(
-                      hintText: t(loc, 'lists_inline_add_hint'),
-                      border: const OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    onSubmitted: (_) => _submitInline(),
-                  ),
-                ),
-                IconButton(
-                  tooltip: t(loc, 'add'),
-                  onPressed: _submitInline,
-                  icon: const Icon(Icons.add),
-                ),
               ],
             ),
           ),
@@ -731,6 +722,32 @@ class _ListsPageState extends State<ListsPage>
                       );
                     },
                   ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _inlineController,
+                    focusNode: _inlineFocus,
+                    textInputAction: TextInputAction.done,
+                    decoration: InputDecoration(
+                      hintText: t(loc, 'lists_inline_add_hint'),
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    onSubmitted: (_) => _submitInline(),
+                  ),
+                ),
+                IconButton(
+                  tooltip: t(loc, 'add'),
+                  onPressed: _submitInline,
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
           ),
         ],
       ),

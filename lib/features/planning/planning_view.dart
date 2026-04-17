@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -25,7 +26,6 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum _PlanSortMode { category, time, tags, custom }
@@ -2067,13 +2067,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final headerDate = widget.selectedDate ?? _today;
-    String dateStr;
-    try {
-      dateStr = DateFormat.yMMMMd(currentLocale.value).format(headerDate);
-    } catch (_) {
-      dateStr =
-          '${headerDate.year}-${headerDate.month.toString().padLeft(2, '0')}-${headerDate.day.toString().padLeft(2, '0')}';
-    }
 
     return StreamBuilder<List<PlanningTask>>(
       stream: _planningStream,
@@ -2165,16 +2158,12 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                         onPressed: () => _shiftPlanningDay(-1),
                       ),
                       Expanded(
-                        child: InkWell(
-                          onTap: _openPlanningHeaderDatePicker,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            child: Text(
-                              '${t(currentLocale.value, 'planning')} · $dateStr',
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
+                        child: GlobalAppHeader(
+                          sectionTitle:
+                              t(currentLocale.value, 'planning'),
+                          selectedDate: headerDate,
+                          onDateSelected: (d) =>
+                              widget.onDatePicked?.call(d),
                         ),
                       ),
                       IconButton(
