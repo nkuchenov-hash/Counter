@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-04-06] - Strike 19: Idea Editor (GTD layout + Markdown toolbar)
+* **Idea Editor (`lib/features/shared/shared_widgets.dart` `_PlanningTaskEditSheet`, `lib/l10n/dictionary.dart` `notes_md_*`):** Overhauled the Idea Editor into a strict 3-tab GTD layout (Notes, Checklist, Schedule), completely purging the Tag UI for undated backlog items. Implemented a lightweight, schema-safe Markdown injection toolbar for the Notes field, avoiding heavy WYSIWYG dependencies while preserving the Optimistic UI speed.
+
 ## [2026-04-17] - Strike 17: Omni-Picker refinement
 * **Platform / omni-picker (`lib/core/widgets/omni_date_time_picker_dialog.dart`, `showAppDateTimePicker` keyboard path in `shared_widgets.dart`):** Refined the Web/Desktop Omni-Picker into a hybrid UI, combining Flutter's native CalendarDatePicker for visual day selection with a custom-styled, large-format digital text input for time. Maintained the single-dialog Omni-Picker Law while drastically improving visual hierarchy and desktop input ergonomics. Replaced `InputDatePickerFormField` with `CalendarDatePicker` + `ValueKey` sync; soft rounded HH:mm fields, divider, ~350px content width; mobile/touch path unchanged (`omni_datetime_picker`).
 
