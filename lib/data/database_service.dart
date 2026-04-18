@@ -467,7 +467,8 @@ class DatabaseService {
           t.endDateTime!.second,
         ],
       'checklist': t.checklist,
-      'note': t.notes,
+      'notes_plain': t.notesPlain,
+      'notes_delta': t.notesDeltaJson,
       'parent_plan_id': t.parentPlanId,
       'isSynced': t.isSynced,
       if (t.initialDateKey != null && t.initialDateKey!.trim().length >= 10)
@@ -519,6 +520,20 @@ class DatabaseService {
             ),
       ];
     }
+    final deltaRaw = m['notes_delta'];
+    String? deltaJsonStr;
+    if (deltaRaw != null) {
+      if (deltaRaw is String) {
+        final s = deltaRaw.trim();
+        deltaJsonStr = s.isEmpty ? null : s;
+      } else {
+        try {
+          deltaJsonStr = jsonEncode(deltaRaw);
+        } catch (_) {
+          deltaJsonStr = null;
+        }
+      }
+    }
     return PlanningTask(
       id: int.tryParse((m['id'] ?? '').toString()) ?? 0,
       planRowId: m['plan_row_id']?.toString(),
@@ -535,7 +550,8 @@ class DatabaseService {
       endDateTime: wallFromList(m['end_wall']),
       endDateKey: (m['endDateKey'] ?? m['dateKey'] ?? '').toString(),
       checklist: parseChecklistFromNocoList(m['checklist']),
-      notes: m['note']?.toString(),
+      notesPlain: m['notes_plain']?.toString() ?? m['note']?.toString(),
+      notesDeltaJson: deltaJsonStr,
       parentPlanId: m['parent_plan_id'] == null
           ? null
           : int.tryParse(m['parent_plan_id'].toString()),
@@ -2094,8 +2110,8 @@ class DatabaseService {
         'startTime': startDisplay,
         'endDateTime': endDisplay,
         'checklist': d['checklist'],
-        'note': d['note'],
-        'notes': d['note'],
+        'notes_plain': d['notes_plain'] ?? d['note'],
+        'notes_delta': d['notes_delta'],
         'parent_plan_id': d['parent_plan_id'],
         'initial_date_key': d['initial_date_key'],
         'is_postponed': d['is_postponed'],
@@ -8047,7 +8063,6 @@ class DatabaseService {
           endDateTime: null,
           rrule: null,
           checklist: const [],
-          notes: null,
           parentPlanId: null,
           tags: const [],
           isSynced: false,
@@ -8109,7 +8124,6 @@ class DatabaseService {
         startTime: startStored,
         endDateTime: endStored,
         checklist: const [],
-        notes: null,
         parentPlanId: null,
         tags: const [],
         isSynced: false,
@@ -9019,8 +9033,15 @@ class DatabaseService {
     if (task.parentPlanId != null) {
       body['parent_plan_id'] = task.parentPlanId.toString();
     }
-    if (task.notes != null && task.notes!.trim().isNotEmpty) {
-      body['note'] = task.notes;
+    final np = task.notesPlain?.trim() ?? '';
+    if (np.isNotEmpty) {
+      body['notes_plain'] = np;
+    }
+    final ndRaw = task.notesDeltaJson?.trim() ?? '';
+    if (ndRaw.isNotEmpty) {
+      try {
+        body['notes_delta'] = jsonDecode(ndRaw);
+      } catch (_) {}
     }
     final idk = task.initialDateKey?.trim() ?? '';
     if (idk.length >= 10) {
@@ -9408,7 +9429,8 @@ class DatabaseService {
     String? title,
     int? categoryId,
     bool? isDone,
-    String? notes,
+    String? notesPlain,
+    String? notesDeltaJson,
     List<Map<String, dynamic>>? checklist,
     int? parentPlanId,
     int? order,
@@ -9433,7 +9455,22 @@ class DatabaseService {
       }
     }
     if (isDone != null) fields['is_done'] = isDone;
-    if (notes != null) fields['note'] = notes;
+    if (notesPlain != null) {
+      final nt = notesPlain.trim();
+      fields['notes_plain'] = nt.isEmpty ? null : nt;
+    }
+    if (notesDeltaJson != null) {
+      final nd = notesDeltaJson.trim();
+      if (nd.isEmpty) {
+        fields['notes_delta'] = null;
+      } else {
+        try {
+          fields['notes_delta'] = jsonDecode(nd);
+        } catch (_) {
+          fields['notes_delta'] = null;
+        }
+      }
+    }
     if (checklist != null) fields['checklist'] = checklist;
     if (parentPlanId != null) {
       fields['parent_plan_id'] = parentPlanId.toString();
@@ -9722,7 +9759,8 @@ class DatabaseService {
         startTime: wallTimes.$1,
         endDateTime: wallTimes.$2,
         checklist: _copyChecklistForMaterialize(parent.checklist),
-        notes: parent.notes,
+        notesPlain: parent.notesPlain,
+        notesDeltaJson: parent.notesDeltaJson,
         tags: List<Tag>.from(parent.tags),
         initialDateKey: day,
         isPostponed: false,
@@ -9768,7 +9806,8 @@ class DatabaseService {
     String? title,
     int? categoryId,
     bool? isDone,
-    String? notes,
+    String? notesPlain,
+    String? notesDeltaJson,
     List<Map<String, dynamic>>? checklist,
     int? parentPlanId,
     int? order,
@@ -9807,7 +9846,8 @@ class DatabaseService {
 
       final disallowedExtras = title != null ||
           categoryId != null ||
-          notes != null ||
+          notesPlain != null ||
+          notesDeltaJson != null ||
           checklist != null ||
           parentPlanId != null ||
           order != null ||
@@ -9853,7 +9893,8 @@ class DatabaseService {
       title: title,
       categoryId: categoryId,
       isDone: isDone,
-      notes: notes,
+      notesPlain: notesPlain,
+      notesDeltaJson: notesDeltaJson,
       checklist: checklist,
       parentPlanId: parentPlanId,
       order: order,

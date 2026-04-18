@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
@@ -19,6 +20,7 @@ import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 
@@ -420,7 +422,8 @@ class _PlanningTaskEditSheet extends StatefulWidget {
 class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     with SingleTickerProviderStateMixin {
   late final TextEditingController _titleController;
-  late final TextEditingController _notesController;
+  late final QuillController _quillController;
+  late final FocusNode _quillFocusNode;
   late final TextEditingController _linkController;
   late int _categoryId;
   DateTime? _scheduledTime;
@@ -446,8 +449,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         widget.task.dateKey.trim().length < 10;
     _tabController = TabController(length: 3, vsync: this);
     _titleController = TextEditingController(text: widget.task.title);
-    final parsedNotes = _parseStoredNotesForLink(widget.task.notes);
-    _notesController = TextEditingController(text: parsedNotes.body);
+    final parsedNotes = _parseStoredNotesForLink(widget.task.notesPlain);
+    _quillController = QuillController(
+      document: _documentForPlanningNotes(parsedNotes.body),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    _quillFocusNode = FocusNode();
     _linkController = TextEditingController(text: parsedNotes.link);
     _categoryId = widget.task.categoryId;
     _selectedTags = List<Tag>.from(widget.task.tags);
@@ -494,7 +501,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   void dispose() {
     _tabController.dispose();
     _titleController.dispose();
-    _notesController.dispose();
+    _quillController.dispose();
+    _quillFocusNode.dispose();
     _linkController.dispose();
     for (final c in _checklistControllers) {
       c.dispose();
@@ -558,7 +566,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     });
   }
 
-  /// Optional URL line prefix in [notes] for backlog ideas (no separate PB field).
+  /// Optional URL line prefix in [notesPlain] for backlog ideas (no separate PB field).
   static const String _kLifeOsLinkPrefix = 'LIFEOS_LINK::';
 
   ({String link, String body}) _parseStoredNotesForLink(String? raw) {
@@ -586,140 +594,42 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     return '$_kLifeOsLinkPrefix$l\n$b';
   }
 
+  /// Builds initial Quill [Document] from stored delta or legacy plain-only [legacyPlainBody].
+  Document _documentForPlanningNotes(String legacyPlainBody) {
+    final deltaRaw = widget.task.notesDeltaJson?.trim() ?? '';
+    if (deltaRaw.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(deltaRaw);
+        if (decoded is List) {
+          return Document.fromJson(decoded);
+        }
+      } catch (_) {}
+    }
+    final b = legacyPlainBody.trim();
+    if (b.isNotEmpty) {
+      return Document.fromJson([
+        <String, dynamic>{'insert': '$b\n'},
+      ]);
+    }
+    return Document();
+  }
+
+  bool _isTrivialEmptyNotes(String deltaJson, String plainTrimmed) {
+    if (plainTrimmed.isNotEmpty) return false;
+    try {
+      final d = jsonDecode(deltaJson);
+      if (d is! List) return true;
+      if (d.isEmpty) return true;
+      if (d.length == 1 && d[0] is Map) {
+        final m = Map<String, dynamic>.from(d[0] as Map);
+        if (m['insert'] == '\n' && m['attributes'] == null) return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   String _dateKeyFromDate(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   String _shortMonth(int month) => month >= 1 && month <= 12 ? _shortMonths[month - 1] : '';
-
-  void _notesInsertAt(int start, int end, String replacement) {
-    final c = _notesController;
-    final text = c.text;
-    final s = start.clamp(0, text.length);
-    final e = end.clamp(0, text.length);
-    final newText = text.replaceRange(s, e, replacement);
-    final newOff = s + replacement.length;
-    c.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newOff),
-    );
-    setState(() {});
-  }
-
-  void _notesWrapSelection(String left, String right) {
-    final c = _notesController;
-    final text = c.text;
-    final sel = c.selection;
-    if (!sel.isValid) return;
-    final start = sel.start.clamp(0, text.length);
-    final end = sel.end.clamp(0, text.length);
-    final inner = text.substring(start, end);
-    final replacement = '$left$inner$right';
-    _notesInsertAt(start, end, replacement);
-  }
-
-  void _injectNotesMarkdownBold() {
-    final c = _notesController;
-    final sel = c.selection;
-    if (sel.isValid && !sel.isCollapsed) {
-      _notesWrapSelection('**', '**');
-      return;
-    }
-    final text = c.text;
-    final start = sel.isValid ? sel.start.clamp(0, text.length) : text.length;
-    const ins = '****';
-    final newText = text.replaceRange(start, start, ins);
-    c.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: start + 2),
-    );
-    setState(() {});
-  }
-
-  void _injectNotesMarkdownItalic() {
-    final c = _notesController;
-    final sel = c.selection;
-    if (sel.isValid && !sel.isCollapsed) {
-      _notesWrapSelection('*', '*');
-      return;
-    }
-    final text = c.text;
-    final start = sel.isValid ? sel.start.clamp(0, text.length) : text.length;
-    const ins = '**';
-    final newText = text.replaceRange(start, start, ins);
-    c.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: start + 1),
-    );
-    setState(() {});
-  }
-
-  void _injectNotesMarkdownBullet() {
-    final c = _notesController;
-    final text = c.text;
-    final sel = c.selection;
-    final pos = sel.isValid ? sel.start.clamp(0, text.length) : text.length;
-    final ins = pos == 0 ? '- ' : '\n- ';
-    _notesInsertAt(pos, pos, ins);
-  }
-
-  void _injectNotesMarkdownCheckbox() {
-    final c = _notesController;
-    final text = c.text;
-    final sel = c.selection;
-    final pos = sel.isValid ? sel.start.clamp(0, text.length) : text.length;
-    final ins = pos == 0 ? '- [ ] ' : '\n- [ ] ';
-    _notesInsertAt(pos, pos, ins);
-  }
-
-  Widget _buildNotesMarkdownToolbar(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.55),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          IconButton(
-            tooltip: t(currentLocale.value, 'notes_md_bold'),
-            icon: const Icon(Icons.format_bold, size: 22),
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            onPressed: _injectNotesMarkdownBold,
-          ),
-          IconButton(
-            tooltip: t(currentLocale.value, 'notes_md_italic'),
-            icon: const Icon(Icons.format_italic, size: 22),
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            onPressed: _injectNotesMarkdownItalic,
-          ),
-          IconButton(
-            tooltip: t(currentLocale.value, 'notes_md_bullet'),
-            icon: const Icon(Icons.format_list_bulleted, size: 22),
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            onPressed: _injectNotesMarkdownBullet,
-          ),
-          IconButton(
-            tooltip: t(currentLocale.value, 'notes_md_checkbox'),
-            icon: const Icon(Icons.check_box_outlined, size: 22),
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-            onPressed: _injectNotesMarkdownCheckbox,
-          ),
-        ],
-      ),
-    );
-  }
 
   void _commitSave() {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
@@ -741,35 +651,74 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     }
     final rruleWire = _rruleWireFromRepeatUi(_repeatUi, _rruleCustomRaw);
     final clearR = rruleWire == null;
-    final updated = widget.task.copyWith(
-      title: title,
-      categoryId: catId,
-      startTime: _scheduledTime,
-      date: _date,
-      dateKey: newDateKey,
-      endDateTime: _endTime != null
-          ? DateTime(_date.year, _date.month, _date.day, _endTime!.hour, _endTime!.minute)
-          : null,
-      endDateKey: _endTime != null ? newDateKey : null,
-      checklist: checklist,
-      notes: _startedAsUndatedBacklog
-          ? _composeNotesWithOptionalLink(
-              _notesController.text,
-              _linkController.text,
-            )
-          : (_notesController.text.trim().isEmpty
-              ? null
-              : _notesController.text.trim()),
-      tags: _startedAsUndatedBacklog
-          ? <Tag>[]
-          : List<Tag>.from(_selectedTags),
-      rrule: rruleWire,
-      clearRrule: clearR,
-      exceptionDates:
-          clearR ? const <String>[] : List<String>.from(widget.task.exceptionDates),
-      reminderOffset: _reminderMinutes,
-      clearReminderOffset: _reminderMinutes == null,
-    );
+    final deltaJson =
+        jsonEncode(_quillController.document.toDelta().toJson());
+    final plainTrimmed = _quillController.document
+        .toPlainText()
+        .replaceAll('\u200b', '')
+        .trim();
+    String? notesPlainOut;
+    String? notesDeltaJsonOut;
+    if (_startedAsUndatedBacklog) {
+      notesPlainOut =
+          _composeNotesWithOptionalLink(plainTrimmed, _linkController.text);
+      notesDeltaJsonOut = deltaJson;
+    } else {
+      notesPlainOut = plainTrimmed.isEmpty ? null : plainTrimmed;
+      notesDeltaJsonOut = deltaJson;
+    }
+    final shouldClear = notesPlainOut == null &&
+        _isTrivialEmptyNotes(deltaJson, plainTrimmed);
+    final updated = shouldClear
+        ? widget.task.copyWith(
+            title: title,
+            categoryId: catId,
+            startTime: _scheduledTime,
+            date: _date,
+            dateKey: newDateKey,
+            endDateTime: _endTime != null
+                ? DateTime(_date.year, _date.month, _date.day, _endTime!.hour,
+                    _endTime!.minute)
+                : null,
+            endDateKey: _endTime != null ? newDateKey : null,
+            checklist: checklist,
+            clearNotes: true,
+            tags: _startedAsUndatedBacklog
+                ? <Tag>[]
+                : List<Tag>.from(_selectedTags),
+            rrule: rruleWire,
+            clearRrule: clearR,
+            exceptionDates: clearR
+                ? const <String>[]
+                : List<String>.from(widget.task.exceptionDates),
+            reminderOffset: _reminderMinutes,
+            clearReminderOffset: _reminderMinutes == null,
+          )
+        : widget.task.copyWith(
+            title: title,
+            categoryId: catId,
+            startTime: _scheduledTime,
+            date: _date,
+            dateKey: newDateKey,
+            endDateTime: _endTime != null
+                ? DateTime(_date.year, _date.month, _date.day, _endTime!.hour,
+                    _endTime!.minute)
+                : null,
+            endDateKey: _endTime != null ? newDateKey : null,
+            checklist: checklist,
+            notesPlain: notesPlainOut,
+            notesDeltaJson: notesDeltaJsonOut,
+            tags: _startedAsUndatedBacklog
+                ? <Tag>[]
+                : List<Tag>.from(_selectedTags),
+            rrule: rruleWire,
+            clearRrule: clearR,
+            exceptionDates: clearR
+                ? const <String>[]
+                : List<String>.from(widget.task.exceptionDates),
+            reminderOffset: _reminderMinutes,
+            clearReminderOffset: _reminderMinutes == null,
+          );
     if (widget.onSaved != null) {
       widget.onSaved!(updated);
     } else {
@@ -885,45 +834,105 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      ListView(
-                        controller: widget.scrollController,
+                      Padding(
                         padding: EdgeInsets.fromLTRB(
                           16,
-                          12,
+                          8,
                           16,
                           24 + MediaQuery.of(context).viewInsets.bottom,
                         ),
-                        children: [
-                          _buildNotesMarkdownToolbar(context),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _notesController,
-                            minLines: 4,
-                            maxLines: 18,
-                            decoration: InputDecoration(
-                              labelText: t(currentLocale.value, 'notes'),
-                              hintText:
-                                  t(currentLocale.value, 'notes_hint_flat'),
-                              border: const OutlineInputBorder(),
-                            ),
-                            textCapitalization: TextCapitalization.sentences,
-                          ),
-                          if (_startedAsUndatedBacklog) ...[
-                            const SizedBox(height: 16),
-                            TextField(
-                              controller: _linkController,
-                              keyboardType: TextInputType.url,
-                              textInputAction: TextInputAction.done,
-                              decoration: InputDecoration(
-                                labelText: t(
-                                  currentLocale.value,
-                                  'plan_idea_link_label',
-                                ),
-                                border: const OutlineInputBorder(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            QuillSimpleToolbar(
+                              controller: _quillController,
+                              config: QuillSimpleToolbarConfig(
+                                showFontFamily: false,
+                                showFontSize: false,
+                                showBoldButton: true,
+                                showItalicButton: true,
+                                showUnderLineButton: true,
+                                showStrikeThrough: true,
+                                showInlineCode: false,
+                                showColorButton: true,
+                                showBackgroundColorButton: false,
+                                showClearFormat: true,
+                                showAlignmentButtons: false,
+                                showHeaderStyle: false,
+                                showListNumbers: true,
+                                showListBullets: true,
+                                showListCheck: true,
+                                showCodeBlock: false,
+                                showQuote: false,
+                                showIndent: false,
+                                showLink: false,
+                                showUndo: false,
+                                showRedo: false,
+                                showSearchButton: false,
+                                showSubscript: false,
+                                showSuperscript: false,
+                                showSmallButton: false,
+                                showLineHeightButton: false,
+                                showDirection: false,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color:
+                                      Theme.of(context).colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outlineVariant
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: QuillEditor.basic(
+                                  controller: _quillController,
+                                  focusNode: _quillFocusNode,
+                                  scrollController: widget.scrollController,
+                                  config: QuillEditorConfig(
+                                    expands: true,
+                                    padding: const EdgeInsets.all(12),
+                                    placeholder: t(
+                                      currentLocale.value,
+                                      'notes_hint_flat',
+                                    ),
+                                    customStyles:
+                                        DefaultStyles.getInstance(context),
+                                    keyboardAppearance:
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Brightness.dark
+                                            : Brightness.light,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (_startedAsUndatedBacklog) ...[
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: _linkController,
+                                keyboardType: TextInputType.url,
+                                textInputAction: TextInputAction.done,
+                                decoration: InputDecoration(
+                                  labelText: t(
+                                    currentLocale.value,
+                                    'plan_idea_link_label',
+                                  ),
+                                  border: const OutlineInputBorder(),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                       ListView(
                         padding: EdgeInsets.fromLTRB(

@@ -1791,7 +1791,8 @@ class PlanningTask {
     this.endDateTime,
     String? endDateKey,
     this.checklist = const [],
-    this.notes,
+    this.notesPlain,
+    this.notesDeltaJson,
     this.parentPlanId,
     List<int>? subRecordIds,
     List<Tag>? tags,
@@ -1848,7 +1849,10 @@ class PlanningTask {
   final DateTime? endDateTime;
   final String endDateKey;
   final List<Map<String, dynamic>> checklist;
-  final String? notes;
+  /// @DATA_MAP `plans.notes_plain` — searchable plain text (may include `LIFEOS_LINK::` prefix for backlog ideas).
+  final String? notesPlain;
+  /// JSON-encoded Quill Delta (`Document.toDelta().toJson()`), @DATA_MAP `plans.notes_delta`.
+  final String? notesDeltaJson;
   final int? parentPlanId;
   final List<int> subRecordIds;
   final List<Tag> tags;
@@ -1873,8 +1877,13 @@ class PlanningTask {
   /// JIT expansion only: which wall day this virtual row represents; not stored on PB.
   final String? recurrenceInstanceDateKey;
 
-  /// @DATA_MAP `plans.note`.
-  bool get hasNotes => notes != null && notes!.trim().isNotEmpty;
+  /// True when rich notes or legacy plain-only content exists.
+  bool get hasNotes {
+    final p = notesPlain?.trim() ?? '';
+    if (p.isNotEmpty) return true;
+    final d = notesDeltaJson?.trim() ?? '';
+    return d.isNotEmpty;
+  }
 
   /// @DATA_MAP `plans.checklist`.
   bool get hasChecklist => checklist.isNotEmpty;
@@ -1905,7 +1914,9 @@ class PlanningTask {
         'is_done': isDone,
         'isSynced': isSynced,
         if (parentPlanId != null) 'parent_plan_id': parentPlanId.toString(),
-        if (notes != null && notes!.isNotEmpty) 'note': notes,
+        if (notesPlain != null && notesPlain!.isNotEmpty) 'notes_plain': notesPlain,
+        if (notesDeltaJson != null && notesDeltaJson!.trim().isNotEmpty)
+          'notes_delta': notesDeltaJson,
         if (checklist.isNotEmpty) 'checklist': checklist,
         if (startTime != null) 'start_time': startTime!.toUtc().toIso8601String(),
         if (endDateTime != null) 'end_time': endDateTime!.toUtc().toIso8601String(),
@@ -1946,8 +1957,11 @@ class PlanningTask {
     }
     final endDateKey = (g('endDateKey', 'end_date_key') as String?) ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey);
     final checklist = parseChecklistFromNocoList(json['checklist']);
-    final notes =
-        json['note']?.toString() ?? json['notes']?.toString();
+    final notesPlain =
+        json['notes_plain']?.toString() ??
+        json['note']?.toString() ??
+        json['notes']?.toString();
+    final notesDeltaJson = _notesDeltaJsonFromPb(json['notes_delta']);
     final pp = g('parentPlanId', 'parent_plan_id');
     final int? parentPlanId = pp == null || pp.toString().isEmpty ? null : _jsonInt(pp);
     final rawSubIds = g('subRecordIds', 'sub_record_ids');
@@ -2021,7 +2035,8 @@ class PlanningTask {
       endDateTime: endDateTime,
       endDateKey: endDateKey,
       checklist: checklist,
-      notes: notes,
+      notesPlain: notesPlain,
+      notesDeltaJson: notesDeltaJson,
       parentPlanId: parentPlanId,
       subRecordIds: subRecordIds,
       tags: tagList,
@@ -2086,6 +2101,19 @@ class PlanningTask {
     if (v is int) return v;
     if (v is num) return v.toInt();
     return int.tryParse(v.toString());
+  }
+
+  static String? _notesDeltaJsonFromPb(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is String) {
+      final s = raw.trim();
+      return s.isEmpty ? null : s;
+    }
+    try {
+      return jsonEncode(raw);
+    } catch (_) {
+      return null;
+    }
   }
 
   static String? _normInitialDateKey(String? raw) {
@@ -2216,7 +2244,9 @@ class PlanningTask {
     String? endDateKey,
     bool clearEnd = false,
     List<Map<String, dynamic>>? checklist,
-    String? notes,
+    String? notesPlain,
+    String? notesDeltaJson,
+    bool clearNotes = false,
     int? parentPlanId,
     List<int>? subRecordIds,
     List<Tag>? tags,
@@ -2246,7 +2276,8 @@ class PlanningTask {
       endDateTime: eDt,
       endDateKey: eDk,
       checklist: checklist ?? this.checklist,
-      notes: notes ?? this.notes,
+      notesPlain: clearNotes ? null : (notesPlain ?? this.notesPlain),
+      notesDeltaJson: clearNotes ? null : (notesDeltaJson ?? this.notesDeltaJson),
       parentPlanId: parentPlanId ?? this.parentPlanId,
       subRecordIds: subRecordIds ?? this.subRecordIds,
       tags: tags ?? this.tags,

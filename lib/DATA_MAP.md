@@ -119,7 +119,8 @@ description: Revisions and corrections for DATA_MAP.md.
 | **parent_plan_id**| Relation | Hierarchy | NO | Relation to **plans** `id` (15-char, **self-collection**). Optional parent plan for sub-tasks; use `expand` for nested plan trees. |
 | **checklist** | JSON | Complex | **YES** | Array of sub-items (default: `[]`). |
 | **order** | Number | UI | **YES** | Manual sorting index (default: `0`). |
-| **note** | String | Text | NO | Personal notes or extra details. |
+| **notes_delta** | JSON | Complex | NO | Quill Delta (JSON array) for rich-text notes in the Idea Editor. |
+| **notes_plain** | String | Text | NO | Plain-text extraction of notes for search and legacy display; may include `LIFEOS_LINK::` prefix for backlog link (see app). |
 | **tags** | String | Data | NO | Comma-separated tags string. |
 | **tags_link** | Relation (Mult)| **Expand** | NO | PB Relation to the `tags` collection. |
 | **initial_date_key** | String | Audit | NO | Wall day `YYYY-MM-DD` when the task was first placed on the plan (does not move when the task is postponed). |

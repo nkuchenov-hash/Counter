@@ -21,6 +21,7 @@ import 'package:counter/core/url_strategy_stub.dart'
     as url_strategy;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -110,10 +111,11 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
               theme: appLightTheme,
               darkTheme: appDarkTheme,
               themeMode: parseAppThemeMode(s.themeMode),
-              localizationsDelegates: const [
+              localizationsDelegates: [
                 GlobalMaterialLocalizations.delegate,
                 GlobalWidgetsLocalizations.delegate,
                 GlobalCupertinoLocalizations.delegate,
+                ...FlutterQuillLocalizations.localizationsDelegates,
               ],
               supportedLocales: kAppSupportedMaterialLocales,
               localeResolutionCallback: (deviceLocale, supported) {
