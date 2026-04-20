@@ -24,6 +24,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
 import 'package:omni_datetime_picker/omni_datetime_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+Future<void> _launchUrlFromQuillEditor(String raw) async {
+  final u = Uri.tryParse(raw.trim());
+  if (u == null || !u.hasScheme) return;
+  try {
+    if (await canLaunchUrl(u)) {
+      await launchUrl(u, mode: LaunchMode.externalApplication);
+    }
+  } catch (_) {}
+}
 
 // --- Time helpers (Planetary: UTC + profile offset). Used by sheets. ---
 /// Calendar date for UI (localized month/day per [currentLocale]).
@@ -472,7 +483,6 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   late final FocusNode _quillFocusNode;
   /// Separate from [scrollController] so plan-mode outer [ListView] does not fight Quill.
   late final ScrollController _quillScrollController;
-  late final TextEditingController _linkController;
   late int _categoryId;
   DateTime? _scheduledTime;
   DateTime? _endTime;
@@ -507,12 +517,14 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _titleController = TextEditingController(text: widget.task.title);
     final parsedNotes = _parseStoredNotesForLink(widget.task.notesPlain);
     _quillController = QuillController(
-      document: _documentForPlanningNotes(parsedNotes.body),
+      document: _documentForPlanningNotes(
+        parsedNotes.body,
+        legacyUrl: parsedNotes.link,
+      ),
       selection: const TextSelection.collapsed(offset: 0),
     );
     _quillFocusNode = FocusNode();
     _quillScrollController = ScrollController();
-    _linkController = TextEditingController(text: parsedNotes.link);
     _categoryId = widget.task.categoryId;
     _selectedTags = List<Tag>.from(widget.task.tags);
     _reminderMinutes = widget.task.reminderOffset;
@@ -577,7 +589,6 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _quillController.dispose();
     _quillFocusNode.dispose();
     _quillScrollController.dispose();
-    _linkController.dispose();
     _rruleCustomController.dispose();
     for (final c in _checklistControllers) {
       c.dispose();
@@ -668,17 +679,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     );
   }
 
-  String? _composeNotesWithOptionalLink(String body, String link) {
-    final b = body.trim();
-    final l = link.trim();
-    if (l.isEmpty && b.isEmpty) return null;
-    if (l.isEmpty) return b.isEmpty ? null : b;
-    if (b.isEmpty) return '$_kLifeOsLinkPrefix$l';
-    return '$_kLifeOsLinkPrefix$l\n$b';
-  }
-
   /// Builds initial Quill [Document] from stored delta or legacy plain-only [legacyPlainBody].
-  Document _documentForPlanningNotes(String legacyPlainBody) {
+  /// [legacyUrl] migrates old `LIFEOS_LINK::` first line into an inline Quill link op.
+  Document _documentForPlanningNotes(
+    String legacyPlainBody, {
+    String? legacyUrl,
+  }) {
     final deltaRaw = widget.task.notesDeltaJson?.trim() ?? '';
     if (deltaRaw.isNotEmpty) {
       try {
@@ -688,7 +694,21 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         }
       } catch (_) {}
     }
+    final url = legacyUrl?.trim() ?? '';
     final b = legacyPlainBody.trim();
+    if (url.isNotEmpty) {
+      final ops = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'insert': url,
+          'attributes': LinkAttribute(url).toJson(),
+        },
+        <String, dynamic>{'insert': '\n'},
+      ];
+      if (b.isNotEmpty) {
+        ops.add(<String, dynamic>{'insert': '$b\n'});
+      }
+      return Document.fromJson(ops);
+    }
     if (b.isNotEmpty) {
       return Document.fromJson([
         <String, dynamic>{'insert': '$b\n'},
@@ -746,8 +766,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     String? notesPlainOut;
     String? notesDeltaJsonOut;
     if (_startedAsUndatedBacklog) {
-      notesPlainOut =
-          _composeNotesWithOptionalLink(plainTrimmed, _linkController.text);
+      notesPlainOut = plainTrimmed.isEmpty ? null : plainTrimmed;
       notesDeltaJsonOut = deltaJson;
     } else {
       notesPlainOut = plainTrimmed.isEmpty ? null : plainTrimmed;
@@ -769,9 +788,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
             endDateKey: _endTime != null ? newDateKey : null,
             checklist: checklist,
             clearNotes: true,
-            tags: _startedAsUndatedBacklog
-                ? <Tag>[]
-                : List<Tag>.from(_selectedTags),
+            tags: List<Tag>.from(_selectedTags),
             rrule: rruleWire,
             clearRrule: clearR,
             exceptionDates: clearR
@@ -794,9 +811,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
             checklist: checklist,
             notesPlain: notesPlainOut,
             notesDeltaJson: notesDeltaJsonOut,
-            tags: _startedAsUndatedBacklog
-                ? <Tag>[]
-                : List<Tag>.from(_selectedTags),
+            tags: List<Tag>.from(_selectedTags),
             rrule: rruleWire,
             clearRrule: clearR,
             exceptionDates: clearR
@@ -887,16 +902,23 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
             child: Column(
               children: [
                 if (_startedAsUndatedBacklog) ...[
-                  TabBar(
-                    controller: _tabController!,
-                    isScrollable: false,
-                    tabAlignment: TabAlignment.start,
+                  Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    tabs: [
-                      Tab(text: t(currentLocale.value, 'notes_tab')),
-                      Tab(text: t(currentLocale.value, 'checklist_tab')),
-                      Tab(text: t(currentLocale.value, 'plan_idea_tab_schedule')),
-                    ],
+                    child: TabBar(
+                      controller: _tabController!,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      labelPadding:
+                          const EdgeInsets.symmetric(horizontal: 10),
+                      padding: EdgeInsets.zero,
+                      tabs: [
+                        Tab(text: t(currentLocale.value, 'notes_tab')),
+                        Tab(text: t(currentLocale.value, 'checklist_tab')),
+                        Tab(
+                            text: t(
+                                currentLocale.value, 'plan_idea_tab_schedule')),
+                      ],
+                    ),
                   ),
                   Expanded(
                     child: TabBarView(
@@ -948,6 +970,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                         currentLocale.value,
                                         'notes_hint_flat',
                                       ),
+                                      onLaunchUrl: _launchUrlFromQuillEditor,
                                       customStyles:
                                           DefaultStyles.getInstance(context),
                                       keyboardAppearance:
@@ -957,19 +980,6 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                               : Brightness.light,
                                     ),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _linkController,
-                                keyboardType: TextInputType.url,
-                                textInputAction: TextInputAction.done,
-                                decoration: InputDecoration(
-                                  labelText: t(
-                                    currentLocale.value,
-                                    'plan_idea_link_label',
-                                  ),
-                                  border: const OutlineInputBorder(),
                                 ),
                               ),
                             ],
@@ -1464,23 +1474,28 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       ),
                           ),
                         ),
-                        TabBar(
-                          controller: _planTabController!,
-                          isScrollable: false,
-                          tabAlignment: TabAlignment.start,
+                        Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          tabs: [
-                            Tab(text: t(currentLocale.value, 'notes_tab')),
-                            Tab(
-                                text:
-                                    t(currentLocale.value, 'checklist_tab')),
-                            Tab(
+                          child: TabBar(
+                            controller: _planTabController!,
+                            isScrollable: true,
+                            tabAlignment: TabAlignment.start,
+                            labelPadding:
+                                const EdgeInsets.symmetric(horizontal: 10),
+                            padding: EdgeInsets.zero,
+                            tabs: [
+                              Tab(text: t(currentLocale.value, 'notes_tab')),
+                              Tab(
+                                  text: t(
+                                      currentLocale.value, 'checklist_tab')),
+                              Tab(
                                 text: t(
-                                    currentLocale.value,
-                                    'plan_parallel_plans_tab',
-                                  ),
+                                  currentLocale.value,
+                                  'plan_parallel_plans_tab',
                                 ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                         Expanded(
                           child: TabBarView(
@@ -1539,6 +1554,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                               currentLocale.value,
                                               'notes_hint_flat',
                                             ),
+                                            onLaunchUrl:
+                                                _launchUrlFromQuillEditor,
                                             customStyles:
                                                 DefaultStyles.getInstance(
                                               context,
@@ -2598,6 +2615,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                                       currentLocale.value,
                                       'notes_hint_flat',
                                     ),
+                                    onLaunchUrl: _launchUrlFromQuillEditor,
                                     customStyles:
                                         DefaultStyles.getInstance(context),
                                     keyboardAppearance:

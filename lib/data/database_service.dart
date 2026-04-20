@@ -1538,7 +1538,9 @@ class DatabaseService {
       _loadErrorMessage = e.message ?? 'Session invalid or profile not found';
       _isInitialized = true;
       return false;
-    } catch (e) {
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('DatabaseService.loadInitialData failed: $e\n$st');
       _isInitialized = true;
       _loadErrorMessage = 'Sync Error: $e';
       _settingsController.add(_settings);
@@ -1577,7 +1579,9 @@ class DatabaseService {
       _loadErrorMessage = e.message ?? 'Session invalid or profile not found';
       _isInitialized = true;
       return false;
-    } catch (e) {
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('DatabaseService.loadInitialDataWearLite failed: $e\n$st');
       _isInitialized = true;
       _loadErrorMessage = 'Sync Error: $e';
       _settingsController.add(_settings);
@@ -4137,6 +4141,11 @@ class DatabaseService {
       final nk = node.normalizedId?.trim();
       if (nk != null && nk.isNotEmpty) lookup[nk] = node;
       lookup[nodeLocalId.toString()] = node;
+      final pbRowKey =
+          (row['_pb_record_id'] ?? row['id'] ?? row['Id'])?.toString().trim();
+      if (pbRowKey != null && pbRowKey.isNotEmpty) {
+        lookup[pbRowKey] = node;
+      }
     }
     var linksCreated = 0;
     for (final node in all) {
@@ -4202,6 +4211,20 @@ class DatabaseService {
 
   /// After Noco profile load: **device prefs win** for theme + timezone so a stale server row
   /// (e.g. default "New York" / `system`) cannot wipe what the user saved in-app (@DATA_MAP §profiles).
+  static String _prefsKeyShowListTagsOnCards(String uid) =>
+      'lists_show_tags_on_cards_${uid.trim()}';
+
+  /// Lists inbox: persist tag strip visibility per auth user (device prefs; merged into [UserSettings]).
+  Future<void> persistShowListTagsOnCards(bool value) async {
+    final aid = _requireAuthUserIdForWrite();
+    _settings = _settings.copyWith(showListTagsOnCards: value);
+    _settingsController.add(_settings);
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await prefs.setBool(_prefsKeyShowListTagsOnCards(aid), value);
+    } catch (_) {}
+  }
+
   void _mergeDeviceProfilePreferenceOverridesSync() {
     try {
       final prefs = _prefs;
@@ -4219,6 +4242,13 @@ class DatabaseService {
           preferredTimeZone: tzLabel,
           timezoneOffsetHours: oh,
         );
+      }
+      final uid = next.userId.trim();
+      if (uid.isNotEmpty) {
+        final showTags = prefs.getBool(_prefsKeyShowListTagsOnCards(uid));
+        if (showTags != null) {
+          next = next.copyWith(showListTagsOnCards: showTags);
+        }
       }
       _settings = next;
     } catch (_) {}
@@ -4279,15 +4309,16 @@ class DatabaseService {
       }
       final dn = data['display_name'] as String?;
       final tagModeRaw = data['tag_display_mode']?.toString().trim();
-      final listBehRaw =
-          data['list_completion_behavior']?.toString().trim().toLowerCase() ??
-              '';
+      final rawListBeh = data['list_completion_behavior'];
+      final listBehRaw = rawListBeh == null
+          ? ''
+          : rawListBeh.toString().trim().toLowerCase();
       final listBeh = (listBehRaw == 'stay' ||
               listBehRaw == 'bottom' ||
               listBehRaw == 'hide' ||
               listBehRaw == 'archive')
           ? listBehRaw
-          : 'hide';
+          : (listBehRaw.isEmpty ? 'stay' : 'hide');
       final settingsUserId =
           authUid.isNotEmpty ? authUid : (uid != null && uid.isNotEmpty ? uid : rowUid);
       _settings = UserSettings(
@@ -4307,6 +4338,7 @@ class DatabaseService {
         tagDisplayModeWireRaw:
             (tagModeRaw != null && tagModeRaw.isNotEmpty) ? tagModeRaw : null,
         listCompletionBehavior: listBeh,
+        showListTagsOnCards: true,
       );
       _mergeDeviceProfilePreferenceOverridesSync();
       _settingsController.add(_settings);

@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
@@ -15,6 +16,7 @@ import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Backlog screen: grouped headers by category path, Play + Done + Delete, inline add.
@@ -45,7 +47,6 @@ class _ListsPageState extends State<ListsPage>
   static const String _prefsKeyChipMode = 'list_chip_mode';
   static const String _prefsKeyPinnedIds = 'list_pinned_ids';
   static const String _legacyPrefsKeyPinnedListChipIds = 'pinned_list_chip_ids';
-  static const String _prefsKeyShowListTags = 'lists_show_tags_on_cards';
 
   List<PlanningTask> _flat = [];
   /// Local-only rows until [fetchBacklogPlans] returns the server copy (inline add).
@@ -69,7 +70,6 @@ class _ListsPageState extends State<ListsPage>
   bool _listsSelectMode = false;
   final Set<String> _selectedListKeys = <String>{};
   bool _listsArchiveSectionExpanded = true;
-  bool _showListTagsOnCards = true;
 
   /// Stable key for backlog rows (matches Planning bulk selection).
   static String _listKey(PlanningTask t) {
@@ -242,17 +242,71 @@ class _ListsPageState extends State<ListsPage>
     await CategoryVisibilityPrefs.ensureLoaded();
     await _loadPersistedFilter();
     await _loadChipModeAndPinnedIds();
-    await _loadShowListTagsPref();
+    await _maybeMigrateListTagsPrefToUserScope();
     if (!mounted) return;
     await _reload();
   }
 
-  Future<void> _loadShowListTagsPref() async {
+  /// One-time: legacy global prefs key → auth-scoped prefs via [DatabaseService.persistShowListTagsOnCards].
+  Future<void> _maybeMigrateListTagsPrefToUserScope() async {
     final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _showListTagsOnCards = prefs.getBool(_prefsKeyShowListTags) ?? true;
-    });
+    const legacyGlobal = 'lists_show_tags_on_cards';
+    final legacyVal = prefs.getBool(legacyGlobal);
+    if (legacyVal == null) return;
+    try {
+      await DatabaseService.instance.persistShowListTagsOnCards(legacyVal);
+      await prefs.remove(legacyGlobal);
+    } catch (_) {
+      // Auth not ready yet; retry on next Lists open.
+    }
+  }
+
+  void _showListsRadialMenu(
+    BuildContext anchorContext,
+    PlanningTask task,
+    String listKey,
+  ) {
+    final overlay = Overlay.maybeOf(anchorContext);
+    if (overlay == null) return;
+    final box = anchorContext.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    final anchorCenter = rect.center;
+
+    late OverlayEntry entry;
+    void dismiss() {
+      entry.remove();
+    }
+
+    entry = OverlayEntry(
+      builder: (ctx) {
+        return _ListsSemicircleMenuOverlay(
+          anchorCenter: anchorCenter,
+          onDismiss: dismiss,
+          onEdit: () {
+            dismiss();
+            widget.onEditTask?.call(task);
+          },
+          onSelect: () {
+            dismiss();
+            setState(() {
+              _listsSelectMode = true;
+              _selectedListKeys.add(listKey);
+            });
+            _syncListsShellFabBulkReserve();
+          },
+          onDelete: () {
+            dismiss();
+            unawaited(_confirmAndDelete(task));
+          },
+          onStart: () {
+            dismiss();
+            _onPlay(task);
+          },
+        );
+      },
+    );
+    overlay.insert(entry);
   }
 
   Future<void> _loadPersistedFilter() async {
@@ -419,11 +473,13 @@ class _ListsPageState extends State<ListsPage>
   }
 
   /// Manual chip picker: tree of [CategoryRule] — parents collapsed by default.
+  /// [depth] drives horizontal indent so nested `parent_id` chains read clearly.
   Widget _buildManualCategoryTreeTile(
     CategoryRule r,
     Set<int> sel,
-    void Function(void Function()) setModal,
-  ) {
+    void Function(void Function()) setModal, {
+    int depth = 0,
+  }) {
     if (CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) {
       return const SizedBox.shrink();
     }
@@ -432,6 +488,7 @@ class _ListsPageState extends State<ListsPage>
         .where((c) => !CategoryVisibilityPrefs.isHiddenOrAncestor(c.id))
         .toList();
     final titleName = _categoryRawName(r.id);
+    final depthPad = EdgeInsetsDirectional.only(start: depth * 20.0);
     void toggleSel(bool? v) {
       setModal(() {
         if (v == true) {
@@ -442,39 +499,42 @@ class _ListsPageState extends State<ListsPage>
       });
     }
     if (kids.isEmpty) {
-      return CheckboxListTile(
-        value: sel.contains(r.id),
-        onChanged: toggleSel,
-        title: Text(titleName),
-        controlAffinity: ListTileControlAffinity.leading,
-        dense: true,
+      return Padding(
+        padding: depthPad,
+        child: CheckboxListTile(
+          value: sel.contains(r.id),
+          onChanged: toggleSel,
+          title: Text(titleName),
+          controlAffinity: ListTileControlAffinity.leading,
+          dense: true,
+        ),
       );
     }
-    return ExpansionTile(
-      key: PageStorageKey<int>(r.id),
-      initiallyExpanded: false,
-      tilePadding: const EdgeInsets.symmetric(horizontal: 4),
-      title: Row(
-        children: [
-          Checkbox(
-            value: sel.contains(r.id),
-            onChanged: toggleSel,
-          ),
-          Expanded(
-            child: Text(
-              titleName,
-              style: Theme.of(context).textTheme.bodyLarge,
+    return Padding(
+      padding: depthPad,
+      child: ExpansionTile(
+        key: PageStorageKey<int>(r.id),
+        initiallyExpanded: false,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 4),
+        title: Row(
+          children: [
+            Checkbox(
+              value: sel.contains(r.id),
+              onChanged: toggleSel,
             ),
-          ),
+            Expanded(
+              child: Text(
+                titleName,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          ],
+        ),
+        children: [
+          for (final c in kids)
+            _buildManualCategoryTreeTile(c, sel, setModal, depth: depth + 1),
         ],
       ),
-      children: [
-        for (final c in kids)
-          Padding(
-            padding: const EdgeInsets.only(left: 12),
-            child: _buildManualCategoryTreeTile(c, sel, setModal),
-          ),
-      ],
     );
   }
 
@@ -500,7 +560,8 @@ class _ListsPageState extends State<ListsPage>
                 completionDraft != 'archive') {
               completionDraft = 'hide';
             }
-            var showTagsDraft = _showListTagsOnCards;
+            var showTagsDraft =
+                DatabaseService.instance.settings.showListTagsOnCards;
             final manualListHeight =
                 (MediaQuery.sizeOf(ctx).height * 0.45).clamp(200.0, 520.0);
             return Padding(
@@ -552,6 +613,7 @@ class _ListsPageState extends State<ListsPage>
                           ],
                         ),
                       ),
+                    const SizedBox(height: 24),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: DropdownButtonFormField<String>(
@@ -589,6 +651,28 @@ class _ListsPageState extends State<ListsPage>
                       value: showTagsDraft,
                       onChanged: (v) => setModal(() => showTagsDraft = v),
                     ),
+                    ListTile(
+                      leading: const Icon(Icons.label_outline_rounded),
+                      title: Text(t(loc, 'lists_manage_tags')),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        unawaited(
+                          Navigator.of(context).push<void>(
+                            MaterialPageRoute<void>(
+                              builder: (c) => Scaffold(
+                                appBar: AppBar(
+                                  title: Text(t(loc, 'lists_manage_tags')),
+                                ),
+                                body: const TagManagerPage(
+                                  pocketTagDomain: 'list',
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: FilledButton(
@@ -601,16 +685,12 @@ class _ListsPageState extends State<ListsPage>
                             if (mode == 'manual') {
                               _pinnedChipIds = nextPinned;
                             }
-                            _showListTagsOnCards = showTagsDraft;
                           });
                           unawaited(_persistChipMode(mode));
-                          unawaited(() async {
-                            final prefs = await SharedPreferences.getInstance();
-                            await prefs.setBool(
-                              _prefsKeyShowListTags,
-                              showTagsDraft,
-                            );
-                          }());
+                          unawaited(
+                            DatabaseService.instance
+                                .persistShowListTagsOnCards(showTagsDraft),
+                          );
                           unawaited(
                             DatabaseService.instance.saveSettings(
                               DatabaseService.instance.settings.copyWith(
@@ -782,14 +862,13 @@ class _ListsPageState extends State<ListsPage>
   Widget _listsBacklogCard(
     PlanningTask task,
     String loc, {
-    String? categoryPathHeader,
+    required bool showTagsStrip,
   }) {
     final key = _listKey(task);
     return _BacklogPlanCard(
       task: task,
       locale: loc,
-      categoryPathHeader: categoryPathHeader,
-      showTagsStrip: _showListTagsOnCards,
+      showTagsStrip: showTagsStrip,
       selectionMode: _listsSelectMode,
       isSelected: _selectedListKeys.contains(key),
       onBodyTap: () {
@@ -803,13 +882,7 @@ class _ListsPageState extends State<ListsPage>
       onPlay: () => _onPlay(task),
       onToggleDone: (done) => _onListToggleDone(task, done),
       onDelete: () => unawaited(_confirmAndDelete(task)),
-      onMenuEdit: () => widget.onEditTask?.call(task),
-      onMenuSelect: () {
-        setState(() {
-          _listsSelectMode = true;
-          _selectedListKeys.add(key);
-        });
-      },
+      onOpenMenu: (anchorCtx) => _showListsRadialMenu(anchorCtx, task, key),
     );
   }
 
@@ -1027,6 +1100,9 @@ class _ListsPageState extends State<ListsPage>
             .listCompletionBehavior
             .trim()
             .toLowerCase();
+        final showListTagsOnCards =
+            (settingsSnap.data ?? DatabaseService.instance.settings)
+                .showListTagsOnCards;
         return ValueListenableBuilder<List<int>>(
           valueListenable: CategoryVisibilityPrefs.hiddenIds,
           builder: (context, _, __) {
@@ -1303,8 +1379,6 @@ class _ListsPageState extends State<ListsPage>
                                                       (context, index) {
                                                     final row = flatRows[index];
                                                     final t = row.task;
-                                                    final pathLabel =
-                                                        row.path.trim();
                                                     return ReorderableDelayedDragStartListener(
                                                       key: ValueKey<String>(
                                                           _listKey(t)),
@@ -1316,12 +1390,8 @@ class _ListsPageState extends State<ListsPage>
                                                         child: _listsBacklogCard(
                                                           t,
                                                           loc,
-                                                          categoryPathHeader:
-                                                              pathLabel.isEmpty ||
-                                                                      pathLabel ==
-                                                                          '—'
-                                                                  ? null
-                                                                  : pathLabel,
+                                                          showTagsStrip:
+                                                              showListTagsOnCards,
                                                         ),
                                                       ),
                                                     );
@@ -1362,6 +1432,8 @@ class _ListsPageState extends State<ListsPage>
                                                                 _listsBacklogCard(
                                                               t,
                                                               loc,
+                                                              showTagsStrip:
+                                                                  showListTagsOnCards,
                                                             ),
                                                           ),
                                                       ],
@@ -1472,7 +1544,6 @@ class _BacklogPlanCard extends StatelessWidget {
   const _BacklogPlanCard({
     required this.task,
     required this.locale,
-    this.categoryPathHeader,
     required this.showTagsStrip,
     required this.selectionMode,
     required this.isSelected,
@@ -1481,13 +1552,11 @@ class _BacklogPlanCard extends StatelessWidget {
     required this.onPlay,
     required this.onToggleDone,
     required this.onDelete,
-    required this.onMenuEdit,
-    required this.onMenuSelect,
+    required this.onOpenMenu,
   });
 
   final PlanningTask task;
   final String locale;
-  final String? categoryPathHeader;
   final bool showTagsStrip;
   final bool selectionMode;
   final bool isSelected;
@@ -1496,14 +1565,20 @@ class _BacklogPlanCard extends StatelessWidget {
   final VoidCallback onPlay;
   final void Function(bool toDone) onToggleDone;
   final VoidCallback onDelete;
-  final VoidCallback onMenuEdit;
-  final VoidCallback onMenuSelect;
+  final void Function(BuildContext anchorContext) onOpenMenu;
+
+  static Iterable<Tag> _listDomainTags(PlanningTask task) sync* {
+    for (final tag in task.tags) {
+      if (!tag.rendersAsChip) continue;
+      if (TagCatalogScope.list.matchesTag(tag)) yield tag;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final err = scheme.error;
+    final listTags = _listDomainTags(task).toList();
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
@@ -1514,12 +1589,12 @@ class _BacklogPlanCard extends StatelessWidget {
         onTap: onBodyTap,
         onLongPress: onLongPress,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 0),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsetsDirectional.only(start: 2, top: 4),
                 child: selectionMode
                     ? Checkbox(
                         value: isSelected,
@@ -1538,33 +1613,21 @@ class _BacklogPlanCard extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.only(top: 10, bottom: 10, right: 8),
+                  padding: const EdgeInsetsDirectional.only(
+                    top: 6,
+                    bottom: 2,
+                    end: 4,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (categoryPathHeader != null &&
-                          categoryPathHeader!.trim().isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            categoryPathHeader!.trim(),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: scheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
                       Text(
                         task.title,
                         maxLines: 4,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      if (showTagsStrip &&
-                          task.tags.any((tag) => tag.rendersAsChip))
+                      if (showTagsStrip && listTags.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: StreamBuilder<UserSettings>(
@@ -1573,26 +1636,25 @@ class _BacklogPlanCard extends StatelessWidget {
                             builder: (context, snap) {
                               final mode = snap.data?.tagDisplayMode ??
                                   CategoryDisplayMode.letterChip;
-                              final scheme =
-                                  Theme.of(context).colorScheme;
+                              final sch = Theme.of(context).colorScheme;
                               return Wrap(
+                                alignment: WrapAlignment.start,
+                                crossAxisAlignment: WrapCrossAlignment.start,
                                 spacing: 6,
                                 runSpacing: 4,
                                 children: [
-                                  for (final tag in task.tags)
-                                    if (tag.rendersAsChip)
-                                      CategoryChip(
-                                        mode: mode,
-                                        label: tag.name.trim().isNotEmpty
-                                            ? tag.name.trim()
-                                            : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                                        color: parseTagHexColor(tag.color) ??
-                                            scheme.primary,
-                                        icon: iconForTagKey(tag.icon),
-                                        compactGlyphLayout: true,
-                                        syntheticNoTagsMonochrome:
-                                            tag.tagId == -1,
-                                      ),
+                                  for (final tag in listTags)
+                                    CategoryChip(
+                                      mode: mode,
+                                      label: tag.name.trim().isNotEmpty
+                                          ? tag.name.trim()
+                                          : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
+                                      color: parseTagHexColor(tag.color) ??
+                                          sch.primary,
+                                      icon: iconForTagKey(tag.icon),
+                                      compactGlyphLayout: true,
+                                      syntheticNoTagsMonochrome: tag.tagId == -1,
+                                    ),
                                 ],
                               );
                             },
@@ -1602,56 +1664,275 @@ class _BacklogPlanCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (!selectionMode)
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'edit':
-                        onMenuEdit();
-                        break;
-                      case 'select':
-                        onMenuSelect();
-                        break;
-                      case 'delete':
-                        onDelete();
-                        break;
-                      case 'start':
-                        onPlay();
-                        break;
-                    }
-                  },
-                  itemBuilder: (ctx) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(t(locale, 'lists_menu_change')),
-                    ),
-                    PopupMenuItem(
-                      value: 'select',
-                      child: Text(t(locale, 'lists_menu_choose')),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(
-                        t(locale, 'delete'),
-                        style: TextStyle(color: err),
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'start',
-                      child: Text(t(locale, 'start')),
-                    ),
-                  ],
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.more_vert_rounded,
-                      color: scheme.onSurfaceVariant,
-                    ),
+              if (!selectionMode) ...[
+                IconButton(
+                  style: IconButton.styleFrom(
+                    splashFactory: NoSplash.splashFactory,
+                    hoverColor: Colors.transparent,
                   ),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  onPressed: onPlay,
+                  tooltip: t(locale, 'start'),
                 ),
+                Builder(
+                  builder: (menuCtx) {
+                    return IconButton(
+                      tooltip: t(locale, 'plan_radial_menu_tip'),
+                      style: IconButton.styleFrom(
+                        splashFactory: NoSplash.splashFactory,
+                        hoverColor: Colors.transparent,
+                        backgroundColor: scheme.secondaryContainer
+                            .withValues(alpha: 0.92),
+                        foregroundColor: scheme.onSecondaryContainer,
+                        minimumSize: const Size(44, 44),
+                        padding: EdgeInsets.zero,
+                        shape: const CircleBorder(),
+                      ),
+                      icon: const Icon(Icons.menu_open_rounded, size: 24),
+                      onPressed: () => onOpenMenu(menuCtx),
+                    );
+                  },
+                ),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Same semi-circle satellite pattern as Planning task cards; fourth action: Start.
+class _ListsSemicircleMenuOverlay extends StatefulWidget {
+  const _ListsSemicircleMenuOverlay({
+    required this.anchorCenter,
+    required this.onDismiss,
+    required this.onEdit,
+    required this.onSelect,
+    required this.onDelete,
+    required this.onStart,
+  });
+
+  final Offset anchorCenter;
+  final VoidCallback onDismiss;
+  final VoidCallback onEdit;
+  final VoidCallback onSelect;
+  final VoidCallback onDelete;
+  final VoidCallback onStart;
+
+  @override
+  State<_ListsSemicircleMenuOverlay> createState() =>
+      _ListsSemicircleMenuOverlayState();
+}
+
+class _ListsSemicircleMenuOverlayState extends State<_ListsSemicircleMenuOverlay>
+    with SingleTickerProviderStateMixin {
+  static const double _canvas = 300;
+  static const double _hub = 44;
+  static const double _orbit = 100;
+  static const double _satellite = 60;
+
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 340),
+    );
+    unawaited(_controller.forward());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      HapticFeedback.mediumImpact();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Offset _orbitOffsetLeftArc(double radians) {
+    return Offset(
+      math.cos(radians) * _orbit,
+      -math.sin(radians) * _orbit,
+    );
+  }
+
+  Widget _labeledAction({
+    required int index,
+    required Offset offsetFromHub,
+    required IconData icon,
+    required String label,
+    required Color background,
+    required Color foreground,
+    required VoidCallback onTap,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final delayed = CurvedAnimation(
+      parent: _controller,
+      curve: Interval(
+        index * 0.09,
+        0.62 + index * 0.1,
+        curve: Curves.easeOutBack,
+      ),
+    );
+    return Positioned(
+      left: _canvas / 2 + offsetFromHub.dx - _satellite / 2,
+      top: _canvas / 2 + offsetFromHub.dy - _satellite / 2 - 22,
+      child: FadeTransition(
+        opacity: delayed,
+        child: ScaleTransition(
+          scale: delayed,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Material(
+                elevation: 4,
+                color: background,
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onTap,
+                  child: SizedBox(
+                    width: _satellite,
+                    height: _satellite,
+                    child: Icon(icon, color: foreground, size: 30),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 96),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                        height: 1.1,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final loc = currentLocale.value;
+
+    final stackLeft = widget.anchorCenter.dx - _canvas / 2;
+    final stackTop = widget.anchorCenter.dy - _canvas / 2;
+
+    final hubAnim = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0, 0.45, curve: Curves.easeOutCubic),
+    );
+
+    double angleForSatellite(int i) {
+      return (2 * math.pi / 3) + i * (2 * math.pi / 9);
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: widget.onDismiss,
+              child: ColoredBox(color: scheme.scrim.withValues(alpha: 0.36)),
+            ),
+          ),
+          Positioned(
+            left: stackLeft,
+            top: stackTop,
+            width: _canvas,
+            height: _canvas,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _labeledAction(
+                  index: 0,
+                  offsetFromHub: _orbitOffsetLeftArc(angleForSatellite(0)),
+                  icon: Icons.edit_rounded,
+                  label: t(loc, 'lists_menu_change'),
+                  background: scheme.primaryContainer,
+                  foreground: scheme.onPrimaryContainer,
+                  onTap: widget.onEdit,
+                ),
+                _labeledAction(
+                  index: 1,
+                  offsetFromHub: _orbitOffsetLeftArc(angleForSatellite(1)),
+                  icon: Icons.checklist_rounded,
+                  label: t(loc, 'lists_menu_choose'),
+                  background: scheme.secondaryContainer,
+                  foreground: scheme.onSecondaryContainer,
+                  onTap: widget.onSelect,
+                ),
+                _labeledAction(
+                  index: 2,
+                  offsetFromHub: _orbitOffsetLeftArc(angleForSatellite(2)),
+                  icon: Icons.delete_outline_rounded,
+                  label: t(loc, 'delete'),
+                  background: scheme.errorContainer,
+                  foreground: scheme.onErrorContainer,
+                  onTap: widget.onDelete,
+                ),
+                _labeledAction(
+                  index: 3,
+                  offsetFromHub: _orbitOffsetLeftArc(angleForSatellite(3)),
+                  icon: Icons.play_arrow_rounded,
+                  label: t(loc, 'start'),
+                  background: scheme.tertiaryContainer,
+                  foreground: scheme.onTertiaryContainer,
+                  onTap: widget.onStart,
+                ),
+                Positioned(
+                  left: _canvas / 2 - _hub / 2,
+                  top: _canvas / 2 - _hub / 2,
+                  child: FadeTransition(
+                    opacity: hubAnim,
+                    child: ScaleTransition(
+                      scale: hubAnim,
+                      child: Tooltip(
+                        message: t(loc, 'plan_radial_close'),
+                        child: Material(
+                          elevation: 6,
+                          color: scheme.primary,
+                          shape: const CircleBorder(),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: widget.onDismiss,
+                            child: SizedBox(
+                              width: _hub,
+                              height: _hub,
+                              child: Icon(
+                                Icons.close_rounded,
+                                color: scheme.onPrimary,
+                                size: 26,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

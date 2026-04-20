@@ -1583,6 +1583,8 @@ class UserSettings {
     this.tagDisplayModeWireRaw,
     /// PocketBase `list_completion_behavior`: stay | bottom | hide | archive.
     this.listCompletionBehavior = 'hide',
+    /// Lists inbox: show `domain: list` tags on backlog cards. Device prefs per user (no PB column in Strike 25.4).
+    this.showListTagsOnCards = true,
   });
 
   final String userId;
@@ -1605,6 +1607,8 @@ class UserSettings {
   final String? tagDisplayModeWireRaw;
   /// Lists checked-item UX (`profiles.list_completion_behavior`).
   final String listCompletionBehavior;
+  /// Lists / backlog cards: render tag strip when true (persisted via device prefs keyed by user id).
+  final bool showListTagsOnCards;
 
   /// Single UI language: derived from [primaryLanguage] / [language] (multi-active UI removed).
   List<String> get effectiveActiveLanguages => <String>[
@@ -1628,6 +1632,7 @@ class UserSettings {
           'displayName': displayName!.trim(),
         'tagDisplayMode': tagDisplayMode.wireValue,
         'listCompletionBehavior': listCompletionBehavior,
+        'showListTagsOnCards': showListTagsOnCards,
       };
 
   factory UserSettings.fromJson(Map<String, dynamic> json) {
@@ -1643,17 +1648,33 @@ class UserSettings {
     }
     final tagWire = json['tag_display_mode'] ?? json['tagDisplayMode'];
     final tagWireStr = tagWire?.toString().trim();
-    final listBehRaw =
-        (json['list_completion_behavior'] ?? json['listCompletionBehavior'])
-            ?.toString()
-            .trim()
-            .toLowerCase();
+    final rawListBeh =
+        json['list_completion_behavior'] ?? json['listCompletionBehavior'];
+    final listBehRaw = rawListBeh == null
+        ? ''
+        : rawListBeh.toString().trim().toLowerCase();
     final listBeh = (listBehRaw == 'stay' ||
             listBehRaw == 'bottom' ||
             listBehRaw == 'hide' ||
             listBehRaw == 'archive')
-        ? listBehRaw!
-        : 'hide';
+        ? listBehRaw
+        : (listBehRaw.isEmpty ? 'stay' : 'hide');
+    final tagsShowRaw = json['lists_show_tags_on_cards'] ??
+        json['showListTagsOnCards'] ??
+        json['show_list_tags_on_cards'];
+    var showListTagsOnCards = true;
+    if (tagsShowRaw != null) {
+      if (tagsShowRaw is bool) {
+        showListTagsOnCards = tagsShowRaw;
+      } else {
+        final s = tagsShowRaw.toString().trim().toLowerCase();
+        if (s == 'false' || s == '0') {
+          showListTagsOnCards = false;
+        } else if (s == 'true' || s == '1') {
+          showListTagsOnCards = true;
+        }
+      }
+    }
     return UserSettings(
       userId: (json['user_id'] ?? json['userId'])?.toString() ?? '',
       language: json['language'] as String? ?? 'en',
@@ -1671,6 +1692,7 @@ class UserSettings {
       tagDisplayModeWireRaw:
           (tagWireStr != null && tagWireStr.isNotEmpty) ? tagWireStr : null,
       listCompletionBehavior: listBeh,
+      showListTagsOnCards: showListTagsOnCards,
     );
   }
 
@@ -1690,6 +1712,7 @@ class UserSettings {
     CategoryDisplayMode? tagDisplayMode,
     String? tagDisplayModeWireRaw,
     String? listCompletionBehavior,
+    bool? showListTagsOnCards,
   }) {
     return UserSettings(
       userId: userId ?? this.userId,
@@ -1710,6 +1733,8 @@ class UserSettings {
           : (tagDisplayModeWireRaw ?? this.tagDisplayModeWireRaw),
       listCompletionBehavior:
           listCompletionBehavior ?? this.listCompletionBehavior,
+      showListTagsOnCards:
+          showListTagsOnCards ?? this.showListTagsOnCards,
     );
   }
 }
@@ -1805,7 +1830,10 @@ class Tag {
   /// PocketBase **tags** row map (`id`, `tag_id`, `name`, …). Always set [pbRecordId] from the collection row id when present.
   factory Tag.fromPocketJson(Map<String, dynamic> json) {
     final rid = (json['id'] ?? json['recordId'])?.toString().trim();
-    final domRaw = json['domain']?.toString().trim().toLowerCase() ?? '';
+    final domDyn = json['domain'];
+    final domRaw = domDyn == null
+        ? ''
+        : domDyn.toString().trim().toLowerCase();
     final dom = domRaw == 'list' ? 'list' : 'plan';
     return Tag(
       tagId: _jsonInt(json['tag_id']),

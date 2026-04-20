@@ -291,7 +291,10 @@ class _InitGuardState extends State<_InitGuard> {
           });
         }
       }
-    } catch (_) {
+    } catch (e, st) {
+      // Boot-only: surfaces parser/init bugs (e.g. legacy PB nulls) that would otherwise hang silently.
+      // ignore: avoid_print
+      print('_InitGuard._initialize failed: $e\n$st');
       if (mounted) {
         setState(() {
           _ready = true;
