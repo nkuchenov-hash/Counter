@@ -1507,13 +1507,16 @@ class ProfileUpdate {
         displayName = s.displayName,
         primaryLanguage =
             s.primaryLanguage.isNotEmpty ? s.primaryLanguage : s.language,
-        tagDisplayMode = tagDisplayModeWireForPatch(s);
+        tagDisplayMode = tagDisplayModeWireForPatch(s),
+        listCompletionBehavior = listCompletionBehaviorWireForPatch(s);
   final String preferredTimeZone;
   final int timezoneOffsetHours;
   final String themeMode;
   final String? displayName;
   final String primaryLanguage;
   final String tagDisplayMode;
+  /// PocketBase `profiles.list_completion_behavior` (@DATA_MAP).
+  final String listCompletionBehavior;
   Map<String, dynamic> toJson() => <String, dynamic>{
         'preferred_timezone': preferredTimeZone,
         'timezone_offset': timezoneOffsetHours,
@@ -1523,9 +1526,42 @@ class ProfileUpdate {
           resolvedUiLanguageCode(primaryLanguage),
         ],
         'tag_display_mode': tagDisplayMode,
+        'list_completion_behavior': listCompletionBehavior,
         if (displayName != null && displayName!.trim().isNotEmpty)
           'display_name': displayName!.trim(),
       };
+}
+
+/// Wire for `profiles.list_completion_behavior` / Lists UI (@DATA_MAP).
+String listCompletionBehaviorWireForPatch(UserSettings s) {
+  final w = s.listCompletionBehavior.trim().toLowerCase();
+  if (w == 'stay' ||
+      w == 'bottom' ||
+      w == 'hide' ||
+      w == 'archive') {
+    return w;
+  }
+  return 'hide';
+}
+
+/// Which PocketBase `tags.domain` rows a surface may show (@DATA_MAP).
+enum TagCatalogScope {
+  /// Legacy rows and `domain == 'plan'`.
+  plan,
+  /// `domain == 'list'` only.
+  list,
+}
+
+extension TagCatalogScopeMatch on TagCatalogScope {
+  bool matchesTag(Tag t) {
+    final d = t.domain.trim().toLowerCase();
+    switch (this) {
+      case TagCatalogScope.list:
+        return d == 'list';
+      case TagCatalogScope.plan:
+        return d.isEmpty || d == 'plan';
+    }
+  }
 }
 
 /// User preferences. [userId] = PocketBase auth record id / `user_id` on child rows (string).
@@ -1545,6 +1581,8 @@ class UserSettings {
     this.displayName,
     this.tagDisplayMode = CategoryDisplayMode.letterChip,
     this.tagDisplayModeWireRaw,
+    /// PocketBase `list_completion_behavior`: stay | bottom | hide | archive.
+    this.listCompletionBehavior = 'hide',
   });
 
   final String userId;
@@ -1565,6 +1603,8 @@ class UserSettings {
   final CategoryDisplayMode tagDisplayMode;
   /// Exact string last read from PocketBase for [tagDisplayMode] (Select option spelling).
   final String? tagDisplayModeWireRaw;
+  /// Lists checked-item UX (`profiles.list_completion_behavior`).
+  final String listCompletionBehavior;
 
   /// Single UI language: derived from [primaryLanguage] / [language] (multi-active UI removed).
   List<String> get effectiveActiveLanguages => <String>[
@@ -1587,6 +1627,7 @@ class UserSettings {
         if (displayName != null && displayName!.trim().isNotEmpty)
           'displayName': displayName!.trim(),
         'tagDisplayMode': tagDisplayMode.wireValue,
+        'listCompletionBehavior': listCompletionBehavior,
       };
 
   factory UserSettings.fromJson(Map<String, dynamic> json) {
@@ -1602,6 +1643,17 @@ class UserSettings {
     }
     final tagWire = json['tag_display_mode'] ?? json['tagDisplayMode'];
     final tagWireStr = tagWire?.toString().trim();
+    final listBehRaw =
+        (json['list_completion_behavior'] ?? json['listCompletionBehavior'])
+            ?.toString()
+            .trim()
+            .toLowerCase();
+    final listBeh = (listBehRaw == 'stay' ||
+            listBehRaw == 'bottom' ||
+            listBehRaw == 'hide' ||
+            listBehRaw == 'archive')
+        ? listBehRaw!
+        : 'hide';
     return UserSettings(
       userId: (json['user_id'] ?? json['userId'])?.toString() ?? '',
       language: json['language'] as String? ?? 'en',
@@ -1618,6 +1670,7 @@ class UserSettings {
       tagDisplayMode: categoryDisplayModeFromWire(tagWireStr),
       tagDisplayModeWireRaw:
           (tagWireStr != null && tagWireStr.isNotEmpty) ? tagWireStr : null,
+      listCompletionBehavior: listBeh,
     );
   }
 
@@ -1636,6 +1689,7 @@ class UserSettings {
     String? displayName,
     CategoryDisplayMode? tagDisplayMode,
     String? tagDisplayModeWireRaw,
+    String? listCompletionBehavior,
   }) {
     return UserSettings(
       userId: userId ?? this.userId,
@@ -1654,6 +1708,8 @@ class UserSettings {
       tagDisplayModeWireRaw: tagDisplayMode != null
           ? null
           : (tagDisplayModeWireRaw ?? this.tagDisplayModeWireRaw),
+      listCompletionBehavior:
+          listCompletionBehavior ?? this.listCompletionBehavior,
     );
   }
 }
@@ -1670,6 +1726,8 @@ class Tag {
     this.pbRecordId,
     this.sortOrder = 0,
     this.isSynced = true,
+    /// PocketBase `tags.domain`: `plan` | `list`. Legacy rows: treat as plan when empty.
+    this.domain = 'plan',
   });
 
   final int tagId;
@@ -1684,6 +1742,8 @@ class Tag {
   final int sortOrder;
   /// Local-only sync flag (not a PocketBase column).
   final bool isSynced;
+  /// Isolation scope for Lists vs Planning tag pickers (@DATA_MAP `tags.domain`).
+  final String domain;
 
   Tag copyWith({
     int? tagId,
@@ -1694,6 +1754,7 @@ class Tag {
     String? pbRecordId,
     int? sortOrder,
     bool? isSynced,
+    String? domain,
   }) {
     return Tag(
       tagId: tagId ?? this.tagId,
@@ -1704,6 +1765,7 @@ class Tag {
       pbRecordId: pbRecordId ?? this.pbRecordId,
       sortOrder: sortOrder ?? this.sortOrder,
       isSynced: isSynced ?? this.isSynced,
+      domain: domain ?? this.domain,
     );
   }
 
@@ -1736,12 +1798,15 @@ class Tag {
       pbRecordId: json['pocket_id']?.toString(),
       sortOrder: _jsonInt(json['sort_order'] ?? json['sortOrder']),
       isSynced: _jsonBool(json['isSynced'] ?? json['is_synced'], true),
+      domain: 'plan',
     );
   }
 
   /// PocketBase **tags** row map (`id`, `tag_id`, `name`, …). Always set [pbRecordId] from the collection row id when present.
   factory Tag.fromPocketJson(Map<String, dynamic> json) {
     final rid = (json['id'] ?? json['recordId'])?.toString().trim();
+    final domRaw = json['domain']?.toString().trim().toLowerCase() ?? '';
+    final dom = domRaw == 'list' ? 'list' : 'plan';
     return Tag(
       tagId: _jsonInt(json['tag_id']),
       name: json['name']?.toString() ?? '',
@@ -1751,6 +1816,7 @@ class Tag {
       pbRecordId: (rid != null && rid.isNotEmpty) ? rid : null,
       sortOrder: _jsonInt(json['sort_order'] ?? json['sortOrder']),
       isSynced: true,
+      domain: dom,
     );
   }
 

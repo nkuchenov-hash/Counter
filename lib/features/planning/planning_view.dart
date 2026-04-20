@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
@@ -26,6 +27,7 @@ import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -242,7 +244,8 @@ class PlanningPage extends StatefulWidget {
   State<PlanningPage> createState() => _PlanningPageState();
 }
 
-class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver {
+class _PlanningPageState extends State<PlanningPage>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   final _textController = TextEditingController();
   final _quickAddFocus = FocusNode();
   final Set<String> _selectedPlanKeys = {};
@@ -256,6 +259,18 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
   _PlanSortMode _sortMode = _PlanSortMode.custom;
   int _timelineHourStart = 0;
   int _timelineHourEnd = 23;
+
+  /// Hour-grid day timeline scroll (edge auto-scroll while dragging a plan).
+  final ScrollController _hourGridScrollController = ScrollController();
+
+  late final Ticker _hourGridEdgeScrollTicker;
+  double _hourGridScrollVelocityPxPerSec = 0;
+  Duration? _hourGridTickerElapsedLast;
+
+  static const double _kShellBulkBarReservePx = 56;
+
+  /// Pixels per second while the drag pointer sits in the top/bottom 10% bands.
+  static const double _kHourGridEdgeScrollSpeedPxPerSec = 400;
 
   StreamSubscription<void>? _planningTimeSub;
   StreamSubscription<void>? _tagsCatalogSub;
@@ -429,6 +444,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     });
     unawaited(_loadPlanningTimelineBounds());
     unawaited(_reloadQuickAddTags());
+    _hourGridEdgeScrollTicker = createTicker(_onHourGridEdgeScrollTick);
   }
 
   Tag _syntheticNoTagsTag() {
@@ -503,7 +519,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         ? cr
         : _defaultNoTagsColorHex;
 
-    final list = await DatabaseService.instance.fetchTagsForCurrentUser();
+    final list = await DatabaseService.instance
+        .fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
     List<int>? order;
     try {
       final raw = prefs.getString(_prefsKeyQuickBarTagOrder);
@@ -658,42 +675,6 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     widget.onDatePicked?.call(day.add(Duration(days: days)));
   }
 
-  Future<void> _openPlanningHeaderDatePicker() async {
-    if (_planSelectMode) return;
-    final d = widget.selectedDate ?? _today;
-    if (useKeyboardFriendlyMaterialPickers()) {
-      final loc = currentLocale.value;
-      final picked = await showDatePicker(
-        context: context,
-        locale: Locale(loc),
-        initialDate: d,
-        firstDate: DateTime(2020),
-        lastDate: DateTime(2030),
-        initialEntryMode: appDatePickerEntryMode(),
-      );
-      if (picked != null && mounted) {
-        widget.onDatePicked?.call(picked);
-      }
-      return;
-    }
-    if (!mounted) return;
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => _PlanningDatePickerDialog(
-        initialDate: d,
-        onDatePicked: (date) {
-          Navigator.of(ctx).pop();
-          widget.onDatePicked?.call(date);
-        },
-        pageController: widget.pageController,
-        anchorDate: widget.anchorDate,
-        initialPage: widget.initialPage,
-        totalPageCount: widget.totalPageCount,
-        onDateChanged: widget.onDateChanged,
-      ),
-    );
-  }
-
   void _showPlanningSettingsSheet() {
     final loc = currentLocale.value;
     showModalBottomSheet<void>(
@@ -784,6 +765,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
           _sortMode = _PlanSortMode.custom;
         }
       });
+      _syncPlanningShellFabBulkReserve();
     }
   }
 
@@ -793,9 +775,76 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     _tagsCatalogSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(DatabaseService.instance.flushPlanningOrderSyncNow());
+    _stopHourGridEdgeScroll();
+    _hourGridEdgeScrollTicker.dispose();
+    _hourGridScrollController.dispose();
     _textController.dispose();
     _quickAddFocus.dispose();
     super.dispose();
+  }
+
+  void _onHourGridEdgeScrollTick(Duration elapsed) {
+    if (!mounted) {
+      return;
+    }
+    if (!_hourGridScrollController.hasClients) {
+      return;
+    }
+    final v = _hourGridScrollVelocityPxPerSec;
+    if (v == 0) {
+      return;
+    }
+    final last = _hourGridTickerElapsedLast;
+    _hourGridTickerElapsedLast = elapsed;
+    if (last == null) {
+      return;
+    }
+    final dtSeconds = (elapsed - last).inMicroseconds / 1000000.0;
+    if (dtSeconds <= 0) {
+      return;
+    }
+    final c = _hourGridScrollController;
+    final deltaPx = v * dtSeconds;
+    final next = (c.offset + deltaPx).clamp(0.0, c.position.maxScrollExtent);
+    c.jumpTo(next.toDouble());
+  }
+
+  void _ensureHourGridEdgeTickerRunning() {
+    if (!_hourGridEdgeScrollTicker.isActive) {
+      _hourGridTickerElapsedLast = null;
+      _hourGridEdgeScrollTicker.start();
+    }
+  }
+
+  void _stopHourGridEdgeScroll() {
+    _hourGridScrollVelocityPxPerSec = 0;
+    _hourGridTickerElapsedLast = null;
+    if (_hourGridEdgeScrollTicker.isActive) {
+      _hourGridEdgeScrollTicker.stop();
+    }
+  }
+
+  /// While dragging in the hour grid, set scroll velocity from global Y bands
+  /// (top/bottom 10% of viewport); motion is applied in [_onHourGridEdgeScrollTick].
+  void _handleHourGridDragUpdateForEdgeScroll(double globalDy) {
+    if (_sortMode != _PlanSortMode.time) {
+      return;
+    }
+    final viewH = MediaQuery.sizeOf(context).height;
+    if (viewH <= 1) {
+      return;
+    }
+    final topBand = viewH * 0.1;
+    final bottomBand = viewH * 0.9;
+    if (globalDy < topBand) {
+      _hourGridScrollVelocityPxPerSec = -_kHourGridEdgeScrollSpeedPxPerSec;
+      _ensureHourGridEdgeTickerRunning();
+    } else if (globalDy > bottomBand) {
+      _hourGridScrollVelocityPxPerSec = _kHourGridEdgeScrollSpeedPxPerSec;
+      _ensureHourGridEdgeTickerRunning();
+    } else {
+      _stopHourGridEdgeScroll();
+    }
   }
 
   List<PlanningTask> _mergeWithOptimistic(List<PlanningTask> server) {
@@ -825,11 +874,24 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     return merged;
   }
 
+  void _syncPlanningShellFabBulkReserve() {
+    if (!mounted) {
+      return;
+    }
+    final shell = ShellLayoutScope.read(context, listen: false);
+    if (shell.primaryTabIndex != 1) {
+      return;
+    }
+    final next = _selectedPlanKeys.isNotEmpty ? _kShellBulkBarReservePx : 0.0;
+    shell.setFabBottomReservePx(next);
+  }
+
   void _exitSelectMode() {
     setState(() {
       _planSelectMode = false;
       _selectedPlanKeys.clear();
     });
+    _syncPlanningShellFabBulkReserve();
   }
 
   void _toggleKeySelection(String key) {
@@ -840,6 +902,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         _selectedPlanKeys.add(key);
       }
     });
+    _syncPlanningShellFabBulkReserve();
   }
 
   void _clearSelection() {
@@ -847,6 +910,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       _selectedPlanKeys.clear();
       _planSelectMode = false;
     });
+    _syncPlanningShellFabBulkReserve();
   }
 
   bool _allVisiblePlanTasksSelected(List<PlanningTask> list) {
@@ -870,6 +934,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         }
       }
     });
+    _syncPlanningShellFabBulkReserve();
   }
 
   Future<void> _openBulkPlanningEdit(List<PlanningTask> tasks) async {
@@ -976,6 +1041,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       _selectedPlanKeys.clear();
       _planSelectMode = false;
     });
+    _syncPlanningShellFabBulkReserve();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -1007,6 +1073,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         _selectedPlanKeys.clear();
         _planSelectMode = false;
       });
+      _syncPlanningShellFabBulkReserve();
     }
   }
 
@@ -1074,6 +1141,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
               _planSelectMode = true;
               _selectedPlanKeys.add(_planKey(task));
             });
+            _syncPlanningShellFabBulkReserve();
           },
           onDelete: () {
             dismiss();
@@ -1515,6 +1583,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                 _planSelectMode = true;
                 _selectedPlanKeys.add(key);
               });
+              _syncPlanningShellFabBulkReserve();
             },
       onPlay: () async {
         final dateKeyForRecord = task.startTime != null
@@ -1593,6 +1662,9 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     bool enableLongPressDrag = false,
     /// When true, [InkWell.onLongPress] is omitted so [ReorderableDelayedDragStartListener] can claim long-press reorder.
     bool omitLongPressForReorder = false,
+    /// When set with [enableLongPressDrag], drives hour-grid edge auto-scroll from [DragUpdateDetails.globalPosition].
+    ValueChanged<double>? onHourGridDragGlobalDy,
+    VoidCallback? onHourGridDragEnded,
   }) {
     final highlightAsRunning = _activeRecordingTitleNorm != null &&
         _activeRecordingTitleNorm ==
@@ -1618,11 +1690,20 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
     }
 
     final maxFeedbackW = MediaQuery.sizeOf(context).width * 0.9;
+    final onDragEnded = onHourGridDragEnded;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: LongPressDraggable<PlanningTask>(
         delay: const Duration(milliseconds: 300),
         data: task,
+        onDragUpdate: onHourGridDragGlobalDy == null
+            ? null
+            : (details) =>
+                onHourGridDragGlobalDy(details.globalPosition.dy),
+        onDragEnd:
+            onDragEnded == null ? null : (_) => onDragEnded(),
+        onDraggableCanceled:
+            onDragEnded == null ? null : (_, __) => onDragEnded(),
         feedback: Material(
           elevation: 8,
           borderRadius: BorderRadius.circular(12),
@@ -1716,6 +1797,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             isSelected: _selectedPlanKeys.contains(key),
             planActualByPbId: planActualByPbId,
             enableLongPressDrag: true,
+            onHourGridDragGlobalDy: _handleHourGridDragUpdateForEdgeScroll,
+            onHourGridDragEnded: _stopHourGridEdgeScroll,
           ),
         );
       }
@@ -1755,6 +1838,8 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
             isSelected: _selectedPlanKeys.contains(key),
             planActualByPbId: planActualByPbId,
             enableLongPressDrag: true,
+            onHourGridDragGlobalDy: _handleHourGridDragUpdateForEdgeScroll,
+            onHourGridDragEnded: _stopHourGridEdgeScroll,
           ),
         );
       }
@@ -1845,6 +1930,9 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
                                     _selectedPlanKeys.contains(key),
                                 planActualByPbId: planActualByPbId,
                                 enableLongPressDrag: true,
+                                onHourGridDragGlobalDy:
+                                    _handleHourGridDragUpdateForEdgeScroll,
+                                onHourGridDragEnded: _stopHourGridEdgeScroll,
                               );
                             },
                           ),
@@ -1856,6 +1944,7 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       );
     }
     return ListView(
+      controller: _hourGridScrollController,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       children: children,
     );
@@ -2185,84 +2274,114 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
         }
 
         final visiblePlans = displayedForChrome;
+        _syncPlanningShellFabBulkReserve();
         return Scaffold(
           resizeToAvoidBottomInset: true,
-          appBar: AppBar(
-            leading: _planSelectMode
-                ? IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: _exitSelectMode,
-                    tooltip: t(currentLocale.value, 'plan_exit_select'),
-                  )
-                : null,
-            title: _planSelectMode
-                ? Text(t(currentLocale.value, 'plan_select_mode'))
-                : Row(
-                    children: [
-                      if (kIsWeb)
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 40,
-                            minHeight: 40,
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Material(
+                  color: scheme.surface,
+                  elevation: 0,
+                  surfaceTintColor: scheme.surfaceTint,
+                  child: SizedBox(
+                    height: kToolbarHeight,
+                    child: _planSelectMode
+                        ? Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: _exitSelectMode,
+                                tooltip: t(
+                                    currentLocale.value, 'plan_exit_select'),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  t(currentLocale.value, 'plan_select_mode'),
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (visiblePlans != null)
+                                TextButton(
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                  ),
+                                  onPressed: () => _toggleSelectAllVisiblePlans(
+                                      visiblePlans),
+                                  child: Text(
+                                    _allVisiblePlanTasksSelected(visiblePlans)
+                                        ? t(currentLocale.value,
+                                            'plan_deselect_visible')
+                                        : t(currentLocale.value,
+                                            'plan_select_all'),
+                                  ),
+                                ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              if (kIsWeb)
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                  icon: const Icon(Icons.chevron_left_rounded),
+                                  tooltip: t(
+                                      currentLocale.value, 'date_previous_day'),
+                                  onPressed: () => _shiftPlanningDay(-1),
+                                ),
+                              Expanded(
+                                child: GlobalAppHeader(
+                                  selectedDate: headerDate,
+                                  onDateSelected: (d) =>
+                                      widget.onDatePicked?.call(d),
+                                ),
+                              ),
+                              if (kIsWeb)
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 40,
+                                    minHeight: 40,
+                                  ),
+                                  icon:
+                                      const Icon(Icons.chevron_right_rounded),
+                                  tooltip: t(
+                                      currentLocale.value, 'date_next_day'),
+                                  onPressed: () => _shiftPlanningDay(1),
+                                ),
+                              IconButton(
+                                icon: const Icon(Icons.auto_awesome_rounded),
+                                tooltip: t(
+                                    currentLocale.value, 'smart_plan_tooltip'),
+                                onPressed: _openSmartPlanSheet,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.settings_rounded),
+                                tooltip: t(
+                                    currentLocale.value,
+                                    'plan_settings_tooltip'),
+                                onPressed: _showPlanningSettingsSheet,
+                              ),
+                            ],
                           ),
-                          icon: const Icon(Icons.chevron_left_rounded),
-                          tooltip: t(currentLocale.value, 'date_previous_day'),
-                          onPressed: () => _shiftPlanningDay(-1),
-                        ),
-                      Expanded(
-                        child: GlobalAppHeader(
-                          selectedDate: headerDate,
-                          onDateSelected: (d) =>
-                              widget.onDatePicked?.call(d),
-                        ),
-                      ),
-                      if (kIsWeb)
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                            minWidth: 40,
-                            minHeight: 40,
-                          ),
-                          icon: const Icon(Icons.chevron_right_rounded),
-                          tooltip: t(currentLocale.value, 'date_next_day'),
-                          onPressed: () => _shiftPlanningDay(1),
-                        ),
-                    ],
-                  ),
-            actions: [
-              if (_planSelectMode && visiblePlans != null)
-                TextButton(
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                  onPressed: () => _toggleSelectAllVisiblePlans(visiblePlans),
-                  child: Text(
-                    _allVisiblePlanTasksSelected(visiblePlans)
-                        ? t(currentLocale.value, 'plan_deselect_visible')
-                        : t(currentLocale.value, 'plan_select_all'),
                   ),
                 ),
-              if (!_planSelectMode) ...[
-                IconButton(
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                  tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
-                  onPressed: _openSmartPlanSheet,
+                Divider(
+                  height: 1,
+                  color: scheme.outlineVariant,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.settings_rounded),
-                  tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
-                  onPressed: _showPlanningSettingsSheet,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.calendar_today_rounded),
-                  onPressed: _openPlanningHeaderDatePicker,
-                ),
+                Expanded(child: body),
               ],
-            ],
+            ),
           ),
-          body: body,
           bottomNavigationBar: displayedForChrome != null
               ? _planningBulkBottomBar(context, scheme, displayedForChrome)
               : null,
@@ -2281,60 +2400,61 @@ class _PlanningPageState extends State<PlanningPage> with WidgetsBindingObserver
       children: [
               if (!_planSelectMode)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: AlignmentDirectional.centerStart,
-                      child: SegmentedButton<_PlanSortMode>(
-                        segments: [
-                          ButtonSegment<_PlanSortMode>(
-                            value: _PlanSortMode.category,
-                            label: Text(
-                                t(currentLocale.value, 'plan_sort_category')),
-                          ),
-                          ButtonSegment<_PlanSortMode>(
-                            value: _PlanSortMode.time,
-                            label: Text(
-                                t(currentLocale.value, 'plan_sort_time')),
-                          ),
-                          ButtonSegment<_PlanSortMode>(
-                            value: _PlanSortMode.tags,
-                            label: Text(
-                                t(currentLocale.value, 'plan_sort_tags')),
-                          ),
-                          ButtonSegment<_PlanSortMode>(
-                            value: _PlanSortMode.custom,
-                            label: Text(
-                                t(currentLocale.value, 'plan_sort_custom')),
-                          ),
-                        ],
-                        selected: {_sortMode},
-                        onSelectionChanged: (Set<_PlanSortMode> next) {
-                          if (next.isEmpty) return;
-                          final mode = next.first;
-                          setState(() {
-                            _sortMode = mode;
-                          });
-                          unawaited(
-                            DatabaseService.instance.persistPlanActiveTabIndex(
-                              _planSortModeToPersistedIndex(mode),
-                            ),
-                          );
-                        },
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: SegmentedButton<_PlanSortMode>(
+                      style: SegmentedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        fixedSize: const Size(76, 36),
                       ),
+                      segments: [
+                        ButtonSegment<_PlanSortMode>(
+                          value: _PlanSortMode.category,
+                          label: Text(
+                              t(currentLocale.value, 'plan_sort_category')),
+                        ),
+                        ButtonSegment<_PlanSortMode>(
+                          value: _PlanSortMode.time,
+                          label: Text(
+                              t(currentLocale.value, 'plan_sort_time')),
+                        ),
+                        ButtonSegment<_PlanSortMode>(
+                          value: _PlanSortMode.tags,
+                          label: Text(
+                              t(currentLocale.value, 'plan_sort_tags')),
+                        ),
+                        ButtonSegment<_PlanSortMode>(
+                          value: _PlanSortMode.custom,
+                          label: Text(
+                              t(currentLocale.value, 'plan_sort_custom')),
+                        ),
+                      ],
+                      selected: {_sortMode},
+                      onSelectionChanged: (Set<_PlanSortMode> next) {
+                        if (next.isEmpty) return;
+                        final mode = next.first;
+                        setState(() {
+                          _sortMode = mode;
+                        });
+                        unawaited(
+                          DatabaseService.instance.persistPlanActiveTabIndex(
+                            _planSortModeToPersistedIndex(mode),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      height: 52,
+                      height: 46,
                       child: _buildQuickAddTagStrip(scheme),
                     ),
                     Row(

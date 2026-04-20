@@ -411,7 +411,7 @@ class TagQuickPickStrip extends StatelessWidget {
                 syntheticNoTagsMonochrome: tag.tagId == -1,
                 onTap: () => onToggle(tag),
               );
-              return ReorderableDragStartListener(
+              return ReorderableDelayedDragStartListener(
                 key: ValueKey<String>(
                   tag.pbRecordId?.trim().isNotEmpty == true
                       ? 'pb-${tag.pbRecordId}'

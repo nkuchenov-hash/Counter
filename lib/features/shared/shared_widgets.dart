@@ -10,6 +10,7 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/core/theme.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -93,6 +94,51 @@ DateTime? planningDateFromKey(String key) {
 }
 
 const List<String> _shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/// Strike 23: one horizontal row ([multiRowsDisplay]: false → arrow-indicated list, no [Wrap]).
+QuillSimpleToolbarConfig _planningTaskEditQuillToolbarConfig(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
+  return QuillSimpleToolbarConfig(
+    multiRowsDisplay: false,
+    showDividers: false,
+    toolbarSize: kPlanningEditQuillToolbarRowSize,
+    toolbarRunSpacing: 0,
+    buttonOptions: const QuillSimpleToolbarButtonOptions(
+      base: QuillToolbarBaseButtonOptions(
+        iconSize: kPlanningEditQuillToolbarIconSize,
+        iconButtonFactor: 1.42,
+      ),
+    ),
+    showFontFamily: false,
+    showFontSize: false,
+    showBoldButton: true,
+    showItalicButton: true,
+    showUnderLineButton: true,
+    showStrikeThrough: true,
+    showInlineCode: false,
+    showColorButton: true,
+    showBackgroundColorButton: false,
+    showClearFormat: true,
+    showAlignmentButtons: false,
+    showHeaderStyle: false,
+    showListNumbers: true,
+    showListBullets: true,
+    showListCheck: true,
+    showCodeBlock: false,
+    showQuote: false,
+    showIndent: false,
+    showLink: false,
+    showUndo: false,
+    showRedo: false,
+    showSearchButton: false,
+    showSubscript: false,
+    showSuperscript: false,
+    showSmallButton: false,
+    showLineHeightButton: false,
+    showDirection: false,
+    color: scheme.surfaceContainerHighest,
+  );
+}
 
 // --- Checklist editors (_PlanningTaskEditSheet + _TimelineRecordSheetContent) ---
 void _syncChecklistDoneLength(
@@ -437,6 +483,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   final List<bool> _checklistDone = [];
   /// Non-null only for list-item / Idea mode (3-tab Strike 19 layout).
   TabController? _tabController;
+  /// Dated plan mode: Notes / Checklist / schedule & recurrence (Strike 24).
+  TabController? _planTabController;
   List<Tag> _availableTags = [];
   /// True until [DatabaseService.fetchTagsForCurrentUser] completes (strip stays visible).
   bool _tagsLoading = true;
@@ -444,6 +492,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   int? _reminderMinutes;
   late _PlanRepeatUi _repeatUi;
   String? _rruleCustomRaw;
+  late final TextEditingController _rruleCustomController;
 
   @override
   void initState() {
@@ -452,6 +501,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         widget.task.dateKey.trim().length < 10;
     if (_startedAsUndatedBacklog) {
       _tabController = TabController(length: 3, vsync: this);
+    } else {
+      _planTabController = TabController(length: 3, vsync: this);
     }
     _titleController = TextEditingController(text: widget.task.title);
     final parsedNotes = _parseStoredNotesForLink(widget.task.notesPlain);
@@ -468,8 +519,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _repeatUi = _planRepeatUiFromTask(widget.task);
     _rruleCustomRaw =
         _repeatUi == _PlanRepeatUi.custom ? widget.task.rrule?.trim() : null;
+    _rruleCustomController = TextEditingController(
+      text: _repeatUi == _PlanRepeatUi.custom
+          ? (widget.task.rrule?.trim() ?? '')
+          : '',
+    );
     if (!_startedAsUndatedBacklog) {
-      DatabaseService.instance.fetchTagsForCurrentUser().then((List<Tag> result) {
+      DatabaseService.instance
+          .fetchTagsForCurrentUser(scope: TagCatalogScope.plan)
+          .then((List<Tag> result) {
         if (!mounted) return;
         setState(() {
           _availableTags = result;
@@ -477,7 +535,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         });
       });
     } else {
-      _tagsLoading = false;
+      DatabaseService.instance
+          .fetchTagsForCurrentUser(scope: TagCatalogScope.list)
+          .then((List<Tag> result) {
+        if (!mounted) return;
+        setState(() {
+          _availableTags = result;
+          _tagsLoading = false;
+        });
+      });
     }
     // [PlanningTask.startTime] / [endDateTime] from Brain are profile wall components, not UTC.
     _scheduledTime = widget.task.startTime;
@@ -506,11 +572,13 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   @override
   void dispose() {
     _tabController?.dispose();
+    _planTabController?.dispose();
     _titleController.dispose();
     _quillController.dispose();
     _quillFocusNode.dispose();
     _quillScrollController.dispose();
     _linkController.dispose();
+    _rruleCustomController.dispose();
     for (final c in _checklistControllers) {
       c.dispose();
     }
@@ -548,11 +616,19 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
 
   Future<void> _openTagManagerAndReload() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (ctx) => const TagSettingsHub()),
+      MaterialPageRoute<void>(
+        builder: (ctx) => TagSettingsHub(
+          tagCreateDomain: _startedAsUndatedBacklog ? 'list' : 'plan',
+        ),
+      ),
     );
     if (!mounted) return;
     setState(() => _tagsLoading = true);
-    final list = await DatabaseService.instance.fetchTagsForCurrentUser();
+    final list = await DatabaseService.instance.fetchTagsForCurrentUser(
+      scope: _startedAsUndatedBacklog
+          ? TagCatalogScope.list
+          : TagCatalogScope.plan,
+    );
     if (!mounted) return;
     setState(() {
       _availableTags = list;
@@ -656,6 +732,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         'isDone': i < _checklistDone.length ? _checklistDone[i] : false,
       });
     }
+    if (_repeatUi == _PlanRepeatUi.custom) {
+      _rruleCustomRaw = _rruleCustomController.text.trim();
+    }
     final rruleWire = _rruleWireFromRepeatUi(_repeatUi, _rruleCustomRaw);
     final clearR = rruleWire == null;
     final deltaJson =
@@ -739,6 +818,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     final dropdownValue = pairs.any((p) => p.id == _categoryId)
         ? _categoryId
         : (pairs.isNotEmpty ? pairs.first.id : _categoryId);
+    final kbBottom = MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardOpen = kbBottom > 0;
+    final compactChrome = keyboardOpen;
 
     return Material(
       color: Theme.of(context).colorScheme.surface,
@@ -746,7 +828,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              compactChrome ? 6 : 12,
+              16,
+              compactChrome ? 4 : 8,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -758,7 +845,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                           fontWeight: FontWeight.w700,
                         ),
                     minLines: 1,
-                    maxLines: 4,
+                    maxLines: compactChrome ? 2 : 4,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
                       hintText: t(currentLocale.value, 'title_label'),
@@ -779,7 +866,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
           ),
           const Divider(height: 1),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              compactChrome ? 4 : 8,
+              16,
+              compactChrome ? 2 : 4,
+            ),
             child: CategoryTreeFormField(
               value: pairs.any((p) => p.id == dropdownValue)
                   ? dropdownValue
@@ -791,47 +883,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                   setState(() => _categoryId = id ?? _categoryId),
             ),
           ),
-          if (!_startedAsUndatedBacklog)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: SizedBox(
-                height: 52,
-                child: _tagsLoading
-                    ? Center(
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      )
-                    : _availableTags.isEmpty
-                        ? Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: OutlinedButton.icon(
-                              onPressed: _openTagManagerAndReload,
-                              icon: const Icon(Icons.add_rounded, size: 20),
-                              label: Text(
-                                t(currentLocale.value,
-                                    'tags_empty_create_first'),
-                              ),
-                            ),
-                          )
-                        : TagQuickPickStrip(
-                            tags: _availableTags,
-                            selected: _selectedTags,
-                            onToggle: _toggleTag,
-                          ),
-              ),
-            ),
           Expanded(
             child: Column(
               children: [
                 if (_startedAsUndatedBacklog) ...[
                   TabBar(
                     controller: _tabController!,
+                    isScrollable: false,
+                    tabAlignment: TabAlignment.start,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     tabs: [
                       Tab(text: t(currentLocale.value, 'notes_tab')),
                       Tab(text: t(currentLocale.value, 'checklist_tab')),
@@ -845,46 +905,21 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         Padding(
                           padding: EdgeInsets.fromLTRB(
                             16,
-                            8,
+                            compactChrome ? 4 : 8,
                             16,
-                            24 + MediaQuery.of(context).viewInsets.bottom,
+                            compactChrome ? 12 : 24,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              QuillSimpleToolbar(
-                                controller: _quillController,
-                                config: QuillSimpleToolbarConfig(
-                                  showFontFamily: false,
-                                  showFontSize: false,
-                                  showBoldButton: true,
-                                  showItalicButton: true,
-                                  showUnderLineButton: true,
-                                  showStrikeThrough: true,
-                                  showInlineCode: false,
-                                  showColorButton: true,
-                                  showBackgroundColorButton: false,
-                                  showClearFormat: true,
-                                  showAlignmentButtons: false,
-                                  showHeaderStyle: false,
-                                  showListNumbers: true,
-                                  showListBullets: true,
-                                  showListCheck: true,
-                                  showCodeBlock: false,
-                                  showQuote: false,
-                                  showIndent: false,
-                                  showLink: false,
-                                  showUndo: false,
-                                  showRedo: false,
-                                  showSearchButton: false,
-                                  showSubscript: false,
-                                  showSuperscript: false,
-                                  showSmallButton: false,
-                                  showLineHeightButton: false,
-                                  showDirection: false,
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: kPlanningEditQuillToolbarMinHeight,
+                                ),
+                                child: QuillSimpleToolbar(
+                                  controller: _quillController,
+                                  config: _planningTaskEditQuillToolbarConfig(
+                                      context),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -943,9 +978,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         ListView(
                           padding: EdgeInsets.fromLTRB(
                             16,
-                            12,
+                            compactChrome ? 8 : 12,
                             16,
-                            24 + MediaQuery.of(context).viewInsets.bottom,
+                            compactChrome ? 12 : 24,
                           ),
                           children: [
                             ...List.generate(_checklistControllers.length, (i) {
@@ -1039,9 +1074,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         ListView(
                           padding: EdgeInsets.fromLTRB(
                             16,
-                            12,
+                            compactChrome ? 8 : 12,
                             16,
-                            24 + MediaQuery.of(context).viewInsets.bottom,
+                            compactChrome ? 12 : 24,
                           ),
                           children: [
                             ListTile(
@@ -1214,13 +1249,31 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                   _repeatUi = v;
                                   if (v != _PlanRepeatUi.custom) {
                                     _rruleCustomRaw = null;
+                                    _rruleCustomController.clear();
                                   } else {
                                     _rruleCustomRaw =
                                         widget.task.rrule?.trim();
+                                    _rruleCustomController.text =
+                                        _rruleCustomRaw ?? '';
                                   }
                                 });
                               },
                             ),
+                            if (_repeatUi == _PlanRepeatUi.custom) ...[
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: _rruleCustomController,
+                                minLines: 2,
+                                maxLines: 5,
+                                decoration: InputDecoration(
+                                  labelText: t(
+                                    currentLocale.value,
+                                    'plan_repeat_custom',
+                                  ),
+                                  border: const OutlineInputBorder(),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ],
@@ -1228,365 +1281,550 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                   ),
                 ] else ...[
                   Expanded(
-                    child: ListView(
-                      controller: widget.scrollController,
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        8,
-                        16,
-                        24 + MediaQuery.of(context).viewInsets.bottom,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(_scheduledTime == null
-                              ? t(currentLocale.value, 'scheduled')
-                              : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}'),
-                          trailing: const Icon(Icons.schedule_rounded),
-                          onTap: () async {
-                            final initial = DateTime(
-                                _date.year,
-                                _date.month,
-                                _date.day,
-                                _scheduledTime?.hour ?? 9,
-                                _scheduledTime?.minute ?? 0);
-                            final picked = await showAppDateTimePicker(
-                                context,
-                                initial: initial);
-                            if (picked != null && mounted) {
-                              setState(() {
-                                _date = DateTime(picked.year, picked.month,
-                                    picked.day);
-                                _scheduledTime = picked;
-                              });
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: Text(_endTime == null
-                              ? t(currentLocale.value, 'no_end_time')
-                              : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'),
-                          trailing: const Icon(Icons.schedule_rounded),
-                          onTap: () async {
-                            final initial = DateTime(
-                                _date.year,
-                                _date.month,
-                                _date.day,
-                                _endTime?.hour ?? 10,
-                                _endTime?.minute ?? 0);
-                            final picked = await showAppDateTimePicker(
-                                context,
-                                initial: initial);
-                            if (picked != null && mounted) {
-                              setState(() => _endTime = DateTime(
-                                  _date.year,
-                                  _date.month,
-                                  _date.day,
-                                  picked.hour,
-                                  picked.minute));
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<int?>(
-                          value: _reminderMinutes,
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            labelText: t(
-                              currentLocale.value,
-                              'plan_reminder_label',
-                            ),
-                          ),
-                          items: [
-                            DropdownMenuItem<int?>(
-                              value: null,
-                              child: Text(
-                                t(currentLocale.value, 'plan_reminder_none'),
-                              ),
-                            ),
-                            DropdownMenuItem<int?>(
-                              value: 5,
-                              child: Text(
-                                t(currentLocale.value, 'plan_reminder_5m'),
-                              ),
-                            ),
-                            DropdownMenuItem<int?>(
-                              value: 15,
-                              child: Text(
-                                t(currentLocale.value, 'plan_reminder_15m'),
-                              ),
-                            ),
-                            DropdownMenuItem<int?>(
-                              value: 30,
-                              child: Text(
-                                t(currentLocale.value, 'plan_reminder_30m'),
-                              ),
-                            ),
-                            DropdownMenuItem<int?>(
-                              value: 60,
-                              child: Text(
-                                t(currentLocale.value, 'plan_reminder_1h'),
-                              ),
-                            ),
-                          ],
-                          onChanged: (v) =>
-                              setState(() => _reminderMinutes = v),
-                        ),
-                        const SizedBox(height: 12),
-                        DropdownButtonFormField<_PlanRepeatUi>(
-                          value: _repeatUi,
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            labelText: t(
-                              currentLocale.value,
-                              'plan_repeat_label',
-                            ),
-                          ),
-                          items: [
-                            DropdownMenuItem(
-                              value: _PlanRepeatUi.none,
-                              child: Text(
-                                t(currentLocale.value, 'plan_repeat_none'),
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: _PlanRepeatUi.daily,
-                              child: Text(
-                                t(currentLocale.value, 'plan_repeat_daily'),
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: _PlanRepeatUi.weekdays,
-                              child: Text(
-                                t(
-                                  currentLocale.value,
-                                  'plan_repeat_weekdays',
-                                ),
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: _PlanRepeatUi.weekly,
-                              child: Text(
-                                t(currentLocale.value, 'plan_repeat_weekly'),
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: _PlanRepeatUi.monthly,
-                              child: Text(
-                                t(
-                                  currentLocale.value,
-                                  'plan_repeat_monthly',
-                                ),
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: _PlanRepeatUi.yearly,
-                              child: Text(
-                                t(
-                                  currentLocale.value,
-                                  'plan_repeat_yearly',
-                                ),
-                              ),
-                            ),
-                            if (_repeatUi == _PlanRepeatUi.custom)
-                              DropdownMenuItem(
-                                value: _PlanRepeatUi.custom,
-                                child: Text(
-                                  t(
-                                    currentLocale.value,
-                                    'plan_repeat_custom',
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () async {
+                                    final initial = DateTime(
+                                      _date.year,
+                                      _date.month,
+                                      _date.day,
+                                      _scheduledTime?.hour ?? 9,
+                                      _scheduledTime?.minute ?? 0,
+                                    );
+                                    final picked = await showAppDateTimePicker(
+                                      context,
+                                      initial: initial,
+                                    );
+                                    if (picked != null && mounted) {
+                                      setState(() {
+                                        _date = DateTime(
+                                          picked.year,
+                                          picked.month,
+                                          picked.day,
+                                        );
+                                        _scheduledTime = picked;
+                                      });
+                                    }
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 6),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.calendar_month_rounded,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              t(currentLocale.value,
+                                                  'start_time'),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelMedium,
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _scheduledTime == null
+                                              ? t(currentLocale.value,
+                                                  'scheduled')
+                                              : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () async {
+                                    final initial = DateTime(
+                                      _date.year,
+                                      _date.month,
+                                      _date.day,
+                                      _endTime?.hour ?? 10,
+                                      _endTime?.minute ?? 0,
+                                    );
+                                    final picked = await showAppDateTimePicker(
+                                      context,
+                                      initial: initial,
+                                    );
+                                    if (picked != null && mounted) {
+                                      setState(() => _endTime = DateTime(
+                                            _date.year,
+                                            _date.month,
+                                            _date.day,
+                                            picked.hour,
+                                            picked.minute,
+                                          ));
+                                    }
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 6),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.event_available_rounded,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              t(currentLocale.value,
+                                                  'end_time'),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelMedium,
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _endTime == null
+                                              ? t(currentLocale.value,
+                                                  'no_end_time')
+                                              : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                          child: SizedBox(
+                            height: 52,
+                            child: _tagsLoading
+                                ? Center(
+                                    child: SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                      ),
+                                    ),
+                                  )
+                                : _availableTags.isEmpty
+                                    ? Align(
+                                        alignment:
+                                            AlignmentDirectional.centerStart,
+                                        child: OutlinedButton.icon(
+                                          onPressed: _openTagManagerAndReload,
+                                          icon: const Icon(Icons.add_rounded,
+                                              size: 20),
+                                          label: Text(
+                                            t(
+                                              currentLocale.value,
+                                              'tags_empty_create_first',
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : TagQuickPickStrip(
+                                        tags: _availableTags,
+                                        selected: _selectedTags,
+                                        onToggle: _toggleTag,
+                                      ),
+                          ),
+                        ),
+                        TabBar(
+                          controller: _planTabController!,
+                          isScrollable: false,
+                          tabAlignment: TabAlignment.start,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          tabs: [
+                            Tab(text: t(currentLocale.value, 'notes_tab')),
+                            Tab(
+                                text:
+                                    t(currentLocale.value, 'checklist_tab')),
+                            Tab(
+                                text: t(
+                                    currentLocale.value,
+                                    'plan_parallel_plans_tab',
+                                  ),
+                                ),
                           ],
-                          onChanged: (v) {
-                            if (v == null) return;
-                            setState(() {
-                              _repeatUi = v;
-                              if (v != _PlanRepeatUi.custom) {
-                                _rruleCustomRaw = null;
-                              } else {
-                                _rruleCustomRaw =
-                                    widget.task.rrule?.trim();
-                              }
-                            });
-                          },
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          t(currentLocale.value, 'notes'),
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        QuillSimpleToolbar(
-                          controller: _quillController,
-                          config: QuillSimpleToolbarConfig(
-                            showFontFamily: false,
-                            showFontSize: false,
-                            showBoldButton: true,
-                            showItalicButton: true,
-                            showUnderLineButton: true,
-                            showStrikeThrough: true,
-                            showInlineCode: false,
-                            showColorButton: true,
-                            showBackgroundColorButton: false,
-                            showClearFormat: true,
-                            showAlignmentButtons: false,
-                            showHeaderStyle: false,
-                            showListNumbers: true,
-                            showListBullets: true,
-                            showListCheck: true,
-                            showCodeBlock: false,
-                            showQuote: false,
-                            showIndent: false,
-                            showLink: false,
-                            showUndo: false,
-                            showRedo: false,
-                            showSearchButton: false,
-                            showSubscript: false,
-                            showSuperscript: false,
-                            showSmallButton: false,
-                            showLineHeightButton: false,
-                            showDirection: false,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          height: 220,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .outlineVariant
-                                    .withValues(alpha: 0.5),
-                              ),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: QuillEditor.basic(
-                              controller: _quillController,
-                              focusNode: _quillFocusNode,
-                              scrollController: _quillScrollController,
-                              config: QuillEditorConfig(
-                                expands: true,
-                                padding: const EdgeInsets.all(12),
-                                placeholder: t(
-                                  currentLocale.value,
-                                  'notes_hint_flat',
+                        Expanded(
+                          child: TabBarView(
+                            controller: _planTabController!,
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  16,
+                                  compactChrome ? 4 : 8,
+                                  16,
+                                  compactChrome ? 12 : 24,
                                 ),
-                                customStyles:
-                                    DefaultStyles.getInstance(context),
-                                keyboardAppearance:
-                                    Theme.of(context).brightness ==
-                                            Brightness.dark
-                                        ? Brightness.dark
-                                        : Brightness.light,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          t(currentLocale.value, 'checklist_tab'),
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        ...List.generate(_checklistControllers.length, (i) {
-                          final scheme = Theme.of(context).colorScheme;
-                          final rowDone =
-                              i < _checklistDone.length && _checklistDone[i];
-                          return ListTile(
-                            contentPadding:
-                                const EdgeInsets.symmetric(horizontal: 4),
-                            horizontalTitleGap: 4,
-                            leading: Checkbox(
-                              value: rowDone,
-                              onChanged: (v) => setState(() {
-                                _syncChecklistDoneLength(
-                                    _checklistControllers, _checklistDone);
-                                _checklistDone[i] = v ?? false;
-                                _partitionChecklistRowsByDone(
-                                  controllers: _checklistControllers,
-                                  done: _checklistDone,
-                                );
-                              }),
-                            ),
-                            title: TextField(
-                              controller: _checklistControllers[i],
-                              style: TextStyle(
-                                decoration: rowDone
-                                    ? TextDecoration.lineThrough
-                                    : TextDecoration.none,
-                                color: rowDone
-                                    ? scheme.onSurface.withValues(alpha: 0.5)
-                                    : scheme.onSurface,
-                                decorationColor: rowDone
-                                    ? scheme.onSurface.withValues(alpha: 0.5)
-                                    : null,
-                              ),
-                              decoration: InputDecoration(
-                                hintText:
-                                    t(currentLocale.value, 'checklist_item'),
-                                hintStyle: TextStyle(
-                                  color: scheme.onSurfaceVariant
-                                      .withValues(
-                                          alpha: rowDone ? 0.35 : 0.5),
-                                ),
-                                border: InputBorder.none,
-                                isDense: true,
-                                filled: true,
-                                fillColor:
-                                    scheme.surfaceContainerHighest.withValues(
-                                        alpha: 0.35),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 12,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        minHeight:
+                                            kPlanningEditQuillToolbarMinHeight,
+                                      ),
+                                      child: QuillSimpleToolbar(
+                                        controller: _quillController,
+                                        config:
+                                            _planningTaskEditQuillToolbarConfig(
+                                          context,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Expanded(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .surface,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .outlineVariant
+                                                .withValues(alpha: 0.5),
+                                          ),
+                                        ),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: QuillEditor.basic(
+                                          controller: _quillController,
+                                          focusNode: _quillFocusNode,
+                                          scrollController:
+                                              _quillScrollController,
+                                          config: QuillEditorConfig(
+                                            expands: true,
+                                            padding: const EdgeInsets.all(12),
+                                            placeholder: t(
+                                              currentLocale.value,
+                                              'notes_hint_flat',
+                                            ),
+                                            customStyles:
+                                                DefaultStyles.getInstance(
+                                              context,
+                                            ),
+                                            keyboardAppearance:
+                                                Theme.of(context).brightness ==
+                                                        Brightness.dark
+                                                    ? Brightness.dark
+                                                    : Brightness.light,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                            trailing: IconButton(
-                              icon: Icon(
-                                Icons.delete_outline_rounded,
-                                color: scheme.error,
+                              ListView(
+                                padding: const EdgeInsets.fromLTRB(
+                                    16, 12, 16, 24),
+                                children: [
+                                  ...List.generate(
+                                      _checklistControllers.length, (i) {
+                                    final scheme =
+                                        Theme.of(context).colorScheme;
+                                    final rowDone = i < _checklistDone.length &&
+                                        _checklistDone[i];
+                                    return ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 4),
+                                      horizontalTitleGap: 4,
+                                      leading: Checkbox(
+                                        value: rowDone,
+                                        onChanged: (v) => setState(() {
+                                          _syncChecklistDoneLength(
+                                            _checklistControllers,
+                                            _checklistDone,
+                                          );
+                                          _checklistDone[i] = v ?? false;
+                                          _partitionChecklistRowsByDone(
+                                            controllers:
+                                                _checklistControllers,
+                                            done: _checklistDone,
+                                          );
+                                        }),
+                                      ),
+                                      title: TextField(
+                                        controller: _checklistControllers[i],
+                                        style: TextStyle(
+                                          decoration: rowDone
+                                              ? TextDecoration.lineThrough
+                                              : TextDecoration.none,
+                                          color: rowDone
+                                              ? scheme.onSurface
+                                                  .withValues(alpha: 0.5)
+                                              : scheme.onSurface,
+                                          decorationColor: rowDone
+                                              ? scheme.onSurface
+                                                  .withValues(alpha: 0.5)
+                                              : null,
+                                        ),
+                                        decoration: InputDecoration(
+                                          hintText: t(
+                                            currentLocale.value,
+                                            'checklist_item',
+                                          ),
+                                          hintStyle: TextStyle(
+                                            color: scheme.onSurfaceVariant
+                                                .withValues(
+                                              alpha: rowDone ? 0.35 : 0.5,
+                                            ),
+                                          ),
+                                          border: InputBorder.none,
+                                          isDense: true,
+                                          filled: true,
+                                          fillColor: scheme
+                                              .surfaceContainerHighest
+                                              .withValues(alpha: 0.35),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                        ),
+                                      ),
+                                      trailing: IconButton(
+                                        icon: Icon(
+                                          Icons.delete_outline_rounded,
+                                          color: scheme.error,
+                                        ),
+                                        tooltip: t(
+                                            currentLocale.value, 'delete'),
+                                        onPressed: () => setState(() {
+                                          _removeChecklistRowAt(
+                                            i,
+                                            controllers:
+                                                _checklistControllers,
+                                            done: _checklistDone,
+                                          );
+                                        }),
+                                      ),
+                                    );
+                                  }),
+                                  ListTile(
+                                    leading: Icon(
+                                      Icons.add_circle_outline_rounded,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                    ),
+                                    title: Text(
+                                      t(currentLocale.value,
+                                          'add_checklist_item'),
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    onTap: () => setState(() {
+                                      _checklistControllers
+                                          .add(TextEditingController());
+                                      _checklistDone.add(false);
+                                    }),
+                                  ),
+                                ],
                               ),
-                              tooltip: t(currentLocale.value, 'delete'),
-                              onPressed: () => setState(() {
-                                _removeChecklistRowAt(
-                                  i,
-                                  controllers: _checklistControllers,
-                                  done: _checklistDone,
-                                );
-                              }),
-                            ),
-                          );
-                        }),
-                        ListTile(
-                          leading: Icon(
-                            Icons.add_circle_outline_rounded,
-                            color: Theme.of(context).colorScheme.primary,
+                              ListView(
+                                padding: const EdgeInsets.fromLTRB(
+                                    16, 12, 16, 24),
+                                children: [
+                                  DropdownButtonFormField<int?>(
+                                    value: _reminderMinutes,
+                                    isExpanded: true,
+                                    decoration: InputDecoration(
+                                      labelText: t(
+                                        currentLocale.value,
+                                        'plan_reminder_label',
+                                      ),
+                                    ),
+                                    items: [
+                                      DropdownMenuItem<int?>(
+                                        value: null,
+                                        child: Text(
+                                          t(currentLocale.value,
+                                              'plan_reminder_none'),
+                                        ),
+                                      ),
+                                      DropdownMenuItem<int?>(
+                                        value: 5,
+                                        child: Text(
+                                          t(currentLocale.value,
+                                              'plan_reminder_5m'),
+                                        ),
+                                      ),
+                                      DropdownMenuItem<int?>(
+                                        value: 15,
+                                        child: Text(
+                                          t(currentLocale.value,
+                                              'plan_reminder_15m'),
+                                        ),
+                                      ),
+                                      DropdownMenuItem<int?>(
+                                        value: 30,
+                                        child: Text(
+                                          t(currentLocale.value,
+                                              'plan_reminder_30m'),
+                                        ),
+                                      ),
+                                      DropdownMenuItem<int?>(
+                                        value: 60,
+                                        child: Text(
+                                          t(currentLocale.value,
+                                              'plan_reminder_1h'),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (v) => setState(
+                                        () => _reminderMinutes = v),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  DropdownButtonFormField<_PlanRepeatUi>(
+                                    value: _repeatUi,
+                                    isExpanded: true,
+                                    decoration: InputDecoration(
+                                      labelText: t(
+                                        currentLocale.value,
+                                        'plan_repeat_label',
+                                      ),
+                                    ),
+                                    items: [
+                                      DropdownMenuItem(
+                                        value: _PlanRepeatUi.none,
+                                        child: Text(
+                                          t(currentLocale.value,
+                                              'plan_repeat_none'),
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: _PlanRepeatUi.daily,
+                                        child: Text(
+                                          t(currentLocale.value,
+                                              'plan_repeat_daily'),
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: _PlanRepeatUi.weekdays,
+                                        child: Text(
+                                          t(
+                                            currentLocale.value,
+                                            'plan_repeat_weekdays',
+                                          ),
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: _PlanRepeatUi.weekly,
+                                        child: Text(
+                                          t(currentLocale.value,
+                                              'plan_repeat_weekly'),
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: _PlanRepeatUi.monthly,
+                                        child: Text(
+                                          t(
+                                            currentLocale.value,
+                                            'plan_repeat_monthly',
+                                          ),
+                                        ),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: _PlanRepeatUi.yearly,
+                                        child: Text(
+                                          t(
+                                            currentLocale.value,
+                                            'plan_repeat_yearly',
+                                          ),
+                                        ),
+                                      ),
+                                      if (_repeatUi == _PlanRepeatUi.custom)
+                                        DropdownMenuItem(
+                                          value: _PlanRepeatUi.custom,
+                                          child: Text(
+                                            t(
+                                              currentLocale.value,
+                                              'plan_repeat_custom',
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                    onChanged: (v) {
+                                      if (v == null) return;
+                                      setState(() {
+                                        _repeatUi = v;
+                                        if (v != _PlanRepeatUi.custom) {
+                                          _rruleCustomRaw = null;
+                                          _rruleCustomController.clear();
+                                        } else {
+                                          _rruleCustomRaw =
+                                              widget.task.rrule?.trim();
+                                          _rruleCustomController.text =
+                                              _rruleCustomRaw ?? '';
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  if (_repeatUi == _PlanRepeatUi.custom) ...[
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: _rruleCustomController,
+                                      minLines: 2,
+                                      maxLines: 5,
+                                      decoration: InputDecoration(
+                                        labelText: t(
+                                          currentLocale.value,
+                                          'plan_repeat_custom',
+                                        ),
+                                        border: const OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
                           ),
-                          title: Text(
-                            t(currentLocale.value, 'add_checklist_item'),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          onTap: () => setState(() {
-                            _checklistControllers.add(TextEditingController());
-                            _checklistDone.add(false);
-                          }),
                         ),
                       ],
                     ),
@@ -1594,7 +1832,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                 ],
                 if (_shouldShowGraduateUi)
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      0,
+                      16,
+                      keyboardOpen ? 4 : 8,
+                    ),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -1608,10 +1851,14 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                   ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    16 + MediaQuery.of(context).viewInsets.bottom,
+                    kPlanningEditActionBarPadH,
+                    keyboardOpen
+                        ? kPlanningEditActionBarPadVKeyboard
+                        : kPlanningEditActionBarPadV,
+                    kPlanningEditActionBarPadH,
+                    keyboardOpen
+                        ? kPlanningEditActionBarBottomPadKeyboard
+                        : kPlanningEditActionBarBottomPad,
                   ),
                   child: Row(
                     children: [
@@ -1673,7 +1920,9 @@ class _TimelineRecordSheetContent extends StatefulWidget {
 class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent>
     with SingleTickerProviderStateMixin {
   late TextEditingController _titleController;
-  late TextEditingController _noteController;
+  late QuillController _recordQuillController;
+  late FocusNode _recordQuillFocus;
+  late ScrollController _recordQuillScroll;
   int? _categoryId;
   DateTime? _startDisplay;
   DateTime? _endDisplay;
@@ -1704,7 +1953,12 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _titleController = TextEditingController(text: widget.record.title);
-    _noteController = TextEditingController(text: widget.record.note ?? '');
+    _recordQuillController = QuillController(
+      document: _documentForRecordPlain(widget.record.note),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+    _recordQuillFocus = FocusNode();
+    _recordQuillScroll = ScrollController();
     _categoryId = widget.record.categoryId;
     _startDisplay = widget.record.startTime != null ? utcToDisplay(widget.record.startTime!) : null;
     _endDisplay = widget.record.endTime != null ? utcToDisplay(widget.record.endTime!) : null;
@@ -1916,11 +2170,21 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     return (sync: true, clear: false, id: sel);
   }
 
+  Document _documentForRecordPlain(String? plain) {
+    final b = plain?.trim() ?? '';
+    if (b.isEmpty) return Document();
+    return Document.fromJson([
+      <String, dynamic>{'insert': '$b\n'},
+    ]);
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
     _titleController.dispose();
-    _noteController.dispose();
+    _recordQuillController.dispose();
+    _recordQuillFocus.dispose();
+    _recordQuillScroll.dispose();
     for (final c in _checklistControllers) {
       c.dispose();
     }
@@ -1945,7 +2209,10 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
   Future<void> _save() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) return;
-    final noteText = _noteController.text.trim();
+    final noteText = _recordQuillController.document
+        .toPlainText()
+        .replaceAll('\u200b', '')
+        .trim();
     final checklistPayload = _checklistForApi();
     final isRunning = widget.record.endTime == null;
     final planPatch = _sourcePlanPatchArgs();
@@ -2276,7 +2543,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                 ),
                 TabBar(
                   controller: _tabController,
-                  isScrollable: true,
+                  isScrollable: false,
+                  tabAlignment: TabAlignment.start,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   tabs: [
                     Tab(text: t(currentLocale.value, 'notes_tab')),
                     Tab(text: t(currentLocale.value, 'checklist_tab')),
@@ -2288,27 +2557,60 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                   child: TabBarView(
                     controller: _tabController,
                     children: [
-                      ListView(
-                        primary: false,
-                        controller: widget.scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                        children: [
-                          TextField(
-                            controller: _noteController,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: t(currentLocale.value, 'notes_hint_flat'),
-                              hintStyle: TextStyle(
-                                color: Colors.grey.withOpacity(0.5),
-                                fontWeight: FontWeight.w400,
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                minHeight: kPlanningEditQuillToolbarMinHeight,
                               ),
-                              labelText: null,
+                              child: QuillSimpleToolbar(
+                                controller: _recordQuillController,
+                                config: _planningTaskEditQuillToolbarConfig(
+                                  context,
+                                ),
+                              ),
                             ),
-                            minLines: 1,
-                            maxLines: 4,
-                            textCapitalization: TextCapitalization.sentences,
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .outlineVariant
+                                        .withValues(alpha: 0.5),
+                                  ),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: QuillEditor.basic(
+                                  controller: _recordQuillController,
+                                  focusNode: _recordQuillFocus,
+                                  scrollController: _recordQuillScroll,
+                                  config: QuillEditorConfig(
+                                    expands: true,
+                                    padding: const EdgeInsets.all(12),
+                                    placeholder: t(
+                                      currentLocale.value,
+                                      'notes_hint_flat',
+                                    ),
+                                    customStyles:
+                                        DefaultStyles.getInstance(context),
+                                    keyboardAppearance:
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Brightness.dark
+                                            : Brightness.light,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       ListView(
                         primary: false,

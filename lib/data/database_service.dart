@@ -517,6 +517,7 @@ class DatabaseService {
               name: (e['name'] ?? '').toString(),
               pbRecordId: e['pocket_id']?.toString(),
               sortOrder: int.tryParse((e['sort_order'] ?? '0').toString()) ?? 0,
+              domain: 'plan',
             ),
       ];
     }
@@ -1766,7 +1767,8 @@ class DatabaseService {
       try {
         final uid = _escapeForPbFilter(authId);
         // Required: without expand, API returns only relation ids — chips would be empty after refresh.
-        final tagCatalog = await fetchTagsForCurrentUser();
+        final tagCatalog =
+            await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
         final list = await _pb.collection(PbCollections.plans).getFullList(
               expand: kPbPlanTagsExpand,
               filter: 'user_id = "$uid"',
@@ -1849,7 +1851,8 @@ class DatabaseService {
     if (authId == null || authId.isEmpty) return [];
     final uid = _escapeForPbFilter(authId);
     try {
-      final tagCatalog = await fetchTagsForCurrentUser();
+      final tagCatalog =
+          await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
       final list = await _pb.collection(PbCollections.plans).getFullList(
             expand: kPbPlanTagsExpand,
             filter: 'user_id = "$uid"',
@@ -1864,8 +1867,12 @@ class DatabaseService {
     }
   }
 
-  /// Undated plans (`start_time` unset): backlog / Lists tab. Excludes done, virtual, optimistic rows.
-  Future<List<PlanningTask>> fetchBacklogPlans({int? categoryId}) async {
+  /// Undated plans (`start_time` unset): backlog / Lists tab. Excludes virtual, optimistic rows.
+  /// When [includeCompleted] is false (default), excludes [PlanningTask.isDone] (e.g. chip counts).
+  Future<List<PlanningTask>> fetchBacklogPlans({
+    int? categoryId,
+    bool includeCompleted = false,
+  }) async {
     try {
       final all = await _fetchAllPlanningTasksForCurrentUser();
       final out = <PlanningTask>[];
@@ -1874,7 +1881,7 @@ class DatabaseService {
         if (pid.startsWith('optimistic-') || pid.startsWith('virt-')) {
           continue;
         }
-        if (t.isDone) continue;
+        if (!includeCompleted && t.isDone) continue;
         if (t.startTime != null) continue;
         if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
         final dk = t.dateKey.trim();
@@ -4272,6 +4279,15 @@ class DatabaseService {
       }
       final dn = data['display_name'] as String?;
       final tagModeRaw = data['tag_display_mode']?.toString().trim();
+      final listBehRaw =
+          data['list_completion_behavior']?.toString().trim().toLowerCase() ??
+              '';
+      final listBeh = (listBehRaw == 'stay' ||
+              listBehRaw == 'bottom' ||
+              listBehRaw == 'hide' ||
+              listBehRaw == 'archive')
+          ? listBehRaw
+          : 'hide';
       final settingsUserId =
           authUid.isNotEmpty ? authUid : (uid != null && uid.isNotEmpty ? uid : rowUid);
       _settings = UserSettings(
@@ -4290,6 +4306,7 @@ class DatabaseService {
         tagDisplayMode: categoryDisplayModeFromWire(tagModeRaw),
         tagDisplayModeWireRaw:
             (tagModeRaw != null && tagModeRaw.isNotEmpty) ? tagModeRaw : null,
+        listCompletionBehavior: listBeh,
       );
       _mergeDeviceProfilePreferenceOverridesSync();
       _settingsController.add(_settings);
@@ -8817,7 +8834,10 @@ class DatabaseService {
   }
 
   /// Loads tag rows for the current profile (`user_id` filter). Returns empty if none or error (no mocks).
-  Future<List<Tag>> fetchTagsForCurrentUser() async {
+  /// [scope] filters `tags.domain`: plan strip vs list strip (@DATA_MAP).
+  Future<List<Tag>> fetchTagsForCurrentUser({
+    TagCatalogScope scope = TagCatalogScope.plan,
+  }) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       _userTagsCatalogCache = [];
       return [];
@@ -8838,7 +8858,7 @@ class DatabaseService {
         return a.name.toLowerCase().compareTo(b.name.toLowerCase());
       });
       _userTagsCatalogCache = List.unmodifiable(out);
-      return List<Tag>.from(out);
+      return List<Tag>.from(out.where((t) => scope.matchesTag(t)));
     } catch (e, st) {
       _log('TAGS_FETCH: $e');
       _log(st.toString());
@@ -8887,12 +8907,16 @@ class DatabaseService {
     required String name,
     required String colorHex,
     required String iconKey,
+    String domain = 'plan',
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
     final trimmed = name.trim();
     if (trimmed.isEmpty) return null;
+    final dom = domain.trim().toLowerCase() == 'list' ? 'list' : 'plan';
     try {
-      final existing = await fetchTagsForCurrentUser();
+      final existing = await fetchTagsForCurrentUser(
+        scope: dom == 'list' ? TagCatalogScope.list : TagCatalogScope.plan,
+      );
       var nextBiz = 1;
       var nextOrder = 0;
       for (final t in existing) {
@@ -8907,6 +8931,7 @@ class DatabaseService {
               'color': colorHex,
               'icon': iconKey,
               'sort_order': nextOrder,
+              'domain': dom,
             },
           );
       return Tag.fromPocketJson(<String, dynamic>{...created.data, 'id': created.id});
@@ -9228,11 +9253,13 @@ class DatabaseService {
         );
         await _pb.collection(PbCollections.plans).update(
               restId,
-              body: <String, dynamic>{'order': i},
+              body: <String, dynamic>{
+                'user_id': _pidForPbFilter,
+                'order': i,
+              },
             );
       }
     } catch (e, st) {
-      print('UI ERROR: $e');
       _log('PLAN_ORDER_SYNC_PB: $e');
       _log(st.toString());
       try {

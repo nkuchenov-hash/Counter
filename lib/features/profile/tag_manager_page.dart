@@ -76,10 +76,17 @@ Color? parseTagHexColor(String? hex) {
 }
 
 class TagManagerPage extends StatefulWidget {
-  const TagManagerPage({super.key, this.embeddedInHub = false});
+  const TagManagerPage({
+    super.key,
+    this.embeddedInHub = false,
+    this.pocketTagDomain = 'plan',
+  });
 
   /// When true, no [AppBar] — shown as a tab in the unified tag settings screen.
   final bool embeddedInHub;
+
+  /// PocketBase `tags.domain` for list vs plan ecosystem (`plan` | `list`).
+  final String pocketTagDomain;
 
   @override
   State<TagManagerPage> createState() => _TagManagerPageState();
@@ -95,9 +102,15 @@ class _TagManagerPageState extends State<TagManagerPage> {
     _reload();
   }
 
+  TagCatalogScope get _tagScope =>
+      widget.pocketTagDomain.trim().toLowerCase() == 'list'
+          ? TagCatalogScope.list
+          : TagCatalogScope.plan;
+
   Future<void> _reload() async {
     setState(() => _loading = true);
-    final list = await DatabaseService.instance.fetchTagsForCurrentUser();
+    final list =
+        await DatabaseService.instance.fetchTagsForCurrentUser(scope: _tagScope);
     if (!mounted) return;
     setState(() {
       _tags = list;
@@ -226,6 +239,9 @@ class _TagManagerPageState extends State<TagManagerPage> {
         name: name,
         colorHex: pickedColor,
         iconKey: pickedIcon,
+        domain: widget.pocketTagDomain.trim().toLowerCase() == 'list'
+            ? 'list'
+            : 'plan',
       );
       if (!mounted) return;
       if (created == null) {

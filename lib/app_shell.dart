@@ -14,6 +14,7 @@ import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
@@ -189,6 +190,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   StreamSubscription<String?>? _notificationSub;
   StreamSubscription<List<CategoryRule>>? _categoryRulesSub;
 
+  final ShellLayoutController _shellLayout = ShellLayoutController();
+
   stt.SpeechToText? _speech;
   SpeechEngineHandle? _speechHandle;
   bool _speechReady = false;
@@ -303,6 +306,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _categoryRulesSub?.cancel();
     _titleController.dispose();
     _titleFocus.dispose();
+    _shellLayout.dispose();
     super.dispose();
   }
 
@@ -1170,8 +1174,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
           child: DraggableScrollableSheet(
             expand: false,
-            initialChildSize: 0.7,
-            minChildSize: 0.4,
+            initialChildSize: 0.88,
+            minChildSize: 0.42,
             maxChildSize: 0.95,
             builder: (context, scrollController) {
               return ActivityDetailSheet(
@@ -1227,8 +1231,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: DraggableScrollableSheet(
             expand: false,
-            initialChildSize: 0.7,
-            minChildSize: 0.4,
+            initialChildSize: 0.88,
+            minChildSize: 0.42,
             maxChildSize: 0.95,
             builder: (context, scrollController) {
               return ActivityDetailSheet(
@@ -1472,8 +1476,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           });
           await _loadTasksForDate(_selectedDate);
           if (!mounted) return;
+          setState(() => _shellPageIndex = 0);
         },
-        onJumpToTimeline: () => setState(() => _shellPageIndex = 0),
       ),
       ListsPage(
         selectedDate: _selectedDate,
@@ -1509,27 +1513,60 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         return AnimatedBuilder(
       animation: currentLocale,
       builder: (context, _) {
-        return Listener(
+        final scheme = Theme.of(context).colorScheme;
+        _shellLayout.applyShellFrame(_shellPageIndex);
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: scheme.brightness == Brightness.dark
+                ? Brightness.light
+                : Brightness.dark,
+            systemNavigationBarColor: scheme.surface,
+          ),
+          child: Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) {
             ScaffoldMessenger.of(context).clearSnackBars();
           },
-          child: Scaffold(
-            resizeToAvoidBottomInset: true,
-            body: IndexedStack(
-              index: _shellPageIndex,
-              sizing: StackFit.expand,
-              children: pages,
-            ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-            floatingActionButton: !showVoiceFab
-            ? null
-            : FloatingActionButton(
-                onPressed: _startVoiceInput,
-                tooltip: _isVoiceListening ? t(currentLocale.value, 'listening') : t(currentLocale.value, 'voice_input'),
-                child: Icon(_isVoiceListening ? Icons.graphic_eq_rounded : Icons.mic_rounded),
+          child: ShellLayoutScope(
+            controller: _shellLayout,
+            child: Scaffold(
+              backgroundColor: scheme.surface,
+              resizeToAvoidBottomInset: true,
+              body: IndexedStack(
+                index: _shellPageIndex,
+                sizing: StackFit.expand,
+                children: pages,
               ),
-            bottomNavigationBar: NavigationBar(
+              floatingActionButtonLocation:
+                  FloatingActionButtonLocation.endFloat,
+              floatingActionButton: !showVoiceFab
+                  ? null
+                  : ListenableBuilder(
+                      listenable: _shellLayout,
+                      builder: (context, child) {
+                        final bulkReservePx = _shellLayout.fabBottomReservePx;
+                        return AnimatedPadding(
+                          duration: const Duration(milliseconds: 240),
+                          curve: Curves.easeOutCubic,
+                          padding: EdgeInsets.only(
+                            bottom: MediaQuery.paddingOf(context).bottom +
+                                bulkReservePx,
+                          ),
+                          child: child,
+                        );
+                      },
+                      child: FloatingActionButton(
+                        onPressed: _startVoiceInput,
+                        tooltip: _isVoiceListening
+                            ? t(currentLocale.value, 'listening')
+                            : t(currentLocale.value, 'voice_input'),
+                        child: Icon(_isVoiceListening
+                            ? Icons.graphic_eq_rounded
+                            : Icons.mic_rounded),
+                      ),
+                    ),
+              bottomNavigationBar: NavigationBar(
               selectedIndex: _navBarSelectedIndex,
               onDestinationSelected: (i) {
                 if (i == 4) {
@@ -1585,7 +1622,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 ),
               ],
             ),
+            ),
           ),
+        ),
         );
       },
     );

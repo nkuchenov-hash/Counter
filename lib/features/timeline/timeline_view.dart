@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
+import 'package:counter/features/timeline/timeline_widgets.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/chip_component.dart';
@@ -474,60 +474,18 @@ class _TimelinePageState extends State<TimelinePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: Row(
-          children: [
-            if (kIsWeb)
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
-                icon: const Icon(Icons.chevron_left_rounded),
-                tooltip: t(currentLocale.value, 'date_previous_day'),
-                onPressed: widget.onNavigateToDate == null
-                    ? null
-                    : () {
-                        final d = widget.selectedDate
-                            .subtract(const Duration(days: 1));
-                        widget.onNavigateToDate!(
-                          DateTime(d.year, d.month, d.day),
-                        );
-                      },
-              ),
-            Expanded(
-              child: GlobalAppHeader(
-                selectedDate: widget.selectedDate,
-                enabled: widget.onNavigateToDate != null,
-                onDateSelected: (d) => widget.onNavigateToDate?.call(d),
-              ),
-            ),
-            if (kIsWeb)
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
-                icon: const Icon(Icons.chevron_right_rounded),
-                tooltip: t(currentLocale.value, 'date_next_day'),
-                onPressed: widget.onNavigateToDate == null
-                    ? null
-                    : () {
-                        final d =
-                            widget.selectedDate.add(const Duration(days: 1));
-                        widget.onNavigateToDate!(
-                          DateTime(d.year, d.month, d.day),
-                        );
-                      },
-              ),
-          ],
-        ),
-      ),
       body: SafeArea(
         child: Column(
           children: [
+            TimelineTopDateStrip(
+              selectedDate: widget.selectedDate,
+              onDateSelected: (d) => widget.onNavigateToDate?.call(d),
+              onNavigateToDate: widget.onNavigateToDate,
+            ),
+            Divider(
+              height: 1,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: SegmentedButton<bool>(

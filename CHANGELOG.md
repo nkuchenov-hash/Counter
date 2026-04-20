@@ -11,7 +11,18 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
-## [2026-04-06] - Strike 19: Idea Editor (GTD layout + Markdown toolbar)
+## [2026-04-20] - Strike 25: Shell layout isolation & ticker edge-scroll (victory)
+* **Strike 25 (`lib/core/shell_layout_state.dart` `ShellLayoutController` / `ShellLayoutScope`, `lib/app_shell.dart`, `lib/features/planning/planning_view.dart`, `lib/features/lists/lists_view.dart`, `lib/data/database_service.dart`):** Enforced domain isolation by extracting UI layout state (`ShellLayoutController`) from the data layer. Replaced frame-dependent pointer events with a time-delta `Ticker` to guarantee hardware-agnostic, consistent velocity for timeline edge auto-scrolling.
+* **Strike 25 — Lists / Backlog (`lib/features/lists/lists_view.dart`, `UserSettings.listCompletionBehavior`, `DatabaseService.persistPlanningTaskOrder`):** `CustomScrollView` + `SliverReorderableList` + `ReorderableDelayedDragStartListener` for long-press backlog reorder with optimistic `plans.order` + debounced bulk PATCH; per-card category path header; `list_completion_behavior`-driven done/archive/hide layouts; filter chip bar with horizontal manual reorder; optional tag chips on cards; mass-edit selection + bottom bar reporting FAB clearance through `ShellLayoutScope` (not the data layer).
+* **Strike 25 — Planning day & tag fork (`lib/features/planning/planning_view.dart`, `lib/features/profile/tag_settings_hub.dart`, `lib/features/profile/tag_manager_page.dart`, `lib/features/shared/shared_widgets.dart` `_PlanningTaskEditSheet`):** Segmented sort surface (category / wall-time hour grid / tags / custom) with delayed-drag reorder in tag & custom buckets; hour-grid `LongPressDraggable` + slot `DragTarget` rescheduling; plan bulk-select bar wired to shell FAB reserve. `TagSettingsHub.tagCreateDomain` + `TagManagerPage.pocketTagDomain` enforce PocketBase `tags.domain` + `fetchTagsForCurrentUser(scope:)` so Ideas/backlog CRUD list-scoped tags without mixing the plan tag catalog.
+
+## [2026-04-19] - Strike 24: UI purge & editor unification (victory)
+* **Strike 24 (`lib/features/timeline/timeline_view.dart`, `lib/features/timeline/timeline_widgets.dart`, `lib/features/planning/planning_view.dart`, `lib/features/shared/shared_widgets.dart`, `lib/core/theme.dart`, `lib/l10n/dictionary.dart`):** Eliminated legacy spatial bloat by moving dates to a compact SafeArea strip. Unified the Plan and Record edit sheets into a mirrored, left-aligned Tab architecture (Start/End 50-50 row, Notes, Checklist, Parallel) and stabilized the Quill toolbar height, maintaining strict schema adherence for Record text persistence.
+
+## [2026-04-17] - Strike 22: Idea vs Plan editor fork (rollback)
+* **`_PlanningTaskEditSheet` (`lib/features/shared/shared_widgets.dart`, `_startedAsUndatedBacklog`, nullable `TabController`):** Resolved UI regression by explicitly branching `_PlanningTaskEditSheet` logic based on list-item state. Restored the optimized single-scroll layout for time-bound Plans (exposed Omni-Picker, visible Tags) while preserving the 3-tab GTD layout for Ideas, ensuring both modes safely integrate the new Quill editor schema.
+
+## [2026-04-17] - Strike 19: Idea Editor (GTD layout + Markdown toolbar)
 * **Idea Editor (`lib/features/shared/shared_widgets.dart` `_PlanningTaskEditSheet`, `lib/l10n/dictionary.dart` `notes_md_*`):** Overhauled the Idea Editor into a strict 3-tab GTD layout (Notes, Checklist, Schedule), completely purging the Tag UI for undated backlog items. Implemented a lightweight, schema-safe Markdown injection toolbar for the Notes field, avoiding heavy WYSIWYG dependencies while preserving the Optimistic UI speed.
 
 ## [2026-04-17] - Strike 17: Omni-Picker refinement
@@ -23,7 +34,7 @@
 ## [2026-04-17] - Strike 15: Unified Omni-Picker
 * **Platform / omni-picker (`ARCHITECTURE.md` §8.1, `lib/core/widgets/omni_date_time_picker_dialog.dart`, `shared_widgets.dart` `showAppDateTimePicker`, `picker_entry_modes.dart`):** Codified the Omni-Picker Law in ARCHITECTURE.md and implemented a unified, keyboard-first Date & Time AlertDialog for Web/Desktop, replacing the sequential picker flow to eliminate UX friction while preserving mobile touch flows. The `useKeyboardFriendlyMaterialPickers()` path now opens `showOmniDateTimePickerDialog` (`InputDatePickerFormField` + 24h hour/minute `TextFormField`s, single Save) instead of chained `showDatePicker`→`showTimePicker`; touch/mobile still uses `showOmniDateTimePicker` from `omni_datetime_picker`.
 
-## [2026-04-06] - Strike 14: Inbox gating & UI polish
+## [2026-04-17] - Strike 14: Inbox gating & UI polish
 * **Lists / Timeline / Planning / shell (`lists_view.dart` `_filterCategoryId` gate, `timeline_view.dart` / `planning_view.dart` `kIsWeb` chevrons, `app_shell.dart`, `dictionary.dart` `input_placeholder_*`, `tag_contrast.dart` / `chip_component.dart`):** Enforced strict GTD Inbox gating with empty states. Purged redundant manual-add UI/dead code from app_shell, standardized inline placeholders, relocated 'No Tags' settings with dynamic B/W contrast, and implemented Web-only chevron date navigation.
 
 ## [2026-04-17] - Strike 13: Inbox paradigm & UI purge

@@ -168,6 +168,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **data_region** | String | Setting | NO | Region for data storage preference. |
 | **has_seeded** | Bool | System | NO | Flag indicating if initial data has been seeded. |
 | **tag_display_mode** | Text or Select | UI | NO | **Planning tags** (strip, task editor, task cards). App **default PATCH** strings: `letter_chip`, `chip`, `round`, `icon`, `icon_in_circle`. Also accepts/round-trips: `text_chip`, `dot`, `icon_circle` (preserved if already stored). Align PocketBase Select to one set or use **Plain text**. |
+| **list_completion_behavior** | Select or Text | UI | NO | **Lists (Inbox)** checked-item UX. App PATCH / read values: `stay`, `bottom`, `hide`, `archive` (see Strike 25.1). Default server-side or client fallback: `hide`. |
 
 ### 🛠 Operational Logic for `profiles`:
 1. **The Role of `user_id` vs `id`:**
@@ -193,4 +194,5 @@ description: Revisions and corrections for DATA_MAP.md.
 | **name** | String | Data | **YES** | Display name of the tag (e.g., "Dinner", "#1"). |
 | **color** | String | UI | NO | Hex color code (e.g., "#FF0000"). |
 | **icon** | String | UI | NO | Material icon string identifier. |
-| **sort_order** | Number | UI | NO | Manual order in Tag Manager; lower = earlier. Planning **Sort by Tags** uses th
+| **sort_order** | Number | UI | NO | Manual order in Tag Manager; lower = earlier. Planning **Sort by Tags** uses this order. |
+| **domain** | String (Select) | Data | NO | Tag isolation: `plan` (Planning / timeline tag pickers) vs `list` (Lists / backlog tag pickers). Legacy rows with empty domain are treated as **`plan`**. New list tags MUST be created with `list`. |

@@ -5,12 +5,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
+import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +45,7 @@ class _ListsPageState extends State<ListsPage>
   static const String _prefsKeyChipMode = 'list_chip_mode';
   static const String _prefsKeyPinnedIds = 'list_pinned_ids';
   static const String _legacyPrefsKeyPinnedListChipIds = 'pinned_list_chip_ids';
+  static const String _prefsKeyShowListTags = 'lists_show_tags_on_cards';
 
   List<PlanningTask> _flat = [];
   /// Local-only rows until [fetchBacklogPlans] returns the server copy (inline add).
@@ -59,11 +61,15 @@ class _ListsPageState extends State<ListsPage>
   StreamSubscription<void>? _planRefreshSub;
   DateTime? _lastPlayDebounce;
   static const Duration _playDebounce = Duration(milliseconds: 500);
+
+  static const double _kShellBulkBarReservePx = 56;
   late final TextEditingController _inlineController;
   final FocusNode _inlineFocus = FocusNode();
 
   bool _listsSelectMode = false;
   final Set<String> _selectedListKeys = <String>{};
+  bool _listsArchiveSectionExpanded = true;
+  bool _showListTagsOnCards = true;
 
   /// Stable key for backlog rows (matches Planning bulk selection).
   static String _listKey(PlanningTask t) {
@@ -72,11 +78,26 @@ class _ListsPageState extends State<ListsPage>
     return 'plan-fallback-${t.id}-${t.order}-${t.dateKey}-${t.categoryId}-${t.title}';
   }
 
+  void _syncListsShellFabBulkReserve() {
+    if (!mounted) {
+      return;
+    }
+    final shell = ShellLayoutScope.read(context, listen: false);
+    if (shell.primaryTabIndex != 3) {
+      return;
+    }
+    final show =
+        _filterCategoryId != null && _selectedListKeys.isNotEmpty;
+    final next = show ? _kShellBulkBarReservePx : 0.0;
+    shell.setFabBottomReservePx(next);
+  }
+
   void _exitListsSelectMode() {
     setState(() {
       _listsSelectMode = false;
       _selectedListKeys.clear();
     });
+    _syncListsShellFabBulkReserve();
   }
 
   void _toggleListKey(String key) {
@@ -87,6 +108,7 @@ class _ListsPageState extends State<ListsPage>
         _selectedListKeys.add(key);
       }
     });
+    _syncListsShellFabBulkReserve();
   }
 
   void _toggleSelectAllVisibleLists(List<PlanningTask> visible) {
@@ -102,6 +124,7 @@ class _ListsPageState extends State<ListsPage>
         }
       }
     });
+    _syncListsShellFabBulkReserve();
   }
 
   bool _allVisibleListsSelected(List<PlanningTask> visible) {
@@ -118,178 +141,6 @@ class _ListsPageState extends State<ListsPage>
       if (_selectedListKeys.contains(_listKey(t))) out.add(t);
     }
     return out;
-  }
-
-  void _applyBulkCategoryToSelected(List<PlanningTask> display, int categoryId) {
-    final tasks = _tasksMatchingSelectedKeys(display);
-    if (tasks.isEmpty) return;
-    for (final task in tasks) {
-      if (task.planRowIdForBackend.startsWith('optimistic-inline-')) continue;
-      final updated = task.copyWith(categoryId: categoryId);
-      DatabaseService.instance.applyOptimisticPlanningTask(updated);
-    }
-    setState(() {});
-    DatabaseService.instance.notifyPlanningRefresh();
-    for (final task in tasks) {
-      if (task.planRowIdForBackend.startsWith('optimistic-inline-')) continue;
-      unawaited(
-        DatabaseService.instance.updatePlanningTask(
-          task.planRowIdForBackend,
-          planBusinessId: task.planRowId,
-          categoryId: categoryId,
-          suppressAppSnack: true,
-        ),
-      );
-    }
-    _exitListsSelectMode();
-  }
-
-  void _applyBulkTagsToSelected(List<PlanningTask> display, List<Tag> tags) {
-    final tasks = _tasksMatchingSelectedKeys(display);
-    if (tasks.isEmpty) return;
-    final tagList = List<Tag>.from(tags);
-    for (final task in tasks) {
-      if (task.planRowIdForBackend.startsWith('optimistic-inline-')) continue;
-      final updated = task.copyWith(tags: tagList);
-      DatabaseService.instance.applyOptimisticPlanningTask(updated);
-    }
-    setState(() {});
-    DatabaseService.instance.notifyPlanningRefresh();
-    for (final task in tasks) {
-      if (task.planRowIdForBackend.startsWith('optimistic-inline-')) continue;
-      unawaited(
-        DatabaseService.instance.updatePlanningTask(
-          task.planRowIdForBackend,
-          planBusinessId: task.planRowId,
-          tags: tagList,
-          suppressAppSnack: true,
-        ),
-      );
-    }
-    _exitListsSelectMode();
-  }
-
-  Future<void> _openListsBulkCategorySheet(List<PlanningTask> display) async {
-    final loc = currentLocale.value;
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
-    if (pairs.isEmpty) return;
-    var picked = pairs.first.id;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetCtx) {
-        return StatefulBuilder(
-          builder: (ctx, setModal) {
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      t(loc, 'select_category'),
-                      style: Theme.of(ctx).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    CategoryTreeFormField(
-                      value: pairs.any((p) => p.id == picked)
-                          ? picked
-                          : pairs.first.id,
-                      decoration: InputDecoration(
-                        labelText: t(loc, 'category_label'),
-                      ),
-                      onChanged: (id) =>
-                          setModal(() => picked = id ?? picked),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () {
-                        Navigator.of(sheetCtx).pop();
-                        _applyBulkCategoryToSelected(display, picked);
-                      },
-                      child: Text(t(loc, 'save')),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _openListsBulkTagsSheet(List<PlanningTask> display) async {
-    final loc = currentLocale.value;
-    final catalog = await DatabaseService.instance.fetchTagsForCurrentUser();
-    if (!mounted) return;
-    var selected = <Tag>[];
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetCtx) {
-        return StatefulBuilder(
-          builder: (ctx, setModal) {
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.viewInsetsOf(ctx).bottom,
-                ),
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          t(loc, 'plan_sort_tags'),
-                          style: Theme.of(ctx).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        if (catalog.isEmpty)
-                          Text(t(loc, 'tags_empty_create_first'))
-                        else
-                          SizedBox(
-                            height: 120,
-                            child: TagQuickPickStrip(
-                              tags: catalog,
-                              selected: selected,
-                              onToggle: (tag) {
-                                setModal(() {
-                                  final next = List<Tag>.from(selected);
-                                  final i =
-                                      next.indexWhere((x) => x.tagId == tag.tagId);
-                                  if (i >= 0) {
-                                    next.removeAt(i);
-                                  } else {
-                                    next.add(tag);
-                                  }
-                                  selected = next;
-                                });
-                              },
-                            ),
-                          ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: () {
-                            Navigator.of(sheetCtx).pop();
-                            _applyBulkTagsToSelected(display, selected);
-                          },
-                          child: Text(t(loc, 'save')),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   Future<void> _listsBulkDelete(List<PlanningTask> display) async {
@@ -348,20 +199,10 @@ class _ListsPageState extends State<ListsPage>
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              TextButton(
-                onPressed: _exitListsSelectMode,
-                child: Text(t(loc, 'cancel')),
-              ),
               IconButton(
-                tooltip: t(loc, 'plan_sort_tags'),
-                icon: const Icon(Icons.label_outline_rounded),
-                onPressed: () => unawaited(_openListsBulkTagsSheet(display)),
-              ),
-              IconButton(
-                tooltip: t(loc, 'category_label'),
-                icon: const Icon(Icons.category_outlined),
-                onPressed: () =>
-                    unawaited(_openListsBulkCategorySheet(display)),
+                tooltip: t(loc, 'edit'),
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => _openListsBulkEditFirst(display),
               ),
               IconButton(
                 tooltip: t(loc, 'delete'),
@@ -401,8 +242,17 @@ class _ListsPageState extends State<ListsPage>
     await CategoryVisibilityPrefs.ensureLoaded();
     await _loadPersistedFilter();
     await _loadChipModeAndPinnedIds();
+    await _loadShowListTagsPref();
     if (!mounted) return;
     await _reload();
+  }
+
+  Future<void> _loadShowListTagsPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _showListTagsOnCards = prefs.getBool(_prefsKeyShowListTags) ?? true;
+    });
   }
 
   Future<void> _loadPersistedFilter() async {
@@ -550,7 +400,7 @@ class _ListsPageState extends State<ListsPage>
     if (_chipMode == 'frequent') {
       raw = _computeTopFrequentCategoryIds(maxN: 5);
     } else {
-      raw = [..._pinnedChipIds]..sort();
+      raw = List<int>.from(_pinnedChipIds);
     }
     return raw
         .where((id) => !CategoryVisibilityPrefs.isHiddenOrAncestor(id))
@@ -640,6 +490,17 @@ class _ListsPageState extends State<ListsPage>
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModal) {
+            var completionDraft = DatabaseService
+                .instance.settings.listCompletionBehavior
+                .trim()
+                .toLowerCase();
+            if (completionDraft != 'stay' &&
+                completionDraft != 'bottom' &&
+                completionDraft != 'hide' &&
+                completionDraft != 'archive') {
+              completionDraft = 'hide';
+            }
+            var showTagsDraft = _showListTagsOnCards;
             final manualListHeight =
                 (MediaQuery.sizeOf(ctx).height * 0.45).clamp(200.0, 520.0);
             return Padding(
@@ -692,6 +553,43 @@ class _ListsPageState extends State<ListsPage>
                         ),
                       ),
                     Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: DropdownButtonFormField<String>(
+                        value: completionDraft,
+                        decoration: InputDecoration(
+                          labelText: t(loc, 'lists_completion_title'),
+                          border: const OutlineInputBorder(),
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: 'stay',
+                            child: Text(t(loc, 'lists_completion_stay')),
+                          ),
+                          DropdownMenuItem(
+                            value: 'bottom',
+                            child: Text(t(loc, 'lists_completion_bottom')),
+                          ),
+                          DropdownMenuItem(
+                            value: 'hide',
+                            child: Text(t(loc, 'lists_completion_hide')),
+                          ),
+                          DropdownMenuItem(
+                            value: 'archive',
+                            child: Text(t(loc, 'lists_completion_archive')),
+                          ),
+                        ],
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setModal(() => completionDraft = v);
+                        },
+                      ),
+                    ),
+                    SwitchListTile(
+                      title: Text(t(loc, 'lists_show_list_tags')),
+                      value: showTagsDraft,
+                      onChanged: (v) => setModal(() => showTagsDraft = v),
+                    ),
+                    Padding(
                       padding: const EdgeInsets.all(16),
                       child: FilledButton(
                         onPressed: () {
@@ -703,8 +601,23 @@ class _ListsPageState extends State<ListsPage>
                             if (mode == 'manual') {
                               _pinnedChipIds = nextPinned;
                             }
+                            _showListTagsOnCards = showTagsDraft;
                           });
                           unawaited(_persistChipMode(mode));
+                          unawaited(() async {
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.setBool(
+                              _prefsKeyShowListTags,
+                              showTagsDraft,
+                            );
+                          }());
+                          unawaited(
+                            DatabaseService.instance.saveSettings(
+                              DatabaseService.instance.settings.copyWith(
+                                listCompletionBehavior: completionDraft,
+                              ),
+                            ),
+                          );
                           if (mode == 'manual') {
                             unawaited(_persistPinnedChipIds(_pinnedChipIds));
                             final fid = _filterCategoryId;
@@ -755,7 +668,10 @@ class _ListsPageState extends State<ListsPage>
   Future<void> _reload() async {
     final db = DatabaseService.instance;
     final results = await Future.wait<List<PlanningTask>>([
-      db.fetchBacklogPlans(categoryId: _filterCategoryId),
+      db.fetchBacklogPlans(
+        categoryId: _filterCategoryId,
+        includeCompleted: true,
+      ),
       db.fetchBacklogPlans(categoryId: null),
     ]);
     final list = results[0];
@@ -784,6 +700,153 @@ class _ListsPageState extends State<ListsPage>
     final o = a.order.compareTo(b.order);
     if (o != 0) return o;
     return a.title.compareTo(b.title);
+  }
+
+  List<PlanningTask> _listsApplyCompletionLayout(
+    List<PlanningTask> raw,
+    String behNorm,
+  ) {
+    switch (behNorm) {
+      case 'hide':
+        return raw.where((t) => !t.isDone).toList();
+      case 'bottom':
+        final o = List<PlanningTask>.from(raw);
+        o.sort((a, b) {
+          if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+          return _sortTasks(a, b);
+        });
+        return o;
+      case 'archive':
+      case 'stay':
+      default:
+        final o = List<PlanningTask>.from(raw)..sort(_sortTasks);
+        return o;
+    }
+  }
+
+  List<PlanningTask> _listsArchiveDoneSlice(List<PlanningTask> flat) {
+    final o = flat.where((t) => t.isDone).toList()..sort(_sortTasks);
+    return o;
+  }
+
+  List<({PlanningTask task, String path})> _listsFlattenGrouped(
+    Map<String, List<PlanningTask>> grouped,
+  ) {
+    final out = <({PlanningTask task, String path})>[];
+    for (final e in grouped.entries) {
+      for (final t in e.value) {
+        out.add((task: t, path: e.key));
+      }
+    }
+    return out;
+  }
+
+  void _onListsReorder(int oldIndex, int newIndex, String listBehNorm) {
+    final flat = _displayFlat;
+    final forGrouping = listBehNorm == 'archive'
+        ? (flat.where((t) => !t.isDone).toList()..sort(_sortTasks))
+        : _listsApplyCompletionLayout(flat, listBehNorm);
+    final grouped = _groupByCategoryPath(forGrouping);
+    final snap = _listsFlattenGrouped(grouped);
+    if (oldIndex < 0 || oldIndex >= snap.length) return;
+    var ni = newIndex;
+    if (ni > oldIndex) ni--;
+    if (ni < 0 || ni >= snap.length) return;
+    final row = snap[oldIndex].task;
+    if (row.planRowIdForBackend.startsWith('optimistic-')) return;
+    final orderedBefore = [for (final r in snap) r.task];
+    final next = List<PlanningTask>.from(orderedBefore);
+    next.removeAt(oldIndex);
+    next.insert(ni, row);
+    final withOrders = <PlanningTask>[
+      for (var i = 0; i < next.length; i++) next[i].copyWith(order: i),
+    ];
+    setState(() {
+      final byId = {for (final t in _flat) t.planRowIdForBackend: t};
+      for (final t in withOrders) {
+        final id = t.planRowIdForBackend;
+        if (byId.containsKey(id)) {
+          byId[id] = t;
+        }
+      }
+      _flat = byId.values.toList()..sort(_sortTasks);
+    });
+    unawaited(
+      DatabaseService.instance.persistPlanningTaskOrder(
+        withOrders,
+        baselineBeforeReorder: orderedBefore,
+      ),
+    );
+  }
+
+  Widget _listsBacklogCard(
+    PlanningTask task,
+    String loc, {
+    String? categoryPathHeader,
+  }) {
+    final key = _listKey(task);
+    return _BacklogPlanCard(
+      task: task,
+      locale: loc,
+      categoryPathHeader: categoryPathHeader,
+      showTagsStrip: _showListTagsOnCards,
+      selectionMode: _listsSelectMode,
+      isSelected: _selectedListKeys.contains(key),
+      onBodyTap: () {
+        if (_listsSelectMode) {
+          _toggleListKey(key);
+        } else {
+          widget.onEditTask?.call(task);
+        }
+      },
+      onLongPress: null,
+      onPlay: () => _onPlay(task),
+      onToggleDone: (done) => _onListToggleDone(task, done),
+      onDelete: () => unawaited(_confirmAndDelete(task)),
+      onMenuEdit: () => widget.onEditTask?.call(task),
+      onMenuSelect: () {
+        setState(() {
+          _listsSelectMode = true;
+          _selectedListKeys.add(key);
+        });
+      },
+    );
+  }
+
+  void _onListToggleDone(PlanningTask task, bool toDone) {
+    if (task.planRowIdForBackend.startsWith('optimistic-')) return;
+    if (task.isDone == toDone) return;
+    final updated = task.copyWith(isDone: toDone);
+    DatabaseService.instance.applyOptimisticPlanningTask(updated);
+    setState(() {});
+    DatabaseService.instance.notifyPlanningRefresh();
+    unawaited(
+      DatabaseService.instance.updatePlanningTask(
+        task.planRowIdForBackend,
+        planBusinessId: task.planRowId,
+        isDone: toDone,
+        suppressAppSnack: true,
+      ),
+    );
+  }
+
+  void _openListsBulkEditFirst(List<PlanningTask> display) {
+    final tasks = _tasksMatchingSelectedKeys(display);
+    if (tasks.isEmpty) return;
+    widget.onEditTask?.call(tasks.first);
+  }
+
+  void _onManualChipReorder(List<int> chipIds, int oldIndex, int newIndex) {
+    if (_chipMode != 'manual' || chipIds.length < 2) return;
+    var ni = newIndex;
+    if (ni > oldIndex) ni -= 1;
+    if (oldIndex < 0 || oldIndex >= chipIds.length) return;
+    if (ni < 0 || ni >= chipIds.length) return;
+    final next = List<int>.from(chipIds);
+    final row = next.removeAt(oldIndex);
+    next.insert(ni, row);
+    setState(() => _pinnedChipIds = _sanitizeIntCategoryIds(next));
+    unawaited(_persistPinnedChipIds(_pinnedChipIds));
   }
 
   Map<String, List<PlanningTask>> _groupByCategoryPath(
@@ -896,32 +959,6 @@ class _ListsPageState extends State<ListsPage>
     }());
   }
 
-  void _onComplete(PlanningTask task) {
-    if (task.planRowIdForBackend.startsWith('optimistic-')) return;
-    final backup = task;
-    setState(() {
-      _flat = _flat
-          .where((x) => x.planRowIdForBackend != task.planRowIdForBackend)
-          .toList();
-    });
-    unawaited(() async {
-      final ok = await DatabaseService.instance.updatePlanningTask(
-        task.planRowIdForBackend,
-        planBusinessId: task.planRowId,
-        isDone: true,
-      );
-      if (!mounted) return;
-      if (!ok) {
-        setState(() {
-          _flat = [..._flat, backup]..sort(_sortTasks);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
-        );
-      }
-    }());
-  }
-
   Future<void> _confirmAndDelete(PlanningTask task) async {
     final loc = currentLocale.value;
     final go = await showDialog<bool>(
@@ -982,270 +1019,373 @@ class _ListsPageState extends State<ListsPage>
     final headerDay = widget.selectedDate ??
         DatabaseService.instance.getTimelineDeviceLocalToday();
 
-    return ValueListenableBuilder<List<int>>(
-      valueListenable: CategoryVisibilityPrefs.hiddenIds,
-      builder: (context, _, _) {
-        final chipIds = _chipIdsForBar();
-        final display = _displayFlat;
-        return Scaffold(
-      appBar: AppBar(
-        leading: _listsSelectMode
-            ? IconButton(
-                icon: const Icon(Icons.close_rounded),
-                onPressed: _exitListsSelectMode,
-                tooltip: t(loc, 'plan_exit_select'),
-              )
-            : null,
-        title: _listsSelectMode
-            ? Text(t(loc, 'plan_select_mode'))
-            : GlobalAppHeader(
-                selectedDate: headerDay,
-                enabled: widget.onDateChanged != null,
-                onDateSelected: (d) => widget.onDateChanged?.call(d),
-              ),
-        actions: [
-          if (_listsSelectMode && filterId != null && display.isNotEmpty)
-            TextButton(
-              style: TextButton.styleFrom(
-                visualDensity: VisualDensity.compact,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-              onPressed: () => _toggleSelectAllVisibleLists(display),
-              child: Text(
-                _allVisibleListsSelected(display)
-                    ? t(loc, 'plan_deselect_visible')
-                    : t(loc, 'plan_select_all'),
-              ),
-            ),
-          if (!_listsSelectMode)
-            IconButton(
-              tooltip: t(loc, 'lists_chip_bar_settings_tooltip'),
-              onPressed: _openChipBarSettingsSheet,
-              icon: const Icon(Icons.settings_outlined),
-            ),
-          if (filterId != null && !_listsSelectMode)
-            IconButton(
-              tooltip: t(loc, 'plan_sheet_select'),
-              icon: const Icon(Icons.checklist_rounded),
-              onPressed: () => setState(() => _listsSelectMode = true),
-            ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return StreamBuilder<UserSettings>(
+      stream: DatabaseService.instance.userSettingsStream,
+      initialData: DatabaseService.instance.settings,
+      builder: (context, settingsSnap) {
+        final listBeh = (settingsSnap.data ?? DatabaseService.instance.settings)
+            .listCompletionBehavior
+            .trim()
+            .toLowerCase();
+        return ValueListenableBuilder<List<int>>(
+          valueListenable: CategoryVisibilityPrefs.hiddenIds,
+          builder: (context, _, __) {
+            final chipIds = _chipIdsForBar();
+            final flat = _displayFlat;
+            final forGrouping = listBeh == 'archive'
+                ? (flat.where((t) => !t.isDone).toList()..sort(_sortTasks))
+                : _listsApplyCompletionLayout(flat, listBeh);
+            final archiveSlice = listBeh == 'archive'
+                ? _listsArchiveDoneSlice(flat)
+                : const <PlanningTask>[];
+            final grouped = _groupByCategoryPath(forGrouping);
+            final flatRows = _listsFlattenGrouped(grouped);
+            final listBodyEmpty =
+                forGrouping.isEmpty && archiveSlice.isEmpty;
+            _syncListsShellFabBulkReserve();
+            return Scaffold(
+          body: SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final id in chipIds)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
-                    child: _ListsQuadraticChip(
-                      label: _categoryRawName(id),
-                      categoryColor: _listsCategoryAccentColor(id),
-                      selected: filterId == id,
-                      onTap: () {
-                        if (filterId == id) {
-                          _onFilterChanged(null);
-                        } else {
-                          _onFilterChanged(id);
-                        }
-                      },
-                    ),
+                Material(
+                  color: theme.colorScheme.surface,
+                  elevation: 0,
+                  surfaceTintColor: theme.colorScheme.surfaceTint,
+                  child: SizedBox(
+                    height: kToolbarHeight,
+                    child: _listsSelectMode
+                        ? Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: _exitListsSelectMode,
+                                tooltip: t(loc, 'plan_exit_select'),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  t(loc, 'plan_select_mode'),
+                                  style: theme.textTheme.titleMedium,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (filterId != null && flat.isNotEmpty)
+                                TextButton(
+                                  style: TextButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8),
+                                  ),
+                                  onPressed: () =>
+                                      _toggleSelectAllVisibleLists(flat),
+                                  child: Text(
+                                    _allVisibleListsSelected(flat)
+                                        ? t(loc, 'plan_deselect_visible')
+                                        : t(loc, 'plan_select_all'),
+                                  ),
+                                ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: GlobalAppHeader(
+                                  selectedDate: headerDay,
+                                  enabled: widget.onDateChanged != null,
+                                  onDateSelected: (d) =>
+                                      widget.onDateChanged?.call(d),
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: t(loc, 'lists_chip_bar_settings_tooltip'),
+                                onPressed: _openChipBarSettingsSheet,
+                                icon: const Icon(Icons.settings_rounded),
+                              ),
+                            ],
+                          ),
                   ),
+                ),
+                Divider(
+                  height: 1,
+                  color: theme.colorScheme.outlineVariant,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: 48,
+                        child: _chipMode == 'manual' && chipIds.length > 1
+                            ? ReorderableListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                buildDefaultDragHandles: false,
+                                shrinkWrap: true,
+                                physics: const ClampingScrollPhysics(),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                itemCount: chipIds.length,
+                                onReorder: (oldI, newI) =>
+                                    _onManualChipReorder(chipIds, oldI, newI),
+                                itemBuilder: (ctx, idx) {
+                                  final id = chipIds[idx];
+                                  return ReorderableDelayedDragStartListener(
+                                    key: ValueKey<int>(id),
+                                    index: idx,
+                                    child: Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                          end: 8),
+                                      child: _ListsQuadraticChip(
+                                        label: _categoryRawName(id),
+                                        categoryColor:
+                                            _listsCategoryAccentColor(id),
+                                        selected: filterId == id,
+                                        onTap: () {
+                                          if (filterId == id) {
+                                            _onFilterChanged(null);
+                                          } else {
+                                            _onFilterChanged(id);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : ListView(
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                children: [
+                                  for (final id in chipIds)
+                                    Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                          end: 8),
+                                      child: _ListsQuadraticChip(
+                                        label: _categoryRawName(id),
+                                        categoryColor:
+                                            _listsCategoryAccentColor(id),
+                                        selected: filterId == id,
+                                        onTap: () {
+                                          if (filterId == id) {
+                                            _onFilterChanged(null);
+                                          } else {
+                                            _onFilterChanged(id);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                ],
+                              ),
+                      ),
+                      if (filterId != null)
+                        Padding(
+                          padding:
+                              const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _inlineController,
+                                  focusNode: _inlineFocus,
+                                  textInputAction: TextInputAction.done,
+                                  decoration: InputDecoration(
+                                    hintText: t(loc, 'input_placeholder_list'),
+                                    isDense: true,
+                                    border: InputBorder.none,
+                                    enabledBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: theme.colorScheme.outline
+                                            .withValues(alpha: 0.45),
+                                      ),
+                                    ),
+                                    focusedBorder: UnderlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: theme.colorScheme.primary,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  onSubmitted: (_) => _submitInline(),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              FilledButton.icon(
+                                onPressed: _submitInline,
+                                icon: const Icon(Icons.add_rounded),
+                                label: Text(t(loc, 'add')),
+                              ),
+                            ],
+                          ),
+                        ),
+                      Expanded(
+                        child: filterId == null
+                            ? ListView(
+                                physics:
+                                    const AlwaysScrollableScrollPhysics(),
+                                children: [
+                                  SizedBox(
+                                    height: MediaQuery.sizeOf(context)
+                                            .height *
+                                        0.25,
+                                  ),
+                                  Center(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 24),
+                                      child: Text(
+                                        t(loc, 'lists_no_category_chosen'),
+                                        style: theme.textTheme.bodyLarge
+                                            ?.copyWith(
+                                          color: theme.colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : _loading
+                                ? const Center(
+                                    child: CircularProgressIndicator(),
+                                  )
+                                : RefreshIndicator(
+                                    onRefresh: _reload,
+                                    child: listBodyEmpty
+                                        ? ListView(
+                                            physics:
+                                                const AlwaysScrollableScrollPhysics(),
+                                            children: [
+                                              SizedBox(
+                                                height: MediaQuery.sizeOf(
+                                                            context)
+                                                        .height *
+                                                    0.25,
+                                              ),
+                                              Center(
+                                                child: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 24),
+                                                  child: Text(
+                                                    t(loc, 'lists_empty'),
+                                                    style: theme.textTheme
+                                                        .bodyLarge
+                                                        ?.copyWith(
+                                                      color: theme.colorScheme
+                                                          .onSurfaceVariant,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : CustomScrollView(
+                                            physics:
+                                                const AlwaysScrollableScrollPhysics(),
+                                            slivers: [
+                                              SliverPadding(
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        16, 8, 16, 8),
+                                                sliver: SliverReorderableList(
+                                                  itemCount: flatRows.length,
+                                                  onReorder: (oldI, newI) =>
+                                                      _onListsReorder(
+                                                    oldI,
+                                                    newI,
+                                                    listBeh,
+                                                  ),
+                                                  itemBuilder:
+                                                      (context, index) {
+                                                    final row = flatRows[index];
+                                                    final t = row.task;
+                                                    final pathLabel =
+                                                        row.path.trim();
+                                                    return ReorderableDelayedDragStartListener(
+                                                      key: ValueKey<String>(
+                                                          _listKey(t)),
+                                                      index: index,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets.only(
+                                                                bottom: 8),
+                                                        child: _listsBacklogCard(
+                                                          t,
+                                                          loc,
+                                                          categoryPathHeader:
+                                                              pathLabel.isEmpty ||
+                                                                      pathLabel ==
+                                                                          '—'
+                                                                  ? null
+                                                                  : pathLabel,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                              if (archiveSlice.isNotEmpty)
+                                                SliverToBoxAdapter(
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.fromLTRB(
+                                                            16, 0, 16, 24),
+                                                    child: ExpansionTile(
+                                                      initiallyExpanded:
+                                                          _listsArchiveSectionExpanded,
+                                                      onExpansionChanged: (x) {
+                                                        setState(() =>
+                                                            _listsArchiveSectionExpanded =
+                                                                x);
+                                                      },
+                                                      title: Text(
+                                                        t(
+                                                                loc,
+                                                                'lists_archive_section')
+                                                            .replaceFirst(
+                                                          '%s',
+                                                          '${archiveSlice.length}',
+                                                        ),
+                                                      ),
+                                                      children: [
+                                                        for (final t
+                                                            in archiveSlice)
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets.only(
+                                                                    bottom: 8),
+                                                            child:
+                                                                _listsBacklogCard(
+                                                              t,
+                                                              loc,
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                  ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
-          Expanded(
-            child: filterId == null
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      SizedBox(
-                        height: MediaQuery.sizeOf(context).height * 0.25,
-                      ),
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: Text(
-                            t(loc, 'lists_no_category_chosen'),
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : _loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : Builder(
-                        builder: (context) {
-                          final grouped = _groupByCategoryPath(display);
-                          return RefreshIndicator(
-                            onRefresh: _reload,
-                            child: display.isEmpty
-                                ? ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height: MediaQuery.sizeOf(context)
-                                                .height *
-                                            0.25,
-                                      ),
-                                      Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 24),
-                                          child: Text(
-                                            t(loc, 'lists_empty'),
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                              color: theme.colorScheme
-                                                  .onSurfaceVariant,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : ListView.builder(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    padding: const EdgeInsets.fromLTRB(
-                                        16, 12, 16, 24),
-                                    itemCount: _itemCountForGrouped(grouped),
-                                    itemBuilder: (context, index) {
-                                      return _buildGroupedItem(
-                                        context,
-                                        index,
-                                        grouped,
-                                        loc,
-                                      );
-                                    },
-                                  ),
-                          );
-                        },
-                      ),
-          ),
-          if (filterId != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _inlineController,
-                      focusNode: _inlineFocus,
-                      textInputAction: TextInputAction.done,
-                      decoration: InputDecoration(
-                        hintText: t(loc, 'input_placeholder_list'),
-                        isDense: true,
-                        border: InputBorder.none,
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.outline
-                                .withValues(alpha: 0.45),
-                          ),
-                        ),
-                        focusedBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(
-                            color: theme.colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                      onSubmitted: (_) => _submitInline(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed: _submitInline,
-                    icon: const Icon(Icons.add_rounded),
-                    label: Text(t(loc, 'add')),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-      bottomNavigationBar: filterId != null && _selectedListKeys.isNotEmpty
-          ? _listsBulkBottomBar(context, theme.colorScheme, display)
-          : null,
-    );
+          bottomNavigationBar: filterId != null && _selectedListKeys.isNotEmpty
+              ? _listsBulkBottomBar(context, theme.colorScheme, flat)
+              : null,
+        );
+          },
+        );
       },
     );
-  }
-
-  int _itemCountForGrouped(Map<String, List<PlanningTask>> grouped) {
-    var n = 0;
-    for (final e in grouped.entries) {
-      n += 1 + e.value.length;
-    }
-    return n;
-  }
-
-  Widget _buildGroupedItem(
-    BuildContext context,
-    int index,
-    Map<String, List<PlanningTask>> grouped,
-    String loc,
-  ) {
-    var i = index;
-    for (final e in grouped.entries) {
-      if (i == 0) {
-        return Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
-          child: Text(
-            e.key,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-          ),
-        );
-      }
-      i--;
-      if (i < e.value.length) {
-        final task = e.value[i];
-        final key = _listKey(task);
-        return _BacklogPlanCard(
-          task: task,
-          locale: loc,
-          selectionMode: _listsSelectMode,
-          isSelected: _selectedListKeys.contains(key),
-          onBodyTap: () {
-            if (_listsSelectMode) {
-              _toggleListKey(key);
-            } else {
-              widget.onEditTask?.call(task);
-            }
-          },
-          onLongPress: _listsSelectMode
-              ? null
-              : () {
-                  setState(() {
-                    _listsSelectMode = true;
-                    _selectedListKeys.add(key);
-                  });
-                },
-          onPlay: () => _onPlay(task),
-          onComplete: () => _onComplete(task),
-          onDelete: () {
-            unawaited(_confirmAndDelete(task));
-          },
-        );
-      }
-      i -= e.value.length;
-    }
-    return const SizedBox.shrink();
   }
 }
 
@@ -1276,25 +1416,36 @@ class _ListsQuadraticChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: base.withValues(alpha: selected ? 0.38 : 0.22),
+            color: selected
+                ? scheme.primary.withValues(alpha: 0.42)
+                : base.withValues(alpha: 0.22),
             border: Border.all(
-              color: base,
-              width: selected ? 2 : 1,
+              color: selected ? scheme.primary : base,
+              width: selected ? 3 : 1,
             ),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 200),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: scheme.onSurface,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    ),
+          child: SizedBox(
+            height: 40,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: selected
+                              ? scheme.onPrimary
+                              : scheme.onSurface,
+                          fontWeight:
+                              selected ? FontWeight.w800 : FontWeight.w500,
+                        ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -1321,24 +1472,32 @@ class _BacklogPlanCard extends StatelessWidget {
   const _BacklogPlanCard({
     required this.task,
     required this.locale,
+    this.categoryPathHeader,
+    required this.showTagsStrip,
     required this.selectionMode,
     required this.isSelected,
     required this.onBodyTap,
     this.onLongPress,
     required this.onPlay,
-    required this.onComplete,
+    required this.onToggleDone,
     required this.onDelete,
+    required this.onMenuEdit,
+    required this.onMenuSelect,
   });
 
   final PlanningTask task;
   final String locale;
+  final String? categoryPathHeader;
+  final bool showTagsStrip;
   final bool selectionMode;
   final bool isSelected;
   final VoidCallback onBodyTap;
   final VoidCallback? onLongPress;
   final VoidCallback onPlay;
-  final VoidCallback onComplete;
+  final void Function(bool toDone) onToggleDone;
   final VoidCallback onDelete;
+  final VoidCallback onMenuEdit;
+  final VoidCallback onMenuSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -1357,7 +1516,7 @@ class _BacklogPlanCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Padding(
                 padding: const EdgeInsets.only(top: 2),
@@ -1367,42 +1526,128 @@ class _BacklogPlanCard extends StatelessWidget {
                         onChanged: (_) => onBodyTap(),
                       )
                     : Checkbox(
-                        value: false,
-                        onChanged: (v) {
-                          if (v == true) onComplete();
-                        },
+                        value: task.isDone,
+                        onChanged: task.planRowIdForBackend
+                                .startsWith('optimistic-')
+                            ? null
+                            : (v) {
+                                if (v == null) return;
+                                onToggleDone(v);
+                              },
                       ),
               ),
               Expanded(
                 child: Padding(
                   padding:
                       const EdgeInsets.only(top: 10, bottom: 10, right: 8),
-                  child: Text(
-                    task.title,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (categoryPathHeader != null &&
+                          categoryPathHeader!.trim().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            categoryPathHeader!.trim(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: scheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      Text(
+                        task.title,
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (showTagsStrip &&
+                          task.tags.any((tag) => tag.rendersAsChip))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: StreamBuilder<UserSettings>(
+                            stream: DatabaseService.instance.userSettingsStream,
+                            initialData: DatabaseService.instance.settings,
+                            builder: (context, snap) {
+                              final mode = snap.data?.tagDisplayMode ??
+                                  CategoryDisplayMode.letterChip;
+                              final scheme =
+                                  Theme.of(context).colorScheme;
+                              return Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: [
+                                  for (final tag in task.tags)
+                                    if (tag.rendersAsChip)
+                                      CategoryChip(
+                                        mode: mode,
+                                        label: tag.name.trim().isNotEmpty
+                                            ? tag.name.trim()
+                                            : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
+                                        color: parseTagHexColor(tag.color) ??
+                                            scheme.primary,
+                                        icon: iconForTagKey(tag.icon),
+                                        compactGlyphLayout: true,
+                                        syntheticNoTagsMonochrome:
+                                            tag.tagId == -1,
+                                      ),
+                                ],
+                              );
+                            },
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
               if (!selectionMode)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Tooltip(
-                      message: t(locale, 'start'),
-                      child: IconButton(
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        onPressed: onPlay,
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'edit':
+                        onMenuEdit();
+                        break;
+                      case 'select':
+                        onMenuSelect();
+                        break;
+                      case 'delete':
+                        onDelete();
+                        break;
+                      case 'start':
+                        onPlay();
+                        break;
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Text(t(locale, 'lists_menu_change')),
+                    ),
+                    PopupMenuItem(
+                      value: 'select',
+                      child: Text(t(locale, 'lists_menu_choose')),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(
+                        t(locale, 'delete'),
+                        style: TextStyle(color: err),
                       ),
                     ),
-                    Tooltip(
-                      message: t(locale, 'delete'),
-                      child: IconButton(
-                        icon: Icon(Icons.delete_outline_rounded, color: err),
-                        onPressed: onDelete,
-                      ),
+                    PopupMenuItem(
+                      value: 'start',
+                      child: Text(t(locale, 'start')),
                     ),
                   ],
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.more_vert_rounded,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
                 ),
             ],
           ),

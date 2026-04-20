@@ -15,6 +15,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -33,6 +34,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
         // BUILD_STABILITY (§10): Satisfy manifest placeholders required by flutter_login_yandex. Replace with your Yandex OAuth client ID from Yandex Developer Console.
         manifestPlaceholders["YANDEX_CLIENT_ID"] = "your_yandex_client_id_here"
     }
@@ -56,5 +58,6 @@ flutter {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation("com.google.android.gms:play-services-wearable:18.1.0")
 }

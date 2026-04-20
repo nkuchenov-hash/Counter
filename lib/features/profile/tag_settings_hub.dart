@@ -8,10 +8,17 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
 class TagSettingsHub extends StatefulWidget {
-  const TagSettingsHub({super.key, this.initialTabIndex = 0});
+  const TagSettingsHub({
+    super.key,
+    this.initialTabIndex = 0,
+    this.tagCreateDomain = 'plan',
+  });
 
   /// 0 = tags list, 1 = display style.
   final int initialTabIndex;
+
+  /// PocketBase `tags.domain` for creates/fetches in the first tab (`plan` vs `list`).
+  final String tagCreateDomain;
 
   @override
   State<TagSettingsHub> createState() => _TagSettingsHubState();
@@ -50,9 +57,12 @@ class _TagSettingsHubState extends State<TagSettingsHub>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          TagManagerPage(embeddedInHub: true),
-          TagSettingsView(embeddedInHub: true),
+        children: [
+          TagManagerPage(
+            embeddedInHub: true,
+            pocketTagDomain: widget.tagCreateDomain,
+          ),
+          const TagSettingsView(embeddedInHub: true),
         ],
       ),
     );
