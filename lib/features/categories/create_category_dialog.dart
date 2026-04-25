@@ -204,7 +204,7 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: const AppLoading(size: AppLoadingSize.small),
+                    child: AppLoading(size: AppLoadingSize.small),
                   )
                 : Text(t(loc, 'category_restore_and_use')),
           ),
@@ -217,7 +217,7 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: const AppLoading(size: AppLoadingSize.small),
+                    child: AppLoading(size: AppLoadingSize.small),
                   )
                 : Text(t(loc, 'category_create_action')),
           ),

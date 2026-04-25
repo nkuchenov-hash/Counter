@@ -159,7 +159,7 @@ class _TagSettingsViewState extends State<TagSettingsView> {
                 child: SizedBox(
                   width: 22,
                   height: 22,
-                  child: const AppLoading(size: AppLoadingSize.small),
+                  child: AppLoading(size: AppLoadingSize.small),
                 ),
               ),
             ),

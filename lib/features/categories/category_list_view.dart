@@ -940,7 +940,7 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
                   ? const SizedBox(
                       height: 22,
                       width: 22,
-                      child: const AppLoading(size: AppLoadingSize.small),
+                      child: AppLoading(size: AppLoadingSize.small),
                     )
                   : Text(t(loc, 'category_appearance_apply')),
             ),
@@ -1454,7 +1454,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                   ? const SizedBox(
                       height: 22,
                       width: 22,
-                      child: const AppLoading(size: AppLoadingSize.small),
+                      child: AppLoading(size: AppLoadingSize.small),
                     )
                   : Text(t(locale, 'save')),
             ),

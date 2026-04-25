@@ -13,7 +13,7 @@
 //   planning.dart   PlanningTask, PlanningBulkPatch, SourcePlanLinkSuggestion, AiParsedTaskHint
 //   tag.dart        Tag
 //   stats.dart      BasicDayStats, StatsTreeNode, SessionGroup, StatsNode
-library counter.data.models;
+library;
 
 import 'dart:convert';
 import 'dart:math' show max;

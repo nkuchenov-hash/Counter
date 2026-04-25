@@ -528,7 +528,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: SizedBox(
                         width: 18,
                         height: 18,
-                        child: const AppLoading(size: AppLoadingSize.small),
+                        child: AppLoading(size: AppLoadingSize.small),
                       ),
                     )
                   : null,
@@ -568,7 +568,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: const AppLoading(size: AppLoadingSize.small),
+                    child: AppLoading(size: AppLoadingSize.small),
                   ),
                 ),
             ],
@@ -616,7 +616,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: const AppLoading(size: AppLoadingSize.small),
+                    child: AppLoading(size: AppLoadingSize.small),
                   ),
                 ),
             ],

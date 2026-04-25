@@ -287,7 +287,7 @@ class _WearTimerScreenState extends State<WearTimerScreen> {
                         child: SizedBox(
                           width: 28,
                           height: 28,
-                          child: const AppLoading(size: AppLoadingSize.small),
+                          child: AppLoading(size: AppLoadingSize.small),
                         ),
                       ),
                     ),

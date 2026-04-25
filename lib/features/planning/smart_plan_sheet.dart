@@ -635,7 +635,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
                     const SizedBox(
                       width: 22,
                       height: 22,
-                      child: const AppLoading(size: AppLoadingSize.small),
+                      child: AppLoading(size: AppLoadingSize.small),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
