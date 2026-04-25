@@ -688,6 +688,16 @@ class Record {
   Map<String, dynamic> toMap() => toJson();
 }
 
+/// Deterministic cross-platform hash for string category IDs (replaces Dart's randomized hashCode).
+/// Returns values in [1, 0x7FFFFFFF] — always positive, never 0, never -1 (uncategorizedSyntheticId).
+int _stableStringHash(String s) {
+  var h = 0;
+  for (final c in s.codeUnits) {
+    h = (31 * h + c) & 0x7FFFFFFF;
+  }
+  return h == 0 ? 1 : h;
+}
+
 /// Calendar day from `start_time` using profile [offsetHours] (UTC + offset, no device TZ).
 DateTime? _recordLocalCalendarDate(dynamic v, [int offsetHours = 0]) {
   if (v == null) return null;
@@ -1154,7 +1164,7 @@ class CategoryRule {
         (archivedRaw is String &&
             archivedRaw.toLowerCase().trim() == 'true');
     return CategoryRule(
-      id: int.tryParse(rawId) ?? rawId.hashCode,
+      id: int.tryParse(rawId) ?? _stableStringHash(rawId),
       name: safeTag,
       backendRowId: rawId,
       normalizedId: (data['category_id'] ?? data['id1'] ?? data['normalized_id'] ?? data['normalizedId'])?.toString(),

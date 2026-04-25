@@ -3827,8 +3827,9 @@ class DatabaseService {
     try {
       final stUtc = _parseDateTimeUtc(r['start_time']);
       if (stUtc == null) return false;
-      return _timelineDeviceLocalDayKeyFromUtc(stUtc) <
-          getTimelineDeviceLocalTodayDateKey();
+      return _timelineDeviceLocalDayKeyFromUtc(stUtc)
+              .compareTo(getTimelineDeviceLocalTodayDateKey()) <
+          0;
     } catch (_) {
       return false;
     }
