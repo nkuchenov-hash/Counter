@@ -2232,7 +2232,59 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
         .trim();
     final checklistPayload = _checklistForApi();
     final isRunning = widget.record.endTime == null;
+    final isCreate = widget.record.id.isEmpty;
     final planPatch = _sourcePlanPatchArgs();
+
+    // CREATE path (past-date "New Record" entry): no existing row id.
+    // Single shared edit sheet — no separate EditRecordSheet for past dates.
+    if (isCreate) {
+      if (_startDisplay == null || _endDisplay == null) return;
+      final startUtc = displayToUtc(_startDisplay!);
+      final endUtc = displayToUtc(_endDisplay!);
+      if (endUtc.isBefore(startUtc) || endUtc.isAtSameMomentAs(startUtc)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(t(currentLocale.value, 'end_time_after_start'))),
+          );
+        }
+        return;
+      }
+      final overlap = await DatabaseService.instance.checkOverlapWithExistingRecords(
+        startUtc,
+        endUtc,
+      );
+      if (overlap && mounted) {
+        final conflict = await DatabaseService.instance.findFirstOverlappingRecord(
+          startUtc,
+          endUtc,
+        );
+        if (!mounted) return;
+        final loc = currentLocale.value;
+        final rawTitle = (conflict?['title'] ?? '').toString().trim();
+        final otherLabel = rawTitle.isNotEmpty ? rawTitle : t(loc, 'untitled');
+        final msg = t(loc, 'time_conflict_with_title').replaceFirst('%s', otherLabel);
+        final sm = ScaffoldMessenger.maybeOf(context);
+        Navigator.of(context).pop();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          sm?.showSnackBar(SnackBar(content: Text(msg)));
+        });
+        return;
+      }
+      final ok = await DatabaseService.instance.writeCompletedRecord(
+        title,
+        startUtc,
+        endUtc,
+        categoryId: _categoryId,
+      );
+      if (!mounted) return;
+      if (ok) {
+        AppSnack.saved();
+        widget.onSaved(null);
+      } else {
+        AppSnack.failed();
+      }
+      return;
+    }
 
     if (isRunning) {
       final startUtc =
@@ -3157,578 +3209,3 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
   }
 }
 
-/// Create (or edit) a single record with start/end date+time. Used for "New Record" on past date.
-class EditRecordSheet extends StatefulWidget {
-  const EditRecordSheet({
-    super.key,
-    required this.serverRecordId,
-    required this.data,
-    required this.dateKey,
-    required this.selectedDate,
-    required this.onSaved,
-    required this.onJumpToConflict,
-  });
-
-  /// NocoDB row id (empty when creating a new row).
-  final String serverRecordId;
-  final Map<String, dynamic> data;
-  final String dateKey;
-  final DateTime selectedDate;
-  final VoidCallback onSaved;
-  final void Function(DateTime date, String conflictRecordId) onJumpToConflict;
-
-  @override
-  State<EditRecordSheet> createState() => _EditRecordSheetState();
-}
-
-class _EditRecordSheetState extends State<EditRecordSheet> {
-  late TextEditingController _titleController;
-  int? _categoryId;
-  late DateTime _recordDate;
-  late DateTime _endDate;
-  late DateTime _startTime;
-  late DateTime _endTime;
-  String? _timeConflictError;
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: (widget.data['title'] as String?) ?? '');
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
-    final cr = widget.data['categoryId'];
-    _categoryId = cr is int ? cr : int.tryParse(cr?.toString() ?? '');
-    if (_categoryId == null && pairs.isNotEmpty) _categoryId = pairs.first.id;
-    final startUtc = widget.data['startTime'] as DateTime?;
-    final endUtc = widget.data['endTime'] as DateTime?;
-    final displayStart = startUtc != null ? utcToDisplay(startUtc) : DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, 9, 0);
-    final displayEnd = endUtc != null ? utcToDisplay(endUtc) : displayStart;
-    _recordDate = DateTime(displayStart.year, displayStart.month, displayStart.day);
-    _endDate = DateTime(displayEnd.year, displayEnd.month, displayEnd.day);
-    _startTime = displayStart;
-    _endTime = displayEnd;
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    super.dispose();
-  }
-
-  DateTime get _effectiveStart => DateTime(_recordDate.year, _recordDate.month, _recordDate.day, _startTime.hour, _startTime.minute);
-  DateTime get _effectiveEnd => DateTime(_endDate.year, _endDate.month, _endDate.day, _endTime.hour, _endTime.minute);
-
-  Future<void> _pickStartTime() async {
-    final picked = await showAppDateTimePicker(context, initial: _startTime, firstDate: _recordDate, lastDate: DateTime(_recordDate.year, _recordDate.month, _recordDate.day, 23, 59));
-    if (picked != null && mounted) setState(() => _startTime = picked);
-  }
-
-  Future<void> _pickEndTime() async {
-    final picked = await showAppDateTimePicker(context, initial: _endTime, firstDate: _endDate, lastDate: DateTime(_endDate.year, _endDate.month, _endDate.day, 23, 59));
-    if (picked != null && mounted) setState(() => _endTime = picked);
-  }
-
-  Future<void> _pickRecordDate() async {
-    final loc = currentLocale.value;
-    final d = await showDatePicker(
-      context: context,
-      locale: Locale(loc),
-      initialDate: _recordDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      initialEntryMode: appDatePickerEntryMode(),
-    );
-    if (d != null && mounted) {
-      setState(() {
-        _recordDate = d;
-        if (_endDate.isBefore(_recordDate)) _endDate = _recordDate;
-      });
-    }
-  }
-
-  Future<void> _pickEndDate() async {
-    final loc = currentLocale.value;
-    final d = await showDatePicker(
-      context: context,
-      locale: Locale(loc),
-      initialDate: _endDate,
-      firstDate: _recordDate,
-      lastDate: DateTime(2030),
-      initialEntryMode: appDatePickerEntryMode(),
-    );
-    if (d != null && mounted) setState(() => _endDate = d);
-  }
-
-  Future<void> _save() async {
-    final title = _titleController.text.trim();
-    if (title.isEmpty) return;
-    final start = _effectiveStart;
-    final end = _effectiveEnd;
-    if (end.isBefore(start) || end.isAtSameMomentAs(start)) {
-      setState(() => _timeConflictError = t(currentLocale.value, 'end_time_after_start'));
-      return;
-    }
-    final startUtc = displayToUtc(start);
-    final endUtc = displayToUtc(end);
-    final overlap = await DatabaseService.instance.checkOverlapWithExistingRecords(
-        startUtc,
-        endUtc,
-        excludeRecordId: widget.serverRecordId.isNotEmpty
-            ? widget.serverRecordId
-            : null);
-    if (overlap) {
-      final conflict = await DatabaseService.instance.findFirstOverlappingRecord(
-        startUtc,
-        endUtc,
-        excludeRecordId: widget.serverRecordId.isNotEmpty
-            ? widget.serverRecordId
-            : null,
-      );
-      if (!mounted) return;
-      final loc = currentLocale.value;
-      final rawTitle = (conflict?['title'] ?? '').toString().trim();
-      final otherLabel = rawTitle.isNotEmpty ? rawTitle : t(loc, 'untitled');
-      final msg =
-          t(loc, 'time_conflict_with_title').replaceFirst('%s', otherLabel);
-      final sm = ScaffoldMessenger.maybeOf(context);
-      if (conflict != null) {
-        final conflictRid =
-            (conflict['record_id'] ?? conflict['id'] ?? '').toString();
-        final conflictStart = DatabaseService.startTimeFromRecord(conflict);
-        final conflictDate = conflictStart != null
-            ? DateTime(
-                conflictStart.year,
-                conflictStart.month,
-                conflictStart.day,
-              )
-            : widget.selectedDate;
-        widget.onJumpToConflict(conflictDate, conflictRid);
-      }
-      Navigator.of(context).pop();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        sm?.showSnackBar(SnackBar(content: Text(msg)));
-      });
-      return;
-    }
-    setState(() => _timeConflictError = null);
-    var ok = false;
-    if (widget.serverRecordId.isEmpty) {
-      ok = await DatabaseService.instance.writeCompletedRecord(
-        title,
-        startUtc,
-        endUtc,
-        categoryId: _categoryId,
-      );
-    } else {
-      final updated = await DatabaseService.instance.updateRecord(
-        recordId: widget.serverRecordId,
-        title: title,
-        startTime: startUtc,
-        endTime: endUtc,
-        categoryId: _categoryId,
-      );
-      ok = updated != null;
-    }
-    if (ok && mounted) {
-      final msgKey = widget.serverRecordId.isEmpty
-          ? 'record_synced'
-          : 'changes_saved';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, msgKey))),
-      );
-      widget.onSaved();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
-    final catVal = _categoryId != null && pairs.any((p) => p.id == _categoryId)
-        ? _categoryId
-        : (pairs.isNotEmpty ? pairs.first.id : null);
-
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Row(
-              children: [
-                Expanded(child: Text(t(currentLocale.value, 'new_record_btn'), style: Theme.of(context).textTheme.titleLarge)),
-                IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.of(context).pop()),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Flexible(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                24 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: InputDecoration(labelText: t(currentLocale.value, 'title_label'), hintText: t(currentLocale.value, 'hint_task_example')),
-                  ),
-                  const SizedBox(height: 12),
-                  CategoryTreeFormField(
-                    value: catVal,
-                    decoration: InputDecoration(
-                      labelText:
-                          t(currentLocale.value, 'category_label'),
-                    ),
-                    onChanged: (id) =>
-                        setState(() => _categoryId = id ?? catVal),
-                  ),
-                  const SizedBox(height: 16),
-                  ListTile(
-                    title: Text(t(currentLocale.value, 'start_time')),
-                    subtitle: Text('${formatDate(_recordDate)} ${formatTimeOfDay(_startTime)}'),
-                    trailing: const Icon(Icons.calendar_today_rounded),
-                    onTap: () async {
-                      await _pickRecordDate();
-                      await _pickStartTime();
-                    },
-                  ),
-                  ListTile(
-                    title: Text(t(currentLocale.value, 'end_time')),
-                    subtitle: Text('${formatDate(_endDate)} ${formatTimeOfDay(_endTime)}'),
-                    trailing: const Icon(Icons.calendar_today_rounded),
-                    onTap: () async {
-                      await _pickEndDate();
-                      await _pickEndTime();
-                    },
-                  ),
-                  if (_timeConflictError != null) Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(_timeConflictError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(onPressed: _save, child: Text(t(currentLocale.value, 'save'))),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// CategoryFolderTile — Recursive category tree tile. Uses Theme.of(context).
-// ---------------------------------------------------------------------------
-
-class CategoryFolderTile extends StatefulWidget {
-  const CategoryFolderTile({
-    super.key,
-    required this.rule,
-    required this.rootRules,
-    required this.level,
-    required this.onChanged,
-    required this.onRemove,
-  });
-
-  final CategoryRule rule;
-  final List<CategoryRule> rootRules;
-  final int level;
-  final VoidCallback onChanged;
-  final VoidCallback onRemove;
-
-  @override
-  State<CategoryFolderTile> createState() => _CategoryFolderTileState();
-}
-
-class _CategoryFolderTileState extends State<CategoryFolderTile> {
-  void _addChild() {
-    if (DatabaseService.instance.siblingHasTag(widget.rule.id, 'Sub')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'category_exists'))),
-      );
-      return;
-    }
-    setState(() {
-      widget.rule.children ??= [];
-      widget.rule.children!.add(CategoryRule(
-        id: DatabaseService.instance.newId(),
-        name: 'Sub',
-        colorValue: widget.rule.colorValue,
-        iconCodePoint: widget.rule.iconCodePoint,
-        order: 0,
-      ));
-    });
-    widget.onChanged();
-  }
-
-  Future<void> _openCategoryEditorSurgical(BuildContext context) async {
-    final controller = TextEditingController(text: widget.rule.name);
-    int? selectedColorValue = widget.rule.colorValue;
-    MaterialColor? selectedPrimary;
-    int? selectedShadeValue;
-    String? dialogError;
-    try {
-      final saved = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            selectedPrimary ??=
-                categoryMaterialPrimaryForValue(selectedColorValue);
-            selectedShadeValue ??= (selectedColorValue != null &&
-                    categoryMaterialShadeValues(selectedPrimary!)
-                        .contains(selectedColorValue))
-                ? selectedColorValue
-                : selectedPrimary![500]!.value;
-
-            return AlertDialog(
-              title: Text(t(currentLocale.value, 'edit_category_title')),
-              content: SizedBox(
-                width: double.maxFinite,
-                height: 400,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: kCategoryPickerMaterialColors.map((p) {
-                          final isSelected = selectedPrimary == p;
-                          return GestureDetector(
-                            onTap: () {
-                              setDialogState(() {
-                                selectedPrimary = p;
-                                selectedShadeValue = p[500]!.value;
-                                selectedColorValue = selectedShadeValue;
-                              });
-                              HapticFeedback.lightImpact();
-                            },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: p,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected ? Theme.of(ctx).colorScheme.primary : Colors.transparent,
-                                  width: isSelected ? 3 : 0,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((tone) {
-                          final c = selectedPrimary![tone]!;
-                          final v = c.value;
-                          final isSelected = selectedShadeValue == v;
-                          return GestureDetector(
-                            onTap: () {
-                              setDialogState(() {
-                                selectedShadeValue = v;
-                                selectedColorValue = v;
-                              });
-                              HapticFeedback.lightImpact();
-                            },
-                            child: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: c,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isSelected ? Theme.of(ctx).colorScheme.primary : Colors.transparent,
-                                  width: isSelected ? 3 : 0,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          labelText: t(currentLocale.value, 'name_label'),
-                          hintText: t(currentLocale.value, 'hint_work_health'),
-                          errorText: dialogError,
-                        ),
-                        autofocus: true,
-                        textCapitalization: TextCapitalization.words,
-                        onChanged: (_) {
-                          if (dialogError != null) setDialogState(() => dialogError = null);
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Icon(
-                            widget.rule.iconOrDefault,
-                            color: selectedShadeValue != null ? Color(selectedShadeValue!) : Theme.of(ctx).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text('Selected color updates before save', style: Theme.of(ctx).textTheme.bodySmall)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(t(currentLocale.value, 'cancel'))),
-                FilledButton(
-                  onPressed: () async {
-                    final newTag = controller.text.trim().isEmpty ? widget.rule.name : controller.text.trim();
-                    final updated = DatabaseService.instance.updateNestedCategory(widget.rule.id, name: newTag, colorValue: selectedColorValue);
-                    if (updated) {
-                      try {
-                        final sync =
-                            await DatabaseService.instance.saveCategoryRowToServer(
-                          widget.rule.id,
-                        );
-                        if (!sync.ok && ctx.mounted) {
-                          setDialogState(() => dialogError = sync.errorDetail ?? 'Sync failed');
-                          return;
-                        }
-                      } catch (_) {}
-                      if (ctx.mounted) Navigator.of(ctx).pop(true);
-                    } else if (newTag != widget.rule.name) {
-                      setDialogState(() => dialogError = 'Category already exists');
-                    }
-                  },
-                  child: Text(t(currentLocale.value, 'save')),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-      if (saved == true && mounted) {
-        widget.onChanged();
-        setState(() {});
-      }
-    } finally {
-      controller.dispose();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final hasChildren = widget.rule.children != null && widget.rule.children!.isNotEmpty;
-    final canAddChild = widget.level < 4;
-    final color = widget.rule.colorOrDefault;
-
-    final displayName = localizeCategoryDbSegment(
-      (widget.rule.localizedNames?[currentLocale.value] ?? widget.rule.name)
-          .trim(),
-      currentLocale.value,
-    );
-
-    final leading = Icon(widget.rule.iconOrDefault, color: color, size: 24);
-    final title = Text(
-      displayName,
-      style: TextStyle(fontWeight: FontWeight.w600, color: color),
-      overflow: TextOverflow.ellipsis,
-    );
-    final trailing = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (canAddChild)
-          IconButton(
-            iconSize: 22,
-            tooltip: t(currentLocale.value, 'add_subcategory'),
-            onPressed: _addChild,
-            icon: const Icon(Icons.add_rounded),
-          ),
-        IconButton(
-          iconSize: 22,
-          tooltip: t(currentLocale.value, 'edit_category_tooltip'),
-          onPressed: () => _openCategoryEditorSurgical(context),
-          icon: const Icon(Icons.edit_outlined),
-        ),
-        IconButton(
-          iconSize: 22,
-          tooltip: t(currentLocale.value, 'delete_category'),
-          onPressed: widget.onRemove,
-          icon: const Icon(Icons.delete_outline_rounded),
-        ),
-      ],
-    );
-
-    final List<Widget> childTiles = hasChildren
-        ? [
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: widget.rule.children!.length,
-              itemBuilder: (context, index) {
-                final c = widget.rule.children![index];
-                return CategoryFolderTile(
-                  key: ValueKey(c.id),
-                  rule: c,
-                  rootRules: widget.rootRules,
-                  level: widget.level + 1,
-                  onChanged: widget.onChanged,
-                  onRemove: () {
-                    setState(() {
-                      widget.rule.children!.removeWhere((x) => x.id == c.id);
-                    });
-                    widget.onChanged();
-                  },
-                );
-              },
-            ),
-          ]
-        : [];
-
-    const double kMaxTileHeight = 4000;
-    final expansionContent = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: childTiles,
-    );
-
-    final content = ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: kMaxTileHeight),
-      child: Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: 16.0 * (widget.level - 1),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.level > 1)
-              Container(
-                width: 2,
-                margin: const EdgeInsetsDirectional.only(end: 8),
-                color: scheme.outline,
-              ),
-            Expanded(
-              child: ExpansionTile(
-                leading: leading,
-                title: title,
-                trailing: trailing,
-                children: [expansionContent],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    return content;
-  }
-}

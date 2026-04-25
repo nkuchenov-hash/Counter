@@ -1029,21 +1029,51 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   void _openNewTaskForPastDate() {
     final ctx = context;
+    // Synthetic empty record signals "create" to _TimelineRecordSheetContent
+    // (id == '' triggers the create branch in _save). Single shared edit sheet.
+    final tzHours = DatabaseService.instance.settings.timezoneOffsetHours;
+    final defaultStartDisplay = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      9,
+    );
+    final defaultEndDisplay = defaultStartDisplay.add(const Duration(hours: 1));
+    final placeholder = TimelineRecord(
+      id: '',
+      title: _titleController.text.trim(),
+      startTime: displayToUtc(defaultStartDisplay),
+      endTime: displayToUtc(defaultEndDisplay),
+      status: 'completed',
+      timezoneOffsetHours: tzHours,
+    );
     showModalBottomSheet<void>(
       context: ctx,
+      useRootNavigator: true,
       isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetCtx) => EditRecordSheet(
-        serverRecordId: '',
-        data: {'title': _titleController.text.trim()},
-        dateKey: _selectedDateString,
-        selectedDate: _selectedDate,
-        onSaved: () => Navigator.of(sheetCtx).pop(),
-        onJumpToConflict: (date, _) {
-          Navigator.of(sheetCtx).pop();
-          _jumpToConflictDate(date);
-        },
-      ),
+      backgroundColor: Colors.transparent,
+      clipBehavior: Clip.none,
+      builder: (sheetCtx) {
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+          child: DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.88,
+            minChildSize: 0.42,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) {
+              return ActivityDetailSheet(
+                kind: ActivityDetailKind.timelineRecord,
+                timelineRecord: placeholder,
+                scrollController: scrollController,
+                onSaved: (_) {
+                  if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
+                },
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

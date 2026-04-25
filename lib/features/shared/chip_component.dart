@@ -15,8 +15,8 @@ import 'package:flutter/material.dart';
 ///
 /// Hierarchical path (`Parent > Child`). Independent of `profiles.tag_display_mode`.
 /// Compact stadium-shaped tint ([accentColor] ~13% opacity), full-strength accent text.
-class RecordCategoryHeader extends StatelessWidget {
-  const RecordCategoryHeader({
+class CategoryBreadcrumb extends StatelessWidget {
+  const CategoryBreadcrumb({
     super.key,
     required this.breadcrumbPath,
     required this.accentColor,
@@ -43,7 +43,7 @@ class RecordCategoryHeader extends StatelessWidget {
 
     final scheme = Theme.of(context).colorScheme;
     final plate =
-        tagRecordCategoryHeaderPlate(accentColor, scheme.surface);
+        tagCategoryBreadcrumbPlate(accentColor, scheme.surface);
     final fg = tagVibrantForeground(accentColor);
     final sepStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
           color: fg.withValues(alpha: 0.58),

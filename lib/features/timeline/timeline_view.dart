@@ -869,7 +869,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
                 const SizedBox(height: 6),
                 Theme(
                   data: suppressInnerInk,
-                  child: RecordCategoryHeader(
+                  child: CategoryBreadcrumb(
                     breadcrumbPath: categoryPath,
                     accentColor: categoryColor,
                   ),

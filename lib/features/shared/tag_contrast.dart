@@ -17,7 +17,7 @@ bool tagColorIsYellowFamily(Color tagColor) {
 }
 
 /// Timeline breadcrumb stadium: default ~13% accent; yellow → 15% [kTagYellowGold].
-Color tagRecordCategoryHeaderPlate(Color accentColor, Color surface) {
+Color tagCategoryBreadcrumbPlate(Color accentColor, Color surface) {
   if (tagColorIsYellowFamily(accentColor)) {
     return Color.alphaBlend(
       kTagYellowGold.withValues(alpha: kTagYellowPlateOpacity),
