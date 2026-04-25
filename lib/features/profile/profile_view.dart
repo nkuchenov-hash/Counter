@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 
 // ---------------------------------------------------------------------------
 // PROFILE FEATURE — UI_ISOLATION (§7). All strings via t() from dictionary.
@@ -527,7 +528,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: const AppLoading(size: AppLoadingSize.small),
                       ),
                     )
                   : null,
@@ -567,7 +568,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: const AppLoading(size: AppLoadingSize.small),
                   ),
                 ),
             ],
@@ -615,7 +616,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: const AppLoading(size: AppLoadingSize.small),
                   ),
                 ),
             ],

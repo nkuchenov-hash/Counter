@@ -5,6 +5,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 
 String _wearRowSystemId(Map<String, dynamic>? data) {
   if (data == null) return '';
@@ -286,7 +287,7 @@ class _WearTimerScreenState extends State<WearTimerScreen> {
                         child: SizedBox(
                           width: 28,
                           height: 28,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: const AppLoading(size: AppLoadingSize.small),
                         ),
                       ),
                     ),

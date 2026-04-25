@@ -27,6 +27,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:counter/core/widgets/app_loading.dart';
 
 String? _startupNetworkErrorMessage;
 bool _startupNetworkErrorShown = false;
@@ -243,7 +244,7 @@ class _LoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+      body: const AppLoading(),
     );
   }
 }
@@ -515,7 +516,7 @@ class _BiometricGateState extends State<_BiometricGate> {
                     ],
                     const SizedBox(height: 24),
                     if (_checking)
-                      const CircularProgressIndicator()
+                      const AppLoading()
                     else
                       FilledButton.icon(
                         onPressed: _checkAndAuthenticate,

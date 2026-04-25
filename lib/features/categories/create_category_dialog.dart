@@ -4,6 +4,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 
 /// Interactive create flow: archive-aware hints, restore / duplicate / go-to.
 Future<void> showCreateCategoryDialog({
@@ -203,7 +204,7 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: const AppLoading(size: AppLoadingSize.small),
                   )
                 : Text(t(loc, 'category_restore_and_use')),
           ),
@@ -216,7 +217,7 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
                 ? const SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: const AppLoading(size: AppLoadingSize.small),
                   )
                 : Text(t(loc, 'category_create_action')),
           ),

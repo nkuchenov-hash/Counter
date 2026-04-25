@@ -11,6 +11,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 
 // ---------------------------------------------------------------------------
 // CATEGORIES FEATURE — UI_ISOLATION (§7). All strings via t() from dictionary.
@@ -939,7 +940,7 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
                   ? const SizedBox(
                       height: 22,
                       width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: const AppLoading(size: AppLoadingSize.small),
                     )
                   : Text(t(loc, 'category_appearance_apply')),
             ),
@@ -1453,7 +1454,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                   ? const SizedBox(
                       height: 22,
                       width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: const AppLoading(size: AppLoadingSize.small),
                     )
                   : Text(t(locale, 'save')),
             ),

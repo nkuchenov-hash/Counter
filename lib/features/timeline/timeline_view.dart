@@ -11,6 +11,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 // ---------------------------------------------------------------------------
 // TIMELINE FEATURE — UI_ISOLATION (§7). PLANETARY TIME PROTOCOL (§5). ACTIVE_STATUS_LAW (§2).
 // All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] §8).
@@ -603,7 +604,7 @@ class _TimelinePageState extends State<TimelinePage> {
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const CircularProgressIndicator(),
+                                    const AppLoading(),
                                     const SizedBox(height: 8),
                                     Text(t(
                                         currentLocale.value,

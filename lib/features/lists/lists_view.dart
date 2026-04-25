@@ -18,6 +18,7 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 
 /// Backlog screen: grouped headers by category path, Play + Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
@@ -1324,9 +1325,7 @@ class _ListsPageState extends State<ListsPage>
                                 ],
                               )
                             : _loading
-                                ? const Center(
-                                    child: CircularProgressIndicator(),
-                                  )
+                                ? const AppLoading()
                                 : RefreshIndicator(
                                     onRefresh: _reload,
                                     child: listBodyEmpty

@@ -6,6 +6,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 
 // ---------------------------------------------------------------------------
 // PLAN VS FACT — simple scheduled plan vs tracked time per category (DNA).
@@ -109,7 +110,7 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(),
+                const AppLoading(),
                 const SizedBox(height: 12),
                 Text(
                   t(loc, 'waiting_planetary_data'),

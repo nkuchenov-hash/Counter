@@ -11,6 +11,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/tag_contrast.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 
 /// Preset hex colors for @DATA_MAP `tags.color` (stored as "#RRGGBB").
 const List<String> kTagManagerPalette = [
@@ -360,7 +361,7 @@ class _TagManagerPageState extends State<TagManagerPage> {
         label: Text(t(loc, 'tag_create')),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoading()
           : _tags.isEmpty
               ? Center(
                   child: Padding(

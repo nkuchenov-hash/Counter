@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:counter/core/widgets/app_loading.dart';
 
 typedef SmartPlanCommit =
     Future<int> Function(List<Map<String, dynamic>> items);
@@ -634,7 +635,7 @@ class _SmartPlanSheetState extends State<SmartPlanSheet> {
                     const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: const AppLoading(size: AppLoadingSize.small),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

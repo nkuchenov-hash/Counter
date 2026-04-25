@@ -30,6 +30,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 
 enum _PlanSortMode { category, time, tags, custom }
 
@@ -2217,7 +2218,7 @@ class _PlanningPageState extends State<PlanningPage>
         try {
           if (snapshot.connectionState == ConnectionState.waiting &&
               !snapshot.hasData) {
-            body = const Center(child: CircularProgressIndicator());
+            body = const AppLoading();
           } else if (snapshot.hasError) {
             body = Center(
               child: Padding(
