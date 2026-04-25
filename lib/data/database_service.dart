@@ -3822,16 +3822,13 @@ class DatabaseService {
     }
   }
 
-  /// True when [start_time] local calendar day is **strictly before** device-local today (multi-day open).
+  /// True when [start_time] profile wall-clock day is **strictly before** projected today (multi-day open).
   bool _rowStartWallDayIsBeforeProjectedToday(Map<String, dynamic> r) {
     try {
       final stUtc = _parseDateTimeUtc(r['start_time']);
       if (stUtc == null) return false;
-      final loc = stUtc.toUtc().toLocal();
-      final wd = DateTime(loc.year, loc.month, loc.day);
-      final t = getTimelineDeviceLocalToday();
-      final td = DateTime(t.year, t.month, t.day);
-      return wd.isBefore(td);
+      return _timelineDeviceLocalDayKeyFromUtc(stUtc) <
+          getTimelineDeviceLocalTodayDateKey();
     } catch (_) {
       return false;
     }
@@ -7452,6 +7449,7 @@ class DatabaseService {
             out.add(TimelineRecord.fromMap(
               _rowToRecordMap(row),
               systemId: recordsTablePk(row),
+              timezoneOffsetHours: _settings.timezoneOffsetHours,
             ));
           } catch (e, st) {
             final rid = recordsTablePk(row);
@@ -7489,6 +7487,7 @@ class DatabaseService {
             out.add(TimelineRecord.fromMap(
               _rowToRecordMap(row),
               systemId: recordsTablePk(row),
+              timezoneOffsetHours: _settings.timezoneOffsetHours,
             ));
           } catch (e, st) {
             final rid = recordsTablePk(row);
@@ -8354,7 +8353,8 @@ class DatabaseService {
         }
         if (found == null) return null;
         return TimelineRecord.fromMap(_rowToRecordMap(found),
-            systemId: rid);
+            systemId: rid,
+            timezoneOffsetHours: _settings.timezoneOffsetHours);
       }
       rollbackIndex = _indexOfCachedRecordRow(rid, originalInput);
       if (rollbackIndex >= 0) {
@@ -8426,7 +8426,9 @@ class DatabaseService {
         return null;
       }
       _notifyTimelineAfterRecordCacheMutation();
-      return TimelineRecord.fromMap(_rowToRecordMap(row), systemId: rid);
+      return TimelineRecord.fromMap(_rowToRecordMap(row),
+          systemId: rid,
+          timezoneOffsetHours: _settings.timezoneOffsetHours);
     } catch (_) {
       if (rollbackRow != null && rollbackIndex >= 0) {
         if (rollbackIndex < _cachedFlatRecords.length) {

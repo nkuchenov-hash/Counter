@@ -688,8 +688,8 @@ class Record {
   Map<String, dynamic> toMap() => toJson();
 }
 
-/// DNA helper: naive calendar day from `start_time` (UTC→device [DateTime.toLocal]). **Timeline buckets** use profile wall-clock in `DatabaseService` only ([DATA_MAP] records §8 / `wall_clock.dart`).
-DateTime? _recordLocalCalendarDate(dynamic v) {
+/// Calendar day from `start_time` using profile [offsetHours] (UTC + offset, no device TZ).
+DateTime? _recordLocalCalendarDate(dynamic v, [int offsetHours = 0]) {
   if (v == null) return null;
   DateTime? parsed;
   if (v is DateTime) {
@@ -706,8 +706,8 @@ DateTime? _recordLocalCalendarDate(dynamic v) {
     parsed = DateTime.tryParse(hasTz ? s : '${s}Z');
   }
   if (parsed == null) return null;
-  final loc = parsed.toUtc().toLocal();
-  return DateTime(loc.year, loc.month, loc.day);
+  final wall = parsed.toUtc().add(Duration(hours: offsetHours));
+  return DateTime(wall.year, wall.month, wall.day);
 }
 
 DateTime? _parseFlexibleDateTime(dynamic v) {
@@ -1190,6 +1190,7 @@ class TimelineRecord {
     this.note,
     this.subRecordIds,
     this.parentId,
+    this.timezoneOffsetHours = 0,
   });
 
   /// PocketBase **records** row id — **only** value used for REST paths and stop/delete/patch dispatch.
@@ -1212,13 +1213,15 @@ class TimelineRecord {
   final String? note;
   final List<int>? subRecordIds;
   final int? parentId;
+  /// Profile wall-clock offset (profiles.timezone_offset). Drives [dateKey] day bucket — no device TZ.
+  final int timezoneOffsetHours;
 
-  /// ISO `YYYY-MM-DD` from [startTime] in **device-local** calendar (matches timeline list buckets).
+  /// ISO `YYYY-MM-DD` from [startTime] in profile wall-clock calendar ([timezoneOffsetHours], not device TZ).
   String get dateKey {
     final st = startTime;
     if (st == null) return '';
-    final loc = st.toUtc().toLocal();
-    return '${loc.year}-${loc.month.toString().padLeft(2, '0')}-${loc.day.toString().padLeft(2, '0')}';
+    final wall = st.toUtc().add(Duration(hours: timezoneOffsetHours));
+    return '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';
   }
 
   /// Basta: [endTime] set ⇒ not running, regardless of [status] string.
@@ -1239,7 +1242,7 @@ class TimelineRecord {
   static dynamic _get(Map<String, dynamic> data, String camel, String snake) =>
       data[camel] ?? data[snake];
 
-  factory TimelineRecord.fromMap(Map<String, dynamic> data, {String? systemId}) {
+  factory TimelineRecord.fromMap(Map<String, dynamic> data, {String? systemId, int timezoneOffsetHours = 0}) {
     String? passiveBiz;
     for (final k in <String>['record_id', 'recordId']) {
       final v = data[k];
@@ -1333,6 +1336,7 @@ class TimelineRecord {
       note: note,
       subRecordIds: subRecordIds,
       parentId: parentId,
+      timezoneOffsetHours: timezoneOffsetHours,
     );
   }
 
@@ -1406,6 +1410,7 @@ class TimelineRecord {
     String? note,
     List<int>? subRecordIds,
     int? parentId,
+    int? timezoneOffsetHours,
   }) {
     return TimelineRecord(
       id: id ?? this.id,
@@ -1424,6 +1429,7 @@ class TimelineRecord {
       note: note ?? this.note,
       subRecordIds: subRecordIds ?? this.subRecordIds,
       parentId: parentId ?? this.parentId,
+      timezoneOffsetHours: timezoneOffsetHours ?? this.timezoneOffsetHours,
     );
   }
 }

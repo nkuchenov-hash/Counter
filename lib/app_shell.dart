@@ -1169,7 +1169,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       backgroundColor: Colors.transparent,
       clipBehavior: Clip.none,
       builder: (sheetCtx) {
-        final record = TimelineRecord.fromMap(data);
+        final record = TimelineRecord.fromMap(data,
+            timezoneOffsetHours: DatabaseService.instance.settings.timezoneOffsetHours);
         return Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
           child: DraggableScrollableSheet(
