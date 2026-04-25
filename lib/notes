@@ -1,5 +1,9 @@
 .\f - to update the web build on github
 
 flutter run -d chrome --web-port 8080
-
 flutter build apk --split-per-abi --no-tree-shake-icons
+
+
+
+
+
