@@ -8,11 +8,12 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 | File | Purpose |
 | :--- | :--- |
-| `ROADMAP.md` | Current plan — phases, bugs, component work. **Read this first before suggesting any structural changes.** |
+| `docs/ROADMAP.md` | Current plan — phases, bugs, component work. **Read this first before suggesting any structural changes.** |
 | `AUDIT_NOTES.md` | Full April 2026 audit findings that produced the roadmap. |
-| `ARCHITECTURE.md` | Iron Laws, core contracts, data flow. The authoritative technical reference. |
-| `POCKETBASE_MANIFEST.md` | PocketBase URL, collection names, relation fields. |
-| `lib/DATA_MAP.md` | Field names and business IDs (`user_id`, `record_id`, etc.). |
+| `docs/APP_STRUCTURE.md` | Physical directory map and module interaction rules. |
+| `docs/ARCHITECTURE.md` | Iron Laws, core contracts, data flow. The authoritative technical reference. |
+| `docs/POCKETBASE_MANIFEST.md` | PocketBase URL, collection names, relation fields. |
+| `docs/DATA_MAP.md` | Field names and business IDs (`user_id`, `record_id`, etc.). |
 
 ---
 
@@ -20,8 +21,8 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
-- **`models.dart:1157`** — category ID hash collision → silent category tree corruption
-- **`models.dart:1220`** — `dateKey` uses device timezone, not profile timezone → travelers get records on the wrong day
+- **`models/category.dart`** — category ID hash collision → **fixed** with `_stableStringHash` (FNV-style polynomial, cross-platform deterministic)
+- **`models/record.dart`** — `dateKey` uses device timezone, not profile timezone → **fixed** with `timezoneOffsetHours` parameter on `TimelineRecord`
 
 **Never use `DateTime.now().toLocal()` for persisted date keys.** Use profile timezone helpers already in the codebase.
 
@@ -31,9 +32,8 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
 - Shared primitives belong in `core/widgets/`. Feature folders compose them, never reimplement.
 - Variations are parameters, not copies.
-- Two edit sheets currently exist for the same record (`EditRecordSheet` and `_TimelineRecordSheetContent`). The older one (`EditRecordSheet`) is slated for deletion — don't add work to it.
-- When adding loading states: build toward `AppLoading(size)` (not yet built). Don't add new inline `CircularProgressIndicator` with custom `strokeWidth`.
-- When adding confirm dialogs: build toward `showConfirmDialog(title, body)` (not yet built). Don't add new inline `AlertDialog` patterns.
+- `EditRecordSheet` has been deleted — all entry points route to `_TimelineRecordSheetContent`.
+- `AppLoading(size)`, `showConfirmDialog()`, `AppButton`, `AppErrorState`, `AppEmptyState` are all built in `core/widgets/`. Use them; don't add new inline equivalents.
 
 ---
 
@@ -52,3 +52,13 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 Flutter · PocketBase (self-hosted) · Dart
 Targets: Android, iOS, Web, Windows, macOS, Linux, Wear OS
 Live: `nkuchenov-hash.github.io/Counter/`
+
+---
+
+## Changelog discipline
+At the end of any session where code was shipped (committed and verified clean by `flutter analyze`), append a CHANGELOG.md entry under today's date. Newest entries at the top. Match the existing format: terse, technical, name specific files and symbols. Tag entries [shipped], [rollback], or [wip] so the codebase state is readable at a glance. Never modify or delete existing entries.
+
+---
+
+## Doc sync reminder
+Maintain a running list of every governing doc modified during the session. At session end, print the full list and remind the user to re-upload them to the Claude.ai Project. Do not rely on memory of what was last edited. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `CHANGELOG.md`, `CLAUDE.md`.

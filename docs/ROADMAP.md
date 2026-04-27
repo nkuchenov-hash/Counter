@@ -51,20 +51,19 @@ Two sheets currently edit the same timeline record from different entry points:
 ### 3b. Build the component library
 **Target: every reusable UI element lives in `core/widgets/`. Zero duplicates.**
 
-Current state of the 29 existing components:
-- 2 in `core/widgets/` — the only true shared primitives
-- 8 in `features/shared/` — shared but not in core
-- 19 scattered across feature folders — not reusable without copying
+Current state (updated 2026-04-25):
+- 8 in `core/widgets/` — canonical primitives (was 2 at April 2026 audit)
+- 5 in `features/shared/` — shared but not in core (was 8 at April 2026 audit)
 
-**Missing pieces to build (in order):**
+**Missing pieces to build:**
 
-| What | Why it's needed |
+| What | Status |
 | :--- | :--- |
-| `AppLoading(size)` widget | 17 inline `CircularProgressIndicator` calls exist with inconsistent `strokeWidth`. One component fixes all 17. |
-| `showConfirmDialog(title, body)` | 8 inline `AlertDialog` confirms are scattered. One function, consistent behavior. |
-| Error-state widget | Currently zero exist. Every screen handles errors differently (or not at all). |
-| Empty-state widget | One exists. May need variants. |
-| Button component | Currently zero custom buttons. |
+| `AppLoading(size)` widget | ✅ Built — 17 `CircularProgressIndicator` call sites migrated |
+| `showConfirmDialog(title, body)` | ✅ Built — replaces 8+ inline `AlertDialog` patterns |
+| Error-state widget | ✅ Built — `AppErrorState` (`app_state_views.dart`) |
+| Empty-state widget | ✅ Built — `AppEmptyState` (`app_state_views.dart`) |
+| Button component | ✅ Built — `AppButton` (`app_button.dart`) |
 
 Lower priority consolidations (judgment calls, do when the area is already open):
 - Merge `_PlanningTaskCard` and `_BacklogPlanCard` — same card, different optional features
