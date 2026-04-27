@@ -35,12 +35,6 @@ class _BuildNode {
   final Map<String, List<Map<String, dynamic>>> sessionGroups = {};
 }
 
-class _SignInRequiredException implements Exception {
-  _SignInRequiredException(this.message);
-  final String message;
-  @override
-  String toString() => message;
-}
 
 /// In-memory only: timeline shows [endUtc] until server confirms or optimistic layer is cleared.
 class _OptimisticEndPatch {
@@ -1183,13 +1177,6 @@ class DatabaseService {
   String _escapeForPbFilter(String raw) =>
       raw.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
 
-  /// Business UUID shape (`record_id` / `plan_id`), not PocketBase row id.
-  static final RegExp _standardUuidRe = RegExp(
-    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-  );
-
-  static bool _looksLikeStandardUuid(String s) =>
-      _standardUuidRe.hasMatch(s.trim());
 
   /// PocketBase collection row `id`: lowercase alphanumeric, ~15 chars, no hyphens (@DATA_MAP).
   static bool _isLikelyPocketBaseRowId(String s) {
@@ -2264,12 +2251,6 @@ class DatabaseService {
     return out;
   }
 
-  /// Returns a positive count when the server sent a numeric link rollup (not expanded rows).
-  static int? _m2MlinkIntCount(dynamic linkRaw) {
-    if (linkRaw is int) return linkRaw;
-    if (linkRaw is num) return linkRaw.toInt();
-    return null;
-  }
 
   /// Fetches profile row: auth store first, else list filter by [user_id] (@ARCHITECTURE §3).
   Future<Map<String, dynamic>?> getUserProfile(String id) async {
@@ -5784,34 +5765,6 @@ class DatabaseService {
     });
   }
 
-  void _replaceCategoryNodeById(int oldId, CategoryRule replacement) {
-    bool replaceIn(List<CategoryRule> rules) {
-      for (var i = 0; i < rules.length; i++) {
-        if (rules[i].id == oldId) {
-          rules[i] = replacement;
-          return true;
-        }
-        final ch = rules[i].children;
-        if (ch != null && replaceIn(ch)) return true;
-      }
-      return false;
-    }
-
-    replaceIn(_rules);
-  }
-
-  void _updateCategoryTagInRules(int id, String newTag) {
-    void visit(List<CategoryRule> rules) {
-      for (final r in rules) {
-        if (r.id == id) {
-          r.name = newTag;
-          return;
-        }
-        if (r.children != null) visit(r.children!);
-      }
-    }
-    visit(_rules);
-  }
 
   /// UI-first: move category in _rules, push; then PocketBase PATCH `parent_id`.
   Future<bool> updateCategoryParent(int categoryId, int? newParentId) async {
