@@ -17,6 +17,43 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ---
 
+## Where things live
+
+Routing map for AI assistants: open these first instead of grepping. Update this table whenever a canonical symbol moves or is renamed.
+
+| Concept | File | Symbol |
+| :--- | :--- | :--- |
+| Voice input dispatcher (routes by active tab) | `lib/app_shell.dart` | `_startVoiceInput` |
+| UI dispatch wrappers (shell-side, debounced) | `lib/app_shell.dart` | `_stopRecordByDocId` / `_deleteRecordByDocId` / `_startTaskFromInput` |
+| Start a record (user taps Start) | `lib/data/database_service.dart` | `DatabaseService.writeRecord` |
+| Stop a record (user taps Stop) | `lib/data/database_service.dart` | `DatabaseService.stopRecordByDocId` |
+| Update / edit a record | `lib/data/database_service.dart` | `DatabaseService.updateRecord` |
+| Delete a record | `lib/data/database_service.dart` | `DatabaseService.deleteRecordByDocId` |
+| Optimistic shadow — Start | `lib/data/database_service.dart` | `DatabaseService._startAtomicTaskSequenceApplyLocalPrimary` |
+| Optimistic shadow — Stop | `lib/data/database_service.dart` | `DatabaseService._applyOptimisticStopUiSnapshot` |
+| Realtime subscribe handler | `lib/data/database_service.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` |
+| Record cache mutation (atomic upsert) | `lib/data/database_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` |
+| ID resolution (legacy UUID → PB row id) | `lib/data/database_service.dart` | `DatabaseService._resolveRecordIdForStopOrDelete` [internal but high-traffic] |
+| Category smart-link / fuzzy match | `lib/data/database_service.dart` | `DatabaseService.findCategoryByFuzzyMatch` |
+| Category create | `lib/data/database_service.dart` | `DatabaseService.addNestedCategory` |
+| Category update | `lib/data/database_service.dart` | `DatabaseService.updateCategory` |
+| Plan / planning task write | `lib/data/database_service.dart` | `DatabaseService.addPlanningTask` |
+| Plan / planning task done-toggle | `lib/features/planning/planning_view.dart` | `_PlanningViewState._toggleDone` |
+| Tag link to plan | `lib/data/database_service.dart` | `DatabaseService._syncPlanTagsPocket` |
+| Timeline render (list) | `lib/features/timeline/timeline_view.dart` | `TimelinePage` |
+| Timeline edit sheet | `lib/features/shared/shared_widgets.dart` | `ActivityDetailSheet` |
+| Inline edit widget (child / parallel record) | `lib/features/shared/shared_widgets.dart` | `_ChildParallelEditBar` |
+| Voice input → record submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitTimeline` |
+| Voice input → planning task submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitPlanning` |
+| Voice input → backlog submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitBacklog` |
+| Auth / session bootstrap | `lib/data/auth_bridge.dart` | `AuthBridge.checkSession` |
+| Profile timezone resolution | `lib/data/database_service.dart` | `DatabaseService.getProjectedToday` |
+| Date key bucketing (UTC → wall-day string) | `lib/data/database_service.dart` | `DatabaseService._timelineDeviceLocalDayKeyFromUtc` |
+| Initial data load (full) | `lib/data/database_service.dart` | `DatabaseService.loadInitialData` |
+| Wear OS lite data load | `lib/data/database_service.dart` | `DatabaseService.loadInitialDataWearLite` |
+
+---
+
 ## Confirmed bugs (fix before anything else)
 
 See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
