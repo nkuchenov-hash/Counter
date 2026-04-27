@@ -1292,7 +1292,6 @@ class DatabaseService {
       final uid = _escapeForPbFilter(authId);
       final esc = _escapeForPbFilter(key);
 
-      print('SEARCHING PB FOR: record_id = "$key"');
       try {
         final scoped = 'record_id = "$esc" && user_id = "$uid"';
         final rec = await _pb
@@ -1392,7 +1391,6 @@ class DatabaseService {
       if (key.isEmpty || !tried.add(key)) continue;
       final sid = await _fetchPbPlanSysIdByPlanIdField(key);
       if (sid != null && sid.isNotEmpty && sid != p) {
-        print('ID TRANSLATION: Legacy UUID $key -> PocketBase ID $sid');
         return sid;
       }
       if (sid != null && sid.isNotEmpty) return sid;
@@ -1415,7 +1413,6 @@ class DatabaseService {
       if (key.isEmpty || !tried.add(key)) continue;
       final sid = await _fetchPbCategorySysIdByCategoryIdField(key);
       if (sid != null && sid.isNotEmpty && sid != p) {
-        print('ID TRANSLATION: Legacy UUID $key -> PocketBase ID $sid');
         return sid;
       }
       if (sid != null && sid.isNotEmpty) return sid;
@@ -2479,15 +2476,7 @@ class DatabaseService {
   }
 
   /// Verification: at most one `running` row should exist after local Highlander apply.
-  void _printAtomicCheckRunningCount() {
-    final n = _cachedFlatRecords
-        .where(
-          (r) =>
-              (r['status'] ?? '').toString().trim().toLowerCase() == 'running',
-        )
-        .length;
-    print('[ATOMIC_CHECK] Running records in cache: $n');
-  }
+  void _printAtomicCheckRunningCount() {}
 
   /// **Highlander** — local-only phase: every `status == running` row is forced to `stopped`
   /// with [end_time]; then the new primary running row is appended. Single notifier happens
@@ -2624,9 +2613,6 @@ class DatabaseService {
           next[i] = m;
           _cachedFlatRecords = next;
           if (!suppressTimelineNotify && !silent) {
-            if (logSuccessLine) {
-              print('✅ Local cache updated atomically for record: ${r.id}');
-            }
             _notifyTimelineAfterRecordCacheMutation();
           }
           return;
@@ -2635,9 +2621,6 @@ class DatabaseService {
       next.add(m);
       _cachedFlatRecords = next;
       if (!suppressTimelineNotify) {
-        if (logSuccessLine) {
-          print('✅ Local cache updated atomically for record: ${r.id}');
-        }
         _notifyTimelineAfterRecordCacheMutation();
       }
     } catch (e, st) {
@@ -3280,23 +3263,9 @@ class DatabaseService {
     return null;
   }
 
-  void _logRecordsPatchDispatch(String restId) {
-    final row = _findCachedRecordRowByRestCandidate(restId);
-    final leg = (row?['record_id'] ?? '').toString().trim();
-    final legOut = leg.isEmpty ? '—' : leg;
-    print(
-      '[DISPATCH] Firing PATCH to /records/$restId. (FYI: legacy record_id is $legOut)',
-    );
-  }
+  void _logRecordsPatchDispatch(String restId) {}
 
-  void _logRecordsDeleteDispatch(String restId) {
-    final row = _findCachedRecordRowByRestCandidate(restId);
-    final leg = (row?['record_id'] ?? '').toString().trim();
-    final legOut = leg.isEmpty ? '—' : leg;
-    print(
-      '[DISPATCH] Firing DELETE to /records/$restId. (FYI: legacy record_id is $legOut)',
-    );
-  }
+  void _logRecordsDeleteDispatch(String restId) {}
 
   /// PocketBase row `id` from a cached flat row — never a legacy UUID mistaken for REST id.
   String? _pbSystemIdFromCachedRecordRow(Map<String, dynamic> r) {
@@ -3327,14 +3296,7 @@ class DatabaseService {
     return null;
   }
 
-  /// Logs **only** when [inputId] is mapped to a different PocketBase row id.
-  static void _logIdMapTranslated(String inputId, String pocketBaseId) {
-    final i = inputId.trim();
-    final p = pocketBaseId.trim();
-    if (i.isEmpty || p.isEmpty || i == p) return;
-    if (!_isLikelyPocketBaseRowId(p)) return;
-    print('ID_MAP: Translated UUID $i to PB_ID $p');
-  }
+  static void _logIdMapTranslated(String inputId, String pocketBaseId) {}
 
   /// Snack from the Brain; falls back to [notifications] when [appSnackMessengerKey] has no overlay yet.
   void _brainSnackError(String message) {
@@ -3586,10 +3548,6 @@ class DatabaseService {
         (_recordRestDefinitive404Keys.contains(rid) ||
             (oq.isNotEmpty && _recordRestDefinitive404Keys.contains(oq)))) {
       _lastRecordsPatchSkippedDeadLetter = true;
-      print(
-        '[ABORT_REASON] PATCH not sent — id is in _recordRestDefinitive404Keys (dead letter). '
-        'rid="$rid" oq="$oq". No [DISPATCH], no pb.collection.update.',
-      );
       _log('RECORDS_PB SKIP_PATCH: dead-letter 404 rid=$rid');
       _purgeGhostRecordById(rid.isNotEmpty ? rid : oq);
       return 404;
@@ -3689,7 +3647,6 @@ class DatabaseService {
       _mapCategoryIdToLinkForPb(merged);
       _sanitizeOutgoingCategoryLink(merged);
       merged['user_id'] = authRowId;
-      print('[POST_PAYLOAD] $merged');
       final created =
           await _pb.collection(PbCollections.records).create(body: merged);
       _upsertFlatRecordFromPbModel(created,
@@ -4918,9 +4875,6 @@ class DatabaseService {
     if (bestRule != null) {
       final pb = _categoryBackendRowIdStrict(bestRule);
       if (pb != null && pb.isNotEmpty) {
-        print(
-          '[SMART_LINK] Detected category match for "$title" -> Category ID: $pb',
-        );
         return pb;
       }
     }
@@ -7713,7 +7667,6 @@ class DatabaseService {
     _writeRecordMutationInFlight = true;
     var deferWriteRecordMutationRelease = false;
     try {
-      print('[SHADOW_EMIT] UI updated locally at ${DateTime.now()}');
       final parsed = getCleanTitleAndTags(taskText);
       int? cid = categoryId;
       cid = identifyCategory(parsed.title)?.id ?? cid;
@@ -8950,7 +8903,6 @@ class DatabaseService {
     final out = <String>[];
     final seen = <String>{};
     for (final t in tags) {
-      print('DEBUG: Tag "${t.name}" has pbRecordId: ${t.pbRecordId}');
       if (!t.rendersAsChip) continue;
       var pid = t.pbRecordId?.trim() ?? '';
       if (pid.isEmpty && t.tagId != 0) {
@@ -9035,7 +8987,6 @@ class DatabaseService {
     if (task.tags.isNotEmpty) {
       final pbIds = await _pbTagRecordIdsFromTags(task.tags);
       if (pbIds.isNotEmpty) {
-        print('DEBUG: Sending to PB tags_link: $pbIds');
         body['tags_link'] = pbIds;
       }
     }
@@ -9056,7 +9007,6 @@ class DatabaseService {
           'from ${tags.length} tag(s); missing rows need pbRecordId / tag_id in catalog. plan=$rid',
         );
       }
-      print('DEBUG: Sending to PB tags_link: $pbIds');
       await _pb.collection(PbCollections.plans).update(
             rid,
             body: <String, dynamic>{kPbPlanTagsExpand: pbIds},
