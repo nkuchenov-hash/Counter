@@ -1392,7 +1392,7 @@ class _PlanningPageState extends State<PlanningPage>
         );
       }
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         setState(() => _planDoneOverride.remove(key));
         ScaffoldMessenger.of(context).showSnackBar(

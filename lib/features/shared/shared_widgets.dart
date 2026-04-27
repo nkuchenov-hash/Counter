@@ -2909,7 +2909,7 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
         );
       }
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2920,20 +2920,15 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
   }
 
   Future<void> _stopChild(TimelineRecord child) async {
-    print(
-      'Attempting to stop record with systemRowId: ${child.id} (legacy record_id: ${child.recordId})',
-    );
     try {
       final ok =
           await DatabaseService.instance.stopRecordByDocId(child.id);
       if (!mounted) return;
       if (!ok) {
-        print(
-          'UI ERROR: stopRecordByDocId returned false (systemRowId=${child.id})',
-        );
+        debugPrint('UI ERROR: stopRecordByDocId returned false (systemRowId=${child.id})');
       }
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
     }
   }
 
@@ -3126,7 +3121,7 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
         );
       }
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3137,9 +3132,6 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
   }
 
   Future<void> _stop() async {
-    print(
-      'Attempting to stop record with systemRowId: ${widget.child.id} (legacy record_id: ${widget.child.recordId})',
-    );
     try {
       final ok = await DatabaseService.instance
           .stopRecordByDocId(widget.child.id);
@@ -3147,12 +3139,10 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
       if (ok) {
         widget.onSaved();
       } else {
-        print(
-          'UI ERROR: stopRecordByDocId returned false (systemRowId=${widget.child.id})',
-        );
+        debugPrint('UI ERROR: stopRecordByDocId returned false (systemRowId=${widget.child.id})');
       }
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
     }
   }
 

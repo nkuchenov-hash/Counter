@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:web/web.dart' as web;
 
 /// Web implementation: play a short sine tone using Web Audio API (package:web).
@@ -16,6 +17,6 @@ void playTone({required double freq, required double duration}) {
     osc.start(context.currentTime);
     osc.stop(context.currentTime + duration);
   } catch (e) {
-    print('Audio fail: $e');
+    debugPrint('Audio fail: $e');
   }
 }
