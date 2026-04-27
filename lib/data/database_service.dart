@@ -3976,48 +3976,6 @@ class DatabaseService {
     return hash;
   }
 
-  /// Noco wrapper **Id** (int) from create/PATCH response body — stored in [CategoryRule.nocoId] for URLs.
-  static int? _parseNocoCategoryWrapperRowIdFromBody(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      int? fromMap(Map<String, dynamic> m) {
-        for (final k in const ['id', 'Id', 'ID']) {
-          final v = m[k];
-          if (v == null) continue;
-          final p = int.tryParse(v.toString().trim());
-          if (p != null && p > 0) return p;
-        }
-        return null;
-      }
-
-      if (decoded is Map<String, dynamic>) {
-        final top = fromMap(decoded);
-        if (top != null) return top;
-        final list = decoded['list'] ?? decoded['records'];
-        if (list is List &&
-            list.isNotEmpty &&
-            list.first is Map<String, dynamic>) {
-          return fromMap(Map<String, dynamic>.from(list.first as Map));
-        }
-      }
-    } catch (_) {}
-    return null;
-  }
-
-  /// Business key from PATCH/POST JSON: `fields.category_id`.
-  static String? _parseCategoryFieldsCategoryIdFromBody(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      if (decoded is! Map) return null;
-      final m = Map<String, dynamic>.from(decoded);
-      final fld = m['fields'] is Map
-          ? Map<String, dynamic>.from(m['fields'] as Map)
-          : m;
-      final v = fld['category_id'] ?? fld['Category_id'];
-      return _sanitizePkString(v?.toString());
-    } catch (_) {}
-    return null;
-  }
 
   /// `true` if Noco sent an explicit `order` (including `0`); `false` if null / missing / empty string.
   static bool _categoryOrderRawIsExplicit(dynamic orderRaw) {
