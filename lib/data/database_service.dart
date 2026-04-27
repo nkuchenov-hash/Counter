@@ -3741,8 +3741,8 @@ class DatabaseService {
     return false;
   }
 
-  /// Sacred Law scope: only rows whose [start_time] falls on **device-local calendar today**
-  /// (same as timeline buckets). Avoids PATCHing legacy `running` ghosts from other local days.
+  /// Sacred Law scope: only rows whose [start_time] falls on **profile wall-clock today**
+  /// (same as timeline buckets). Avoids PATCHing legacy `running` ghosts from other wall-clock days.
   bool _rowStartWallDayIsProjectedToday(Map<String, dynamic> r) {
     try {
       final stUtc = _parseDateTimeUtc(r['start_time']);
@@ -6890,7 +6890,7 @@ class DatabaseService {
 
   List<Map<String, dynamic>> _filterCachedRecordsForDate(DateTime date) {
     try {
-      // Selected calendar day + record day: device **local** Y-M-D only (no profile-offset wall).
+      // Selected calendar day + record day: profile wall-clock Y-M-D (derived from getTimelineDeviceLocalToday); callers must pass a profile wall-clock date.
       final targetDayStr =
           '${date.year}-${_two(date.month)}-${_two(date.day)}';
       final ownerIds = _recordRowOwnerIdMatchSet();

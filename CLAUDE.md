@@ -31,6 +31,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Delete a record | `lib/data/database_service.dart` | `DatabaseService.deleteRecordByDocId` |
 | Optimistic shadow — Start | `lib/data/database_service.dart` | `DatabaseService._startAtomicTaskSequenceApplyLocalPrimary` |
 | Optimistic shadow — Stop | `lib/data/database_service.dart` | `DatabaseService._applyOptimisticStopUiSnapshot` |
+| Singleton / stale-open detection | `lib/data/database_service.dart` | `_rowStartWallDayIsBeforeProjectedToday` / `_mergeSacredStaleOpenCandidates` |
 | Realtime subscribe handler | `lib/data/database_service.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` |
 | Record cache mutation (atomic upsert) | `lib/data/database_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` |
 | ID resolution (legacy UUID → PB row id) | `lib/data/database_service.dart` | `DatabaseService._resolveRecordIdForStopOrDelete` [internal but high-traffic] |

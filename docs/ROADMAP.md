@@ -1,6 +1,6 @@
 # Life OS — Roadmap (April 2026)
 
-Drawn from the April 2026 full-codebase audit. Phases are ordered by dependency, not timeline.
+Drawn from the April 2026 full-codebase audit. Updated 2026-04-27.
 
 ---
 
@@ -10,106 +10,130 @@ Build the best time tracker possible. Every UI component lives in one place and 
 
 ---
 
-## Phase 1 — Stop the Bleeding
-**Fix real bugs before anything else.**
+## Priority rule
 
-Five confirmed bugs. Two are silent data corruptors that affect travelers and multi-device users today.
+Two parallel tracks. Always work the **🔴 Correctness track** first when one is open — bugs that hurt users beat everything. Otherwise drop into the **🟢 Velocity track**, ordered by *token-savings-per-iteration*: do the things first that make every future AI session cheaper and faster.
 
-| Priority | Where | What breaks |
-| :--- | :--- | :--- |
-| 🔴 Critical | `models.dart:1157` | Category ID hash collision → category tree silently corrupts |
-| 🔴 Critical | `models.dart:1220` | Timeline records bucketed on wrong day for travelers (uses device timezone, not profile timezone) |
-| 🟡 High | `models.dart:709` | Same timezone bug in date parsing |
-| 🟡 High | `database_service.dart:3830` | Mixed timezone sources in stale-row detection |
-| 🟠 Medium | `database_service.dart:3517` | Category silently drops from saved records during cold start — no error thrown |
-
-Low severity (non-urgent): `auth_service.dart:134, 163` — non-deterministic UID fallbacks. Defer.
+The velocity rule exists because Nick is a UX designer working with AI assistants on a 10k-line file. Every minute the AI wastes hunting through code is a minute Nick pays for and waits for. Tidiness for tidiness' sake is not a goal — tidiness *that compounds* is.
 
 ---
 
-## Phase 2 — Audit
-**Status: ✅ Complete.**
+## 🔴 Correctness Track — Phase 1 bugs
 
-Full audit documented in `AUDIT_NOTES.md`.
+**Status: 3 of 5 fixed. 2 remaining.**
 
----
+| Priority | Where | What breaks | Status |
+| :--- | :--- | :--- | :--- |
+| 🔴 Critical | `models/category.dart` | Category ID hash collision → category tree silently corrupts | ✅ Fixed (`_stableStringHash`, FNV polynomial) |
+| 🔴 Critical | `models/record.dart` | Timeline records bucketed on wrong day for travelers | ✅ Fixed (`timezoneOffsetHours` on `TimelineRecord`) |
+| 🟡 High | `database_service.dart` | Mixed timezone sources in stale-row detection (`_rowStartWallDayIsBeforeProjectedToday`) | ✅ Fixed in `393bb0f` — `toLocal()` replaced with `_timelineDeviceLocalDayKeyFromUtc`; two misleading doc comments corrected 2026-04-27 |
+| 🟡 High | `models.dart:709` | Same timezone bug in date parsing (`_parseFlexDateOnly`) | ⏳ Open — locate by symbol, line number is pre-split |
+| 🟠 Medium | `database_service.dart` | Category silently drops from saved records during cold start — no error thrown | ⏳ Open — locate by symbol near `loadInitialData` cold-start path |
 
-## Phase 3 — Foundation
-**Build the base that everything else sits on.**
-
-Three parallel workstreams. Do them roughly in order — they each unblock the next phase.
-
-### 3a. Kill the duplicate edit sheet
-One thing to fix before any design work starts.
-
-Two sheets currently edit the same timeline record from different entry points:
-- `EditRecordSheet` — older, NocoDB-era, works with raw data maps
-- `_TimelineRecordSheetContent` — newer, typed, should be the only one
-
-**Action:** Delete `EditRecordSheet`. Route all entry points to `_TimelineRecordSheetContent`. Until this is done, fixing a bug in one means the other still has it.
-
-### 3b. Build the component library
-**Target: every reusable UI element lives in `core/widgets/`. Zero duplicates.**
-
-Current state (updated 2026-04-25):
-- 8 in `core/widgets/` — canonical primitives (was 2 at April 2026 audit)
-- 5 in `features/shared/` — shared but not in core (was 8 at April 2026 audit)
-
-**Missing pieces to build:**
-
-| What | Status |
-| :--- | :--- |
-| `AppLoading(size)` widget | ✅ Built — 17 `CircularProgressIndicator` call sites migrated |
-| `showConfirmDialog(title, body)` | ✅ Built — replaces 8+ inline `AlertDialog` patterns |
-| Error-state widget | ✅ Built — `AppErrorState` (`app_state_views.dart`) |
-| Empty-state widget | ✅ Built — `AppEmptyState` (`app_state_views.dart`) |
-| Button component | ✅ Built — `AppButton` (`app_button.dart`) |
-
-Lower priority consolidations (judgment calls, do when the area is already open):
-- Merge `_PlanningTaskCard` and `_BacklogPlanCard` — same card, different optional features
-- Promote `_ListsQuadraticChip` to a filter mode of `CategoryChip`
-
-**Keep separate (intentional differences, don't merge):**
-- Web vs mobile date picker — platform difference is correct
-- `RecordCategoryHeader` — it's a breadcrumb, not a chip (rename it someday)
-- `TagQuickPickStrip` — a container of chips, not a chip
-- `CategoryFolderTile` — a folder tile, not an activity card
-
-### 3c. Write UX_CONTRACT.md
-**The most important design document this app doesn't have yet.**
-
-A single written spec defining exactly how the UI responds to every user action — universally, across every screen. Covers: tap, save, edit, delete, drag, swipe, error, offline, loading, empty state. Treated with the same authority as the Iron Laws in `ARCHITECTURE.md`.
-
-Once written, every new screen and component is built against it. Without it, each feature invents its own behavior.
-
-### 3d. God Object — defer
-`database_service.dart` is 10,222 lines and could be split into 5 focused files. The app works fine today. **Don't split it until the pain of working in it makes it unavoidable.** When that day comes, the split plan is already designed in `AUDIT_NOTES.md`.
+Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fallbacks.
 
 ---
 
-## Phase 4 — Design Language
-**Make it look like a deliberate product, not assembled code.**
+## 🟢 Velocity Track — ordered by token-savings-per-iteration
 
-- Typography scale
-- Color tokens
-- Spacing system
-- Motion / animation principles
+### V1. Sharpen `CLAUDE.md` into a navigation map
+**Effort: small. Savings: every session, forever. Highest ROI on the board.**
 
-This phase is unblocked once the component library exists (Phase 3b), because tokens only work when there's one place to apply them.
+`CLAUDE.md` is solid as a rules document but weak as a routing document. Right now an AI reading it learns the laws but not where things live. Add a "Where things live" section so the AI opens the right file on first try without scanning the 10k God Object.
+
+Concretely, add a table like:
+- Stop logic → `database_service.dart` → `stopRecordByDocId`
+- Start logic → `database_service.dart` → `writeRecord`
+- Optimistic UI shadow → `database_service.dart` → `_upsertFlatRecordFromPbModel`
+- Realtime subscribe → `database_service.dart` → [symbol]
+- Category resolution → `database_service.dart` → `_resolveRecordIdForStopOrDelete` + smart-link helpers
+- Timeline render → `app_shell.dart` → [symbol]
+- Inline edit widget → `shared_widgets.dart` → [symbol]
+- Planning task done-toggle → `planning_view.dart` → `_toggleDone`
+
+Goal: any AI session can answer *"where do I open first?"* from `CLAUDE.md` alone, without grepping. This single change makes the 10k-line file dramatically less expensive to work with — without splitting it.
+
+### V2. Skills docs for repeated task patterns
+**Effort: small per skill, write as you encounter the pattern. Compounds with every repeat task.**
+
+Short reference docs for tasks the AI re-derives every time. Each one replaces ~5–15 minutes of code-reading with a 30-second doc read. Candidates from observed work:
+- "How to add a field to a record" (touches model, DB write, DB read, PB collection, UI)
+- "How to add a new PB error-path debugPrint correctly"
+- "Optimistic UI checklist for a new user-action button"
+- "How to safely delete dead code without breaking imports" (Round 1–3 lessons)
+
+Don't write all of these now — write each one the first time you notice the AI re-deriving the pattern.
+
+### V3. Phase 3c — Write `UX_CONTRACT.md`
+**Effort: medium. Savings: high — once written, every UI question gets a one-doc answer.**
+
+A single written spec for how the UI responds to every user action — tap, save, edit, delete, drag, swipe, error, offline, loading, empty state. Same authority as the Iron Laws.
+
+Without it, every new feature reinvents its own behavior and the AI has to ask. With it, the AI applies the contract and ships.
+
+### V4. Phase 3b leftovers — judgment-call merges
+**Effort: small. Savings: small but recurring (less "which one is canonical?" confusion).**
+
+Do these only when the file is already open for another reason:
+- Merge `_PlanningTaskCard` and `_BacklogPlanCard` — same card, different optional features.
+- Promote `_ListsQuadraticChip` to a filter mode of `CategoryChip`.
+
+Keep separate (intentional, do not merge): web vs mobile date picker, `RecordCategoryHeader` (it's a breadcrumb), `TagQuickPickStrip` (container of chips), `CategoryFolderTile` (folder, not card).
+
+### V5. Split `database_service.dart` (the 10k God Object)
+**Effort: large. Savings: large but one-time. Hard prerequisite: V1 must be done first.**
+
+Promoted from "defer indefinitely" to *next big lift after V1–V4* — under the new priority rule, this file taxes every AI session. Splitting it is a one-time cost that pays back forever.
+
+**Why V1 must come first:** if you split before `CLAUDE.md` is a proper map, the AI loses its mental model of where things live mid-surgery and writes worse code, not better. Sharpened map first, then split.
+
+**Split plan already exists in `AUDIT_NOTES.md` (5-file split).** When you start, load that first.
+
+**Hard rules for the split:**
+- One PR per extracted file.
+- `flutter analyze` must show zero new warnings after each PR.
+- Update `CLAUDE.md` "Where things live" table in the same PR — never lag behind.
+- Iron Laws (optimistic UI, no-await-before-UI, UTC storage, user_id filter) must be preserved verbatim — they're contracts, not implementation details.
+
+### V6. Tooling cleanup leftovers
+- `tool/test_smart_parse.dart:13` — last `avoid_print` violation, out of Round 4 scope. Quick fix.
+
+### V7. Phase 4 — Design Language
+Typography scale, color tokens, spacing system, motion principles. Unblocked by V3 and V4.
+
+### V8. Phase 5 — Per-Screen Polish + Accessibility
+Apply design language and UX contract screen by screen.
+
+### V9. Phase 6 — Growth / Market Differentiation
+Defined once foundation is solid.
 
 ---
 
-## Phase 5 — Per-Screen Polish + Accessibility
-**With the foundation in place, go screen by screen.**
+## ✅ Completed (struck through, kept for history)
 
-Apply the design language and UX contract to every surface. Fix accessibility gaps.
+### ~~Phase 0 — Cleanup (Rounds 1–4, April 2026)~~
+- ~~**Round 1+2** — Deleted 11 legacy backend files (Yandex YDB, NocoDB stubs, vestigial l10n, migration CSVs).~~
+- ~~**Round 3a** — Removed dead imports, unused widget classes, dead constants.~~
+- ~~**Round 3b/3c** — Further dead code removal across 4 files.~~
+- ~~**Round 4a–4d** — `avoid_print` sweep across 6 files: 17 deleted (hot-path traces), 45 converted to `debugPrint`, 3 left as intentional boot-fail crash surfaces. Net: 65 prints touched, 0 violations remaining in scope.~~
 
----
+### ~~Phase 2 — Audit~~
+~~Full audit documented in `AUDIT_NOTES.md`.~~
 
-## Phase 6 — Growth / Market Differentiation
-**What makes this the best time tracker.**
+### ~~Phase 3a — Kill the duplicate edit sheet~~
+~~`EditRecordSheet` deleted. All entry points route to `_TimelineRecordSheetContent`.~~
 
-TBD — defined once the foundation is solid.
+### ~~Phase 3b — Component library (core pieces)~~
+- ~~`AppLoading(size)` — built, 17 `CircularProgressIndicator` sites migrated.~~
+- ~~`showConfirmDialog(title, body)` — built, replaces 8+ inline `AlertDialog` patterns.~~
+- ~~`AppErrorState` — built (`app_state_views.dart`).~~
+- ~~`AppEmptyState` — built (`app_state_views.dart`).~~
+- ~~`AppButton` — built (`app_button.dart`).~~
+
+### ~~Phase 1 bugs (3 of 5)~~
+- ~~Category ID hash collision — fixed with `_stableStringHash`.~~
+- ~~Timeline timezone bucketing — fixed with `timezoneOffsetHours` parameter.~~
+- ~~Mixed timezone in stale-row detection — fixed in `393bb0f` (`_rowStartWallDayIsBeforeProjectedToday`); doc comments corrected 2026-04-27.~~
 
 ---
 
@@ -119,4 +143,4 @@ TBD — defined once the foundation is solid.
 - **Backend:** PocketBase, self-hosted
 - **Targets:** Android, iOS, Web, Windows, macOS, Linux, Wear OS
 - **Stack:** Flutter
-- **Architecture:** disciplined, Iron Laws documented and mostly honored
+- **Architecture:** Iron Laws documented and honored. `database_service.dart` still monolithic (10k+ lines) — split is V5 on the velocity track, gated on V1.
