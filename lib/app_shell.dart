@@ -419,7 +419,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       });
       await _saveTasks();
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryWriteNewTask(
@@ -475,7 +475,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       });
       await _saveTasks();
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryVoiceWriteNewTask(
@@ -588,7 +588,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       }
       return true;
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryVoiceWriteNewTask(
@@ -620,7 +620,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       }
       return ok;
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryVoicePlanningTask(recognized)),
@@ -648,7 +648,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       }
       return ok;
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryVoiceBacklogTask(recognized)),
@@ -720,7 +720,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         ));
       }
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(_retryWriteNewTask(
@@ -794,15 +794,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           await DatabaseService.instance.stopRecordByDocId(systemRowId);
       if (!mounted) return;
       if (!ok) {
-        print(
-          'UI ERROR: stopRecordByDocId returned false (systemRowId=$systemRowId)',
-        );
+        debugPrint('UI ERROR: stopRecordByDocId returned false (systemRowId=$systemRowId)');
         // DatabaseService already showed error_stop_* / HTTP code — do not show sync_failed_retry.
         return;
       }
       await _stopAnyActiveTask();
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
     }
   }
 
@@ -966,7 +964,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         sourcePlanPocketRecordId: chosen,
       );
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
     }
   }
 
@@ -1011,7 +1009,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       );
       setState(() {});
     } catch (e) {
-      print('UI ERROR: $e');
+      debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
           onRetry: () => unawaited(
@@ -1231,17 +1229,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                   if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
                 },
                 onStop: () async {
-                  print(
-                    'Attempting to stop record with systemRowId: ${record.id} (legacy record_id: ${record.recordId})',
-                  );
-                  final ok = await DatabaseService.instance
-                      .stopRecordByDocId(record.id);
+                  await DatabaseService.instance.stopRecordByDocId(record.id);
                   if (!mounted) return;
-                  if (!ok) {
-                    print(
-                      'UI ERROR: stopRecordByDocId returned false (systemRowId=${record.id})',
-                    );
-                  }
                   if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
                 },
               );
