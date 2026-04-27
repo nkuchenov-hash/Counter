@@ -3031,46 +3031,6 @@ class _PlanningTimelineBoundsSheetState
   }
 }
 
-/// Date picker for planning header.
-class _PlanningDatePickerDialog extends StatelessWidget {
-  const _PlanningDatePickerDialog({
-    required this.initialDate,
-    required this.onDatePicked,
-    this.pageController,
-    this.anchorDate,
-    this.initialPage,
-    this.totalPageCount,
-    this.onDateChanged,
-  });
-
-  final DateTime initialDate;
-  final void Function(DateTime date) onDatePicked;
-  final PageController? pageController;
-  final DateTime? anchorDate;
-  final int? initialPage;
-  final int? totalPageCount;
-  final void Function(DateTime date)? onDateChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(t(currentLocale.value, 'calendar')),
-      content: SizedBox(
-        width: 300,
-        child: CalendarDatePicker(
-          initialDate: initialDate,
-          firstDate: DateTime(2020),
-          lastDate: DateTime(2030),
-          onDateChanged: (date) {
-            // Parent [_openPlanningHeaderDatePicker] already pops via Navigator.of(ctx).pop().
-            // A second pop here removed the route under the dialog (white screen).
-            onDatePicked(date);
-          },
-        ),
-      ),
-    );
-  }
-}
 
 List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
   final base = Theme.of(context).iconTheme.color;

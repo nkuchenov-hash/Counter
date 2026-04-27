@@ -24,9 +24,6 @@ import 'package:counter/data/pb_config.dart';
 
 const _superusers = '_superusers';
 
-final _uuidRe = RegExp(
-  r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
-);
 
 Future<void> main(List<String> args) async {
   final baseUrl = _env('PB_BASE_URL', kPocketBaseUrl).replaceAll(RegExp(r'/$'), '');
