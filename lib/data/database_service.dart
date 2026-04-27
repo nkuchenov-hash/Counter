@@ -1301,9 +1301,7 @@ class DatabaseService {
         return id.isEmpty ? null : id;
       } on ClientException catch (_) {
         try {
-          print(
-            'SEARCHING PB FOR: record_id = "$key" (emergency: no user_id filter)',
-          );
+          debugPrint('SEARCHING PB FOR: record_id = "$key" (emergency: no user_id filter)');
           final solo = 'record_id = "$esc"';
           final rec =
               await _pb.collection(PbCollections.records).getFirstListItem(
@@ -1311,9 +1309,7 @@ class DatabaseService {
                   );
           final foundOwner = _pbRecordRowUserIdString(rec);
           if (foundOwner != authId) {
-            print(
-              'CONFLICT: Record found but owner mismatch. Found: $foundOwner, Expected: $authId',
-            );
+            debugPrint('CONFLICT: Record found but owner mismatch. Found: $foundOwner, Expected: $authId');
           }
           final id = rec.id.trim();
           return id.isEmpty ? null : id;
@@ -2328,7 +2324,7 @@ class DatabaseService {
       }
       return out;
     } on ClientException catch (e) {
-      print('PB_ERROR_RESPONSE: ${e.response}');
+      debugPrint('PB_ERROR_RESPONSE: ${e.response}');
       _maybeOpenPbCircuitFromListFailure(e, 'fetchCategories');
       return [];
     } catch (e) {
@@ -2362,7 +2358,7 @@ class DatabaseService {
           })
           .toList();
     } on ClientException catch (e) {
-      print('PB_ERROR_RESPONSE: ${e.response}');
+      debugPrint('PB_ERROR_RESPONSE: ${e.response}');
       _maybeOpenPbCircuitFromListFailure(e, 'fetchAllCategories');
       return [];
     } catch (e) {
@@ -3414,7 +3410,7 @@ class DatabaseService {
         fromCache.isNotEmpty &&
         _isLikelyPocketBaseRowId(fromCache)) {
       if (!_isLikelyPocketBaseRowId(c) && fromCache != c) {
-        print('ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromCache');
+        debugPrint('ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromCache');
       }
       if (fromCache != c) {
         _log(
@@ -3426,7 +3422,7 @@ class DatabaseService {
     final fromServer = await _fetchPbRecordSysIdByRecordIdField(c);
     if (fromServer != null && fromServer.isNotEmpty) {
       if (fromServer != c) {
-        print('ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromServer');
+        debugPrint('ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromServer');
       }
       return fromServer;
     }
@@ -3599,9 +3595,7 @@ class DatabaseService {
       }
       return e.statusCode;
     } catch (e, st) {
-      print(
-        '[ABORT_REASON] records PATCH failed inside try (before or after [DISPATCH]): $e',
-      );
+      debugPrint('[ABORT_REASON] records PATCH failed inside try (before or after [DISPATCH]): $e');
       _log(st.toString());
       return 500;
     }
@@ -3653,7 +3647,7 @@ class DatabaseService {
           preserveExpand: false, suppressTimelineNotify: true);
       return created.id;
     } on ClientException catch (e) {
-      print('PB_CREATE_ERROR_DETAILS: ${e.response}');
+      debugPrint('PB_CREATE_ERROR_DETAILS: ${e.response}');
       _log('RECORDS_PB create failed: ${e.statusCode}');
       final code = e.statusCode;
       if (code == 403 || code == 401) {
@@ -6089,7 +6083,7 @@ class DatabaseService {
         unawaited(_loadRulesFromNoco());
         return true;
       } on ClientException catch (e) {
-        print('[SERVER_ERROR_BODY] ${e.response}');
+        debugPrint('[SERVER_ERROR_BODY] ${e.response}');
         if (attempt == 0 && _pbErrorLooksLikeUniqueCategoryCollision(e)) {
           final baseForRetry = categoryId.trim().isEmpty ? 'cat' : categoryId.trim();
           var newSlug = '${baseForRetry}_${_randomCategoryRecoverySuffix3()}';
@@ -6098,9 +6092,7 @@ class DatabaseService {
             newSlug =
                 '${baseForRetry}_${_randomCategoryRecoverySuffix3()}';
           }
-          print(
-            '[CATEGORY_RECOVERY] Retrying creation with unique slug: $newSlug',
-          );
+          debugPrint('[CATEGORY_RECOVERY] Retrying creation with unique slug: $newSlug');
           categoryId = newSlug;
           _patchPlaceholderCategoryBizId(parentId, child.name, categoryId);
           _categoryController.add(List.from(_rules));
@@ -7319,8 +7311,8 @@ class DatabaseService {
             ));
           } catch (e, st) {
             final rid = recordsTablePk(row);
-            print('[CHILD_RECORD_PARSE] $e row=$rid data=${row.keys}');
-            print(st);
+            debugPrint('[CHILD_RECORD_PARSE] $e row=$rid data=${row.keys}');
+            debugPrint(st.toString());
             _log('CHILD_RECORD_PARSE: $e | $rid');
           }
         }
@@ -7357,8 +7349,8 @@ class DatabaseService {
             ));
           } catch (e, st) {
             final rid = recordsTablePk(row);
-            print('[CHILD_RECORD_PARSE] $e row=$rid');
-            print(st);
+            debugPrint('[CHILD_RECORD_PARSE] $e row=$rid');
+            debugPrint(st.toString());
             _log('CHILD_RECORD_PARSE: $e | $rid');
           }
         }
@@ -8531,26 +8523,18 @@ class DatabaseService {
   /// Returns **`true` only** for **2xx** (not 404). Optimistic UI reverts when the request fails.
   Future<bool> stopRecordByDocId(String recordId) async {
     if (!_isInitialized) {
-      print(
-        '[ABORT_REASON] Exiting early because: !_isInitialized '
-        '(_isInitialized=$_isInitialized). No PATCH.',
-      );
+      debugPrint('[ABORT_REASON] Exiting early because: !_isInitialized (_isInitialized=$_isInitialized). No PATCH.');
       _brainSnackError(t(currentLocale.value, 'error_stop_brain_not_ready'));
       return false;
     }
     if (!_hasAuthenticatedUserId) {
-      print(
-        '[ABORT_REASON] Exiting early because: PocketBase auth record id is missing '
-        '(_isInitialized=$_isInitialized, currentProfileId=$currentProfileId). No PATCH.',
-      );
+      debugPrint('[ABORT_REASON] Exiting early because: PocketBase auth record id is missing (_isInitialized=$_isInitialized, currentProfileId=$currentProfileId). No PATCH.');
       _brainSnackError(t(currentLocale.value, 'error_stop_brain_not_ready'));
       return false;
     }
     var rid = recordId.trim();
     if (rid.isEmpty) {
-      print(
-        '[ABORT_REASON] Exiting early because: trimmed recordId is empty. No PATCH.',
-      );
+      debugPrint('[ABORT_REASON] Exiting early because: trimmed recordId is empty. No PATCH.');
       _brainSnackError(t(currentLocale.value, 'error_stop_empty_doc_id'));
       return false;
     }
@@ -8588,18 +8572,13 @@ class DatabaseService {
     try {
       rid = await _resolveRecordIdForStopOrDelete(rid);
       if (!_isLikelyPocketBaseRowId(rid)) {
-        print(
-          '[ABORT_REASON] After resolve, rid="$rid" is not a PocketBase row id segment '
-          '(fails _isLikelyPocketBaseRowId). Throwing LegacyIdResolutionException.',
-        );
+        debugPrint('[ABORT_REASON] After resolve, rid="$rid" is not a PocketBase row id segment (fails _isLikelyPocketBaseRowId). Throwing LegacyIdResolutionException.');
         throw LegacyIdResolutionException(originalInput);
       }
       return await _patchStopRecordNetworkPhase(originalInput, rid);
     } on LegacyIdResolutionException catch (e, st) {
-      print('UI ERROR: $e');
-      print(
-        '[ABORT_REASON] LegacyIdResolutionException — could not map input to PB row id: $e',
-      );
+      debugPrint('UI ERROR: $e');
+      debugPrint('[ABORT_REASON] LegacyIdResolutionException — could not map input to PB row id: $e');
       _log('stopRecordByDocId: $e');
       _log(st.toString());
       _clearOptimisticStopKeysForRecord(originalInput);
@@ -8607,10 +8586,8 @@ class DatabaseService {
       _brainSnackError(t(currentLocale.value, 'error_stop_id_unresolved'));
       return false;
     } on ClientException catch (e, st) {
-      print('UI ERROR: $e');
-      print(
-        '[ABORT_REASON] stopRecordByDocId: PocketBase ClientException status=${e.statusCode} $e',
-      );
+      debugPrint('UI ERROR: $e');
+      debugPrint('[ABORT_REASON] stopRecordByDocId: PocketBase ClientException status=${e.statusCode} $e');
       _log('stopRecordByDocId failed: $e');
       _log(st.toString());
       _clearOptimisticStopKeysForRecord(originalInput);
@@ -8618,10 +8595,8 @@ class DatabaseService {
       _snackStopHttpFailure(e.statusCode);
       return false;
     } catch (e, st) {
-      print('UI ERROR: $e');
-      print(
-        '[ABORT_REASON] stopRecordByDocId: unexpected exception before/after PATCH: $e',
-      );
+      debugPrint('UI ERROR: $e');
+      debugPrint('[ABORT_REASON] stopRecordByDocId: unexpected exception before/after PATCH: $e');
       _log('stopRecordByDocId failed: $e');
       _log(st.toString());
       _clearOptimisticStopKeysForRecord(originalInput);
