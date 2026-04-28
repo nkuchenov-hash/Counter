@@ -48,7 +48,12 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Voice input → planning task submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitPlanning` |
 | Voice input → backlog submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitBacklog` |
 | Auth / session bootstrap | `lib/data/auth_bridge.dart` | `AuthBridge.checkSession` |
-| Profile timezone resolution | `lib/data/database_service.dart` | `DatabaseService.getProjectedToday` |
+| Profile timezone resolution | `lib/data/profile_service.dart` | `DatabaseService.getProjectedToday` (extension) |
+| Profile settings getter | `lib/data/profile_service.dart` | `DatabaseService.settings` (extension) |
+| Save user settings | `lib/data/profile_service.dart` | `DatabaseService.saveSettings` (extension) |
+| Update timezone | `lib/data/profile_service.dart` | `DatabaseService.updateTimeZone` (extension) |
+| Fetch tags (current user) | `lib/data/profile_service.dart` | `DatabaseService.fetchTagsForCurrentUser` (extension) |
+| Get / fetch user profile | `lib/data/profile_service.dart` | `DatabaseService.getUserProfile` (extension) |
 | Date key bucketing (UTC → wall-day string) | `lib/data/database_service.dart` | `DatabaseService._timelineDeviceLocalDayKeyFromUtc` |
 | Initial data load (full) | `lib/data/database_service.dart` | `DatabaseService.loadInitialData` |
 | Wear OS lite data load | `lib/data/database_service.dart` | `DatabaseService.loadInitialDataWearLite` |
@@ -81,7 +86,7 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 - **No `await` before UI update** for user-driven record actions.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object:** `database_service.dart` is 10k lines. Don't split it — the app works. Add to it as needed until the pain demands a split.
+- **God Object:** `database_service.dart` is ~9,400 lines (V5.1: profile/tag domain extracted to `lib/data/profile_service.dart` as a `part of` file using `extension ProfileServiceExtension on DatabaseService`). Add to either file as needed.
 
 ---
 

@@ -21,6 +21,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+part 'profile_service.dart';
+
 // Brain: PocketBase for profiles, records, categories, plans, tags.
 // Wear OS DataClient / MethodChannel: only under lib/features/wear/ — nothing here sends to the watch.
 
@@ -49,15 +51,6 @@ class LegacyIdResolutionException implements Exception {
   final String docId;
   @override
   String toString() => 'LegacyIdResolutionException($docId)';
-}
-
-/// Thrown when profile fetch returns 404 or 422 (invalid session / UUID mismatch).
-class _ProfileFetchFailedException implements Exception {
-  _ProfileFetchFailedException(this.statusCode, [this.message]);
-  final int statusCode;
-  final String? message;
-  @override
-  String toString() => message ?? 'Profile fetch failed: $statusCode';
 }
 
 /// PocketBase auth record id is required for mutating API calls (`user_id` on child rows).
@@ -129,6 +122,10 @@ class _HighlanderRollbackToken {
   final Map<int, Map<String, dynamic>> runningSnapshotsByIndex;
   final bool appendedPendingRow;
 }
+
+String _two(int n) => n.toString().padLeft(2, '0');
+String _dateKeyFromDate(DateTime date) =>
+    '${date.year}-${_two(date.month)}-${_two(date.day)}';
 
 class DatabaseService {
   DatabaseService._();
@@ -233,9 +230,6 @@ class DatabaseService {
   static bool get _isPlansTableConfigured => true;
 
   String? currentProfileId;
-
-  /// PocketBase **profiles** auth row id (for PATCH settings); set on profile load.
-  String? _profilePbRecordId;
 
   PocketBase? _pocketBase;
 
@@ -699,17 +693,12 @@ class DatabaseService {
   /// Called when user explicitly signs out so the shell can set _profileId = null. Set by RootAuthWrapper.
   void Function()? onSignOut;
 
-  static const String _dataRegionKey = 'data_region';
-  static const String _profileTzLabelKey = 'profile_preferred_timezone';
-  static const String _profileTzOffsetKey = 'profile_timezone_offset_hours';
-  static const String _profileThemeModeKey = 'profile_theme_mode';
   /// One-shot local clean of titleless / "Untitled" rows from [_cachedFlatRecords] (@DATA_MAP ghost / bad creates).
   static const String _oneShotUntitledGhostCleanKey =
       'brain_one_shot_untitled_ghost_clean_v1';
   static const String _cacheRecordsFlatKey = 'cache_records_flat_v1';
   static const String _cacheCategoriesRawKey = 'cache_categories_raw_v1';
 
-  String _dataRegion = 'global';
   String? _loadErrorMessage;
   String? get loadErrorMessage => _loadErrorMessage;
 
@@ -724,16 +713,10 @@ class DatabaseService {
   Set<String> _reservedCategorySlugsLower = {};
   /// Display names + archive flags for **all** PB rows (see [_rebuildCategoryDialogUniverse]) — create dialog pre-flight.
   List<Map<String, dynamic>> _categoryDialogUniverse = [];
-  UserSettings _settings = UserSettings(userId: '');
-  UserSettings get settings => _settings;
 
   int? _lastAggregatedKey;
   List<StatsNode>? _lastStatsNodeRoots;
-  /// user_id from profile row when applicable (business string; mirrors auth id when healthy).
-  String? _cachedProfileUuid;
 
-  final StreamController<UserSettings> _settingsController =
-      StreamController<UserSettings>.broadcast();
   final StreamController<List<CategoryRule>> _categoryController =
       StreamController<List<CategoryRule>>.broadcast();
   final StreamController<List<PlanningTask>> _tasksController =
@@ -845,24 +828,6 @@ class DatabaseService {
   /// Planning UI: manual refresh in addition to the 2s poll (after PATCH/cross-day optimistic).
   final StreamController<void> _planningRefreshController =
       StreamController<void>.broadcast();
-
-  /// Last [fetchTagsForCurrentUser] result (`sort_order` then name). Updated on every fetch; not broadcast.
-  List<Tag> _userTagsCatalogCache = [];
-
-  /// Planning **Sort by Tags** grouping refreshes when tag order changes in Tag Manager (no plan list tick).
-  final StreamController<void> _tagsCatalogRefreshController =
-      StreamController<void>.broadcast();
-
-  /// Snapshot for tag-group headers (may be empty before first fetch).
-  List<Tag> get cachedUserTagsCatalog => List.unmodifiable(_userTagsCatalogCache);
-
-  Stream<void> get tagsCatalogUpdated => _tagsCatalogRefreshController.stream;
-
-  void notifyTagsCatalogChanged() {
-    if (!_tagsCatalogRefreshController.isClosed) {
-      _tagsCatalogRefreshController.add(null);
-    }
-  }
 
   /// Serializes **network** for primary Highlander (PATCH/POST), not local shadow / UI emission.
   Future<void> _primaryHighlanderNetworkChain = Future.value();
@@ -1479,15 +1444,6 @@ class DatabaseService {
       await prefs.setString(_dataRegionKey, _dataRegion);
     } catch (_) {}
   }
-
-  /// Background refresh only; does not block UI.
-  Future<void> reloadForDataRegionChange() async {
-    if ((currentProfileId?.isNotEmpty ?? false)) {
-      unawaited(loadInitialData(currentProfileId!));
-    }
-  }
-
-  String get dataRegion => _dataRegion;
 
   Future<bool> loadInitialData(String uid) async {
     await ensurePocketBaseReady();
@@ -2244,58 +2200,6 @@ class DatabaseService {
     return out;
   }
 
-
-  /// Fetches profile row: auth store first, else list filter by [user_id] (@ARCHITECTURE §3).
-  Future<Map<String, dynamic>?> getUserProfile(String id) async {
-    await ensurePocketBaseReady();
-    final want = id.trim();
-    if (want.isEmpty) return null;
-    try {
-      final auth = _pb.authStore.record;
-      if (auth != null) {
-        final data = Map<String, dynamic>.from(auth.data);
-        data['id'] = auth.id;
-        final uid = (data['user_id'] ?? '').toString().trim();
-        if (uid == want || auth.id == want) {
-          _profilePbRecordId = auth.id;
-          return data;
-        }
-      }
-    } catch (_) {}
-    try {
-      final escaped = want.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
-      final rec = await _pb.collection(PbCollections.profiles).getFirstListItem(
-        'user_id = "$escaped"',
-      );
-      _profilePbRecordId = rec.id;
-      return Map<String, dynamic>.from(rec.data)..['id'] = rec.id;
-    } on ClientException catch (e) {
-      if (e.statusCode == 404 || e.statusCode == 403 || e.statusCode == 422) {
-        throw _ProfileFetchFailedException(
-          e.statusCode,
-          'Session invalid or profile not found',
-        );
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Shell: current profile as map (snake_case keys aligned with UI).
-  /// Rethrows _ProfileFetchFailedException so loadInitialData can force logout on 422/404.
-  Future<Map<String, dynamic>> getCurrentUserProfileMap() async {
-    try {
-      final id = currentProfileId;
-      if (id == null || id.isEmpty) return {};
-      final m = await getUserProfile(id);
-      return m ?? {};
-    } on _ProfileFetchFailedException {
-      rethrow;
-    } catch (_) {
-      return {};
-    }
-  }
 
   /// PocketBase: all **categories** for the signed-in `user_id` (@DATA_MAP).
   Future<List<Map<String, dynamic>>> fetchCategories() async {
@@ -4097,225 +4001,6 @@ class DatabaseService {
     }
   }
 
-  /// After Noco profile load: **device prefs win** for theme + timezone so a stale server row
-  /// (e.g. default "New York" / `system`) cannot wipe what the user saved in-app (@DATA_MAP §profiles).
-  static String _prefsKeyShowListTagsOnCards(String uid) =>
-      'lists_show_tags_on_cards_${uid.trim()}';
-
-  /// Lists inbox: persist tag strip visibility per auth user (device prefs; merged into [UserSettings]).
-  Future<void> persistShowListTagsOnCards(bool value) async {
-    final aid = _requireAuthUserIdForWrite();
-    _settings = _settings.copyWith(showListTagsOnCards: value);
-    _settingsController.add(_settings);
-    try {
-      final prefs = _prefs ?? await SharedPreferences.getInstance();
-      await prefs.setBool(_prefsKeyShowListTagsOnCards(aid), value);
-    } catch (_) {}
-  }
-
-  void _mergeDeviceProfilePreferenceOverridesSync() {
-    try {
-      final prefs = _prefs;
-      if (prefs == null) return;
-      final tm = prefs.getString(_profileThemeModeKey)?.trim().toLowerCase();
-      var next = _settings;
-      if (tm == 'light' || tm == 'dark' || tm == 'system') {
-        next = next.copyWith(themeMode: tm);
-      }
-      final tzLabel = prefs.getString(_profileTzLabelKey)?.trim();
-      if (tzLabel != null && tzLabel.isNotEmpty) {
-        final oh = prefs.getInt(_profileTzOffsetKey) ??
-            _fixedOffsetHoursFromLabel(tzLabel);
-        next = next.copyWith(
-          preferredTimeZone: tzLabel,
-          timezoneOffsetHours: oh,
-        );
-      }
-      final uid = next.userId.trim();
-      if (uid.isNotEmpty) {
-        final showTags = prefs.getBool(_prefsKeyShowListTagsOnCards(uid));
-        if (showTags != null) {
-          next = next.copyWith(showListTagsOnCards: showTags);
-        }
-      }
-      _settings = next;
-    } catch (_) {}
-  }
-
-  Future<void> _loadSettingsFromNoco() async {
-    try {
-      final data = await getCurrentUserProfileMap();
-      if (data.isEmpty) {
-        throw _ProfileFetchFailedException(
-          404,
-          'Profile not found — cannot load timezone or user_id',
-        );
-      }
-      final rowUid = data['user_id']?.toString().trim() ?? '';
-      if (rowUid.isEmpty) {
-        throw _ProfileFetchFailedException(
-          422,
-          'Profile row missing user_id',
-        );
-      }
-      _log('Profile data loaded from PocketBase.');
-      final authUid = _userIdForWhere ?? '';
-      final uid = data['user_id']?.toString().trim();
-      if (uid != null && uid.isNotEmpty) _cachedProfileUuid = uid;
-      final raw = data['active_languages'];
-      List<String>? activeLanguages;
-      if (raw is List) {
-        activeLanguages =
-            raw.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
-        if (activeLanguages.isEmpty) activeLanguages = null;
-      }
-      final region = data['data_region'] as String?;
-      if (region == 'russia' || region == 'global') _dataRegion = region!;
-      final tzLabel =
-          (data['preferred_timezone'] as String? ?? 'UTC').trim();
-      final tzOffsetRaw = data['timezone_offset'];
-      final tzOffset = tzOffsetRaw == null
-          ? _fixedOffsetHoursFromLabel(tzLabel.isEmpty ? 'UTC' : tzLabel)
-          : (tzOffsetRaw is int
-              ? tzOffsetRaw
-              : int.tryParse(tzOffsetRaw.toString()) ?? 0);
-      final dc = data['default_category_id'];
-      final rawTheme = (data['theme_mode'] as String?)?.trim().toLowerCase();
-      String themeMode;
-      if (rawTheme == 'light' || rawTheme == 'dark' || rawTheme == 'system') {
-        themeMode = rawTheme!;
-      } else {
-        try {
-          final prefs = _prefs ?? await SharedPreferences.getInstance();
-          final cached = prefs.getString(_profileThemeModeKey)?.trim().toLowerCase();
-          themeMode = (cached == 'light' || cached == 'dark' || cached == 'system')
-              ? cached!
-              : 'system';
-        } catch (_) {
-          themeMode = 'system';
-        }
-      }
-      final dn = data['display_name'] as String?;
-      final tagModeRaw = data['tag_display_mode']?.toString().trim();
-      final rawListBeh = data['list_completion_behavior'];
-      final listBehRaw = rawListBeh == null
-          ? ''
-          : rawListBeh.toString().trim().toLowerCase();
-      final listBeh = (listBehRaw == 'stay' ||
-              listBehRaw == 'bottom' ||
-              listBehRaw == 'hide' ||
-              listBehRaw == 'archive')
-          ? listBehRaw
-          : (listBehRaw.isEmpty ? 'stay' : 'hide');
-      final settingsUserId =
-          authUid.isNotEmpty ? authUid : (uid != null && uid.isNotEmpty ? uid : rowUid);
-      _settings = UserSettings(
-        userId: settingsUserId,
-        language: data['primary_language'] as String? ?? 'en',
-        preferredTimeZone: tzLabel.isEmpty ? 'UTC' : tzLabel,
-        timezoneOffsetHours: tzOffset,
-        activeLanguages: activeLanguages,
-        primaryLanguage: data['primary_language'] as String? ?? 'en',
-        defaultCategoryId: dc == null ? null : _rowInt(dc),
-        hasSeeded: data['has_seeded'] == true,
-        dataRegion: region,
-        biometricEnabled: data['biometric_enabled'] == true,
-        themeMode: themeMode,
-        displayName: dn != null && dn.trim().isNotEmpty ? dn.trim() : null,
-        tagDisplayMode: categoryDisplayModeFromWire(tagModeRaw),
-        tagDisplayModeWireRaw:
-            (tagModeRaw != null && tagModeRaw.isNotEmpty) ? tagModeRaw : null,
-        listCompletionBehavior: listBeh,
-        showListTagsOnCards: true,
-      );
-      _mergeDeviceProfilePreferenceOverridesSync();
-      _settingsController.add(_settings);
-      _syncMaterialAppLocaleFromSettings(_settings);
-    } on _ProfileFetchFailedException {
-      rethrow;
-    } catch (_) {
-      final authUid = _userIdForWhere ?? '';
-      final fallback = currentProfileId?.trim() ?? '';
-      final uidStr =
-          authUid.isNotEmpty ? authUid : fallback;
-      _settings = UserSettings(userId: uidStr);
-      _mergeDeviceProfilePreferenceOverridesSync();
-      _settingsController.add(_settings);
-    }
-  }
-
-  static const List<String> _profileTimezoneOptions = [
-    'UTC',
-    'London',
-    'Moscow',
-    'Dubai',
-    'New York',
-  ];
-  static List<String> get validTimezonesForProfile =>
-      List.from(_profileTimezoneOptions);
-
-  static String _normalizeTimezone(String timezone) {
-    final t = timezone.trim();
-    if (t.isEmpty) return 'UTC';
-    switch (t) {
-      case 'London':
-      case 'London (UTC+0)':
-        return 'UTC';
-      case 'Moscow':
-      case 'Moscow (UTC+3)':
-      case 'Dubai':
-        return 'GMT+3';
-      case 'Dubai (UTC+4)':
-        return 'Dubai';
-      case 'New York':
-      case 'New York (UTC-5)':
-        return 'New York';
-      default:
-        if (t.contains('Moscow') || t.contains('UTC+3')) return 'GMT+3';
-        if (t.contains('Dubai') || t.contains('UTC+4')) return 'Dubai';
-        if (t.contains('New York') || t.contains('UTC-5')) return 'New York';
-        if (t.contains('London') || t.contains('UTC+0')) return 'UTC';
-        return t;
-    }
-  }
-
-  static int _fixedOffsetHoursFromLabel(String timezone) {
-    final tz = _normalizeTimezone(timezone);
-    switch (tz) {
-      case 'UTC':
-        return 0;
-      case 'GMT+3':
-        return 3;
-      case 'Dubai':
-        return 4;
-      case 'New York':
-        return -5;
-      default:
-        return 0;
-    }
-  }
-
-  static (DateTime, DateTime) utcRangeForDateInTimezone(
-      DateTime selectedDate, String timezone) {
-    final offset = _fixedOffsetHoursFromLabel(timezone);
-    return wall_clock.utcWallClockDayBoundsUtc(
-      DateTime(selectedDate.year, selectedDate.month, selectedDate.day),
-      offset,
-      timezone,
-    );
-  }
-
-  static (DateTime, DateTime) utcRangeForWallClockDate(
-    DateTime wallClockDate,
-    int offsetHours,
-    String preferredTimeZone,
-  ) {
-    return wall_clock.utcWallClockDayBoundsUtc(
-      wallClockDate,
-      offsetHours,
-      preferredTimeZone,
-    );
-  }
 
   DateTime _profileWallFromUtc(DateTime utc) => wall_clock.toWallClockForLabel(
         utc.toUtc(),
@@ -4330,101 +4015,12 @@ class DatabaseService {
         _settings.preferredTimeZone,
       );
 
-  DateTime getProjectedToday() {
-    final utc = DateTime.now().toUtc();
-    final view = _profileWallFromUtc(utc);
-    return DateTime(view.year, view.month, view.day);
-  }
-
-  DateTime applyUserOffset(DateTime utcDate) {
-    return _profileWallFromUtc(utcDate);
-  }
-
-  DateTime displayTimeToUtc(DateTime displayNaive) {
-    return _profileUtcFromWall(displayNaive);
-  }
-
-  String getProjectedTodayDateKey() {
-    final t = getProjectedToday();
-    return '${t.year}-${_two(t.month)}-${_two(t.day)}';
-  }
-
-  /// Timeline calendar “today” / strip anchor: **profile wall-clock** ([getProjectedToday]), per [DATA_MAP] records §8 / [wall_clock] (not device TZ).
-  DateTime getTimelineDeviceLocalToday() => getProjectedToday();
-
-  String getTimelineDeviceLocalTodayDateKey() => getProjectedTodayDateKey();
-
   /// Day-bucket key for a stored UTC instant: profile wall date, never raw UTC Y-M-D / never [DateTime.toLocal].
   String _timelineDeviceLocalDayKeyFromUtc(DateTime utcInstant) {
     final wall = _profileWallFromUtc(utcInstant.toUtc());
     return _dateKeyFromDate(DateTime(wall.year, wall.month, wall.day));
   }
 
-  static String _two(int n) => n.toString().padLeft(2, '0');
-  static String _dateKeyFromDate(DateTime date) =>
-      '${date.year}-${_two(date.month)}-${_two(date.day)}';
-
-  void _syncMaterialAppLocaleFromSettings(UserSettings s) {
-    final raw = s.primaryLanguage.trim().isNotEmpty
-        ? s.primaryLanguage
-        : s.language;
-    final code = resolvedUiLanguageCode(raw);
-    if (currentLocale.value != code) {
-      currentLocale.value = code;
-    }
-  }
-
-  /// UI-first: update state immediately; then PocketBase PATCH on **profiles** auth row.
-  Future<bool> saveSettings(UserSettings s) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
-
-    final authId = _requireAuthUserIdForWrite();
-    final lang = resolvedUiLanguageCode(
-      s.primaryLanguage.trim().isNotEmpty ? s.primaryLanguage : s.language,
-    );
-    final coerced = s.copyWith(
-      primaryLanguage: lang,
-      language: lang,
-      activeLanguages: <String>[lang],
-    );
-    _settings = coerced.copyWith(userId: authId);
-    _settingsController.add(_settings);
-    _syncMaterialAppLocaleFromSettings(_settings);
-    _notifyTimelineAfterRecordCacheMutation();
-
-    try {
-      await ensurePocketBaseReady();
-      final pbId = (_profilePbRecordId ?? _pb.authStore.record?.id)?.trim();
-      if (pbId == null || pbId.isEmpty) return false;
-      final profileBody = ProfileUpdate.fromSettings(coerced).toJson();
-      await _pb.collection(PbCollections.profiles).update(
-            pbId,
-            body: profileBody,
-          );
-      final patchedTagWire = profileBody['tag_display_mode']?.toString();
-      if (patchedTagWire != null && patchedTagWire.isNotEmpty) {
-        _settings = _settings.copyWith(
-          tagDisplayModeWireRaw: patchedTagWire,
-        );
-        _settingsController.add(_settings);
-      }
-      _log('Timezone synced to PocketBase.');
-      try {
-        final prefs = _prefs ?? await SharedPreferences.getInstance();
-        await prefs.setString(_profileThemeModeKey, coerced.themeMode);
-        await prefs.setString(_profileTzLabelKey, coerced.preferredTimeZone);
-        await prefs.setInt(_profileTzOffsetKey, coerced.timezoneOffsetHours);
-      } catch (_) {}
-      return true;
-    } on ClientException catch (e) {
-      _log('SAVE_SETTINGS: PocketBase ${e.statusCode} — $e');
-      return false;
-    } catch (e, st) {
-      _log('SAVE_SETTINGS: request failed — $e');
-      _log(st);
-      return false;
-    }
-  }
 
   /// Natural-language → structured task hints via `POST …/api/ai/parse-task` only.
   /// Flutter stays **LLM-agnostic**; routing and provider live on the server.
@@ -4625,20 +4221,6 @@ class DatabaseService {
     return out;
   }
 
-  Future<bool> updateTimeZone(String label) async {
-    final ok = await saveSettings(_settings.copyWith(
-        preferredTimeZone: label,
-        timezoneOffsetHours: _fixedOffsetHoursFromLabel(label)));
-    _notifyTimelineAfterRecordCacheMutation();
-    return ok;
-  }
-
-  Future<bool> updateUserTimezone(double offsetHours) async {
-    final ok = await saveSettings(_settings.copyWith(
-        timezoneOffsetHours: offsetHours.round()));
-    _notifyTimelineAfterRecordCacheMutation();
-    return ok;
-  }
 
   final Random _random = Random();
   int newId() => -DateTime.now().millisecondsSinceEpoch - _random.nextInt(9999);
@@ -8673,230 +8255,6 @@ class DatabaseService {
     });
   }
 
-  /// PocketBase: **tags** rows for the current `user_id` (flat maps incl. 15-char `id`).
-  Future<List<Map<String, dynamic>>> fetchTags() async {
-    if (!(currentProfileId?.isNotEmpty ?? false)) return [];
-    try {
-      await ensurePocketBaseReady();
-      if (_pbHttpBackoffActive) {
-        return [];
-      }
-      final authId = _userIdForWhere;
-      if (authId == null || authId.isEmpty) return [];
-      final uid = _escapeForPbFilter(authId);
-      final list = await _pb.collection(PbCollections.tags).getFullList(
-        filter: 'user_id = "$uid"',
-      );
-      final out = list.map((r) {
-        final m = Map<String, dynamic>.from(r.data);
-        m['id'] = r.id;
-        m['_pb_record_id'] = r.id;
-        return m;
-      }).toList();
-      if (kDebugMode) {
-        debugPrint(
-          '[PB] fetchTags: ${out.length} rows @ $kPocketBaseUrl',
-        );
-      }
-      return out;
-    } catch (e, st) {
-      _maybeOpenPbCircuitFromListFailure(e, 'fetchTags');
-      _log('TAGS_FETCH: $e');
-      _log(st.toString());
-      return [];
-    }
-  }
-
-  /// Loads tag rows for the current profile (`user_id` filter). Returns empty if none or error (no mocks).
-  /// [scope] filters `tags.domain`: plan strip vs list strip (@DATA_MAP).
-  Future<List<Tag>> fetchTagsForCurrentUser({
-    TagCatalogScope scope = TagCatalogScope.plan,
-  }) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
-      _userTagsCatalogCache = [];
-      return [];
-    }
-    try {
-      final flat = await fetchTags();
-      final out = <Tag>[];
-      for (final row in flat) {
-        final tag = Tag.fromPocketJson(row);
-        if (tag.tagId == 0 && (tag.pbRecordId == null || tag.pbRecordId!.isEmpty)) {
-          continue;
-        }
-        out.add(tag);
-      }
-      out.sort((a, b) {
-        final c = a.sortOrder.compareTo(b.sortOrder);
-        if (c != 0) return c;
-        return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-      });
-      _userTagsCatalogCache = List.unmodifiable(out);
-      return List<Tag>.from(out.where((t) => scope.matchesTag(t)));
-    } catch (e, st) {
-      _log('TAGS_FETCH: $e');
-      _log(st.toString());
-      _userTagsCatalogCache = [];
-      return [];
-    }
-  }
-
-  /// Writes `sort_order` 0…n-1 for [ordered] (PocketBase **tags** rows). Concurrent PATCH per row.
-  Future<bool> persistTagsSortOrderForCurrentUser(List<Tag> ordered) async {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
-    if (ordered.isEmpty) return true;
-    try {
-      await ensurePocketBaseReady();
-      final jobs = <Future<dynamic>>[];
-      for (var i = 0; i < ordered.length; i++) {
-        final rid = ordered[i].pbRecordId?.trim() ?? '';
-        if (rid.isEmpty) continue;
-        jobs.add(
-          _pb.collection(PbCollections.tags).update(
-                rid,
-                body: <String, dynamic>{
-                  'user_id': _pidForPbFilter,
-                  'sort_order': i,
-                },
-              ),
-        );
-      }
-      if (jobs.isEmpty) return false;
-      await Future.wait(jobs);
-      final next = <Tag>[
-        for (var i = 0; i < ordered.length; i++) ordered[i].copyWith(sortOrder: i),
-      ];
-      _userTagsCatalogCache = List.unmodifiable(next);
-      notifyTagsCatalogChanged();
-      return true;
-    } catch (e, st) {
-      _log('TAG_SORT_PERSIST: $e');
-      _log(st.toString());
-      return false;
-    }
-  }
-
-  /// POST one tag row: `user_id`, `tag_id` (business), `name`, optional `color` / `icon` (@DATA_MAP `tags`).
-  Future<Tag?> createTagForCurrentUser({
-    required String name,
-    required String colorHex,
-    required String iconKey,
-    String domain = 'plan',
-  }) async {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return null;
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return null;
-    final dom = domain.trim().toLowerCase() == 'list' ? 'list' : 'plan';
-    try {
-      final existing = await fetchTagsForCurrentUser(
-        scope: dom == 'list' ? TagCatalogScope.list : TagCatalogScope.plan,
-      );
-      var nextBiz = 1;
-      var nextOrder = 0;
-      for (final t in existing) {
-        if (t.tagId >= nextBiz) nextBiz = t.tagId + 1;
-        if (t.sortOrder >= nextOrder) nextOrder = t.sortOrder + 1;
-      }
-      final created = await _pb.collection(PbCollections.tags).create(
-            body: <String, dynamic>{
-              'tag_id': nextBiz,
-              'user_id': _pidForPbFilter,
-              'name': trimmed,
-              'color': colorHex,
-              'icon': iconKey,
-              'sort_order': nextOrder,
-              'domain': dom,
-            },
-          );
-      return Tag.fromPocketJson(<String, dynamic>{...created.data, 'id': created.id});
-    } catch (e, st) {
-      _log('CREATE_TAG: $e');
-      _log(st.toString());
-      return null;
-    }
-  }
-
-  /// PocketBase **tags** collection row id.
-  Future<bool> deleteTagByPocketRecordId(String pocketRecordId) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
-      return false;
-    }
-    final id = pocketRecordId.trim();
-    if (id.isEmpty) return false;
-    try {
-      await _pb.collection(PbCollections.tags).delete(id);
-      return true;
-    } catch (e, st) {
-      _log('DELETE_TAG_PB: $e');
-      _log(st.toString());
-      return false;
-    }
-  }
-
-  /// Update one **tags** row on PocketBase.
-  Future<bool> patchTagForCurrentUser({
-    required String pocketRecordId,
-    required String name,
-    required String colorHex,
-    required String iconKey,
-  }) async {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return false;
-    final rid = pocketRecordId.trim();
-    if (rid.isEmpty) return false;
-    try {
-      await _pb.collection(PbCollections.tags).update(
-            rid,
-            body: <String, dynamic>{
-              'user_id': _pidForPbFilter,
-              'name': trimmed,
-              'color': colorHex,
-              'icon': iconKey,
-            },
-          );
-      return true;
-    } catch (e, st) {
-      _log('TAG_PATCH: $e');
-      _log(st.toString());
-      return false;
-    }
-  }
-
-  /// PocketBase `tags_link` values: **only** `tags` collection record ids ([Tag.pbRecordId]).
-  /// Resolves by business [Tag.tagId] against [fetchTagsForCurrentUser] when pb id missing on the instance.
-  /// Never uses tag name, Noco wrapper id, or any non-PB identifier.
-  Future<List<String>> _pbTagRecordIdsFromTags(List<Tag> tags) async {
-    if (tags.isEmpty) return [];
-    final catalog = await fetchTagsForCurrentUser();
-    final byBiz = <int, Tag>{};
-    for (final t in catalog) {
-      if (t.tagId != 0) {
-        byBiz[t.tagId] = t;
-      }
-    }
-    final out = <String>[];
-    final seen = <String>{};
-    for (final t in tags) {
-      if (!t.rendersAsChip) continue;
-      var pid = t.pbRecordId?.trim() ?? '';
-      if (pid.isEmpty && t.tagId != 0) {
-        pid = byBiz[t.tagId]?.pbRecordId?.trim() ?? '';
-      }
-      if (pid.isEmpty) {
-        if (kDebugMode) {
-          debugPrint(
-            '[PB] _pbTagRecordIdsFromTags: skip — no PocketBase record id '
-            '(tagId=${t.tagId} name="${t.name}")',
-          );
-        }
-        continue;
-      }
-      if (seen.add(pid)) out.add(pid);
-    }
-    return out;
-  }
-
   Future<Map<String, dynamic>> _buildPocketPlanCreateBody(
     PlanningTask task, {
     required String titleTrimmed,
@@ -10053,9 +9411,4 @@ class DatabaseService {
     unawaited(deletePlanningTasksBulk([id]));
   }
 
-  // Removed: Supabase OTP/Yandex/OAuth — use AuthBridge + Noco only.
-  Future<void> signInWithYandex() async {}
-  Future<void> exchangeCodeForSession(String code) async {}
-  Future<void> signInWithOtp(String email) async {}
-  Future<void> verifyOtp(String email, String code) async {}
 }
