@@ -1559,7 +1559,7 @@ class _PlanningPageState extends State<PlanningPage>
   }) {
     final pbId = DatabaseService.pocketRelationIdOrNull(task.pocketRecordId);
     final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
-    final estimate = DatabaseService.planningWallEstimateSeconds(task);
+    final estimate = PlanServiceExtension.planningWallEstimateSeconds(task);
     return _PlanningTaskCard(
       task: task,
       planTrackedSeconds: tracked,

@@ -38,9 +38,16 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Category smart-link / fuzzy match | `lib/data/database_service.dart` | `DatabaseService.findCategoryByFuzzyMatch` |
 | Category create | `lib/data/database_service.dart` | `DatabaseService.addNestedCategory` |
 | Category update | `lib/data/database_service.dart` | `DatabaseService.updateCategory` |
-| Plan / planning task write | `lib/data/database_service.dart` | `DatabaseService.addPlanningTask` |
+| Plan / planning task write | `lib/data/plan_service.dart` | `DatabaseService.addPlanningTask` (extension) |
+| Plan / planning task CRUD (full) | `lib/data/plan_service.dart` | `PlanServiceExtension` — addPlan, updatePlanningTask, deletePlanningTask, bulkUpdatePlans |
+| Plan stream / optimistic cache | `lib/data/plan_service.dart` | `DatabaseService.planningStream` / `applyOptimisticPlanningTask` (extension) |
+| Plan rrule expansion | `lib/data/plan_service.dart` | `DatabaseService.expandRecurringPlans` (extension) |
+| Plan alarm scheduling | `lib/data/plan_service.dart` | `DatabaseService._requestPlanAlarmReschedule` (extension) |
+| AI task parse | `lib/data/plan_service.dart` | `DatabaseService.parseTaskViaAiBackend` / `parsePlanningItemsViaAiBackend` (extension) |
+| Plan link scoring (title similarity) | `lib/data/plan_service.dart` | `PlanServiceExtension.titleSimilarityForPlanLink` (static) |
+| Plan wall-estimate seconds | `lib/data/plan_service.dart` | `PlanServiceExtension.planningWallEstimateSeconds` (static) |
 | Plan / planning task done-toggle | `lib/features/planning/planning_view.dart` | `_PlanningViewState._toggleDone` |
-| Tag link to plan | `lib/data/database_service.dart` | `DatabaseService._syncPlanTagsPocket` |
+| Tag link to plan | `lib/data/plan_service.dart` | `DatabaseService._syncPlanTagsPocket` (extension) |
 | Timeline render (list) | `lib/features/timeline/timeline_view.dart` | `TimelinePage` |
 | Timeline edit sheet | `lib/features/shared/shared_widgets.dart` | `ActivityDetailSheet` |
 | Inline edit widget (child / parallel record) | `lib/features/shared/shared_widgets.dart` | `_ChildParallelEditBar` |
@@ -86,7 +93,7 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 - **No `await` before UI update** for user-driven record actions.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object:** `database_service.dart` is ~9,400 lines (V5.1: profile/tag domain extracted to `lib/data/profile_service.dart` as a `part of` file using `extension ProfileServiceExtension on DatabaseService`). Add to either file as needed.
+- **God Object:** `database_service.dart` is ~9,400 lines (V5.1: profile/tag domain → `lib/data/profile_service.dart`; V5.2: plan domain → `lib/data/plan_service.dart`). Both are `part of 'database_service.dart'` files using named `extension …Extension on DatabaseService`. V5.2 result: `database_service.dart` ~6,634 lines, `plan_service.dart` ~2,803 lines. Add plan-domain code to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
 
 ---
 
