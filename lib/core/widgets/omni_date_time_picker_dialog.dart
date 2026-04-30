@@ -321,9 +321,6 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
           ),
           const SizedBox(height: 12),
           CalendarDatePicker(
-            key: ValueKey<String>(
-              '${_selectedDay.year}-${_selectedDay.month}-${_selectedDay.day}',
-            ),
             initialDate: _selectedDay,
             firstDate: widget.firstDate,
             lastDate: widget.lastDate,

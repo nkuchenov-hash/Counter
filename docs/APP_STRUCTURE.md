@@ -8,7 +8,12 @@ lib/
 ├── data/                          // THE BRAIN & DNA (Logic Only)
 │   ├── models.dart                // [DNA] Part coordinator — `part` declarations only; all types in models/
 │   ├── models/                    // Part files: _shared, profile, category, record, planning, tag, stats
-│   ├── database_service.dart      // [CRUD] The God Object. PocketBase logic, HTTP calls, local state caching.
+│   ├── database_service.dart      // [BRAIN ROOT] Singleton, shared state, streams, static helpers. Part files below.
+│   ├── db_core.dart               // [BOOTSTRAP] PocketBase init, health/circuit, lifecycle, loadInitialData. (part of database_service)
+│   ├── profile_service.dart       // [PROFILE] User settings, timezone, tags. (part of database_service)
+│   ├── plan_service.dart          // [PLANS] Planning tasks, rrule, alarms, AI parse. (part of database_service)
+│   ├── record_service.dart        // [RECORDS] Timeline CRUD, optimistic UI, realtime. (part of database_service)
+│   ├── category_service.dart      // [CATEGORIES] Category CRUD, fuzzy match, stats helpers. (part of database_service)
 │   ├── pb_config.dart             // [CONFIG] PocketBase URL, Collections, & Expands.
 │   ├── auth_bridge.dart           // [GATE] Auth session management, OAuth, & Profile routing.
 │   ├── category_fuzzy_match.dart  // Category name fuzzy-match scoring.

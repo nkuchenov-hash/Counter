@@ -61,9 +61,12 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Update timezone | `lib/data/profile_service.dart` | `DatabaseService.updateTimeZone` (extension) |
 | Fetch tags (current user) | `lib/data/profile_service.dart` | `DatabaseService.fetchTagsForCurrentUser` (extension) |
 | Get / fetch user profile | `lib/data/profile_service.dart` | `DatabaseService.getUserProfile` (extension) |
+| PocketBase init / health check | `lib/data/db_core.dart` | `DbCoreExtension.ensurePocketBaseReady` |
+| Realtime reconnect bridge | `lib/data/db_core.dart` | `DbCoreExtension.ensureRecordsRealtimeBridge` |
+| Sign-out / state clear | `lib/data/db_core.dart` | `DbCoreExtension.clearLocalStateOnSignOut` |
+| Initial data load (full) | `lib/data/db_core.dart` | `DbCoreExtension.loadInitialData` |
+| Wear OS lite data load | `lib/data/db_core.dart` | `DbCoreExtension.loadInitialDataWearLite` |
 | Date key bucketing (UTC → wall-day string) | `lib/data/database_service.dart` | `DatabaseService._timelineDeviceLocalDayKeyFromUtc` |
-| Initial data load (full) | `lib/data/database_service.dart` | `DatabaseService.loadInitialData` |
-| Wear OS lite data load | `lib/data/database_service.dart` | `DatabaseService.loadInitialDataWearLite` |
 
 ---
 
@@ -93,7 +96,7 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 - **No `await` before UI update** for user-driven record actions.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object:** `database_service.dart` is ~9,400 lines (V5.1: profile/tag → `profile_service.dart`; V5.2: plan → `plan_service.dart`; V5.3: record → `record_service.dart`; V5.4: category → `category_service.dart`). All are `part of 'database_service.dart'` files using named `extension …Extension on DatabaseService`. V5.4 result: `database_service.dart` ~1,089 lines, `category_service.dart` ~3,158 lines. Add category-domain code to `category_service.dart`, record-domain to `record_service.dart`, plan-domain to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
+- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). All domain logic lives in `part of` files as named extensions: V5.1 profile/tag → `profile_service.dart`; V5.2 plan → `plan_service.dart`; V5.3 record → `record_service.dart`; V5.4 category → `category_service.dart`; V5.5 bootstrap/lifecycle → `db_core.dart`. Add bootstrap/lifecycle code to `db_core.dart`, category-domain to `category_service.dart`, record-domain to `record_service.dart`, plan-domain to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
 
 ---
 

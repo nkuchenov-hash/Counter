@@ -1,8 +1,7 @@
 // Bulk edit: absolute target date + optional same start time for all selected plans. UI only; Brain calls from planning_view.
-import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -134,12 +133,16 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _date,
+    final seed = DateTime(
+      _date.year, _date.month, _date.day,
+      _pickedTargetTime?.hour ?? 9,
+      _pickedTargetTime?.minute ?? 0,
+    );
+    final picked = await showAppDateTimePicker(
+      context,
+      initial: seed,
       firstDate: DateTime.utc(2020),
       lastDate: DateTime.utc(2035),
-      initialEntryMode: appDatePickerEntryMode(),
     );
     if (picked != null && mounted) {
       setState(() => _date = DateTime(picked.year, picked.month, picked.day));
@@ -148,77 +151,18 @@ class _BulkPlanningEditSheetBodyState extends State<_BulkPlanningEditSheetBody> 
 
   Future<void> _pickTime() async {
     final initial = _pickedTargetTime ?? _defaultPickerSeed();
-    final mq = MediaQuery.of(context);
-    TimeOfDay? out;
-
-    if (Theme.of(context).platform == TargetPlatform.iOS) {
-      var wheel = DateTime(2020, 1, 1, initial.hour, initial.minute);
-      final loc = currentLocale.value;
-      out = await showCupertinoModalPopup<TimeOfDay>(
-        context: context,
-        builder: (ctx) {
-          return SafeArea(
-            child: Material(
-              color: CupertinoColors.systemBackground.resolveFrom(ctx),
-              child: SizedBox(
-                height: 276,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        CupertinoButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: Text(t(loc, 'cancel')),
-                        ),
-                        CupertinoButton(
-                          onPressed: () {
-                            Navigator.pop(
-                              ctx,
-                              TimeOfDay(hour: wheel.hour, minute: wheel.minute),
-                            );
-                          },
-                          child: Text(t(loc, 'done')),
-                        ),
-                      ],
-                    ),
-                    Expanded(
-                      child: CupertinoTheme(
-                        data: CupertinoThemeData(
-                          brightness: Theme.of(ctx).brightness,
-                        ),
-                        child: CupertinoDatePicker(
-                          mode: CupertinoDatePickerMode.time,
-                          initialDateTime: wheel,
-                          use24hFormat: mq.alwaysUse24HourFormat,
-                          minuteInterval: 1,
-                          onDateTimeChanged: (d) => wheel = d,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      );
-    } else {
-      out = await showTimePicker(
-        context: context,
-        initialTime: initial,
-        initialEntryMode: appTimePickerEntryMode(),
-        builder: (context, child) {
-          return MediaQuery(
-            data: mq.copyWith(alwaysUse24HourFormat: mq.alwaysUse24HourFormat),
-            child: child ?? const SizedBox.shrink(),
-          );
-        },
-      );
-    }
-
-    if (out != null && mounted) {
-      setState(() => _pickedTargetTime = out);
+    final seed = DateTime(
+      _date.year, _date.month, _date.day,
+      initial.hour, initial.minute,
+    );
+    final picked = await showAppDateTimePicker(
+      context,
+      initial: seed,
+      firstDate: DateTime.utc(2020),
+      lastDate: DateTime.utc(2035),
+    );
+    if (picked != null && mounted) {
+      setState(() => _pickedTargetTime = TimeOfDay(hour: picked.hour, minute: picked.minute));
     }
   }
 
