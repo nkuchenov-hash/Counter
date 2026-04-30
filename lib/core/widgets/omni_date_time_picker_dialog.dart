@@ -420,9 +420,6 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
                 primaryColor: scheme.primary,
               ),
               child: CupertinoDatePicker(
-                key: ValueKey<int>(
-                  _wheelTime.hour * 60 + _wheelTime.minute,
-                ),
                 mode: CupertinoDatePickerMode.time,
                 use24hFormat: true,
                 minuteInterval: 1,
