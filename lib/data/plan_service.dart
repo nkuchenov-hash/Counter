@@ -585,7 +585,7 @@ extension PlanServiceExtension on DatabaseService {
         final rowUid =
             (row['user_id'] ?? '').toString().trim().toLowerCase();
         if (rowUid.isEmpty || !ownerIds.contains(rowUid)) continue;
-        final stUtc = DatabaseService._parseDateTimeUtc(row['start_time']);
+        final stUtc = CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
         if (stUtc == null) continue;
         final recordDayStr = _timelineDeviceLocalDayKeyFromUtc(stUtc);
         if (recordDayStr != targetDayStr) continue;
@@ -811,7 +811,7 @@ extension PlanServiceExtension on DatabaseService {
     final offset = settings.timezoneOffsetHours;
     final tz = settings.preferredTimeZone;
     for (final rec in recordsForDay) {
-      final sec = DatabaseService.recordDurationSecondsWithinDayFromTimestamps(
+      final sec = CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
         rec,
         wallDate,
         offset,
@@ -934,10 +934,10 @@ extension PlanServiceExtension on DatabaseService {
     required List<Tag> pocketTagCatalog,
   }) {
     final d = r.data;
-    final startUtc = DatabaseService._parseDateTimeUtc(d['start_time']);
+    final startUtc = CategoryServiceExtension._parseDateTimeUtc(d['start_time']);
     final startDisplay =
         startUtc != null ? _profileWallFromUtc(startUtc.toUtc()) : null;
-    final endUtc = DatabaseService._parseDateTimeUtc(d['end_time']);
+    final endUtc = CategoryServiceExtension._parseDateTimeUtc(d['end_time']);
     final endDisplay =
         endUtc != null ? _profileWallFromUtc(endUtc.toUtc()) : null;
     final derivedDateKey = startDisplay != null

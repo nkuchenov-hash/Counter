@@ -35,9 +35,9 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Realtime subscribe handler | `lib/data/record_service.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` (extension) |
 | Record cache mutation (atomic upsert) | `lib/data/record_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` (extension) |
 | ID resolution (legacy UUID → PB row id) | `lib/data/record_service.dart` | `DatabaseService._resolveRecordIdForStopOrDelete` (extension) |
-| Category smart-link / fuzzy match | `lib/data/database_service.dart` | `DatabaseService.findCategoryByFuzzyMatch` |
-| Category create | `lib/data/database_service.dart` | `DatabaseService.addNestedCategory` |
-| Category update | `lib/data/database_service.dart` | `DatabaseService.updateCategory` |
+| Category smart-link / fuzzy match | `lib/data/category_service.dart` | `DatabaseService.findCategoryByFuzzyMatch` (extension) |
+| Category create | `lib/data/category_service.dart` | `DatabaseService.addNestedCategory` (extension) |
+| Category update | `lib/data/category_service.dart` | `DatabaseService.updateCategory` (extension) |
 | Plan / planning task write | `lib/data/plan_service.dart` | `DatabaseService.addPlanningTask` (extension) |
 | Plan / planning task CRUD (full) | `lib/data/plan_service.dart` | `PlanServiceExtension` — addPlan, updatePlanningTask, deletePlanningTask, bulkUpdatePlans |
 | Plan stream / optimistic cache | `lib/data/plan_service.dart` | `DatabaseService.planningStream` / `applyOptimisticPlanningTask` (extension) |
@@ -93,7 +93,7 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 - **No `await` before UI update** for user-driven record actions.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object:** `database_service.dart` is ~9,400 lines (V5.1: profile/tag domain → `lib/data/profile_service.dart`; V5.2: plan domain → `lib/data/plan_service.dart`; V5.3: record domain → `lib/data/record_service.dart`). All are `part of 'database_service.dart'` files using named `extension …Extension on DatabaseService`. V5.3 result: `database_service.dart` ~4,238 lines, `record_service.dart` ~2,407 lines. Add record-domain code to `record_service.dart`, plan-domain to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
+- **God Object:** `database_service.dart` is ~9,400 lines (V5.1: profile/tag → `profile_service.dart`; V5.2: plan → `plan_service.dart`; V5.3: record → `record_service.dart`; V5.4: category → `category_service.dart`). All are `part of 'database_service.dart'` files using named `extension …Extension on DatabaseService`. V5.4 result: `database_service.dart` ~1,089 lines, `category_service.dart` ~3,158 lines. Add category-domain code to `category_service.dart`, record-domain to `record_service.dart`, plan-domain to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
 
 ---
 

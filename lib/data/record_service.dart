@@ -90,7 +90,7 @@ extension RecordServiceExtension on DatabaseService {
       final copy = Map<String, dynamic>.from(row);
       final st = (copy['status'] ?? '').toString().trim().toLowerCase();
       if (st == 'running') {
-        final pk = DatabaseService.recordsTablePk(copy);
+        final pk = CategoryServiceExtension.recordsTablePk(copy);
         final biz = (copy['record_id'] ?? '').toString().trim();
         if (pk.isNotEmpty) {
           patchTargetsOut.add(<String, String>{
@@ -132,8 +132,8 @@ extension RecordServiceExtension on DatabaseService {
     }
 
     bool sameTime(dynamic a, dynamic b) {
-      final da = DatabaseService._parseDateTimeUtc(a);
-      final db = DatabaseService._parseDateTimeUtc(b);
+      final da = CategoryServiceExtension._parseDateTimeUtc(a);
+      final db = CategoryServiceExtension._parseDateTimeUtc(b);
       if (da != null && db != null) {
         final ua = da.toUtc();
         final ub = db.toUtc();
@@ -186,13 +186,13 @@ extension RecordServiceExtension on DatabaseService {
   }) {
     try {
       final m = _recordMapFromPb(r);
-      final pk = DatabaseService.recordsTablePk(m);
+      final pk = CategoryServiceExtension.recordsTablePk(m);
       if (pk.isEmpty) return;
       final biz = (m['record_id'] ?? '').toString().trim();
       final next = List<Map<String, dynamic>>.from(_cachedFlatRecords);
       for (var i = 0; i < next.length; i++) {
         final row = next[i];
-        final rpk = DatabaseService.recordsTablePk(row);
+        final rpk = CategoryServiceExtension.recordsTablePk(row);
         final rbiz = (row['record_id'] ?? '').toString().trim();
         final same =
             rpk == pk || (biz.isNotEmpty && (rbiz == biz || rpk == biz));
@@ -231,7 +231,7 @@ extension RecordServiceExtension on DatabaseService {
     final before = _cachedFlatRecords.length;
     _cachedFlatRecords = [
       for (final row in _cachedFlatRecords)
-        if (DatabaseService.recordsTablePk(row) != id) row,
+        if (CategoryServiceExtension.recordsTablePk(row) != id) row,
     ];
     if (_cachedFlatRecords.length != before) {
       _notifyTimelineAfterRecordCacheMutation();
@@ -424,7 +424,7 @@ extension RecordServiceExtension on DatabaseService {
         for (final r in list) {
           try {
             final m = _recordMapFromPb(r);
-            final pk = DatabaseService.recordsTablePk(m);
+            final pk = CategoryServiceExtension.recordsTablePk(m);
             if (pk.isEmpty) {
               DatabaseService._log(
                 'GHOST_ROW_SKIPPED: PB record missing PK (keys=${m.keys.map((k) => k.toString()).take(12).join(",")})',
@@ -544,7 +544,7 @@ extension RecordServiceExtension on DatabaseService {
       if (v != null) {
         final s = v.toString().trim();
         if (s.isNotEmpty) {
-          final asInt = DatabaseService._rowInt(v);
+          final asInt = CategoryServiceExtension._rowInt(v);
           if (asInt != 0) return asInt;
           final fromKey = findCategoryIdForStoredCategoryKey(s);
           if (fromKey != null) return fromKey;
@@ -587,8 +587,8 @@ extension RecordServiceExtension on DatabaseService {
   }
 
   Map<String, dynamic> _rowToRecordMap(Map<String, dynamic> row) {
-    final start = DatabaseService._parseDateTimeUtc(row['start_time']);
-    final end = DatabaseService._parseDateTimeUtc(row['end_time']);
+    final start = CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
+    final end = CategoryServiceExtension._parseDateTimeUtc(row['end_time']);
     final pidRaw = row['parent_id'];
     final pidFlat = normalizeLinkScalar(pidRaw) ?? pidRaw;
     final pidStr = pidFlat?.toString().trim() ?? '';
@@ -596,7 +596,7 @@ extension RecordServiceExtension on DatabaseService {
     if (pidStr.isNotEmpty && pidStr != '0') {
       parentInt = int.tryParse(pidStr);
       if (parentInt == null || parentInt == 0) {
-        final ri = DatabaseService._rowInt(pidRaw);
+        final ri = CategoryServiceExtension._rowInt(pidRaw);
         parentInt = ri == 0 ? null : ri;
       }
     }
@@ -613,7 +613,7 @@ extension RecordServiceExtension on DatabaseService {
     } else {
       status = 'running';
     }
-    final restPk = DatabaseService.recordsTablePk(row);
+    final restPk = CategoryServiceExtension.recordsTablePk(row);
     final bizRid = (row['record_id'] ?? '').toString().trim();
     final sysObj = row[DatabaseService._nocoSystemRowIdKey];
     final int? sysInt =
@@ -623,7 +623,7 @@ extension RecordServiceExtension on DatabaseService {
     if (start != null) {
       calendarDayStr = _timelineDeviceLocalDayKeyFromUtc(start);
     } else {
-      final stFallback = DatabaseService._parseDateTimeUtc(row['start_time']);
+      final stFallback = CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
       calendarDayStr = stFallback != null
           ? _timelineDeviceLocalDayKeyFromUtc(stFallback)
           : '';
@@ -667,7 +667,7 @@ extension RecordServiceExtension on DatabaseService {
     final out = <String>{};
     if (id.isNotEmpty) out.add(id);
     for (final row in _cachedFlatRecords) {
-      final pk = DatabaseService.recordsTablePk(row);
+      final pk = CategoryServiceExtension.recordsTablePk(row);
       final biz = (row['record_id'] ?? '').toString().trim();
       if (pk == id || biz == id) {
         if (pk.isNotEmpty) out.add(pk);
@@ -682,7 +682,7 @@ extension RecordServiceExtension on DatabaseService {
     if (_recordRestDefinitive404Keys.isEmpty) return;
     final alive = <String>{};
     for (final r in _cachedFlatRecords) {
-      final pk = DatabaseService.recordsTablePk(r).trim();
+      final pk = CategoryServiceExtension.recordsTablePk(r).trim();
       final biz = (r['record_id'] ?? '').toString().trim();
       if (pk.isNotEmpty) alive.add(pk);
       if (biz.isNotEmpty) alive.add(biz);
@@ -697,7 +697,7 @@ extension RecordServiceExtension on DatabaseService {
   }
 
   bool _optimisticRowDeletedRaw(Map<String, dynamic> row) {
-    final pk = DatabaseService.recordsTablePk(row);
+    final pk = CategoryServiceExtension.recordsTablePk(row);
     final biz = (row['record_id'] ?? '').toString().trim();
     for (final k in [pk, biz]) {
       if (k.isNotEmpty && _optimisticDeletedKeys.contains(k)) return true;
@@ -807,8 +807,8 @@ extension RecordServiceExtension on DatabaseService {
       final now = DatabaseService.getPlanetaryNow();
       for (final row in _cachedFlatRecords) {
         if (_rowHasNonEmptyParent(row['parent_id'])) continue;
-        if (!DatabaseService._isNocoRowSacredStopTarget(row)) continue;
-        final pk = DatabaseService.recordsTablePk(row);
+        if (!CategoryServiceExtension._isNocoRowSacredStopTarget(row)) continue;
+        final pk = CategoryServiceExtension.recordsTablePk(row);
         final biz = (row['record_id'] ?? '').toString().trim();
         for (final k in [pk, biz]) {
           if (k.isNotEmpty) _optimisticEndByKey[k] = _OptimisticEndPatch(now);
@@ -850,7 +850,7 @@ extension RecordServiceExtension on DatabaseService {
           continue;
         }
 
-        final stUtc = DatabaseService._parseDateTimeUtc(row['start_time']);
+        final stUtc = CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
         if (stUtc == null) {
           continue;
         }
@@ -864,7 +864,7 @@ extension RecordServiceExtension on DatabaseService {
               _mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
         } catch (e, st) {
           final rowData =
-              '${DatabaseService.recordsTablePk(row)} ${(row['record_id'] ?? '').toString().trim()} data=$row';
+              '${CategoryServiceExtension.recordsTablePk(row)} ${(row['record_id'] ?? '').toString().trim()} data=$row';
           DatabaseService._log('TIMELINE_ROW_MAP: $e | $rowData');
           DatabaseService._log(st.toString());
         }
@@ -1107,9 +1107,9 @@ extension RecordServiceExtension on DatabaseService {
         if (_rowHasNonEmptyParent(row['parent_id'])) continue;
         final data = _rowToRecordMap(row);
         if (_recordMapOverlapsExcludeKeys(data, excludeKeys)) continue;
-        final otherStart = DatabaseService.startTimeFromRecord(data);
+        final otherStart = CategoryServiceExtension.startTimeFromRecord(data);
         if (otherStart == null) continue;
-        final otherEnd = DatabaseService.endTimeFromRecord(data) ?? now;
+        final otherEnd = CategoryServiceExtension.endTimeFromRecord(data) ?? now;
         if (_rangesOverlap(start, end, otherStart, otherEnd)) return data;
       }
       return null;
@@ -1138,7 +1138,7 @@ extension RecordServiceExtension on DatabaseService {
         final pend = _optimisticPendingStartRecordMap;
         if (pend != null &&
             pend['endTime'] == null &&
-            DatabaseService.isRecordMapActuallyRunning(pend)) {
+            CategoryServiceExtension.isRecordMapActuallyRunning(pend)) {
           final data = Map<String, dynamic>.from(pend);
           final st = data['startTime'] as DateTime?;
           final en = data['endTime'] as DateTime?;
@@ -1163,7 +1163,7 @@ extension RecordServiceExtension on DatabaseService {
         Map<String, dynamic>? row;
         for (final r in rows) {
           if (_rowHasNonEmptyParent(r['parent_id'])) continue;
-          if (!DatabaseService._isNocoRowActiveRunning(r)) continue;
+          if (!CategoryServiceExtension._isNocoRowActiveRunning(r)) continue;
           row = r;
           break;
         }
@@ -1171,7 +1171,7 @@ extension RecordServiceExtension on DatabaseService {
           yield null;
         } else {
           final data = _mergeOptimisticIntoRecordMap(_rowToRecordMap(row));
-          if (data['endTime'] != null || !DatabaseService.isRecordMapActuallyRunning(data)) {
+          if (data['endTime'] != null || !CategoryServiceExtension.isRecordMapActuallyRunning(data)) {
             yield null;
             await Future.delayed(const Duration(seconds: 2));
             continue;
@@ -1202,7 +1202,7 @@ extension RecordServiceExtension on DatabaseService {
         '';
     if (u == parentRecordId) return true;
     final pInt = int.tryParse(parentRecordId);
-    if (pInt != null && DatabaseService._rowInt(raw) == pInt) return true;
+    if (pInt != null && CategoryServiceExtension._rowInt(raw) == pInt) return true;
     return false;
   }
 
@@ -1212,7 +1212,7 @@ extension RecordServiceExtension on DatabaseService {
     if (q.isEmpty) return q;
     try {
       for (final row in _cachedFlatRecords) {
-        final pk = DatabaseService.recordsTablePk(row);
+        final pk = CategoryServiceExtension.recordsTablePk(row);
         final biz = (row['record_id'] ?? '').toString().trim();
         if (pk == q || biz == q) {
           if (biz.isNotEmpty) return biz;
@@ -1233,7 +1233,7 @@ extension RecordServiceExtension on DatabaseService {
         final rows = await getRecords();
         final list = rows
             .where((r) => _parentFieldEqualsRecordId(r, pid))
-            .where(DatabaseService._isNocoRowActiveRunning)
+            .where(CategoryServiceExtension._isNocoRowActiveRunning)
             .toList();
         list.sort((a, b) {
           final at = a['start_time']?.toString() ?? '';
@@ -1245,11 +1245,11 @@ extension RecordServiceExtension on DatabaseService {
           try {
             out.add(TimelineRecord.fromMap(
               _rowToRecordMap(row),
-              systemId: DatabaseService.recordsTablePk(row),
+              systemId: CategoryServiceExtension.recordsTablePk(row),
               timezoneOffsetHours: _settings.timezoneOffsetHours,
             ));
           } catch (e, st) {
-            final rid = DatabaseService.recordsTablePk(row);
+            final rid = CategoryServiceExtension.recordsTablePk(row);
             debugPrint('[CHILD_RECORD_PARSE] $e row=$rid data=${row.keys}');
             debugPrint(st.toString());
             DatabaseService._log('CHILD_RECORD_PARSE: $e | $rid');
@@ -1283,11 +1283,11 @@ extension RecordServiceExtension on DatabaseService {
           try {
             out.add(TimelineRecord.fromMap(
               _rowToRecordMap(row),
-              systemId: DatabaseService.recordsTablePk(row),
+              systemId: CategoryServiceExtension.recordsTablePk(row),
               timezoneOffsetHours: _settings.timezoneOffsetHours,
             ));
           } catch (e, st) {
-            final rid = DatabaseService.recordsTablePk(row);
+            final rid = CategoryServiceExtension.recordsTablePk(row);
             debugPrint('[CHILD_RECORD_PARSE] $e row=$rid');
             debugPrint(st.toString());
             DatabaseService._log('CHILD_RECORD_PARSE: $e | $rid');
@@ -1366,9 +1366,9 @@ extension RecordServiceExtension on DatabaseService {
         serverOk = true;
         for (final r in serverRows) {
           if (_rowHasNonEmptyParent(r['parent_id'])) continue;
-          if (!DatabaseService._isNocoRowSacredStopTarget(r)) continue;
+          if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r)) continue;
           if (!_rowStartWallDayIsProjectedToday(r)) continue;
-          final id = DatabaseService.recordsTablePk(r);
+          final id = CategoryServiceExtension.recordsTablePk(r);
           if (id.isEmpty) continue;
           byPk[id] = r;
         }
@@ -1389,9 +1389,9 @@ extension RecordServiceExtension on DatabaseService {
           final local = _cachedFlatRecords;
           for (final r in local) {
             if (_rowHasNonEmptyParent(r['parent_id'])) continue;
-            if (!DatabaseService._isNocoRowSacredStopTarget(r)) continue;
+            if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r)) continue;
             if (!_rowStartWallDayIsProjectedToday(r)) continue;
-            final id = DatabaseService.recordsTablePk(r);
+            final id = CategoryServiceExtension.recordsTablePk(r);
             if (id.isEmpty) continue;
             byPk[id] = r;
           }
@@ -1723,11 +1723,11 @@ extension RecordServiceExtension on DatabaseService {
           if (pr != null && pr.isNotEmpty) {
             sameParent = _parentFieldEqualsRecordId(r, pr);
           } else if (parentId != null) {
-            sameParent = DatabaseService._rowInt(r['parent_id']) == parentId;
+            sameParent = CategoryServiceExtension._rowInt(r['parent_id']) == parentId;
           }
           if (!sameParent) continue;
-          if (!DatabaseService._isNocoRowSacredStopTarget(r)) continue;
-          final id = DatabaseService.recordsTablePk(r);
+          if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r)) continue;
+          final id = CategoryServiceExtension.recordsTablePk(r);
           if (id.isEmpty) continue;
           DatabaseService._log('PATCH_ID_TRACE: child-stop pb id=$id');
           final childFields = _nocoFieldsForPatch(<String, dynamic>{
@@ -1971,7 +1971,7 @@ extension RecordServiceExtension on DatabaseService {
         final rows = await getRecords();
         Map<String, dynamic>? found;
         for (final r in rows) {
-          if (DatabaseService.recordsTablePk(r) == rid ||
+          if (CategoryServiceExtension.recordsTablePk(r) == rid ||
               (r['record_id'] ?? '').toString().trim() == rid ||
               (r['record_id'] ?? '').toString().trim() == originalInput) {
             found = r;
@@ -2043,7 +2043,7 @@ extension RecordServiceExtension on DatabaseService {
       final rows = await getRecords(forceNetwork: true);
       final row = rows.firstWhere(
         (r) =>
-            DatabaseService.recordsTablePk(r) == rid ||
+            CategoryServiceExtension.recordsTablePk(r) == rid ||
             (r['record_id'] ?? '').toString().trim() == rid ||
             (r['record_id'] ?? '').toString().trim() == originalInput,
         orElse: () => <String, dynamic>{},

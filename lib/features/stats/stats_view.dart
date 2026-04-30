@@ -68,7 +68,7 @@ class _StatsViewState extends State<StatsView> {
   }
 
   int _aggregatedCacheKey(List<Map<String, dynamic>> records, DateTime selectedDate) {
-    return DatabaseService.statsRecordsSignature(records, selectedDate);
+    return CategoryServiceExtension.statsRecordsSignature(records, selectedDate);
   }
 
   @override
@@ -431,12 +431,12 @@ class _StatsViewState extends State<StatsView> {
   }
 
   Widget _buildSessionTile(BuildContext context, ColorScheme scheme, Map<String, dynamic> rec, double indent) {
-    final startUtc = DatabaseService.startTimeFromRecord(rec);
-    final endUtc = DatabaseService.endTimeFromRecord(rec);
+    final startUtc = CategoryServiceExtension.startTimeFromRecord(rec);
+    final endUtc = CategoryServiceExtension.endTimeFromRecord(rec);
     final status = (rec['status'] as String? ?? '').toLowerCase();
     final DateTime? endUtcOrNow = endUtc ??
         (status == 'running' ? DatabaseService.getPlanetaryNow() : null);
-    final sec = DatabaseService.recordDurationSecondsWithinDayFromTimestamps(
+    final sec = CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
       rec,
       widget.selectedDate,
       DatabaseService.instance.settings.timezoneOffsetHours,

@@ -715,7 +715,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
   void _startTimerIfRunning() {
     _timer?.cancel();
     _timer = null;
-    if (DatabaseService.isRecordMapActuallyRunning(widget.data)) {
+    if (CategoryServiceExtension.isRecordMapActuallyRunning(widget.data)) {
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
       });
@@ -760,7 +760,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
     final type = widget.data['type'] as String? ?? 'record';
     final isPlanned = type == 'planned';
     final isRunning = type == 'record' &&
-        DatabaseService.isRecordMapActuallyRunning(widget.data);
+        CategoryServiceExtension.isRecordMapActuallyRunning(widget.data);
 
     final categoryPath = DatabaseService.instance
         .categoryDisplayPathForRecordData(widget.data);
@@ -772,7 +772,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
     if (isPlanned) {
       subtitle = t(currentLocale.value, 'planned_label');
     } else if (isRunning) {
-      final startTimeUtc = DatabaseService.startTimeFromRecord(widget.data);
+      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(widget.data);
       if (startTimeUtc != null) {
         duration =
             DatabaseService.getPlanetaryNow().difference(startTimeUtc);
@@ -783,8 +783,8 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
         subtitle = t(currentLocale.value, 'running_label');
       }
     } else {
-      final startTimeUtc = DatabaseService.startTimeFromRecord(widget.data);
-      final endTimeUtc = DatabaseService.endTimeFromRecord(widget.data);
+      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(widget.data);
+      final endTimeUtc = CategoryServiceExtension.endTimeFromRecord(widget.data);
       if (startTimeUtc != null) {
         final endOrNow =
             endTimeUtc ?? DatabaseService.getPlanetaryNow();

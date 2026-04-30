@@ -202,7 +202,7 @@ class _WearTimerScreenState extends State<WearTimerScreen> {
             if (data != null) {
               final st = data['startTime'] as DateTime?;
               if (st != null &&
-                  DatabaseService.isRecordMapActuallyRunning(data)) {
+                  CategoryServiceExtension.isRecordMapActuallyRunning(data)) {
                 startUtc = st;
                 running = true;
               }

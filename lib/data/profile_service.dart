@@ -307,7 +307,7 @@ extension ProfileServiceExtension on DatabaseService {
         timezoneOffsetHours: tzOffset,
         activeLanguages: activeLanguages,
         primaryLanguage: data['primary_language'] as String? ?? 'en',
-        defaultCategoryId: dc == null ? null : DatabaseService._rowInt(dc),
+        defaultCategoryId: dc == null ? null : CategoryServiceExtension._rowInt(dc),
         hasSeeded: data['has_seeded'] == true,
         dataRegion: region,
         biometricEnabled: data['biometric_enabled'] == true,
