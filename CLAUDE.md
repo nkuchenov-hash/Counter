@@ -25,16 +25,16 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | :--- | :--- | :--- |
 | Voice input dispatcher (routes by active tab) | `lib/app_shell.dart` | `_startVoiceInput` |
 | UI dispatch wrappers (shell-side, debounced) | `lib/app_shell.dart` | `_stopRecordByDocId` / `_deleteRecordByDocId` / `_startTaskFromInput` |
-| Start a record (user taps Start) | `lib/data/database_service.dart` | `DatabaseService.writeRecord` |
-| Stop a record (user taps Stop) | `lib/data/database_service.dart` | `DatabaseService.stopRecordByDocId` |
-| Update / edit a record | `lib/data/database_service.dart` | `DatabaseService.updateRecord` |
-| Delete a record | `lib/data/database_service.dart` | `DatabaseService.deleteRecordByDocId` |
-| Optimistic shadow — Start | `lib/data/database_service.dart` | `DatabaseService._startAtomicTaskSequenceApplyLocalPrimary` |
-| Optimistic shadow — Stop | `lib/data/database_service.dart` | `DatabaseService._applyOptimisticStopUiSnapshot` |
-| Singleton / stale-open detection | `lib/data/database_service.dart` | `_rowStartWallDayIsBeforeProjectedToday` / `_mergeSacredStaleOpenCandidates` |
-| Realtime subscribe handler | `lib/data/database_service.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` |
-| Record cache mutation (atomic upsert) | `lib/data/database_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` |
-| ID resolution (legacy UUID → PB row id) | `lib/data/database_service.dart` | `DatabaseService._resolveRecordIdForStopOrDelete` [internal but high-traffic] |
+| Start a record (user taps Start) | `lib/data/record_service.dart` | `DatabaseService.writeRecord` (extension) |
+| Stop a record (user taps Stop) | `lib/data/record_service.dart` | `DatabaseService.stopRecordByDocId` (extension) |
+| Update / edit a record | `lib/data/record_service.dart` | `DatabaseService.updateRecord` (extension) |
+| Delete a record | `lib/data/record_service.dart` | `DatabaseService.deleteRecordByDocId` (extension) |
+| Optimistic shadow — Start | `lib/data/record_service.dart` | `DatabaseService._startAtomicTaskSequenceApplyLocalPrimary` (extension) |
+| Optimistic shadow — Stop | `lib/data/record_service.dart` | `DatabaseService._applyOptimisticStopUiSnapshot` (extension) |
+| Singleton / stale-open detection | `lib/data/record_service.dart` | `_rowStartWallDayIsBeforeProjectedToday` / `_mergeSacredStaleOpenCandidates` (extension) |
+| Realtime subscribe handler | `lib/data/record_service.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` (extension) |
+| Record cache mutation (atomic upsert) | `lib/data/record_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` (extension) |
+| ID resolution (legacy UUID → PB row id) | `lib/data/record_service.dart` | `DatabaseService._resolveRecordIdForStopOrDelete` (extension) |
 | Category smart-link / fuzzy match | `lib/data/database_service.dart` | `DatabaseService.findCategoryByFuzzyMatch` |
 | Category create | `lib/data/database_service.dart` | `DatabaseService.addNestedCategory` |
 | Category update | `lib/data/database_service.dart` | `DatabaseService.updateCategory` |
@@ -93,7 +93,7 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 - **No `await` before UI update** for user-driven record actions.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object:** `database_service.dart` is ~9,400 lines (V5.1: profile/tag domain → `lib/data/profile_service.dart`; V5.2: plan domain → `lib/data/plan_service.dart`). Both are `part of 'database_service.dart'` files using named `extension …Extension on DatabaseService`. V5.2 result: `database_service.dart` ~6,634 lines, `plan_service.dart` ~2,803 lines. Add plan-domain code to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
+- **God Object:** `database_service.dart` is ~9,400 lines (V5.1: profile/tag domain → `lib/data/profile_service.dart`; V5.2: plan domain → `lib/data/plan_service.dart`; V5.3: record domain → `lib/data/record_service.dart`). All are `part of 'database_service.dart'` files using named `extension …Extension on DatabaseService`. V5.3 result: `database_service.dart` ~4,238 lines, `record_service.dart` ~2,407 lines. Add record-domain code to `record_service.dart`, plan-domain to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
 
 ---
 
