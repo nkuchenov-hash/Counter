@@ -28,8 +28,12 @@ class CalendarView extends StatefulWidget {
   State<CalendarView> createState() => _CalendarViewState();
 }
 
-class _CalendarViewState extends State<CalendarView> {
+class _CalendarViewState extends State<CalendarView>
+    with AutomaticKeepAliveClientMixin {
   late DateTime _focusedDay;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -37,8 +41,14 @@ class _CalendarViewState extends State<CalendarView> {
     _focusedDay = widget.focusedDay;
   }
 
+  // No didUpdateWidget — _focusedDay is owned entirely by local state.
+  // TableCalendarBase.didUpdateWidget jumps pages whenever focusedDay changes,
+  // so we must never let widget.focusedDay (parent state) overwrite _focusedDay.
+
   @override
   Widget build(BuildContext context) {
+    super.build(context); // required by AutomaticKeepAliveClientMixin
+    final scheme = Theme.of(context).colorScheme;
     try {
       return Scaffold(
         body: SafeArea(
@@ -48,6 +58,7 @@ class _CalendarViewState extends State<CalendarView> {
             lastDay: DateTime(2100, 12, 31),
             focusedDay: _focusedDay,
             calendarFormat: CalendarFormat.month,
+            sixWeekMonthsEnforced: true,
             startingDayOfWeek: StartingDayOfWeek.monday,
             selectedDayPredicate: (day) => isSameDay(day, widget.selectedDate),
             onDaySelected: (selectedDay, focused) {
@@ -57,6 +68,12 @@ class _CalendarViewState extends State<CalendarView> {
             onPageChanged: (focusedDay) {
               setState(() => _focusedDay = focusedDay);
             },
+            calendarStyle: CalendarStyle(
+              outsideDaysVisible: true,
+              outsideTextStyle: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.35),
+              ),
+            ),
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
