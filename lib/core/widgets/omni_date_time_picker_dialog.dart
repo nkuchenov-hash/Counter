@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 /// Unified date+time picker for keyboard-friendly surfaces. Single dialog only.
 Future<DateTime?> showOmniDateTimePickerDialog(
@@ -52,6 +53,10 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
   late TextEditingController _dateTextController;
 
   late DateTime _selectedDay;
+  // Tracks the month displayed in the calendar — updated only by onPageChanged
+  // and onDaySelected. Never overwritten by time-wheel rebuilds, so the
+  // displayed month can't drift on setState calls from the time picker.
+  late DateTime _calendarFocusedDay;
   /// Fixed calendar date for the Cupertino time wheel (time-of-day only).
   late DateTime _wheelTime;
 
@@ -98,6 +103,7 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
       text: i.minute.toString().padLeft(2, '0'),
     );
     _wheelTime = DateTime(2000, 1, 1, i.hour, i.minute);
+    _calendarFocusedDay = _selectedDay;
   }
 
   @override
@@ -121,6 +127,7 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
     }
     setState(() {
       _selectedDay = next;
+      _calendarFocusedDay = next;
       _dateTextFromCalendar = true;
       _dateTextController.value = TextEditingValue(
         text: _formatDateField(next),
@@ -132,11 +139,12 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
     });
   }
 
-  void _onCalendarDateChanged(DateTime d) {
+  void _onCalendarDateChanged(DateTime d, {DateTime? focusedDay}) {
     final next = _clampDay(DateTime(d.year, d.month, d.day));
     _dateTextFromCalendar = true;
     setState(() {
       _selectedDay = next;
+      _calendarFocusedDay = focusedDay ?? next;
       _dateTextController.text = _formatDateField(next);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -320,11 +328,31 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
             validator: _validateDateText,
           ),
           const SizedBox(height: 12),
-          CalendarDatePicker(
-            initialDate: _selectedDay,
-            firstDate: widget.firstDate,
-            lastDate: widget.lastDate,
-            onDateChanged: _onCalendarDateChanged,
+          TableCalendar(
+            locale: loc,
+            firstDay: widget.firstDate,
+            lastDay: widget.lastDate,
+            focusedDay: _calendarFocusedDay,
+            calendarFormat: CalendarFormat.month,
+            sixWeekMonthsEnforced: true,
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
+            onDaySelected: (selectedDay, focused) {
+              _onCalendarDateChanged(selectedDay, focusedDay: focused);
+            },
+            onPageChanged: (focusedDay) {
+              setState(() => _calendarFocusedDay = focusedDay);
+            },
+            calendarStyle: CalendarStyle(
+              outsideDaysVisible: true,
+              outsideTextStyle: TextStyle(
+                color: scheme.onSurface.withValues(alpha: 0.35),
+              ),
+            ),
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
           ),
         ],
       ),
