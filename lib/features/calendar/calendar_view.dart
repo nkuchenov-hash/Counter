@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 /// Calendar tab: TableCalendar only (no duplicate planning header / timeline jump).
-class CalendarView extends StatelessWidget {
+class CalendarView extends StatefulWidget {
   const CalendarView({
     super.key,
     required this.selectedDate,
@@ -25,6 +25,19 @@ class CalendarView extends StatelessWidget {
       onSelectDate;
 
   @override
+  State<CalendarView> createState() => _CalendarViewState();
+}
+
+class _CalendarViewState extends State<CalendarView> {
+  late DateTime _focusedDay;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusedDay = widget.focusedDay;
+  }
+
+  @override
   Widget build(BuildContext context) {
     try {
       return Scaffold(
@@ -33,12 +46,16 @@ class CalendarView extends StatelessWidget {
             locale: currentLocale.value,
             firstDay: DateTime(2020, 1, 1),
             lastDay: DateTime(2100, 12, 31),
-            focusedDay: focusedDay,
+            focusedDay: _focusedDay,
             calendarFormat: CalendarFormat.month,
             startingDayOfWeek: StartingDayOfWeek.monday,
-            selectedDayPredicate: (day) => isSameDay(day, selectedDate),
+            selectedDayPredicate: (day) => isSameDay(day, widget.selectedDate),
             onDaySelected: (selectedDay, focused) {
-              unawaited(onSelectDate(selectedDay, focused));
+              setState(() => _focusedDay = focused);
+              unawaited(widget.onSelectDate(selectedDay, focused));
+            },
+            onPageChanged: (focusedDay) {
+              setState(() => _focusedDay = focusedDay);
             },
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
