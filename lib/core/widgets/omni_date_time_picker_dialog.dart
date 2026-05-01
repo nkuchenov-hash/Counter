@@ -50,6 +50,9 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
   late int _hour;
   late int _minute;
 
+  late final Widget _dateSectionWidget;
+  late final Widget _timeSectionWidget;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +60,24 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
     _selectedDay = _clampDay(DateTime(i.year, i.month, i.day));
     _hour = i.hour;
     _minute = i.minute;
+    _dateSectionWidget = _DateSection(
+      key: const ValueKey('date_section'),
+      initial: widget.initial,
+      firstDate: widget.firstDate,
+      lastDate: widget.lastDate,
+      onDateChanged: (date) {
+        _selectedDay = date;
+      },
+    );
+    _timeSectionWidget = _TimeSection(
+      key: const ValueKey('time_section'),
+      initial: widget.initial,
+      onTimeChanged: (h, m) {
+        _hour = h;
+        _minute = m;
+      },
+      onSubmit: _submit,
+    );
   }
 
   DateTime _clampDay(DateTime d) {
@@ -87,41 +108,22 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
         : _kDialogContentMaxWidth;
     final wide = screenW >= 560;
 
-    final dateSection = _DateSection(
-      key: const ValueKey('date_section'),
-      initial: _selectedDay,
-      firstDate: widget.firstDate,
-      lastDate: widget.lastDate,
-      onDateChanged: (date) {
-        _selectedDay = date;
-      },
-    );
-
-    final timeSection = _TimeSection(
-      initial: widget.initial,
-      onTimeChanged: (h, m) {
-        _hour = h;
-        _minute = m;
-      },
-      onSubmit: _submit,
-    );
-
     final body = wide
         ? Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: dateSection),
+              Expanded(child: _dateSectionWidget),
               const SizedBox(width: 12),
-              Expanded(child: timeSection),
+              Expanded(child: _timeSectionWidget),
             ],
           )
         : Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              dateSection,
+              _dateSectionWidget,
               const SizedBox(height: 12),
-              timeSection,
+              _timeSectionWidget,
             ],
           );
 
@@ -335,6 +337,7 @@ class _DateSectionState extends State<_DateSection> {
 
 class _TimeSection extends StatefulWidget {
   const _TimeSection({
+    super.key,
     required this.initial,
     required this.onTimeChanged,
     required this.onSubmit,
