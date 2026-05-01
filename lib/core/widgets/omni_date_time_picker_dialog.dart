@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 /// Unified date+time picker for keyboard-friendly surfaces. Single dialog only.
 Future<DateTime?> showOmniDateTimePickerDialog(
@@ -174,6 +175,7 @@ class _DateSection extends StatefulWidget {
 
 class _DateSectionState extends State<_DateSection> {
   late DateTime _selectedDay;
+  late DateTime _focusedDay;
   late TextEditingController _dateTextController;
 
   DateTime _clampDay(DateTime d) {
@@ -209,6 +211,7 @@ class _DateSectionState extends State<_DateSection> {
     _selectedDay = _clampDay(
       DateTime(widget.initial.year, widget.initial.month, widget.initial.day),
     );
+    _focusedDay = _selectedDay;
     _dateTextController = TextEditingController(text: _formatDateField(_selectedDay));
   }
 
@@ -285,18 +288,37 @@ class _DateSectionState extends State<_DateSection> {
             validator: _validateDateText,
           ),
           const SizedBox(height: 12),
-          CalendarDatePicker(
-            initialCalendarMode: DatePickerMode.day,
-            initialDate: _selectedDay,
-            firstDate: widget.firstDate,
-            lastDate: widget.lastDate,
-            onDateChanged: (date) {
+          TableCalendar(
+            locale: currentLocale.value,
+            firstDay: widget.firstDate,
+            lastDay: widget.lastDate,
+            focusedDay: _focusedDay,
+            calendarFormat: CalendarFormat.month,
+            sixWeekMonthsEnforced: true,
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
+            onDaySelected: (selected, focused) {
+              final next = _clampDay(DateTime(selected.year, selected.month, selected.day));
               setState(() {
-                _selectedDay = _clampDay(date);
-                _dateTextController.text = _formatDateField(_selectedDay);
+                _selectedDay = next;
+                _focusedDay = focused;
+                _dateTextController.text = _formatDateField(next);
               });
-              widget.onDateChanged(_selectedDay);
+              widget.onDateChanged(next);
             },
+            onPageChanged: (focused) {
+              setState(() => _focusedDay = focused);
+            },
+            calendarStyle: CalendarStyle(
+              outsideDaysVisible: true,
+              outsideTextStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
+              ),
+            ),
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
           ),
         ],
       ),
