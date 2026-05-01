@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-04-30] - Bug fix: omni-picker TableCalendar → CalendarDatePicker [shipped]
+* **Root cause (`omni_date_time_picker_dialog.dart`):** `TableCalendar` inside the dialog was unstable when co-hosted with `CupertinoDatePicker`. Every `setState` from the time wheel (via `_applyTimeFromWheel`) caused `TableCalendar.didUpdateWidget` to run — even with a separate `_calendarFocusedDay` guard — leading to unpredictable month jumps and layout thrash inside the dialog's `SingleChildScrollView`.
+* **Fix:** Replaced `TableCalendar` with Flutter's native `CalendarDatePicker` (no external dependency). Wrapped in `RepaintBoundary` to isolate repaints from time-wheel `setState` calls. Keyed with `ValueKey<String>('year-month')` — stable within a month so day-selection doesn't recreate the widget, but correctly resets when a cross-month date is typed into the text field. Removed `_calendarFocusedDay` state entirely (was only needed for `TableCalendar`). Removed `table_calendar` import from this file (pubspec unchanged — used by `calendar_view.dart`). Simplified `_onCalendarDateChanged` back to single `DateTime` parameter.
+* **Result:** `flutter analyze` full project: 0 errors (62 info/warnings, all pre-existing).
+
 ## [2026-04-30] - Bug fix: omni-picker CupertinoDatePicker ValueKey removal [shipped]
 * **Root cause (`omni_date_time_picker_dialog.dart`):** `CupertinoDatePicker` had `key: ValueKey<int>(_wheelTime.hour * 60 + _wheelTime.minute)`. The key value changes on every time-wheel tick, forcing Flutter to destroy and recreate the `CupertinoDatePicker` widget on each callback from `onDateTimeChanged`. This full widget recreation triggered a dialog-level rebuild on every drum scroll tick, which in turn caused `TableCalendar.didUpdateWidget` to run and risk a month jump.
 * **Fix:** Removed the `key:` line entirely. `CupertinoDatePicker` manages its own internal scroll state via `initialDateTime`; no external key is needed. Rebuilds from `_applyTimeFromWheel → setState` now update `_wheelTime` (used only as stable reference for `_syncWheelFromTypedTime`) without recreating the drum widget.
