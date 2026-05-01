@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-05-01] - Fix: omni-picker _DateSection stability key + TableCalendar fixed row height [shipped]
+* **Root cause (`omni_date_time_picker_dialog.dart`):** `_DateSection` was constructed inline in the parent `build()` without a key. On any parent `setState`, Flutter diffed it as a new widget and could reset `_DateSectionState` (losing `_selectedDay`, `_focusedDay`). Separately, `sixWeekMonthsEnforced: true` alone does not pin pixel height — `TableCalendarBase` still computes row height from `daysOfWeekHeight` defaults, causing subtle width/height shifts on month change.
+* **Fix:** Added `key: const ValueKey('date_section')` to the `_DateSection(...)` call in `_OmniDateTimePickerDialogState.build()` — Flutter now preserves the existing element rather than recreating it. Added `rowHeight: 42.0` to `TableCalendar` alongside `sixWeekMonthsEnforced: true` to enforce a fixed pixel height for every row regardless of month. Removed the stale unused `theme` local variable from `_OmniDateTimePickerDialogState.build()`. Added `super.key` to `_DateSection` constructor to accept the key param.
+* **Result:** `flutter analyze` full project: 0 errors (62 info/warnings, all pre-existing).
+
 ## [2026-05-01] - Fix: omni-picker calendar → TableCalendar with isolated _focusedDay [shipped]
 * **Root cause (`omni_date_time_picker_dialog.dart`):** `CalendarDatePicker` does not render neighboring-month dates — a Flutter framework limitation. The fix was to restore `TableCalendar` (already a project dependency) inside `_DateSectionState.build()`.
 * **Fix:** Replaced `CalendarDatePicker` with `TableCalendar` inside `_DateSectionState` only. Added `late DateTime _focusedDay` to `_DateSectionState`, initialized to `_selectedDay` in `initState`. `_focusedDay` is updated exclusively by `onDaySelected` and `onPageChanged` — the text field path updates `_selectedDay` only, leaving the calendar's scroll position untouched. Because `_focusedDay` lives entirely inside `_DateSectionState`, time-wheel `setState` calls in `_TimeSectionState` cannot reach it (separate widget subtrees). Applied `sixWeekMonthsEnforced: true`, `outsideDaysVisible: true`, `outsideTextStyle` with dimmed alpha, `formatButtonVisible: false`, `titleCentered: true`. Public API unchanged.

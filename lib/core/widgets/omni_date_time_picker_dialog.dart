@@ -81,7 +81,6 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
-    final theme = Theme.of(context);
     final screenW = MediaQuery.sizeOf(context).width;
     final dialogW = screenW - 48 < _kDialogContentMaxWidth
         ? screenW - 48
@@ -89,6 +88,7 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
     final wide = screenW >= 560;
 
     final dateSection = _DateSection(
+      key: const ValueKey('date_section'),
       initial: _selectedDay,
       firstDate: widget.firstDate,
       lastDate: widget.lastDate,
@@ -158,6 +158,7 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
 
 class _DateSection extends StatefulWidget {
   const _DateSection({
+    super.key,
     required this.initial,
     required this.firstDate,
     required this.lastDate,
@@ -295,6 +296,7 @@ class _DateSectionState extends State<_DateSection> {
             focusedDay: _focusedDay,
             calendarFormat: CalendarFormat.month,
             sixWeekMonthsEnforced: true,
+            rowHeight: 42.0,
             startingDayOfWeek: StartingDayOfWeek.monday,
             selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
             onDaySelected: (selected, focused) {
