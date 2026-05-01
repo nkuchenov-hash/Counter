@@ -8,7 +8,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:table_calendar/table_calendar.dart';
 
 /// Unified date+time picker for keyboard-friendly surfaces. Single dialog only.
 Future<DateTime?> showOmniDateTimePickerDialog(
@@ -45,19 +44,19 @@ class _OmniDateTimePickerDialog extends StatefulWidget {
 
 class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _hourFocus = FocusNode();
+  final _minuteFocus = FocusNode();
+
+  late TextEditingController _hourController;
+  late TextEditingController _minuteController;
+  late TextEditingController _dateTextController;
 
   late DateTime _selectedDay;
-  late int _hour;
-  late int _minute;
+  /// Fixed calendar date for the Cupertino time wheel (time-of-day only).
+  late DateTime _wheelTime;
 
-  @override
-  void initState() {
-    super.initState();
-    final i = widget.initial;
-    _selectedDay = _clampDay(DateTime(i.year, i.month, i.day));
-    _hour = i.hour;
-    _minute = i.minute;
-  }
+  bool _dateTextFromCalendar = false;
+  bool _ignoreWheelCallback = false;
 
   DateTime _clampDay(DateTime d) {
     final day = DateTime(d.year, d.month, d.day);
@@ -66,45 +65,349 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
     return day;
   }
 
+  String _formatDateField(DateTime d) {
+    final loc = currentLocale.value;
+    return DateFormat.yMd(loc).format(DateTime(d.year, d.month, d.day));
+  }
+
+  DateTime? _tryParseDateField(String raw) {
+    final s = raw.trim();
+    if (s.isEmpty) return null;
+    final loc = currentLocale.value;
+    try {
+      return DateFormat.yMd(loc).parseStrict(s);
+    } catch (_) {
+      try {
+        return DateFormat.yMd(loc).parseLoose(s);
+      } catch (_) {
+        return DateTime.tryParse(s);
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final i = widget.initial;
+    _selectedDay = _clampDay(DateTime(i.year, i.month, i.day));
+    _dateTextController = TextEditingController(text: _formatDateField(_selectedDay));
+    _hourController = TextEditingController(
+      text: i.hour.toString().padLeft(2, '0'),
+    );
+    _minuteController = TextEditingController(
+      text: i.minute.toString().padLeft(2, '0'),
+    );
+    _wheelTime = DateTime(2000, 1, 1, i.hour, i.minute);
+  }
+
+  @override
+  void dispose() {
+    _dateTextController.dispose();
+    _hourController.dispose();
+    _minuteController.dispose();
+    _hourFocus.dispose();
+    _minuteFocus.dispose();
+    super.dispose();
+  }
+
+  void _onDateTextChanged(String value) {
+    if (_dateTextFromCalendar) return;
+    final parsed = _tryParseDateField(value);
+    if (parsed == null) return;
+    final next = _clampDay(parsed);
+    if (next == _selectedDay &&
+        _formatDateField(next) == value.trim()) {
+      return;
+    }
+    setState(() {
+      _selectedDay = next;
+      _dateTextFromCalendar = true;
+      _dateTextController.value = TextEditingValue(
+        text: _formatDateField(next),
+        selection: TextSelection.collapsed(offset: _formatDateField(next).length),
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _dateTextFromCalendar = false;
+    });
+  }
+
+  void _onCalendarDateChanged(DateTime d) {
+    final next = _clampDay(DateTime(d.year, d.month, d.day));
+    _dateTextFromCalendar = true;
+    setState(() {
+      _selectedDay = next;
+      _dateTextController.text = _formatDateField(next);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _dateTextFromCalendar = false;
+    });
+  }
+
+  void _applyTimeFromWheel(DateTime dt) {
+    if (_ignoreWheelCallback) return;
+    final h = dt.hour.clamp(0, 23);
+    final m = dt.minute.clamp(0, 59);
+    _hourController.text = h.toString().padLeft(2, '0');
+    _minuteController.text = m.toString().padLeft(2, '0');
+    setState(() {
+      _wheelTime = DateTime(2000, 1, 1, h, m);
+    });
+  }
+
+  void _syncWheelFromTypedTime() {
+    final h = int.tryParse(_hourController.text.trim());
+    final m = int.tryParse(_minuteController.text.trim());
+    if (h == null || m == null) return;
+    final ch = h.clamp(0, 23);
+    final cm = m.clamp(0, 59);
+    if (ch == _wheelTime.hour && cm == _wheelTime.minute) return;
+    _ignoreWheelCallback = true;
+    setState(() {
+      _wheelTime = DateTime(2000, 1, 1, ch, cm);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ignoreWheelCallback = false;
+    });
+  }
+
+  String? _validateHour(String? s) {
+    final mat = MaterialLocalizations.of(context);
+    if (s == null || s.trim().isEmpty) return mat.invalidTimeLabel;
+    final h = int.tryParse(s.trim());
+    if (h == null || h < 0 || h > 23) return mat.invalidTimeLabel;
+    return null;
+  }
+
+  String? _validateMinute(String? s) {
+    final mat = MaterialLocalizations.of(context);
+    if (s == null || s.trim().isEmpty) return mat.invalidTimeLabel;
+    final m = int.tryParse(s.trim());
+    if (m == null || m < 0 || m > 59) return mat.invalidTimeLabel;
+    return null;
+  }
+
+  String? _validateDateText(String? s) {
+    if (s == null || s.trim().isEmpty) {
+      return MaterialLocalizations.of(context).invalidDateFormatLabel;
+    }
+    final p = _tryParseDateField(s);
+    if (p == null) {
+      return MaterialLocalizations.of(context).invalidDateFormatLabel;
+    }
+    final day = DateTime(p.year, p.month, p.day);
+    if (day.isBefore(widget.firstDate) || day.isAfter(widget.lastDate)) {
+      return MaterialLocalizations.of(context).dateOutOfRangeLabel;
+    }
+    return null;
+  }
+
   void _submit() {
     final form = _formKey.currentState;
     if (form == null) return;
     if (!form.validate()) return;
     if (!mounted) return;
-    Navigator.of(context).pop(
-      DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day, _hour, _minute),
-    );
+    final h = int.parse(_hourController.text.trim());
+    final m = int.parse(_minuteController.text.trim());
+    final d = _selectedDay;
+    Navigator.of(context).pop(DateTime(d.year, d.month, d.day, h, m));
   }
 
   static const double _kDialogContentMaxWidth = 600;
+  static const double _kDigitalFontSize = 24;
+  static const double _kTimeBoxWidth = 76;
+  static const double _kDrumHeight = 216;
 
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
+    final theme = Theme.of(context);
+    final mat = MaterialLocalizations.of(context);
+    final scheme = theme.colorScheme;
     final screenW = MediaQuery.sizeOf(context).width;
     final dialogW = screenW - 48 < _kDialogContentMaxWidth
         ? screenW - 48
         : _kDialogContentMaxWidth;
     final wide = screenW >= 560;
 
-    final dateSection = _DateSection(
-      key: const ValueKey('date_section'),
-      initial: _selectedDay,
-      firstDate: widget.firstDate,
-      lastDate: widget.lastDate,
-      onDateChanged: (date) {
-        _selectedDay = date;
-      },
+    final timeFill = scheme.surfaceContainerHighest.withValues(alpha: 0.65);
+    final timeBorder = scheme.outlineVariant.withValues(alpha: 0.5);
+    final sectionBorder = scheme.outlineVariant.withValues(alpha: 0.45);
+
+    InputDecoration digitalDecoration() {
+      return const InputDecoration(
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        errorBorder: InputBorder.none,
+        focusedErrorBorder: InputBorder.none,
+        isDense: true,
+        contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        counterText: '',
+        filled: false,
+      );
+    }
+
+    Widget digitalField({
+      required TextEditingController controller,
+      required FocusNode focusNode,
+      required String? Function(String?) validator,
+      required TextInputAction textInputAction,
+      required void Function(String?) onFieldSubmitted,
+      required void Function(String) onChanged,
+    }) {
+      return Container(
+        width: _kTimeBoxWidth,
+        decoration: BoxDecoration(
+          color: timeFill,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: timeBorder, width: 1),
+        ),
+        alignment: Alignment.center,
+        child: TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontSize: _kDigitalFontSize,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+            height: 1.1,
+          ),
+          decoration: digitalDecoration(),
+          keyboardType: TextInputType.number,
+          textInputAction: textInputAction,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(2),
+          ],
+          validator: validator,
+          onFieldSubmitted: onFieldSubmitted,
+          onChanged: onChanged,
+        ),
+      );
+    }
+
+    final dateSection = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: sectionBorder),
+        borderRadius: BorderRadius.circular(12),
+        color: scheme.surfaceContainerLowest.withValues(alpha: 0.35),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            mat.datePickerHelpText,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _dateTextController,
+            decoration: InputDecoration(
+              labelText: mat.dateInputLabel,
+              border: const OutlineInputBorder(),
+              isDense: true,
+            ),
+            keyboardType: TextInputType.datetime,
+            textInputAction: TextInputAction.next,
+            onChanged: _onDateTextChanged,
+            validator: _validateDateText,
+          ),
+          const SizedBox(height: 12),
+          CalendarDatePicker(
+            initialDate: _selectedDay,
+            firstDate: widget.firstDate,
+            lastDate: widget.lastDate,
+            onDateChanged: _onCalendarDateChanged,
+          ),
+        ],
+      ),
     );
 
-    final timeSection = _TimeSection(
-      key: const ValueKey('time_section'),
-      initial: widget.initial,
-      onTimeChanged: (h, m) {
-        _hour = h;
-        _minute = m;
-      },
-      onSubmit: _submit,
+    final timeSection = Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: sectionBorder),
+        borderRadius: BorderRadius.circular(12),
+        color: scheme.surfaceContainerLowest.withValues(alpha: 0.35),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            mat.timePickerInputHelpText,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              digitalField(
+                controller: _hourController,
+                focusNode: _hourFocus,
+                validator: _validateHour,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _minuteFocus.requestFocus(),
+                onChanged: (_) => _syncWheelFromTypedTime(),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  ':',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontSize: _kDigitalFontSize + 2,
+                    fontWeight: FontWeight.w300,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              digitalField(
+                controller: _minuteController,
+                focusNode: _minuteFocus,
+                validator: _validateMinute,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _submit(),
+                onChanged: (_) => _syncWheelFromTypedTime(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: _kDrumHeight,
+            child: CupertinoTheme(
+              data: CupertinoThemeData(
+                brightness: theme.brightness,
+                primaryColor: scheme.primary,
+              ),
+              child: CupertinoDatePicker(
+                key: ValueKey<int>(
+                  _wheelTime.hour * 60 + _wheelTime.minute,
+                ),
+                mode: CupertinoDatePickerMode.time,
+                use24hFormat: true,
+                minuteInterval: 1,
+                initialDateTime: _wheelTime,
+                onDateTimeChanged: (DateTime dt) {
+                  if (_ignoreWheelCallback) return;
+                  _applyTimeFromWheel(dt);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
 
     final body = wide
@@ -148,337 +451,6 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
           child: Text(t(loc, 'save')),
         ),
       ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Date section — owns selected day and text field; CalendarDatePicker manages
-// its own displayed month, no external key or focusedDay tracking.
-// ---------------------------------------------------------------------------
-
-class _DateSection extends StatefulWidget {
-  const _DateSection({
-    super.key,
-    required this.initial,
-    required this.firstDate,
-    required this.lastDate,
-    required this.onDateChanged,
-  });
-
-  final DateTime initial;
-  final DateTime firstDate;
-  final DateTime lastDate;
-  final ValueChanged<DateTime> onDateChanged;
-
-  @override
-  State<_DateSection> createState() => _DateSectionState();
-}
-
-class _DateSectionState extends State<_DateSection> {
-  late DateTime _selectedDay;
-  late DateTime _focusedDay;
-  late TextEditingController _dateTextController;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedDay = widget.initial;
-    _focusedDay = widget.initial;
-    _dateTextController = TextEditingController(
-      text: DateFormat.yMd(currentLocale.value).format(widget.initial),
-    );
-  }
-
-  @override
-  void dispose() {
-    _dateTextController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TableCalendar(
-          locale: currentLocale.value,
-          firstDay: widget.firstDate,
-          lastDay: widget.lastDate,
-          focusedDay: _focusedDay,
-          calendarFormat: CalendarFormat.month,
-          sixWeekMonthsEnforced: true,
-          rowHeight: 42,
-          startingDayOfWeek: StartingDayOfWeek.monday,
-          selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
-          onDaySelected: (selected, focused) {
-            setState(() {
-              _selectedDay = selected;
-              _focusedDay = focused;
-              _dateTextController.text =
-                  DateFormat.yMd(currentLocale.value).format(selected);
-            });
-            widget.onDateChanged(selected);
-          },
-          onPageChanged: (focused) {
-            _focusedDay = focused;
-          },
-          calendarStyle: CalendarStyle(
-            outsideDaysVisible: true,
-            outsideTextStyle: TextStyle(
-              color: scheme.onSurface.withValues(alpha: 0.35),
-            ),
-          ),
-          headerStyle: const HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Time section — owns hour/minute controllers and Cupertino drum. setState calls
-// here never touch _DateSection, eliminating the calendar rebuild on wheel scroll.
-// ---------------------------------------------------------------------------
-
-class _TimeSection extends StatefulWidget {
-  const _TimeSection({
-    super.key,
-    required this.initial,
-    required this.onTimeChanged,
-    required this.onSubmit,
-  });
-
-  final DateTime initial;
-  final void Function(int hour, int minute) onTimeChanged;
-  final VoidCallback onSubmit;
-
-  @override
-  State<_TimeSection> createState() => _TimeSectionState();
-}
-
-class _TimeSectionState extends State<_TimeSection> {
-  final _hourFocus = FocusNode();
-  final _minuteFocus = FocusNode();
-
-  late TextEditingController _hourController;
-  late TextEditingController _minuteController;
-  late DateTime _wheelTime;
-  bool _ignoreWheelCallback = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final i = widget.initial;
-    _hourController = TextEditingController(text: i.hour.toString().padLeft(2, '0'));
-    _minuteController = TextEditingController(text: i.minute.toString().padLeft(2, '0'));
-    _wheelTime = DateTime(2000, 1, 1, i.hour, i.minute);
-  }
-
-  @override
-  void dispose() {
-    _hourController.dispose();
-    _minuteController.dispose();
-    _hourFocus.dispose();
-    _minuteFocus.dispose();
-    super.dispose();
-  }
-
-  void _applyTimeFromWheel(DateTime dt) {
-    if (_ignoreWheelCallback) return;
-    final h = dt.hour.clamp(0, 23);
-    final m = dt.minute.clamp(0, 59);
-    _hourController.text = h.toString().padLeft(2, '0');
-    _minuteController.text = m.toString().padLeft(2, '0');
-    setState(() {
-      _wheelTime = DateTime(2000, 1, 1, h, m);
-    });
-    widget.onTimeChanged(h, m);
-  }
-
-  void _syncWheelFromTypedTime() {
-    final h = int.tryParse(_hourController.text.trim());
-    final m = int.tryParse(_minuteController.text.trim());
-    if (h == null || m == null) return;
-    final ch = h.clamp(0, 23);
-    final cm = m.clamp(0, 59);
-    if (ch == _wheelTime.hour && cm == _wheelTime.minute) return;
-    _ignoreWheelCallback = true;
-    setState(() {
-      _wheelTime = DateTime(2000, 1, 1, ch, cm);
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _ignoreWheelCallback = false;
-    });
-    widget.onTimeChanged(ch, cm);
-  }
-
-  String? _validateHour(String? s) {
-    final mat = MaterialLocalizations.of(context);
-    if (s == null || s.trim().isEmpty) return mat.invalidTimeLabel;
-    final h = int.tryParse(s.trim());
-    if (h == null || h < 0 || h > 23) return mat.invalidTimeLabel;
-    return null;
-  }
-
-  String? _validateMinute(String? s) {
-    final mat = MaterialLocalizations.of(context);
-    if (s == null || s.trim().isEmpty) return mat.invalidTimeLabel;
-    final m = int.tryParse(s.trim());
-    if (m == null || m < 0 || m > 59) return mat.invalidTimeLabel;
-    return null;
-  }
-
-  static const double _kDigitalFontSize = 24;
-  static const double _kTimeBoxWidth = 76;
-  static const double _kDrumHeight = 216;
-
-  InputDecoration _digitalDecoration() {
-    return const InputDecoration(
-      border: InputBorder.none,
-      enabledBorder: InputBorder.none,
-      focusedBorder: InputBorder.none,
-      errorBorder: InputBorder.none,
-      focusedErrorBorder: InputBorder.none,
-      isDense: true,
-      contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-      counterText: '',
-      filled: false,
-    );
-  }
-
-  Widget _digitalField({
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required String? Function(String?) validator,
-    required TextInputAction textInputAction,
-    required void Function(String?) onFieldSubmitted,
-    required void Function(String) onChanged,
-  }) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final timeFill = scheme.surfaceContainerHighest.withValues(alpha: 0.65);
-    final timeBorder = scheme.outlineVariant.withValues(alpha: 0.5);
-
-    return Container(
-      width: _kTimeBoxWidth,
-      decoration: BoxDecoration(
-        color: timeFill,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: timeBorder, width: 1),
-      ),
-      alignment: Alignment.center,
-      child: TextFormField(
-        controller: controller,
-        focusNode: focusNode,
-        textAlign: TextAlign.center,
-        style: theme.textTheme.headlineSmall?.copyWith(
-          fontSize: _kDigitalFontSize,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.5,
-          height: 1.1,
-        ),
-        decoration: _digitalDecoration(),
-        keyboardType: TextInputType.number,
-        textInputAction: textInputAction,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(2),
-        ],
-        validator: validator,
-        onFieldSubmitted: onFieldSubmitted,
-        onChanged: onChanged,
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final mat = MaterialLocalizations.of(context);
-    final scheme = theme.colorScheme;
-    final sectionBorder = scheme.outlineVariant.withValues(alpha: 0.45);
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: sectionBorder),
-        borderRadius: BorderRadius.circular(12),
-        color: scheme.surfaceContainerLowest.withValues(alpha: 0.35),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            mat.timePickerInputHelpText,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _digitalField(
-                controller: _hourController,
-                focusNode: _hourFocus,
-                validator: _validateHour,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) => _minuteFocus.requestFocus(),
-                onChanged: (_) => _syncWheelFromTypedTime(),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Text(
-                  ':',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontSize: _kDigitalFontSize + 2,
-                    fontWeight: FontWeight.w300,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              _digitalField(
-                controller: _minuteController,
-                focusNode: _minuteFocus,
-                validator: _validateMinute,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => widget.onSubmit(),
-                onChanged: (_) => _syncWheelFromTypedTime(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: _kDrumHeight,
-            child: CupertinoTheme(
-              data: CupertinoThemeData(
-                brightness: theme.brightness,
-                primaryColor: scheme.primary,
-              ),
-              child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                use24hFormat: true,
-                minuteInterval: 1,
-                initialDateTime: _wheelTime,
-                onDateTimeChanged: (DateTime dt) {
-                  if (_ignoreWheelCallback) return;
-                  _applyTimeFromWheel(dt);
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -11,6 +11,8 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-05-01] - Restored omni_date_time_picker_dialog.dart to last known good state (4676e273) — reverting all May 1 changes [shipped]
+
 ## [2026-05-01] - Fix: omni-picker _DateSectionState minimal rewrite, onPageChanged no setState [shipped]
 * **Root cause (`omni_date_time_picker_dialog.dart`):** Previous `_DateSectionState` called `setState` inside `onPageChanged`, which triggered a `build()`. During that rebuild, `TableCalendar` received an updated `focusedDay` prop and internally called `_pageController.jumpToPage` — creating a feedback loop that caused the visible month jump. Additionally, the date text field's `TextFormField` rebuild inside `_DateSectionState.build()` added unnecessary subtree churn on every calendar interaction.
 * **Fix:** Replaced `_DateSectionState` with a minimal implementation: `onPageChanged` writes `_focusedDay` directly without `setState` (no rebuild, no `didUpdateWidget` on `TableCalendar`, no jump). Removed date text field from `_DateSection` entirely — calendar is the only date input. Removed `_clampDay`, `_tryParseDateField`, `_formatDateField`, `_validateDateText`, and `_onDateTextChanged` from `_DateSectionState`. `_dateTextController` kept and updated in `onDaySelected` for state tracking. Reverted `_OmniDateTimePickerDialogState` to construct `_DateSection` / `_TimeSection` inline in `build()` (with `ValueKey`s) — the `late final Widget` field approach was unnecessary complexity. Confirmed `CupertinoDatePicker.mode: CupertinoDatePickerMode.time`, `minuteInterval: 1`.

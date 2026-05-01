@@ -38,7 +38,8 @@
       "Bash(sed -n '500,506p' lib/data/profile_service.dart)",
       "Read(//dev/**)",
       "Bash(awk 'NR==430||NR==477||NR==503||NR==563||NR==571||NR==587||NR==813||NR==824||NR==867||NR==896||NR==902||NR==912||NR==936||NR==939||NR==1175||NR==1178||NR==1183||NR==1499||NR==1561||NR==1823||NR==2045||NR==2047||NR==2177||NR==2196||NR==2322||NR==2350 {print NR\": \"$0}' lib/data/plan_service.dart)",
-      "Bash(grep -v \"^.*//.*onTap\")"
+      "Bash(grep -v \"^.*//.*onTap\")",
+      "Bash(git log *)"
     ]
   }
 }
