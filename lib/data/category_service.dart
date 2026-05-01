@@ -657,6 +657,13 @@ extension CategoryServiceExtension on DatabaseService {
         _categoryPbRowIdKnownInRules(bid)) {
       merged['category_id'] = bid;
     } else {
+      if (kDebugMode) {
+        debugPrint(
+          '[CAT_MAP] category_id dropped from payload — no resolved PB row id '
+          '(rawCat=$rawCat, bid=$bid, ruleName=${rule.name}, ruleId=${rule.id}). '
+          'Cold-start race or unmapped category.',
+        );
+      }
       merged.remove('category_id');
     }
   }

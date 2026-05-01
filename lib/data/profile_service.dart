@@ -573,7 +573,10 @@ extension ProfileServiceExtension on DatabaseService {
               'domain': dom,
             },
           );
-      return Tag.fromPocketJson(<String, dynamic>{...created.data, 'id': created.id});
+      final tag = Tag.fromPocketJson(<String, dynamic>{...created.data, 'id': created.id});
+      _userTagsCatalogCache = [..._userTagsCatalogCache, tag];
+      notifyTagsCatalogChanged();
+      return tag;
     } catch (e, st) {
       DatabaseService._log('CREATE_TAG: $e');
       DatabaseService._log(st.toString());
@@ -590,6 +593,8 @@ extension ProfileServiceExtension on DatabaseService {
     if (id.isEmpty) return false;
     try {
       await _pb.collection(PbCollections.tags).delete(id);
+      _userTagsCatalogCache = _userTagsCatalogCache.where((t) => t.pbRecordId != id).toList();
+      notifyTagsCatalogChanged();
       return true;
     } catch (e, st) {
       DatabaseService._log('DELETE_TAG_PB: $e');
@@ -620,6 +625,7 @@ extension ProfileServiceExtension on DatabaseService {
               'icon': iconKey,
             },
           );
+      notifyTagsCatalogChanged();
       return true;
     } catch (e, st) {
       DatabaseService._log('TAG_PATCH: $e');

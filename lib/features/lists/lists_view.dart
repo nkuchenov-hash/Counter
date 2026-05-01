@@ -891,16 +891,24 @@ class _ListsPageState extends State<ListsPage>
     if (task.planRowIdForBackend.startsWith('optimistic-')) return;
     if (task.isDone == toDone) return;
     final updated = task.copyWith(isDone: toDone);
-    DatabaseService.instance.applyOptimisticPlanningTask(updated);
-    setState(() {});
-    DatabaseService.instance.notifyPlanningRefresh();
+    final snapshot = List<PlanningTask>.from(_flat);
+    setState(() {
+      _flat = [
+        for (final t in _flat)
+          if (t.planRowIdForBackend == task.planRowIdForBackend) updated else t,
+      ];
+    });
     unawaited(
-      DatabaseService.instance.updatePlanningTask(
-        task.planRowIdForBackend,
-        planBusinessId: task.planRowId,
-        isDone: toDone,
-        suppressAppSnack: true,
-      ),
+      DatabaseService.instance
+          .updatePlanningTask(
+            task.planRowIdForBackend,
+            planBusinessId: task.planRowId,
+            isDone: toDone,
+            suppressAppSnack: true,
+          )
+          .then((ok) {
+            if (!ok && mounted) setState(() => _flat = snapshot);
+          }),
     );
   }
 
@@ -1625,6 +1633,9 @@ class _BacklogPlanCard extends StatelessWidget {
                         task.title,
                         maxLines: 4,
                         overflow: TextOverflow.ellipsis,
+                        style: task.isDone
+                            ? const TextStyle(decoration: TextDecoration.lineThrough)
+                            : null,
                       ),
                       if (showTagsStrip && listTags.isNotEmpty)
                         Padding(
