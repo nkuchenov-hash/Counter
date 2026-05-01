@@ -50,9 +50,6 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
   late int _hour;
   late int _minute;
 
-  late final Widget _dateSectionWidget;
-  late final Widget _timeSectionWidget;
-
   @override
   void initState() {
     super.initState();
@@ -60,24 +57,6 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
     _selectedDay = _clampDay(DateTime(i.year, i.month, i.day));
     _hour = i.hour;
     _minute = i.minute;
-    _dateSectionWidget = _DateSection(
-      key: const ValueKey('date_section'),
-      initial: widget.initial,
-      firstDate: widget.firstDate,
-      lastDate: widget.lastDate,
-      onDateChanged: (date) {
-        _selectedDay = date;
-      },
-    );
-    _timeSectionWidget = _TimeSection(
-      key: const ValueKey('time_section'),
-      initial: widget.initial,
-      onTimeChanged: (h, m) {
-        _hour = h;
-        _minute = m;
-      },
-      onSubmit: _submit,
-    );
   }
 
   DateTime _clampDay(DateTime d) {
@@ -108,22 +87,42 @@ class _OmniDateTimePickerDialogState extends State<_OmniDateTimePickerDialog> {
         : _kDialogContentMaxWidth;
     final wide = screenW >= 560;
 
+    final dateSection = _DateSection(
+      key: const ValueKey('date_section'),
+      initial: _selectedDay,
+      firstDate: widget.firstDate,
+      lastDate: widget.lastDate,
+      onDateChanged: (date) {
+        _selectedDay = date;
+      },
+    );
+
+    final timeSection = _TimeSection(
+      key: const ValueKey('time_section'),
+      initial: widget.initial,
+      onTimeChanged: (h, m) {
+        _hour = h;
+        _minute = m;
+      },
+      onSubmit: _submit,
+    );
+
     final body = wide
         ? Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _dateSectionWidget),
+              Expanded(child: dateSection),
               const SizedBox(width: 12),
-              Expanded(child: _timeSectionWidget),
+              Expanded(child: timeSection),
             ],
           )
         : Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _dateSectionWidget,
+              dateSection,
               const SizedBox(height: 12),
-              _timeSectionWidget,
+              timeSection,
             ],
           );
 
@@ -181,41 +180,14 @@ class _DateSectionState extends State<_DateSection> {
   late DateTime _focusedDay;
   late TextEditingController _dateTextController;
 
-  DateTime _clampDay(DateTime d) {
-    final day = DateTime(d.year, d.month, d.day);
-    if (day.isBefore(widget.firstDate)) return widget.firstDate;
-    if (day.isAfter(widget.lastDate)) return widget.lastDate;
-    return day;
-  }
-
-  String _formatDateField(DateTime d) {
-    final loc = currentLocale.value;
-    return DateFormat.yMd(loc).format(DateTime(d.year, d.month, d.day));
-  }
-
-  DateTime? _tryParseDateField(String raw) {
-    final s = raw.trim();
-    if (s.isEmpty) return null;
-    final loc = currentLocale.value;
-    try {
-      return DateFormat.yMd(loc).parseStrict(s);
-    } catch (_) {
-      try {
-        return DateFormat.yMd(loc).parseLoose(s);
-      } catch (_) {
-        return DateTime.tryParse(s);
-      }
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    _selectedDay = _clampDay(
-      DateTime(widget.initial.year, widget.initial.month, widget.initial.day),
+    _selectedDay = widget.initial;
+    _focusedDay = widget.initial;
+    _dateTextController = TextEditingController(
+      text: DateFormat.yMd(currentLocale.value).format(widget.initial),
     );
-    _focusedDay = _selectedDay;
-    _dateTextController = TextEditingController(text: _formatDateField(_selectedDay));
   }
 
   @override
@@ -224,108 +196,47 @@ class _DateSectionState extends State<_DateSection> {
     super.dispose();
   }
 
-  // Only fires for user input — programmatic controller changes do not trigger
-  // onChanged in Flutter's TextFormField.
-  void _onDateTextChanged(String value) {
-    final parsed = _tryParseDateField(value);
-    if (parsed == null) return;
-    final next = _clampDay(parsed);
-    if (next == _selectedDay) return;
-    setState(() {
-      _selectedDay = next;
-    });
-    widget.onDateChanged(_selectedDay);
-  }
-
-  String? _validateDateText(String? s) {
-    if (s == null || s.trim().isEmpty) {
-      return MaterialLocalizations.of(context).invalidDateFormatLabel;
-    }
-    final p = _tryParseDateField(s);
-    if (p == null) {
-      return MaterialLocalizations.of(context).invalidDateFormatLabel;
-    }
-    final day = DateTime(p.year, p.month, p.day);
-    if (day.isBefore(widget.firstDate) || day.isAfter(widget.lastDate)) {
-      return MaterialLocalizations.of(context).dateOutOfRangeLabel;
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final mat = MaterialLocalizations.of(context);
-    final scheme = theme.colorScheme;
-    final sectionBorder = scheme.outlineVariant.withValues(alpha: 0.45);
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: sectionBorder),
-        borderRadius: BorderRadius.circular(12),
-        color: scheme.surfaceContainerLowest.withValues(alpha: 0.35),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            mat.datePickerHelpText,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TableCalendar(
+          locale: currentLocale.value,
+          firstDay: widget.firstDate,
+          lastDay: widget.lastDate,
+          focusedDay: _focusedDay,
+          calendarFormat: CalendarFormat.month,
+          sixWeekMonthsEnforced: true,
+          rowHeight: 42,
+          startingDayOfWeek: StartingDayOfWeek.monday,
+          selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
+          onDaySelected: (selected, focused) {
+            setState(() {
+              _selectedDay = selected;
+              _focusedDay = focused;
+              _dateTextController.text =
+                  DateFormat.yMd(currentLocale.value).format(selected);
+            });
+            widget.onDateChanged(selected);
+          },
+          onPageChanged: (focused) {
+            _focusedDay = focused;
+          },
+          calendarStyle: CalendarStyle(
+            outsideDaysVisible: true,
+            outsideTextStyle: TextStyle(
+              color: scheme.onSurface.withValues(alpha: 0.35),
             ),
           ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _dateTextController,
-            decoration: InputDecoration(
-              labelText: mat.dateInputLabel,
-              border: const OutlineInputBorder(),
-              isDense: true,
-            ),
-            keyboardType: TextInputType.datetime,
-            textInputAction: TextInputAction.next,
-            onChanged: _onDateTextChanged,
-            validator: _validateDateText,
+          headerStyle: const HeaderStyle(
+            formatButtonVisible: false,
+            titleCentered: true,
           ),
-          const SizedBox(height: 12),
-          TableCalendar(
-            locale: currentLocale.value,
-            firstDay: widget.firstDate,
-            lastDay: widget.lastDate,
-            focusedDay: _focusedDay,
-            calendarFormat: CalendarFormat.month,
-            sixWeekMonthsEnforced: true,
-            rowHeight: 42.0,
-            startingDayOfWeek: StartingDayOfWeek.monday,
-            selectedDayPredicate: (day) => isSameDay(day, _selectedDay),
-            onDaySelected: (selected, focused) {
-              final next = _clampDay(DateTime(selected.year, selected.month, selected.day));
-              setState(() {
-                _selectedDay = next;
-                _focusedDay = focused;
-                _dateTextController.text = _formatDateField(next);
-              });
-              widget.onDateChanged(next);
-            },
-            onPageChanged: (focused) {
-              setState(() => _focusedDay = focused);
-            },
-            calendarStyle: CalendarStyle(
-              outsideDaysVisible: true,
-              outsideTextStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.35),
-              ),
-            ),
-            headerStyle: const HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
