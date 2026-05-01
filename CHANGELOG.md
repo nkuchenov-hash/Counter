@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-05-01] - C1 Sync & Reactivity: tag stream gaps, category silent drop, optimistic list toggle [shipped]
+* **`profile_service.dart`:** `createTagForCurrentUser` adds new tag to `_userTagsCatalogCache` and calls `notifyTagsCatalogChanged()`; `deleteTagByPocketRecordId` removes tag from cache by `pbRecordId` and notifies; `patchTagForCurrentUser` calls `notifyTagsCatalogChanged()` after server write. All three mutations now push to UI immediately without manual refresh (#16).
+* **`category_service.dart`:** `_mapCategoryIdToLinkForPb` else-branch now emits `debugPrint('[CAT_MAP] category_id dropped from payload — no resolved PB row id …')` instead of silent `merged.remove('category_id')` — cold-start category drops are now visible in debug logs (#9).
+* **`lists_view.dart`:** `_onListToggleDone` rewired for true optimistic UI — snapshots `_flat`, immediately replaces the toggled task in `setState`, then fires `updatePlanningTask` async; rolls back `_flat` to snapshot on PATCH failure. Removed `notifyPlanningRefresh()` call (was triggering non-optimistic network reload). Added `TextDecoration.lineThrough` style to task title `Text` when `task.isDone` (#11).
+* **Confirmed clean:** `flutter analyze` 0 new errors (64 issues, all pre-existing).
+
 ## [2026-05-01] - Restored omni_date_time_picker_dialog.dart to last known good state (4676e273) — reverting all May 1 changes [shipped]
 
 ## [2026-05-01] - Fix: omni-picker _DateSectionState minimal rewrite, onPageChanged no setState [shipped]

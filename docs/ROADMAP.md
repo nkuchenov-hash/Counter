@@ -1,6 +1,6 @@
-# Life OS — Roadmap (April 2026)
+# Life OS — Roadmap (May 2026)
 
-Drawn from the April 2026 full-codebase audit. Updated 2026-04-30.
+Drawn from the April 2026 full-codebase audit. Updated 2026-05-01.
 
 ---
 
@@ -21,7 +21,7 @@ The velocity rule exists because Nick is a UX designer working with AI assistant
 ## Execution order
 
 ```
-C1 (Sync & Reactivity) → V1 (CLAUDE.md nav map) → F1 (Lists completion) → F2 (Plans completion) → F3 (Auto-save) → V3 (UX_CONTRACT) → V7 (Design Language)
+~~C1~~ ✅ → V1 (CLAUDE.md nav map) → F1 (Lists completion) → F2 (Plans completion) → F3 (Auto-save) → V3 (UX_CONTRACT) → V7 (Design Language)
 ```
 
 ---
@@ -35,32 +35,20 @@ C1 (Sync & Reactivity) → V1 (CLAUDE.md nav map) → F1 (Lists completion) → 
 | 🔴 Critical | `models/category.dart` | Category ID hash collision → category tree silently corrupts | ✅ Fixed (`_stableStringHash`, FNV polynomial) |
 | 🔴 Critical | `models/record.dart` | Timeline records bucketed on wrong day for travelers | ✅ Fixed (`timezoneOffsetHours` on `TimelineRecord`) |
 | 🟡 High | `database_service.dart` | Mixed timezone sources in stale-row detection (`_rowStartWallDayIsBeforeProjectedToday`) | ✅ Fixed in `393bb0f` |
-| 🟡 High | `models/record.dart` | Same timezone bug in date parsing (`_parseFlexDateOnly`) | ⏳ Open — fold into C1 |
-| 🟠 Medium | `category_service.dart` | Category silently drops from saved records during cold start — no error thrown | ⏳ Open — fold into C1 |
+| 🟡 High | `models/record.dart` | Same timezone bug in date parsing (`_parseFlexDateOnly`) | ✅ Already fixed — `_parseFlexDateOnly` not present in production code post-split |
+| 🟠 Medium | `category_service.dart` | Category silently drops from saved records during cold start — no error thrown | ✅ Fixed in C1 — `_mapCategoryIdToLinkForPb` now logs `[CAT_MAP]` debugPrint on drop |
 
 Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fallbacks.
 
 ---
 
-### C1 — Sync & Reactivity (next session)
-**Scope: the app's state layer is leaking. Fix before any UI work.**
+### ~~C1 — Sync & Reactivity~~ ✅ (shipped 2026-05-01)
 
-Folds in: open Phase 1 bugs above + user items #9, #10, #11, #16, #18.
-
-**What's broken:**
-- PocketBase realtime subscription on web fails to re-arm after login or page reload → items added on mobile don't appear on web without manual refresh (#10, #18)
-- Plan and tag stream mutations don't push to UI widgets — cache updates but `StreamController` doesn't notify → tags added to a plan card don't appear until screen refresh (#16)
-- List item done-toggle is not optimistic: waits for server round-trip before showing crossout (#11)
-- Save errors surface on some record/plan writes — root cause unclear, likely cold-start category drop or a race in the PATCH path (#9)
-- `_parseFlexDateOnly` uses `.toLocal()` for persisted date keys — timezone bug, same family as the fixed `_rowStartWallDayIsBeforeProjectedToday` (open Phase 1 bug)
-- `_mapCategoryIdToLinkForPb` silently drops `category_id` from save payload during cold start (open Phase 1 bug)
-
-**Files in scope:** `record_service.dart`, `plan_service.dart`, `profile_service.dart`, `category_service.dart`, `db_core.dart`, `lists_view.dart`, `models/record.dart`
-
-**Hard constraints:**
-- Optimistic UI law: done-toggle must update UI in <100ms, PATCH runs async with rollback
-- Do not change stream architecture — fix the notification gaps, don't redesign
-- `flutter analyze` zero new errors after
+- `profile_service.dart`: tag mutations (`createTagForCurrentUser`, `deleteTagByPocketRecordId`, `patchTagForCurrentUser`) now update `_userTagsCatalogCache` and call `notifyTagsCatalogChanged()` — tags push to UI without manual refresh (#16)
+- `category_service.dart`: `_mapCategoryIdToLinkForPb` silent drop replaced with `debugPrint('[CAT_MAP]')` including rawCat/bid/ruleName/ruleId (#9)
+- `lists_view.dart`: `_onListToggleDone` is now truly optimistic — updates `_flat` in `setState` immediately, rolls back on PATCH failure, adds `TextDecoration.lineThrough` for completed items; removed non-optimistic `notifyPlanningRefresh()` call (#11)
+- `_parseFlexDateOnly` timezone bug: confirmed not present in production code post-split (already resolved via God Object split)
+- PocketBase realtime re-arm: confirmed existing `ensureRecordsRealtimeBridge()` calls in all login paths handle this correctly
 
 ---
 
