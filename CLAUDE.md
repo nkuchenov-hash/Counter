@@ -38,8 +38,10 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Category smart-link / fuzzy match | `lib/data/category_service.dart` | `DatabaseService.findCategoryByFuzzyMatch` (extension) |
 | Category create | `lib/data/category_service.dart` | `DatabaseService.addNestedCategory` (extension) |
 | Category update | `lib/data/category_service.dart` | `DatabaseService.updateCategory` (extension) |
+| Category → PB row ID mapping (cold-start) | `lib/data/category_service.dart` | `DatabaseService._mapCategoryIdToLinkForPb` (extension) |
 | Plan / planning task write | `lib/data/plan_service.dart` | `DatabaseService.addPlanningTask` (extension) |
 | Plan / planning task CRUD (full) | `lib/data/plan_service.dart` | `PlanServiceExtension` — addPlan, updatePlanningTask, deletePlanningTask, bulkUpdatePlans |
+| Backlog / list items fetch | `lib/data/plan_service.dart` | `DatabaseService.fetchBacklogPlans` (extension) |
 | Plan stream / optimistic cache | `lib/data/plan_service.dart` | `DatabaseService.planningStream` / `applyOptimisticPlanningTask` (extension) |
 | Plan rrule expansion | `lib/data/plan_service.dart` | `DatabaseService.expandRecurringPlans` (extension) |
 | Plan alarm scheduling | `lib/data/plan_service.dart` | `DatabaseService._requestPlanAlarmReschedule` (extension) |
@@ -47,6 +49,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Plan link scoring (title similarity) | `lib/data/plan_service.dart` | `PlanServiceExtension.titleSimilarityForPlanLink` (static) |
 | Plan wall-estimate seconds | `lib/data/plan_service.dart` | `PlanServiceExtension.planningWallEstimateSeconds` (static) |
 | Plan / planning task done-toggle | `lib/features/planning/planning_view.dart` | `_PlanningViewState._toggleDone` |
+| List done-toggle (optimistic, with rollback) | `lib/features/lists/lists_view.dart` | `_ListsPageState._onListToggleDone` |
 | Tag link to plan | `lib/data/plan_service.dart` | `DatabaseService._syncPlanTagsPocket` (extension) |
 | Timeline render (list) | `lib/features/timeline/timeline_view.dart` | `TimelinePage` |
 | Timeline edit sheet | `lib/features/shared/shared_widgets.dart` | `ActivityDetailSheet` |
@@ -60,13 +63,17 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Save user settings | `lib/data/profile_service.dart` | `DatabaseService.saveSettings` (extension) |
 | Update timezone | `lib/data/profile_service.dart` | `DatabaseService.updateTimeZone` (extension) |
 | Fetch tags (current user) | `lib/data/profile_service.dart` | `DatabaseService.fetchTagsForCurrentUser` (extension) |
+| Tag create | `lib/data/profile_service.dart` | `DatabaseService.createTagForCurrentUser` (extension) |
+| Tag delete | `lib/data/profile_service.dart` | `DatabaseService.deleteTagByPocketRecordId` (extension) |
+| Tag update | `lib/data/profile_service.dart` | `DatabaseService.patchTagForCurrentUser` (extension) |
+| Tag stream notification | `lib/data/profile_service.dart` | `DatabaseService.notifyTagsCatalogChanged` / `tagsCatalogUpdated` (extension) |
 | Get / fetch user profile | `lib/data/profile_service.dart` | `DatabaseService.getUserProfile` (extension) |
 | PocketBase init / health check | `lib/data/db_core.dart` | `DbCoreExtension.ensurePocketBaseReady` |
 | Realtime reconnect bridge | `lib/data/db_core.dart` | `DbCoreExtension.ensureRecordsRealtimeBridge` |
 | Sign-out / state clear | `lib/data/db_core.dart` | `DbCoreExtension.clearLocalStateOnSignOut` |
 | Initial data load (full) | `lib/data/db_core.dart` | `DbCoreExtension.loadInitialData` |
 | Wear OS lite data load | `lib/data/db_core.dart` | `DbCoreExtension.loadInitialDataWearLite` |
-| Date key bucketing (UTC → wall-day string) | `lib/data/database_service.dart` | `DatabaseService._timelineDeviceLocalDayKeyFromUtc` |
+| Date key bucketing (UTC → wall-day string) | `lib/data/record_service.dart` | `DatabaseService._timelineDeviceLocalDayKeyFromUtc` (extension) |
 
 ---
 
