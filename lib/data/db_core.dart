@@ -118,12 +118,13 @@ extension DbCoreExtension on DatabaseService {
   // Realtime reconnect
   // ---------------------------------------------------------------------------
 
-  /// Re-subscribe to `records` realtime after auth when init ran without a session.
+  /// Re-subscribe to `records` + `plans` realtime after auth when init ran without a session.
   Future<void> ensureRecordsRealtimeBridge() async {
     _recordsRealtimeReconnectTimer?.cancel();
     _recordsRealtimeReconnectTimer = null;
     _recordsRealtimeFailureStreak = 0;
     unawaited(_startRecordsRealtimeSubscription());
+    unawaited(ensurePlansRealtimeBridge());
   }
 
   Duration _recordsRealtimeDelayForCurrentFailureStreak() {
@@ -172,7 +173,7 @@ extension DbCoreExtension on DatabaseService {
       if (decoded is! List) return;
       _cachedFlatRecords = [
         for (final e in decoded)
-          if (e is Map) Map<String, dynamic>.from(e as Map),
+          if (e is Map) Map<String, dynamic>.from(e),
       ];
     } catch (_) {}
   }
@@ -186,7 +187,11 @@ extension DbCoreExtension on DatabaseService {
     DatabaseService._appLifecycleObserver.onResumed = () {
       unawaited(_startRecordsRealtimeSubscription());
       _lastSuccessfulRecordsNetworkFetchAt = null;
-      unawaited(_fetchRecordsIntoCache().catchError((Object _, StackTrace __) {}));
+      unawaited(
+        _fetchRecordsIntoCache().catchError(
+          (Object _, StackTrace _) => <Map<String, dynamic>>[],
+        ),
+      );
     };
     WidgetsBinding.instance.addObserver(DatabaseService._appLifecycleObserver);
     DatabaseService._appLifecycleObserverRegistered = true;
@@ -207,6 +212,11 @@ extension DbCoreExtension on DatabaseService {
     _unregisterAppLifecycleObserver();
     _planAlarmRescheduleDebounceTimer?.cancel();
     _planAlarmRescheduleDebounceTimer = null;
+    _planningNotifyNetworkDebounceTimer?.cancel();
+    _planningNotifyNetworkDebounceTimer = null;
+    unawaited(_cancelPlansRealtimeSubscription());
+    _allPlansUserCache = [];
+    _allPlansUserCacheFetchedAt = null;
     _recordsRealtimeReconnectTimer?.cancel();
     _recordsRealtimeReconnectTimer = null;
     _recordsRealtimeFailureStreak = 0;
@@ -222,7 +232,6 @@ extension DbCoreExtension on DatabaseService {
     try {
       _isInitialized = false;
       currentProfileId = null;
-      _cachedProfileUuid = null;
       _loadErrorMessage = null;
       _rules = [];
       _reservedCategorySlugsLower.clear();
@@ -377,7 +386,7 @@ extension DbCoreExtension on DatabaseService {
     _registerAppLifecycleObserverOnce();
     // LAW_OF_THE_MAIN_THREAD / Wear-lite: do not block watch bootstrap on realtime socket.
     unawaited(
-      _startRecordsRealtimeSubscription().catchError((Object _, StackTrace __) {}),
+      _startRecordsRealtimeSubscription().catchError((Object _, StackTrace _) {}),
     );
   }
 
@@ -410,8 +419,12 @@ extension DbCoreExtension on DatabaseService {
       await _startRecordsRealtimeSubscription();
     } catch (_) {}
     unawaited(
+      _startPlansRealtimeSubscription().catchError((Object _, StackTrace _) {}),
+    );
+    unawaited(_ensureAllPlansUserCacheFresh(force: true));
+    unawaited(
       _runOneShotUntitledGhostRecordCleanDeferred()
-          .catchError((Object _, StackTrace __) {}),
+          .catchError((Object _, StackTrace _) {}),
     );
     unawaited(flushPendingPlanCreates());
   }

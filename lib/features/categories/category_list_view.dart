@@ -814,7 +814,7 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
                 categoryMaterialShadeValues(_selectedPrimary!)
                     .contains(_colorValue))
             ? _colorValue
-            : _selectedPrimary![500]!.value;
+            : _selectedPrimary![500]!.toARGB32();
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -841,7 +841,7 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
                   onTap: () {
                     setState(() {
                       _selectedPrimary = p;
-                      _selectedShadeValue = p[500]!.value;
+                      _selectedShadeValue = p[500]!.toARGB32();
                       _colorValue = _selectedShadeValue;
                     });
                     HapticFeedback.lightImpact();
@@ -870,7 +870,7 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
               children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
                   .map((tone) {
                 final c = _selectedPrimary![tone]!;
-                final v = c.value;
+                final v = c.toARGB32();
                 final sel = _selectedShadeValue == v;
                 return GestureDetector(
                   onTap: () {
@@ -1243,7 +1243,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
             categoryMaterialShadeValues(_selectedPrimary!)
                 .contains(_selectedColorValue))
         ? _selectedColorValue
-        : _selectedPrimary![500]!.value;
+        : _selectedPrimary![500]!.toARGB32();
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -1299,7 +1299,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                   onTap: () {
                     setState(() {
                       _selectedPrimary = p;
-                      _selectedShadeValue = p[500]!.value;
+                      _selectedShadeValue = p[500]!.toARGB32();
                       _selectedColorValue = _selectedShadeValue;
                     });
                     HapticFeedback.lightImpact();
@@ -1326,7 +1326,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
                   .map((tone) {
                 final c = _selectedPrimary![tone]!;
-                final v = c.value;
+                final v = c.toARGB32();
                 final sel = _selectedShadeValue == v;
                 return GestureDetector(
                   onTap: () {
@@ -1696,7 +1696,7 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
     return ValueListenableBuilder<List<int>>(
       valueListenable: CategoryVisibilityPrefs.hiddenIds,
-      builder: (context, _, __) {
+      builder: (context, _, _) {
         final roots = _getItemsForDepth(0);
         return Scaffold(
       resizeToAvoidBottomInset: true,

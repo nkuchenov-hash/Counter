@@ -1704,7 +1704,7 @@ class _PlanningPageState extends State<PlanningPage>
         onDragEnd:
             onDragEnded == null ? null : (_) => onDragEnded(),
         onDraggableCanceled:
-            onDragEnded == null ? null : (_, __) => onDragEnded(),
+            onDragEnded == null ? null : (_, _) => onDragEnded(),
         feedback: Material(
           elevation: 8,
           borderRadius: BorderRadius.circular(12),

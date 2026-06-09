@@ -64,6 +64,16 @@ const Map<String, Map<String, String>> _l10nCore = {
     'input_placeholder_record': 'Add a new record',
     'input_placeholder_plan': 'Add a new plan',
     'input_placeholder_list': 'Add to a list',
+    'lists_export_text': 'Export as text',
+    'lists_export_copied': 'List copied to clipboard',
+    'lists_export_empty': 'Nothing to export',
+    'lists_filter_tag_all': 'All tags',
+    'lists_subitems_tab': 'Sub-items',
+    'lists_subitems_save_parent_first':
+        'Save this item first to add sub-items.',
+    'lists_subitems_add_hint': 'Add sub-item…',
+    'lists_pin_item_todo':
+        'TODO: backlog pin needs plans.is_pinned (bool) in PocketBase + DATA_MAP.',
     'lists_no_category_chosen':
         'No lists are chosen. Choose a category to add ideas to your list.',
     'plan_graduate_warning':
@@ -588,6 +598,16 @@ const Map<String, Map<String, String>> _l10nCore = {
     'input_placeholder_record': 'Добавить запись',
     'input_placeholder_plan': 'Добавить план',
     'input_placeholder_list': 'Добавить в список',
+    'lists_export_text': 'Экспорт как текст',
+    'lists_export_copied': 'Список скопирован в буфер обмена',
+    'lists_export_empty': 'Нечего экспортировать',
+    'lists_filter_tag_all': 'Все теги',
+    'lists_subitems_tab': 'Подпункты',
+    'lists_subitems_save_parent_first':
+        'Сначала сохраните элемент, чтобы добавить подпункты.',
+    'lists_subitems_add_hint': 'Добавить подпункт…',
+    'lists_pin_item_todo':
+        'TODO: закрепление требует plans.is_pinned (bool) в PocketBase + DATA_MAP.',
     'lists_no_category_chosen':
         'Списки не выбраны. Выберите категорию, чтобы добавлять идеи в список.',
     'plan_graduate_warning':

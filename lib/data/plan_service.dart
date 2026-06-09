@@ -16,14 +16,24 @@ final StreamController<void> _planningRefreshController =
     StreamController<void>.broadcast();
 
 /// Wall **dateKey** → (**planRowIdForBackend** → task) merged on top of server list until PATCH lands.
+/// Dateless backlog rows use [_kBacklogOptimisticDayKey], not a calendar day.
 final Map<String, Map<String, PlanningTask>> _planningOptimisticByDateKey =
     {};
+
+const String _kBacklogOptimisticDayKey = '__backlog__';
+
+/// In-memory all-user plans (single source for Planning + Lists); refreshed by fetch, PATCH merge, realtime.
+List<PlanningTask> _allPlansUserCache = [];
+DateTime? _allPlansUserCacheFetchedAt;
+const Duration _allPlansUserCacheFreshTtl = Duration(seconds: 30);
+Timer? _planningNotifyNetworkDebounceTimer;
+Future<void>? _plansRealtimeSubscribeFuture;
+Future<void> Function()? _plansRealtimeUnsubscribe;
 
 List<PlanningTask> _tasksCache = [];
 
 /// Planning reorder: debounced bulk PATCH of [order] only (@DATA_MAP `plans.order`, `user_id`).
 const Duration _planOrderDebounce = Duration(seconds: 2);
-const int _planOrderBulkChunkSize = 10;
 
 Timer? _planOrderDebounceTimer;
 List<PlanningTask>? _pendingPlanOrderSyncList;
@@ -69,7 +79,9 @@ extension PlanServiceExtension on DatabaseService {
       'checklist': t.checklist,
       'notes_plain': t.notesPlain,
       'notes_delta': t.notesDeltaJson,
-      'parent_plan_id': t.parentPlanId,
+      if (t.parentPlanPocketId != null && t.parentPlanPocketId!.trim().isNotEmpty)
+        'parent_plan_pocket_id': t.parentPlanPocketId!.trim(),
+      if (t.parentPlanId != null) 'parent_plan_id': t.parentPlanId,
       'isSynced': t.isSynced,
       if (t.initialDateKey != null && t.initialDateKey!.trim().length >= 10)
         'initial_date_key': t.initialDateKey!.trim().substring(0, 10),
@@ -153,6 +165,9 @@ extension PlanServiceExtension on DatabaseService {
       checklist: parseChecklistFromNocoList(m['checklist']),
       notesPlain: m['notes_plain']?.toString() ?? m['note']?.toString(),
       notesDeltaJson: deltaJsonStr,
+      parentPlanPocketId: (m['parent_plan_pocket_id'] ?? m['parent_plan_id'])
+          ?.toString()
+          .trim(),
       parentPlanId: m['parent_plan_id'] == null
           ? null
           : int.tryParse(m['parent_plan_id'].toString()),
@@ -221,7 +236,7 @@ extension PlanServiceExtension on DatabaseService {
         if (e is! Map) continue;
         out.add(
           _planningTaskFromOfflineDayMap(
-            Map<String, dynamic>.from(e as Map),
+            Map<String, dynamic>.from(e),
           ),
         );
       }
@@ -251,7 +266,7 @@ extension PlanServiceExtension on DatabaseService {
         if (wrapped is! Map) {
           continue;
         }
-        final body = Map<String, dynamic>.from(wrapped as Map);
+        final body = Map<String, dynamic>.from(wrapped);
         body['user_id'] = _pidForPbFilter;
         try {
           await _pb.collection(PbCollections.plans).create(body: body);
@@ -337,12 +352,217 @@ extension PlanServiceExtension on DatabaseService {
   }
 
 
-  /// Ping all open [planningStream] subscribers to refetch immediately.
-  void notifyPlanningRefresh() {
+  /// Ping planning/list subscribers. UI streams emit cache+overlay first; network refresh is debounced.
+  void notifyPlanningRefresh({bool scheduleNetworkRefresh = true}) {
     if (!_planningRefreshController.isClosed) {
       _planningRefreshController.add(null);
     }
     _requestPlanAlarmReschedule();
+    if (scheduleNetworkRefresh) {
+      _planningNotifyNetworkDebounceTimer?.cancel();
+      _planningNotifyNetworkDebounceTimer = Timer(
+        const Duration(milliseconds: 400),
+        () {
+          unawaited(_ensureAllPlansUserCacheFresh(force: true));
+        },
+      );
+    }
+  }
+
+  String _planOptimisticDayKeyFor(PlanningTask task) {
+    var dk = task.dateKey.trim();
+    if (dk.length >= 10) return dk.substring(0, 10);
+    if (task.startTime != null) {
+      final st = task.startTime!;
+      return '${st.year}-${_two(st.month)}-${_two(st.day)}';
+    }
+    return _kBacklogOptimisticDayKey;
+  }
+
+  void _upsertPlanInUserCache(PlanningTask task) {
+    final pid = task.planRowIdForBackend.trim();
+    if (pid.isEmpty) return;
+    var i = -1;
+    for (var j = 0; j < _allPlansUserCache.length; j++) {
+      if (_allPlansUserCache[j].planRowIdForBackend.trim() == pid) {
+        i = j;
+        break;
+      }
+    }
+    if (i >= 0) {
+      _allPlansUserCache[i] = task;
+    } else {
+      _allPlansUserCache.add(task);
+    }
+  }
+
+  void _removePlanFromUserCache(String planRowId) {
+    final p = planRowId.trim();
+    if (p.isEmpty) return;
+    _allPlansUserCache = [
+      for (final t in _allPlansUserCache)
+        if (t.planRowIdForBackend.trim() != p) t,
+    ];
+  }
+
+  bool _planTagsEqual(List<Tag> a, List<Tag> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].pbRecordId != b[i].pbRecordId ||
+          a[i].name != b[i].name ||
+          a[i].color != b[i].color) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  List<Tag> _refreshTaskTagsFromCatalog(List<Tag> tags) {
+    if (tags.isEmpty || _userTagsCatalogCache.isEmpty) return tags;
+    final byPb = <String, Tag>{
+      for (final t in _userTagsCatalogCache)
+        if ((t.pbRecordId ?? '').trim().isNotEmpty) t.pbRecordId!: t,
+    };
+    if (byPb.isEmpty) return tags;
+    return [
+      for (final tag in tags)
+        byPb[tag.pbRecordId ?? ''] ?? tag,
+    ];
+  }
+
+  /// After tag catalog PATCH/create/delete, refresh embedded tag chips on cached plans.
+  void syncEmbeddedPlanTagsFromCatalog() {
+    var changed = false;
+    final nextCache = <PlanningTask>[];
+    for (final t in _allPlansUserCache) {
+      final nt = _refreshTaskTagsFromCatalog(t.tags);
+      if (!_planTagsEqual(nt, t.tags)) {
+        changed = true;
+        nextCache.add(t.copyWith(tags: nt));
+      } else {
+        nextCache.add(t);
+      }
+    }
+    if (changed) _allPlansUserCache = nextCache;
+    for (final m in _planningOptimisticByDateKey.values) {
+      for (final e in m.entries.toList()) {
+        final nt = _refreshTaskTagsFromCatalog(e.value.tags);
+        if (!_planTagsEqual(nt, e.value.tags)) {
+          m[e.key] = e.value.copyWith(tags: nt);
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    }
+  }
+
+  List<PlanningTask> _filterBacklogFromAll(
+    List<PlanningTask> all, {
+    int? categoryId,
+    bool includeCompleted = false,
+  }) {
+    final out = <PlanningTask>[];
+    for (final t in all) {
+      final pid = t.planRowIdForBackend.trim();
+      if (pid.startsWith('optimistic-') || pid.startsWith('virt-')) continue;
+      if (!includeCompleted && t.isDone) continue;
+      if (t.startTime != null) continue;
+      if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
+      if (t.isBacklogChildItem) continue;
+      final dk = t.dateKey.trim();
+      if (dk.length >= 10) continue;
+      if (categoryId != null && t.categoryId != categoryId) continue;
+      out.add(t);
+    }
+    out.sort((a, b) {
+      final o = a.order.compareTo(b.order);
+      if (o != 0) return o;
+      return a.title.compareTo(b.title);
+    });
+    return out;
+  }
+
+  List<PlanningTask> _mergeBacklogOptimistic(List<PlanningTask> server) {
+    final overlay = _planningOptimisticByDateKey[_kBacklogOptimisticDayKey];
+    if (overlay == null || overlay.isEmpty) return server;
+    final byId = <String, PlanningTask>{
+      for (final t in server) t.planRowIdForBackend: t,
+    };
+    for (final e in overlay.entries) {
+      final t = e.value;
+      if (t.startTime != null) continue;
+      final dk = t.dateKey.trim();
+      if (dk.length >= 10) continue;
+      byId[e.key] = t;
+    }
+    final merged = byId.values.toList();
+    merged.sort((a, b) {
+      final o = a.order.compareTo(b.order);
+      if (o != 0) return o;
+      return a.title.compareTo(b.title);
+    });
+    return merged;
+  }
+
+  /// Instant backlog snapshot (cache + optimistic overlay) — no network.
+  List<PlanningTask> getBacklogPlansSnapshot({
+    int? categoryId,
+    bool includeCompleted = false,
+  }) {
+    final base = _filterBacklogFromAll(
+      _allPlansUserCache,
+      categoryId: categoryId,
+      includeCompleted: includeCompleted,
+    );
+    return _mergeBacklogOptimistic(base);
+  }
+
+  List<PlanningTask> _filterPlansForWallDay(
+    List<PlanningTask> all,
+    DateTime selectedDate,
+  ) {
+    final targetDayStr =
+        '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
+    final plans = <PlanningTask>[];
+    for (final t in all) {
+      if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
+      if (t.startTime == null) continue;
+      final anchorUtc = _profileUtcFromWall(t.startTime!).toUtc();
+      final w = _profileWallFromUtc(anchorUtc);
+      final planDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
+      if (planDayStr != targetDayStr) continue;
+      plans.add(t);
+    }
+    plans.addAll(expandRecurringPlans(all, selectedDate, selectedDate));
+    plans.sort((a, b) {
+      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final o = a.order.compareTo(b.order);
+      if (o != 0) return o;
+      final at = a.startTime;
+      final bt = b.startTime;
+      if (at != bt) {
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        return at.compareTo(bt);
+      }
+      return a.title.compareTo(b.title);
+    });
+    return plans;
+  }
+
+  Future<void> _ensureAllPlansUserCacheFresh({bool force = false}) async {
+    if (!_isPlansTableConfigured) return;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return;
+    if (!force &&
+        _allPlansUserCache.isNotEmpty &&
+        _allPlansUserCacheFetchedAt != null &&
+        DateTime.now().difference(_allPlansUserCacheFetchedAt!) <
+            _allPlansUserCacheFreshTtl) {
+      return;
+    }
+    await _fetchAllPlanningTasksForCurrentUser();
   }
 
   /// Stats / Plan-vs-fact audit: listen to refresh planning data (same signal as [notifyPlanningRefresh]).
@@ -357,16 +577,9 @@ extension PlanServiceExtension on DatabaseService {
     for (final m in _planningOptimisticByDateKey.values) {
       m.remove(pid);
     }
-    var dk = task.dateKey.trim();
-    if (dk.length < 10) {
-      final st = task.startTime;
-      if (st == null) {
-        // Dateless backlog: never merge into a calendar-day overlay.
-        return;
-      }
-      dk = '${st.year}-${_two(st.month)}-${_two(st.day)}';
-    }
+    final dk = _planOptimisticDayKeyFor(task);
     _planningOptimisticByDateKey.putIfAbsent(dk, () => {})[pid] = task;
+    _upsertPlanInUserCache(task);
   }
 
   void clearOptimisticPlanningForPlanRow(String planRowIdForBackend) {
@@ -632,51 +845,11 @@ extension PlanServiceExtension on DatabaseService {
         return [];
       }
       if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
-      final authId = _userIdForWhere;
-      if (authId == null || authId.isEmpty) return [];
       final targetDayStr =
           '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
       try {
-        final uid = _escapeForPbFilter(authId);
-        // Required: without expand, API returns only relation ids — chips would be empty after refresh.
-        final tagCatalog =
-            await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
-        final list = await _pb.collection(PbCollections.plans).getFullList(
-              expand: kPbPlanTagsExpand,
-              filter: 'user_id = "$uid"',
-            );
-        final allTasks = <PlanningTask>[
-          for (final r in list)
-            _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
-        ];
-        final plans = <PlanningTask>[];
-        for (final t in allTasks) {
-          if (t.rrule != null && t.rrule!.trim().isNotEmpty) {
-            continue;
-          }
-          if (t.startTime == null) continue;
-          final anchorUtc = _profileUtcFromWall(t.startTime!).toUtc();
-          final w = _profileWallFromUtc(anchorUtc);
-          final planDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
-          if (planDayStr != targetDayStr) continue;
-          plans.add(t);
-        }
-        plans.addAll(
-          expandRecurringPlans(allTasks, selectedDate, selectedDate),
-        );
-        plans.sort((a, b) {
-          if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
-          final o = a.order.compareTo(b.order);
-          if (o != 0) return o;
-          final at = a.startTime;
-          final bt = b.startTime;
-          if (at != bt) {
-            if (at == null) return 1;
-            if (bt == null) return -1;
-            return at.compareTo(bt);
-          }
-          return a.title.compareTo(b.title);
-        });
+        await _ensureAllPlansUserCacheFresh();
+        final plans = _filterPlansForWallDay(_allPlansUserCache, selectedDate);
         final merged = _mergePlanningOptimistic(targetDayStr, plans);
         await _persistPlanningTasksDayCache(targetDayStr, merged);
         return merged;
@@ -730,12 +903,15 @@ extension PlanServiceExtension on DatabaseService {
             filter: 'user_id = "$uid"',
             batch: 200,
           );
-      return [
+      final out = [
         for (final r in list)
           _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
       ];
+      _allPlansUserCache = out;
+      _allPlansUserCacheFetchedAt = DateTime.now();
+      return out;
     } catch (_) {
-      return [];
+      return _allPlansUserCache;
     }
   }
 
@@ -746,29 +922,18 @@ extension PlanServiceExtension on DatabaseService {
     bool includeCompleted = false,
   }) async {
     try {
-      final all = await _fetchAllPlanningTasksForCurrentUser();
-      final out = <PlanningTask>[];
-      for (final t in all) {
-        final pid = t.planRowIdForBackend.trim();
-        if (pid.startsWith('optimistic-') || pid.startsWith('virt-')) {
-          continue;
-        }
-        if (!includeCompleted && t.isDone) continue;
-        if (t.startTime != null) continue;
-        if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
-        final dk = t.dateKey.trim();
-        if (dk.length >= 10) continue;
-        if (categoryId != null && t.categoryId != categoryId) continue;
-        out.add(t);
-      }
-      out.sort((a, b) {
-        final o = a.order.compareTo(b.order);
-        if (o != 0) return o;
-        return a.title.compareTo(b.title);
-      });
-      return out;
+      await _ensureAllPlansUserCacheFresh();
+      final filtered = _filterBacklogFromAll(
+        _allPlansUserCache,
+        categoryId: categoryId,
+        includeCompleted: includeCompleted,
+      );
+      return _mergeBacklogOptimistic(filtered);
     } catch (_) {
-      return [];
+      return getBacklogPlansSnapshot(
+        categoryId: categoryId,
+        includeCompleted: includeCompleted,
+      );
     }
   }
 
@@ -898,6 +1063,11 @@ extension PlanServiceExtension on DatabaseService {
         return _planLocalCategoryIdIsConcrete(t.categoryId) ? t.categoryId : null;
       }
     }
+    for (final t in _allPlansUserCache) {
+      if (DatabaseService.pocketRelationIdOrNull(t.pocketRecordId) == want) {
+        return _planLocalCategoryIdIsConcrete(t.categoryId) ? t.categoryId : null;
+      }
+    }
     for (final m in _planningOptimisticByDateKey.values) {
       for (final t in m.values) {
         if (DatabaseService.pocketRelationIdOrNull(t.pocketRecordId) == want) {
@@ -997,7 +1167,7 @@ extension PlanServiceExtension on DatabaseService {
         'rrule': d['rrule'],
         'exception_dates': d['exception_dates'],
         'reminder_offset': d['reminder_offset'],
-        if (expandJson != null) 'expand': expandJson,
+        'expand': ?expandJson,
         'tags_link': d['tags_link'],
       },
       pocketTagCatalog: pocketTagCatalog,
@@ -1615,8 +1785,30 @@ extension PlanServiceExtension on DatabaseService {
     return Stream.multi((controller) {
       StreamSubscription<void>? pokeSub;
       var busy = false;
-      Future<void> pump() async {
-        if (busy || controller.isClosed) return;
+      final targetDayStr =
+          '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
+
+      void emitFastFromCache() {
+        if (controller.isClosed) return;
+        List<PlanningTask> base = [];
+        if (_allPlansUserCache.isNotEmpty) {
+          base = _filterPlansForWallDay(_allPlansUserCache, selectedDate);
+        }
+        if (base.isEmpty) {
+          unawaited(() async {
+            final offline = await _loadPlanningTasksDayCache(targetDayStr);
+            if (!controller.isClosed && offline.isNotEmpty) {
+              controller.add(_mergePlanningOptimistic(targetDayStr, offline));
+            }
+          }());
+          return;
+        }
+        controller.add(_mergePlanningOptimistic(targetDayStr, base));
+      }
+
+      Future<void> pump({bool network = true}) async {
+        emitFastFromCache();
+        if (!network || busy || controller.isClosed) return;
         busy = true;
         try {
           List<PlanningTask> tasks;
@@ -1631,10 +1823,15 @@ extension PlanServiceExtension on DatabaseService {
         }
       }
 
+      emitFastFromCache();
       unawaited(pump());
       if (listenToGlobalPlanningRefresh) {
         pokeSub = _planningRefreshController.stream.listen((_) {
-          unawaited(pump());
+          final stale = _allPlansUserCache.isEmpty ||
+              _allPlansUserCacheFetchedAt == null ||
+              DateTime.now().difference(_allPlansUserCacheFetchedAt!) >
+                  _allPlansUserCacheFreshTtl;
+          unawaited(pump(network: stale));
         });
       }
       controller.onCancel = () {
@@ -1674,7 +1871,10 @@ extension PlanServiceExtension on DatabaseService {
     if (task.endDateTime != null) {
       body['end_time'] = task.endDateTime!.toUtc().toIso8601String();
     }
-    if (task.parentPlanId != null) {
+    if (task.parentPlanPocketId != null &&
+        task.parentPlanPocketId!.trim().isNotEmpty) {
+      body['parent_plan_id'] = task.parentPlanPocketId!.trim();
+    } else if (task.parentPlanId != null) {
       body['parent_plan_id'] = task.parentPlanId.toString();
     }
     final np = task.notesPlain?.trim() ?? '';
@@ -1744,6 +1944,15 @@ extension PlanServiceExtension on DatabaseService {
     required String clientPlanId,
     required Object categoryFieldForPlan,
   }) async {
+    final optimisticId = 'optimistic-$clientPlanId';
+    applyOptimisticPlanningTask(
+      task.copyWith(
+        pocketRecordId: optimisticId,
+        planRowId: clientPlanId,
+        isSynced: false,
+      ),
+    );
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
     late final Map<String, dynamic> body;
     try {
       body = await _buildPocketPlanCreateBody(
@@ -1755,6 +1964,8 @@ extension PlanServiceExtension on DatabaseService {
     } catch (e, st) {
       DatabaseService._log('ADD_PLAN_BUILD_BODY: $e');
       DatabaseService._log(st.toString());
+      clearOptimisticPlanningForPlanRow(optimisticId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return false;
     }
     try {
@@ -1763,7 +1974,22 @@ extension PlanServiceExtension on DatabaseService {
       if (task.tags.isNotEmpty) {
         await _syncPlanTagsPocket(record.id, task.tags);
       }
-      notifyPlanningRefresh();
+      final tagCatalog =
+          await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
+      final merged = task.tags.isNotEmpty
+          ? await _pb.collection(PbCollections.plans).getOne(
+                record.id,
+                expand: kPbPlanTagsExpand,
+              )
+          : record;
+      final fromServer = _planningTaskFromPocketRecord(
+        merged,
+        pocketTagCatalog: tagCatalog,
+      );
+      _upsertPlanInUserCache(fromServer);
+      _allPlansUserCacheFetchedAt = DateTime.now();
+      clearOptimisticPlanningForPlanRow(optimisticId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return true;
     } catch (e, st) {
       DatabaseService._log('ADD_PLAN_PB: $e');
@@ -2562,9 +2788,21 @@ extension PlanServiceExtension on DatabaseService {
       if (tags != null) {
         await _syncPlanTagsPocket(restId, tags);
       }
+      final tagCatalog =
+          await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
+      final merged = await _pb.collection(PbCollections.plans).getOne(
+            restId,
+            expand: kPbPlanTagsExpand,
+          );
+      final taskFromServer = _planningTaskFromPocketRecord(
+        merged,
+        pocketTagCatalog: tagCatalog,
+      );
+      _upsertPlanInUserCache(taskFromServer);
+      _allPlansUserCacheFetchedAt = DateTime.now();
       clearOptimisticPlanningForPlanRow(rid);
       clearOptimisticPlanningForPlanRow(restId);
-      notifyPlanningRefresh();
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return true;
     } catch (e, st) {
       DatabaseService._log('UPDATE_PLANNING_TASK_PB: $e');
@@ -2668,6 +2906,8 @@ extension PlanServiceExtension on DatabaseService {
         }
         final restId = await _resolvePlanRestId(id);
         await _pb.collection(PbCollections.plans).delete(restId);
+        _removePlanFromUserCache(id);
+        _removePlanFromUserCache(restId);
         clearOptimisticPlanningForPlanRow(id);
         clearOptimisticPlanningForPlanRow(restId);
         deferredNotify = true;
@@ -2797,6 +3037,158 @@ extension PlanServiceExtension on DatabaseService {
     final id = planRowId.trim();
     if (id.isEmpty) return;
     unawaited(deletePlanningTasksBulk([id]));
+  }
+
+  /// Undated child rows for a backlog parent ([PlanningTask.parentPlanPocketId]).
+  List<PlanningTask> backlogChildPlansForParent(String parentPocketPlanId) {
+    final want = parentPocketPlanId.trim();
+    if (want.isEmpty) return const [];
+    final out = <PlanningTask>[];
+    for (final t in _allPlansUserCache) {
+      if (t.startTime != null) continue;
+      if ((t.parentPlanPocketId ?? '').trim() != want) continue;
+      out.add(t);
+    }
+    for (final m in _planningOptimisticByDateKey.values) {
+      for (final t in m.values) {
+        if (t.startTime != null) continue;
+        if ((t.parentPlanPocketId ?? '').trim() != want) continue;
+        if (!out.any((x) => x.planRowIdForBackend == t.planRowIdForBackend)) {
+          out.add(t);
+        }
+      }
+    }
+    out.sort((a, b) {
+      final o = a.order.compareTo(b.order);
+      if (o != 0) return o;
+      return a.title.compareTo(b.title);
+    });
+    return out;
+  }
+
+  /// Creates a child backlog plan linked via [parent_plan_id] → parent pocket id.
+  Future<bool> addBacklogChildPlan({
+    required String parentPocketPlanId,
+    required String title,
+    required int categoryId,
+  }) async {
+    final parent = parentPocketPlanId.trim();
+    final titleTrimmed = title.trim();
+    if (parent.isEmpty || titleTrimmed.isEmpty) return false;
+    final ord = await nextBacklogPlanningOrder();
+    return addPlanningTask(
+      PlanningTask(
+        id: 0,
+        title: titleTrimmed,
+        categoryId: categoryId,
+        dateKey: '',
+        order: ord,
+        startTime: null,
+        endDateTime: null,
+        parentPlanPocketId: parent,
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Plans realtime (web + mobile multi-device sync)
+  // ---------------------------------------------------------------------------
+
+  String? _pocketBaseOwnerFilterClauseForPlans() {
+    final uid = _userIdForWhere?.trim() ?? '';
+    if (uid.isEmpty) return null;
+    return 'user_id = "${_escapeForPbFilter(uid)}"';
+  }
+
+  void _onPbPlansSubscriptionEvent(RecordSubscriptionEvent e) {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    final action = e.action.toLowerCase().trim();
+    if (action == 'delete') {
+      final id = e.record?.id.trim() ?? '';
+      if (id.isNotEmpty) {
+        _removePlanFromUserCache(id);
+        clearOptimisticPlanningForPlanRow(id);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      }
+      return;
+    }
+    final rec = e.record;
+    if (rec == null) return;
+    unawaited(() async {
+      try {
+        final tagCatalog =
+            await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
+        final task = _planningTaskFromPocketRecord(
+          rec,
+          pocketTagCatalog: tagCatalog,
+        );
+        _upsertPlanInUserCache(task);
+        _allPlansUserCacheFetchedAt = DateTime.now();
+        clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      } catch (_) {}
+    }());
+  }
+
+  Future<void> _cancelPlansRealtimeSubscription() async {
+    final unsub = _plansRealtimeUnsubscribe;
+    _plansRealtimeUnsubscribe = null;
+    if (unsub != null) {
+      try {
+        await unsub();
+      } catch (_) {}
+    }
+    try {
+      await _pb.collection(PbCollections.plans).unsubscribe();
+    } catch (_) {}
+  }
+
+  Future<void> _startPlansRealtimeSubscriptionBody() async {
+    await _cancelPlansRealtimeSubscription();
+    if (!_hasAuthenticatedUserId) return;
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) return;
+      final filter = _pocketBaseOwnerFilterClauseForPlans();
+      if (filter == null || filter.isEmpty) return;
+      Future<void> Function()? unsub;
+      try {
+        unsub = await _pb.collection(PbCollections.plans).subscribe(
+              '*',
+              _onPbPlansSubscriptionEvent,
+              filter: filter,
+              expand: kPbPlanTagsExpand,
+            );
+      } catch (_) {
+        unsub = await _pb.collection(PbCollections.plans).subscribe(
+              '*',
+              _onPbPlansSubscriptionEvent,
+              filter: filter,
+            );
+      }
+      _plansRealtimeUnsubscribe = unsub;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('plans realtime subscribe failed: $e');
+      }
+    }
+  }
+
+  Future<void> _startPlansRealtimeSubscription() async {
+    final existing = _plansRealtimeSubscribeFuture;
+    if (existing != null) return existing;
+    final f = _startPlansRealtimeSubscriptionBody();
+    _plansRealtimeSubscribeFuture = f;
+    try {
+      await f;
+    } finally {
+      _plansRealtimeSubscribeFuture = null;
+    }
+  }
+
+  /// Re-subscribe to `plans` realtime after auth when init ran without a session.
+  Future<void> ensurePlansRealtimeBridge() async {
+    unawaited(_startPlansRealtimeSubscription());
   }
 
 }

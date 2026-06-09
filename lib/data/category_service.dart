@@ -135,7 +135,7 @@ extension CategoryServiceExtension on DatabaseService {
           if (decoded is List) {
             allRows = [
               for (final e in decoded)
-                if (e is Map) Map<String, dynamic>.from(e as Map),
+                if (e is Map) Map<String, dynamic>.from(e),
             ];
           }
         }

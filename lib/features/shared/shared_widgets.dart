@@ -507,7 +507,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _startedAsUndatedBacklog = widget.task.startTime == null &&
         widget.task.dateKey.trim().length < 10;
     if (_startedAsUndatedBacklog) {
-      _tabController = TabController(length: 3, vsync: this);
+      _tabController = TabController(length: 4, vsync: this);
     } else {
       _planTabController = TabController(length: 3, vsync: this);
     }
@@ -593,7 +593,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     super.dispose();
   }
 
+  void _applyFuzzyCategoryFromTitle(String title) {
+    final fuzzy = DatabaseService.instance.findCategoryByFuzzyMatch(title);
+    if (fuzzy != null && fuzzy.id != _categoryId && mounted) {
+      setState(() => _categoryId = fuzzy.id);
+    }
+  }
+
   void _onTitleChangedForSmartTime(String raw) {
+    _applyFuzzyCategoryFromTitle(raw.trim().isEmpty ? _titleController.text : raw);
     if (_startedAsUndatedBacklog) return;
     final v = _titleController.value;
     if (!v.composing.isCollapsed) return;
@@ -911,6 +919,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                       tabs: [
                         Tab(text: t(currentLocale.value, 'notes_tab')),
                         Tab(text: t(currentLocale.value, 'checklist_tab')),
+                        Tab(text: t(currentLocale.value, 'lists_subitems_tab')),
                         Tab(
                             text: t(
                                 currentLocale.value, 'plan_idea_tab_schedule')),
@@ -1078,6 +1087,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                             ),
                           ],
                         ),
+                        _BacklogSubItemsPanel(
+                          parentTask: widget.task,
+                          categoryId: _categoryId,
+                        ),
                         ListView(
                           padding: EdgeInsets.fromLTRB(
                             16,
@@ -1140,7 +1153,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<int?>(
-                              value: _reminderMinutes,
+                              initialValue: _reminderMinutes,
                               isExpanded: true,
                               decoration: InputDecoration(
                                 labelText: t(
@@ -1185,7 +1198,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<_PlanRepeatUi>(
-                              value: _repeatUi,
+                              initialValue: _repeatUi,
                               isExpanded: true,
                               decoration: InputDecoration(
                                 labelText: t(
@@ -1686,7 +1699,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     16, 12, 16, 24),
                                 children: [
                                   DropdownButtonFormField<int?>(
-                                    value: _reminderMinutes,
+                                    initialValue: _reminderMinutes,
                                     isExpanded: true,
                                     decoration: InputDecoration(
                                       labelText: t(
@@ -1736,7 +1749,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                   ),
                                   const SizedBox(height: 12),
                                   DropdownButtonFormField<_PlanRepeatUi>(
-                                    value: _repeatUi,
+                                    initialValue: _repeatUi,
                                     isExpanded: true,
                                     decoration: InputDecoration(
                                       labelText: t(
@@ -1960,6 +1973,13 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       });
     }
     return out;
+  }
+
+  void _applyFuzzyCategoryFromRecordTitle(String title) {
+    final fuzzy = DatabaseService.instance.findCategoryByFuzzyMatch(title);
+    if (fuzzy != null && fuzzy.id != _categoryId && mounted) {
+      setState(() => _categoryId = fuzzy.id);
+    }
   }
 
   @override
@@ -2486,6 +2506,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                             ),
                             textCapitalization:
                                 TextCapitalization.sentences,
+                            onChanged: _applyFuzzyCategoryFromRecordTitle,
                           ),
                           const SizedBox(height: 8),
                           Padding(
@@ -2812,6 +2833,167 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Child backlog plans linked via [PlanningTask.parentPlanPocketId] (lists sub-items).
+class _BacklogSubItemsPanel extends StatefulWidget {
+  const _BacklogSubItemsPanel({
+    required this.parentTask,
+    required this.categoryId,
+  });
+
+  final PlanningTask parentTask;
+  final int categoryId;
+
+  @override
+  State<_BacklogSubItemsPanel> createState() => _BacklogSubItemsPanelState();
+}
+
+class _BacklogSubItemsPanelState extends State<_BacklogSubItemsPanel> {
+  final TextEditingController _newTitleController = TextEditingController();
+  StreamSubscription<void>? _planRefreshSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _planRefreshSub =
+        DatabaseService.instance.planningRefreshNotifications.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _planRefreshSub?.cancel();
+    _newTitleController.dispose();
+    super.dispose();
+  }
+
+  bool get _parentPersisted {
+    final id = widget.parentTask.planRowIdForBackend.trim();
+    return id.isNotEmpty && !id.startsWith('optimistic-');
+  }
+
+  List<PlanningTask> get _children {
+    if (!_parentPersisted) return const [];
+    return DatabaseService.instance.backlogChildPlansForParent(
+      widget.parentTask.planRowIdForBackend.trim(),
+    );
+  }
+
+  Future<void> _addSubItem() async {
+    final title = _newTitleController.text.trim();
+    if (title.isEmpty) return;
+    if (!_parentPersisted) {
+      AppSnack.show(
+        t(currentLocale.value, 'lists_subitems_save_parent_first'),
+        error: true,
+      );
+      return;
+    }
+    final ok = await DatabaseService.instance.addBacklogChildPlan(
+      parentPocketPlanId: widget.parentTask.planRowIdForBackend.trim(),
+      title: title,
+      categoryId: widget.categoryId,
+    );
+    if (!mounted) return;
+    if (ok) {
+      _newTitleController.clear();
+      setState(() {});
+    } else {
+      AppSnack.failed();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final scheme = Theme.of(context).colorScheme;
+    final children = _children;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        if (!_parentPersisted)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              t(loc, 'lists_subitems_save_parent_first'),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+            ),
+          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _newTitleController,
+                enabled: _parentPersisted,
+                textInputAction: TextInputAction.done,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  hintText: t(loc, 'lists_subitems_add_hint'),
+                  isDense: true,
+                  border: const OutlineInputBorder(),
+                ),
+                onSubmitted: (_) => unawaited(_addSubItem()),
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: _parentPersisted ? () => unawaited(_addSubItem()) : null,
+              icon: const Icon(Icons.add_rounded),
+              label: Text(t(loc, 'add')),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (children.isEmpty)
+          Text(
+            '—',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+          )
+        else
+          for (final child in children)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Checkbox(
+                value: child.isDone,
+                onChanged: child.planRowIdForBackend.startsWith('optimistic-')
+                    ? null
+                    : (v) {
+                        if (v == null) return;
+                        final db = DatabaseService.instance;
+                        db.applyOptimisticPlanningTask(
+                          child.copyWith(isDone: v),
+                        );
+                        db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+                        setState(() {});
+                        unawaited(
+                          db.updatePlanningTask(
+                            child.planRowIdForBackend,
+                            planBusinessId: child.planRowId,
+                            isDone: v,
+                            suppressAppSnack: true,
+                          ),
+                        );
+                      },
+              ),
+              title: Text(
+                child.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: child.isDone
+                    ? const TextStyle(decoration: TextDecoration.lineThrough)
+                    : null,
+              ),
+            ),
+      ],
     );
   }
 }

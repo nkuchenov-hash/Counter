@@ -191,17 +191,6 @@ DateTime? _recordLocalCalendarDate(dynamic v, [int offsetHours = 0]) {
   return DateTime(wall.year, wall.month, wall.day);
 }
 
-DateTime? _parseFlexibleDateTime(dynamic v) {
-  if (v == null) return null;
-  if (v is DateTime) return v;
-  final s = v.toString().trim();
-  if (s.isEmpty) return null;
-  // NocoDB sometimes returns without timezone; treat as UTC by app contract.
-  final hasTz = s.endsWith('Z') || s.contains('+') || (s.length > 11 && s.substring(11).contains('-'));
-  final parsed = DateTime.tryParse(hasTz ? s : '${s}Z');
-  return parsed?.toUtc();
-}
-
 /// Strict hierarchical category. Supports optional keywords per language (MULTILINGUAL_KEYWORDS).
 class CategoryRule {
   /// Synthetic id for records whose Noco `category_id` does not match any loaded rule.
@@ -699,5 +688,5 @@ Color getTagColorWithOpacity(List<CategoryRule> rules, String tag) {
   final level = (depth >= 1 && depth <= 4) ? depth : 1;
   final opacity = _pathOpacities[level - 1];
   final rule = _findRuleForTag(rules, tag);
-  return (rule?.colorOrDefault ?? Colors.grey).withOpacity(opacity);
+  return (rule?.colorOrDefault ?? Colors.grey).withValues(alpha: opacity);
 }

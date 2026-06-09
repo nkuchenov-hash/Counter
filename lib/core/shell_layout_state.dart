@@ -51,8 +51,8 @@ class ShellLayoutScope extends InheritedNotifier<ShellLayoutController> {
   const ShellLayoutScope({
     super.key,
     required ShellLayoutController controller,
-    required Widget child,
-  }) : super(notifier: controller, child: child);
+    required super.child,
+  }) : super(notifier: controller);
 
   static ShellLayoutController? _maybeController(
     BuildContext context, {

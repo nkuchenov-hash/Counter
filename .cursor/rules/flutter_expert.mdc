@@ -89,3 +89,23 @@ alwaysApply: true
 4. **No blocking initializers on record path:** Speech-to-Text prewarm, one-shot ghost cleanup, plan flush, and Wear **must not** sit on the critical **start/stop record** code path. Schedule them **after** the user-visible update (delayed/zero-duration yield + `unawaited`).
 
 5. **Wear / platform bridge:** `DatabaseService` does **not** own `MethodChannel` Wear I/O (that lives under `lib/features/wear/`). The Brain’s **Wear-lite** load path must **not** await realtime subscription or other optional background hooks that are not required for the watch UI to render.
+
+Before editing any code, read and follow:
+- CLAUDE.md
+- docs/APP_STRUCTURE.md
+- docs/ARCHITECTURE.md
+- docs/POCKETBASE_MANIFEST.md
+- docs/DATA_MAP.md
+- docs/ROADMAP.md
+
+If docs/ is not visible in the current Cursor context, stop and ask the user to attach/open the required docs.
+
+Architecture rules:
+- lib/data/ is the Brain. It must not import lib/features/.
+- lib/features/ is UI only. Durable state and PocketBase I/O belong in lib/data/.
+- database_service.dart is the Brain root; domain logic lives in part files.
+- PocketBase system ids are 15-char strings. Do not use business UUIDs in REST paths or relation payloads.
+- UI mutations must be optimistic: update local Brain cache first, notify UI, then sync PocketBase in background.
+- Do not introduce full refetch fan-out after small mutations unless unavoidable.
+- Date + time picking must use the Omni-Picker.
+- Do not rewrite architecture when fixing local bugs.

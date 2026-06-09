@@ -69,7 +69,7 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
       final child = CategoryRule(
         id: DatabaseService.instance.newId(),
         name: name,
-        colorValue: Colors.grey.value,
+        colorValue: Colors.grey.toARGB32(),
         iconCodePoint: Icons.folder_rounded.codePoint,
       );
       final ok =

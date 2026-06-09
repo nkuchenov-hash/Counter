@@ -10,6 +10,7 @@ void main() {
     'поход 13:40',
   ]) {
     final r = SmartInputParser.parseTitleForScheduledTime(s);
+    // ignore: avoid_print
     print('$s -> ${r?.hour}:${r?.minute} / "${r?.cleanedTitle}"');
   }
 }

@@ -10,9 +10,7 @@ extension RecordServiceExtension on DatabaseService {
     d['id'] = r.id;
     d['_pb_record_id'] = r.id;
     dynamic exp = r.get<dynamic>('expand.$kPbRecordCategoryExpand');
-    if (exp == null) {
-      exp = r.get<dynamic>('expand.category_id');
-    }
+    exp ??= r.get<dynamic>('expand.category_id');
     if (exp is RecordModel) {
       final cd = exp.data;
       d['category_id'] = cd['category_id']?.toString() ?? d['category_id'];
@@ -258,45 +256,6 @@ extension RecordServiceExtension on DatabaseService {
         logSuccessLine: false,
       );
     } catch (_) {}
-  }
-
-  void _registerAppLifecycleObserverOnce() {
-    if (DatabaseService._appLifecycleObserverRegistered) return;
-    DatabaseService._appLifecycleObserver.onResumed = _onAppLifecycleResumed;
-    try {
-      WidgetsBinding.instance.addObserver(DatabaseService._appLifecycleObserver);
-      DatabaseService._appLifecycleObserverRegistered = true;
-    } catch (_) {}
-  }
-
-  void _unregisterAppLifecycleObserver() {
-    if (!DatabaseService._appLifecycleObserverRegistered) return;
-    try {
-      WidgetsBinding.instance.removeObserver(DatabaseService._appLifecycleObserver);
-    } catch (_) {}
-    DatabaseService._appLifecycleObserver.onResumed = null;
-    DatabaseService._appLifecycleObserverRegistered = false;
-  }
-
-  void _onAppLifecycleResumed() {
-    if (!(currentProfileId?.isNotEmpty ?? false)) return;
-    if (!_hasAuthenticatedUserId) return;
-    _recordsRealtimeFailureStreak = 0;
-    unawaited(_resyncRecordsRealtimeAfterAppResume());
-  }
-
-  Future<void> _resyncRecordsRealtimeAfterAppResume() async {
-    try {
-      await _cancelRecordsRealtimeSubscription();
-    } catch (_) {}
-    unawaited(
-      _startRecordsRealtimeSubscription()
-          .catchError((Object _, StackTrace __) {}),
-    );
-    unawaited(
-      fetchRecords(forceNetwork: true)
-          .catchError((Object _, StackTrace __) {}),
-    );
   }
 
   Future<void> _cancelRecordsRealtimeSubscription() async {

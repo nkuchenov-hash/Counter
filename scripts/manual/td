@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# One-command deploy: analyze, build web, commit (if dirty), push main.
+# GitHub Actions (.github/workflows/deploy.yml) publishes build/web → gh-pages.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT"
+
+if [[ ! -f lib/core/env/env.dart ]]; then
+  echo "==> creating lib/core/env/env.dart from example (gitignored)"
+  mkdir -p lib/core/env
+  cp lib/core/env/env.dart.example lib/core/env/env.dart
+fi
+
+echo "==> flutter analyze"
+flutter analyze --no-fatal-infos --no-fatal-warnings
+
+echo "==> flutter build web"
+flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
+
+BRANCH="$(git branch --show-current)"
+if [[ -z "$BRANCH" ]]; then
+  echo "error: not on a git branch" >&2
+  exit 1
+fi
+
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "==> commit changes"
+  git add -A
+  git commit -m "Deploy: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+fi
+
+echo "==> push to origin/$BRANCH"
+git push origin "$BRANCH"
+
+cat <<EOF
+
+Pushed. GitHub Actions will build and deploy to gh-pages.
+Live: https://nkuchenov-hash.github.io/Counter/
+EOF

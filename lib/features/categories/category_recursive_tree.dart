@@ -321,9 +321,12 @@ class _CategoryTreeBodyState extends State<_CategoryTreeBody> {
     setState(() {
       if (_expandedIds.contains(id)) {
         _expandedIds.remove(id);
-      } else {
-        _expandedIds = {..._expandedIds, id};
+        return;
       }
+      final spine = DatabaseService.instance.categoryPathFromRootToLocalId(id);
+      final ancestors =
+          spine.length > 1 ? spine.take(spine.length - 1).toSet() : <int>{};
+      _expandedIds = {...ancestors, id};
     });
   }
 

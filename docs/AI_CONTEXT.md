@@ -203,6 +203,7 @@ Defined once foundation is solid.
 ## Snapshot (April 2026)
 
 - **Live at:** `nkuchenov-hash.github.io/Counter/`
+- **Deploy:** `.\scripts\manual\td.ps1` from repo root (`Apps/counter/`) — see `docs/DEPLOY.md`
 - **Backend:** PocketBase, self-hosted
 - **Targets:** Android, iOS, Web, Windows, macOS, Linux, Wear OS
 - **Stack:** Flutter

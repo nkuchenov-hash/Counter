@@ -109,7 +109,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             key: ValueKey<String>(_language),
-            value: _language,
+            initialValue: _language,
             decoration: InputDecoration(
               labelText: t(locale, 'language_label'),
               border: const OutlineInputBorder(),

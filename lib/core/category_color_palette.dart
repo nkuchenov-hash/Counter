@@ -31,16 +31,16 @@ final List<MaterialColor> kCategoryPickerMaterialColors = <MaterialColor>[
 ];
 
 List<int> categoryMaterialShadeValues(MaterialColor c) => <int>[
-      c[50]!.value,
-      c[100]!.value,
-      c[200]!.value,
-      c[300]!.value,
-      c[400]!.value,
-      c[500]!.value,
-      c[600]!.value,
-      c[700]!.value,
-      c[800]!.value,
-      c[900]!.value,
+      c[50]!.toARGB32(),
+      c[100]!.toARGB32(),
+      c[200]!.toARGB32(),
+      c[300]!.toARGB32(),
+      c[400]!.toARGB32(),
+      c[500]!.toARGB32(),
+      c[600]!.toARGB32(),
+      c[700]!.toARGB32(),
+      c[800]!.toARGB32(),
+      c[900]!.toARGB32(),
     ];
 
 MaterialColor categoryMaterialPrimaryForValue(int? v) {

@@ -254,10 +254,6 @@ class DatabaseService {
     return DateTime.now().isBefore(t);
   }
 
-  void _clearPocketBaseConnectivityBackoff() {
-    _pbNextAllowedNetworkAt = null;
-  }
-
   String _scopedDataCacheKey(String base) {
     final u = (currentProfileId ?? _userIdForWhere ?? '').trim();
     if (u.isEmpty) return '${base}_anon';

@@ -112,18 +112,6 @@ bool _isTimelineRestRowId(String s) {
   return false;
 }
 
-int _stableStringId(String raw, [int fallback = 0]) {
-  final s = raw.trim();
-  if (s.isEmpty) return fallback;
-  var hash = 2166136261;
-  for (final u in s.codeUnits) {
-    hash ^= u;
-    hash = (hash * 16777619) & 0x7fffffff;
-  }
-  if (hash == 0) return fallback;
-  return hash;
-}
-
 String _twoIso(int n) => n.toString().padLeft(2, '0');
 
 /// UTC ISO-8601 with **second** precision only — avoids client/server sub-second drift in UI compares.

@@ -15,7 +15,7 @@ abstract final class PlanCreateOutbox {
       if (decoded is! List) return [];
       return [
         for (final e in decoded)
-          if (e is Map) Map<String, dynamic>.from(e as Map),
+          if (e is Map) Map<String, dynamic>.from(e),
       ];
     } catch (_) {
       return [];

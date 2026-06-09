@@ -17,9 +17,6 @@ String _dataRegion = 'global';
 
 UserSettings _settings = UserSettings(userId: '');
 
-/// user_id from profile row when applicable (business string; mirrors auth id when healthy).
-String? _cachedProfileUuid;
-
 final StreamController<UserSettings> _settingsController =
     StreamController<UserSettings>.broadcast();
 
@@ -122,6 +119,7 @@ extension ProfileServiceExtension on DatabaseService {
     if (!_tagsCatalogRefreshController.isClosed) {
       _tagsCatalogRefreshController.add(null);
     }
+    syncEmbeddedPlanTagsFromCatalog();
   }
 
 
@@ -252,7 +250,6 @@ extension ProfileServiceExtension on DatabaseService {
       DatabaseService._log('Profile data loaded from PocketBase.');
       final authUid = _userIdForWhere ?? '';
       final uid = data['user_id']?.toString().trim();
-      if (uid != null && uid.isNotEmpty) _cachedProfileUuid = uid;
       final raw = data['active_languages'];
       List<String>? activeLanguages;
       if (raw is List) {
@@ -625,6 +622,13 @@ extension ProfileServiceExtension on DatabaseService {
               'icon': iconKey,
             },
           );
+      _userTagsCatalogCache = [
+        for (final t in _userTagsCatalogCache)
+          if (t.pbRecordId == rid)
+            t.copyWith(name: trimmed, color: colorHex, icon: iconKey)
+          else
+            t,
+      ];
       notifyTagsCatalogChanged();
       return true;
     } catch (e, st) {

@@ -59,6 +59,7 @@ class PlanningTask {
     this.notesPlain,
     this.notesDeltaJson,
     this.parentPlanId,
+    this.parentPlanPocketId,
     List<int>? subRecordIds,
     List<Tag>? tags,
     this.isSynced = true,
@@ -119,6 +120,8 @@ class PlanningTask {
   /// JSON-encoded Quill Delta (`Document.toDelta().toJson()`), @DATA_MAP `plans.notes_delta`.
   final String? notesDeltaJson;
   final int? parentPlanId;
+  /// PocketBase **plans.parent_plan_id** relation (15-char parent row id).
+  final String? parentPlanPocketId;
   final List<int> subRecordIds;
   final List<Tag> tags;
   /// Local-only: false for optimistic / outbox rows until PocketBase confirms.
@@ -155,7 +158,12 @@ class PlanningTask {
 
   /// Sub-task: @DATA_MAP `plans.parent_plan_id`.
   bool get hasParentPlan =>
-      parentPlanId != null && parentPlanId != 0;
+      (parentPlanPocketId != null && parentPlanPocketId!.trim().isNotEmpty) ||
+      (parentPlanId != null && parentPlanId != 0);
+
+  /// Backlog/list child row linked to a parent plan pocket id.
+  bool get isBacklogChildItem =>
+      parentPlanPocketId != null && parentPlanPocketId!.trim().isNotEmpty;
 
   /// Parsed [initialDateKey] (UTC date-only), or `null` if missing / invalid.
   DateTime? get initialDate => _dateFromDateKey(initialDateKey ?? '');
@@ -178,7 +186,10 @@ class PlanningTask {
         'category_id': categoryId,
         'is_done': isDone,
         'isSynced': isSynced,
-        if (parentPlanId != null) 'parent_plan_id': parentPlanId.toString(),
+        if (parentPlanPocketId != null && parentPlanPocketId!.trim().isNotEmpty)
+          'parent_plan_id': parentPlanPocketId!.trim()
+        else if (parentPlanId != null)
+          'parent_plan_id': parentPlanId.toString(),
         if (notesPlain != null && notesPlain!.isNotEmpty) 'notes_plain': notesPlain,
         if (notesDeltaJson != null && notesDeltaJson!.trim().isNotEmpty)
           'notes_delta': notesDeltaJson,
@@ -228,7 +239,22 @@ class PlanningTask {
         json['notes']?.toString();
     final notesDeltaJson = _notesDeltaJsonFromPb(json['notes_delta']);
     final pp = g('parentPlanId', 'parent_plan_id');
-    final int? parentPlanId = pp == null || pp.toString().isEmpty ? null : _jsonInt(pp);
+    String? parentPlanPocketId;
+    int? parentPlanId;
+    if (pp != null && pp.toString().trim().isNotEmpty) {
+      if (pp is Map) {
+        final id = (pp['id'] ?? pp['recordId'])?.toString().trim() ?? '';
+        if (id.isNotEmpty) parentPlanPocketId = id;
+      } else {
+        final s = pp.toString().trim();
+        if (s.length >= 15 && !s.contains('-')) {
+          parentPlanPocketId = s;
+        } else {
+          parentPlanId = _jsonInt(pp);
+          if (parentPlanId == 0) parentPlanId = null;
+        }
+      }
+    }
     final rawSubIds = g('subRecordIds', 'sub_record_ids');
     List<int> subRecordIds = const [];
     if (rawSubIds is List) {
@@ -303,6 +329,7 @@ class PlanningTask {
       notesPlain: notesPlain,
       notesDeltaJson: notesDeltaJson,
       parentPlanId: parentPlanId,
+      parentPlanPocketId: parentPlanPocketId,
       subRecordIds: subRecordIds,
       tags: tagList,
       isSynced: _jsonBool(g('isSynced', 'is_synced'), true),
@@ -513,6 +540,7 @@ class PlanningTask {
     String? notesDeltaJson,
     bool clearNotes = false,
     int? parentPlanId,
+    String? parentPlanPocketId,
     List<int>? subRecordIds,
     List<Tag>? tags,
     bool? isSynced,
@@ -544,6 +572,7 @@ class PlanningTask {
       notesPlain: clearNotes ? null : (notesPlain ?? this.notesPlain),
       notesDeltaJson: clearNotes ? null : (notesDeltaJson ?? this.notesDeltaJson),
       parentPlanId: parentPlanId ?? this.parentPlanId,
+      parentPlanPocketId: parentPlanPocketId ?? this.parentPlanPocketId,
       subRecordIds: subRecordIds ?? this.subRecordIds,
       tags: tags ?? this.tags,
       isSynced: isSynced ?? this.isSynced,

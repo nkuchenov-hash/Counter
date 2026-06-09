@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/data/database_service.dart';
@@ -20,7 +21,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 
-/// Backlog screen: grouped headers by category path, Play + Done + Delete, inline add.
+/// Backlog screen: grouped headers by category path, Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
   const ListsPage({
     super.key,
@@ -49,22 +50,23 @@ class _ListsPageState extends State<ListsPage>
   static const String _prefsKeyPinnedIds = 'list_pinned_ids';
   static const String _legacyPrefsKeyPinnedListChipIds = 'pinned_list_chip_ids';
 
-  List<PlanningTask> _flat = [];
-  /// Local-only rows until [fetchBacklogPlans] returns the server copy (inline add).
-  final List<PlanningTask> _pendingInline = [];
   /// Full backlog snapshot for frequency-based chips (same rules as [fetchBacklogPlans] with no filter).
   List<PlanningTask> _allBacklogForFrequency = [];
   bool _loading = true;
   int? _filterCategoryId;
+  String? _filterTagPbId;
+  List<Tag> _listTagsForFilter = const [];
   /// `'manual'` = user-pinned IDs; `'frequent'` = top categories by local backlog counts.
   String _chipMode = 'frequent';
   /// Manual mode: category IDs persisted under [_prefsKeyPinnedIds].
   List<int> _pinnedChipIds = [];
   StreamSubscription<void>? _planRefreshSub;
-  DateTime? _lastPlayDebounce;
-  static const Duration _playDebounce = Duration(milliseconds: 500);
+  StreamSubscription<void>? _tagsCatalogSub;
+  final ScrollController _chipBarScrollController = ScrollController();
+  final ScrollController _tagFilterScrollController = ScrollController();
 
   static const double _kShellBulkBarReservePx = 56;
+  static const String _kOptimisticPurgeDateKey = '2099-12-31';
   late final TextEditingController _inlineController;
   final FocusNode _inlineFocus = FocusNode();
 
@@ -77,6 +79,23 @@ class _ListsPageState extends State<ListsPage>
     final p = t.planRowIdForBackend.trim();
     if (p.isNotEmpty) return p;
     return 'plan-fallback-${t.id}-${t.order}-${t.dateKey}-${t.categoryId}-${t.title}';
+  }
+
+  /// Brain SSOT + optional list-tag filter (Phase 1 overlay).
+  List<PlanningTask> get _displayFlat {
+    final db = DatabaseService.instance;
+    var out = db.getBacklogPlansSnapshot(
+      categoryId: _filterCategoryId,
+      includeCompleted: true,
+    );
+    final tagId = _filterTagPbId?.trim() ?? '';
+    if (tagId.isNotEmpty) {
+      out = [
+        for (final t in out)
+          if (t.tags.any((tag) => (tag.pbRecordId ?? '').trim() == tagId)) t,
+      ];
+    }
+    return out;
   }
 
   void _syncListsShellFabBulkReserve() {
@@ -148,32 +167,37 @@ class _ListsPageState extends State<ListsPage>
     final tasks = _tasksMatchingSelectedKeys(display);
     if (tasks.isEmpty) return;
     final ids = <String>[];
+    final db = DatabaseService.instance;
+    final backups = <PlanningTask>[];
     for (final t in tasks) {
-      if (t.planRowIdForBackend.startsWith('optimistic-inline-')) {
-        setState(() {
-          _pendingInline.removeWhere(
-            (x) => x.planRowIdForBackend == t.planRowIdForBackend,
-          );
-        });
+      if (t.planRowIdForBackend.startsWith('optimistic-')) {
+        db.clearOptimisticPlanningForPlanRow(t.planRowIdForBackend);
         continue;
       }
-      final rid = t.recordIdForBackend.trim();
-      if (rid.isNotEmpty) ids.add(rid);
+      final pid = t.planRowIdForBackend.trim();
+      if (pid.isNotEmpty) ids.add(pid);
+      backups.add(t);
+      db.applyOptimisticPlanningTask(
+        t.copyWith(dateKey: _kOptimisticPurgeDateKey),
+      );
     }
     if (ids.isEmpty) {
+      db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      setState(() {});
       _exitListsSelectMode();
       return;
     }
-    setState(() {
-      _flat = _flat
-          .where(
-            (x) => !tasks.any(
-              (s) => s.planRowIdForBackend == x.planRowIdForBackend,
-            ),
-          )
-          .toList();
-    });
-    await DatabaseService.instance.deletePlanningTasksBulk(ids);
+    db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    setState(() {});
+    final ok = await db.deletePlanningTasksBulk(ids);
+    if (!ok && mounted) {
+      for (final t in backups) {
+        db.applyOptimisticPlanningTask(t);
+      }
+      db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      setState(() {});
+      AppSnack.failed();
+    }
     if (mounted) _exitListsSelectMode();
   }
 
@@ -232,11 +256,36 @@ class _ListsPageState extends State<ListsPage>
     super.initState();
     _inlineController = TextEditingController();
     CategoryVisibilityPrefs.hiddenIds.addListener(_listsVisibilityListener);
-    _planRefreshSub =
-        DatabaseService.instance.planningRefreshNotifications.listen((_) {
-      if (mounted) unawaited(_reload());
+    final db = DatabaseService.instance;
+    _planRefreshSub = db.planningRefreshNotifications.listen((_) {
+      if (!mounted) return;
+      _applyBacklogFromBrainSnapshot();
+      unawaited(_reloadFromNetwork());
+    });
+    _tagsCatalogSub = db.tagsCatalogUpdated.listen((_) {
+      if (!mounted) return;
+      unawaited(_loadListTagsForFilter());
     });
     unawaited(_bootstrap());
+  }
+
+  Future<void> _loadListTagsForFilter() async {
+    final tags = await DatabaseService.instance.fetchTagsForCurrentUser(
+      scope: TagCatalogScope.list,
+    );
+    if (!mounted) return;
+    setState(() => _listTagsForFilter = tags);
+  }
+
+  void _applyBacklogFromBrainSnapshot() {
+    final db = DatabaseService.instance;
+    setState(() {
+      _allBacklogForFrequency = db.getBacklogPlansSnapshot(
+        categoryId: null,
+        includeCompleted: true,
+      );
+      _loading = false;
+    });
   }
 
   Future<void> _bootstrap() async {
@@ -244,6 +293,7 @@ class _ListsPageState extends State<ListsPage>
     await _loadPersistedFilter();
     await _loadChipModeAndPinnedIds();
     await _maybeMigrateListTagsPrefToUserScope();
+    await _loadListTagsForFilter();
     if (!mounted) return;
     await _reload();
   }
@@ -299,10 +349,6 @@ class _ListsPageState extends State<ListsPage>
           onDelete: () {
             dismiss();
             unawaited(_confirmAndDelete(task));
-          },
-          onStart: () {
-            dismiss();
-            _onPlay(task);
           },
         );
       },
@@ -428,11 +474,6 @@ class _ListsPageState extends State<ListsPage>
     for (final t in _allBacklogForFrequency) {
       counts[t.categoryId] = (counts[t.categoryId] ?? 0) + 1;
     }
-    for (final t in _pendingInline) {
-      if (t.startTime == null) {
-        counts[t.categoryId] = (counts[t.categoryId] ?? 0) + 1;
-      }
-    }
     final entries = counts.entries.toList()
       ..sort((a, b) {
         final byCount = b.value.compareTo(a.value);
@@ -457,27 +498,88 @@ class _ListsPageState extends State<ListsPage>
     } else {
       raw = List<int>.from(_pinnedChipIds);
     }
-    return raw
+    final visible = raw
         .where((id) => !CategoryVisibilityPrefs.isHiddenOrAncestor(id))
         .toList();
+    final active = _filterCategoryId;
+    if (active != null && visible.contains(active)) {
+      return [active, ...visible.where((x) => x != active)];
+    }
+    return visible;
+  }
+
+  List<Tag> _tagsForFilterBar() {
+    final tags = [
+      for (final t in _listTagsForFilter)
+        if (TagCatalogScope.list.matchesTag(t)) t,
+    ];
+    final active = _filterTagPbId?.trim() ?? '';
+    if (active.isEmpty) return tags;
+    final idx = tags.indexWhere((t) => (t.pbRecordId ?? '').trim() == active);
+    if (idx <= 0) return tags;
+    final picked = tags[idx];
+    return [picked, ...tags.where((t) => t != picked)];
+  }
+
+  void _scrollChipBarToStart() {
+    for (final c in [_chipBarScrollController, _tagFilterScrollController]) {
+      if (!c.hasClients) continue;
+      unawaited(
+        c.animateTo(
+          0,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    }
   }
 
   void _onFilterChanged(int? id) {
+    if (id != null && _chipMode == 'manual') {
+      final next = List<int>.from(_pinnedChipIds)..remove(id);
+      next.insert(0, id);
+      _pinnedChipIds = _sanitizeIntCategoryIds(next);
+      unawaited(_persistPinnedChipIds(_pinnedChipIds));
+    }
     setState(() {
       _filterCategoryId = id;
-      _loading = true;
       _listsSelectMode = false;
       _selectedListKeys.clear();
     });
     unawaited(_persistFilterCategoryId(id));
-    unawaited(_reload());
+    _scrollChipBarToStart();
   }
 
-  /// Manual chip picker: tree of [CategoryRule] — parents collapsed by default.
-  /// [depth] drives horizontal indent so nested `parent_id` chains read clearly.
+  void _onTagFilterChanged(String? tagPbId) {
+    final next = tagPbId?.trim();
+    setState(() {
+      _filterTagPbId = (next == null || next.isEmpty) ? null : next;
+      _listsSelectMode = false;
+      _selectedListKeys.clear();
+    });
+    _scrollChipBarToStart();
+  }
+
+  Future<void> _exportVisibleListAsText(List<PlanningTask> visible) async {
+    final loc = currentLocale.value;
+    if (visible.isEmpty) {
+      AppSnack.show(t(loc, 'lists_export_empty'), error: true);
+      return;
+    }
+    final lines = <String>[];
+    for (var i = 0; i < visible.length; i++) {
+      lines.add('${i + 1}. ${visible[i].title.trim()}');
+    }
+    await Clipboard.setData(ClipboardData(text: lines.join('\n')));
+    AppSnack.show(t(loc, 'lists_export_copied'));
+  }
+
+  /// Manual chip picker: tree of [CategoryRule] — accordion (one branch open per level).
   Widget _buildManualCategoryTreeTile(
     CategoryRule r,
     Set<int> sel,
+    Set<int> expandedIds,
+    void Function(int id) onToggleExpand,
     void Function(void Function()) setModal, {
     int depth = 0,
   }) {
@@ -511,11 +613,19 @@ class _ListsPageState extends State<ListsPage>
         ),
       );
     }
+    final expanded = expandedIds.contains(r.id);
     return Padding(
       padding: depthPad,
       child: ExpansionTile(
-        key: PageStorageKey<int>(r.id),
-        initiallyExpanded: false,
+        key: ValueKey<int>(r.id),
+        initiallyExpanded: expanded,
+        onExpansionChanged: (open) {
+          if (open) {
+            onToggleExpand(r.id);
+          } else {
+            setModal(() => expandedIds.remove(r.id));
+          }
+        },
         tilePadding: const EdgeInsets.symmetric(horizontal: 4),
         title: Row(
           children: [
@@ -533,8 +643,76 @@ class _ListsPageState extends State<ListsPage>
         ),
         children: [
           for (final c in kids)
-            _buildManualCategoryTreeTile(c, sel, setModal, depth: depth + 1),
+            _buildManualCategoryTreeTile(
+              c,
+              sel,
+              expandedIds,
+              onToggleExpand,
+              setModal,
+              depth: depth + 1,
+            ),
         ],
+      ),
+    );
+  }
+
+  void _toggleManualTreeExpand(
+    int id,
+    void Function(void Function()) setModal,
+    Set<int> expandedIds,
+  ) {
+    setModal(() {
+      if (expandedIds.contains(id)) {
+        expandedIds.remove(id);
+        return;
+      }
+      final spine =
+          DatabaseService.instance.categoryPathFromRootToLocalId(id);
+      final ancestors =
+          spine.length > 1 ? spine.take(spine.length - 1).toSet() : <int>{};
+      expandedIds
+        ..clear()
+        ..addAll({...ancestors, id});
+    });
+  }
+
+  Widget _buildListTagFilterChip({
+    required String label,
+    required bool selected,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: selected
+                ? scheme.primary.withValues(alpha: 0.42)
+                : color.withValues(alpha: 0.22),
+            border: Border.all(
+              color: selected ? scheme.primary : color,
+              width: selected ? 2 : 1,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: selected ? scheme.onPrimary : scheme.onSurface,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                  ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -544,6 +722,7 @@ class _ListsPageState extends State<ListsPage>
     final db = DatabaseService.instance;
     var mode = _chipMode;
     final sel = Set<int>.from(_pinnedChipIds);
+    final expandedManualTreeIds = <int>{};
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -610,7 +789,17 @@ class _ListsPageState extends State<ListsPage>
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           children: [
                             for (final r in db.rules)
-                              _buildManualCategoryTreeTile(r, sel, setModal),
+                              _buildManualCategoryTreeTile(
+                                r,
+                                sel,
+                                expandedManualTreeIds,
+                                (id) => _toggleManualTreeExpand(
+                                  id,
+                                  setModal,
+                                  expandedManualTreeIds,
+                                ),
+                                setModal,
+                              ),
                           ],
                         ),
                       ),
@@ -618,7 +807,7 @@ class _ListsPageState extends State<ListsPage>
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: DropdownButtonFormField<String>(
-                        value: completionDraft,
+                        initialValue: completionDraft,
                         decoration: InputDecoration(
                           labelText: t(loc, 'lists_completion_title'),
                           border: const OutlineInputBorder(),
@@ -651,6 +840,18 @@ class _ListsPageState extends State<ListsPage>
                       title: Text(t(loc, 'lists_show_list_tags')),
                       value: showTagsDraft,
                       onChanged: (v) => setModal(() => showTagsDraft = v),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.copy_rounded),
+                      title: Text(t(loc, 'lists_export_text')),
+                      onTap: () {
+                        Navigator.of(ctx).pop();
+                        final flat = _listsApplyCompletionLayout(
+                          _displayFlat,
+                          completionDraft,
+                        );
+                        unawaited(_exportVisibleListAsText(flat));
+                      },
                     ),
                     ListTile(
                       leading: const Icon(Icons.label_outline_rounded),
@@ -725,28 +926,20 @@ class _ListsPageState extends State<ListsPage>
   void dispose() {
     CategoryVisibilityPrefs.hiddenIds.removeListener(_listsVisibilityListener);
     _planRefreshSub?.cancel();
+    _tagsCatalogSub?.cancel();
+    _chipBarScrollController.dispose();
+    _tagFilterScrollController.dispose();
     _inlineController.dispose();
     _inlineFocus.dispose();
     super.dispose();
   }
 
-  List<PlanningTask> get _displayFlat {
-    final seen = <String>{};
-    final out = <PlanningTask>[];
-    for (final t in _pendingInline) {
-      final k = t.planRowIdForBackend.trim();
-      if (k.isEmpty) continue;
-      if (seen.add(k)) out.add(t);
-    }
-    for (final t in _flat) {
-      final k = t.planRowIdForBackend.trim();
-      if (k.isEmpty) continue;
-      if (seen.add(k)) out.add(t);
-    }
-    return out;
+  Future<void> _reload() async {
+    _applyBacklogFromBrainSnapshot();
+    await _reloadFromNetwork();
   }
 
-  Future<void> _reload() async {
+  Future<void> _reloadFromNetwork() async {
     final db = DatabaseService.instance;
     final results = await Future.wait<List<PlanningTask>>([
       db.fetchBacklogPlans(
@@ -755,24 +948,10 @@ class _ListsPageState extends State<ListsPage>
       ),
       db.fetchBacklogPlans(categoryId: null),
     ]);
-    final list = results[0];
     final allBacklog = results[1];
     if (!mounted) return;
     setState(() {
-      _flat = list;
       _allBacklogForFrequency = allBacklog;
-      _pendingInline.removeWhere((p) {
-        if (!p.planRowIdForBackend.startsWith('optimistic-inline-')) {
-          return false;
-        }
-        return list.any(
-          (s) =>
-              s.title == p.title &&
-              s.categoryId == p.categoryId &&
-              s.startTime == null &&
-              !s.planRowIdForBackend.startsWith('optimistic-'),
-        );
-      });
       _loading = false;
     });
   }
@@ -842,18 +1021,14 @@ class _ListsPageState extends State<ListsPage>
     final withOrders = <PlanningTask>[
       for (var i = 0; i < next.length; i++) next[i].copyWith(order: i),
     ];
-    setState(() {
-      final byId = {for (final t in _flat) t.planRowIdForBackend: t};
-      for (final t in withOrders) {
-        final id = t.planRowIdForBackend;
-        if (byId.containsKey(id)) {
-          byId[id] = t;
-        }
-      }
-      _flat = byId.values.toList()..sort(_sortTasks);
-    });
+    final db = DatabaseService.instance;
+    for (final t in withOrders) {
+      db.applyOptimisticPlanningTask(t);
+    }
+    db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    setState(() {});
     unawaited(
-      DatabaseService.instance.persistPlanningTaskOrder(
+      db.persistPlanningTaskOrder(
         withOrders,
         baselineBeforeReorder: orderedBefore,
       ),
@@ -879,8 +1054,6 @@ class _ListsPageState extends State<ListsPage>
           widget.onEditTask?.call(task);
         }
       },
-      onLongPress: null,
-      onPlay: () => _onPlay(task),
       onToggleDone: (done) => _onListToggleDone(task, done),
       onDelete: () => unawaited(_confirmAndDelete(task)),
       onOpenMenu: (anchorCtx) => _showListsRadialMenu(anchorCtx, task, key),
@@ -891,15 +1064,12 @@ class _ListsPageState extends State<ListsPage>
     if (task.planRowIdForBackend.startsWith('optimistic-')) return;
     if (task.isDone == toDone) return;
     final updated = task.copyWith(isDone: toDone);
-    final snapshot = List<PlanningTask>.from(_flat);
-    setState(() {
-      _flat = [
-        for (final t in _flat)
-          if (t.planRowIdForBackend == task.planRowIdForBackend) updated else t,
-      ];
-    });
+    final db = DatabaseService.instance;
+    db.applyOptimisticPlanningTask(updated);
+    db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    setState(() {});
     unawaited(
-      DatabaseService.instance
+      db
           .updatePlanningTask(
             task.planRowIdForBackend,
             planBusinessId: task.planRowId,
@@ -907,7 +1077,12 @@ class _ListsPageState extends State<ListsPage>
             suppressAppSnack: true,
           )
           .then((ok) {
-            if (!ok && mounted) setState(() => _flat = snapshot);
+            if (!ok && mounted) {
+              db.applyOptimisticPlanningTask(task);
+              db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+              setState(() {});
+              AppSnack.failed();
+            }
           }),
     );
   }
@@ -964,80 +1139,27 @@ class _ListsPageState extends State<ListsPage>
       return;
     }
 
-    final optId =
-        'optimistic-inline-${DateTime.now().microsecondsSinceEpoch}';
-    final pending = PlanningTask(
-      id: 0,
-      planRowId: optId,
-      title: title,
-      categoryId: cat,
-      dateKey: '',
-      order: 0,
-      startTime: null,
-      endDateTime: null,
-      rrule: null,
-    );
-    setState(() {
-      _pendingInline.insert(0, pending);
-      _inlineController.clear();
-    });
-    unawaited(_persistInlineAdd(pending));
-  }
-
-  Future<void> _persistInlineAdd(PlanningTask optimistic) async {
-    final ord = await DatabaseService.instance.nextBacklogPlanningOrder();
-    final ok = await DatabaseService.instance.addPlanningTask(
-      PlanningTask(
-        id: 0,
-        title: optimistic.title.trim(),
-        categoryId: optimistic.categoryId,
-        dateKey: '',
-        order: ord,
-        startTime: null,
-        endDateTime: null,
-        rrule: null,
-      ),
-    );
-    if (!mounted) return;
-    if (!ok) {
-      setState(() {
-        _pendingInline.removeWhere(
-          (t) => t.planRowIdForBackend == optimistic.planRowIdForBackend,
-        );
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
-      );
-      return;
-    }
-    unawaited(_reload());
-  }
-
-  void _onPlay(PlanningTask task) {
-    if (task.planRowIdForBackend.startsWith('optimistic-inline-')) return;
-    final tick = DateTime.now();
-    if (_lastPlayDebounce != null &&
-        tick.difference(_lastPlayDebounce!) < _playDebounce) {
-      return;
-    }
-    _lastPlayDebounce = tick;
-    final loc = currentLocale.value;
+    _inlineController.clear();
+    setState(() {});
     unawaited(() async {
-      final id = await DatabaseService.instance.startRecordFromPlanTask(task);
-      if (!mounted) return;
-      if (id == null || id.trim().isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(loc, 'plan_save_failed'))),
-        );
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(loc, 'record_started_message').replaceFirst('%s', task.title),
-          ),
+      final db = DatabaseService.instance;
+      final ord = await db.nextBacklogPlanningOrder();
+      final ok = await db.addPlanningTask(
+        PlanningTask(
+          id: 0,
+          title: title,
+          categoryId: cat,
+          dateKey: '',
+          order: ord,
+          startTime: null,
+          endDateTime: null,
+          rrule: null,
         ),
       );
+      if (!mounted) return;
+      if (!ok) {
+        AppSnack.failed();
+      }
     }());
   }
 
@@ -1066,28 +1188,28 @@ class _ListsPageState extends State<ListsPage>
 
   void _onDelete(PlanningTask task) {
     final id = task.planRowIdForBackend.trim();
-    if (id.startsWith('optimistic-inline-')) {
-      setState(() {
-        _pendingInline.removeWhere((t) => t.planRowIdForBackend == id);
-      });
+    final db = DatabaseService.instance;
+    if (id.startsWith('optimistic-')) {
+      db.clearOptimisticPlanningForPlanRow(id);
+      db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      setState(() {});
       return;
     }
 
     final backup = task;
-    setState(() {
-      _flat = _flat.where((x) => x.planRowIdForBackend != id).toList();
-    });
+    db.applyOptimisticPlanningTask(
+      task.copyWith(dateKey: _kOptimisticPurgeDateKey),
+    );
+    db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    setState(() {});
     unawaited(() async {
-      final ok =
-          await DatabaseService.instance.deletePlanningTasksBulk([id]);
+      final ok = await db.deletePlanningTasksBulk([id]);
       if (!mounted) return;
       if (!ok) {
-        setState(() {
-          _flat = [..._flat, backup]..sort(_sortTasks);
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
-        );
+        db.applyOptimisticPlanningTask(backup);
+        db.notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        setState(() {});
+        AppSnack.failed();
       }
     }());
   }
@@ -1114,7 +1236,7 @@ class _ListsPageState extends State<ListsPage>
                 .showListTagsOnCards;
         return ValueListenableBuilder<List<int>>(
           valueListenable: CategoryVisibilityPrefs.hiddenIds,
-          builder: (context, _, __) {
+          builder: (context, _, _) {
             final chipIds = _chipIdsForBar();
             final flat = _displayFlat;
             final forGrouping = listBeh == 'archive'
@@ -1182,6 +1304,14 @@ class _ListsPageState extends State<ListsPage>
                                       widget.onDateChanged?.call(d),
                                 ),
                               ),
+                              if (filterId != null)
+                                IconButton(
+                                  tooltip: t(loc, 'lists_export_text'),
+                                  onPressed: () => unawaited(
+                                    _exportVisibleListAsText(forGrouping),
+                                  ),
+                                  icon: const Icon(Icons.copy_rounded),
+                                ),
                               IconButton(
                                 tooltip: t(loc, 'lists_chip_bar_settings_tooltip'),
                                 onPressed: _openChipBarSettingsSheet,
@@ -1238,6 +1368,7 @@ class _ListsPageState extends State<ListsPage>
                                 },
                               )
                             : ListView(
+                                controller: _chipBarScrollController,
                                 scrollDirection: Axis.horizontal,
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 8),
@@ -1263,6 +1394,55 @@ class _ListsPageState extends State<ListsPage>
                                 ],
                               ),
                       ),
+                      if (filterId != null &&
+                          _tagsForFilterBar().isNotEmpty)
+                        SizedBox(
+                          height: 44,
+                          child: ListView(
+                            controller: _tagFilterScrollController,
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsetsDirectional.only(end: 8),
+                                child: _buildListTagFilterChip(
+                                  label: t(loc, 'lists_filter_tag_all'),
+                                  selected: _filterTagPbId == null,
+                                  color: theme.colorScheme.outline,
+                                  onTap: () => _onTagFilterChanged(null),
+                                ),
+                              ),
+                              for (final tag in _tagsForFilterBar())
+                                Padding(
+                                  padding: const EdgeInsetsDirectional.only(
+                                      end: 8),
+                                  child: _buildListTagFilterChip(
+                                    label: tag.name.trim().isNotEmpty
+                                        ? tag.name.trim()
+                                        : '#${tag.tagId}',
+                                    selected: (_filterTagPbId ?? '') ==
+                                        (tag.pbRecordId ?? '').trim(),
+                                    color: parseTagHexColor(tag.color) ??
+                                        theme.colorScheme.primary,
+                                    onTap: () {
+                                      final id =
+                                          (tag.pbRecordId ?? '').trim();
+                                      if (id.isEmpty) return;
+                                      if (_filterTagPbId == id) {
+                                        _onTagFilterChanged(null);
+                                      } else {
+                                        _onTagFilterChanged(id);
+                                      }
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       if (filterId != null)
                         Padding(
                           padding:
@@ -1555,8 +1735,6 @@ class _BacklogPlanCard extends StatelessWidget {
     required this.selectionMode,
     required this.isSelected,
     required this.onBodyTap,
-    this.onLongPress,
-    required this.onPlay,
     required this.onToggleDone,
     required this.onDelete,
     required this.onOpenMenu,
@@ -1568,8 +1746,6 @@ class _BacklogPlanCard extends StatelessWidget {
   final bool selectionMode;
   final bool isSelected;
   final VoidCallback onBodyTap;
-  final VoidCallback? onLongPress;
-  final VoidCallback onPlay;
   final void Function(bool toDone) onToggleDone;
   final VoidCallback onDelete;
   final void Function(BuildContext anchorContext) onOpenMenu;
@@ -1594,44 +1770,38 @@ class _BacklogPlanCard extends StatelessWidget {
           : null,
       child: InkWell(
         onTap: onBodyTap,
-        onLongPress: onLongPress,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 0),
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Padding(
-                padding: const EdgeInsetsDirectional.only(start: 2, top: 4),
-                child: selectionMode
-                    ? Checkbox(
-                        value: isSelected,
-                        onChanged: (_) => onBodyTap(),
-                      )
-                    : Checkbox(
-                        value: task.isDone,
-                        onChanged: task.planRowIdForBackend
-                                .startsWith('optimistic-')
-                            ? null
-                            : (v) {
-                                if (v == null) return;
-                                onToggleDone(v);
-                              },
-                      ),
-              ),
+              selectionMode
+                  ? Checkbox(
+                      value: isSelected,
+                      onChanged: (_) => onBodyTap(),
+                    )
+                  : Checkbox(
+                      value: task.isDone,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      onChanged: task.planRowIdForBackend
+                              .startsWith('optimistic-')
+                          ? null
+                          : (v) {
+                              if (v == null) return;
+                              onToggleDone(v);
+                            },
+                    ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.only(
-                    top: 6,
-                    bottom: 2,
-                    end: 4,
-                  ),
+                  padding: const EdgeInsetsDirectional.only(end: 4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         task.title,
-                        maxLines: 4,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: task.isDone
                             ? const TextStyle(decoration: TextDecoration.lineThrough)
@@ -1674,16 +1844,7 @@ class _BacklogPlanCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (!selectionMode) ...[
-                IconButton(
-                  style: IconButton.styleFrom(
-                    splashFactory: NoSplash.splashFactory,
-                    hoverColor: Colors.transparent,
-                  ),
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  onPressed: onPlay,
-                  tooltip: t(locale, 'start'),
-                ),
+              if (!selectionMode)
                 Builder(
                   builder: (menuCtx) {
                     return IconButton(
@@ -1703,7 +1864,6 @@ class _BacklogPlanCard extends StatelessWidget {
                     );
                   },
                 ),
-              ],
             ],
           ),
         ),
@@ -1712,7 +1872,7 @@ class _BacklogPlanCard extends StatelessWidget {
   }
 }
 
-/// Same semi-circle satellite pattern as Planning task cards; fourth action: Start.
+/// Semi-circle satellite menu for list/backlog cards (no Start — lists are not time-bound).
 class _ListsSemicircleMenuOverlay extends StatefulWidget {
   const _ListsSemicircleMenuOverlay({
     required this.anchorCenter,
@@ -1720,7 +1880,6 @@ class _ListsSemicircleMenuOverlay extends StatefulWidget {
     required this.onEdit,
     required this.onSelect,
     required this.onDelete,
-    required this.onStart,
   });
 
   final Offset anchorCenter;
@@ -1728,7 +1887,6 @@ class _ListsSemicircleMenuOverlay extends StatefulWidget {
   final VoidCallback onEdit;
   final VoidCallback onSelect;
   final VoidCallback onDelete;
-  final VoidCallback onStart;
 
   @override
   State<_ListsSemicircleMenuOverlay> createState() =>
@@ -1849,7 +2007,7 @@ class _ListsSemicircleMenuOverlayState extends State<_ListsSemicircleMenuOverlay
     );
 
     double angleForSatellite(int i) {
-      return (2 * math.pi / 3) + i * (2 * math.pi / 9);
+      return math.pi + i * (math.pi / 3);
     }
 
     return Material(
@@ -1897,15 +2055,6 @@ class _ListsSemicircleMenuOverlayState extends State<_ListsSemicircleMenuOverlay
                   background: scheme.errorContainer,
                   foreground: scheme.onErrorContainer,
                   onTap: widget.onDelete,
-                ),
-                _labeledAction(
-                  index: 3,
-                  offsetFromHub: _orbitOffsetLeftArc(angleForSatellite(3)),
-                  icon: Icons.play_arrow_rounded,
-                  label: t(loc, 'start'),
-                  background: scheme.tertiaryContainer,
-                  foreground: scheme.onTertiaryContainer,
-                  onTap: widget.onStart,
                 ),
                 Positioned(
                   left: _canvas / 2 - _hub / 2,

@@ -1,2 +1,0 @@
-id,record_id,user_id,category_id,title,start_time,end_time,status,type,checklist
-1,22222222-2222-4222-8222-222222222222,11111111-1111-4111-8111-111111111111,cat-life,Sample block,2024-06-01T10:00:00.000Z,2024-06-01T11:00:00.000Z,completed,record,"[]"

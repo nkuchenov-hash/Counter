@@ -9,7 +9,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 | File | Purpose |
 | :--- | :--- |
 | `docs/ROADMAP.md` | Current plan — phases, bugs, component work. **Read this first before suggesting any structural changes.** |
-| `AUDIT_NOTES.md` | Full April 2026 audit findings that produced the roadmap. |
+| `docs/reports/AUDIT_NOTES.md` | Full April 2026 audit findings that produced the roadmap. |
 | `docs/APP_STRUCTURE.md` | Physical directory map and module interaction rules. |
 | `docs/ARCHITECTURE.md` | Iron Laws, core contracts, data flow. The authoritative technical reference. |
 | `docs/POCKETBASE_MANIFEST.md` | PocketBase URL, collection names, relation fields. |
@@ -17,7 +17,59 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ---
 
-## Where things live
+## Structure check (vs `docs/APP_STRUCTURE.md`)
+
+Verified 2026-06-09. **Core layout matches** the documented map: `lib/data/` (Brain + part files), `lib/features/` (UI modules), `lib/core/` (theme + widgets), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
+
+**Known drift** (harmless; do not “fix” unless asked):
+
+| Item | Actual | Doc says |
+| :--- | :--- | :--- |
+| Brain import path | `package:counter/data/database_service.dart` | same; plus legacy barrel `lib/database_service.dart` → re-exports `data/` |
+| Models import path | `package:counter/data/models.dart` | same; plus legacy barrel `lib/models.dart` |
+| Planning widget name | `PlanningPage` / `PlanningSwipeWrapper` in `planning_view.dart` | file name only (no `PlanningView` class) |
+| Lists widget name | `ListsPage` in `lists_view.dart` | file name only |
+| Extra at `lib/` root | `auth_service.dart`, `auth_screen.dart` (OAuth legacy) | only `features/auth/` listed |
+| Extra data files | `base_database.dart`, `voice_audio_web.dart` | stubs only in doc |
+| Governing docs path | `counter/docs/*.md` | some older refs say `lib/DATA_MAP.md` |
+
+---
+
+## Screen & sheet navigation (open these first)
+
+Short routing map for Cursor / AI. Symbols in backticks.
+
+| What | File | Entry symbol / notes |
+| :--- | :--- | :--- |
+| **Lists screen** | `lib/features/lists/lists_view.dart` | `ListsPage` — wired in `app_shell.dart` IndexedStack index 3 |
+| **Plans screen** | `lib/features/planning/planning_view.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |
+| **Shared edit sheets** | `lib/features/shared/shared_widgets.dart` | `ActivityDetailSheet` (router) → `_PlanningTaskEditSheet` (plans/lists) or `_TimelineRecordSheetContent` (timeline records); `showAppDateTimePicker` (Omni-Picker entry) |
+| **Bulk plan edit** | `lib/features/planning/bulk_planning_edit_sheet.dart` | bulk date/time moves (also uses `showAppDateTimePicker`) |
+| **Sheet host (modal)** | `lib/app_shell.dart` | `_openEditDialog` / `_showEditRecordSheetForTimeline` → `showModalBottomSheet` + `ActivityDetailSheet` |
+| **Category create** | `lib/features/categories/create_category_dialog.dart` | dialog; calls `DatabaseService.addNestedCategory` |
+| **Category edit** | `lib/features/categories/category_list_view.dart` | `CategoryEditorSheet`, `_showCategoryEditorSheet`; appearance quick sheet `_showCategoryAppearanceSheet` |
+| **Category tree picker** | `lib/features/categories/category_recursive_tree.dart` | `showCategoryTreePicker` |
+| **Tag data (Brain)** | `lib/data/profile_service.dart` | `fetchTagsForCurrentUser`, `createTagForCurrentUser`, `patchTagForCurrentUser`, `deleteTagByPocketRecordId`, `notifyTagsCatalogChanged` |
+| **Tag model** | `lib/data/models/tag.dart` | `Tag`, `TagCatalogScope` |
+| **Tag UI — manager** | `lib/features/profile/tag_manager_page.dart` | `TagManagerPage` (`pocketTagDomain: 'plan'` or `'list'`) |
+| **Tag UI — display prefs** | `lib/features/profile/tag_settings_view.dart` | `tag_display_mode` on profile |
+| **Tag UI — pickers** | `lib/features/shared/chip_component.dart` | `TagQuickPickStrip`, `TagChip` |
+| **Tag UI in edit sheet** | `lib/features/shared/shared_widgets.dart` | tag strip inside `_PlanningTaskEditSheet` |
+| **PB config** | `lib/data/pb_config.dart` | `kPocketBaseUrl`, `PbCollections`, expand constants |
+| **PB — records** | `lib/data/record_service.dart` | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, realtime |
+| **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `planningStream`, `_syncPlanTagsPocket` |
+| **PB — categories** | `lib/data/category_service.dart` | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
+| **PB — tags** | `lib/data/profile_service.dart` | (same as tag data row above) |
+| **PB — auth / bootstrap** | `lib/data/auth_bridge.dart`, `lib/data/db_core.dart` | session, `ensurePocketBaseReady`, `loadInitialData` |
+| **Date/time header strip** | `lib/core/widgets/global_app_header.dart` | `GlobalAppHeader` + `AppBarLiveClock` |
+| **Per-screen header chrome** | `lib/features/timeline/timeline_widgets.dart` | `TimelineTopDateStrip` (timeline) |
+| | `lib/features/planning/planning_view.dart` | custom `Material` + `kToolbarHeight` row hosting `GlobalAppHeader` (~L2286) |
+| | `lib/features/lists/lists_view.dart` | same pattern (~L1137) |
+| **Material `AppBar` (opaque nav bar)** | not on main tabs | Main tabs use **no** `Scaffold.appBar`; header is the surface strip above. `AppBar` remains on secondary routes: `category_list_view.dart`, `profile_view.dart`, `more_view.dart`, `tag_settings_*.dart`, `SettingsPage` in `app_shell.dart`, and nested Lists tag-manager push |
+
+---
+
+## Where things live (symbols)
 
 Routing map for AI assistants: open these first instead of grepping. Update this table whenever a canonical symbol moves or is renamed.
 
@@ -97,6 +149,14 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
 ---
 
+## F1 / Lists — open TODOs
+
+| Item | Status | Notes |
+| :--- | :--- | :--- |
+| Backlog pin / fix important items | **Schema gap** | No `plans.is_pinned` in PocketBase yet. Proposed: `plans.is_pinned` (bool) on backlog/list rows; sort pinned before unpinned. Do not implement client-only pin state. See `lists_pin_item_todo` in `dictionary.dart`. |
+
+---
+
 ## Architecture rules (from Iron Laws)
 
 - **Optimistic UI:** Start/Stop/Update on records must never block the UI. Apply local shadow first (<100ms), sync to PocketBase async, roll back on failure.
@@ -112,6 +172,8 @@ See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 Flutter · PocketBase (self-hosted) · Dart
 Targets: Android, iOS, Web, Windows, macOS, Linux, Wear OS
 Live: `nkuchenov-hash.github.io/Counter/`
+
+**Deploy (GitHub Pages):** `.\scripts\manual\td.ps1` or `./scripts/manual/td` from repo root (`Apps/counter/`). See `docs/DEPLOY.md`.
 
 ---
 
