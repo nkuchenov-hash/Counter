@@ -19,7 +19,7 @@ jobs:
       - name: 'Set up Flutter 3.41.6 (Dart 3.11 satisfies pubspec sdk ^3.11.0)'
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'any'
+          flutter-version: '3.41.6'
           channel: 'stable'
 
       - name: Flutter doctor (CI environment diagnostics)
@@ -34,7 +34,7 @@ jobs:
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4

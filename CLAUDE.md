@@ -131,7 +131,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 
 ## Confirmed bugs (fix before anything else)
 
-See `ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
+See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
 - **`models/category.dart`** — category ID hash collision → **fixed** with `_stableStringHash` (FNV-style polynomial, cross-platform deterministic)
 - **`models/record.dart`** — `dateKey` uses device timezone, not profile timezone → **fixed** with `timezoneOffsetHours` parameter on `TimelineRecord`
@@ -173,7 +173,7 @@ Flutter · PocketBase (self-hosted) · Dart
 Targets: Android, iOS, Web, Windows, macOS, Linux, Wear OS
 Live: `nkuchenov-hash.github.io/Counter/`
 
-**Deploy (GitHub Pages):** `.\scripts\manual\td.ps1` or `./scripts/manual/td` from repo root (`Apps/counter/`). See `docs/DEPLOY.md`.
+**Deploy (GitHub Pages):** `.\update.ps1` from repo root (`C:\Users\nkuch\Development\Apps\counter`). Implementation: `scripts/manual/td.ps1`. See `docs/DEPLOY.md`.
 
 ---
 

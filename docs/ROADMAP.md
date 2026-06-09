@@ -1,6 +1,8 @@
-# Life OS — Roadmap (May 2026)
+# Life OS — Roadmap
 
-Drawn from the April 2026 full-codebase audit. Updated 2026-05-01.
+**Single canonical plan.** Drawn from the April 2026 audit (`docs/reports/AUDIT_NOTES.md`). Updated 2026-06-09.
+
+> Other docs (`CLAUDE.md`, `docs/AI_CONTEXT.md`) link here — do not maintain a second roadmap copy.
 
 ---
 
@@ -141,8 +143,11 @@ Status: `database_service.dart` ~720 lines. All domains extracted to part files.
 
 ---
 
-### V6. Tooling cleanup
-- `tool/test_smart_parse.dart:13` — last `avoid_print` violation. Quick fix, do when in the file.
+### V6. Tooling cleanup & technical debt
+**Not urgent. Later cleanup — not F1/F2.**
+
+- **`Archive/tool/test_smart_parse.dart`** — dev-only smart-parse probe; `avoid_print` suppressed. Former repo-root `tool/` lives under `Archive/tool/` after June 2026 cleanup.
+- **Replace dynamic IconData with fixed icon registry** — Flutter web release builds need `--no-tree-shake-icons` because category icons are created dynamically from stored `icon_code_point` values (`CategoryRule.iconCodePoint` → `IconData(...)`). **Current workaround:** `update.ps1` / `scripts/manual/td.ps1` and GitHub Actions CI pass `--no-tree-shake-icons`. **Proper fix:** persist stable icon keys/names (e.g. `'work'`, `'home'`) instead of arbitrary code points; resolve through a const registry, e.g. `const Map<String, IconData> appIcons = { 'work': Icons.work, 'home': Icons.home, ... }`. **Scope:** category model, category create/edit UI, `category_service.dart`, migration/backward compatibility for existing `icon_code_point` rows, `docs/DATA_MAP.md` / `docs/POCKETBASE_MANIFEST.md` if field meaning changes.
 
 ---
 
@@ -200,10 +205,13 @@ Defined once foundation is solid.
 
 ---
 
-## Snapshot (April 2026)
+## Snapshot (June 2026)
 
+- **Repo root:** `C:\Users\nkuch\Development\Apps\counter` (flattened from nested `counter/counter/`; outer skeleton in `counter_WRAPPER_BACKUP`)
 - **Live at:** `nkuchenov-hash.github.io/Counter/`
+- **Update website:** `.\update.ps1` from repo root — see `docs/DEPLOY.md`
 - **Backend:** PocketBase, self-hosted
 - **Targets:** Android, iOS, Web, Windows, macOS, Linux, Wear OS
 - **Stack:** Flutter
-- **Architecture:** Iron Laws honored. God Object split complete. Next: C1 sync fixes.
+- **Analyzer:** 11 info-only issues (0 errors, 0 warnings) after June 2026 hygiene pass
+- **Architecture:** Iron Laws honored. God Object split complete. Velocity track: V1 done → F1/F2 polish in progress.

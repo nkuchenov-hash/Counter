@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-09] - Repo layout, docs hygiene, analyzer & deploy scripts [shipped]
+* **Folder flatten:** Real app moved from nested `counter/counter/` to `C:\Users\nkuch\Development\Apps\counter`; old outer Flutter skeleton backed up to sibling `counter_WRAPPER_BACKUP` (not in git).
+* **Root cleanup:** Reports → `docs/reports/`; prompt/archive docs → `docs/archive/`; temp zips/screenshots/logs → `Archive/root_cleanup_backup/`; manual scripts → `scripts/manual/`; dev `tool/` → `Archive/tool/`.
+* **Docs:** `docs/ROADMAP.md` is the single canonical roadmap; `docs/AI_CONTEXT.md` deduplicated to a pointer; `docs/DEPLOY.md` updated for flat repo root and `update.ps1`.
+* **Analyzer hygiene:** `flutter analyze` reduced from 49 to 11 info-only issues (0 errors, 0 warnings) — mechanical lint/dead-code pass; no intended behavior change.
+* **Deploy:** `update.ps1` at repo root calls `scripts/manual/td.ps1`; analyze uses `--no-fatal-infos --no-fatal-warnings`; web build uses `--no-tree-shake-icons --no-wasm-dry-run` (dynamic `IconData` — proper fix tracked in `docs/ROADMAP.md` V6).
+
 ## [2026-05-01] - C1 Sync & Reactivity: tag stream gaps, category silent drop, optimistic list toggle [shipped]
 * **`profile_service.dart`:** `createTagForCurrentUser` adds new tag to `_userTagsCatalogCache` and calls `notifyTagsCatalogChanged()`; `deleteTagByPocketRecordId` removes tag from cache by `pbRecordId` and notifies; `patchTagForCurrentUser` calls `notifyTagsCatalogChanged()` after server write. All three mutations now push to UI immediately without manual refresh (#16).
 * **`category_service.dart`:** `_mapCategoryIdToLinkForPb` else-branch now emits `debugPrint('[CAT_MAP] category_id dropped from payload — no resolved PB row id …')` instead of silent `merged.remove('category_id')` — cold-start category drops are now visible in debug logs (#9).
