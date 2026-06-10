@@ -66,11 +66,11 @@ class AppEditSheetTimeButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton(
       onPressed: onPressed,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+      child: SizedBox(
+        height: 56,
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
@@ -89,7 +89,7 @@ class AppEditSheetTimeButton extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               value,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall,
             ),

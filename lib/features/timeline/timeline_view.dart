@@ -213,6 +213,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             isFutureDate: isFuture,
             tasks: isSelectedDate ? widget.tasks : [],
             tasksLoading: isSelectedDate ? widget.tasksLoading : false,
+            isActivePage: isSelectedDate,
             titleController: widget.titleController,
             titleFocus: widget.titleFocus,
             selectedCategoryId: widget.selectedCategoryId,
@@ -244,6 +245,7 @@ class TimelinePage extends StatefulWidget {
     required this.isFutureDate,
     required this.tasks,
     required this.tasksLoading,
+    required this.isActivePage,
     required this.titleController,
     required this.titleFocus,
     required this.selectedCategoryId,
@@ -273,6 +275,7 @@ class TimelinePage extends StatefulWidget {
   final bool isFutureDate;
   final List<Task> tasks;
   final bool tasksLoading;
+  final bool isActivePage;
   final TextEditingController titleController;
   final FocusNode titleFocus;
   final int? selectedCategoryId;
@@ -526,8 +529,11 @@ class _TimelinePageState extends State<TimelinePage> {
                 children: [
                   Expanded(
                     child: TextField(
-                      controller: widget.titleController,
-                      focusNode: widget.titleFocus,
+                      controller: widget.isActivePage
+                          ? widget.titleController
+                          : null,
+                      focusNode: widget.isActivePage ? widget.titleFocus : null,
+                      enabled: widget.isActivePage,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) {
                         if (widget.isFutureDate) {
