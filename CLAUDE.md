@@ -2,7 +2,7 @@
 
 Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best time tracker possible, tidy codebase where every reusable thing lives in one place.
 
-**Current velocity track (2026-06-10):** ~~O1~~ Offline-first ✅ shipped · **V1** (this nav map) · **F1** Lists unblocked (do not start until V1 is done) · see `docs/ROADMAP.md` execution order.
+**Current velocity track (2026-06-10):** O1 Offline-first ✅ shipped · V1 ✅ shipped · F1 Lists ✅ shipped · next: F2 Plans.
 
 ---
 
@@ -184,13 +184,17 @@ See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
 ---
 
-## F1 / Lists — next feature phase (unblocked, not started)
+## F1 / Lists — shipped
 
-O1 offline-first is **shipped** (`docs/ROADMAP.md`). F1 is **unblocked** after V1. Do not implement F1 tags/export/pin until explicitly requested.
+O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). Next roadmap item is **F2 Plans Feature Completion**. Do not start F2 unless explicitly requested.
 
 | Item | Status | Notes |
 | :--- | :--- | :--- |
-| F1 scope (tags, export, chips, etc.) | **Not started** | See `docs/ROADMAP.md` F1 section |
+| List-domain tags | **Shipped** | `domain: list` tags load/filter in Lists, show on cards/edit sheet, and hydrate through plan/list tag catalogs |
+| Export visible list as text | **Shipped** | Copies currently visible filtered list rows to clipboard as numbered text |
+| Active chip first | **Shipped** | Active category/tag chips render first and scroll to start |
+| Card checkbox/text alignment | **Shipped** | `_BacklogPlanCard` checkbox and title column are centered for one-line and two-line titles |
+| No play button on list cards | **Shipped** | Lists cards expose checkbox/menu only; Planning play controls remain separate |
 | Backlog pin / fix important items | **Schema gap** | No `plans.is_pinned` in PocketBase yet. Proposed: `plans.is_pinned` (bool) on backlog/list rows; sort pinned before unpinned. Do not implement client-only pin state. See `lists_pin_item_todo` in `dictionary.dart`. |
 
 ---

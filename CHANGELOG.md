@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-10] - CLAUDE.md F1 status sync [shipped]
+* **`CLAUDE.md`:** F1 status synced after Lists shipped — top velocity line now points to F2 Plans, and the F1 table marks list tags/export/active chip/alignment/no-play work as shipped.
+
 ## [2026-06-10] - Docs sync: O1 local sync architecture [shipped]
 * **`docs/APP_STRUCTURE.md` / `docs/ARCHITECTURE.md`:** Synced governing docs with shipped O1 local mutation queues, sync state, drain triggers, auth-paused behavior, and `_OfflineSyncStatusBar` anchors.
 
