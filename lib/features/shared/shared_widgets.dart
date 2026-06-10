@@ -47,6 +47,59 @@ DateTime displayToUtc(DateTime displayNaive) =>
 DateTime displayNow() =>
     DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
 
+/// Shared start/end time control for Timeline and Planning edit sheets.
+class AppEditSheetTimeButton extends StatelessWidget {
+  const AppEditSheetTimeButton({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 Future<DateTime?> showAppDateTimePicker(
   BuildContext context, {
   DateTime? initial,
@@ -1391,7 +1444,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                child: OutlinedButton(
+                                child: AppEditSheetTimeButton(
+                                  icon: Icons.calendar_month_rounded,
+                                  label: t(
+                                    currentLocale.value,
+                                    'plan_start_time_full',
+                                  ),
+                                  value: _scheduledTime == null
+                                      ? t(currentLocale.value, 'scheduled')
+                                      : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
                                   onPressed: () async {
                                     final initial = DateTime(
                                       _date.year,
@@ -1415,58 +1476,19 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       });
                                     }
                                   },
-                                  child: SizedBox(
-                                    height: 56,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.calendar_month_rounded,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                t(
-                                                  currentLocale.value,
-                                                  'plan_start_time_full',
-                                                ),
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.labelMedium,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _scheduledTime == null
-                                              ? t(
-                                                  currentLocale.value,
-                                                  'scheduled',
-                                                )
-                                              : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
-                                child: OutlinedButton(
+                                child: AppEditSheetTimeButton(
+                                  icon: Icons.event_available_rounded,
+                                  label: t(
+                                    currentLocale.value,
+                                    'plan_end_time_full',
+                                  ),
+                                  value: _endTime == null
+                                      ? t(currentLocale.value, 'no_end_time')
+                                      : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
                                   onPressed: () async {
                                     final initial = DateTime(
                                       _date.year,
@@ -1491,53 +1513,6 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       );
                                     }
                                   },
-                                  child: SizedBox(
-                                    height: 56,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.event_available_rounded,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Expanded(
-                                              child: Text(
-                                                t(
-                                                  currentLocale.value,
-                                                  'plan_end_time_full',
-                                                ),
-                                                style: Theme.of(
-                                                  context,
-                                                ).textTheme.labelMedium,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _endTime == null
-                                              ? t(
-                                                  currentLocale.value,
-                                                  'no_end_time',
-                                                )
-                                              : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ),
                               ),
                             ],
@@ -2638,23 +2613,6 @@ class _TimelineRecordSheetContentState
       catVal = CategoryRule.uncategorizedSyntheticId;
     }
 
-    Widget startEndCaption(bool isEnd) {
-      if (isEnd && isRunning) {
-        return Text(
-          t(currentLocale.value, 'running_label'),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        );
-      }
-      final dt = isEnd ? _endDisplay : _startDisplay;
-      if (dt == null) return const Text('–');
-      return Text(
-        '${formatDate(dt)} ${formatTimeOfDay(dt)}',
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      );
-    }
-
     return Material(
       clipBehavior: Clip.none,
       color: Theme.of(context).colorScheme.surface,
@@ -2747,80 +2705,41 @@ class _TimelineRecordSheetContentState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: OutlinedButton(
-                              onPressed: _pickStart,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 6,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.calendar_month_rounded,
-                                          size: 18,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          t(currentLocale.value, 'start_time'),
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.labelMedium,
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    DefaultTextStyle.merge(
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall!,
-                                      child: startEndCaption(false),
-                                    ),
-                                  ],
-                                ),
+                            child: AppEditSheetTimeButton(
+                              icon: Icons.calendar_month_rounded,
+                              label: t(
+                                currentLocale.value,
+                                'plan_start_time_full',
                               ),
+                              value: () {
+                                final dt = _startDisplay;
+                                if (dt == null) return '–';
+                                return '${formatDate(dt)} ${formatTimeOfDay(dt)}';
+                              }(),
+                              onPressed: _pickStart,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: OutlinedButton(
-                              onPressed: isRunning ? null : _pickEnd,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 6,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.event_available_rounded,
-                                          size: 18,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          t(currentLocale.value, 'end_time'),
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.labelMedium,
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 4),
-                                    DefaultTextStyle.merge(
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall!,
-                                      child: startEndCaption(true),
-                                    ),
-                                  ],
-                                ),
+                            child: AppEditSheetTimeButton(
+                              icon: Icons.event_available_rounded,
+                              label: t(
+                                currentLocale.value,
+                                'plan_end_time_full',
                               ),
+                              value: isRunning
+                                  ? t(currentLocale.value, 'running_label')
+                                  : () {
+                                      final dt = _endDisplay;
+                                      if (dt == null) {
+                                        return t(
+                                          currentLocale.value,
+                                          'no_end_time',
+                                        );
+                                      }
+                                      return '${formatDate(dt)} ${formatTimeOfDay(dt)}';
+                                    }(),
+                              onPressed: isRunning ? null : _pickEnd,
                             ),
                           ),
                         ],

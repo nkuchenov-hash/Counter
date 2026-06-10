@@ -175,10 +175,7 @@ class CategoryChip extends StatelessWidget {
     final isPillMode =
         mode == CategoryDisplayMode.letterChip ||
         mode == CategoryDisplayMode.chip;
-    final glyphCompact = compactGlyphLayout && onTap == null && !isPillMode;
-    final glyphSide = glyphCompact
-        ? _glyphLayoutSide(mode)
-        : (large ? 56.0 : _glyphTapExtent);
+    final glyphSide = _glyphLayoutSide(mode);
 
     final showOuterSelectionFrame = selected && onTap == null;
     final inner = AnimatedContainer(
@@ -199,22 +196,6 @@ class CategoryChip extends StatelessWidget {
           : null,
       child: visual,
     );
-    final selectedPickerVisual = selected && onTap != null && large
-        ? DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(isPillMode ? 14 : 28),
-              border: Border.all(color: scheme.primary, width: 2),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(3),
-              child: isPillMode ? inner : Center(child: visual),
-            ),
-          )
-        : inner;
-
-    final BoxConstraints constraints = isPillMode
-        ? const BoxConstraints()
-        : BoxConstraints.tightFor(width: glyphSide, height: glyphSide);
 
     if (onTap == null) {
       // Pill chips on task cards: loose BoxConstraints() would expand to parent width
@@ -222,20 +203,26 @@ class CategoryChip extends StatelessWidget {
       if (isPillMode) {
         return inner;
       }
-      return ConstrainedBox(constraints: constraints, child: inner);
+      return ConstrainedBox(
+        constraints: BoxConstraints.tightFor(
+          width: glyphSide,
+          height: glyphSide,
+        ),
+        child: inner,
+      );
     }
+
+    final tapRadius = isPillMode ? (large ? 14.0 : 10.0) : glyphSide / 2;
+    final tappableChild = isPillMode
+        ? inner
+        : SizedBox(width: glyphSide, height: glyphSide, child: inner);
 
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
-        borderRadius: isPillMode
-            ? BorderRadius.circular(14)
-            : BorderRadius.circular(22),
-        child: ConstrainedBox(
-          constraints: constraints,
-          child: selectedPickerVisual,
-        ),
+        borderRadius: BorderRadius.circular(tapRadius),
+        child: tappableChild,
       ),
     );
   }
