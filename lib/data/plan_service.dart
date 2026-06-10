@@ -2273,6 +2273,15 @@ extension PlanServiceExtension on DatabaseService {
         categoryIdHint ??
         defaultCategoryId ??
         (rules.isNotEmpty ? rules.first.id : 0);
+    if (startStored == null && range == null && parsed == null) {
+      final defaultWall = wallDateTimeForCategoryDefaultPlanTime(
+        categoryId,
+        ymd,
+      );
+      if (defaultWall != null) {
+        startStored = displayTimeToUtc(defaultWall);
+      }
+    }
 
     if (getCategoryRuleById(categoryId) == null) {
       DatabaseService._log(
@@ -2317,6 +2326,20 @@ extension PlanServiceExtension on DatabaseService {
     }
     unawaited(() async {
       try {
+        DateTime? defaultStart;
+        final d = dateKey.trim();
+        if (d.length >= 10) {
+          final y = int.tryParse(d.substring(0, 4));
+          final m = int.tryParse(d.substring(5, 7));
+          final day = int.tryParse(d.substring(8, 10));
+          if (y != null && m != null && day != null) {
+            final wall = wallDateTimeForCategoryDefaultPlanTime(
+              categoryId,
+              DateTime(y, m, day),
+            );
+            if (wall != null) defaultStart = displayTimeToUtc(wall);
+          }
+        }
         await addPlanningTask(
           PlanningTask(
             id: 0,
@@ -2324,6 +2347,7 @@ extension PlanServiceExtension on DatabaseService {
             categoryId: categoryId,
             dateKey: dateKey,
             order: 0,
+            startTime: defaultStart,
           ),
         );
       } catch (_) {}

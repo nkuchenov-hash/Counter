@@ -16,9 +16,9 @@ extension CategoryServiceExtension on DatabaseService {
       final authId = _userIdForWhere;
       if (authId == null || authId.isEmpty) return [];
       final uid = _escapeForPbFilter(authId);
-      final list = await _pb.collection(PbCollections.categories).getFullList(
-        filter: 'user_id = "$uid" && is_archived = false',
-      );
+      final list = await _pb
+          .collection(PbCollections.categories)
+          .getFullList(filter: 'user_id = "$uid" && is_archived = false');
       final out = list.map((r) {
         final m = Map<String, dynamic>.from(r.data);
         m['id'] = r.id;
@@ -54,17 +54,15 @@ extension CategoryServiceExtension on DatabaseService {
       final authId = _userIdForWhere;
       if (authId == null || authId.isEmpty) return [];
       final uid = _escapeForPbFilter(authId);
-      final list = await _pb.collection(PbCollections.categories).getFullList(
-        filter: 'user_id = "$uid"',
-      );
-      return list
-          .map((r) {
-            final m = Map<String, dynamic>.from(r.data);
-            m['id'] = r.id;
-            m['_pb_record_id'] = r.id;
-            return m;
-          })
-          .toList();
+      final list = await _pb
+          .collection(PbCollections.categories)
+          .getFullList(filter: 'user_id = "$uid"');
+      return list.map((r) {
+        final m = Map<String, dynamic>.from(r.data);
+        m['id'] = r.id;
+        m['_pb_record_id'] = r.id;
+        return m;
+      }).toList();
     } on ClientException catch (e) {
       debugPrint('PB_ERROR_RESPONSE: ${e.response}');
       _maybeOpenPbCircuitFromListFailure(e, 'fetchAllCategories');
@@ -75,8 +73,7 @@ extension CategoryServiceExtension on DatabaseService {
     }
   }
 
-  void _rebuildReservedCategorySlugsFromRows(
-      List<Map<String, dynamic>> rows) {
+  void _rebuildReservedCategorySlugsFromRows(List<Map<String, dynamic>> rows) {
     final set = <String>{};
     for (final row in rows) {
       final flat = _flattenNocoRecord(row, allowCategoryIdAsRowPk: true);
@@ -113,7 +110,6 @@ extension CategoryServiceExtension on DatabaseService {
     _categoryDialogUniverse = list;
   }
 
-
   Future<void> _loadRulesFromNoco() async {
     List<Map<String, dynamic>>? allRows;
     try {
@@ -129,7 +125,9 @@ extension CategoryServiceExtension on DatabaseService {
       DatabaseService._log('CATEGORY_FETCH: $e');
       try {
         final prefs = _prefs ?? await SharedPreferences.getInstance();
-        final raw = prefs.getString(_scopedDataCacheKey(DatabaseService._cacheCategoriesRawKey));
+        final raw = prefs.getString(
+          _scopedDataCacheKey(DatabaseService._cacheCategoriesRawKey),
+        );
         if (raw != null && raw.trim().isNotEmpty) {
           final decoded = jsonDecode(raw);
           if (decoded is List) {
@@ -261,13 +259,17 @@ extension CategoryServiceExtension on DatabaseService {
   /// Sets `is_archived` false on a PocketBase **categories** row. Returns local id after reload.
   Future<int?> restoreArchivedCategory(String pbRowId) async {
     final rid = pbRowId.trim();
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return null;
-    if (rid.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(rid)) return null;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false))
+      return null;
+    if (rid.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(rid))
+      return null;
     try {
       await ensurePocketBaseReady();
       final rec = await _pb.collection(PbCollections.categories).getOne(rid);
       final m = Map<String, dynamic>.from(rec.data);
-      final biz = DatabaseService._sanitizePkString(m['category_id']?.toString());
+      final biz = DatabaseService._sanitizePkString(
+        m['category_id']?.toString(),
+      );
       final ordRaw = m['order'];
       final ord = ordRaw is int
           ? ordRaw
@@ -280,7 +282,9 @@ extension CategoryServiceExtension on DatabaseService {
           if (biz != null && biz.isNotEmpty) 'category_id': biz,
         }),
       );
-      await _pb.collection(PbCollections.categories).update(rid, body: patchBody);
+      await _pb
+          .collection(PbCollections.categories)
+          .update(rid, body: patchBody);
       await _loadRulesFromNoco();
       return getCategoryRuleByBackendRowId(rid)?.id;
     } on ClientException catch (e) {
@@ -321,8 +325,9 @@ extension CategoryServiceExtension on DatabaseService {
         fields['normalized_id'] = fields['id1'].toString().trim();
       }
       final envPk = DatabaseService._envelopePkOnlyFromWrapper(record);
-      final uuidInFields =
-          allowCategoryIdAsRowPk ? null : DatabaseService._firstUuidLikeRecordIdInFields(fields);
+      final uuidInFields = allowCategoryIdAsRowPk
+          ? null
+          : DatabaseService._firstUuidLikeRecordIdInFields(fields);
 
       if (!allowCategoryIdAsRowPk) {
         // Records/plans: REST path = **system integer** from wrapper only (never business UUID).
@@ -334,7 +339,7 @@ extension CategoryServiceExtension on DatabaseService {
         if (uuidInFields != null &&
             (envPk == null || _isSmallIntegerString(envPk))) {
           fields[DatabaseService._nocoEnvelopePkKey] = uuidInFields;
-        } else         if (envPk != null) {
+        } else if (envPk != null) {
           fields[DatabaseService._nocoEnvelopePkKey] = envPk;
         }
         // M2M link column may sit on the v3 list **envelope** (nested expand) or match `fields`
@@ -351,14 +356,16 @@ extension CategoryServiceExtension on DatabaseService {
         fields[DatabaseService._nocoEnvelopePkKey] = envPk;
       }
 
-      dynamic resolvedPk = record['id'] ??
+      dynamic resolvedPk =
+          record['id'] ??
           record['Id'] ??
           record['ID'] ??
           record['record_id'] ??
           record['Record_id'];
       final rs = resolvedPk?.toString().trim() ?? '';
       if (rs.isEmpty) {
-        resolvedPk = fields['record_id'] ??
+        resolvedPk =
+            fields['record_id'] ??
             fields['Record_id'] ??
             fields['id'] ??
             fields['Id'] ??
@@ -366,12 +373,15 @@ extension CategoryServiceExtension on DatabaseService {
       }
       final rs2 = resolvedPk?.toString().trim() ?? '';
       if (rs2.isEmpty) {
-        resolvedPk = fields['category_id'] ??
+        resolvedPk =
+            fields['category_id'] ??
             fields['Category_id'] ??
             record['category_id'] ??
             record['Category_id'];
       }
-      final stamped = DatabaseService._sanitizePkString(fields[DatabaseService._nocoEnvelopePkKey]?.toString());
+      final stamped = DatabaseService._sanitizePkString(
+        fields[DatabaseService._nocoEnvelopePkKey]?.toString(),
+      );
       if (stamped != null && stamped.isNotEmpty) {
         fields['id'] = stamped;
         resolvedPk = stamped;
@@ -382,7 +392,9 @@ extension CategoryServiceExtension on DatabaseService {
       }
       // Categories (@DATA_MAP): REST row URL must use wrapper **Id** (int). Never leave `id` as
       // `category_id` UUID after fallbacks above.
-      final categoryWrapperSysId = DatabaseService._parseSystemIntFromWrapper(record);
+      final categoryWrapperSysId = DatabaseService._parseSystemIntFromWrapper(
+        record,
+      );
       if (categoryWrapperSysId != null && categoryWrapperSysId > 0) {
         fields[DatabaseService._nocoSystemRowIdKey] = categoryWrapperSysId;
         fields['id'] = categoryWrapperSysId;
@@ -614,7 +626,9 @@ extension CategoryServiceExtension on DatabaseService {
         fromCache.isNotEmpty &&
         DatabaseService._isLikelyPocketBaseRowId(fromCache)) {
       if (!DatabaseService._isLikelyPocketBaseRowId(c) && fromCache != c) {
-        debugPrint('ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromCache');
+        debugPrint(
+          'ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromCache',
+        );
       }
       if (fromCache != c) {
         DatabaseService._log(
@@ -626,7 +640,9 @@ extension CategoryServiceExtension on DatabaseService {
     final fromServer = await _fetchPbRecordSysIdByRecordIdField(c);
     if (fromServer != null && fromServer.isNotEmpty) {
       if (fromServer != c) {
-        debugPrint('ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromServer');
+        debugPrint(
+          'ID TRANSLATION: Legacy UUID $c -> PocketBase ID $fromServer',
+        );
       }
       return fromServer;
     }
@@ -777,10 +793,10 @@ extension CategoryServiceExtension on DatabaseService {
       merged['user_id'] = _pidForPbFilter;
       payloadForError = merged;
       _logRecordsPatchDispatch(rid);
-      final updated =
-          await _pb.collection(PbCollections.records).update(rid, body: merged);
-      _upsertFlatRecordFromPbModel(updated,
-          suppressTimelineNotify: true);
+      final updated = await _pb
+          .collection(PbCollections.records)
+          .update(rid, body: merged);
+      _upsertFlatRecordFromPbModel(updated, suppressTimelineNotify: true);
       return 200;
     } on ClientException catch (e) {
       if (debugPbClientException) {
@@ -806,7 +822,9 @@ extension CategoryServiceExtension on DatabaseService {
       }
       return e.statusCode;
     } catch (e, st) {
-      debugPrint('[ABORT_REASON] records PATCH failed inside try (before or after [DISPATCH]): $e');
+      debugPrint(
+        '[ABORT_REASON] records PATCH failed inside try (before or after [DISPATCH]): $e',
+      );
       DatabaseService._log(st.toString());
       return 500;
     }
@@ -852,10 +870,14 @@ extension CategoryServiceExtension on DatabaseService {
       _mapCategoryIdToLinkForPb(merged);
       _sanitizeOutgoingCategoryLink(merged);
       merged['user_id'] = authRowId;
-      final created =
-          await _pb.collection(PbCollections.records).create(body: merged);
-      _upsertFlatRecordFromPbModel(created,
-          preserveExpand: false, suppressTimelineNotify: true);
+      final created = await _pb
+          .collection(PbCollections.records)
+          .create(body: merged);
+      _upsertFlatRecordFromPbModel(
+        created,
+        preserveExpand: false,
+        suppressTimelineNotify: true,
+      );
       return created.id;
     } on ClientException catch (e) {
       debugPrint('PB_CREATE_ERROR_DETAILS: ${e.response}');
@@ -894,7 +916,9 @@ extension CategoryServiceExtension on DatabaseService {
       final sys = r[DatabaseService._nocoSystemRowIdKey];
       if (sys is int && sys.toString() == rid) return true;
       if (sys != null && sys.toString().trim() == rid) return true;
-      final env = (r[DatabaseService._nocoEnvelopePkKey] ?? '').toString().trim();
+      final env = (r[DatabaseService._nocoEnvelopePkKey] ?? '')
+          .toString()
+          .trim();
       if (env.isNotEmpty && env == rid) return true;
       final localId = (r['id'] ?? '').toString().trim();
       final localRecordId = (r['record_id'] ?? '').toString().trim();
@@ -951,8 +975,9 @@ extension CategoryServiceExtension on DatabaseService {
     try {
       final stUtc = _parseDateTimeUtc(r['start_time']);
       if (stUtc == null) return false;
-      return _timelineDeviceLocalDayKeyFromUtc(stUtc)
-              .compareTo(getTimelineDeviceLocalTodayDateKey()) <
+      return _timelineDeviceLocalDayKeyFromUtc(
+            stUtc,
+          ).compareTo(getTimelineDeviceLocalTodayDateKey()) <
           0;
     } catch (_) {
       return false;
@@ -1026,9 +1051,9 @@ extension CategoryServiceExtension on DatabaseService {
       final authId = _userIdForWhere;
       if (authId == null || authId.isEmpty) return [];
       final uid = _escapeForPbFilter(authId);
-      final list = await _pb.collection(PbCollections.records).getFullList(
-        filter: 'user_id = "$uid" && status = "running"',
-      );
+      final list = await _pb
+          .collection(PbCollections.records)
+          .getFullList(filter: 'user_id = "$uid" && status = "running"');
       return list.map(_recordMapFromPb).toList();
     } catch (_) {
       return [];
@@ -1036,7 +1061,8 @@ extension CategoryServiceExtension on DatabaseService {
   }
 
   /// Fresh server map `pocketbase_row_id -> row` for **primary** rows in sacred running state.
-  Future<Map<String, Map<String, dynamic>>> _fetchServerRunningSacredPrimariesByPbId() async {
+  Future<Map<String, Map<String, dynamic>>>
+  _fetchServerRunningSacredPrimariesByPbId() async {
     final rows = await _fetchRunningRecordsFromNoco();
     final byId = <String, Map<String, dynamic>>{};
     for (final r in rows) {
@@ -1055,10 +1081,13 @@ extension CategoryServiceExtension on DatabaseService {
     required String handoffIsoUtc,
     required Map<String, dynamic> serverRow,
   }) {
-    final handoff = _parseDateTimeUtc(handoffIsoUtc) ?? DatabaseService.getPlanetaryNow().toUtc();
+    final handoff =
+        _parseDateTimeUtc(handoffIsoUtc) ??
+        DatabaseService.getPlanetaryNow().toUtc();
     final rowStart = _parseDateTimeUtc(serverRow['start_time']);
-    final t =
-        rowStart != null && handoff.isBefore(rowStart) ? rowStart : handoff;
+    final t = rowStart != null && handoff.isBefore(rowStart)
+        ? rowStart
+        : handoff;
     return t.toUtc().toIso8601String();
   }
 
@@ -1084,7 +1113,6 @@ extension CategoryServiceExtension on DatabaseService {
     return hash;
   }
 
-
   /// `true` if Noco sent an explicit `order` (including `0`); `false` if null / missing / empty string.
   static bool _categoryOrderRawIsExplicit(dynamic orderRaw) {
     if (orderRaw == null) return false;
@@ -1096,7 +1124,7 @@ extension CategoryServiceExtension on DatabaseService {
   ///
   /// Second return: sibling groups that had null/missing `order` — each list shares one `parent_id` (roots use `''` key), renumbered 0..n−1 for persistence (@DATA_MAP §8).
   (List<CategoryRule> roots, List<List<CategoryRule>> orderInitGroups)
-      _buildCategoryTreeFromFlat(List<Map<String, dynamic>> flat) {
+  _buildCategoryTreeFromFlat(List<Map<String, dynamic>> flat) {
     final all = <CategoryRule>[];
     final lookup = <String, CategoryRule>{};
     final parentIdsById = <int, String?>{};
@@ -1105,13 +1133,12 @@ extension CategoryServiceExtension on DatabaseService {
       final fields = (row['fields'] is Map)
           ? Map<String, dynamic>.from(row['fields'] as Map)
           : row;
-      final bizCategoryId = (fields['category_id'] ?? fields['Category_id'])
-              ?.toString()
-              .trim() ??
+      final bizCategoryId =
+          (fields['category_id'] ?? fields['Category_id'])?.toString().trim() ??
           '';
       final sysObj = row[DatabaseService._nocoSystemRowIdKey];
-      final wrapperPk = ((sysObj != null &&
-                  sysObj.toString().trim().isNotEmpty)
+      final wrapperPk =
+          ((sysObj != null && sysObj.toString().trim().isNotEmpty)
               ? sysObj.toString().trim()
               : (row['id'] ?? row['Id'])?.toString().trim()) ??
           '';
@@ -1131,10 +1158,10 @@ extension CategoryServiceExtension on DatabaseService {
               bizCategoryId.isNotEmpty
                   ? bizCategoryId
                   : (normalizedForMatching ??
-                      fields['normalized_id']?.toString() ??
-                      fields['tag']?.toString() ??
-                      fields['name']?.toString() ??
-                      'unknown'),
+                        fields['normalized_id']?.toString() ??
+                        fields['tag']?.toString() ??
+                        fields['name']?.toString() ??
+                        'unknown'),
               1,
             );
       final pidRaw = row['parent_id'];
@@ -1194,6 +1221,7 @@ extension CategoryServiceExtension on DatabaseService {
         iconCodePoint: _rowInt(row['icon_code_point'], 0) == 0
             ? null
             : _rowInt(row['icon_code_point']),
+        defaultPlanTime: sanitizeDefaultPlanTime(row['default_plan_time']),
         keywords: keywords,
         localizedNames: loc,
         order: orderExplicit ? _rowInt(orderRaw) : 0,
@@ -1205,8 +1233,9 @@ extension CategoryServiceExtension on DatabaseService {
       final nk = node.normalizedId?.trim();
       if (nk != null && nk.isNotEmpty) lookup[nk] = node;
       lookup[nodeLocalId.toString()] = node;
-      final pbRowKey =
-          (row['_pb_record_id'] ?? row['id'] ?? row['Id'])?.toString().trim();
+      final pbRowKey = (row['_pb_record_id'] ?? row['id'] ?? row['Id'])
+          ?.toString()
+          .trim();
       if (pbRowKey != null && pbRowKey.isNotEmpty) {
         lookup[pbRowKey] = node;
       }
@@ -1242,8 +1271,9 @@ extension CategoryServiceExtension on DatabaseService {
     }
     final orderInitGroups = <List<CategoryRule>>[];
     for (final bucket in buckets.values) {
-      final anyImplicit =
-          bucket.any((n) => orderExplicitByLocalId[n.id] != true);
+      final anyImplicit = bucket.any(
+        (n) => orderExplicitByLocalId[n.id] != true,
+      );
       if (anyImplicit) {
         for (var i = 0; i < bucket.length; i++) {
           bucket[i].order = i;
@@ -1253,7 +1283,7 @@ extension CategoryServiceExtension on DatabaseService {
     }
 
     DatabaseService._log(
-        'TREE DEBUG: Total Categories: ${all.length}. Roots: ${roots.length}. Links: $linksCreated. Order init groups: ${orderInitGroups.length}',
+      'TREE DEBUG: Total Categories: ${all.length}. Roots: ${roots.length}. Links: $linksCreated. Order init groups: ${orderInitGroups.length}',
     );
     _sortCategoryBranch(roots);
     return (roots, orderInitGroups);
@@ -1273,12 +1303,11 @@ extension CategoryServiceExtension on DatabaseService {
     }
   }
 
-
   DateTime _profileWallFromUtc(DateTime utc) => wall_clock.toWallClockForLabel(
-        utc.toUtc(),
-        _settings.timezoneOffsetHours,
-        _settings.preferredTimeZone,
-      );
+    utc.toUtc(),
+    _settings.timezoneOffsetHours,
+    _settings.preferredTimeZone,
+  );
 
   DateTime _profileUtcFromWall(DateTime naive) =>
       wall_clock.wallClockToUtcForLabel(
@@ -1311,7 +1340,8 @@ extension CategoryServiceExtension on DatabaseService {
   Future<void> runOneShotUntitledGhostRecordClean() async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      if (prefs.getBool(DatabaseService._oneShotUntitledGhostCleanKey) ?? false) {
+      if (prefs.getBool(DatabaseService._oneShotUntitledGhostCleanKey) ??
+          false) {
         return;
       }
       final before = _cachedFlatRecords.length;
@@ -1354,10 +1384,7 @@ extension CategoryServiceExtension on DatabaseService {
 
     void considerPhase(int Function(CategoryRule m) scoreOf) {
       for (final root in _rules) {
-        final m = root.findDeepestMatch(
-          title,
-          scoreFor: (r, t) => scoreOf(r),
-        );
+        final m = root.findDeepestMatch(title, scoreFor: (r, t) => scoreOf(r));
         if (m != null) {
           final d = depthOf(m, _rules, 0);
           final sc = scoreOf(m);
@@ -1398,7 +1425,8 @@ extension CategoryServiceExtension on DatabaseService {
     return best;
   }
 
-  CategoryRule? identifyCategory(String input) => findDeepestMatchForTitle(input);
+  CategoryRule? identifyCategory(String input) =>
+      findDeepestMatchForTitle(input);
 
   /// Smart link: best exact [CategoryRule.categoryExactMatchScoreForTitle], else fuzzy
   /// [CategoryRule.categoryFuzzyMatchScoreForTitle]; then longest [CategoryRule.name] tie-break;
@@ -1425,7 +1453,9 @@ extension CategoryServiceExtension on DatabaseService {
       final sc = r.categoryExactMatchScoreForTitle(title);
       if (sc <= 0) continue;
       final pb = _categoryBackendRowIdStrict(r);
-      if (pb == null || pb.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pb)) {
+      if (pb == null ||
+          pb.isEmpty ||
+          !DatabaseService._isLikelyPocketBaseRowId(pb)) {
         continue;
       }
       if (bestRule == null ||
@@ -1442,7 +1472,9 @@ extension CategoryServiceExtension on DatabaseService {
         final sc = r.categoryConsecutiveTokenMatchScoreForTitle(title);
         if (sc <= 0) continue;
         final pb = _categoryBackendRowIdStrict(r);
-        if (pb == null || pb.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pb)) {
+        if (pb == null ||
+            pb.isEmpty ||
+            !DatabaseService._isLikelyPocketBaseRowId(pb)) {
           continue;
         }
         if (bestRule == null ||
@@ -1460,7 +1492,9 @@ extension CategoryServiceExtension on DatabaseService {
         final sc = r.categoryTokenSetOverlapScoreForTitle(title);
         if (sc <= 0) continue;
         final pb = _categoryBackendRowIdStrict(r);
-        if (pb == null || pb.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pb)) {
+        if (pb == null ||
+            pb.isEmpty ||
+            !DatabaseService._isLikelyPocketBaseRowId(pb)) {
           continue;
         }
         if (bestRule == null ||
@@ -1478,7 +1512,9 @@ extension CategoryServiceExtension on DatabaseService {
         final sc = r.categoryFuzzyMatchScoreForTitle(title);
         if (sc <= 0) continue;
         final pb = _categoryBackendRowIdStrict(r);
-        if (pb == null || pb.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pb)) {
+        if (pb == null ||
+            pb.isEmpty ||
+            !DatabaseService._isLikelyPocketBaseRowId(pb)) {
           continue;
         }
         if (bestRule == null ||
@@ -1519,8 +1555,10 @@ extension CategoryServiceExtension on DatabaseService {
     'sin',
   };
 
-  static final RegExp _smartInferNonWordOrUnderscore =
-      RegExp(r'[\W_]+', unicode: true);
+  static final RegExp _smartInferNonWordOrUnderscore = RegExp(
+    r'[\W_]+',
+    unicode: true,
+  );
 
   static final RegExp _smartInferWhitespaceRun = RegExp(r'\s+');
 
@@ -1532,7 +1570,7 @@ extension CategoryServiceExtension on DatabaseService {
     if (s.isEmpty) return {};
     return {
       for (final w in s.split(' '))
-        if (w.isNotEmpty && !_smartInferNoiseWords.contains(w)) w
+        if (w.isNotEmpty && !_smartInferNoiseWords.contains(w)) w,
     };
   }
 
@@ -1565,7 +1603,10 @@ extension CategoryServiceExtension on DatabaseService {
       if (r.isArchived) return;
       if (r.id == CategoryRule.uncategorizedSyntheticId) return;
       final pb = _categoryBackendRowIdStrict(r);
-      if (pb == null || pb.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pb)) return;
+      if (pb == null ||
+          pb.isEmpty ||
+          !DatabaseService._isLikelyPocketBaseRowId(pb))
+        return;
       final name = r.name.trim();
       if (name.isEmpty) return;
       final catTokens = _smartInferMeaningfulTokens(name);
@@ -1751,8 +1792,10 @@ extension CategoryServiceExtension on DatabaseService {
           if (r.children != null) matchLeafFuzzy(r.children!);
           continue;
         }
-        final sc =
-            fuzzyPhraseScoreAgainstTitle(normLabel, normalizeCategoryLabel(r.name));
+        final sc = fuzzyPhraseScoreAgainstTitle(
+          normLabel,
+          normalizeCategoryLabel(r.name),
+        );
         if (sc <= 0) continue;
         if (sc > bestFuzzy) {
           bestFuzzy = sc;
@@ -1799,9 +1842,7 @@ extension CategoryServiceExtension on DatabaseService {
           if (r.children != null) visit(r.children!);
           continue;
         }
-        final n = (r.normalizedId ?? r.name)
-            .toLowerCase()
-            .replaceAll(' ', '');
+        final n = (r.normalizedId ?? r.name).toLowerCase().replaceAll(' ', '');
         if (n == t) found = r.id;
         if (r.children != null) visit(r.children!);
       }
@@ -1844,6 +1885,46 @@ extension CategoryServiceExtension on DatabaseService {
 
     find(_rules);
     return List.from(target?.children ?? []);
+  }
+
+  static final RegExp _defaultPlanTimePattern = RegExp(
+    r'^([01]\d|2[0-3]):([0-5]\d)$',
+  );
+
+  String? sanitizeDefaultPlanTime(dynamic raw) {
+    final s = raw?.toString().trim() ?? '';
+    if (s.isEmpty) return null;
+    final m = _defaultPlanTimePattern.firstMatch(s);
+    if (m == null) return null;
+    return '${m.group(1)}:${m.group(2)}';
+  }
+
+  DateTime? wallDateTimeForCategoryDefaultPlanTime(
+    int categoryId,
+    DateTime wallDay,
+  ) {
+    final hhmm = effectiveDefaultPlanTimeForCategory(categoryId);
+    if (hhmm == null) return null;
+    final h = int.tryParse(hhmm.substring(0, 2));
+    final m = int.tryParse(hhmm.substring(3, 5));
+    if (h == null || m == null) return null;
+    return DateTime(wallDay.year, wallDay.month, wallDay.day, h, m);
+  }
+
+  String? effectiveDefaultPlanTimeForCategory(int categoryId) {
+    final path = categoryPathFromRootToLocalId(categoryId);
+    if (path.isEmpty) {
+      return sanitizeDefaultPlanTime(
+        getCategoryRuleById(categoryId)?.defaultPlanTime,
+      );
+    }
+    for (final id in path.reversed) {
+      final own = sanitizeDefaultPlanTime(
+        getCategoryRuleById(id)?.defaultPlanTime,
+      );
+      if (own != null) return own;
+    }
+    return null;
   }
 
   int? getParentId(int categoryId) {
@@ -1954,7 +2035,9 @@ extension CategoryServiceExtension on DatabaseService {
   }
 
   /// @DATA_MAP `records` and `plans`: **checklist** is stored as **JSON String** (LongText/CSV) — [jsonEncode] for API.
-  Map<String, dynamic> _recordsPatchFieldsJsonStrings(Map<String, dynamic> fields) {
+  Map<String, dynamic> _recordsPatchFieldsJsonStrings(
+    Map<String, dynamic> fields,
+  ) {
     final out = Map<String, dynamic>.from(fields);
     if (!out.containsKey('checklist')) return out;
     final v = out['checklist'];
@@ -2009,6 +2092,7 @@ extension CategoryServiceExtension on DatabaseService {
       }
       return false;
     }
+
     return visit(_rules);
   }
 
@@ -2319,8 +2403,20 @@ extension CategoryServiceExtension on DatabaseService {
     }
   }
 
+  Future<({bool ok, String? errorDetail})> updateCategoryDefaultPlanTime(
+    int categoryId,
+    String? hhmm,
+  ) {
+    final sanitized = sanitizeDefaultPlanTime(hhmm);
+    return patchCategoryDelta(categoryId, <String, dynamic>{
+      'default_plan_time': sanitized,
+    });
+  }
+
   /// After [updateNestedCategory] (or similar) mutates memory, push this row with one PATCH.
-  Future<({bool ok, String? errorDetail})> saveCategoryRowToServer(int targetId) async {
+  Future<({bool ok, String? errorDetail})> saveCategoryRowToServer(
+    int targetId,
+  ) async {
     final r = getCategoryRuleById(targetId);
     if (r == null) return (ok: false, errorDetail: 'category_not_found');
     if (siblingHasTag(getParentId(targetId), r.name, excludeId: targetId)) {
@@ -2337,10 +2433,10 @@ extension CategoryServiceExtension on DatabaseService {
     });
   }
 
-
   /// UI-first: move category in _rules, push; then PocketBase PATCH `parent_id`.
   Future<bool> updateCategoryParent(int categoryId, int? newParentId) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false))
+      return false;
 
     final oldParentId = getParentId(categoryId);
     if (!_moveCategoryInRules(categoryId, newParentId)) return false;
@@ -2426,6 +2522,7 @@ extension CategoryServiceExtension on DatabaseService {
         if (r.children != null) find(r.children!, r);
       }
     }
+
     find(_rules, null);
     if (node == null) return false;
     final nodeVal = node!;
@@ -2449,13 +2546,15 @@ extension CategoryServiceExtension on DatabaseService {
           if (r.children != null) addTo(r.children!);
         }
       }
+
       addTo(_rules);
     }
     return true;
   }
 
   Future<bool> deleteCategory(int id) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false))
+      return false;
 
     final rule = getCategoryRuleById(id);
     if (rule == null || rule.id == -1) {
@@ -2485,10 +2584,9 @@ extension CategoryServiceExtension on DatabaseService {
           if (biz != null && biz.isNotEmpty) 'category_id': biz,
         }),
       );
-      await _pb.collection(PbCollections.categories).update(
-            delId,
-            body: patchBody,
-          );
+      await _pb
+          .collection(PbCollections.categories)
+          .update(delId, body: patchBody);
       _removeCategoryFromRules(id);
       _categoryController.add(List.from(_rules));
       return true;
@@ -2535,20 +2633,30 @@ extension CategoryServiceExtension on DatabaseService {
       }
       return false;
     }
+
     removeFrom(_rules);
   }
 
   /// Same id derivation as [_buildCategoryTreeFromFlat] so the local node matches the next reload.
-  int _categoryDisplayIdFromServerPk(String rawPk, {required String tagFallback}) {
+  int _categoryDisplayIdFromServerPk(
+    String rawPk, {
+    required String tagFallback,
+  }) {
     final trimmed = rawPk.trim();
     if (trimmed.isEmpty) {
-      return _hashStringToPositiveIntForCategoryTreeLocalIdOnly(tagFallback.trim(), 1);
+      return _hashStringToPositiveIntForCategoryTreeLocalIdOnly(
+        tagFallback.trim(),
+        1,
+      );
     }
     final asInt = _rowInt(trimmed);
     if (asInt != 0) return asInt;
     final h = _hashStringToPositiveIntForCategoryTreeLocalIdOnly(trimmed, 0);
     if (h != 0) return h;
-    return _hashStringToPositiveIntForCategoryTreeLocalIdOnly(tagFallback.trim(), 1);
+    return _hashStringToPositiveIntForCategoryTreeLocalIdOnly(
+      tagFallback.trim(),
+      1,
+    );
   }
 
   void _applyCategoryCreateResponseToPlaceholderPb({
@@ -2561,15 +2669,15 @@ extension CategoryServiceExtension on DatabaseService {
       if (rowId.isEmpty) return;
       final wantTag = displayName.trim();
       final biz = created.data['category_id']?.toString();
-      final newId =
-          _categoryDisplayIdFromServerPk(rowId, tagFallback: wantTag);
+      final newId = _categoryDisplayIdFromServerPk(rowId, tagFallback: wantTag);
       CategoryRule upgraded(CategoryRule old) {
         return CategoryRule(
           id: newId,
           name: old.name,
           backendRowId: rowId,
-          normalizedId:
-              (biz != null && biz.isNotEmpty) ? biz : old.normalizedId,
+          normalizedId: (biz != null && biz.isNotEmpty)
+              ? biz
+              : old.normalizedId,
           children: old.children,
           colorValue: old.colorValue,
           iconCodePoint: old.iconCodePoint,
@@ -2618,11 +2726,14 @@ extension CategoryServiceExtension on DatabaseService {
 
   /// UI-first: add child to _rules (temp id -1), push; then PocketBase create.
   Future<bool> addNestedCategory(int? parentId, CategoryRule child) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false))
+      return false;
 
     final ownerPbId = _userIdForWhere;
     if (ownerPbId == null || ownerPbId.isEmpty) {
-      DatabaseService._log('ADD_CATEGORY: missing auth record id for user_id relation');
+      DatabaseService._log(
+        'ADD_CATEGORY: missing auth record id for user_id relation',
+      );
       return false;
     }
 
@@ -2666,6 +2777,7 @@ extension CategoryServiceExtension on DatabaseService {
           if (r.children != null) addTo(r.children!);
         }
       }
+
       addTo(_rules);
     }
     _categoryController.add(List.from(_rules));
@@ -2691,13 +2803,16 @@ extension CategoryServiceExtension on DatabaseService {
         );
         final postedPk = (fields['category_id'] ?? '').toString().trim();
         if (postedPk.isEmpty) {
-          DatabaseService._log('ADD_CATEGORY: POST blocked — category_id missing in fields map');
+          DatabaseService._log(
+            'ADD_CATEGORY: POST blocked — category_id missing in fields map',
+          );
           _removeFailedPlaceholderCategory(parentId, child.name);
           return false;
         }
         await ensurePocketBaseReady();
-        final created =
-            await _pb.collection(PbCollections.categories).create(body: fields);
+        final created = await _pb
+            .collection(PbCollections.categories)
+            .create(body: fields);
         _applyCategoryCreateResponseToPlaceholderPb(
           parentId: parentId,
           displayName: child.name,
@@ -2709,14 +2824,17 @@ extension CategoryServiceExtension on DatabaseService {
       } on ClientException catch (e) {
         debugPrint('[SERVER_ERROR_BODY] ${e.response}');
         if (attempt == 0 && _pbErrorLooksLikeUniqueCategoryCollision(e)) {
-          final baseForRetry = categoryId.trim().isEmpty ? 'cat' : categoryId.trim();
+          final baseForRetry = categoryId.trim().isEmpty
+              ? 'cat'
+              : categoryId.trim();
           var newSlug = '${baseForRetry}_${_randomCategoryRecoverySuffix3()}';
           for (var k = 0; k < 12; k++) {
             if (!_categoryBusinessSlugReservedOrInRules(newSlug)) break;
-            newSlug =
-                '${baseForRetry}_${_randomCategoryRecoverySuffix3()}';
+            newSlug = '${baseForRetry}_${_randomCategoryRecoverySuffix3()}';
           }
-          debugPrint('[CATEGORY_RECOVERY] Retrying creation with unique slug: $newSlug');
+          debugPrint(
+            '[CATEGORY_RECOVERY] Retrying creation with unique slug: $newSlug',
+          );
           categoryId = newSlug;
           _patchPlaceholderCategoryBizId(parentId, child.name, categoryId);
           _categoryController.add(List.from(_rules));
@@ -2796,7 +2914,9 @@ extension CategoryServiceExtension on DatabaseService {
   }
 
   Future<void> updateCategoryKeywords(
-      int categoryId, Map<String, List<String>> keywords) async {
+    int categoryId,
+    Map<String, List<String>> keywords,
+  ) async {
     try {
       final rule = getCategoryRuleById(categoryId);
       if (rule == null) return;
@@ -2841,8 +2961,11 @@ extension CategoryServiceExtension on DatabaseService {
     visit(_rules);
   }
 
-  Future<String?> translateKeyword(String text,
-      {required String fromLang, required String toLang}) async {
+  Future<String?> translateKeyword(
+    String text, {
+    required String fromLang,
+    required String toLang,
+  }) async {
     return text;
   }
 
@@ -2911,8 +3034,11 @@ extension CategoryServiceExtension on DatabaseService {
     } else {
       end = start;
     }
-    final (DateTime dayStart, DateTime dayEnd) =
-        utcRangeForWallClockDate(selectedDay, offsetHours, preferredTimeZone);
+    final (DateTime dayStart, DateTime dayEnd) = utcRangeForWallClockDate(
+      selectedDay,
+      offsetHours,
+      preferredTimeZone,
+    );
     final effectiveStart = start.isBefore(dayStart) ? dayStart : start;
     final effectiveEnd = end.isAfter(dayEnd) ? dayEnd : end;
     if (!effectiveStart.isBefore(effectiveEnd)) return 0;
@@ -2921,7 +3047,9 @@ extension CategoryServiceExtension on DatabaseService {
 
   /// Strong signature so stats cache cannot reuse another day’s tree when length/first/last collide.
   static int statsRecordsSignature(
-      List<Map<String, dynamic>> records, DateTime selectedDay) {
+    List<Map<String, dynamic>> records,
+    DateTime selectedDay,
+  ) {
     var h = Object.hash(
       2,
       selectedDay.year,
@@ -2954,7 +3082,9 @@ extension CategoryServiceExtension on DatabaseService {
   }
 
   Duration getDurationForCategory(
-      int categoryId, List<Map<String, dynamic>> records) {
+    int categoryId,
+    List<Map<String, dynamic>> records,
+  ) {
     final ids = getRecordIdsInSubtree(categoryId);
     var sec = 0;
     for (final rec in records) {
@@ -3000,8 +3130,11 @@ extension CategoryServiceExtension on DatabaseService {
     final Map<String, _BuildNode> roots = {};
     for (final rec in records) {
       final pathStr = resolvedCategoryPathForRecord(rec);
-      var segments =
-          pathStr.split(' > ').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      var segments = pathStr
+          .split(' > ')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
       if (segments.isEmpty) segments = ['Legacy Data'];
       final sec = recordDurationSecondsWithinDayFromTimestamps(
         rec,
@@ -3017,8 +3150,9 @@ extension CategoryServiceExtension on DatabaseService {
         node.totalSeconds += sec;
         if (isLeaf) {
           final title = (rec['title'] as String?)?.trim();
-          final taskLabel =
-              (title != null && title.isNotEmpty) ? title : 'Untitled';
+          final taskLabel = (title != null && title.isNotEmpty)
+              ? title
+              : 'Untitled';
           final groupKey = _normalize(taskLabel);
           node.sessionGroups.putIfAbsent(groupKey, () => []);
           node.sessionGroups[groupKey]?.add(rec);
@@ -3054,8 +3188,8 @@ extension CategoryServiceExtension on DatabaseService {
             if (bt == null) return -1;
             return bt.compareTo(at);
           });
-          var displayLabel = (sortedByStart.isNotEmpty &&
-                  sortedByStart.first['title'] != null)
+          var displayLabel =
+              (sortedByStart.isNotEmpty && sortedByStart.first['title'] != null)
               ? (sortedByStart.first['title'] as String).trim()
               : '';
           if (displayLabel.isEmpty) displayLabel = e.key;
@@ -3094,10 +3228,7 @@ extension CategoryServiceExtension on DatabaseService {
       }
     }
     final title = titleParts.join(' ').trim();
-    return (
-      title: title.isEmpty ? input.trim() : title,
-      tags: tags,
-    );
+    return (title: title.isEmpty ? input.trim() : title, tags: tags);
   }
 
   Future<List<Task>> loadTasksForDate(DateTime date) async {
@@ -3108,8 +3239,10 @@ extension CategoryServiceExtension on DatabaseService {
       final list = prefs.getStringList(key);
       if (list == null || list.isEmpty) return [];
       return list
-          .map((s) =>
-              Task.fromMap(Map<String, dynamic>.from(jsonDecode(s) as Map)))
+          .map(
+            (s) =>
+                Task.fromMap(Map<String, dynamic>.from(jsonDecode(s) as Map)),
+          )
           .toList()
         ..sort((a, b) => a.startTime.compareTo(b.startTime));
     } catch (_) {
@@ -3122,7 +3255,9 @@ extension CategoryServiceExtension on DatabaseService {
     if (prefs == null) return;
     try {
       await prefs.setStringList(
-          _tasksKeyForDate(date), tasks.map((t) => t.toJson()).toList());
+        _tasksKeyForDate(date),
+        tasks.map((t) => t.toJson()).toList(),
+      );
     } catch (_) {}
   }
 
@@ -3142,7 +3277,10 @@ extension CategoryServiceExtension on DatabaseService {
       if (RegExp(r'[+-]\d{2}$').hasMatch(s)) {
         s = '$s:00';
       }
-      final hasTz = s.endsWith('Z') || s.contains('+') || (s.length > 11 && s.substring(11).contains('-'));
+      final hasTz =
+          s.endsWith('Z') ||
+          s.contains('+') ||
+          (s.length > 11 && s.substring(11).contains('-'));
       final parsed = DateTime.tryParse(hasTz ? s : '${s}Z');
       return parsed?.toUtc();
     }
@@ -3153,8 +3291,8 @@ extension CategoryServiceExtension on DatabaseService {
     final t = s.trim();
     if (t.length >= 28) return true;
     return RegExp(
-            r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
-        .hasMatch(t);
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    ).hasMatch(t);
   }
 
   static bool _isSmallIntegerString(String s) {

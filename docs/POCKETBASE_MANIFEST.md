@@ -59,6 +59,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 | `user_id` | relation | → `profiles.id`. |
 | `category_id` | text | Business slug / UUID (`life`, …). |
 | `name`, `normalized_id` | text | Display / search. |
+| `default_plan_time` | text | Optional `HH:mm` 24-hour default start time for new scheduled plans in this category; empty = inherit nearest parent / no default. |
 
 ### 4.3 `plans`
 

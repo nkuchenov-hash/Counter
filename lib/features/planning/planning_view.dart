@@ -687,6 +687,165 @@ class _PlanningPageState extends State<PlanningPage>
     unawaited(PlanningSheetTimelinePrefs.saveStartEnd(s, e));
   }
 
+  String _hhmmFromTimeOfDay(TimeOfDay t) {
+    return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  }
+
+  TimeOfDay _timeOfDayFromHhmm(String? raw) {
+    final sanitized = DatabaseService.instance.sanitizeDefaultPlanTime(raw);
+    if (sanitized == null) return const TimeOfDay(hour: 9, minute: 0);
+    return TimeOfDay(
+      hour: int.parse(sanitized.substring(0, 2)),
+      minute: int.parse(sanitized.substring(3, 5)),
+    );
+  }
+
+  Future<void> _setCategoryDefaultPlanTime(
+    int categoryId,
+    void Function(void Function())? modalSetState,
+  ) async {
+    final current =
+        DatabaseService.instance
+            .getCategoryRuleById(categoryId)
+            ?.defaultPlanTime ??
+        DatabaseService.instance.effectiveDefaultPlanTimeForCategory(
+          categoryId,
+        );
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _timeOfDayFromHhmm(current),
+      initialEntryMode: appTimePickerEntryMode(),
+    );
+    if (picked == null || !mounted) return;
+    final ok = await DatabaseService.instance.updateCategoryDefaultPlanTime(
+      categoryId,
+      _hhmmFromTimeOfDay(picked),
+    );
+    if (!mounted) return;
+    if (!ok.ok) {
+      AppSnack.failed();
+      return;
+    }
+    setState(() {});
+    modalSetState?.call(() {});
+  }
+
+  Future<void> _clearCategoryDefaultPlanTime(
+    int categoryId,
+    void Function(void Function())? modalSetState,
+  ) async {
+    final ok = await DatabaseService.instance.updateCategoryDefaultPlanTime(
+      categoryId,
+      null,
+    );
+    if (!mounted) return;
+    if (!ok.ok) {
+      AppSnack.failed();
+      return;
+    }
+    setState(() {});
+    modalSetState?.call(() {});
+  }
+
+  void _showDefaultPlanTimesSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final loc = currentLocale.value;
+            final db = DatabaseService.instance;
+            final pairs = db.allCategoryIdPathPairs
+                .where((p) => p.id != CategoryRule.uncategorizedSyntheticId)
+                .toList();
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      t(loc, 'plan_default_times_title'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+                      ),
+                      child: ListView.separated(
+                        itemCount: pairs.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final pair = pairs[i];
+                          final rule = db.getCategoryRuleById(pair.id);
+                          final own = db.sanitizeDefaultPlanTime(
+                            rule?.defaultPlanTime,
+                          );
+                          final effective = db
+                              .effectiveDefaultPlanTimeForCategory(pair.id);
+                          late final String subtitle;
+                          if (own != null) {
+                            subtitle = own;
+                          } else if (effective != null) {
+                            subtitle = t(
+                              loc,
+                              'plan_default_time_inherited',
+                            ).replaceFirst('%s', effective);
+                          } else {
+                            subtitle = t(loc, 'plan_default_time_none');
+                          }
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              pair.path,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(subtitle),
+                            trailing: Wrap(
+                              spacing: 4,
+                              children: [
+                                TextButton(
+                                  onPressed: () => unawaited(
+                                    _setCategoryDefaultPlanTime(
+                                      pair.id,
+                                      setModalState,
+                                    ),
+                                  ),
+                                  child: Text(t(loc, 'plan_default_time_set')),
+                                ),
+                                if (own != null)
+                                  TextButton(
+                                    onPressed: () => unawaited(
+                                      _clearCategoryDefaultPlanTime(
+                                        pair.id,
+                                        setModalState,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      t(loc, 'plan_default_time_clear'),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showPlanningSettingsSheet() {
     final loc = currentLocale.value;
     showModalBottomSheet<void>(
@@ -721,6 +880,21 @@ class _PlanningPageState extends State<PlanningPage>
                         _noTagsColorHex = colorHex;
                       });
                       await _reloadQuickAddTags();
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.schedule_rounded),
+                    title: Text(t(loc, 'plan_default_times_title')),
+                    subtitle: Text(
+                      t(loc, 'plan_default_times_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(sheetCtx).pop();
+                      _showDefaultPlanTimesSheet();
                     },
                   ),
                   const Divider(height: 1),
@@ -1187,8 +1361,8 @@ class _PlanningPageState extends State<PlanningPage>
     final range = SmartInputParser.parseTitleForTimeRange(raw);
     SmartTimeParseResult? parsed;
     String title;
-    final DateTime? startStored;
-    final DateTime? endStored;
+    DateTime? startStored;
+    DateTime? endStored;
 
     if (range != null) {
       title = range.cleanedTitle.trim();
@@ -1221,6 +1395,13 @@ class _PlanningPageState extends State<PlanningPage>
         (DatabaseService.instance.rules.isNotEmpty
             ? DatabaseService.instance.rules.first.id
             : 0);
+    if (startStored == null && range == null && parsed == null) {
+      final defaultWall = DatabaseService.instance
+          .wallDateTimeForCategoryDefaultPlanTime(categoryId, wallDay);
+      if (defaultWall != null) {
+        startStored = DatabaseService.instance.displayTimeToUtc(defaultWall);
+      }
+    }
     var nextOrder = _nextPlanOrderForQuickAdd();
     final optimisticId = -DateTime.now().millisecondsSinceEpoch;
     final clientPlanId = DatabaseService.newClientUuid();
@@ -2399,73 +2580,57 @@ class _PlanningPageState extends State<PlanningPage>
         if (!_planSelectMode)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
-            child: Row(
-              children: [
-                SizedBox(
-                  height: kAppCompactControlHeight,
-                  child: SegmentedButton<_PlanSortMode>(
-                    showSelectedIcon: false,
-                    style: appCompactSegmentedButtonStyle(
-                      context,
-                      segmentWidth: 78,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: SizedBox(
+                height: kAppCompactControlHeight,
+                child: SegmentedButton<_PlanSortMode>(
+                  showSelectedIcon: false,
+                  style: appCompactSegmentedButtonStyle(
+                    context,
+                    segmentWidth: 78,
+                  ),
+                  segments: [
+                    ButtonSegment<_PlanSortMode>(
+                      value: _PlanSortMode.category,
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'plan_sort_category'),
+                      ),
                     ),
-                    segments: [
-                      ButtonSegment<_PlanSortMode>(
-                        value: _PlanSortMode.category,
-                        label: AppCompactSegmentLabel(
-                          text: t(currentLocale.value, 'plan_sort_category'),
-                        ),
+                    ButtonSegment<_PlanSortMode>(
+                      value: _PlanSortMode.time,
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'plan_sort_time'),
                       ),
-                      ButtonSegment<_PlanSortMode>(
-                        value: _PlanSortMode.time,
-                        label: AppCompactSegmentLabel(
-                          text: t(currentLocale.value, 'plan_sort_time'),
-                        ),
+                    ),
+                    ButtonSegment<_PlanSortMode>(
+                      value: _PlanSortMode.tags,
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'plan_sort_tags'),
                       ),
-                      ButtonSegment<_PlanSortMode>(
-                        value: _PlanSortMode.tags,
-                        label: AppCompactSegmentLabel(
-                          text: t(currentLocale.value, 'plan_sort_tags'),
-                        ),
+                    ),
+                    ButtonSegment<_PlanSortMode>(
+                      value: _PlanSortMode.custom,
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'plan_sort_custom'),
                       ),
-                      ButtonSegment<_PlanSortMode>(
-                        value: _PlanSortMode.custom,
-                        label: AppCompactSegmentLabel(
-                          text: t(currentLocale.value, 'plan_sort_custom'),
-                        ),
+                    ),
+                  ],
+                  selected: {_sortMode},
+                  onSelectionChanged: (Set<_PlanSortMode> next) {
+                    if (next.isEmpty) return;
+                    final mode = next.first;
+                    setState(() {
+                      _sortMode = mode;
+                    });
+                    unawaited(
+                      DatabaseService.instance.persistPlanActiveTabIndex(
+                        _planSortModeToPersistedIndex(mode),
                       ),
-                    ],
-                    selected: {_sortMode},
-                    onSelectionChanged: (Set<_PlanSortMode> next) {
-                      if (next.isEmpty) return;
-                      final mode = next.first;
-                      setState(() {
-                        _sortMode = mode;
-                      });
-                      unawaited(
-                        DatabaseService.instance.persistPlanActiveTabIndex(
-                          _planSortModeToPersistedIndex(mode),
-                        ),
-                      );
-                    },
-                  ),
+                    );
+                  },
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  constraints: const BoxConstraints(
-                    minWidth: 44,
-                    minHeight: 44,
-                  ),
-                  style: IconButton.styleFrom(
-                    foregroundColor: scheme.primary,
-                    splashFactory: NoSplash.splashFactory,
-                    hoverColor: Colors.transparent,
-                  ),
-                  icon: const Icon(Icons.settings_rounded),
-                  tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
-                  onPressed: _showPlanningSettingsSheet,
-                ),
-              ],
+              ),
             ),
           ),
         Padding(
@@ -2474,7 +2639,31 @@ class _PlanningPageState extends State<PlanningPage>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(height: 50, child: _buildQuickAddTagStrip(scheme)),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: _buildQuickAddTagStrip(scheme),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    style: IconButton.styleFrom(
+                      foregroundColor: scheme.primary,
+                      splashFactory: NoSplash.splashFactory,
+                      hoverColor: Colors.transparent,
+                    ),
+                    icon: const Icon(Icons.settings_rounded),
+                    tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
+                    onPressed: _showPlanningSettingsSheet,
+                  ),
+                ],
+              ),
               const SizedBox(height: 10),
               Row(
                 children: [

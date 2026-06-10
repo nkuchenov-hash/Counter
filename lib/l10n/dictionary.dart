@@ -313,6 +313,13 @@ const Map<String, Map<String, String>> _l10nCore = {
     'smart_plan_added': '%s task(s) added.',
     'smart_plan_failed_detail': '%s',
     'plan_settings_tooltip': 'Planning display',
+    'plan_default_times_title': 'Default plan times',
+    'plan_default_times_subtitle':
+        'Apply a category time when new plan text has no time.',
+    'plan_default_time_none': 'No default time',
+    'plan_default_time_inherited': 'Inherited: %s',
+    'plan_default_time_set': 'Set time',
+    'plan_default_time_clear': 'Clear',
     'plan_day_start_hour': 'Start of day',
     'plan_day_start_hint':
         'First hour row in the time grid (0–23). End may be before start for overnight.',
@@ -866,6 +873,13 @@ const Map<String, Map<String, String>> _l10nCore = {
     'smart_plan_added': 'Добавлено задач: %s.',
     'smart_plan_failed_detail': '%s',
     'plan_settings_tooltip': 'Отображение плана',
+    'plan_default_times_title': 'Время планов по умолчанию',
+    'plan_default_times_subtitle':
+        'Применять время категории, если в новом плане время не указано.',
+    'plan_default_time_none': 'Без времени по умолчанию',
+    'plan_default_time_inherited': 'Наследуется: %s',
+    'plan_default_time_set': 'Установить время',
+    'plan_default_time_clear': 'Очистить',
     'plan_day_start_hour': 'Начало дня',
     'plan_day_start_hint':
         'Первая строка сетки (0–23). Конец может быть «раньше» начала через полночь.',

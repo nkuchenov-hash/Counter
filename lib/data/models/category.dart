@@ -12,19 +12,23 @@ class Category {
     this.normalizedId,
     this.colorValue,
     this.iconCodePoint,
+    this.defaultPlanTime,
     this.isArchived = false,
   });
 
   final String id;
   final int userId;
+
   /// Display name (@DATA_MAP column `name`).
   final String? name;
+
   /// Legacy display label; prefer [name] when present.
   final String? tag;
   final int? parentId;
   final String? normalizedId;
   final int? colorValue;
   final int? iconCodePoint;
+  final String? defaultPlanTime;
   final bool isArchived;
 
   factory Category.fromJson(Map<String, dynamic> json) {
@@ -36,13 +40,15 @@ class Category {
     final resolvedName = nameRaw.isNotEmpty
         ? nameRaw
         : (legacyTag != null && legacyTag.isNotEmpty)
-            ? legacyTag
-            : (normRaw.isNotEmpty ? normRaw : null);
-    final display = resolvedName ??
+        ? legacyTag
+        : (normRaw.isNotEmpty ? normRaw : null);
+    final display =
+        resolvedName ??
         (normRaw.isNotEmpty ? normRaw : null) ??
         (legacyTag != null && legacyTag.isNotEmpty ? legacyTag : null);
     final arc = json['is_archived'] ?? json['isArchived'];
-    final isArc = arc == true ||
+    final isArc =
+        arc == true ||
         arc == 1 ||
         (arc is String && arc.toLowerCase().trim() == 'true');
     return Category(
@@ -52,8 +58,13 @@ class Category {
       tag: display ?? 'Untitled',
       parentId: pid == null || pid.toString().isEmpty ? null : _jsonInt(pid),
       normalizedId: json['normalized_id']?.toString(),
-      colorValue: json['color_value'] is int ? json['color_value'] as int : int.tryParse(json['color_value']?.toString() ?? ''),
-      iconCodePoint: json['icon_code_point'] is int ? json['icon_code_point'] as int : int.tryParse(json['icon_code_point']?.toString() ?? ''),
+      colorValue: json['color_value'] is int
+          ? json['color_value'] as int
+          : int.tryParse(json['color_value']?.toString() ?? ''),
+      iconCodePoint: json['icon_code_point'] is int
+          ? json['icon_code_point'] as int
+          : int.tryParse(json['icon_code_point']?.toString() ?? ''),
+      defaultPlanTime: json['default_plan_time']?.toString().trim(),
       isArchived: isArc,
     );
   }
@@ -62,16 +73,18 @@ class Category {
   /// Note: [userId] is a local int hash of `user_id` when the server sends non-numeric ids
   /// ([_jsonInt]); do not use this map as a verbatim POST body for relation fields.
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'user_id': userId,
-        if (name != null && name!.isNotEmpty) 'name': name,
-        if (normalizedId != null && normalizedId!.isNotEmpty)
-          'normalized_id': normalizedId,
-        if (parentId != null) 'parent_id': parentId,
-        if (colorValue != null) 'color_value': colorValue,
-        if (iconCodePoint != null) 'icon_code_point': iconCodePoint,
-        'is_archived': isArchived,
-      };
+    'id': id,
+    'user_id': userId,
+    if (name != null && name!.isNotEmpty) 'name': name,
+    if (normalizedId != null && normalizedId!.isNotEmpty)
+      'normalized_id': normalizedId,
+    if (parentId != null) 'parent_id': parentId,
+    if (colorValue != null) 'color_value': colorValue,
+    if (iconCodePoint != null) 'icon_code_point': iconCodePoint,
+    if (defaultPlanTime != null && defaultPlanTime!.isNotEmpty)
+      'default_plan_time': defaultPlanTime,
+    'is_archived': isArchived,
+  };
 }
 
 /// Create-category dialog: name availability vs active tree + archived PB rows.
@@ -88,11 +101,13 @@ class CategoryNameInputStatus {
   final int? activeLocalId;
   final String? archivedPbRowId;
 
-  static const CategoryNameInputStatus empty =
-      CategoryNameInputStatus._(kind: CategoryNameInputKind.empty);
+  static const CategoryNameInputStatus empty = CategoryNameInputStatus._(
+    kind: CategoryNameInputKind.empty,
+  );
 
-  static const CategoryNameInputStatus available =
-      CategoryNameInputStatus._(kind: CategoryNameInputKind.available);
+  static const CategoryNameInputStatus available = CategoryNameInputStatus._(
+    kind: CategoryNameInputKind.available,
+  );
 
   factory CategoryNameInputStatus.active(int localId) {
     return CategoryNameInputStatus._(
@@ -181,7 +196,8 @@ DateTime? _recordLocalCalendarDate(dynamic v, [int offsetHours = 0]) {
     if (s.contains(' ') && !s.contains('T')) {
       s = s.replaceFirst(' ', 'T');
     }
-    final hasTz = s.endsWith('Z') ||
+    final hasTz =
+        s.endsWith('Z') ||
         s.contains('+') ||
         (s.length > 11 && s.substring(11).contains('-'));
     parsed = DateTime.tryParse(hasTz ? s : '${s}Z');
@@ -204,6 +220,7 @@ class CategoryRule {
     this.children,
     this.colorValue,
     this.iconCodePoint,
+    this.defaultPlanTime,
     this.keywords,
     this.localizedNames,
     this.order = 0,
@@ -223,26 +240,32 @@ class CategoryRule {
   }
 
   final int id;
+
   /// @DATA_MAP.md `categories.name` (display name).
   String name;
+
   /// PocketBase **categories** collection record id (PATCH/DELETE).
   final String? backendRowId;
   final String? normalizedId;
+
   /// String business key from DB (e.g. slug / UUID). May differ from [name] when resolving archive unique constraints.
-  String get categoryKey =>
-      (normalizedId ?? '').trim().isNotEmpty
-          ? normalizedId!.trim()
-          : (backendRowId ?? '').trim().isNotEmpty
-              ? backendRowId!.trim()
-              : name.trim();
+  String get categoryKey => (normalizedId ?? '').trim().isNotEmpty
+      ? normalizedId!.trim()
+      : (backendRowId ?? '').trim().isNotEmpty
+      ? backendRowId!.trim()
+      : name.trim();
   List<CategoryRule>? children;
   int? colorValue;
   int? iconCodePoint;
+  String? defaultPlanTime;
+
   /// @DATA_MAP.md `categories.order` — sibling sort index (integer); persisted via bulk PATCH.
   int order;
+
   /// @DATA_MAP `is_archived` — soft-deleted categories stay in DB but off active lists.
   /// Uniqueness checks and “category exists” logic must ignore archived rows (zombie slug conflicts).
   bool isArchived;
+
   /// Local-only: queued / cache state (not sent to PocketBase as a field).
   bool isSynced;
   Map<String, List<String>>? keywords;
@@ -256,14 +279,19 @@ class CategoryRule {
     List<CategoryRule>? children,
     int? colorValue,
     int? iconCodePoint,
+    String? defaultPlanTime,
+    bool clearDefaultPlanTime = false,
     Map<String, List<String>>? keywords,
     Map<String, String>? localizedNames,
     int? order,
     bool? isArchived,
     bool? isSynced,
   }) {
-    final copiedChildren = children ??
-        (this.children != null ? List<CategoryRule>.from(this.children!) : null);
+    final copiedChildren =
+        children ??
+        (this.children != null
+            ? List<CategoryRule>.from(this.children!)
+            : null);
     Map<String, List<String>>? copiedKeywords;
     if (keywords != null) {
       copiedKeywords = {};
@@ -284,6 +312,9 @@ class CategoryRule {
       children: copiedChildren,
       colorValue: colorValue ?? this.colorValue,
       iconCodePoint: iconCodePoint ?? this.iconCodePoint,
+      defaultPlanTime: clearDefaultPlanTime
+          ? null
+          : (defaultPlanTime ?? this.defaultPlanTime),
       keywords: copiedKeywords,
       localizedNames: localizedNames ?? this.localizedNames,
       order: order ?? this.order,
@@ -293,7 +324,9 @@ class CategoryRule {
   }
 
   List<String> keywordsFor(String lang) =>
-      (keywords != null && keywords!.containsKey(lang)) ? List<String>.from(keywords![lang]!) : [];
+      (keywords != null && keywords!.containsKey(lang))
+      ? List<String>.from(keywords![lang]!)
+      : [];
 
   Color get colorOrDefault {
     if (colorValue != null) return Color(colorValue!);
@@ -301,7 +334,8 @@ class CategoryRule {
   }
 
   IconData get iconOrDefault {
-    if (iconCodePoint != null) return IconData(iconCodePoint!, fontFamily: 'MaterialIcons');
+    if (iconCodePoint != null)
+      return IconData(iconCodePoint!, fontFamily: 'MaterialIcons');
     return Icons.folder_rounded;
   }
 
@@ -545,42 +579,49 @@ class CategoryRule {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'id': id,
-        'name': name,
-        if (backendRowId != null && backendRowId!.isNotEmpty) 'backendRowId': backendRowId,
-        if (normalizedId != null && normalizedId!.isNotEmpty) 'normalizedId': normalizedId,
-        if (children != null && children!.isNotEmpty)
-          'children': children!.map((c) => c.toJson()).toList(),
-        if (colorValue != null) 'colorValue': colorValue,
-        if (iconCodePoint != null) 'iconCodePoint': iconCodePoint,
-        if (keywords != null && keywords!.isNotEmpty)
-          'keywords': keywords!.map((k, v) => MapEntry(k, v)),
-        if (localizedNames != null && localizedNames!.isNotEmpty)
-          'localizedNames': localizedNames,
-        'order': order,
-        'isArchived': isArchived,
-      };
+    'id': id,
+    'name': name,
+    if (backendRowId != null && backendRowId!.isNotEmpty)
+      'backendRowId': backendRowId,
+    if (normalizedId != null && normalizedId!.isNotEmpty)
+      'normalizedId': normalizedId,
+    if (children != null && children!.isNotEmpty)
+      'children': children!.map((c) => c.toJson()).toList(),
+    if (colorValue != null) 'colorValue': colorValue,
+    if (iconCodePoint != null) 'iconCodePoint': iconCodePoint,
+    if (keywords != null && keywords!.isNotEmpty)
+      'keywords': keywords!.map((k, v) => MapEntry(k, v)),
+    if (localizedNames != null && localizedNames!.isNotEmpty)
+      'localizedNames': localizedNames,
+    'order': order,
+    'isArchived': isArchived,
+  };
 
   factory CategoryRule.fromJson(Map<String, dynamic> json) {
     final data = (json['fields'] ?? json) as Map<String, dynamic>;
     final rawId =
-        (json['id'] ?? json['category_id'] ?? data['id'] ?? data['category_id'] ?? '')
+        (json['id'] ??
+                json['category_id'] ??
+                data['id'] ??
+                data['category_id'] ??
+                '')
             .toString();
     final nameStr = (data['name'] ?? json['name'])?.toString().trim() ?? '';
     final tagStr = (data['tag'] ?? json['tag'])?.toString().trim() ?? '';
     final normStr =
-        (data['normalized_id'] ?? data['normalizedId'])?.toString().trim() ?? '';
+        (data['normalized_id'] ?? data['normalizedId'])?.toString().trim() ??
+        '';
     final safeTag = nameStr.isNotEmpty
         ? nameStr
         : (tagStr.isNotEmpty
-            ? tagStr
-            : (normStr.isNotEmpty ? normStr : 'Untitled'));
+              ? tagStr
+              : (normStr.isNotEmpty ? normStr : 'Untitled'));
     final rawChildren = data['children'];
     final List<CategoryRule> children = rawChildren is List
         ? (rawChildren)
-            .whereType<Map<String, dynamic>>()
-            .map(CategoryRule.fromJson)
-            .toList()
+              .whereType<Map<String, dynamic>>()
+              .map(CategoryRule.fromJson)
+              .toList()
         : [];
     final rawKeywords = data['keywords'];
     Map<String, List<String>>? keywords;
@@ -590,7 +631,10 @@ class CategoryRule {
         if (e.key is! String) continue;
         final list = e.value;
         if (list is List) {
-          keywords[e.key as String] = list.map((x) => x?.toString() ?? '').where((s) => s.isNotEmpty).toList();
+          keywords[e.key as String] = list
+              .map((x) => x?.toString() ?? '')
+              .where((s) => s.isNotEmpty)
+              .toList();
         } else {
           keywords[e.key as String] = [];
         }
@@ -619,18 +663,27 @@ class CategoryRule {
         ? orderRaw
         : int.tryParse(orderRaw?.toString() ?? '') ?? 0;
     final archivedRaw = data['is_archived'] ?? data['isArchived'];
-    final isArc = archivedRaw == true ||
+    final isArc =
+        archivedRaw == true ||
         archivedRaw == 1 ||
-        (archivedRaw is String &&
-            archivedRaw.toLowerCase().trim() == 'true');
+        (archivedRaw is String && archivedRaw.toLowerCase().trim() == 'true');
     return CategoryRule(
       id: int.tryParse(rawId) ?? _stableStringHash(rawId),
       name: safeTag,
       backendRowId: rawId,
-      normalizedId: (data['category_id'] ?? data['id1'] ?? data['normalized_id'] ?? data['normalizedId'])?.toString(),
+      normalizedId:
+          (data['category_id'] ??
+                  data['id1'] ??
+                  data['normalized_id'] ??
+                  data['normalizedId'])
+              ?.toString(),
       children: children.isEmpty ? null : children,
-      colorValue: colorRaw is int ? colorRaw : (colorRaw != null ? int.tryParse(colorRaw.toString()) : null),
-      iconCodePoint: iconRaw is int ? iconRaw : (iconRaw != null ? int.tryParse(iconRaw.toString()) : null),
+      colorValue: colorRaw is int
+          ? colorRaw
+          : (colorRaw != null ? int.tryParse(colorRaw.toString()) : null),
+      iconCodePoint: iconRaw is int
+          ? iconRaw
+          : (iconRaw != null ? int.tryParse(iconRaw.toString()) : null),
       keywords: keywords,
       localizedNames: localizedNames,
       order: orderVal,
@@ -669,7 +722,11 @@ int _tagDepth(List<CategoryRule> rules, String tag, int depth) {
   return -1;
 }
 
-String getTagPath(List<CategoryRule> rules, String tag, [List<String> path = const []]) {
+String getTagPath(
+  List<CategoryRule> rules,
+  String tag, [
+  List<String> path = const [],
+]) {
   final t = tag.trim().toLowerCase();
   if (t.isEmpty) return tag;
   for (final r in rules) {
