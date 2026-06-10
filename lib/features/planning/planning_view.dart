@@ -11,6 +11,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
+import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
@@ -82,7 +83,8 @@ class PlanningSwipeWrapper extends StatefulWidget {
     int categoryId,
     String dateKey, {
     String? sourcePlanPocketRecordId,
-  }) onStartRecordFromTask;
+  })
+  onStartRecordFromTask;
   final void Function(PlanningTask task) onEditTask;
 
   @override
@@ -94,6 +96,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   static const int totalPageCount = 10000;
   late PageController _controller;
   late DateTime _anchorDate;
+
   /// Page index currently shown; only this day’s [PlanningPage] subscribes to [DatabaseService.notifyPlanningRefresh].
   late int _visiblePageIndex;
 
@@ -106,7 +109,9 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   void initState() {
     super.initState();
     _anchorDate = DateUtils.dateOnly(DateTime.now());
-    final daysOffset = _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;
+    final daysOffset = _dateOnly(
+      widget.selectedDate,
+    ).difference(_anchorDate).inDays;
     _visiblePageIndex = initialPage + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
   }
@@ -115,7 +120,9 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   void didUpdateWidget(covariant PlanningSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedDate != widget.selectedDate) {
-      final daysOffset = _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;
+      final daysOffset = _dateOnly(
+        widget.selectedDate,
+      ).difference(_anchorDate).inDays;
       final page = initialPage + daysOffset;
       if (page >= 0 && page < totalPageCount) {
         setState(() => _visiblePageIndex = page);
@@ -140,7 +147,9 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     final dateOnly = _dateOnly(date);
     final offset = dateOnly.difference(_anchorDate).inDays;
     final targetIndex = initialPage + offset;
-    if (targetIndex >= 0 && targetIndex < totalPageCount && _controller.hasClients) {
+    if (targetIndex >= 0 &&
+        targetIndex < totalPageCount &&
+        _controller.hasClients) {
       _controller.jumpToPage(targetIndex);
       widget.onDateChanged(dateOnly);
     }
@@ -152,37 +161,37 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
       return ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
         child: PageView.builder(
-        controller: _controller,
-        itemCount: totalPageCount,
-        onPageChanged: (int index) {
-          if (index >= 0 && index < totalPageCount) {
-            setState(() => _visiblePageIndex = index);
+          controller: _controller,
+          itemCount: totalPageCount,
+          onPageChanged: (int index) {
+            if (index >= 0 && index < totalPageCount) {
+              setState(() => _visiblePageIndex = index);
+              final date = _anchorDate.add(Duration(days: index - initialPage));
+              widget.onDateChanged(_dateOnly(date));
+            }
+          },
+          itemBuilder: (context, index) {
             final date = _anchorDate.add(Duration(days: index - initialPage));
-            widget.onDateChanged(_dateOnly(date));
-          }
-        },
-        itemBuilder: (context, index) {
-          final date = _anchorDate.add(Duration(days: index - initialPage));
-          final dateKey = _dateKeyFromDate(date);
-          return PlanningPage(
-            key: ValueKey(dateKey),
-            selectedDateString: dateKey,
-            selectedDate: date,
-            isActivePlanningDay: index == _visiblePageIndex,
-            selectedCategoryId: widget.selectedCategoryId,
-            onCategoryChanged: widget.onCategoryChanged,
-            onStartRecordFromTask: widget.onStartRecordFromTask,
-            onEditTask: widget.onEditTask,
-            onDatePicked: _jumpToDate,
-            pageController: _controller,
-            anchorDate: _anchorDate,
-            initialPage: initialPage,
-            totalPageCount: totalPageCount,
-            onDateChanged: widget.onDateChanged,
-          );
-        },
-      ),
-    );
+            final dateKey = _dateKeyFromDate(date);
+            return PlanningPage(
+              key: ValueKey(dateKey),
+              selectedDateString: dateKey,
+              selectedDate: date,
+              isActivePlanningDay: index == _visiblePageIndex,
+              selectedCategoryId: widget.selectedCategoryId,
+              onCategoryChanged: widget.onCategoryChanged,
+              onStartRecordFromTask: widget.onStartRecordFromTask,
+              onEditTask: widget.onEditTask,
+              onDatePicked: _jumpToDate,
+              pageController: _controller,
+              anchorDate: _anchorDate,
+              initialPage: initialPage,
+              totalPageCount: totalPageCount,
+              onDateChanged: widget.onDateChanged,
+            );
+          },
+        ),
+      );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('PlanningSwipeWrapper: $e\n$st');
@@ -223,6 +232,7 @@ class PlanningPage extends StatefulWidget {
 
   final String selectedDateString;
   final DateTime? selectedDate;
+
   /// Only the visible PageView day should be `true` so global planning refresh does not N× the same GET.
   final bool isActivePlanningDay;
   final int? selectedCategoryId;
@@ -232,7 +242,8 @@ class PlanningPage extends StatefulWidget {
     int categoryId,
     String dateKey, {
     String? sourcePlanPocketRecordId,
-  }) onStartRecordFromTask;
+  })
+  onStartRecordFromTask;
   final void Function(PlanningTask task) onEditTask;
   final void Function(DateTime date)? onDatePicked;
   final PageController? pageController;
@@ -251,6 +262,7 @@ class _PlanningPageState extends State<PlanningPage>
   final _quickAddFocus = FocusNode();
   final Set<String> _selectedPlanKeys = {};
   final List<PlanningTask> _optimisticTasks = [];
+
   /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
   List<PlanningTask> _latestPlanningDayTasks = const [];
   final Map<String, bool> _planDoneOverride = {};
@@ -293,6 +305,7 @@ class _PlanningPageState extends State<PlanningPage>
   bool _quickAddTagsLoading = true;
   bool _noTagsChipVisible = true;
   String _noTagsColorHex = _defaultNoTagsColorHex;
+
   /// M2M tags selected before submitting the inline task.
   List<Tag> _creationSelectedTags = [];
 
@@ -325,9 +338,8 @@ class _PlanningPageState extends State<PlanningPage>
     if (task.planRowIdForBackend.startsWith('optimistic-')) return;
     if (task.id <= 0) return;
     final loc = currentLocale.value;
-    final initial = _planDateFromTaskDateKey(task.dateKey) ??
-        widget.selectedDate ??
-        _today;
+    final initial =
+        _planDateFromTaskDateKey(task.dateKey) ?? widget.selectedDate ?? _today;
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.utc(initial.year, initial.month, initial.day),
@@ -342,8 +354,7 @@ class _PlanningPageState extends State<PlanningPage>
       h = task.startTime!.hour;
       min = task.startTime!.minute;
     }
-    final wallStart =
-        DateTime(picked.year, picked.month, picked.day, h, min);
+    final wallStart = DateTime(picked.year, picked.month, picked.day, h, min);
     DateTime? wallEnd;
     if (task.endDateTime != null) {
       wallEnd = DateTime(
@@ -355,15 +366,18 @@ class _PlanningPageState extends State<PlanningPage>
       );
     }
     final newKey = _dateKeyFromDate(picked);
-    final anchorShort =
-        DatabaseService.instance.planningAuditAnchorDateKey(task);
+    final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
+      task,
+    );
     const minKeyLen = 10;
     final persistInitial = anchorShort.length >= minKeyLen
         ? anchorShort
         : DatabaseService.instance.planningWallScheduleDateKey(task);
-    final initForPatch =
-        persistInitial.length >= minKeyLen ? persistInitial : newKey;
-    final postponed = !task.isDone &&
+    final initForPatch = persistInitial.length >= minKeyLen
+        ? persistInitial
+        : newKey;
+    final postponed =
+        !task.isDone &&
         DatabaseService.instance.planningShouldMarkPostponed(
           anchorKey: initForPatch,
           newScheduleKey: newKey,
@@ -388,7 +402,9 @@ class _PlanningPageState extends State<PlanningPage>
       endDateTimeDisplay: wallEnd,
       clearEnd: task.endDateTime == null,
       suppressAppSnack: true,
-      planInitialDateKey: initForPatch.length >= minKeyLen ? initForPatch : null,
+      planInitialDateKey: initForPatch.length >= minKeyLen
+          ? initForPatch
+          : null,
       planIsPostponed: postponed,
     );
     if (!mounted) return;
@@ -396,9 +412,9 @@ class _PlanningPageState extends State<PlanningPage>
       DatabaseService.instance.applyOptimisticPlanningTask(task);
       DatabaseService.instance.notifyPlanningRefresh();
       setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'plan_save_failed'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
     }
   }
 
@@ -425,11 +441,12 @@ class _PlanningPageState extends State<PlanningPage>
     }
     WidgetsBinding.instance.addObserver(this);
     _planningStream = _createPlanningStream();
-    _activeRecordingTitleNorm = DatabaseService.instance.cachedPrimaryRunningTitle
+    _activeRecordingTitleNorm = DatabaseService
+        .instance
+        .cachedPrimaryRunningTitle
         ?.trim()
         .toLowerCase();
-    _planningTimeSub =
-        DatabaseService.instance.timeUpdates.listen((_) {
+    _planningTimeSub = DatabaseService.instance.timeUpdates.listen((_) {
       if (!mounted) return;
       final t = DatabaseService.instance.cachedPrimaryRunningTitle
           ?.trim()
@@ -438,8 +455,7 @@ class _PlanningPageState extends State<PlanningPage>
         setState(() => _activeRecordingTitleNorm = t);
       }
     });
-    _tagsCatalogSub =
-        DatabaseService.instance.tagsCatalogUpdated.listen((_) {
+    _tagsCatalogSub = DatabaseService.instance.tagsCatalogUpdated.listen((_) {
       if (!mounted) return;
       setState(() {});
     });
@@ -513,15 +529,17 @@ class _PlanningPageState extends State<PlanningPage>
     final prefs = await SharedPreferences.getInstance();
     final visible = prefs.getBool(_prefsKeyNoTagsVisible) ?? true;
     final cr = prefs.getString(_prefsKeyNoTagsColor)?.trim();
-    final colorHex = (cr != null &&
+    final colorHex =
+        (cr != null &&
             cr.startsWith('#') &&
             cr.length >= 7 &&
             parseTagHexColor(cr) != null)
         ? cr
         : _defaultNoTagsColorHex;
 
-    final list = await DatabaseService.instance
-        .fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
+    final list = await DatabaseService.instance.fetchTagsForCurrentUser(
+      scope: TagCatalogScope.plan,
+    );
     List<int>? order;
     try {
       final raw = prefs.getString(_prefsKeyQuickBarTagOrder);
@@ -540,9 +558,7 @@ class _PlanningPageState extends State<PlanningPage>
     _noTagsColorHex = colorHex;
     var merged = _mergeQuickBarTagsFromServer(list, order);
     if (!visible) {
-      merged = merged
-          .where((t) => t.tagId != _kUntaggedPlanGroupId)
-          .toList();
+      merged = merged.where((t) => t.tagId != _kUntaggedPlanGroupId).toList();
     }
     setState(() {
       _quickAddAvailableTags = merged;
@@ -850,8 +866,11 @@ class _PlanningPageState extends State<PlanningPage>
 
   List<PlanningTask> _mergeWithOptimistic(List<PlanningTask> server) {
     final pending = _optimisticTasks
-        .where((o) => !server.any(
-            (s) => s.title.trim() == o.title.trim() && s.dateKey == o.dateKey))
+        .where(
+          (o) => !server.any(
+            (s) => s.title.trim() == o.title.trim() && s.dateKey == o.dateKey,
+          ),
+        )
         .toList();
     final merged = [...pending, ...server];
     merged.sort((a, b) {
@@ -958,7 +977,8 @@ class _PlanningPageState extends State<PlanningPage>
     if (result == null || !mounted) return;
 
     final refDay = widget.selectedDate ?? _today;
-    final sameDay = result.targetDate.year == refDay.year &&
+    final sameDay =
+        result.targetDate.year == refDay.year &&
         result.targetDate.month == refDay.month &&
         result.targetDate.day == refDay.day;
     if (sameDay && !result.applyTargetTime) {
@@ -985,15 +1005,18 @@ class _PlanningPageState extends State<PlanningPage>
       final wall = computeBulkEditWallTimes(match, result);
       final d = DateTime(wall.start.year, wall.start.month, wall.start.day);
       final newKey = _dateKeyFromDate(d);
-      final anchorShort =
-          DatabaseService.instance.planningAuditAnchorDateKey(match);
+      final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
+        match,
+      );
       const minKeyLen = 10;
       final persistInitial = anchorShort.length >= minKeyLen
           ? anchorShort
           : DatabaseService.instance.planningWallScheduleDateKey(match);
-      final initForPatch =
-          persistInitial.length >= minKeyLen ? persistInitial : newKey;
-      final postponed = !match.isDone &&
+      final initForPatch = persistInitial.length >= minKeyLen
+          ? persistInitial
+          : newKey;
+      final postponed =
+          !match.isDone &&
           DatabaseService.instance.planningShouldMarkPostponed(
             anchorKey: initForPatch,
             newScheduleKey: newKey,
@@ -1024,9 +1047,9 @@ class _PlanningPageState extends State<PlanningPage>
 
     if (patches.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(loc, 'plan_save_failed'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
       }
       return;
     }
@@ -1087,7 +1110,8 @@ class _PlanningPageState extends State<PlanningPage>
     final h = hour.clamp(0, 23);
     final d = widget.selectedDate ?? _today;
     final wall = DateTime(d.year, d.month, d.day, h, 0);
-    final categoryId = widget.selectedCategoryId ??
+    final categoryId =
+        widget.selectedCategoryId ??
         DatabaseService.instance.defaultCategoryId ??
         (DatabaseService.instance.rules.isNotEmpty
             ? DatabaseService.instance.rules.first.id
@@ -1146,7 +1170,11 @@ class _PlanningPageState extends State<PlanningPage>
           },
           onDelete: () {
             dismiss();
-            unawaited(DatabaseService.instance.deletePlanningTask(task.planRowIdForBackend));
+            unawaited(
+              DatabaseService.instance.deletePlanningTask(
+                task.planRowIdForBackend,
+              ),
+            );
             if (mounted) setState(() {});
           },
         );
@@ -1172,10 +1200,12 @@ class _PlanningPageState extends State<PlanningPage>
       if (title.isEmpty) {
         title = t(currentLocale.value, 'plan_title_time_range_fallback');
       }
-      startStored =
-          DatabaseService.instance.displayTimeToUtc(range.startWallOn(wallDay));
-      endStored =
-          DatabaseService.instance.displayTimeToUtc(range.endWallOn(wallDay));
+      startStored = DatabaseService.instance.displayTimeToUtc(
+        range.startWallOn(wallDay),
+      );
+      endStored = DatabaseService.instance.displayTimeToUtc(
+        range.endWallOn(wallDay),
+      );
     } else {
       parsed = SmartInputParser.parseTitleForScheduledTime(raw);
       title = (parsed?.cleanedTitle ?? raw).trim();
@@ -1189,7 +1219,8 @@ class _PlanningPageState extends State<PlanningPage>
     }
 
     final match = DatabaseService.instance.identifyCategory(title);
-    final categoryId = match?.id ??
+    final categoryId =
+        match?.id ??
         widget.selectedCategoryId ??
         DatabaseService.instance.defaultCategoryId ??
         (DatabaseService.instance.rules.isNotEmpty
@@ -1236,7 +1267,10 @@ class _PlanningPageState extends State<PlanningPage>
       );
       if (!mounted) return;
       if (!ok) {
-        setState(() => _optimisticTasks.removeWhere((o) => o.planRowId == optimisticRow));
+        setState(
+          () =>
+              _optimisticTasks.removeWhere((o) => o.planRowId == optimisticRow),
+        );
       } else {
         _textController.clear();
         setState(() {
@@ -1287,16 +1321,15 @@ class _PlanningPageState extends State<PlanningPage>
       final startWall = _wallDateTimeFromHhmm(wallDay, hhmm);
       final endWall = startWall.add(Duration(minutes: safeMinutes));
 
-      final startStored =
-          DatabaseService.instance.displayTimeToUtc(startWall);
-      final endStored =
-          DatabaseService.instance.displayTimeToUtc(endWall);
+      final startStored = DatabaseService.instance.displayTimeToUtc(startWall);
+      final endStored = DatabaseService.instance.displayTimeToUtc(endWall);
 
       final aiCategoryStr = m['category']?.toString().trim();
       final fromAiId = DatabaseService.instance
           .resolveCategoryIdFromSmartPlanLabel(aiCategoryStr);
       final fromTitle = DatabaseService.instance.identifyCategory(title);
-      final categoryId = fromAiId ??
+      final categoryId =
+          fromAiId ??
           fromTitle?.id ??
           widget.selectedCategoryId ??
           DatabaseService.instance.defaultCategoryId ??
@@ -1348,13 +1381,19 @@ class _PlanningPageState extends State<PlanningPage>
         if (ok) {
           created++;
         } else {
-          setState(() => _optimisticTasks
-              .removeWhere((o) => o.planRowId == optimisticRow));
+          setState(
+            () => _optimisticTasks.removeWhere(
+              (o) => o.planRowId == optimisticRow,
+            ),
+          );
         }
       } catch (_) {
         if (mounted) {
-          setState(() => _optimisticTasks
-              .removeWhere((o) => o.planRowId == optimisticRow));
+          setState(
+            () => _optimisticTasks.removeWhere(
+              (o) => o.planRowId == optimisticRow,
+            ),
+          );
         }
       }
     }
@@ -1367,9 +1406,7 @@ class _PlanningPageState extends State<PlanningPage>
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (ctx) => SmartPlanSheet(
-        onCommit: _injectSmartPlanTasks,
-      ),
+      builder: (ctx) => SmartPlanSheet(onCommit: _injectSmartPlanTasks),
     );
   }
 
@@ -1415,7 +1452,10 @@ class _PlanningPageState extends State<PlanningPage>
     return slot * 60 + t.minute;
   }
 
-  List<PlanningTask> _tasksForTimeMode(List<PlanningTask> tasks, int dayStartHour) {
+  List<PlanningTask> _tasksForTimeMode(
+    List<PlanningTask> tasks,
+    int dayStartHour,
+  ) {
     final copy = List<PlanningTask>.from(tasks);
     copy.sort((a, b) {
       final at = a.startTime;
@@ -1432,7 +1472,8 @@ class _PlanningPageState extends State<PlanningPage>
   }
 
   Map<String, List<PlanningTask>> _groupTasksByCategoryPath(
-      List<PlanningTask> tasks) {
+    List<PlanningTask> tasks,
+  ) {
     final groups = <String, List<PlanningTask>>{};
     for (final t in tasks) {
       final path = DatabaseService.instance.getCategoryPath(t.categoryId);
@@ -1534,10 +1575,11 @@ class _PlanningPageState extends State<PlanningPage>
         out.add(id);
       }
     }
-    final orphan = groups.keys
-        .where((k) => k != _kUntaggedPlanGroupId && !seen.contains(k))
-        .toList()
-      ..sort();
+    final orphan =
+        groups.keys
+            .where((k) => k != _kUntaggedPlanGroupId && !seen.contains(k))
+            .toList()
+          ..sort();
     out.addAll(orphan);
     if (!seen.contains(_kUntaggedPlanGroupId)) {
       final untagged = groups[_kUntaggedPlanGroupId];
@@ -1594,8 +1636,9 @@ class _PlanningPageState extends State<PlanningPage>
           task.title,
           task.categoryId,
           dateKeyForRecord,
-          sourcePlanPocketRecordId:
-              DatabaseService.pocketRelationIdOrNull(task.pocketRecordId),
+          sourcePlanPocketRecordId: DatabaseService.pocketRelationIdOrNull(
+            task.pocketRecordId,
+          ),
         );
         if (mounted) setState(() {});
       },
@@ -1610,7 +1653,10 @@ class _PlanningPageState extends State<PlanningPage>
     return st.hour;
   }
 
-  Future<void> _onPlanningTaskDroppedOnHour(PlanningTask task, int targetHour) async {
+  Future<void> _onPlanningTaskDroppedOnHour(
+    PlanningTask task,
+    int targetHour,
+  ) async {
     if (task.planRowIdForBackend.startsWith('optimistic-')) return;
     final h = targetHour.clamp(0, 23);
     final currentHour = _wallClockHourFromTask(task);
@@ -1631,8 +1677,7 @@ class _PlanningPageState extends State<PlanningPage>
     );
     if (!mounted) return;
     final loc = currentLocale.value;
-    final label =
-        '${h.toString().padLeft(2, '0')}:00';
+    final label = '${h.toString().padLeft(2, '0')}:00';
     if (ok) {
       setState(() {
         _planningStream = _createPlanningStream();
@@ -1647,9 +1692,9 @@ class _PlanningPageState extends State<PlanningPage>
         ),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'plan_save_failed'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
     }
   }
 
@@ -1661,15 +1706,17 @@ class _PlanningPageState extends State<PlanningPage>
     required bool isSelected,
     required Map<String, int> planActualByPbId,
     bool enableLongPressDrag = false,
+
     /// When true, [InkWell.onLongPress] is omitted so [ReorderableDelayedDragStartListener] can claim long-press reorder.
     bool omitLongPressForReorder = false,
+
     /// When set with [enableLongPressDrag], drives hour-grid edge auto-scroll from [DragUpdateDetails.globalPosition].
     ValueChanged<double>? onHourGridDragGlobalDy,
     VoidCallback? onHourGridDragEnded,
   }) {
-    final highlightAsRunning = _activeRecordingTitleNorm != null &&
-        _activeRecordingTitleNorm ==
-            task.title.trim().toLowerCase();
+    final highlightAsRunning =
+        _activeRecordingTitleNorm != null &&
+        _activeRecordingTitleNorm == task.title.trim().toLowerCase();
     final omitLongPress = omitLongPressForReorder;
     final card = _planningTaskCardForRow(
       task,
@@ -1680,14 +1727,12 @@ class _PlanningPageState extends State<PlanningPage>
       omitLongPress: omitLongPress,
       planActualByPbId: planActualByPbId,
     );
-    final allowLongPressDrag = enableLongPressDrag &&
+    final allowLongPressDrag =
+        enableLongPressDrag &&
         !_planSelectMode &&
         !task.planRowIdForBackend.startsWith('optimistic-');
     if (!allowLongPressDrag) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: card,
-      );
+      return Padding(padding: const EdgeInsets.only(bottom: 6), child: card);
     }
 
     final maxFeedbackW = MediaQuery.sizeOf(context).width * 0.9;
@@ -1699,12 +1744,11 @@ class _PlanningPageState extends State<PlanningPage>
         data: task,
         onDragUpdate: onHourGridDragGlobalDy == null
             ? null
-            : (details) =>
-                onHourGridDragGlobalDy(details.globalPosition.dy),
-        onDragEnd:
-            onDragEnded == null ? null : (_) => onDragEnded(),
-        onDraggableCanceled:
-            onDragEnded == null ? null : (_, _) => onDragEnded(),
+            : (details) => onHourGridDragGlobalDy(details.globalPosition.dy),
+        onDragEnd: onDragEnded == null ? null : (_) => onDragEnded(),
+        onDraggableCanceled: onDragEnded == null
+            ? null
+            : (_, _) => onDragEnded(),
         feedback: Material(
           elevation: 8,
           borderRadius: BorderRadius.circular(12),
@@ -1762,8 +1806,10 @@ class _PlanningPageState extends State<PlanningPage>
       final h = st.hour.clamp(0, 23);
       byHour.putIfAbsent(h, () => []).add(t);
     }
-    final visibleHours =
-        PlanningSheetTimelinePrefs.visibleHoursOrdered(rangeStart, rangeEnd);
+    final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
+      rangeStart,
+      rangeEnd,
+    );
     final visibleSet = visibleHours.toSet();
 
     /// Slot labels match [PlanningSheetTimelinePrefs] hour integers — profile wall o'clock, not device TZ.
@@ -1779,10 +1825,9 @@ class _PlanningPageState extends State<PlanningPage>
           padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
           child: Text(
             t(loc, 'plan_unscheduled'),
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
       );
@@ -1820,10 +1865,9 @@ class _PlanningPageState extends State<PlanningPage>
           padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
           child: Text(
             t(loc, 'plan_outside_visible_hours'),
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
       );
@@ -1849,8 +1893,7 @@ class _PlanningPageState extends State<PlanningPage>
     for (final hour in visibleHours) {
       final hourTasks = byHour[hour] ?? <PlanningTask>[];
       final label = hourLabel(hour);
-      final dividerColor =
-          scheme.outlineVariant.withValues(alpha: 0.45);
+      final dividerColor = scheme.outlineVariant.withValues(alpha: 0.45);
       children.add(
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
@@ -1860,9 +1903,9 @@ class _PlanningPageState extends State<PlanningPage>
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               Expanded(
                 child: Padding(
@@ -1879,8 +1922,9 @@ class _PlanningPageState extends State<PlanningPage>
                 ),
                 visualDensity: VisualDensity.compact,
                 style: IconButton.styleFrom(
-                  foregroundColor:
-                      scheme.onSurfaceVariant.withValues(alpha: 0.65),
+                  foregroundColor: scheme.onSurfaceVariant.withValues(
+                    alpha: 0.65,
+                  ),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 iconSize: 20,
@@ -1927,8 +1971,7 @@ class _PlanningPageState extends State<PlanningPage>
                                 task: task,
                                 key: key,
                                 displayDone: displayDone,
-                                isSelected:
-                                    _selectedPlanKeys.contains(key),
+                                isSelected: _selectedPlanKeys.contains(key),
                                 planActualByPbId: planActualByPbId,
                                 enableLongPressDrag: true,
                                 onHourGridDragGlobalDy:
@@ -1975,9 +2018,9 @@ class _PlanningPageState extends State<PlanningPage>
               localizeCategoryBreadcrumbPath(k, currentLocale.value),
               textAlign: TextAlign.start,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -2070,7 +2113,9 @@ class _PlanningPageState extends State<PlanningPage>
               final task = bucket[index];
               final key = _planKey(task);
               final displayDone = _planDoneOverride[key] ?? task.isDone;
-              final canReorder = !task.planRowIdForBackend.startsWith('optimistic-');
+              final canReorder = !task.planRowIdForBackend.startsWith(
+                'optimistic-',
+              );
               return ReorderableDelayedDragStartListener(
                 key: ValueKey<String>(key),
                 index: index,
@@ -2178,8 +2223,10 @@ class _PlanningPageState extends State<PlanningPage>
             children: [
               Expanded(
                 child: Text(
-                  t(loc, 'selected_count')
-                      .replaceFirst('%s', '${_selectedPlanKeys.length}'),
+                  t(
+                    loc,
+                    'selected_count',
+                  ).replaceFirst('%s', '${_selectedPlanKeys.length}'),
                   style: Theme.of(context).textTheme.labelLarge,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -2226,10 +2273,9 @@ class _PlanningPageState extends State<PlanningPage>
                 child: Text(
                   t(currentLocale.value, 'no_data_found'),
                   textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyLarge
-                      ?.copyWith(color: scheme.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             );
@@ -2238,16 +2284,23 @@ class _PlanningPageState extends State<PlanningPage>
             _latestPlanningDayTasks = server;
             if (server.isNotEmpty && _optimisticTasks.isNotEmpty) {
               final toDrop = _optimisticTasks
-                  .where((o) => server.any((s) =>
-                      s.title.trim() == o.title.trim() &&
-                      s.dateKey == o.dateKey))
+                  .where(
+                    (o) => server.any(
+                      (s) =>
+                          s.title.trim() == o.title.trim() &&
+                          s.dateKey == o.dateKey,
+                    ),
+                  )
                   .toList();
               if (toDrop.isNotEmpty) {
                 final dropIds = toDrop.map((e) => e.planRowId).toSet();
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (!mounted) return;
-                  setState(() => _optimisticTasks
-                      .removeWhere((o) => dropIds.contains(o.planRowId)));
+                  setState(
+                    () => _optimisticTasks.removeWhere(
+                      (o) => dropIds.contains(o.planRowId),
+                    ),
+                  );
                 });
               }
             }
@@ -2265,10 +2318,9 @@ class _PlanningPageState extends State<PlanningPage>
               child: Text(
                 t(currentLocale.value, 'no_data_found'),
                 textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyLarge
-                    ?.copyWith(color: scheme.onSurfaceVariant),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ),
           );
@@ -2296,12 +2348,16 @@ class _PlanningPageState extends State<PlanningPage>
                                 icon: const Icon(Icons.close_rounded),
                                 onPressed: _exitSelectMode,
                                 tooltip: t(
-                                    currentLocale.value, 'plan_exit_select'),
+                                  currentLocale.value,
+                                  'plan_exit_select',
+                                ),
                               ),
                               Expanded(
                                 child: Text(
                                   t(currentLocale.value, 'plan_select_mode'),
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -2310,16 +2366,22 @@ class _PlanningPageState extends State<PlanningPage>
                                   style: TextButton.styleFrom(
                                     visualDensity: VisualDensity.compact,
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
+                                      horizontal: 8,
+                                    ),
                                   ),
                                   onPressed: () => _toggleSelectAllVisiblePlans(
-                                      visiblePlans),
+                                    visiblePlans,
+                                  ),
                                   child: Text(
                                     _allVisiblePlanTasksSelected(visiblePlans)
-                                        ? t(currentLocale.value,
-                                            'plan_deselect_visible')
-                                        : t(currentLocale.value,
-                                            'plan_select_all'),
+                                        ? t(
+                                            currentLocale.value,
+                                            'plan_deselect_visible',
+                                          )
+                                        : t(
+                                            currentLocale.value,
+                                            'plan_select_all',
+                                          ),
                                   ),
                                 ),
                             ],
@@ -2335,7 +2397,9 @@ class _PlanningPageState extends State<PlanningPage>
                                   ),
                                   icon: const Icon(Icons.chevron_left_rounded),
                                   tooltip: t(
-                                      currentLocale.value, 'date_previous_day'),
+                                    currentLocale.value,
+                                    'date_previous_day',
+                                  ),
                                   onPressed: () => _shiftPlanningDay(-1),
                                 ),
                               Expanded(
@@ -2352,33 +2416,34 @@ class _PlanningPageState extends State<PlanningPage>
                                     minWidth: 40,
                                     minHeight: 40,
                                   ),
-                                  icon:
-                                      const Icon(Icons.chevron_right_rounded),
+                                  icon: const Icon(Icons.chevron_right_rounded),
                                   tooltip: t(
-                                      currentLocale.value, 'date_next_day'),
+                                    currentLocale.value,
+                                    'date_next_day',
+                                  ),
                                   onPressed: () => _shiftPlanningDay(1),
                                 ),
                               IconButton(
                                 icon: const Icon(Icons.auto_awesome_rounded),
                                 tooltip: t(
-                                    currentLocale.value, 'smart_plan_tooltip'),
+                                  currentLocale.value,
+                                  'smart_plan_tooltip',
+                                ),
                                 onPressed: _openSmartPlanSheet,
                               ),
                               IconButton(
                                 icon: const Icon(Icons.settings_rounded),
                                 tooltip: t(
-                                    currentLocale.value,
-                                    'plan_settings_tooltip'),
+                                  currentLocale.value,
+                                  'plan_settings_tooltip',
+                                ),
                                 onPressed: _showPlanningSettingsSheet,
                               ),
                             ],
                           ),
                   ),
                 ),
-                Divider(
-                  height: 1,
-                  color: scheme.outlineVariant,
-                ),
+                Divider(height: 1, color: scheme.outlineVariant),
                 Expanded(child: body),
               ],
             ),
@@ -2399,171 +2464,159 @@ class _PlanningPageState extends State<PlanningPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-              if (!_planSelectMode)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: SegmentedButton<_PlanSortMode>(
-                      style: SegmentedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        fixedSize: const Size(76, 36),
+        if (!_planSelectMode)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: SegmentedButton<_PlanSortMode>(
+                style: appCompactSegmentedButtonStyle(context),
+                segments: [
+                  ButtonSegment<_PlanSortMode>(
+                    value: _PlanSortMode.category,
+                    label: Text(t(currentLocale.value, 'plan_sort_category')),
+                  ),
+                  ButtonSegment<_PlanSortMode>(
+                    value: _PlanSortMode.time,
+                    label: Text(t(currentLocale.value, 'plan_sort_time')),
+                  ),
+                  ButtonSegment<_PlanSortMode>(
+                    value: _PlanSortMode.tags,
+                    label: Text(t(currentLocale.value, 'plan_sort_tags')),
+                  ),
+                  ButtonSegment<_PlanSortMode>(
+                    value: _PlanSortMode.custom,
+                    label: Text(t(currentLocale.value, 'plan_sort_custom')),
+                  ),
+                ],
+                selected: {_sortMode},
+                onSelectionChanged: (Set<_PlanSortMode> next) {
+                  if (next.isEmpty) return;
+                  final mode = next.first;
+                  setState(() {
+                    _sortMode = mode;
+                  });
+                  unawaited(
+                    DatabaseService.instance.persistPlanActiveTabIndex(
+                      _planSortModeToPersistedIndex(mode),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 46, child: _buildQuickAddTagStrip(scheme)),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      focusNode: _quickAddFocus,
+                      decoration: InputDecoration(
+                        hintText: t(
+                          currentLocale.value,
+                          'input_placeholder_plan',
+                        ),
                       ),
-                      segments: [
-                        ButtonSegment<_PlanSortMode>(
-                          value: _PlanSortMode.category,
-                          label: Text(
-                              t(currentLocale.value, 'plan_sort_category')),
-                        ),
-                        ButtonSegment<_PlanSortMode>(
-                          value: _PlanSortMode.time,
-                          label: Text(
-                              t(currentLocale.value, 'plan_sort_time')),
-                        ),
-                        ButtonSegment<_PlanSortMode>(
-                          value: _PlanSortMode.tags,
-                          label: Text(
-                              t(currentLocale.value, 'plan_sort_tags')),
-                        ),
-                        ButtonSegment<_PlanSortMode>(
-                          value: _PlanSortMode.custom,
-                          label: Text(
-                              t(currentLocale.value, 'plan_sort_custom')),
-                        ),
-                      ],
-                      selected: {_sortMode},
-                      onSelectionChanged: (Set<_PlanSortMode> next) {
-                        if (next.isEmpty) return;
-                        final mode = next.first;
-                        setState(() {
-                          _sortMode = mode;
-                        });
-                        unawaited(
-                          DatabaseService.instance.persistPlanActiveTabIndex(
-                            _planSortModeToPersistedIndex(mode),
-                          ),
-                        );
-                      },
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _addTask(),
                     ),
                   ),
-                ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      height: 46,
-                      child: _buildQuickAddTagStrip(scheme),
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _textController,
-                            focusNode: _quickAddFocus,
-                            decoration: InputDecoration(
-                              hintText: t(
-                                  currentLocale.value, 'input_placeholder_plan'),
-                            ),
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _addTask(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
-                          onPressed: _addTask,
-                          icon: const Icon(Icons.add_rounded),
-                          label: Text(t(currentLocale.value, 'add')),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: StreamBuilder<void>(
-                  stream: DatabaseService.instance.timeUpdates,
-                  builder: (context, _) {
-                    final planWallDay = widget.selectedDate ?? _today;
-                    final planActualByPbId = DatabaseService.instance
-                        .aggregateSourcePlanActualSecondsForWallCalendarDay(
-                      planWallDay,
-                    );
-                    if (tasks.isEmpty) {
-                      return EmptyStatePlaceholder(
-                        icon: Icons.track_changes_rounded,
-                        titleL10nKey: 'empty_planning_title',
-                        subtitleL10nKey: 'empty_planning_subtitle',
-                        actionLabelL10nKey:
-                            'empty_action_focus_planning_field',
-                        onAction: () =>
-                            FocusScope.of(context).requestFocus(_quickAddFocus),
-                      );
-                    }
-                    if (_sortMode == _PlanSortMode.time) {
-                      return _buildHourGridView(tasks, planActualByPbId);
-                    }
-                    if (_sortMode == _PlanSortMode.category) {
-                      return _buildCategoryGroupedView(tasks, planActualByPbId);
-                    }
-                    if (_sortMode == _PlanSortMode.tags) {
-                      return _buildTagGroupedListView(tasks, planActualByPbId);
-                    }
-                    return ReorderableListView.builder(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 8),
-                      buildDefaultDragHandles: false,
-                      proxyDecorator:
-                          (Widget child, int index, Animation<double> anim) {
-                        return AnimatedBuilder(
-                          animation: anim,
-                          builder: (context, c) {
-                            final v = Curves.easeInOut.transform(anim.value);
-                            return Material(
-                              elevation: lerpDouble(0, 10, v) ?? 0,
-                              shadowColor: Colors.black38,
-                              borderRadius: BorderRadius.circular(12),
-                              clipBehavior: Clip.antiAlias,
-                              child: c,
-                            );
-                          },
-                          child: child,
-                        );
-                      },
-                      itemCount: tasks.length,
-                      onReorder: (oldI, newI) =>
-                          _onReorder(tasks, oldI, newI),
-                      itemBuilder: (context, index) {
-                        final task = tasks[index];
-                        final key = _planKey(task);
-                        final displayDone =
-                            _planDoneOverride[key] ?? task.isDone;
-                        final canReorder = !_planSelectMode &&
-                            !task.planRowIdForBackend.startsWith('optimistic-');
-                        return ReorderableDelayedDragStartListener(
-                          key: ValueKey(key),
-                          index: index,
-                          enabled: canReorder,
-                          child: _planCardRow(
-                            context: context,
-                            task: task,
-                            key: key,
-                            displayDone: displayDone,
-                            isSelected: _selectedPlanKeys.contains(key),
-                            planActualByPbId: planActualByPbId,
-                            omitLongPressForReorder: canReorder,
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: _addTask,
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(t(currentLocale.value, 'add')),
+                  ),
+                ],
               ),
             ],
-          );
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<void>(
+            stream: DatabaseService.instance.timeUpdates,
+            builder: (context, _) {
+              final planWallDay = widget.selectedDate ?? _today;
+              final planActualByPbId = DatabaseService.instance
+                  .aggregateSourcePlanActualSecondsForWallCalendarDay(
+                    planWallDay,
+                  );
+              if (tasks.isEmpty) {
+                return EmptyStatePlaceholder(
+                  icon: Icons.track_changes_rounded,
+                  titleL10nKey: 'empty_planning_title',
+                  subtitleL10nKey: 'empty_planning_subtitle',
+                  actionLabelL10nKey: 'empty_action_focus_planning_field',
+                  onAction: () =>
+                      FocusScope.of(context).requestFocus(_quickAddFocus),
+                );
+              }
+              if (_sortMode == _PlanSortMode.time) {
+                return _buildHourGridView(tasks, planActualByPbId);
+              }
+              if (_sortMode == _PlanSortMode.category) {
+                return _buildCategoryGroupedView(tasks, planActualByPbId);
+              }
+              if (_sortMode == _PlanSortMode.tags) {
+                return _buildTagGroupedListView(tasks, planActualByPbId);
+              }
+              return ReorderableListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                buildDefaultDragHandles: false,
+                proxyDecorator:
+                    (Widget child, int index, Animation<double> anim) {
+                      return AnimatedBuilder(
+                        animation: anim,
+                        builder: (context, c) {
+                          final v = Curves.easeInOut.transform(anim.value);
+                          return Material(
+                            elevation: lerpDouble(0, 10, v) ?? 0,
+                            shadowColor: Colors.black38,
+                            borderRadius: BorderRadius.circular(12),
+                            clipBehavior: Clip.antiAlias,
+                            child: c,
+                          );
+                        },
+                        child: child,
+                      );
+                    },
+                itemCount: tasks.length,
+                onReorder: (oldI, newI) => _onReorder(tasks, oldI, newI),
+                itemBuilder: (context, index) {
+                  final task = tasks[index];
+                  final key = _planKey(task);
+                  final displayDone = _planDoneOverride[key] ?? task.isDone;
+                  final canReorder =
+                      !_planSelectMode &&
+                      !task.planRowIdForBackend.startsWith('optimistic-');
+                  return ReorderableDelayedDragStartListener(
+                    key: ValueKey(key),
+                    index: index,
+                    enabled: canReorder,
+                    child: _planCardRow(
+                      context: context,
+                      task: task,
+                      key: key,
+                      displayDone: displayDone,
+                      isSelected: _selectedPlanKeys.contains(key),
+                      planActualByPbId: planActualByPbId,
+                      omitLongPressForReorder: canReorder,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -2592,6 +2645,7 @@ class _SemicirclePlanningMenuOverlayState
     extends State<_SemicirclePlanningMenuOverlay>
     with SingleTickerProviderStateMixin {
   static const double _canvas = 300;
+
   /// Match planning card menu control (44) so the close hub covers the tap target.
   static const double _hub = 44;
   static const double _orbit = 100;
@@ -2622,10 +2676,7 @@ class _SemicirclePlanningMenuOverlayState
   /// Flutter Y grows downward, so Y uses `-sin` for a visual CCW arc.
   /// Arc to the **left** of the hub uses angles π, 2π/3, 4π/3 (straight left, up-left, down-left).
   Offset _orbitOffsetLeftArc(double radians) {
-    return Offset(
-      math.cos(radians) * _orbit,
-      -math.sin(radians) * _orbit,
-    );
+    return Offset(math.cos(radians) * _orbit, -math.sin(radians) * _orbit);
   }
 
   Widget _labeledAction({
@@ -2680,10 +2731,10 @@ class _SemicirclePlanningMenuOverlayState
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                        height: 1.1,
-                      ),
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ],
@@ -2812,7 +2863,8 @@ class _PlanningNoTagsSettingsBlock extends StatefulWidget {
       _PlanningNoTagsSettingsBlockState();
 }
 
-class _PlanningNoTagsSettingsBlockState extends State<_PlanningNoTagsSettingsBlock> {
+class _PlanningNoTagsSettingsBlockState
+    extends State<_PlanningNoTagsSettingsBlock> {
   static const List<String> _presets = <String>[
     '#000000',
     '#FFFFFF',
@@ -2881,8 +2933,8 @@ class _PlanningNoTagsSettingsBlockState extends State<_PlanningNoTagsSettingsBlo
                         color: _colorHex == h
                             ? scheme.primary
                             : (h == '#FFFFFF'
-                                ? scheme.outline
-                                : Colors.transparent),
+                                  ? scheme.outline
+                                  : Colors.transparent),
                         width: _colorHex == h ? 3 : 1,
                       ),
                     ),
@@ -2916,6 +2968,7 @@ class _PlanningTimelineBoundsSheet extends StatefulWidget {
   final String startHint;
   final String endTitle;
   final String endHint;
+
   /// Optional row above timeline sliders (e.g. tag manager link).
   final Widget? header;
 
@@ -2932,10 +2985,12 @@ class _PlanningTimelineBoundsSheetState
   @override
   void initState() {
     super.initState();
-    _startValue =
-        PlanningSheetTimelinePrefs.clampHour(widget.initialStart).toDouble();
-    _endValue =
-        PlanningSheetTimelinePrefs.clampHour(widget.initialEnd).toDouble();
+    _startValue = PlanningSheetTimelinePrefs.clampHour(
+      widget.initialStart,
+    ).toDouble();
+    _endValue = PlanningSheetTimelinePrefs.clampHour(
+      widget.initialEnd,
+    ).toDouble();
   }
 
   void _commit() {
@@ -2961,9 +3016,9 @@ class _PlanningTimelineBoundsSheetState
           const SizedBox(height: 4),
           Text(
             widget.startHint,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           Row(
             children: [
@@ -2990,16 +3045,13 @@ class _PlanningTimelineBoundsSheetState
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            widget.endTitle,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text(widget.endTitle, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
             widget.endHint,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
           Row(
             children: [
@@ -3031,12 +3083,15 @@ class _PlanningTimelineBoundsSheetState
   }
 }
 
-
 List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
   final base = Theme.of(context).iconTheme.color;
   final color = base?.withValues(alpha: 0.48);
   if (color == null) return const [];
-  if (!task.hasNotes && !task.hasChecklist && !task.hasParentPlan) {
+  final hasRepeat = task.rrule?.trim().isNotEmpty ?? false;
+  if (!task.hasNotes &&
+      !task.hasChecklist &&
+      !task.hasParentPlan &&
+      !hasRepeat) {
     return const [];
   }
   final out = <Widget>[];
@@ -3047,6 +3102,7 @@ List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
 
   if (task.hasNotes) add(Icons.sticky_note_2_outlined);
   if (task.hasChecklist) add(Icons.checklist_rounded);
+  if (hasRepeat) add(Icons.repeat_rounded);
   if (task.hasParentPlan) add(Icons.account_tree_outlined);
   return out;
 }
@@ -3071,10 +3127,13 @@ class _PlanningTaskCard extends StatelessWidget {
   });
 
   final PlanningTask task;
+
   /// Sum of record durations this wall day with [source_plan_id] → this plan’s PocketBase id.
   final int planTrackedSeconds;
+
   /// Planned span from task start/end wall times; null hides the progress strip.
   final int? planEstimatedSeconds;
+
   /// Merged server [PlanningTask.isDone] with optimistic override from parent.
   final bool displayIsDone;
   final bool selectMode;
@@ -3092,7 +3151,20 @@ class _PlanningTaskCard extends StatelessWidget {
     if (task.dateKey.isEmpty) return '';
     final d = _dateFromKey(task.dateKey);
     if (d == null) return task.dateKey;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final m = d.month >= 1 && d.month <= 12 ? months[d.month - 1] : '';
     return '${d.day} $m';
   }
@@ -3148,12 +3220,16 @@ class _PlanningTaskCard extends StatelessWidget {
       DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
       currentLocale.value,
     );
-    final categoryTone =
-        DatabaseService.instance.getCategoryColor(task.categoryId);
+    final categoryTone = DatabaseService.instance.getCategoryColor(
+      task.categoryId,
+    );
     final bg = selectMode && isSelected
         ? scheme.primaryContainer
         : scheme.surfaceContainerHighest.withValues(alpha: 0.35);
-    final borderColor = highlightAsRunning ? scheme.primary : Colors.transparent;
+    final borderColor = highlightAsRunning
+        ? scheme.primary
+        : Colors.transparent;
+    final showPlayButton = !selectMode && !displayIsDone;
     final suppressChildInk = Theme.of(context).copyWith(
       splashFactory: NoSplash.splashFactory,
       splashColor: Colors.transparent,
@@ -3183,19 +3259,39 @@ class _PlanningTaskCard extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 2, top: 4),
-                  child: selectMode
-                      ? Checkbox(
-                          value: isSelected,
-                          tristate: false,
-                          onChanged: (_) => onBodyTap(),
-                        )
-                      : Checkbox(
-                          value: displayIsDone,
-                          tristate: false,
-                          onChanged: toggleDoneEnabled
-                              ? (_) => onToggleDone()
-                              : null,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      selectMode
+                          ? Checkbox(
+                              value: isSelected,
+                              tristate: false,
+                              onChanged: (_) => onBodyTap(),
+                            )
+                          : Checkbox(
+                              value: displayIsDone,
+                              tristate: false,
+                              onChanged: toggleDoneEnabled
+                                  ? (_) => onToggleDone()
+                                  : null,
+                            ),
+                      if (showPlayButton)
+                        IconButton(
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
+                          padding: EdgeInsets.zero,
+                          style: IconButton.styleFrom(
+                            splashFactory: NoSplash.splashFactory,
+                            hoverColor: Colors.transparent,
+                          ),
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          onPressed: onPlay,
+                          tooltip: t(currentLocale.value, 'start'),
                         ),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: Padding(
@@ -3216,16 +3312,13 @@ class _PlanningTaskCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.start,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     fontSize: 10,
                                     height: 1.2,
                                     letterSpacing: 0.12,
                                     fontWeight: FontWeight.w500,
-                                    color:
-                                        categoryTone.withValues(alpha: 0.88),
+                                    color: categoryTone.withValues(alpha: 0.88),
                                   ),
                             ),
                           ),
@@ -3242,8 +3335,7 @@ class _PlanningTaskCard extends StatelessWidget {
                                       ? TextDecoration.lineThrough
                                       : null,
                                   color: displayIsDone
-                                      ? scheme.onSurface
-                                          .withValues(alpha: 0.62)
+                                      ? scheme.onSurface.withValues(alpha: 0.62)
                                       : null,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -3283,20 +3375,19 @@ class _PlanningTaskCard extends StatelessWidget {
                             () {
                               final est = planEstimatedSeconds!;
                               final a = planTrackedSeconds;
-                              final pct =
-                                  est > 0 ? ((a * 100) / est).round() : 0;
+                              final pct = est > 0
+                                  ? ((a * 100) / est).round()
+                                  : 0;
                               return '${_shortDur(a)} / ${_shortDur(est)} ($pct%)';
                             }(),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   fontSize: 10,
                                   height: 1.1,
-                                  color: planTrackedSeconds >
-                                          planEstimatedSeconds!
+                                  color:
+                                      planTrackedSeconds > planEstimatedSeconds!
                                       ? scheme.error
                                       : scheme.onSurfaceVariant,
                                 ),
@@ -3304,38 +3395,35 @@ class _PlanningTaskCard extends StatelessWidget {
                         ] else if (planTrackedSeconds > 0) ...[
                           const SizedBox(height: 6),
                           Text(
-                            t(currentLocale.value, 'plan_card_fact_time')
-                                .replaceFirst(
+                            t(
+                              currentLocale.value,
+                              'plan_card_fact_time',
+                            ).replaceFirst(
                               '%s',
                               _trackedDurationAsHhMm(planTrackedSeconds),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
+                            style: Theme.of(context).textTheme.labelSmall
                                 ?.copyWith(
                                   fontSize: 10,
                                   height: 1.1,
-                                  color: scheme.primary
-                                      .withValues(alpha: 0.92),
+                                  color: scheme.primary.withValues(alpha: 0.92),
                                 ),
                           ),
                         ],
                         if (task.tags.any((t) => t.rendersAsChip)) ...[
                           const SizedBox(height: 6),
                           StreamBuilder<UserSettings>(
-                            stream: DatabaseService
-                                .instance.userSettingsStream,
-                            initialData:
-                                DatabaseService.instance.settings,
+                            stream: DatabaseService.instance.userSettingsStream,
+                            initialData: DatabaseService.instance.settings,
                             builder: (context, snap) {
-                              final mode = snap.data?.tagDisplayMode ??
+                              final mode =
+                                  snap.data?.tagDisplayMode ??
                                   CategoryDisplayMode.letterChip;
                               return Wrap(
                                 alignment: WrapAlignment.start,
-                                crossAxisAlignment:
-                                    WrapCrossAlignment.start,
+                                crossAxisAlignment: WrapCrossAlignment.start,
                                 spacing: 6,
                                 runSpacing: 4,
                                 children: [
@@ -3343,16 +3431,13 @@ class _PlanningTaskCard extends StatelessWidget {
                                     if (tag.rendersAsChip)
                                       CategoryChip(
                                         mode: mode,
-                                        label: tag.name
-                                                .trim()
-                                                .isNotEmpty
+                                        label: tag.name.trim().isNotEmpty
                                             ? tag.name.trim()
                                             : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                                        color: parseTagHexColor(
-                                                tag.color) ??
+                                        color:
+                                            parseTagHexColor(tag.color) ??
                                             scheme.primary,
-                                        icon:
-                                            iconForTagKey(tag.icon),
+                                        icon: iconForTagKey(tag.icon),
                                         compactGlyphLayout: true,
                                         syntheticNoTagsMonochrome:
                                             tag.tagId == -1,
@@ -3365,36 +3450,23 @@ class _PlanningTaskCard extends StatelessWidget {
                         selectMode
                             ? Text(
                                 _subtitle(task),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                        color: scheme.onSurfaceVariant),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: scheme.onSurfaceVariant),
                               )
                             : GestureDetector(
                                 behavior: HitTestBehavior.opaque,
                                 onTap: onDateTap,
                                 child: Text(
                                   _subtitle(task),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
-                                          color: scheme.onSurfaceVariant),
+                                        color: scheme.onSurfaceVariant,
+                                      ),
                                 ),
                               ),
                       ],
                     ),
                   ),
-                ),
-                IconButton(
-                  style: IconButton.styleFrom(
-                    splashFactory: NoSplash.splashFactory,
-                    hoverColor: Colors.transparent,
-                  ),
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  onPressed: onPlay,
-                  tooltip: t(currentLocale.value, 'start'),
                 ),
                 Builder(
                   builder: (menuCtx) {
@@ -3403,8 +3475,9 @@ class _PlanningTaskCard extends StatelessWidget {
                       style: IconButton.styleFrom(
                         splashFactory: NoSplash.splashFactory,
                         hoverColor: Colors.transparent,
-                        backgroundColor: scheme.secondaryContainer
-                            .withValues(alpha: 0.92),
+                        backgroundColor: scheme.secondaryContainer.withValues(
+                          alpha: 0.92,
+                        ),
                         foregroundColor: scheme.onSecondaryContainer,
                         minimumSize: const Size(44, 44),
                         padding: EdgeInsets.zero,

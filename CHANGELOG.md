@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-10] - F2A Plans UI polish slice [shipped]
+* **`compact_nav_controls.dart` / `planning_view.dart` / `timeline_view.dart` / `shared_widgets.dart`:** Added compact 44px tab/segment styling, moved `_PlanningTaskCard` play into the leading action column (hidden when done/selecting), and added repeat icon metadata for non-empty `rrule` plans. `docs/ROADMAP.md` marks F2A only; F2 remains open.
+
 ## [2026-06-10] - Docs cleanup: DATA_MAP and roadmap status [shipped]
 * **`docs/DATA_MAP.md` / `docs/ROADMAP.md`:** Removed accidental assistant wrapper text from `DATA_MAP.md` and synced roadmap wording so O1, V1, and F1 are shipped with F2 Plans next.
 

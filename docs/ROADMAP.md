@@ -159,13 +159,15 @@ Plans has several UX gaps that make it feel unfinished. All are contained to `pl
 
 User items in scope: #6, #7, #12, #13, #15, and #1.
 
+**Status (2026-06-10): F2A shipped.** Safe UI-only slice completed: compact tab/segment scale, Plans play button moved into the leading action column, repeat icon added for `rrule` plans, and main-tab header audit confirmed no redundant black `AppBar`. F2 is **not** fully complete.
+
 **What to build / fix:**
-- **Shrink plan tabs (#6):** The tab bar in Plans (`TabBar`) is too large and looks unorganized. Reduce tab height, font size, and padding to match a compact, tidy style. Tabs must still be tap-friendly (min 44px touch target).
+- ✅ **F2A — Compact tabs/header polish (#6):** Shared compact 44px tab/segment styling applied to Plans, Timeline, and plan/list edit sheets. Main-tab headers keep `GlobalAppHeader`.
 - **Category default time setting (#7):** Add a per-category setting: "Default start time for new plans in this category." Stored as `default_plan_time` (HH:mm string) on the `categories` collection (new field — add to PocketBase and `DATA_MAP.md`). When a new plan is created and no time is parsed from input, apply the category's default time if set. UI: in the category edit sheet, a time picker field labeled "Default plan time". If not set, behavior unchanged (no time assigned).
-- **Move play button in Plans (#12):** In `_PlanningTaskCard`, the play button is on the far right. Move it below the leading action button (the checkbox/circle area on the left side) to save horizontal space and reduce card width pressure. Layout: left column = [status circle, play button stacked], right = title + meta.
-- **Recurring plan icon + edit scope dialog (#13):** Plans with a non-null `rrule` must show a recurring icon (e.g. `Icons.repeat`) on their card. When the user opens the edit sheet for a recurring plan instance, show a dialog before opening: "Edit this occurrence only" / "Edit all future occurrences". This is the standard calendar app pattern. "This only" adds an exception date and creates a materialized copy (existing `_completeVirtualRecurringInstance` pattern). "All future" patches the template row's `rrule` / times.
+- ✅ **F2A — Move play button in Plans (#12):** `_PlanningTaskCard` play moved below the leading checkbox; hidden when done or in bulk selection.
+- ◐ **F2A — Recurring plan icon (#13 partial):** Plans with non-empty `rrule` show a repeat icon. Full edit-scope dialog/mutation remains open.
 - **Plan filter config (#15):** Add a small settings icon button at the end of the Plans sort/filter bar. Tapping opens a bottom sheet: a checklist of categories the user can toggle on/off to show/hide from the current plan view. Persisted to `SharedPreferences` key `plans_hidden_category_ids`. Filtered categories are hidden from the plan list but not deleted. The icon shows a badge if any categories are currently hidden.
-- **Remove black app header (#1):** Remove the dark/black app header bar from the Plans (and any other) screen where it appears. The `GlobalAppHeader` (date/time strip) stays. Only the opaque black navigation-style bar goes.
+- ◐ **F2A — Header audit (#1 partial):** Main tabs use surface `Material` + `GlobalAppHeader`; no redundant black main-tab `AppBar`. Secondary route `AppBar` normalization remains follow-up.
 
 ---
 

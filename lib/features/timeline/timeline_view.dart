@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/features/timeline/timeline_widgets.dart';
 import 'package:counter/data/database_service.dart';
@@ -18,7 +19,8 @@ import 'package:counter/core/widgets/app_loading.dart';
 // ---------------------------------------------------------------------------
 
 // --- Time helpers: device-local calendar for day strip; profile offset for clock labels only ---
-DateTime _localToday() => DatabaseService.instance.getTimelineDeviceLocalToday();
+DateTime _localToday() =>
+    DatabaseService.instance.getTimelineDeviceLocalToday();
 
 bool _isToday(DateTime date) {
   final today = DatabaseService.instance.getTimelineDeviceLocalToday();
@@ -28,8 +30,7 @@ bool _isToday(DateTime date) {
 }
 
 /// Calendar strip / timeline keys (naive date components from picker / swipe).
-DateTime _dateOnlyCalendar(DateTime d) =>
-    DateTime(d.year, d.month, d.day);
+DateTime _dateOnlyCalendar(DateTime d) => DateTime(d.year, d.month, d.day);
 
 /// For record `startTime` (UTC): **profile wall-calendar** Y-M-D (must match [recordsStream] buckets; [DATA_MAP] §8).
 String _wallCalendarDayKeyFromUtcInstant(DateTime startUtcOrAny) {
@@ -48,8 +49,12 @@ String _formatDuration(Duration d) {
   final h = totalSeconds ~/ 3600;
   final m = (totalSeconds % 3600) ~/ 60;
   final s = totalSeconds % 60;
-  if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  if (m > 0) return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  if (h > 0) {
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+  if (m > 0) {
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
   return '${s}s';
 }
 
@@ -69,10 +74,7 @@ String _timelineBusinessRecordId(Map<String, dynamic> data) {
   return '';
 }
 
-bool _timelineSameRecordRow(
-  Map<String, dynamic> a,
-  Map<String, dynamic> b,
-) {
+bool _timelineSameRecordRow(Map<String, dynamic> a, Map<String, dynamic> b) {
   final bizA = _timelineBusinessRecordId(a);
   final bizB = _timelineBusinessRecordId(b);
   if (bizA.isNotEmpty && bizB.isNotEmpty && bizA == bizB) return true;
@@ -99,8 +101,8 @@ class TimelineSwipeWrapper extends StatefulWidget {
     required this.onNewTaskForPastDate,
     required this.onStopRecord,
     required this.onDeleteRecord,
-  required this.rules,
-  required this.onShowEditRecordSheet,
+    required this.rules,
+    required this.onShowEditRecordSheet,
   });
 
   final DateTime selectedDate;
@@ -115,12 +117,13 @@ class TimelineSwipeWrapper extends StatefulWidget {
   final Future<void> Function() onStart;
   final Future<void> Function() onPlan;
   final VoidCallback onNewTaskForPastDate;
+
   /// PocketBase `records.id` (not legacy `record_id` UUID).
   final Future<void> Function(String systemRowId) onStopRecord;
   final Future<void> Function(String systemRowId) onDeleteRecord;
   final List<CategoryRule> rules;
   final void Function(BuildContext context, Map<String, dynamic> data)
-      onShowEditRecordSheet;
+  onShowEditRecordSheet;
 
   @override
   State<TimelineSwipeWrapper> createState() => _TimelineSwipeWrapperState();
@@ -129,6 +132,7 @@ class TimelineSwipeWrapper extends StatefulWidget {
 class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   static const int _centerIndex = 5000;
   late PageController _controller;
+
   /// Shared across all [TimelinePage] indices so calendar/date changes keep List vs Stats.
   bool _showStatsView = false;
 
@@ -138,9 +142,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   @override
   void initState() {
     super.initState();
-    final daysOffset = _dateOnlyCalendar(widget.selectedDate)
-        .difference(_anchorToday)
-        .inDays;
+    final daysOffset = _dateOnlyCalendar(
+      widget.selectedDate,
+    ).difference(_anchorToday).inDays;
     _controller = PageController(initialPage: _centerIndex + daysOffset);
   }
 
@@ -159,8 +163,11 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     if (_controller.hasClients) {
       final cur = _controller.page;
       if (cur != null && cur.round() == page) return;
-      _controller.animateToPage(page,
-          duration: const Duration(milliseconds: 200), curve: Curves.easeOut);
+      _controller.animateToPage(
+        page,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -179,50 +186,51 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     return ScrollConfiguration(
       behavior: const MouseDragScrollBehavior(),
       child: PageView.builder(
-      controller: _controller,
-      itemCount: 10000,
-      onPageChanged: (int index) {
-        final raw = anchor.add(Duration(days: index - _centerIndex));
-        final next = _dateOnlyCalendar(raw);
-        final sel = _dateOnlyCalendar(widget.selectedDate);
-        if (next.year == sel.year &&
-            next.month == sel.month &&
-            next.day == sel.day) {
-          return;
-        }
-        widget.onDateChanged(next);
-      },
-      itemBuilder: (context, index) {
-        final raw = anchor.add(Duration(days: index - _centerIndex));
-        final date = _dateOnlyCalendar(raw);
-        final dateKey = _dateKey(date);
-        final isFuture = date.isAfter(_anchorToday);
-        final isSelectedDate = date.year == widget.selectedDate.year &&
-            date.month == widget.selectedDate.month &&
-            date.day == widget.selectedDate.day;
-        return TimelinePage(
-          selectedDate: date,
-          selectedDateString: dateKey,
-          isFutureDate: isFuture,
-          tasks: isSelectedDate ? widget.tasks : [],
-          tasksLoading: isSelectedDate ? widget.tasksLoading : false,
-          titleController: widget.titleController,
-          titleFocus: widget.titleFocus,
-          selectedCategoryId: widget.selectedCategoryId,
-          onCategoryChanged: widget.onCategoryChanged,
-          onStart: widget.onStart,
-          onPlan: widget.onPlan,
-          onNewTaskForPastDate: widget.onNewTaskForPastDate,
-          onStopRecord: widget.onStopRecord,
-          onDeleteRecord: widget.onDeleteRecord,
-          onJumpToConflictDate: widget.onJumpToConflict,
-          rules: widget.rules,
-          onShowEditRecordSheet: widget.onShowEditRecordSheet,
-          onNavigateToDate: widget.onDateChanged,
-          showStatsView: _showStatsView,
-          onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
-        );
-      },
+        controller: _controller,
+        itemCount: 10000,
+        onPageChanged: (int index) {
+          final raw = anchor.add(Duration(days: index - _centerIndex));
+          final next = _dateOnlyCalendar(raw);
+          final sel = _dateOnlyCalendar(widget.selectedDate);
+          if (next.year == sel.year &&
+              next.month == sel.month &&
+              next.day == sel.day) {
+            return;
+          }
+          widget.onDateChanged(next);
+        },
+        itemBuilder: (context, index) {
+          final raw = anchor.add(Duration(days: index - _centerIndex));
+          final date = _dateOnlyCalendar(raw);
+          final dateKey = _dateKey(date);
+          final isFuture = date.isAfter(_anchorToday);
+          final isSelectedDate =
+              date.year == widget.selectedDate.year &&
+              date.month == widget.selectedDate.month &&
+              date.day == widget.selectedDate.day;
+          return TimelinePage(
+            selectedDate: date,
+            selectedDateString: dateKey,
+            isFutureDate: isFuture,
+            tasks: isSelectedDate ? widget.tasks : [],
+            tasksLoading: isSelectedDate ? widget.tasksLoading : false,
+            titleController: widget.titleController,
+            titleFocus: widget.titleFocus,
+            selectedCategoryId: widget.selectedCategoryId,
+            onCategoryChanged: widget.onCategoryChanged,
+            onStart: widget.onStart,
+            onPlan: widget.onPlan,
+            onNewTaskForPastDate: widget.onNewTaskForPastDate,
+            onStopRecord: widget.onStopRecord,
+            onDeleteRecord: widget.onDeleteRecord,
+            onJumpToConflictDate: widget.onJumpToConflict,
+            rules: widget.rules,
+            onShowEditRecordSheet: widget.onShowEditRecordSheet,
+            onNavigateToDate: widget.onDateChanged,
+            showStatsView: _showStatsView,
+            onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
+          );
+        },
       ),
     );
   }
@@ -246,12 +254,12 @@ class TimelinePage extends StatefulWidget {
     required this.onNewTaskForPastDate,
     required this.onStopRecord,
     required this.onDeleteRecord,
-  required this.rules,
-  this.onJumpToConflictDate,
-  required this.onShowEditRecordSheet,
-  this.onNavigateToDate,
-  required this.showStatsView,
-  required this.onShowStatsViewChanged,
+    required this.rules,
+    this.onJumpToConflictDate,
+    required this.onShowEditRecordSheet,
+    this.onNavigateToDate,
+    required this.showStatsView,
+    required this.onShowStatsViewChanged,
   });
 
   /// Picks a calendar day (AppBar / Stats PageView); drives parent [TimelineSwipeWrapper] PageController.
@@ -273,14 +281,16 @@ class TimelinePage extends StatefulWidget {
   final Future<void> Function() onStart;
   final Future<void> Function() onPlan;
   final VoidCallback onNewTaskForPastDate;
+
   /// PocketBase `records.id` (not legacy `record_id` UUID).
   final Future<void> Function(String systemRowId) onStopRecord;
   final Future<void> Function(String systemRowId) onDeleteRecord;
   final List<CategoryRule> rules;
   final void Function(DateTime date)? onJumpToConflictDate;
+
   /// Called when user taps a record to edit. Host (e.g. main) shows ActivityDetailSheet.
   final void Function(BuildContext context, Map<String, dynamic> data)
-      onShowEditRecordSheet;
+  onShowEditRecordSheet;
 
   @override
   State<TimelinePage> createState() => _TimelinePageState();
@@ -294,8 +304,9 @@ class _TimelinePageState extends State<TimelinePage> {
   List<Map<String, dynamic>> _lastCoalescedRecords = [];
 
   void _initStream() {
-    _recordsStream =
-        DatabaseService.instance.recordsStream(widget.selectedDate);
+    _recordsStream = DatabaseService.instance.recordsStream(
+      widget.selectedDate,
+    );
   }
 
   void _rememberCoalescedIfAuthoritative(
@@ -342,15 +353,15 @@ class _TimelinePageState extends State<TimelinePage> {
         final active = activeSnap.data;
         final selectedDateKey = widget.selectedDateString;
         String? activeDayStr = active?['calendarDayStr'] as String?;
-        if ((activeDayStr == null || activeDayStr.isEmpty) &&
-            active != null) {
+        if ((activeDayStr == null || activeDayStr.isEmpty) && active != null) {
           final st = active['startTime'] as DateTime?;
           if (st != null) {
             activeDayStr = _wallCalendarDayKeyFromUtcInstant(st);
           }
         }
         // Only inject the running row into the list for the **local calendar day** of its start.
-        final shouldShowActive = active != null &&
+        final shouldShowActive =
+            active != null &&
             activeDayStr != null &&
             activeDayStr.isNotEmpty &&
             activeDayStr == selectedDateKey;
@@ -361,9 +372,7 @@ class _TimelinePageState extends State<TimelinePage> {
           if (!alreadyInList) {
             displayList.insert(0, active);
           } else {
-            displayList.removeWhere(
-              (r) => _timelineSameRecordRow(r, active),
-            );
+            displayList.removeWhere((r) => _timelineSameRecordRow(r, active));
             displayList.insert(0, active);
           }
         }
@@ -413,17 +422,16 @@ class _TimelinePageState extends State<TimelinePage> {
             final tileKey = ValueKey<String>(
               bizId.isNotEmpty ? bizId : 'record-fallback-$index',
             );
-            String? otherDayStr =
-                activeRecord?['calendarDayStr'] as String?;
+            String? otherDayStr = activeRecord?['calendarDayStr'] as String?;
             if ((otherDayStr == null || otherDayStr.isEmpty) &&
                 activeRecord != null) {
               final st = activeRecord['startTime'] as DateTime?;
               if (st != null) {
-                otherDayStr =
-                    _wallCalendarDayKeyFromUtcInstant(st);
+                otherDayStr = _wallCalendarDayKeyFromUtcInstant(st);
               }
             }
-            final isActiveFromOtherDay = activeRecord != null &&
+            final isActiveFromOtherDay =
+                activeRecord != null &&
                 _timelineSameRecordRow(data, activeRecord) &&
                 otherDayStr != null &&
                 otherDayStr.isNotEmpty &&
@@ -434,8 +442,9 @@ class _TimelinePageState extends State<TimelinePage> {
                 systemRowId: systemRowId,
                 data: data,
                 dateKey: widget.selectedDateString,
-                currentActivityFromDate:
-                    isActiveFromOtherDay ? otherDayStr : null,
+                currentActivityFromDate: isActiveFromOtherDay
+                    ? otherDayStr
+                    : null,
                 onStop: widget.onStopRecord,
                 onDelete: widget.onDeleteRecord,
                 onEdit: () => _showEditRecordSheet(context, data),
@@ -466,8 +475,7 @@ class _TimelinePageState extends State<TimelinePage> {
     }
   }
 
-  void _showEditRecordSheet(
-      BuildContext context, Map<String, dynamic> data) {
+  void _showEditRecordSheet(BuildContext context, Map<String, dynamic> data) {
     widget.onShowEditRecordSheet(context, data);
   }
 
@@ -490,15 +498,21 @@ class _TimelinePageState extends State<TimelinePage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: SegmentedButton<bool>(
+                style: appCompactSegmentedButtonStyle(
+                  context,
+                  segmentWidth: 112,
+                ),
                 segments: [
                   ButtonSegment(
-                      value: false,
-                      icon: const Icon(Icons.list_rounded),
-                      label: Text(t(currentLocale.value, 'list'))),
+                    value: false,
+                    icon: const Icon(Icons.list_rounded),
+                    label: Text(t(currentLocale.value, 'list')),
+                  ),
                   ButtonSegment(
-                      value: true,
-                      icon: const Icon(Icons.bar_chart_rounded),
-                      label: Text(t(currentLocale.value, 'stats'))),
+                    value: true,
+                    icon: const Icon(Icons.bar_chart_rounded),
+                    label: Text(t(currentLocale.value, 'stats')),
+                  ),
                 ],
                 selected: {widget.showStatsView},
                 onSelectionChanged: (Set<bool> sel) {
@@ -526,8 +540,10 @@ class _TimelinePageState extends State<TimelinePage> {
                         }
                       },
                       decoration: InputDecoration(
-                        hintText:
-                            t(currentLocale.value, 'input_placeholder_record'),
+                        hintText: t(
+                          currentLocale.value,
+                          'input_placeholder_record',
+                        ),
                       ),
                     ),
                   ),
@@ -535,10 +551,9 @@ class _TimelinePageState extends State<TimelinePage> {
                   Builder(
                     builder: (context) {
                       final projectedToday = _localToday();
-                      final isToday = widget.selectedDate.year ==
-                              projectedToday.year &&
-                          widget.selectedDate.month ==
-                              projectedToday.month &&
+                      final isToday =
+                          widget.selectedDate.year == projectedToday.year &&
+                          widget.selectedDate.month == projectedToday.month &&
                           widget.selectedDate.day == projectedToday.day;
                       final isFuture = widget.isFutureDate;
                       return FilledButton.icon(
@@ -555,15 +570,15 @@ class _TimelinePageState extends State<TimelinePage> {
                           isFuture
                               ? Icons.event_rounded
                               : isToday
-                                  ? Icons.play_arrow_rounded
-                                  : Icons.add_task_rounded,
+                              ? Icons.play_arrow_rounded
+                              : Icons.add_task_rounded,
                         ),
                         label: Text(
                           isFuture
                               ? t(currentLocale.value, 'plan')
                               : isToday
-                                  ? t(currentLocale.value, 'start_timer')
-                                  : t(currentLocale.value, 'new_record_btn'),
+                              ? t(currentLocale.value, 'start_timer')
+                              : t(currentLocale.value, 'new_record_btn'),
                         ),
                       );
                     },
@@ -575,68 +590,66 @@ class _TimelinePageState extends State<TimelinePage> {
             const Divider(height: 1),
             Expanded(
               child: StreamBuilder<List<Map<String, dynamic>>>(
-                          stream: _recordsStream,
-                          builder: (context, recordSnap) {
-                            try {
-                            if (recordSnap.hasError) {
-                              return Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: Text(
-                                    t(currentLocale.value, 'no_data_found'),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              );
-                            }
-                            if (recordSnap.hasData) {
-                              final records =
-                                  List<Map<String, dynamic>>.from(
-                                      recordSnap.data!);
-                              _rememberCoalescedIfAuthoritative(
-                                  records, recordSnap);
-                              return _buildTimelineRecordsArea(
-                                  context, records, recordSnap);
-                            }
-                            if (recordSnap.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const AppLoading(),
-                                    const SizedBox(height: 8),
-                                    Text(t(
-                                        currentLocale.value,
-                                        'waiting_planetary_data')),
-                                  ],
-                                ),
-                              );
-                            }
-                            return _buildTimelineRecordsArea(
-                              context,
-                              List<Map<String, dynamic>>.from(
-                                  _lastCoalescedRecords),
-                              recordSnap,
-                            );
-                          } catch (e, st) {
-                            if (kDebugMode) {
-                              debugPrint(
-                                'Timeline records StreamBuilder: $e\n$st',
-                              );
-                            }
-                            return Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: Text(
-                                  t(currentLocale.value, 'no_data_found'),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            );
-                          }
-                          },
+                stream: _recordsStream,
+                builder: (context, recordSnap) {
+                  try {
+                    if (recordSnap.hasError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            t(currentLocale.value, 'no_data_found'),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
+                      );
+                    }
+                    if (recordSnap.hasData) {
+                      final records = List<Map<String, dynamic>>.from(
+                        recordSnap.data!,
+                      );
+                      _rememberCoalescedIfAuthoritative(records, recordSnap);
+                      return _buildTimelineRecordsArea(
+                        context,
+                        records,
+                        recordSnap,
+                      );
+                    }
+                    if (recordSnap.connectionState == ConnectionState.waiting) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const AppLoading(),
+                            const SizedBox(height: 8),
+                            Text(
+                              t(currentLocale.value, 'waiting_planetary_data'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return _buildTimelineRecordsArea(
+                      context,
+                      List<Map<String, dynamic>>.from(_lastCoalescedRecords),
+                      recordSnap,
+                    );
+                  } catch (e, st) {
+                    if (kDebugMode) {
+                      debugPrint('Timeline records StreamBuilder: $e\n$st');
+                    }
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          t(currentLocale.value, 'no_data_found'),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  }
+                },
+              ),
             ),
           ],
         ),
@@ -755,11 +768,13 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final title = widget.data['title'] as String? ??
+    final title =
+        widget.data['title'] as String? ??
         (widget.systemRowId.isNotEmpty ? widget.systemRowId : '?');
     final type = widget.data['type'] as String? ?? 'record';
     final isPlanned = type == 'planned';
-    final isRunning = type == 'record' &&
+    final isRunning =
+        type == 'record' &&
         CategoryServiceExtension.isRecordMapActuallyRunning(widget.data);
 
     final categoryPath = DatabaseService.instance
@@ -772,10 +787,11 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
     if (isPlanned) {
       subtitle = t(currentLocale.value, 'planned_label');
     } else if (isRunning) {
-      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(widget.data);
+      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(
+        widget.data,
+      );
       if (startTimeUtc != null) {
-        duration =
-            DatabaseService.getPlanetaryNow().difference(startTimeUtc);
+        duration = DatabaseService.getPlanetaryNow().difference(startTimeUtc);
         final start = _formatTimeOfDay(_utcToDisplay(startTimeUtc));
         final end = '...';
         subtitle = '$start — $end (${_formatDuration(duration)})';
@@ -783,11 +799,14 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
         subtitle = t(currentLocale.value, 'running_label');
       }
     } else {
-      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(widget.data);
-      final endTimeUtc = CategoryServiceExtension.endTimeFromRecord(widget.data);
+      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(
+        widget.data,
+      );
+      final endTimeUtc = CategoryServiceExtension.endTimeFromRecord(
+        widget.data,
+      );
       if (startTimeUtc != null) {
-        final endOrNow =
-            endTimeUtc ?? DatabaseService.getPlanetaryNow();
+        final endOrNow = endTimeUtc ?? DatabaseService.getPlanetaryNow();
         duration = endOrNow.difference(startTimeUtc);
       }
       if (startTimeUtc != null) {
@@ -795,8 +814,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
         final end = endTimeUtc != null
             ? _formatTimeOfDay(_utcToDisplay(endTimeUtc))
             : '...';
-        final durationStr =
-            duration != null ? _formatDuration(duration) : '–';
+        final durationStr = duration != null ? _formatDuration(duration) : '–';
         subtitle = '$start — $end ($durationStr)';
       } else if (duration != null) {
         subtitle = _formatDuration(duration);
@@ -808,12 +826,13 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final runningFill = isRunning
         ? (isDark
-            ? scheme.primary.withValues(alpha: 0.2)
-            : scheme.primaryContainer.withValues(alpha: 0.45))
+              ? scheme.primary.withValues(alpha: 0.2)
+              : scheme.primaryContainer.withValues(alpha: 0.45))
         : null;
     final runningBorder = isRunning ? scheme.primary : Colors.transparent;
-    final runningTextColor =
-        isRunning ? (isDark ? scheme.primary : scheme.onPrimaryContainer) : null;
+    final runningTextColor = isRunning
+        ? (isDark ? scheme.primary : scheme.onPrimaryContainer)
+        : null;
 
     final cardTheme = Theme.of(context).cardTheme;
     final suppressInnerInk = Theme.of(context).copyWith(
@@ -838,12 +857,14 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
               children: [
                 if (widget.currentActivityFromDate != null) ...[
                   Text(
-                    t(currentLocale.value, 'current_activity_from')
-                        .replaceFirst('%s', widget.currentActivityFromDate!),
+                    t(
+                      currentLocale.value,
+                      'current_activity_from',
+                    ).replaceFirst('%s', widget.currentActivityFromDate!),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 4),
                 ],
@@ -858,8 +879,10 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
                     ),
                     if (metaIcons.isNotEmpty)
                       Padding(
-                        padding:
-                            const EdgeInsetsDirectional.only(start: 4, top: 1),
+                        padding: const EdgeInsetsDirectional.only(
+                          start: 4,
+                          top: 1,
+                        ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: metaIcons,
@@ -880,12 +903,11 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isRunning
-                              ? runningTextColor
-                              : scheme.onSurfaceVariant,
-                          fontWeight:
-                              isRunning ? FontWeight.w600 : null,
-                        ),
+                      color: isRunning
+                          ? runningTextColor
+                          : scheme.onSurfaceVariant,
+                      fontWeight: isRunning ? FontWeight.w600 : null,
+                    ),
                   ),
                 ],
               ],
@@ -954,15 +976,9 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
                 ? InkWell(
                     onTap: widget.onEdit,
                     borderRadius: contentInkRadius,
-                    child: Theme(
-                      data: suppressInnerInk,
-                      child: paddedRow,
-                    ),
+                    child: Theme(data: suppressInnerInk, child: paddedRow),
                   )
-                : Theme(
-                    data: suppressInnerInk,
-                    child: paddedRow,
-                  ),
+                : Theme(data: suppressInnerInk, child: paddedRow),
           ),
         ],
       ),
@@ -975,10 +991,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
       color: runningFill ?? cardTheme.color,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(cardRadius),
-        side: BorderSide(
-          color: runningBorder,
-          width: isRunning ? 2.0 : 0,
-        ),
+        side: BorderSide(color: runningBorder, width: isRunning ? 2.0 : 0),
       ),
       clipBehavior: Clip.antiAlias,
       child: cardBody,

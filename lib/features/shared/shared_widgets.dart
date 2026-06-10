@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/theme.dart';
@@ -39,9 +40,12 @@ String formatDate(DateTime date) =>
     DateFormat.yMMMd(currentLocale.value).format(date);
 String formatTimeOfDay(DateTime dt) =>
     DateFormat.Hm(currentLocale.value).format(dt);
-DateTime utcToDisplay(DateTime utc) => DatabaseService.instance.applyUserOffset(utc);
-DateTime displayToUtc(DateTime displayNaive) => DatabaseService.instance.displayTimeToUtc(displayNaive);
-DateTime displayNow() => DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
+DateTime utcToDisplay(DateTime utc) =>
+    DatabaseService.instance.applyUserOffset(utc);
+DateTime displayToUtc(DateTime displayNaive) =>
+    DatabaseService.instance.displayTimeToUtc(displayNaive);
+DateTime displayNow() =>
+    DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
 
 Future<DateTime?> showAppDateTimePicker(
   BuildContext context, {
@@ -49,8 +53,9 @@ Future<DateTime?> showAppDateTimePicker(
   DateTime? firstDate,
   DateTime? lastDate,
 }) async {
-  final defaultInitial = DatabaseService.instance
-      .applyUserOffset(DatabaseService.getPlanetaryNow());
+  final defaultInitial = DatabaseService.instance.applyUserOffset(
+    DatabaseService.getPlanetaryNow(),
+  );
   final base = initial ?? defaultInitial;
 
   if (useKeyboardFriendlyMaterialPickers()) {
@@ -101,10 +106,25 @@ DateTime? planningDateFromKey(String key) {
   return DateTime.utc(y, m, d);
 }
 
-const List<String> _shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const List<String> _shortMonths = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 /// Strike 23: one horizontal row ([multiRowsDisplay]: false → arrow-indicated list, no [Wrap]).
-QuillSimpleToolbarConfig _planningTaskEditQuillToolbarConfig(BuildContext context) {
+QuillSimpleToolbarConfig _planningTaskEditQuillToolbarConfig(
+  BuildContext context,
+) {
   final scheme = Theme.of(context).colorScheme;
   return QuillSimpleToolbarConfig(
     multiRowsDisplay: false,
@@ -239,6 +259,7 @@ class EmptyStatePlaceholder extends StatelessWidget {
   final VoidCallback? onAction;
   final double iconSize;
   final double iconOpacity;
+
   /// When true, primary-style button (e.g. “create first” flows).
   final bool useFilledAction;
 
@@ -247,8 +268,7 @@ class EmptyStatePlaceholder extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final loc = currentLocale.value;
-    final hasAction =
-        actionLabelL10nKey != null && onAction != null;
+    final hasAction = actionLabelL10nKey != null && onAction != null;
 
     return Center(
       child: SingleChildScrollView(
@@ -317,15 +337,7 @@ class EmptyStatePlaceholder extends StatelessWidget {
 enum ActivityDetailKind { timelineRecord, planningTask }
 
 /// Local repeat presets for plan edit sheet (maps to @DATA_MAP `plans.rrule`).
-enum _PlanRepeatUi {
-  none,
-  daily,
-  weekdays,
-  weekly,
-  monthly,
-  yearly,
-  custom,
-}
+enum _PlanRepeatUi { none, daily, weekdays, weekly, monthly, yearly, custom }
 
 String _planRruleForUiParse(String? raw) {
   var s = (raw ?? '').trim();
@@ -478,21 +490,26 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   late final TextEditingController _titleController;
   late final QuillController _quillController;
   late final FocusNode _quillFocusNode;
+
   /// Separate from [scrollController] so plan-mode outer [ListView] does not fight Quill.
   late final ScrollController _quillScrollController;
   late int _categoryId;
   DateTime? _scheduledTime;
   DateTime? _endTime;
   late DateTime _date;
+
   /// Undated backlog / list item before any schedule is set (no wall date in [dateKey]).
   late final bool _startedAsUndatedBacklog;
   final List<TextEditingController> _checklistControllers = [];
   final List<bool> _checklistDone = [];
+
   /// Non-null only for list-item / Idea mode (3-tab Strike 19 layout).
   TabController? _tabController;
+
   /// Dated plan mode: Notes / Checklist / schedule & recurrence (Strike 24).
   TabController? _planTabController;
   List<Tag> _availableTags = [];
+
   /// True until [DatabaseService.fetchTagsForCurrentUser] completes (strip stays visible).
   bool _tagsLoading = true;
   late List<Tag> _selectedTags;
@@ -504,8 +521,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   @override
   void initState() {
     super.initState();
-    _startedAsUndatedBacklog = widget.task.startTime == null &&
-        widget.task.dateKey.trim().length < 10;
+    _startedAsUndatedBacklog =
+        widget.task.startTime == null && widget.task.dateKey.trim().length < 10;
     if (_startedAsUndatedBacklog) {
       _tabController = TabController(length: 4, vsync: this);
     } else {
@@ -526,8 +543,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _selectedTags = List<Tag>.from(widget.task.tags);
     _reminderMinutes = widget.task.reminderOffset;
     _repeatUi = _planRepeatUiFromTask(widget.task);
-    _rruleCustomRaw =
-        _repeatUi == _PlanRepeatUi.custom ? widget.task.rrule?.trim() : null;
+    _rruleCustomRaw = _repeatUi == _PlanRepeatUi.custom
+        ? widget.task.rrule?.trim()
+        : null;
     _rruleCustomController = TextEditingController(
       text: _repeatUi == _PlanRepeatUi.custom
           ? (widget.task.rrule?.trim() ?? '')
@@ -537,27 +555,30 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       DatabaseService.instance
           .fetchTagsForCurrentUser(scope: TagCatalogScope.plan)
           .then((List<Tag> result) {
-        if (!mounted) return;
-        setState(() {
-          _availableTags = result;
-          _tagsLoading = false;
-        });
-      });
+            if (!mounted) return;
+            setState(() {
+              _availableTags = result;
+              _tagsLoading = false;
+            });
+          });
     } else {
       DatabaseService.instance
           .fetchTagsForCurrentUser(scope: TagCatalogScope.list)
           .then((List<Tag> result) {
-        if (!mounted) return;
-        setState(() {
-          _availableTags = result;
-          _tagsLoading = false;
-        });
-      });
+            if (!mounted) return;
+            setState(() {
+              _availableTags = result;
+              _tagsLoading = false;
+            });
+          });
     }
     // [PlanningTask.startTime] / [endDateTime] from Brain are profile wall components, not UTC.
     _scheduledTime = widget.task.startTime;
     _endTime = widget.task.endDateTime;
-    _date = planningDateFromKey(widget.task.dateKey) ?? widget.task.date ?? DateTime.now();
+    _date =
+        planningDateFromKey(widget.task.dateKey) ??
+        widget.task.date ??
+        DateTime.now();
     _date = DateTime(_date.year, _date.month, _date.day);
     for (final item in widget.task.checklist) {
       final text = (item['text'] ?? '').toString();
@@ -601,7 +622,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   }
 
   void _onTitleChangedForSmartTime(String raw) {
-    _applyFuzzyCategoryFromTitle(raw.trim().isEmpty ? _titleController.text : raw);
+    _applyFuzzyCategoryFromTitle(
+      raw.trim().isEmpty ? _titleController.text : raw,
+    );
     if (_startedAsUndatedBacklog) return;
     final v = _titleController.value;
     if (!v.composing.isCollapsed) return;
@@ -736,8 +759,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     return false;
   }
 
-  String _dateKeyFromDate(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-  String _shortMonth(int month) => month >= 1 && month <= 12 ? _shortMonths[month - 1] : '';
+  String _dateKeyFromDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  String _shortMonth(int month) =>
+      month >= 1 && month <= 12 ? _shortMonths[month - 1] : '';
 
   void _commitSave() {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
@@ -762,8 +787,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     }
     final rruleWire = _rruleWireFromRepeatUi(_repeatUi, _rruleCustomRaw);
     final clearR = rruleWire == null;
-    final deltaJson =
-        jsonEncode(_quillController.document.toDelta().toJson());
+    final deltaJson = jsonEncode(_quillController.document.toDelta().toJson());
     final plainTrimmed = _quillController.document
         .toPlainText()
         .replaceAll('\u200b', '')
@@ -777,8 +801,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       notesPlainOut = plainTrimmed.isEmpty ? null : plainTrimmed;
       notesDeltaJsonOut = deltaJson;
     }
-    final shouldClear = notesPlainOut == null &&
-        _isTrivialEmptyNotes(deltaJson, plainTrimmed);
+    final shouldClear =
+        notesPlainOut == null && _isTrivialEmptyNotes(deltaJson, plainTrimmed);
     final updated = shouldClear
         ? widget.task.copyWith(
             title: title,
@@ -787,8 +811,13 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
             date: _date,
             dateKey: newDateKey,
             endDateTime: _endTime != null
-                ? DateTime(_date.year, _date.month, _date.day, _endTime!.hour,
-                    _endTime!.minute)
+                ? DateTime(
+                    _date.year,
+                    _date.month,
+                    _date.day,
+                    _endTime!.hour,
+                    _endTime!.minute,
+                  )
                 : null,
             endDateKey: _endTime != null ? newDateKey : null,
             checklist: checklist,
@@ -809,8 +838,13 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
             date: _date,
             dateKey: newDateKey,
             endDateTime: _endTime != null
-                ? DateTime(_date.year, _date.month, _date.day, _endTime!.hour,
-                    _endTime!.minute)
+                ? DateTime(
+                    _date.year,
+                    _date.month,
+                    _date.day,
+                    _endTime!.hour,
+                    _endTime!.minute,
+                  )
                 : null,
             endDateKey: _endTime != null ? newDateKey : null,
             checklist: checklist,
@@ -862,8 +896,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                     controller: _titleController,
                     autofocus: _startedAsUndatedBacklog,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      fontWeight: FontWeight.w700,
+                    ),
                     minLines: 1,
                     maxLines: compactChrome ? 2 : 4,
                     textCapitalization: TextCapitalization.sentences,
@@ -911,18 +945,26 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: TabBar(
                       controller: _tabController!,
-                      isScrollable: true,
-                      tabAlignment: TabAlignment.start,
-                      labelPadding:
-                          const EdgeInsets.symmetric(horizontal: 10),
+                      isScrollable: false,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      labelPadding: EdgeInsets.zero,
                       padding: EdgeInsets.zero,
                       tabs: [
-                        Tab(text: t(currentLocale.value, 'notes_tab')),
-                        Tab(text: t(currentLocale.value, 'checklist_tab')),
-                        Tab(text: t(currentLocale.value, 'lists_subitems_tab')),
-                        Tab(
-                            text: t(
-                                currentLocale.value, 'plan_idea_tab_schedule')),
+                        AppCompactTextTab(
+                          text: t(currentLocale.value, 'notes_tab'),
+                        ),
+                        AppCompactTextTab(
+                          text: t(currentLocale.value, 'checklist_tab'),
+                        ),
+                        AppCompactTextTab(
+                          text: t(currentLocale.value, 'lists_subitems_tab'),
+                        ),
+                        AppCompactTextTab(
+                          text: t(
+                            currentLocale.value,
+                            'plan_idea_tab_schedule',
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -947,15 +989,17 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 child: QuillSimpleToolbar(
                                   controller: _quillController,
                                   config: _planningTaskEditQuillToolbarConfig(
-                                      context),
+                                    context,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Expanded(
                                 child: Container(
                                   decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.surface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surface,
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
                                       color: Theme.of(context)
@@ -977,13 +1021,14 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                         'notes_hint_flat',
                                       ),
                                       onLaunchUrl: _launchUrlFromQuillEditor,
-                                      customStyles:
-                                          DefaultStyles.getInstance(context),
+                                      customStyles: DefaultStyles.getInstance(
+                                        context,
+                                      ),
                                       keyboardAppearance:
                                           Theme.of(context).brightness ==
-                                                  Brightness.dark
-                                              ? Brightness.dark
-                                              : Brightness.light,
+                                              Brightness.dark
+                                          ? Brightness.dark
+                                          : Brightness.light,
                                     ),
                                   ),
                                 ),
@@ -1002,16 +1047,20 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                             ...List.generate(_checklistControllers.length, (i) {
                               final scheme = Theme.of(context).colorScheme;
                               final rowDone =
-                                  i < _checklistDone.length && _checklistDone[i];
+                                  i < _checklistDone.length &&
+                                  _checklistDone[i];
                               return ListTile(
-                                contentPadding:
-                                    const EdgeInsets.symmetric(horizontal: 4),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
                                 horizontalTitleGap: 4,
                                 leading: Checkbox(
                                   value: rowDone,
                                   onChanged: (v) => setState(() {
                                     _syncChecklistDoneLength(
-                                        _checklistControllers, _checklistDone);
+                                      _checklistControllers,
+                                      _checklistDone,
+                                    );
                                     _checklistDone[i] = v ?? false;
                                     _partitionChecklistRowsByDone(
                                       controllers: _checklistControllers,
@@ -1026,26 +1075,31 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                         ? TextDecoration.lineThrough
                                         : TextDecoration.none,
                                     color: rowDone
-                                        ? scheme.onSurface.withValues(alpha: 0.5)
+                                        ? scheme.onSurface.withValues(
+                                            alpha: 0.5,
+                                          )
                                         : scheme.onSurface,
                                     decorationColor: rowDone
-                                        ? scheme.onSurface.withValues(alpha: 0.5)
+                                        ? scheme.onSurface.withValues(
+                                            alpha: 0.5,
+                                          )
                                         : null,
                                   ),
                                   decoration: InputDecoration(
-                                    hintText:
-                                        t(currentLocale.value, 'checklist_item'),
+                                    hintText: t(
+                                      currentLocale.value,
+                                      'checklist_item',
+                                    ),
                                     hintStyle: TextStyle(
-                                      color: scheme.onSurfaceVariant
-                                          .withValues(
-                                              alpha: rowDone ? 0.35 : 0.5),
+                                      color: scheme.onSurfaceVariant.withValues(
+                                        alpha: rowDone ? 0.35 : 0.5,
+                                      ),
                                     ),
                                     border: InputBorder.none,
                                     isDense: true,
                                     filled: true,
-                                    fillColor:
-                                        scheme.surfaceContainerHighest.withValues(
-                                            alpha: 0.35),
+                                    fillColor: scheme.surfaceContainerHighest
+                                        .withValues(alpha: 0.35),
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 12,
                                       vertical: 12,
@@ -1081,7 +1135,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 ),
                               ),
                               onTap: () => setState(() {
-                                _checklistControllers.add(TextEditingController());
+                                _checklistControllers.add(
+                                  TextEditingController(),
+                                );
                                 _checklistDone.add(false);
                               }),
                             ),
@@ -1101,24 +1157,31 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                           children: [
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              title: Text(_scheduledTime == null
-                                  ? t(currentLocale.value, 'scheduled')
-                                  : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}'),
+                              title: Text(
+                                _scheduledTime == null
+                                    ? t(currentLocale.value, 'scheduled')
+                                    : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                              ),
                               trailing: const Icon(Icons.schedule_rounded),
                               onTap: () async {
                                 final initial = DateTime(
-                                    _date.year,
-                                    _date.month,
-                                    _date.day,
-                                    _scheduledTime?.hour ?? 9,
-                                    _scheduledTime?.minute ?? 0);
+                                  _date.year,
+                                  _date.month,
+                                  _date.day,
+                                  _scheduledTime?.hour ?? 9,
+                                  _scheduledTime?.minute ?? 0,
+                                );
                                 final picked = await showAppDateTimePicker(
-                                    context,
-                                    initial: initial);
+                                  context,
+                                  initial: initial,
+                                );
                                 if (picked != null && mounted) {
                                   setState(() {
-                                    _date = DateTime(picked.year, picked.month,
-                                        picked.day);
+                                    _date = DateTime(
+                                      picked.year,
+                                      picked.month,
+                                      picked.day,
+                                    );
                                     _scheduledTime = picked;
                                   });
                                 }
@@ -1127,27 +1190,34 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                             const SizedBox(height: 8),
                             ListTile(
                               contentPadding: EdgeInsets.zero,
-                              title: Text(_endTime == null
-                                  ? t(currentLocale.value, 'no_end_time')
-                                  : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}'),
+                              title: Text(
+                                _endTime == null
+                                    ? t(currentLocale.value, 'no_end_time')
+                                    : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
+                              ),
                               trailing: const Icon(Icons.schedule_rounded),
                               onTap: () async {
                                 final initial = DateTime(
-                                    _date.year,
-                                    _date.month,
-                                    _date.day,
-                                    _endTime?.hour ?? 10,
-                                    _endTime?.minute ?? 0);
+                                  _date.year,
+                                  _date.month,
+                                  _date.day,
+                                  _endTime?.hour ?? 10,
+                                  _endTime?.minute ?? 0,
+                                );
                                 final picked = await showAppDateTimePicker(
-                                    context,
-                                    initial: initial);
+                                  context,
+                                  initial: initial,
+                                );
                                 if (picked != null && mounted) {
-                                  setState(() => _endTime = DateTime(
+                                  setState(
+                                    () => _endTime = DateTime(
                                       _date.year,
                                       _date.month,
                                       _date.day,
                                       picked.hour,
-                                      picked.minute));
+                                      picked.minute,
+                                    ),
+                                  );
                                 }
                               },
                             ),
@@ -1165,7 +1235,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 DropdownMenuItem<int?>(
                                   value: null,
                                   child: Text(
-                                    t(currentLocale.value, 'plan_reminder_none'),
+                                    t(
+                                      currentLocale.value,
+                                      'plan_reminder_none',
+                                    ),
                                   ),
                                 ),
                                 DropdownMenuItem<int?>(
@@ -1231,7 +1304,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 DropdownMenuItem(
                                   value: _PlanRepeatUi.weekly,
                                   child: Text(
-                                    t(currentLocale.value, 'plan_repeat_weekly'),
+                                    t(
+                                      currentLocale.value,
+                                      'plan_repeat_weekly',
+                                    ),
                                   ),
                                 ),
                                 DropdownMenuItem(
@@ -1271,8 +1347,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     _rruleCustomRaw = null;
                                     _rruleCustomController.clear();
                                   } else {
-                                    _rruleCustomRaw =
-                                        widget.task.rrule?.trim();
+                                    _rruleCustomRaw = widget.task.rrule?.trim();
                                     _rruleCustomController.text =
                                         _rruleCustomRaw ?? '';
                                   }
@@ -1336,7 +1411,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 6),
+                                      vertical: 6,
+                                    ),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -1350,23 +1426,27 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
-                                              t(currentLocale.value,
-                                                  'start_time'),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelMedium,
+                                              t(
+                                                currentLocale.value,
+                                                'start_time',
+                                              ),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelMedium,
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           _scheduledTime == null
-                                              ? t(currentLocale.value,
-                                                  'scheduled')
+                                              ? t(
+                                                  currentLocale.value,
+                                                  'scheduled',
+                                                )
                                               : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -1391,18 +1471,21 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       initial: initial,
                                     );
                                     if (picked != null && mounted) {
-                                      setState(() => _endTime = DateTime(
-                                            _date.year,
-                                            _date.month,
-                                            _date.day,
-                                            picked.hour,
-                                            picked.minute,
-                                          ));
+                                      setState(
+                                        () => _endTime = DateTime(
+                                          _date.year,
+                                          _date.month,
+                                          _date.day,
+                                          picked.hour,
+                                          picked.minute,
+                                        ),
+                                      );
                                     }
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 6),
+                                      vertical: 6,
+                                    ),
                                     child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -1416,23 +1499,27 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                             ),
                                             const SizedBox(width: 6),
                                             Text(
-                                              t(currentLocale.value,
-                                                  'end_time'),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelMedium,
+                                              t(
+                                                currentLocale.value,
+                                                'end_time',
+                                              ),
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelMedium,
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           _endTime == null
-                                              ? t(currentLocale.value,
-                                                  'no_end_time')
+                                              ? t(
+                                                  currentLocale.value,
+                                                  'no_end_time',
+                                                )
                                               : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -1455,50 +1542,52 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       height: 22,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                       ),
                                     ),
                                   )
                                 : _availableTags.isEmpty
-                                    ? Align(
-                                        alignment:
-                                            AlignmentDirectional.centerStart,
-                                        child: OutlinedButton.icon(
-                                          onPressed: _openTagManagerAndReload,
-                                          icon: const Icon(Icons.add_rounded,
-                                              size: 20),
-                                          label: Text(
-                                            t(
-                                              currentLocale.value,
-                                              'tags_empty_create_first',
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    : TagQuickPickStrip(
-                                        tags: _availableTags,
-                                        selected: _selectedTags,
-                                        onToggle: _toggleTag,
+                                ? Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: OutlinedButton.icon(
+                                      onPressed: _openTagManagerAndReload,
+                                      icon: const Icon(
+                                        Icons.add_rounded,
+                                        size: 20,
                                       ),
+                                      label: Text(
+                                        t(
+                                          currentLocale.value,
+                                          'tags_empty_create_first',
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : TagQuickPickStrip(
+                                    tags: _availableTags,
+                                    selected: _selectedTags,
+                                    onToggle: _toggleTag,
+                                  ),
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: TabBar(
                             controller: _planTabController!,
-                            isScrollable: true,
-                            tabAlignment: TabAlignment.start,
-                            labelPadding:
-                                const EdgeInsets.symmetric(horizontal: 10),
+                            isScrollable: false,
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            labelPadding: EdgeInsets.zero,
                             padding: EdgeInsets.zero,
                             tabs: [
-                              Tab(text: t(currentLocale.value, 'notes_tab')),
-                              Tab(
-                                  text: t(
-                                      currentLocale.value, 'checklist_tab')),
-                              Tab(
+                              AppCompactTextTab(
+                                text: t(currentLocale.value, 'notes_tab'),
+                              ),
+                              AppCompactTextTab(
+                                text: t(currentLocale.value, 'checklist_tab'),
+                              ),
+                              AppCompactTextTab(
                                 text: t(
                                   currentLocale.value,
                                   'plan_parallel_plans_tab',
@@ -1531,19 +1620,20 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                         controller: _quillController,
                                         config:
                                             _planningTaskEditQuillToolbarConfig(
-                                          context,
-                                        ),
+                                              context,
+                                            ),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Expanded(
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .surface,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surface,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
                                             color: Theme.of(context)
                                                 .colorScheme
@@ -1568,13 +1658,13 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                                 _launchUrlFromQuillEditor,
                                             customStyles:
                                                 DefaultStyles.getInstance(
-                                              context,
-                                            ),
+                                                  context,
+                                                ),
                                             keyboardAppearance:
                                                 Theme.of(context).brightness ==
-                                                        Brightness.dark
-                                                    ? Brightness.dark
-                                                    : Brightness.light,
+                                                    Brightness.dark
+                                                ? Brightness.dark
+                                                : Brightness.light,
                                           ),
                                         ),
                                       ),
@@ -1584,111 +1674,127 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                               ),
                               ListView(
                                 padding: const EdgeInsets.fromLTRB(
-                                    16, 12, 16, 24),
+                                  16,
+                                  12,
+                                  16,
+                                  24,
+                                ),
                                 children: [
                                   ...List.generate(
-                                      _checklistControllers.length, (i) {
-                                    final scheme =
-                                        Theme.of(context).colorScheme;
-                                    final rowDone = i < _checklistDone.length &&
-                                        _checklistDone[i];
-                                    return ListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 4),
-                                      horizontalTitleGap: 4,
-                                      leading: Checkbox(
-                                        value: rowDone,
-                                        onChanged: (v) => setState(() {
-                                          _syncChecklistDoneLength(
-                                            _checklistControllers,
-                                            _checklistDone,
-                                          );
-                                          _checklistDone[i] = v ?? false;
-                                          _partitionChecklistRowsByDone(
-                                            controllers:
-                                                _checklistControllers,
-                                            done: _checklistDone,
-                                          );
-                                        }),
-                                      ),
-                                      title: TextField(
-                                        controller: _checklistControllers[i],
-                                        style: TextStyle(
-                                          decoration: rowDone
-                                              ? TextDecoration.lineThrough
-                                              : TextDecoration.none,
-                                          color: rowDone
-                                              ? scheme.onSurface
-                                                  .withValues(alpha: 0.5)
-                                              : scheme.onSurface,
-                                          decorationColor: rowDone
-                                              ? scheme.onSurface
-                                                  .withValues(alpha: 0.5)
-                                              : null,
-                                        ),
-                                        decoration: InputDecoration(
-                                          hintText: t(
-                                            currentLocale.value,
-                                            'checklist_item',
-                                          ),
-                                          hintStyle: TextStyle(
-                                            color: scheme.onSurfaceVariant
-                                                .withValues(
-                                              alpha: rowDone ? 0.35 : 0.5,
+                                    _checklistControllers.length,
+                                    (i) {
+                                      final scheme = Theme.of(
+                                        context,
+                                      ).colorScheme;
+                                      final rowDone =
+                                          i < _checklistDone.length &&
+                                          _checklistDone[i];
+                                      return ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 4,
                                             ),
+                                        horizontalTitleGap: 4,
+                                        leading: Checkbox(
+                                          value: rowDone,
+                                          onChanged: (v) => setState(() {
+                                            _syncChecklistDoneLength(
+                                              _checklistControllers,
+                                              _checklistDone,
+                                            );
+                                            _checklistDone[i] = v ?? false;
+                                            _partitionChecklistRowsByDone(
+                                              controllers:
+                                                  _checklistControllers,
+                                              done: _checklistDone,
+                                            );
+                                          }),
+                                        ),
+                                        title: TextField(
+                                          controller: _checklistControllers[i],
+                                          style: TextStyle(
+                                            decoration: rowDone
+                                                ? TextDecoration.lineThrough
+                                                : TextDecoration.none,
+                                            color: rowDone
+                                                ? scheme.onSurface.withValues(
+                                                    alpha: 0.5,
+                                                  )
+                                                : scheme.onSurface,
+                                            decorationColor: rowDone
+                                                ? scheme.onSurface.withValues(
+                                                    alpha: 0.5,
+                                                  )
+                                                : null,
                                           ),
-                                          border: InputBorder.none,
-                                          isDense: true,
-                                          filled: true,
-                                          fillColor: scheme
-                                              .surfaceContainerHighest
-                                              .withValues(alpha: 0.35),
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 12,
+                                          decoration: InputDecoration(
+                                            hintText: t(
+                                              currentLocale.value,
+                                              'checklist_item',
+                                            ),
+                                            hintStyle: TextStyle(
+                                              color: scheme.onSurfaceVariant
+                                                  .withValues(
+                                                    alpha: rowDone ? 0.35 : 0.5,
+                                                  ),
+                                            ),
+                                            border: InputBorder.none,
+                                            isDense: true,
+                                            filled: true,
+                                            fillColor: scheme
+                                                .surfaceContainerHighest
+                                                .withValues(alpha: 0.35),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 12,
+                                                ),
                                           ),
                                         ),
-                                      ),
-                                      trailing: IconButton(
-                                        icon: Icon(
-                                          Icons.delete_outline_rounded,
-                                          color: scheme.error,
+                                        trailing: IconButton(
+                                          icon: Icon(
+                                            Icons.delete_outline_rounded,
+                                            color: scheme.error,
+                                          ),
+                                          tooltip: t(
+                                            currentLocale.value,
+                                            'delete',
+                                          ),
+                                          onPressed: () => setState(() {
+                                            _removeChecklistRowAt(
+                                              i,
+                                              controllers:
+                                                  _checklistControllers,
+                                              done: _checklistDone,
+                                            );
+                                          }),
                                         ),
-                                        tooltip: t(
-                                            currentLocale.value, 'delete'),
-                                        onPressed: () => setState(() {
-                                          _removeChecklistRowAt(
-                                            i,
-                                            controllers:
-                                                _checklistControllers,
-                                            done: _checklistDone,
-                                          );
-                                        }),
-                                      ),
-                                    );
-                                  }),
+                                      );
+                                    },
+                                  ),
                                   ListTile(
                                     leading: Icon(
                                       Icons.add_circle_outline_rounded,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                     title: Text(
-                                      t(currentLocale.value,
-                                          'add_checklist_item'),
+                                      t(
+                                        currentLocale.value,
+                                        'add_checklist_item',
+                                      ),
                                       style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     onTap: () => setState(() {
-                                      _checklistControllers
-                                          .add(TextEditingController());
+                                      _checklistControllers.add(
+                                        TextEditingController(),
+                                      );
                                       _checklistDone.add(false);
                                     }),
                                   ),
@@ -1696,7 +1802,11 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                               ),
                               ListView(
                                 padding: const EdgeInsets.fromLTRB(
-                                    16, 12, 16, 24),
+                                  16,
+                                  12,
+                                  16,
+                                  24,
+                                ),
                                 children: [
                                   DropdownButtonFormField<int?>(
                                     initialValue: _reminderMinutes,
@@ -1711,41 +1821,51 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       DropdownMenuItem<int?>(
                                         value: null,
                                         child: Text(
-                                          t(currentLocale.value,
-                                              'plan_reminder_none'),
+                                          t(
+                                            currentLocale.value,
+                                            'plan_reminder_none',
+                                          ),
                                         ),
                                       ),
                                       DropdownMenuItem<int?>(
                                         value: 5,
                                         child: Text(
-                                          t(currentLocale.value,
-                                              'plan_reminder_5m'),
+                                          t(
+                                            currentLocale.value,
+                                            'plan_reminder_5m',
+                                          ),
                                         ),
                                       ),
                                       DropdownMenuItem<int?>(
                                         value: 15,
                                         child: Text(
-                                          t(currentLocale.value,
-                                              'plan_reminder_15m'),
+                                          t(
+                                            currentLocale.value,
+                                            'plan_reminder_15m',
+                                          ),
                                         ),
                                       ),
                                       DropdownMenuItem<int?>(
                                         value: 30,
                                         child: Text(
-                                          t(currentLocale.value,
-                                              'plan_reminder_30m'),
+                                          t(
+                                            currentLocale.value,
+                                            'plan_reminder_30m',
+                                          ),
                                         ),
                                       ),
                                       DropdownMenuItem<int?>(
                                         value: 60,
                                         child: Text(
-                                          t(currentLocale.value,
-                                              'plan_reminder_1h'),
+                                          t(
+                                            currentLocale.value,
+                                            'plan_reminder_1h',
+                                          ),
                                         ),
                                       ),
                                     ],
-                                    onChanged: (v) => setState(
-                                        () => _reminderMinutes = v),
+                                    onChanged: (v) =>
+                                        setState(() => _reminderMinutes = v),
                                   ),
                                   const SizedBox(height: 12),
                                   DropdownButtonFormField<_PlanRepeatUi>(
@@ -1761,15 +1881,19 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       DropdownMenuItem(
                                         value: _PlanRepeatUi.none,
                                         child: Text(
-                                          t(currentLocale.value,
-                                              'plan_repeat_none'),
+                                          t(
+                                            currentLocale.value,
+                                            'plan_repeat_none',
+                                          ),
                                         ),
                                       ),
                                       DropdownMenuItem(
                                         value: _PlanRepeatUi.daily,
                                         child: Text(
-                                          t(currentLocale.value,
-                                              'plan_repeat_daily'),
+                                          t(
+                                            currentLocale.value,
+                                            'plan_repeat_daily',
+                                          ),
                                         ),
                                       ),
                                       DropdownMenuItem(
@@ -1784,8 +1908,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       DropdownMenuItem(
                                         value: _PlanRepeatUi.weekly,
                                         child: Text(
-                                          t(currentLocale.value,
-                                              'plan_repeat_weekly'),
+                                          t(
+                                            currentLocale.value,
+                                            'plan_repeat_weekly',
+                                          ),
                                         ),
                                       ),
                                       DropdownMenuItem(
@@ -1825,8 +1951,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                           _rruleCustomRaw = null;
                                           _rruleCustomController.clear();
                                         } else {
-                                          _rruleCustomRaw =
-                                              widget.task.rrule?.trim();
+                                          _rruleCustomRaw = widget.task.rrule
+                                              ?.trim();
                                           _rruleCustomController.text =
                                               _rruleCustomRaw ?? '';
                                         }
@@ -1870,9 +1996,9 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                       child: Text(
                         t(currentLocale.value, 'plan_graduate_warning'),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -1891,16 +2017,23 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                     children: [
                       if (widget.onDelete != null)
                         TextButton(
-                            onPressed: () {
-                              widget.onDelete!(widget.task);
-                              Navigator.of(context).pop<PlanningTask?>(null);
-                            },
-                            child: Text(t(currentLocale.value, 'delete'),
-                                style: TextStyle(color: Theme.of(context).colorScheme.error))),
+                          onPressed: () {
+                            widget.onDelete!(widget.task);
+                            Navigator.of(context).pop<PlanningTask?>(null);
+                          },
+                          child: Text(
+                            t(currentLocale.value, 'delete'),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
                       const Spacer(),
                       TextButton(
-                          onPressed: () => Navigator.of(context).pop<PlanningTask?>(null),
-                          child: Text(t(currentLocale.value, 'cancel'))),
+                        onPressed: () =>
+                            Navigator.of(context).pop<PlanningTask?>(null),
+                        child: Text(t(currentLocale.value, 'cancel')),
+                      ),
                       const SizedBox(width: 8),
                       FilledButton(
                         onPressed: _commitSave,
@@ -1941,10 +2074,12 @@ class _TimelineRecordSheetContent extends StatefulWidget {
   final VoidCallback onStop;
 
   @override
-  State<_TimelineRecordSheetContent> createState() => _TimelineRecordSheetContentState();
+  State<_TimelineRecordSheetContent> createState() =>
+      _TimelineRecordSheetContentState();
 }
 
-class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent>
+class _TimelineRecordSheetContentState
+    extends State<_TimelineRecordSheetContent>
     with SingleTickerProviderStateMixin {
   late TextEditingController _titleController;
   late QuillController _recordQuillController;
@@ -1956,6 +2091,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
   final List<TextEditingController> _checklistControllers = [];
   final List<bool> _checklistDone = [];
   late TabController _tabController;
+
   /// PocketBase **plans** row id; empty = no link.
   late String _sourcePlanPbId;
   List<PlanningTask> _plansForLink = [];
@@ -1994,8 +2130,12 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     _recordQuillFocus = FocusNode();
     _recordQuillScroll = ScrollController();
     _categoryId = widget.record.categoryId;
-    _startDisplay = widget.record.startTime != null ? utcToDisplay(widget.record.startTime!) : null;
-    _endDisplay = widget.record.endTime != null ? utcToDisplay(widget.record.endTime!) : null;
+    _startDisplay = widget.record.startTime != null
+        ? utcToDisplay(widget.record.startTime!)
+        : null;
+    _endDisplay = widget.record.endTime != null
+        ? utcToDisplay(widget.record.endTime!)
+        : null;
     for (final item in widget.record.checklist ?? []) {
       _checklistControllers.add(
         TextEditingController(text: (item['text'] ?? '').toString()),
@@ -2012,7 +2152,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     );
     _sourcePlanPbId =
         DatabaseService.pocketRelationIdOrNull(widget.record.sourcePlanId) ??
-            '';
+        '';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadPlansForLink());
     });
@@ -2045,8 +2185,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
 
   Future<void> _loadPlansForLink() async {
     if (mounted) setState(() => _plansLoading = true);
-    final list = await DatabaseService.instance
-        .getPlanningTasksForWallDate(_wallDayForRecord());
+    final list = await DatabaseService.instance.getPlanningTasksForWallDate(
+      _wallDayForRecord(),
+    );
     if (!mounted) return;
     setState(() {
       _plansForLink = list;
@@ -2068,8 +2209,10 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       showDragHandle: true,
       builder: (sheetCtx) {
         final viewInsets = MediaQuery.viewInsetsOf(sheetCtx).bottom;
-        final h = (MediaQuery.sizeOf(sheetCtx).height * 0.55)
-            .clamp(240.0, 520.0);
+        final h = (MediaQuery.sizeOf(sheetCtx).height * 0.55).clamp(
+          240.0,
+          520.0,
+        );
         return Padding(
           padding: EdgeInsets.only(bottom: viewInsets),
           child: SizedBox(
@@ -2086,7 +2229,11 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                 ),
                 Expanded(
                   child: ListView.separated(
-                    padding: const EdgeInsets.only(left: 8, right: 8, bottom: 16),
+                    padding: const EdgeInsets.only(
+                      left: 8,
+                      right: 8,
+                      bottom: 16,
+                    ),
                     itemCount: options.length,
                     separatorBuilder: (context, index) =>
                         const Divider(height: 1),
@@ -2154,8 +2301,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       decoration: InputDecoration(
         isDense: true,
         labelText: t(loc, 'record_link_plan_label'),
-        helperText:
-            _plansLoading ? t(loc, 'record_link_plan_loading') : null,
+        helperText: _plansLoading ? t(loc, 'record_link_plan_loading') : null,
         suffixIcon: Icon(
           Icons.arrow_drop_down_rounded,
           color: theme.colorScheme.onSurfaceVariant,
@@ -2164,11 +2310,13 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       child: InkWell(
         onTap: _plansLoading
             ? null
-            : () => unawaited(_showPlanLinkPickerSheet(
+            : () => unawaited(
+                _showPlanLinkPickerSheet(
                   context,
                   options: options,
                   selectedKey: initial,
-                )),
+                ),
+              ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
           child: Row(
@@ -2191,7 +2339,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
   ({bool sync, bool clear, String? id}) _sourcePlanPatchArgs() {
     final initial =
         DatabaseService.pocketRelationIdOrNull(widget.record.sourcePlanId) ??
-            '';
+        '';
     final sel = _sourcePlanPbId.isEmpty
         ? ''
         : (DatabaseService.pocketRelationIdOrNull(_sourcePlanPbId) ?? '');
@@ -2261,25 +2409,26 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
       if (endUtc.isBefore(startUtc) || endUtc.isAtSameMomentAs(startUtc)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t(currentLocale.value, 'end_time_after_start'))),
+            SnackBar(
+              content: Text(t(currentLocale.value, 'end_time_after_start')),
+            ),
           );
         }
         return;
       }
-      final overlap = await DatabaseService.instance.checkOverlapWithExistingRecords(
-        startUtc,
-        endUtc,
-      );
+      final overlap = await DatabaseService.instance
+          .checkOverlapWithExistingRecords(startUtc, endUtc);
       if (overlap && mounted) {
-        final conflict = await DatabaseService.instance.findFirstOverlappingRecord(
-          startUtc,
-          endUtc,
-        );
+        final conflict = await DatabaseService.instance
+            .findFirstOverlappingRecord(startUtc, endUtc);
         if (!mounted) return;
         final loc = currentLocale.value;
         final rawTitle = (conflict?['title'] ?? '').toString().trim();
         final otherLabel = rawTitle.isNotEmpty ? rawTitle : t(loc, 'untitled');
-        final msg = t(loc, 'time_conflict_with_title').replaceFirst('%s', otherLabel);
+        final msg = t(
+          loc,
+          'time_conflict_with_title',
+        ).replaceFirst('%s', otherLabel);
         final sm = ScaffoldMessenger.maybeOf(context);
         Navigator.of(context).pop();
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2304,8 +2453,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     }
 
     if (isRunning) {
-      final startUtc =
-          _startDisplay != null ? displayToUtc(_startDisplay!) : null;
+      final startUtc = _startDisplay != null
+          ? displayToUtc(_startDisplay!)
+          : null;
       DatabaseService.instance.applyOptimisticRecordRowEdit(
         recordId: widget.record.id,
         title: title,
@@ -2343,11 +2493,11 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
               sourcePlanPocketRecordId: planPatch.id,
             )
             .then((TimelineRecord? server) {
-          if (!mounted) return;
-          if (server == null) {
-            AppSnack.failed();
-          }
-        }),
+              if (!mounted) return;
+              if (server == null) {
+                AppSnack.failed();
+              }
+            }),
       );
       return;
     }
@@ -2358,29 +2508,38 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     if (endUtc.isBefore(startUtc) || endUtc.isAtSameMomentAs(startUtc)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'end_time_after_start'))),
+          SnackBar(
+            content: Text(t(currentLocale.value, 'end_time_after_start')),
+          ),
         );
       }
       return;
     }
-    final overlap = await DatabaseService.instance.checkOverlapWithExistingRecords(
-      startUtc,
-      endUtc,
-      excludeRecordId: widget.record.id.isNotEmpty ? widget.record.id : null,
-    );
+    final overlap = await DatabaseService.instance
+        .checkOverlapWithExistingRecords(
+          startUtc,
+          endUtc,
+          excludeRecordId: widget.record.id.isNotEmpty
+              ? widget.record.id
+              : null,
+        );
     if (overlap && mounted) {
-      final conflict = await DatabaseService.instance.findFirstOverlappingRecord(
-        startUtc,
-        endUtc,
-        excludeRecordId:
-            widget.record.id.isNotEmpty ? widget.record.id : null,
-      );
+      final conflict = await DatabaseService.instance
+          .findFirstOverlappingRecord(
+            startUtc,
+            endUtc,
+            excludeRecordId: widget.record.id.isNotEmpty
+                ? widget.record.id
+                : null,
+          );
       if (!mounted) return;
       final loc = currentLocale.value;
       final rawTitle = (conflict?['title'] ?? '').toString().trim();
       final otherLabel = rawTitle.isNotEmpty ? rawTitle : t(loc, 'untitled');
-      final msg =
-          t(loc, 'time_conflict_with_title').replaceFirst('%s', otherLabel);
+      final msg = t(
+        loc,
+        'time_conflict_with_title',
+      ).replaceFirst('%s', otherLabel);
       final sm = ScaffoldMessenger.maybeOf(context);
       Navigator.of(context).pop();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2429,11 +2588,11 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
             sourcePlanPocketRecordId: planPatchStopped.id,
           )
           .then((TimelineRecord? server) {
-        if (!mounted) return;
-        if (server == null) {
-          AppSnack.failed();
-        }
-      }),
+            if (!mounted) return;
+            if (server == null) {
+              AppSnack.failed();
+            }
+          }),
     );
   }
 
@@ -2442,8 +2601,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final isRunning = widget.record.endTime == null;
     final int catVal;
-    if (_categoryId != null &&
-        pairs.any((p) => p.id == _categoryId)) {
+    if (_categoryId != null && pairs.any((p) => p.id == _categoryId)) {
       catVal = _categoryId!;
     } else if (pairs.isNotEmpty) {
       catVal = pairs.first.id;
@@ -2453,8 +2611,11 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
 
     Widget startEndCaption(bool isEnd) {
       if (isEnd && isRunning) {
-        return Text(t(currentLocale.value, 'running_label'),
-            maxLines: 2, overflow: TextOverflow.ellipsis);
+        return Text(
+          t(currentLocale.value, 'running_label'),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        );
       }
       final dt = isEnd ? _endDisplay : _startDisplay;
       if (dt == null) return const Text('–');
@@ -2475,8 +2636,16 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Row(
               children: [
-                Expanded(child: Text(t(currentLocale.value, 'edit_record'), style: Theme.of(context).textTheme.titleLarge)),
-                IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.of(context).pop()),
+                Expanded(
+                  child: Text(
+                    t(currentLocale.value, 'edit_record'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
               ],
             ),
           ),
@@ -2499,13 +2668,13 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                             controller: _titleController,
                             decoration: InputDecoration(
                               isDense: true,
-                              labelText: t(
-                                  currentLocale.value, 'title_label'),
-                              hintText: t(currentLocale.value,
-                                  'hint_record_example'),
+                              labelText: t(currentLocale.value, 'title_label'),
+                              hintText: t(
+                                currentLocale.value,
+                                'hint_record_example',
+                              ),
                             ),
-                            textCapitalization:
-                                TextCapitalization.sentences,
+                            textCapitalization: TextCapitalization.sentences,
                             onChanged: _applyFuzzyCategoryFromRecordTitle,
                           ),
                           const SizedBox(height: 8),
@@ -2517,13 +2686,15 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                               decoration: InputDecoration(
                                 isDense: true,
                                 labelText: t(
-                                    currentLocale.value,
-                                    'category_label'),
+                                  currentLocale.value,
+                                  'category_label',
+                                ),
                               ),
                               onChanged: pairs.isEmpty
                                   ? (_) {}
                                   : (id) => setState(
-                                      () => _categoryId = id ?? catVal),
+                                      () => _categoryId = id ?? catVal,
+                                    ),
                             ),
                           ),
                           Padding(
@@ -2535,9 +2706,7 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                               padding: const EdgeInsets.only(bottom: 6),
                               child: LinearProgressIndicator(
                                 minHeight: 2,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                             ),
                         ],
@@ -2546,97 +2715,107 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
                       child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _pickStart,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 6),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                              Icons.calendar_month_rounded,
-                                              size: 18),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                              t(currentLocale.value,
-                                                  'start_time'),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelMedium),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      DefaultTextStyle.merge(
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall!,
-                                        child: startEndCaption(false),
-                                      ),
-                                    ],
-                                  ),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _pickStart,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.calendar_month_rounded,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          t(currentLocale.value, 'start_time'),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.labelMedium,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    DefaultTextStyle.merge(
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall!,
+                                      child: startEndCaption(false),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: isRunning ? null : _pickEnd,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 6),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                              Icons.event_available_rounded,
-                                              size: 18),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                              t(currentLocale.value,
-                                                  'end_time'),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelMedium),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      DefaultTextStyle.merge(
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall!,
-                                        child: startEndCaption(true),
-                                      ),
-                                    ],
-                                  ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: isRunning ? null : _pickEnd,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.event_available_rounded,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          t(currentLocale.value, 'end_time'),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.labelMedium,
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    DefaultTextStyle.merge(
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall!,
+                                      child: startEndCaption(true),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
                 TabBar(
                   controller: _tabController,
                   isScrollable: false,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  labelPadding: EdgeInsets.zero,
                   tabAlignment: TabAlignment.start,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   tabs: [
-                    Tab(text: t(currentLocale.value, 'notes_tab')),
-                    Tab(text: t(currentLocale.value, 'checklist_tab')),
-                    Tab(text: t(currentLocale.value, 'parallel_activities_tab')),
+                    AppCompactTextTab(
+                      text: t(currentLocale.value, 'notes_tab'),
+                    ),
+                    AppCompactTextTab(
+                      text: t(currentLocale.value, 'checklist_tab'),
+                    ),
+                    AppCompactTextTab(
+                      text: t(currentLocale.value, 'parallel_activities_tab'),
+                    ),
                   ],
                 ),
                 Expanded(
@@ -2686,13 +2865,14 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                                       'notes_hint_flat',
                                     ),
                                     onLaunchUrl: _launchUrlFromQuillEditor,
-                                    customStyles:
-                                        DefaultStyles.getInstance(context),
+                                    customStyles: DefaultStyles.getInstance(
+                                      context,
+                                    ),
                                     keyboardAppearance:
                                         Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Brightness.dark
-                                            : Brightness.light,
+                                            Brightness.dark
+                                        ? Brightness.dark
+                                        : Brightness.light,
                                   ),
                                 ),
                               ),
@@ -2709,14 +2889,17 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                             final rowDone =
                                 i < _checklistDone.length && _checklistDone[i];
                             return ListTile(
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
                               horizontalTitleGap: 4,
                               leading: Checkbox(
                                 value: rowDone,
                                 onChanged: (v) => setState(() {
                                   _syncChecklistDoneLength(
-                                      _checklistControllers, _checklistDone);
+                                    _checklistControllers,
+                                    _checklistDone,
+                                  );
                                   _checklistDone[i] = v ?? false;
                                   _partitionChecklistRowsByDone(
                                     controllers: _checklistControllers,
@@ -2738,18 +2921,20 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                                       : null,
                                 ),
                                 decoration: InputDecoration(
-                                  hintText:
-                                      t(currentLocale.value, 'checklist_item'),
+                                  hintText: t(
+                                    currentLocale.value,
+                                    'checklist_item',
+                                  ),
                                   hintStyle: TextStyle(
-                                    color: scheme.onSurfaceVariant
-                                        .withValues(alpha: rowDone ? 0.35 : 0.5),
+                                    color: scheme.onSurfaceVariant.withValues(
+                                      alpha: rowDone ? 0.35 : 0.5,
+                                    ),
                                   ),
                                   border: InputBorder.none,
                                   isDense: true,
                                   filled: true,
-                                  fillColor:
-                                      scheme.surfaceContainerHighest.withValues(
-                                          alpha: 0.35),
+                                  fillColor: scheme.surfaceContainerHighest
+                                      .withValues(alpha: 0.35),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12,
                                     vertical: 12,
@@ -2785,7 +2970,9 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                               ),
                             ),
                             onTap: () => setState(() {
-                              _checklistControllers.add(TextEditingController());
+                              _checklistControllers.add(
+                                TextEditingController(),
+                              );
                               _checklistDone.add(false);
                             }),
                           ),
@@ -2800,25 +2987,29 @@ class _TimelineRecordSheetContentState extends State<_TimelineRecordSheetContent
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    8,
-                    16,
-                    16,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   child: Row(
                     children: [
                       if (isRunning)
                         TextButton.icon(
-                            onPressed: widget.onStop,
-                            icon: const Icon(Icons.stop_rounded),
-                            label: Text(t(currentLocale.value, 'stop'))),
+                          onPressed: widget.onStop,
+                          icon: const Icon(Icons.stop_rounded),
+                          label: Text(t(currentLocale.value, 'stop')),
+                        ),
                       TextButton(
-                          onPressed: widget.onDelete,
-                          child: Text(t(currentLocale.value, 'delete'),
-                              style: TextStyle(color: Theme.of(context).colorScheme.error))),
+                        onPressed: widget.onDelete,
+                        child: Text(
+                          t(currentLocale.value, 'delete'),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
                       const Spacer(),
-                      FilledButton(onPressed: _save, child: Text(t(currentLocale.value, 'save'))),
+                      FilledButton(
+                        onPressed: _save,
+                        child: Text(t(currentLocale.value, 'save')),
+                      ),
                     ],
                   ),
                 ),
@@ -2858,10 +3049,10 @@ class _BacklogSubItemsPanelState extends State<_BacklogSubItemsPanel> {
   @override
   void initState() {
     super.initState();
-    _planRefreshSub =
-        DatabaseService.instance.planningRefreshNotifications.listen((_) {
-      if (mounted) setState(() {});
-    });
+    _planRefreshSub = DatabaseService.instance.planningRefreshNotifications
+        .listen((_) {
+          if (mounted) setState(() {});
+        });
   }
 
   @override
@@ -2920,9 +3111,9 @@ class _BacklogSubItemsPanelState extends State<_BacklogSubItemsPanel> {
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
               t(loc, 'lists_subitems_save_parent_first'),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
         Row(
@@ -2944,7 +3135,9 @@ class _BacklogSubItemsPanelState extends State<_BacklogSubItemsPanel> {
             ),
             const SizedBox(width: 8),
             FilledButton.icon(
-              onPressed: _parentPersisted ? () => unawaited(_addSubItem()) : null,
+              onPressed: _parentPersisted
+                  ? () => unawaited(_addSubItem())
+                  : null,
               icon: const Icon(Icons.add_rounded),
               label: Text(t(loc, 'add')),
             ),
@@ -2954,9 +3147,9 @@ class _BacklogSubItemsPanelState extends State<_BacklogSubItemsPanel> {
         if (children.isEmpty)
           Text(
             '—',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           )
         else
           for (final child in children)
@@ -3017,6 +3210,7 @@ class _ParallelActivitiesTab extends StatefulWidget {
 class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
     with AutomaticKeepAliveClientMixin {
   late final TextEditingController _newTitleController;
+
   /// Parent link key for which [_runningChildrenStream] / [_completedChildrenStream] were built.
   /// [runningChildrenStream] / [completedChildrenStream] return new streams per call — must not
   /// pass a freshly created stream from [build] each rebuild.
@@ -3036,10 +3230,12 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
   void _ensureChildStreams(String link) {
     if (_childStreamsLink == link) return;
     _childStreamsLink = link;
-    _runningChildrenStream =
-        DatabaseService.instance.runningChildrenStream(link);
-    _completedChildrenStream =
-        DatabaseService.instance.completedChildrenStream(link);
+    _runningChildrenStream = DatabaseService.instance.runningChildrenStream(
+      link,
+    );
+    _completedChildrenStream = DatabaseService.instance.completedChildrenStream(
+      link,
+    );
   }
 
   @override
@@ -3060,14 +3256,15 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
   Future<void> _addParallel() async {
     final title = _newTitleController.text.trim();
     if (title.isEmpty) return;
-    final link = DatabaseService.instance
-        .resolveParentLinkForChildren(widget.parentRecord.id);
+    final link = DatabaseService.instance.resolveParentLinkForChildren(
+      widget.parentRecord.id,
+    );
     if (link.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content:
-                  Text(t(currentLocale.value, 'parallel_activities_info'))),
+            content: Text(t(currentLocale.value, 'parallel_activities_info')),
+          ),
         );
       }
       return;
@@ -3086,16 +3283,14 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
         setState(() {});
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed'))),
+          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
         );
       }
     } catch (e) {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed'))),
+          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
         );
       }
     }
@@ -3103,11 +3298,12 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
 
   Future<void> _stopChild(TimelineRecord child) async {
     try {
-      final ok =
-          await DatabaseService.instance.stopRecordByDocId(child.id);
+      final ok = await DatabaseService.instance.stopRecordByDocId(child.id);
       if (!mounted) return;
       if (!ok) {
-        debugPrint('UI ERROR: stopRecordByDocId returned false (systemRowId=${child.id})');
+        debugPrint(
+          'UI ERROR: stopRecordByDocId returned false (systemRowId=${child.id})',
+        );
       }
     } catch (e) {
       debugPrint('UI ERROR: $e');
@@ -3131,8 +3327,11 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
     );
   }
 
-  Widget _childTile(BuildContext context, TimelineRecord c,
-      {required bool running}) {
+  Widget _childTile(
+    BuildContext context,
+    TimelineRecord c, {
+    required bool running,
+  }) {
     return ListTile(
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 0),
@@ -3140,11 +3339,11 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
       subtitle: Text(
         running
             ? (c.startTime != null
-                ? '${formatDate(utcToDisplay(c.startTime!))} ${formatTimeOfDay(utcToDisplay(c.startTime!))}'
-                : '—')
+                  ? '${formatDate(utcToDisplay(c.startTime!))} ${formatTimeOfDay(utcToDisplay(c.startTime!))}'
+                  : '—')
             : (c.startTime != null && c.endTime != null
-                ? '${formatDate(utcToDisplay(c.startTime!))} ${formatTimeOfDay(utcToDisplay(c.startTime!))} — ${formatTimeOfDay(utcToDisplay(c.endTime!))}'
-                : '—'),
+                  ? '${formatDate(utcToDisplay(c.startTime!))} ${formatTimeOfDay(utcToDisplay(c.startTime!))} — ${formatTimeOfDay(utcToDisplay(c.endTime!))}'
+                  : '—'),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
@@ -3181,8 +3380,9 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
         ],
       );
     }
-    final link = DatabaseService.instance
-        .resolveParentLinkForChildren(widget.parentRecord.id);
+    final link = DatabaseService.instance.resolveParentLinkForChildren(
+      widget.parentRecord.id,
+    );
     _ensureChildStreams(link);
     return ListView(
       primary: false,
@@ -3205,8 +3405,10 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
           label: Text(t(currentLocale.value, 'parallel_add_activity')),
         ),
         const SizedBox(height: 16),
-        Text(t(currentLocale.value, 'child_records_running'),
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          t(currentLocale.value, 'child_records_running'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         StreamBuilder<List<TimelineRecord>>(
           stream: _runningChildrenStream,
           builder: (context, snap) {
@@ -3230,8 +3432,10 @@ class _ParallelActivitiesTabState extends State<_ParallelActivitiesTab>
           },
         ),
         const SizedBox(height: 8),
-        Text(t(currentLocale.value, 'child_records_completed'),
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          t(currentLocale.value, 'child_records_completed'),
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         StreamBuilder<List<TimelineRecord>>(
           stream: _completedChildrenStream,
           builder: (context, snap) {
@@ -3298,16 +3502,14 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
         widget.onSaved();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed'))),
+          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
         );
       }
     } catch (e) {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'plan_save_failed'))),
+          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
         );
       }
     }
@@ -3315,13 +3517,16 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
 
   Future<void> _stop() async {
     try {
-      final ok = await DatabaseService.instance
-          .stopRecordByDocId(widget.child.id);
+      final ok = await DatabaseService.instance.stopRecordByDocId(
+        widget.child.id,
+      );
       if (!mounted) return;
       if (ok) {
         widget.onSaved();
       } else {
-        debugPrint('UI ERROR: stopRecordByDocId returned false (systemRowId=${widget.child.id})');
+        debugPrint(
+          'UI ERROR: stopRecordByDocId returned false (systemRowId=${widget.child.id})',
+        );
       }
     } catch (e) {
       debugPrint('UI ERROR: $e');
@@ -3377,4 +3582,3 @@ class _ChildParallelEditBarState extends State<_ChildParallelEditBar> {
     );
   }
 }
-
