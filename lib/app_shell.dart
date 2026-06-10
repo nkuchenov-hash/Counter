@@ -16,6 +16,7 @@ import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
+import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
@@ -34,7 +35,8 @@ DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
 String _two(int n) => n.toString().padLeft(2, '0');
 
-DateTime _localToday() => DatabaseService.instance.getTimelineDeviceLocalToday();
+DateTime _localToday() =>
+    DatabaseService.instance.getTimelineDeviceLocalToday();
 
 DateTime _displayToUtc(DateTime displayNaive) =>
     DatabaseService.instance.displayTimeToUtc(displayNaive);
@@ -83,13 +85,17 @@ class _OfflineSyncStatusBar extends StatelessWidget {
           fg = scheme.onErrorContainer;
           bg = scheme.errorContainer.withValues(alpha: 0.85);
         } else if (sync.isOffline) {
-          label = t(locale, 'offline_sync_pending')
-              .replaceAll('%s', '${sync.pendingCount}');
+          label = t(
+            locale,
+            'offline_sync_pending',
+          ).replaceAll('%s', '${sync.pendingCount}');
           fg = scheme.onSurfaceVariant;
           bg = scheme.surfaceContainerHighest.withValues(alpha: 0.92);
         } else {
-          label = t(locale, 'offline_sync_pending_online')
-              .replaceAll('%s', '${sync.pendingCount}');
+          label = t(
+            locale,
+            'offline_sync_pending_online',
+          ).replaceAll('%s', '${sync.pendingCount}');
           fg = scheme.onSurfaceVariant;
           bg = scheme.surfaceContainerHighest.withValues(alpha: 0.92);
         }
@@ -104,7 +110,10 @@ class _OfflineSyncStatusBar extends StatelessWidget {
                 );
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -124,9 +133,9 @@ class _OfflineSyncStatusBar extends StatelessWidget {
                       child: Text(
                         label,
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: fg,
-                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(color: fg),
                       ),
                     ),
                   ],
@@ -157,7 +166,12 @@ class _SettingsPageState extends State<SettingsPage> {
   late String _language;
   late String _timeZone;
 
-  static const List<String> _timezoneOptions = ['Local', 'UTC', 'GMT+3', 'GMT-5'];
+  static const List<String> _timezoneOptions = [
+    'Local',
+    'UTC',
+    'GMT+3',
+    'GMT-5',
+  ];
 
   @override
   void initState() {
@@ -190,13 +204,14 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     final locale = currentLocale.value;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t(locale, 'settings')),
-      ),
+      appBar: AppBar(title: Text(t(locale, 'settings'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(t(locale, 'settings'), style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            t(locale, 'settings'),
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             key: ValueKey<String>(_language),
@@ -238,7 +253,9 @@ class _SettingsPageState extends State<SettingsPage> {
     }
     return DropdownButton<String>(
       value: _timeZone,
-      items: _timezoneOptions.map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+      items: _timezoneOptions
+          .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+          .toList(),
       onChanged: (String? v) {
         if (v == null) return;
         setState(() => _timeZone = v);
@@ -264,8 +281,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   /// 0 Timeline, 1 Planning, 2 Calendar, 3 Lists, 4 Categories, 5 Profile.
   int _shellPageIndex = 0;
 
-  int get _navBarSelectedIndex =>
-      _shellPageIndex <= 3 ? _shellPageIndex : 4;
+  int get _navBarSelectedIndex => _shellPageIndex <= 3 ? _shellPageIndex : 4;
 
   late DateTime _selectedDate;
   late DateTime _focusedDay;
@@ -286,6 +302,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   stt.SpeechToText? _speech;
   SpeechEngineHandle? _speechHandle;
   bool _speechReady = false;
+
   /// Last engine init failure (shown with [speech_unavailable] snackbar detail).
   String? _speechLastInitError;
   bool _isVoiceListening = false;
@@ -327,7 +344,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   void initState() {
     super.initState();
     unawaited(CategoryVisibilityPrefs.ensureLoaded());
-    CategoryVisibilityPrefs.hiddenIds.addListener(_categoryVisibilityShellListener);
+    CategoryVisibilityPrefs.hiddenIds.addListener(
+      _categoryVisibilityShellListener,
+    );
     _selectedDate = DatabaseService.instance.getTimelineDeviceLocalToday();
     _focusedDay = DatabaseService.instance.getTimelineDeviceLocalToday();
     _rules = List.from(DatabaseService.instance.rules);
@@ -337,43 +356,44 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
     _notificationSub = DatabaseService.instance.notifications.listen((msg) {
       if (!mounted || msg == null || msg.isEmpty) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     });
 
-    _categoryRulesSub =
-        DatabaseService.instance.categoryStream.listen((rules) {
+    _categoryRulesSub = DatabaseService.instance.categoryStream.listen((rules) {
       if (!mounted) return;
       setState(() => _rules = List.from(rules));
     });
-    _deviceTodayAtLastMidnightCheck =
-        DatabaseService.instance.getTimelineDeviceLocalToday();
-    _deviceLocalDayKeyLast =
-        DatabaseService.instance.getTimelineDeviceLocalTodayDateKey();
-    _deviceLocalMidnightWatchTimer =
-        Timer.periodic(const Duration(minutes: 1), (_) {
-      _onDeviceLocalCalendarDayWatchTick();
-    });
+    _deviceTodayAtLastMidnightCheck = DatabaseService.instance
+        .getTimelineDeviceLocalToday();
+    _deviceLocalDayKeyLast = DatabaseService.instance
+        .getTimelineDeviceLocalTodayDateKey();
+    _deviceLocalMidnightWatchTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) {
+        _onDeviceLocalCalendarDayWatchTick();
+      },
+    );
     unawaited(_ensureSpeechReady());
   }
 
   void _onDeviceLocalCalendarDayWatchTick() {
     final key = DatabaseService.instance.getTimelineDeviceLocalTodayDateKey();
     if (key == _deviceLocalDayKeyLast) {
-      _deviceTodayAtLastMidnightCheck =
-          DatabaseService.instance.getTimelineDeviceLocalToday();
+      _deviceTodayAtLastMidnightCheck = DatabaseService.instance
+          .getTimelineDeviceLocalToday();
       return;
     }
-    final oldToday = _deviceTodayAtLastMidnightCheck ??
+    final oldToday =
+        _deviceTodayAtLastMidnightCheck ??
         DatabaseService.instance.getTimelineDeviceLocalToday();
     _deviceLocalDayKeyLast = key;
-    _deviceTodayAtLastMidnightCheck =
-        DatabaseService.instance.getTimelineDeviceLocalToday();
+    _deviceTodayAtLastMidnightCheck = DatabaseService.instance
+        .getTimelineDeviceLocalToday();
     DatabaseService.instance.notifyTimelineDeviceLocalDayChanged();
     if (!mounted) return;
     final sel = _dateOnly(_selectedDate);
-    final wasFollowingLiveToday = sel.year == oldToday.year &&
+    final wasFollowingLiveToday =
+        sel.year == oldToday.year &&
         sel.month == oldToday.month &&
         sel.day == oldToday.day;
     if (wasFollowingLiveToday && _shellPageIndex == 0) {
@@ -392,7 +412,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   @override
   void dispose() {
-    CategoryVisibilityPrefs.hiddenIds.removeListener(_categoryVisibilityShellListener);
+    CategoryVisibilityPrefs.hiddenIds.removeListener(
+      _categoryVisibilityShellListener,
+    );
     _deviceLocalMidnightWatchTimer?.cancel();
     _notificationSub?.cancel();
     _categoryRulesSub?.cancel();
@@ -462,10 +484,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         duration: const Duration(seconds: 4),
         action: onRetry == null
             ? null
-            : SnackBarAction(
-                label: t(loc, 'try_again'),
-                onPressed: onRetry,
-              ),
+            : SnackBarAction(label: t(loc, 'try_again'), onPressed: onRetry),
       ),
     );
   }
@@ -488,12 +507,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryWriteNewTask(
-            title,
-            cid,
-            pathTag,
-            sourcePlanPocketRecordId: sourcePlanPocketRecordId,
-          )),
+          onRetry: () => unawaited(
+            _retryWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
         );
         return;
       }
@@ -514,12 +535,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryWriteNewTask(
-            title,
-            cid,
-            pathTag,
-            sourcePlanPocketRecordId: sourcePlanPocketRecordId,
-          )),
+          onRetry: () => unawaited(
+            _retryWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
         );
       }
     }
@@ -544,12 +567,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryVoiceWriteNewTask(
-            title,
-            cid,
-            pathTag,
-            sourcePlanPocketRecordId: sourcePlanPocketRecordId,
-          )),
+          onRetry: () => unawaited(
+            _retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
         );
         return;
       }
@@ -570,12 +595,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryVoiceWriteNewTask(
-            title,
-            cid,
-            pathTag,
-            sourcePlanPocketRecordId: sourcePlanPocketRecordId,
-          )),
+          onRetry: () => unawaited(
+            _retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
         );
       }
     }
@@ -615,25 +642,28 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     if (title.isEmpty) return false;
     unawaited(_stopAnyActiveTask());
     final now = DatabaseService.getPlanetaryNow();
-    final alreadyExists = _tasks.any((t) =>
-        t.title == title &&
-        t.isActive &&
-        t.startTime.difference(now).inSeconds.abs() <= 2);
+    final alreadyExists = _tasks.any(
+      (t) =>
+          t.title == title &&
+          t.isActive &&
+          t.startTime.difference(now).inSeconds.abs() <= 2,
+    );
     if (alreadyExists) return true;
     final fuzzyMatch = DatabaseService.instance.findCategoryByFuzzyMatch(title);
     final cid = fuzzyMatch?.id ?? _effectiveCategoryId;
-    final pathTag =
-        cid != null ? DatabaseService.instance.getCategoryPath(cid) : 'Life';
+    final pathTag = cid != null
+        ? DatabaseService.instance.getCategoryPath(cid)
+        : 'Life';
     if (fuzzyMatch != null && mounted) {
       final loc = currentLocale.value;
-      final pathUi =
-          localizeCategoryBreadcrumbPath(fuzzyMatch.path, loc);
+      final pathUi = localizeCategoryBreadcrumbPath(fuzzyMatch.path, loc);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            t(loc, 'mapped_to')
-                .replaceFirst('%s', title)
-                .replaceFirst('%s', pathUi),
+            t(
+              loc,
+              'mapped_to',
+            ).replaceFirst('%s', title).replaceFirst('%s', pathUi),
           ),
         ),
       );
@@ -649,12 +679,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (!mounted) return false;
       if (serverId == null || serverId.trim().isEmpty) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryVoiceWriteNewTask(
-            title,
-            cid,
-            pathTag,
-            sourcePlanPocketRecordId: null,
-          )),
+          onRetry: () => unawaited(
+            _retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: null,
+            ),
+          ),
         );
         return false;
       }
@@ -672,23 +704,27 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       });
       unawaited(_saveTasks());
       if (mounted) {
-        unawaited(_deferSourcePlanLinkAfterFreeStart(
-          title: title,
-          dateKey: _timelineVoiceDateKey,
-          recordBusinessId: serverId,
-        ));
+        unawaited(
+          _deferSourcePlanLinkAfterFreeStart(
+            title: title,
+            dateKey: _timelineVoiceDateKey,
+            recordBusinessId: serverId,
+          ),
+        );
       }
       return true;
     } catch (e) {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryVoiceWriteNewTask(
-            title,
-            cid,
-            pathTag,
-            sourcePlanPocketRecordId: null,
-          )),
+          onRetry: () => unawaited(
+            _retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: null,
+            ),
+          ),
         );
       }
       return false;
@@ -765,8 +801,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
     final now = DatabaseService.getPlanetaryNow();
     final cid = _effectiveCategoryId;
-    final pathTag =
-        cid != null ? DatabaseService.instance.getCategoryPath(cid) : 'Life';
+    final pathTag = cid != null
+        ? DatabaseService.instance.getCategoryPath(cid)
+        : 'Life';
 
     _titleController.clear();
     _titleFocus.requestFocus();
@@ -782,12 +819,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (!mounted) return;
       if (serverId == null || serverId.trim().isEmpty) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryWriteNewTask(
-            title,
-            cid,
-            pathTag,
-            sourcePlanPocketRecordId: null,
-          )),
+          onRetry: () => unawaited(
+            _retryWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: null,
+            ),
+          ),
         );
         return;
       }
@@ -805,22 +844,26 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       });
       unawaited(_saveTasks());
       if (mounted) {
-        unawaited(_deferSourcePlanLinkAfterFreeStart(
-          title: title,
-          dateKey: _selectedDateString,
-          recordBusinessId: serverId,
-        ));
+        unawaited(
+          _deferSourcePlanLinkAfterFreeStart(
+            title: title,
+            dateKey: _selectedDateString,
+            recordBusinessId: serverId,
+          ),
+        );
       }
     } catch (e) {
       debugPrint('UI ERROR: $e');
       if (mounted) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_retryWriteNewTask(
-            title,
-            cid,
-            pathTag,
-            sourcePlanPocketRecordId: null,
-          )),
+          onRetry: () => unawaited(
+            _retryWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: null,
+            ),
+          ),
         );
       }
     }
@@ -867,7 +910,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'failed_to_delete').replaceFirst('%s', e.toString()))),
+          SnackBar(
+            content: Text(
+              t(
+                currentLocale.value,
+                'failed_to_delete',
+              ).replaceFirst('%s', e.toString()),
+            ),
+          ),
         );
       }
     }
@@ -882,11 +932,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
     _lastStopRecordAction = tick;
     try {
-      final ok =
-          await DatabaseService.instance.stopRecordByDocId(systemRowId);
+      final ok = await DatabaseService.instance.stopRecordByDocId(systemRowId);
       if (!mounted) return;
       if (!ok) {
-        debugPrint('UI ERROR: stopRecordByDocId returned false (systemRowId=$systemRowId)');
+        debugPrint(
+          'UI ERROR: stopRecordByDocId returned false (systemRowId=$systemRowId)',
+        );
         // DatabaseService already showed error_stop_* / HTTP code — do not show sync_failed_retry.
         return;
       }
@@ -938,9 +989,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         onStatus: (s) => _speechStatusCallback?.call(s),
         onError: (e) {
           final msg = e.errorMsg;
-          debugPrint(
-            '[STT] onError: $msg (permanent=${e.permanent})',
-          );
+          debugPrint('[STT] onError: $msg (permanent=${e.permanent})');
           _speechStatusCallback?.call('error:$msg');
         },
         debugLogging: false,
@@ -984,9 +1033,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   Future<void> _logSttLocalesBestEffortWeb() async {
     try {
       final locales = await _speech!.locales();
-      final ids = <String>[
-        for (final l in locales) l.localeId.toString(),
-      ];
+      final ids = <String>[for (final l in locales) l.localeId.toString()];
       debugPrint(
         '[STT] Web init OK; locales async (${locales.length}): ${ids.join(", ")}',
       );
@@ -1000,8 +1047,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     required String title,
     required String dateKey,
   }) async {
-    final sugg =
-        await DatabaseService.instance.suggestSourcePlanForFreeStart(
+    final sugg = await DatabaseService.instance.suggestSourcePlanForFreeStart(
       recordTitle: title,
       wallDateKey: dateKey,
     );
@@ -1082,12 +1128,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (!mounted) return;
       if (id == null || id.trim().isEmpty) {
         _showSyncFailedSnackBar(
-          onRetry: () => unawaited(_startRecordFromPlanning(
-                title,
-                categoryId,
-                dateKey,
-                sourcePlanPocketRecordId: sourcePlanPocketRecordId,
-              )),
+          onRetry: () => unawaited(
+            _startRecordFromPlanning(
+              title,
+              categoryId,
+              dateKey,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
         );
         return;
       }
@@ -1145,7 +1193,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       clipBehavior: Clip.none,
       builder: (sheetCtx) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+          ),
           child: DraggableScrollableSheet(
             expand: false,
             initialChildSize: 0.88,
@@ -1175,7 +1225,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         if (!res.isGranted) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(t(currentLocale.value, 'microphone_permission'))),
+            SnackBar(
+              content: Text(t(currentLocale.value, 'microphone_permission')),
+            ),
           );
           return;
         }
@@ -1202,12 +1254,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     final Future<bool> Function(String) voiceSubmitIntent = _shellPageIndex == 1
         ? _voiceSubmitPlanning
         : _shellPageIndex == 3
-            ? _voiceSubmitBacklog
-            : _voiceSubmitTimeline;
-    final voiceSuccessKey =
-        _shellPageIndex == 1 || _shellPageIndex == 3 ? 'task_added_to_plan' : 'record_synced';
-    final voicePrimaryKey =
-        _shellPageIndex == 1 || _shellPageIndex == 3 ? 'add_task' : 'start_task';
+        ? _voiceSubmitBacklog
+        : _voiceSubmitTimeline;
+    final voiceSuccessKey = _shellPageIndex == 1 || _shellPageIndex == 3
+        ? 'task_added_to_plan'
+        : 'record_synced';
+    final voicePrimaryKey = _shellPageIndex == 1 || _shellPageIndex == 3
+        ? 'add_task'
+        : 'start_task';
     _speechHandle ??= SpeechEngineHandle(_speech!);
     _speechHandle!.speech = _speech!;
     await showModalBottomSheet<void>(
@@ -1281,7 +1335,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   }
 
   void _showEditRecordSheetForTimeline(
-      BuildContext context, Map<String, dynamic> data) {
+    BuildContext context,
+    Map<String, dynamic> data,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
@@ -1289,10 +1345,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       backgroundColor: Colors.transparent,
       clipBehavior: Clip.none,
       builder: (sheetCtx) {
-        final record = TimelineRecord.fromMap(data,
-            timezoneOffsetHours: DatabaseService.instance.settings.timezoneOffsetHours);
+        final record = TimelineRecord.fromMap(
+          data,
+          timezoneOffsetHours:
+              DatabaseService.instance.settings.timezoneOffsetHours,
+        );
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(sheetCtx).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetCtx).viewInsets.bottom,
+          ),
           child: DraggableScrollableSheet(
             expand: false,
             initialChildSize: 0.88,
@@ -1309,13 +1370,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                   }
                 },
                 onDelete: () async {
-                  final ok = await DatabaseService.instance
-                      .deleteRecordByDocId(record.id);
+                  final ok = await DatabaseService.instance.deleteRecordByDocId(
+                    record.id,
+                  );
                   if (!mounted) return;
                   if (!ok) {
                     _showSyncFailedSnackBar(
-                      onRetry: () => unawaited(DatabaseService.instance
-                          .deleteRecordByDocId(record.id)),
+                      onRetry: () => unawaited(
+                        DatabaseService.instance.deleteRecordByDocId(record.id),
+                      ),
                     );
                   }
                   if (sheetCtx.mounted) Navigator.of(sheetCtx).pop();
@@ -1340,7 +1403,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: DraggableScrollableSheet(
             expand: false,
             initialChildSize: 0.88,
@@ -1354,7 +1419,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 onSaved: (dynamic updatedRaw) {
                   final updated = updatedRaw as PlanningTask;
                   if (!_shellIsNewPlanningDraft(task)) {
-                    DatabaseService.instance.applyOptimisticPlanningTask(updated);
+                    DatabaseService.instance.applyOptimisticPlanningTask(
+                      updated,
+                    );
                     DatabaseService.instance.notifyPlanningRefresh();
                   }
                   AppSnack.saved();
@@ -1392,25 +1459,21 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     final loc = currentLocale.value;
     try {
       if (_shellIsNewPlanningDraft(task)) {
-        final day = planningDateFromKey(result.dateKey) ??
+        final day =
+            planningDateFromKey(result.dateKey) ??
             DatabaseService.instance.getTimelineDeviceLocalToday();
-        final nextOrder =
-            await DatabaseService.instance.nextPlanningOrderForDate(day);
+        final nextOrder = await DatabaseService.instance
+            .nextPlanningOrderForDate(day);
         final startUtc = result.startTime != null
             ? _displayToUtc(result.startTime!)
             : null;
-        final toCreate = result.copyWith(
-          order: nextOrder,
-          startTime: startUtc,
-        );
+        final toCreate = result.copyWith(order: nextOrder, startTime: startUtc);
         final ok = await DatabaseService.instance.addPlanningTask(toCreate);
         if (!mounted) return;
         if (!ok) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(t(loc, 'plan_save_failed')),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
           return;
         }
         HapticFeedback.heavyImpact();
@@ -1420,7 +1483,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(loc, 'save_failed').replaceFirst('%s', e.toString()))),
+          SnackBar(
+            content: Text(
+              t(loc, 'save_failed').replaceFirst('%s', e.toString()),
+            ),
+          ),
         );
       }
     }
@@ -1433,23 +1500,25 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   ) async {
     final loc = currentLocale.value;
     try {
-      final anchorShort =
-          DatabaseService.instance.planningAuditAnchorDateKey(baseline);
+      final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
+        baseline,
+      );
       const minKeyLen = 10;
       final persistInitial = anchorShort.length >= minKeyLen
           ? anchorShort
           : DatabaseService.instance.planningWallScheduleDateKey(baseline);
-      final newSk =
-          DatabaseService.instance.planningWallScheduleDateKey(edited);
+      final newSk = DatabaseService.instance.planningWallScheduleDateKey(
+        edited,
+      );
       final initForPatch = persistInitial.length >= minKeyLen
           ? persistInitial
           : (newSk.length >= minKeyLen ? newSk : '');
-      final postponed = !edited.isDone &&
+      final postponed =
+          !edited.isDone &&
           initForPatch.length >= minKeyLen &&
           DatabaseService.instance.planningShouldMarkPostponed(
             anchorKey: initForPatch,
-            newScheduleKey:
-                newSk.length >= minKeyLen ? newSk : initForPatch,
+            newScheduleKey: newSk.length >= minKeyLen ? newSk : initForPatch,
           );
       final ok = await DatabaseService.instance.updatePlanningTask(
         edited.planRowIdForBackend,
@@ -1466,14 +1535,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         clearEnd: edited.endDateTime == null,
         tags: edited.tags,
         suppressAppSnack: true,
-        planInitialDateKey:
-            initForPatch.length >= minKeyLen ? initForPatch : null,
+        planInitialDateKey: initForPatch.length >= minKeyLen
+            ? initForPatch
+            : null,
         planIsPostponed: postponed,
         patchPlanAlarmRecurrence: true,
         planRrule: edited.rrule,
         planReminderOffset: edited.reminderOffset,
-        planExceptionDates: (edited.rrule != null &&
-                edited.rrule!.trim().isNotEmpty)
+        planExceptionDates:
+            (edited.rrule != null && edited.rrule!.trim().isNotEmpty)
             ? edited.exceptionDates
             : const <String>[],
       );
@@ -1481,9 +1551,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (!ok) {
         DatabaseService.instance.applyOptimisticPlanningTask(baseline);
         DatabaseService.instance.notifyPlanningRefresh();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(loc, 'plan_save_failed'))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
         return;
       }
       HapticFeedback.heavyImpact();
@@ -1494,8 +1564,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       DatabaseService.instance.notifyPlanningRefresh();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text(t(loc, 'save_failed').replaceFirst('%s', e.toString())),
+          content: Text(t(loc, 'save_failed').replaceFirst('%s', e.toString())),
         ),
       );
     }
@@ -1511,23 +1580,25 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       if (!mounted) return;
       DatabaseService.instance.applyOptimisticPlanningTask(task);
       DatabaseService.instance.notifyPlanningRefresh();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'plan_save_failed'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
       return;
     }
-    final ok =
-        await DatabaseService.instance.deletePlanningTasksBulk([backendId]);
+    final ok = await DatabaseService.instance.deletePlanningTasksBulk([
+      backendId,
+    ]);
     if (!mounted) return;
-    DatabaseService.instance
-        .clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
+    DatabaseService.instance.clearOptimisticPlanningForPlanRow(
+      task.planRowIdForBackend,
+    );
     DatabaseService.instance.notifyPlanningRefresh();
     if (!ok) {
       DatabaseService.instance.applyOptimisticPlanningTask(task);
       DatabaseService.instance.notifyPlanningRefresh();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(loc, 'plan_save_failed'))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
       return;
     }
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -1622,128 +1693,131 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
     final showVoiceFab =
         _shellPageIndex == 1 || _shellPageIndex == 3 || !_isFutureDate;
-        return AnimatedBuilder(
+    return AnimatedBuilder(
       animation: currentLocale,
       builder: (context, _) {
         final scheme = Theme.of(context).colorScheme;
         _shellLayout.applyShellFrame(_shellPageIndex);
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: scheme.brightness == Brightness.dark
-                ? Brightness.light
-                : Brightness.dark,
+            statusBarColor: kGlobalCompactHeaderColor,
+            statusBarIconBrightness: Brightness.light,
             systemNavigationBarColor: scheme.surface,
           ),
           child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) {
-            ScaffoldMessenger.of(context).clearSnackBars();
-          },
-          child: ShellLayoutScope(
-            controller: _shellLayout,
-            child: Scaffold(
-              backgroundColor: scheme.surface,
-              resizeToAvoidBottomInset: true,
-              body: Column(
-                children: [
-                  const _OfflineSyncStatusBar(),
-                  Expanded(
-                    child: IndexedStack(
-                      index: _shellPageIndex,
-                      sizing: StackFit.expand,
-                      children: pages,
-                    ),
-                  ),
-                ],
-              ),
-              floatingActionButtonLocation:
-                  FloatingActionButtonLocation.endFloat,
-              floatingActionButton: !showVoiceFab
-                  ? null
-                  : ListenableBuilder(
-                      listenable: _shellLayout,
-                      builder: (context, child) {
-                        final bulkReservePx = _shellLayout.fabBottomReservePx;
-                        return AnimatedPadding(
-                          duration: const Duration(milliseconds: 240),
-                          curve: Curves.easeOutCubic,
-                          padding: EdgeInsets.only(
-                            bottom: MediaQuery.paddingOf(context).bottom +
-                                bulkReservePx,
-                          ),
-                          child: child,
-                        );
-                      },
-                      child: FloatingActionButton(
-                        onPressed: _startVoiceInput,
-                        tooltip: _isVoiceListening
-                            ? t(currentLocale.value, 'listening')
-                            : t(currentLocale.value, 'voice_input'),
-                        child: Icon(_isVoiceListening
-                            ? Icons.graphic_eq_rounded
-                            : Icons.mic_rounded),
+            behavior: HitTestBehavior.translucent,
+            onPointerDown: (_) {
+              ScaffoldMessenger.of(context).clearSnackBars();
+            },
+            child: ShellLayoutScope(
+              controller: _shellLayout,
+              child: Scaffold(
+                backgroundColor: scheme.surface,
+                resizeToAvoidBottomInset: true,
+                body: Column(
+                  children: [
+                    const _OfflineSyncStatusBar(),
+                    Expanded(
+                      child: IndexedStack(
+                        index: _shellPageIndex,
+                        sizing: StackFit.expand,
+                        children: pages,
                       ),
                     ),
-              bottomNavigationBar: NavigationBar(
-              selectedIndex: _navBarSelectedIndex,
-              onDestinationSelected: (i) {
-                if (i == 4) {
-                  _openMoreMenu();
-                  return;
-                }
-                setState(() {
-                  _shellPageIndex = i;
-                });
-                if (i == 0) {
-                  final target =
-                      DatabaseService.instance.getTimelineDeviceLocalToday();
-                  setState(() {
-                    _selectedDate = target;
-                    _focusedDay = target;
-                  });
-                  unawaited(_loadTasksForDate(target));
-                } else if (i == 1) {
-                  final target =
-                      DatabaseService.instance.getTimelineDeviceLocalToday();
-                  setState(() {
-                    _selectedDate = target;
-                    _focusedDay = target;
-                  });
-                  unawaited(_loadTasksForDate(target));
-                }
-              },
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.timeline_outlined),
-                  selectedIcon: const Icon(Icons.timeline_rounded),
-                  label: t(currentLocale.value, 'tab_timeline'),
+                  ],
                 ),
-                NavigationDestination(
-                  icon: const Icon(Icons.checklist_outlined),
-                  selectedIcon: const Icon(Icons.checklist_rounded),
-                  label: t(currentLocale.value, 'tab_planning'),
+                floatingActionButtonLocation:
+                    FloatingActionButtonLocation.endFloat,
+                floatingActionButton: !showVoiceFab
+                    ? null
+                    : ListenableBuilder(
+                        listenable: _shellLayout,
+                        builder: (context, child) {
+                          final bulkReservePx = _shellLayout.fabBottomReservePx;
+                          return AnimatedPadding(
+                            duration: const Duration(milliseconds: 240),
+                            curve: Curves.easeOutCubic,
+                            padding: EdgeInsets.only(
+                              bottom:
+                                  MediaQuery.paddingOf(context).bottom +
+                                  bulkReservePx,
+                            ),
+                            child: child,
+                          );
+                        },
+                        child: FloatingActionButton(
+                          onPressed: _startVoiceInput,
+                          tooltip: _isVoiceListening
+                              ? t(currentLocale.value, 'listening')
+                              : t(currentLocale.value, 'voice_input'),
+                          child: Icon(
+                            _isVoiceListening
+                                ? Icons.graphic_eq_rounded
+                                : Icons.mic_rounded,
+                          ),
+                        ),
+                      ),
+                bottomNavigationBar: NavigationBar(
+                  selectedIndex: _navBarSelectedIndex,
+                  onDestinationSelected: (i) {
+                    if (i == 4) {
+                      _openMoreMenu();
+                      return;
+                    }
+                    setState(() {
+                      _shellPageIndex = i;
+                    });
+                    if (i == 0) {
+                      final target = DatabaseService.instance
+                          .getTimelineDeviceLocalToday();
+                      setState(() {
+                        _selectedDate = target;
+                        _focusedDay = target;
+                      });
+                      unawaited(_loadTasksForDate(target));
+                    } else if (i == 1) {
+                      final target = DatabaseService.instance
+                          .getTimelineDeviceLocalToday();
+                      setState(() {
+                        _selectedDate = target;
+                        _focusedDay = target;
+                      });
+                      unawaited(_loadTasksForDate(target));
+                    }
+                  },
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.timeline_outlined),
+                      selectedIcon: const Icon(Icons.timeline_rounded),
+                      label: t(currentLocale.value, 'tab_timeline'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.checklist_outlined),
+                      selectedIcon: const Icon(Icons.checklist_rounded),
+                      label: t(currentLocale.value, 'tab_planning'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.calendar_month_outlined),
+                      selectedIcon: const Icon(Icons.calendar_month_rounded),
+                      label: t(currentLocale.value, 'calendar'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.format_list_bulleted_outlined),
+                      selectedIcon: const Icon(
+                        Icons.format_list_bulleted_rounded,
+                      ),
+                      label: t(currentLocale.value, 'tab_lists'),
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.menu_rounded),
+                      selectedIcon: const Icon(Icons.menu_rounded),
+                      label: t(currentLocale.value, 'tab_more'),
+                    ),
+                  ],
                 ),
-                NavigationDestination(
-                  icon: const Icon(Icons.calendar_month_outlined),
-                  selectedIcon: const Icon(Icons.calendar_month_rounded),
-                  label: t(currentLocale.value, 'calendar'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.format_list_bulleted_outlined),
-                  selectedIcon: const Icon(Icons.format_list_bulleted_rounded),
-                  label: t(currentLocale.value, 'tab_lists'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.menu_rounded),
-                  selectedIcon: const Icon(Icons.menu_rounded),
-                  label: t(currentLocale.value, 'tab_more'),
-                ),
-              ],
-            ),
+              ),
             ),
           ),
-        ),
         );
       },
     );

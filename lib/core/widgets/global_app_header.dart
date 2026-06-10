@@ -9,7 +9,9 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-const double kGlobalCompactHeaderHeight = 44;
+const double kGlobalCompactHeaderHeight = 48;
+const Color kGlobalCompactHeaderColor = Color(0xFF111111);
+const Color kGlobalCompactHeaderForeground = Colors.white;
 
 Future<void> _pickDayForGlobalHeader(
   BuildContext context,
@@ -75,16 +77,23 @@ class GlobalAppHeader extends StatelessWidget {
     final loc = currentLocale.value;
     final titleStyle = compact
         ? Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontSize: 14,
+                color: kGlobalCompactHeaderForeground,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
-                height: 1.0,
+                height: 1.1,
               ) ??
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)
+              const TextStyle(
+                color: kGlobalCompactHeaderForeground,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                height: 1.1,
+              )
         : Theme.of(context).appBarTheme.titleTextStyle ??
               const TextStyle(fontSize: 20, fontWeight: FontWeight.w500);
     final clockStyle = titleStyle.copyWith(
-      fontSize: compact ? 12 : 14,
-      fontWeight: compact ? FontWeight.w500 : FontWeight.w400,
+      color: compact ? kGlobalCompactHeaderForeground : titleStyle.color,
+      fontSize: compact ? 13 : 14,
+      fontWeight: compact ? FontWeight.w600 : FontWeight.w400,
     );
     final weekday = DateFormat.EEEE(loc).format(selectedDate);
     final dateStr = DateFormat.yMMMd(loc).format(selectedDate);

@@ -1269,73 +1269,81 @@ class _ListsPageState extends State<ListsPage>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Material(
-                      color: theme.colorScheme.surface,
+                      color: kGlobalCompactHeaderColor,
                       elevation: 0,
-                      surfaceTintColor: theme.colorScheme.surfaceTint,
-                      child: SizedBox(
-                        height: kGlobalCompactHeaderHeight,
-                        child: _listsSelectMode
-                            ? Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.close_rounded),
-                                    onPressed: _exitListsSelectMode,
-                                    tooltip: t(loc, 'plan_exit_select'),
-                                  ),
-                                  Expanded(
-                                    child: Text(
-                                      t(loc, 'plan_select_mode'),
-                                      style: theme.textTheme.titleMedium,
-                                      overflow: TextOverflow.ellipsis,
+                      child: IconTheme(
+                        data: const IconThemeData(
+                          color: kGlobalCompactHeaderForeground,
+                        ),
+                        child: SizedBox(
+                          height: kGlobalCompactHeaderHeight,
+                          child: _listsSelectMode
+                              ? Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.close_rounded),
+                                      onPressed: _exitListsSelectMode,
+                                      tooltip: t(loc, 'plan_exit_select'),
                                     ),
-                                  ),
-                                  if (filterId != null && flat.isNotEmpty)
-                                    TextButton(
-                                      style: TextButton.styleFrom(
-                                        visualDensity: VisualDensity.compact,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
+                                    Expanded(
+                                      child: Text(
+                                        t(loc, 'plan_select_mode'),
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(
+                                              color:
+                                                  kGlobalCompactHeaderForeground,
+                                            ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (filterId != null && flat.isNotEmpty)
+                                      TextButton(
+                                        style: TextButton.styleFrom(
+                                          visualDensity: VisualDensity.compact,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                          ),
+                                        ),
+                                        onPressed: () =>
+                                            _toggleSelectAllVisibleLists(flat),
+                                        child: Text(
+                                          _allVisibleListsSelected(flat)
+                                              ? t(loc, 'plan_deselect_visible')
+                                              : t(loc, 'plan_select_all'),
                                         ),
                                       ),
-                                      onPressed: () =>
-                                          _toggleSelectAllVisibleLists(flat),
-                                      child: Text(
-                                        _allVisibleListsSelected(flat)
-                                            ? t(loc, 'plan_deselect_visible')
-                                            : t(loc, 'plan_select_all'),
+                                  ],
+                                )
+                              : Row(
+                                  children: [
+                                    Expanded(
+                                      child: GlobalAppHeader(
+                                        selectedDate: headerDay,
+                                        enabled: widget.onDateChanged != null,
+                                        onDateSelected: (d) =>
+                                            widget.onDateChanged?.call(d),
+                                        compact: true,
                                       ),
                                     ),
-                                ],
-                              )
-                            : Row(
-                                children: [
-                                  Expanded(
-                                    child: GlobalAppHeader(
-                                      selectedDate: headerDay,
-                                      enabled: widget.onDateChanged != null,
-                                      onDateSelected: (d) =>
-                                          widget.onDateChanged?.call(d),
-                                      compact: true,
-                                    ),
-                                  ),
-                                  if (filterId != null)
+                                    if (filterId != null)
+                                      IconButton(
+                                        tooltip: t(loc, 'lists_export_text'),
+                                        onPressed: () => unawaited(
+                                          _exportVisibleListAsText(forGrouping),
+                                        ),
+                                        icon: const Icon(Icons.copy_rounded),
+                                      ),
                                     IconButton(
-                                      tooltip: t(loc, 'lists_export_text'),
-                                      onPressed: () => unawaited(
-                                        _exportVisibleListAsText(forGrouping),
+                                      tooltip: t(
+                                        loc,
+                                        'lists_chip_bar_settings_tooltip',
                                       ),
-                                      icon: const Icon(Icons.copy_rounded),
+                                      onPressed: _openChipBarSettingsSheet,
+                                      icon: const Icon(Icons.settings_rounded),
                                     ),
-                                  IconButton(
-                                    tooltip: t(
-                                      loc,
-                                      'lists_chip_bar_settings_tooltip',
-                                    ),
-                                    onPressed: _openChipBarSettingsSheet,
-                                    icon: const Icon(Icons.settings_rounded),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
+                        ),
                       ),
                     ),
                     Divider(height: 1, color: theme.colorScheme.outlineVariant),

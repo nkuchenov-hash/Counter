@@ -526,7 +526,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     if (_startedAsUndatedBacklog) {
       _tabController = TabController(length: 4, vsync: this);
     } else {
-      _planTabController = TabController(length: 3, vsync: this);
+      _planTabController = TabController(length: 4, vsync: this);
     }
     _titleController = TextEditingController(text: widget.task.title);
     final parsedNotes = _parseStoredNotesForLink(widget.task.notesPlain);
@@ -947,9 +947,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                       height: kAppCompactControlHeight,
                       child: TabBar(
                         controller: _tabController!,
-                        isScrollable: false,
+                        isScrollable: true,
                         indicatorSize: TabBarIndicatorSize.tab,
-                        labelPadding: EdgeInsets.zero,
+                        labelPadding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                        ),
+                        tabAlignment: TabAlignment.start,
                         padding: EdgeInsets.zero,
                         tabs: [
                           AppCompactTextTab(
@@ -1412,46 +1415,29 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       });
                                     }
                                   },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 6,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
+                                  child: SizedBox(
+                                    height: 44,
+                                    child: Row(
                                       children: [
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.calendar_month_rounded,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              t(
-                                                currentLocale.value,
-                                                'start_time',
-                                              ),
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.labelMedium,
-                                            ),
-                                          ],
+                                        const Icon(
+                                          Icons.calendar_month_rounded,
+                                          size: 18,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _scheduledTime == null
-                                              ? t(
-                                                  currentLocale.value,
-                                                  'scheduled',
-                                                )
-                                              : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            _scheduledTime == null
+                                                ? t(
+                                                    currentLocale.value,
+                                                    'scheduled',
+                                                  )
+                                                : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1485,46 +1471,29 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       );
                                     }
                                   },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 6,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
+                                  child: SizedBox(
+                                    height: 44,
+                                    child: Row(
                                       children: [
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.event_available_rounded,
-                                              size: 18,
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              t(
-                                                currentLocale.value,
-                                                'end_time',
-                                              ),
-                                              style: Theme.of(
-                                                context,
-                                              ).textTheme.labelMedium,
-                                            ),
-                                          ],
+                                        const Icon(
+                                          Icons.event_available_rounded,
+                                          size: 18,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _endTime == null
-                                              ? t(
-                                                  currentLocale.value,
-                                                  'no_end_time',
-                                                )
-                                              : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.bodySmall,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            _endTime == null
+                                                ? t(
+                                                    currentLocale.value,
+                                                    'no_end_time',
+                                                  )
+                                                : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -1537,7 +1506,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: SizedBox(
-                            height: 62,
+                            height: 48,
                             child: _tagsLoading
                                 ? Center(
                                     child: SizedBox(
@@ -1572,7 +1541,6 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     tags: _availableTags,
                                     selected: _selectedTags,
                                     onToggle: _toggleTag,
-                                    prominentVisuals: true,
                                   ),
                           ),
                         ),
@@ -1582,9 +1550,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                             height: kAppCompactControlHeight,
                             child: TabBar(
                               controller: _planTabController!,
-                              isScrollable: false,
+                              isScrollable: true,
                               indicatorSize: TabBarIndicatorSize.tab,
-                              labelPadding: EdgeInsets.zero,
+                              labelPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                              ),
+                              tabAlignment: TabAlignment.start,
                               padding: EdgeInsets.zero,
                               tabs: [
                                 AppCompactTextTab(
@@ -1597,6 +1568,12 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                   text: t(
                                     currentLocale.value,
                                     'plan_repeat_label',
+                                  ),
+                                ),
+                                AppCompactTextTab(
+                                  text: t(
+                                    currentLocale.value,
+                                    'plan_parallel_plans_tab',
                                   ),
                                 ),
                               ],
@@ -1982,6 +1959,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     ),
                                   ],
                                 ],
+                              ),
+                              _BacklogSubItemsPanel(
+                                parentTask: widget.task,
+                                categoryId: _categoryId,
                               ),
                             ],
                           ),
@@ -2810,7 +2791,7 @@ class _TimelineRecordSheetContentState
                   height: kAppCompactControlHeight,
                   child: TabBar(
                     controller: _tabController,
-                    isScrollable: false,
+                    isScrollable: true,
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelPadding: EdgeInsets.zero,
                     tabAlignment: TabAlignment.start,

@@ -155,7 +155,7 @@ class CategoryChip extends StatelessWidget {
       CategoryDisplayMode.icon => Center(
         child: Icon(
           icon,
-          color: tagGlyphOnCanvas(color),
+          color: selected ? scheme.primary : tagGlyphOnCanvas(color),
           size: prominentVisuals ? 30 : 26,
         ),
       ),
@@ -171,13 +171,16 @@ class CategoryChip extends StatelessWidget {
     final glyphCompact = compactGlyphLayout && onTap == null && !isPillMode;
     final glyphSide = glyphCompact ? _glyphLayoutSide(mode) : _glyphTapExtent;
 
+    final showOuterSelectionFrame = selected && onTap == null;
     final inner = AnimatedContainer(
       duration: const Duration(milliseconds: 100),
       alignment: isPillMode ? Alignment.centerLeft : Alignment.center,
       width: isPillMode ? null : glyphSide,
       height: isPillMode ? null : glyphSide,
-      padding: selected ? const EdgeInsets.all(2) : EdgeInsets.zero,
-      decoration: selected
+      padding: showOuterSelectionFrame
+          ? const EdgeInsets.all(2)
+          : EdgeInsets.zero,
+      decoration: showOuterSelectionFrame
           ? BoxDecoration(
               borderRadius: isPillMode
                   ? BorderRadius.circular(10)
@@ -243,7 +246,7 @@ class CategoryChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.black),
+          border: Border.all(color: selected ? scheme.primary : Colors.black),
         ),
         child: Text(
           displayLabel,
@@ -257,7 +260,9 @@ class CategoryChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade400),
+          border: Border.all(
+            color: selected ? scheme.primary : Colors.grey.shade400,
+          ),
         ),
         child: Text(
           displayLabel,
@@ -267,7 +272,9 @@ class CategoryChip extends StatelessWidget {
     }
     final plate = tagLetterChipPlate(color, scheme.surface);
     final fg = tagVibrantForeground(color);
-    final stroke = tagLetterChipBorder(color, scheme.surface);
+    final stroke = selected
+        ? scheme.primary
+        : tagLetterChipBorder(color, scheme.surface);
     return Container(
       padding: padding,
       decoration: BoxDecoration(
@@ -289,7 +296,11 @@ class CategoryChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: tagEmptyChipFill(color, surface),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: tagEmptyChipBorderColor(color)),
+          border: Border.all(
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : tagEmptyChipBorderColor(color),
+          ),
         ),
       ),
     );
@@ -303,7 +314,13 @@ class CategoryChip extends StatelessWidget {
       width: prominentVisuals ? 15 : _dotDiameter,
       height: prominentVisuals ? 15 : _dotDiameter,
       child: DecoratedBox(
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: selected
+              ? Border.all(color: tagVibrantForeground(color), width: 2)
+              : null,
+        ),
       ),
     );
   }
@@ -316,7 +333,13 @@ class CategoryChip extends StatelessWidget {
       width: prominentVisuals ? 36 : _iconCircleDiameter,
       height: prominentVisuals ? 36 : _iconCircleDiameter,
       child: DecoratedBox(
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: selected
+              ? Border.all(color: tagVibrantForeground(color), width: 2)
+              : null,
+        ),
         child: Center(
           child: Icon(
             icon,

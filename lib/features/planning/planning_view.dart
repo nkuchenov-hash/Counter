@@ -2336,112 +2336,124 @@ class _PlanningPageState extends State<PlanningPage>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Material(
-                  color: scheme.surface,
+                  color: kGlobalCompactHeaderColor,
                   elevation: 0,
-                  surfaceTintColor: scheme.surfaceTint,
-                  child: SizedBox(
-                    height: kGlobalCompactHeaderHeight,
-                    child: _planSelectMode
-                        ? Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.close_rounded),
-                                onPressed: _exitSelectMode,
-                                tooltip: t(
-                                  currentLocale.value,
-                                  'plan_exit_select',
+                  child: IconTheme(
+                    data: const IconThemeData(
+                      color: kGlobalCompactHeaderForeground,
+                    ),
+                    child: SizedBox(
+                      height: kGlobalCompactHeaderHeight,
+                      child: _planSelectMode
+                          ? Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.close_rounded),
+                                  onPressed: _exitSelectMode,
+                                  tooltip: t(
+                                    currentLocale.value,
+                                    'plan_exit_select',
+                                  ),
                                 ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  t(currentLocale.value, 'plan_select_mode'),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                  overflow: TextOverflow.ellipsis,
+                                Expanded(
+                                  child: Text(
+                                    t(currentLocale.value, 'plan_select_mode'),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: kGlobalCompactHeaderForeground,
+                                        ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              if (visiblePlans != null)
-                                TextButton(
-                                  style: TextButton.styleFrom(
-                                    visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
+                                if (visiblePlans != null)
+                                  TextButton(
+                                    style: TextButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                    ),
+                                    onPressed: () =>
+                                        _toggleSelectAllVisiblePlans(
+                                          visiblePlans,
+                                        ),
+                                    child: Text(
+                                      _allVisiblePlanTasksSelected(visiblePlans)
+                                          ? t(
+                                              currentLocale.value,
+                                              'plan_deselect_visible',
+                                            )
+                                          : t(
+                                              currentLocale.value,
+                                              'plan_select_all',
+                                            ),
                                     ),
                                   ),
-                                  onPressed: () => _toggleSelectAllVisiblePlans(
-                                    visiblePlans,
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                if (kIsWeb)
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 40,
+                                      minHeight: 40,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.chevron_left_rounded,
+                                    ),
+                                    tooltip: t(
+                                      currentLocale.value,
+                                      'date_previous_day',
+                                    ),
+                                    onPressed: () => _shiftPlanningDay(-1),
                                   ),
-                                  child: Text(
-                                    _allVisiblePlanTasksSelected(visiblePlans)
-                                        ? t(
-                                            currentLocale.value,
-                                            'plan_deselect_visible',
-                                          )
-                                        : t(
-                                            currentLocale.value,
-                                            'plan_select_all',
-                                          ),
+                                Expanded(
+                                  child: GlobalAppHeader(
+                                    selectedDate: headerDate,
+                                    onDateSelected: (d) =>
+                                        widget.onDatePicked?.call(d),
+                                    compact: true,
                                   ),
                                 ),
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              if (kIsWeb)
-                                IconButton(
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 40,
-                                    minHeight: 40,
+                                if (kIsWeb)
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 40,
+                                      minHeight: 40,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.chevron_right_rounded,
+                                    ),
+                                    tooltip: t(
+                                      currentLocale.value,
+                                      'date_next_day',
+                                    ),
+                                    onPressed: () => _shiftPlanningDay(1),
                                   ),
-                                  icon: const Icon(Icons.chevron_left_rounded),
+                                IconButton(
+                                  icon: const Icon(Icons.auto_awesome_rounded),
                                   tooltip: t(
                                     currentLocale.value,
-                                    'date_previous_day',
+                                    'smart_plan_tooltip',
                                   ),
-                                  onPressed: () => _shiftPlanningDay(-1),
+                                  onPressed: _openSmartPlanSheet,
                                 ),
-                              Expanded(
-                                child: GlobalAppHeader(
-                                  selectedDate: headerDate,
-                                  onDateSelected: (d) =>
-                                      widget.onDatePicked?.call(d),
-                                  compact: true,
-                                ),
-                              ),
-                              if (kIsWeb)
                                 IconButton(
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 40,
-                                    minHeight: 40,
-                                  ),
-                                  icon: const Icon(Icons.chevron_right_rounded),
+                                  icon: const Icon(Icons.settings_rounded),
                                   tooltip: t(
                                     currentLocale.value,
-                                    'date_next_day',
+                                    'plan_settings_tooltip',
                                   ),
-                                  onPressed: () => _shiftPlanningDay(1),
+                                  onPressed: _showPlanningSettingsSheet,
                                 ),
-                              IconButton(
-                                icon: const Icon(Icons.auto_awesome_rounded),
-                                tooltip: t(
-                                  currentLocale.value,
-                                  'smart_plan_tooltip',
-                                ),
-                                onPressed: _openSmartPlanSheet,
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.settings_rounded),
-                                tooltip: t(
-                                  currentLocale.value,
-                                  'plan_settings_tooltip',
-                                ),
-                                onPressed: _showPlanningSettingsSheet,
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                    ),
                   ),
                 ),
                 Divider(height: 1, color: scheme.outlineVariant),
@@ -3226,7 +3238,9 @@ class _PlanningTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metaIcons = _planningTaskMetaIcons(context, task);
-    final hasRepeat = task.rrule?.trim().isNotEmpty ?? false;
+    final hasRepeat =
+        (task.rrule?.trim().isNotEmpty ?? false) ||
+        (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
     final scheme = Theme.of(context).colorScheme;
     final categoryTrail = localizeCategoryBreadcrumbPath(
       DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
@@ -3380,41 +3394,57 @@ class _PlanningTaskCard extends StatelessWidget {
                         ),
                         if ((planEstimatedSeconds ?? 0) > 0) ...[
                           const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(2),
-                            child: LinearProgressIndicator(
-                              minHeight: 3,
-                              value: planTrackedSeconds <= planEstimatedSeconds!
-                                  ? planTrackedSeconds / planEstimatedSeconds!
-                                  : 1.0,
-                              backgroundColor: scheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.65),
-                              color: planTrackedSeconds > planEstimatedSeconds!
-                                  ? scheme.error
-                                  : scheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            () {
-                              final est = planEstimatedSeconds!;
-                              final a = planTrackedSeconds;
-                              final pct = est > 0
-                                  ? ((a * 100) / est).round()
-                                  : 0;
-                              return '${_shortDur(a)} / ${_shortDur(est)} ($pct%)';
-                            }(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  fontSize: 10,
-                                  height: 1.1,
-                                  color:
-                                      planTrackedSeconds > planEstimatedSeconds!
-                                      ? scheme.error
-                                      : scheme.onSurfaceVariant,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(2),
+                                  child: LinearProgressIndicator(
+                                    minHeight: 3,
+                                    value:
+                                        planTrackedSeconds <=
+                                            planEstimatedSeconds!
+                                        ? planTrackedSeconds /
+                                              planEstimatedSeconds!
+                                        : 1.0,
+                                    backgroundColor: scheme
+                                        .surfaceContainerHighest
+                                        .withValues(alpha: 0.65),
+                                    color:
+                                        planTrackedSeconds >
+                                            planEstimatedSeconds!
+                                        ? scheme.error
+                                        : scheme.primary,
+                                  ),
                                 ),
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                flex: 0,
+                                child: Text(
+                                  () {
+                                    final est = planEstimatedSeconds!;
+                                    final a = planTrackedSeconds;
+                                    final pct = est > 0
+                                        ? ((a * 100) / est).round()
+                                        : 0;
+                                    return '${_shortDur(a)} / ${_shortDur(est)} ($pct%)';
+                                  }(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        fontSize: 10,
+                                        height: 1.1,
+                                        color:
+                                            planTrackedSeconds >
+                                                planEstimatedSeconds!
+                                            ? scheme.error
+                                            : scheme.onSurfaceVariant,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
                         ] else if (planTrackedSeconds > 0) ...[
                           const SizedBox(height: 6),
@@ -3445,15 +3475,22 @@ class _PlanningTaskCard extends StatelessWidget {
                               final mode =
                                   snap.data?.tagDisplayMode ??
                                   CategoryDisplayMode.letterChip;
-                              return Wrap(
-                                alignment: WrapAlignment.start,
-                                crossAxisAlignment: WrapCrossAlignment.start,
-                                spacing: 6,
-                                runSpacing: 4,
-                                children: [
-                                  for (final tag in task.tags)
-                                    if (tag.rendersAsChip)
-                                      CategoryChip(
+                              return SizedBox(
+                                height: 28,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: task.tags
+                                      .where((tag) => tag.rendersAsChip)
+                                      .length,
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(width: 6),
+                                  itemBuilder: (context, i) {
+                                    final visible = task.tags
+                                        .where((tag) => tag.rendersAsChip)
+                                        .toList(growable: false);
+                                    final tag = visible[i];
+                                    return Center(
+                                      child: CategoryChip(
                                         mode: mode,
                                         label: tag.name.trim().isNotEmpty
                                             ? tag.name.trim()
@@ -3466,7 +3503,9 @@ class _PlanningTaskCard extends StatelessWidget {
                                         syntheticNoTagsMonochrome:
                                             tag.tagId == -1,
                                       ),
-                                ],
+                                    );
+                                  },
+                                ),
                               );
                             },
                           ),

@@ -25,52 +25,59 @@ class TimelineTopDateStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
     final enabled = onNavigateToDate != null;
-    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surface,
+      color: kGlobalCompactHeaderColor,
       elevation: 0,
-      surfaceTintColor: scheme.surfaceTint,
-      child: SizedBox(
-        height: kGlobalCompactHeaderHeight,
-        child: Row(
-          children: [
-            if (kIsWeb)
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                icon: const Icon(Icons.chevron_left_rounded),
-                tooltip: t(loc, 'date_previous_day'),
-                onPressed: enabled
-                    ? () {
-                        final d = selectedDate.subtract(
-                          const Duration(days: 1),
-                        );
-                        onNavigateToDate!(DateTime(d.year, d.month, d.day));
-                      }
-                    : null,
+      child: IconTheme(
+        data: const IconThemeData(color: kGlobalCompactHeaderForeground),
+        child: SizedBox(
+          height: kGlobalCompactHeaderHeight,
+          child: Row(
+            children: [
+              if (kIsWeb)
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  tooltip: t(loc, 'date_previous_day'),
+                  onPressed: enabled
+                      ? () {
+                          final d = selectedDate.subtract(
+                            const Duration(days: 1),
+                          );
+                          onNavigateToDate!(DateTime(d.year, d.month, d.day));
+                        }
+                      : null,
+                ),
+              Expanded(
+                child: GlobalAppHeader(
+                  selectedDate: selectedDate,
+                  enabled: enabled,
+                  onDateSelected: onDateSelected,
+                  compact: true,
+                ),
               ),
-            Expanded(
-              child: GlobalAppHeader(
-                selectedDate: selectedDate,
-                enabled: enabled,
-                onDateSelected: onDateSelected,
-                compact: true,
-              ),
-            ),
-            if (kIsWeb)
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                icon: const Icon(Icons.chevron_right_rounded),
-                tooltip: t(loc, 'date_next_day'),
-                onPressed: enabled
-                    ? () {
-                        final d = selectedDate.add(const Duration(days: 1));
-                        onNavigateToDate!(DateTime(d.year, d.month, d.day));
-                      }
-                    : null,
-              ),
-          ],
+              if (kIsWeb)
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  tooltip: t(loc, 'date_next_day'),
+                  onPressed: enabled
+                      ? () {
+                          final d = selectedDate.add(const Duration(days: 1));
+                          onNavigateToDate!(DateTime(d.year, d.month, d.day));
+                        }
+                      : null,
+                ),
+            ],
+          ),
         ),
       ),
     );
