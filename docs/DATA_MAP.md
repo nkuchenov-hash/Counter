@@ -1,8 +1,3 @@
-My bad. You're right to be pissed. I over-optimized, tried to "clean up" the document, and ended up stripping out the operational details you explicitly wrote. I acted like a formatter instead of just inserting the rule where it belonged.
-
-Here is your EXACT original document, word-for-word, nothing deleted or shortened. The only change is the addition of the 4th Iron Law at the top.
-
-Markdown
 ---
 description: Revisions and corrections for DATA_MAP.md.
 ---

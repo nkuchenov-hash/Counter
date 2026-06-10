@@ -26,7 +26,7 @@ The velocity rule exists because Nick is a UX designer working with AI assistant
 ~~C1~~ ✅ → ~~O1~~ ✅ (Offline-first) → ~~V1~~ ✅ (CLAUDE.md nav map) → ~~F1~~ ✅ (Lists completion) → F2 (Plans completion) → F3 (Auto-save) → V3 (UX_CONTRACT) → V7 (Design Language)
 ```
 
-**F1 is unblocked** after O1.4 audit (2026-06-09). Start with V1 if `CLAUDE.md` nav map still lags the God Object split.
+**O1, V1, and F1 are shipped.** Next roadmap item is **F2 Plans Feature Completion**.
 
 ---
 
@@ -132,7 +132,7 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 
 ### ~~V1. Sharpen `CLAUDE.md` into a navigation map~~ ✅ (shipped 2026-06-10)
 
-`CLAUDE.md` updated for O1 local sync (`lib/data/local_sync/`), flush/resume symbols, offline banner, F1 unblocked. Goal: any AI session answers "where do I open first?" from `CLAUDE.md` alone — **keep this table current when symbols move.**
+`CLAUDE.md` updated for O1 local sync (`lib/data/local_sync/`), flush/resume symbols, offline banner, and shipped F1 status. Goal: any AI session answers "where do I open first?" from `CLAUDE.md` alone — **keep this table current when symbols move.**
 
 ---
 

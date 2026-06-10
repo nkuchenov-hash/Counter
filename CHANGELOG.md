@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-10] - Docs cleanup: DATA_MAP and roadmap status [shipped]
+* **`docs/DATA_MAP.md` / `docs/ROADMAP.md`:** Removed accidental assistant wrapper text from `DATA_MAP.md` and synced roadmap wording so O1, V1, and F1 are shipped with F2 Plans next.
+
 ## [2026-06-10] - CLAUDE.md F1 status sync [shipped]
 * **`CLAUDE.md`:** F1 status synced after Lists shipped — top velocity line now points to F2 Plans, and the F1 table marks list tags/export/active chip/alignment/no-play work as shipped.
 
