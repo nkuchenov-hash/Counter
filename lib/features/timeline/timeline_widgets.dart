@@ -31,25 +31,21 @@ class TimelineTopDateStrip extends StatelessWidget {
       elevation: 0,
       surfaceTintColor: scheme.surfaceTint,
       child: SizedBox(
-        height: kToolbarHeight,
+        height: kGlobalCompactHeaderHeight,
         child: Row(
           children: [
             if (kIsWeb)
               IconButton(
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                 icon: const Icon(Icons.chevron_left_rounded),
                 tooltip: t(loc, 'date_previous_day'),
                 onPressed: enabled
                     ? () {
-                        final d =
-                            selectedDate.subtract(const Duration(days: 1));
-                        onNavigateToDate!(
-                          DateTime(d.year, d.month, d.day),
+                        final d = selectedDate.subtract(
+                          const Duration(days: 1),
                         );
+                        onNavigateToDate!(DateTime(d.year, d.month, d.day));
                       }
                     : null,
               ),
@@ -58,23 +54,19 @@ class TimelineTopDateStrip extends StatelessWidget {
                 selectedDate: selectedDate,
                 enabled: enabled,
                 onDateSelected: onDateSelected,
+                compact: true,
               ),
             ),
             if (kIsWeb)
               IconButton(
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                 icon: const Icon(Icons.chevron_right_rounded),
                 tooltip: t(loc, 'date_next_day'),
                 onPressed: enabled
                     ? () {
                         final d = selectedDate.add(const Duration(days: 1));
-                        onNavigateToDate!(
-                          DateTime(d.year, d.month, d.day),
-                        );
+                        onNavigateToDate!(DateTime(d.year, d.month, d.day));
                       }
                     : null,
               ),

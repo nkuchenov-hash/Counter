@@ -497,28 +497,36 @@ class _TimelinePageState extends State<TimelinePage> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: SegmentedButton<bool>(
-                style: appCompactSegmentedButtonStyle(
-                  context,
-                  segmentWidth: 112,
+              child: SizedBox(
+                height: kAppCompactControlHeight,
+                child: SegmentedButton<bool>(
+                  showSelectedIcon: false,
+                  style: appCompactSegmentedButtonStyle(
+                    context,
+                    segmentWidth: 112,
+                  ),
+                  segments: [
+                    ButtonSegment(
+                      value: false,
+                      icon: const Icon(Icons.list_rounded),
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'list'),
+                      ),
+                    ),
+                    ButtonSegment(
+                      value: true,
+                      icon: const Icon(Icons.bar_chart_rounded),
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'stats'),
+                      ),
+                    ),
+                  ],
+                  selected: {widget.showStatsView},
+                  onSelectionChanged: (Set<bool> sel) {
+                    if (sel.isEmpty) return;
+                    widget.onShowStatsViewChanged(sel.first);
+                  },
                 ),
-                segments: [
-                  ButtonSegment(
-                    value: false,
-                    icon: const Icon(Icons.list_rounded),
-                    label: Text(t(currentLocale.value, 'list')),
-                  ),
-                  ButtonSegment(
-                    value: true,
-                    icon: const Icon(Icons.bar_chart_rounded),
-                    label: Text(t(currentLocale.value, 'stats')),
-                  ),
-                ],
-                selected: {widget.showStatsView},
-                onSelectionChanged: (Set<bool> sel) {
-                  if (sel.isEmpty) return;
-                  widget.onShowStatsViewChanged(sel.first);
-                },
               ),
             ),
             Padding(

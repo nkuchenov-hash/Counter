@@ -29,8 +29,7 @@ class CategoryBreadcrumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
-    final localizedPath =
-        localizeCategoryBreadcrumbPath(breadcrumbPath, loc);
+    final localizedPath = localizeCategoryBreadcrumbPath(breadcrumbPath, loc);
     var parts = localizedPath
         .split(RegExp(r'\s*>\s*'))
         .map((s) => s.trim())
@@ -42,21 +41,20 @@ class CategoryBreadcrumb extends StatelessWidget {
     }
 
     final scheme = Theme.of(context).colorScheme;
-    final plate =
-        tagCategoryBreadcrumbPlate(accentColor, scheme.surface);
+    final plate = tagCategoryBreadcrumbPlate(accentColor, scheme.surface);
     final fg = tagVibrantForeground(accentColor);
     final sepStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: fg.withValues(alpha: 0.58),
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-          height: 1.15,
-        );
+      color: fg.withValues(alpha: 0.58),
+      fontWeight: FontWeight.w700,
+      fontSize: 11,
+      height: 1.15,
+    );
     final segStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: fg,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-          height: 1.15,
-        );
+      color: fg,
+      fontWeight: FontWeight.w600,
+      fontSize: 12,
+      height: 1.15,
+    );
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -100,10 +98,15 @@ class CategoryChip extends StatelessWidget {
     required this.icon,
     this.selected = false,
     this.onTap,
+
     /// When [onTap] is null (e.g. task card), use true so dot/icon/circle chips
     /// layout at their **visual** size (not 44×44), keeping the glyph left-aligned
     /// with adjacent title text. Tappable strips should leave this false.
     this.compactGlyphLayout = false,
+
+    /// Edit-sheet pickers keep 44px touch targets but use less tiny visuals.
+    this.prominentVisuals = false,
+
     /// Synthetic “No Tags” strip id ([Tag.tagId] == -1): solid B/W + inverted text.
     /// All other tags (even #000000) use translucent letter-chip styling.
     this.syntheticNoTagsMonochrome = false,
@@ -116,6 +119,7 @@ class CategoryChip extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
   final bool compactGlyphLayout;
+  final bool prominentVisuals;
   final bool syntheticNoTagsMonochrome;
 
   /// Square tap target for dot / raw icon / icon-in-circle only.
@@ -123,9 +127,10 @@ class CategoryChip extends StatelessWidget {
 
   double _glyphLayoutSide(CategoryDisplayMode m) {
     return switch (m) {
-      CategoryDisplayMode.round => _dotDiameter,
-      CategoryDisplayMode.icon => 26,
-      CategoryDisplayMode.iconCircle => _iconCircleDiameter,
+      CategoryDisplayMode.round => prominentVisuals ? 15 : _dotDiameter,
+      CategoryDisplayMode.icon => prominentVisuals ? 30 : 26,
+      CategoryDisplayMode.iconCircle =>
+        prominentVisuals ? 36 : _iconCircleDiameter,
       _ => _glyphTapExtent,
     };
   }
@@ -134,22 +139,26 @@ class CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final ring = selected ? scheme.primary : Colors.transparent;
-    final displayLabel =
-        localizeCategoryBreadcrumbPath(label, currentLocale.value);
+    final displayLabel = localizeCategoryBreadcrumbPath(
+      label,
+      currentLocale.value,
+    );
 
     final child = switch (mode) {
-      CategoryDisplayMode.letterChip =>
-        _letterChipPlanStyle(context, displayLabel,
-            syntheticNoTagsMonochrome: syntheticNoTagsMonochrome),
+      CategoryDisplayMode.letterChip => _letterChipPlanStyle(
+        context,
+        displayLabel,
+        syntheticNoTagsMonochrome: syntheticNoTagsMonochrome,
+      ),
       CategoryDisplayMode.chip => _chipPlanStyle(context),
       CategoryDisplayMode.round => _tagRoundDot(),
       CategoryDisplayMode.icon => Center(
-          child: Icon(
-            icon,
-            color: tagGlyphOnCanvas(color),
-            size: 26,
-          ),
+        child: Icon(
+          icon,
+          color: tagGlyphOnCanvas(color),
+          size: prominentVisuals ? 30 : 26,
         ),
+      ),
       CategoryDisplayMode.iconCircle => _iconInCircle(),
     };
     final visual = mode != CategoryDisplayMode.letterChip
@@ -157,9 +166,9 @@ class CategoryChip extends StatelessWidget {
         : child;
 
     final isPillMode =
-        mode == CategoryDisplayMode.letterChip || mode == CategoryDisplayMode.chip;
-    final glyphCompact =
-        compactGlyphLayout && onTap == null && !isPillMode;
+        mode == CategoryDisplayMode.letterChip ||
+        mode == CategoryDisplayMode.chip;
+    final glyphCompact = compactGlyphLayout && onTap == null && !isPillMode;
     final glyphSide = glyphCompact ? _glyphLayoutSide(mode) : _glyphTapExtent;
 
     final inner = AnimatedContainer(
@@ -181,10 +190,7 @@ class CategoryChip extends StatelessWidget {
 
     final BoxConstraints constraints = isPillMode
         ? const BoxConstraints()
-        : BoxConstraints.tightFor(
-            width: glyphSide,
-            height: glyphSide,
-          );
+        : BoxConstraints.tightFor(width: glyphSide, height: glyphSide);
 
     if (onTap == null) {
       // Pill chips on task cards: loose BoxConstraints() would expand to parent width
@@ -192,22 +198,17 @@ class CategoryChip extends StatelessWidget {
       if (isPillMode) {
         return inner;
       }
-      return ConstrainedBox(
-        constraints: constraints,
-        child: inner,
-      );
+      return ConstrainedBox(constraints: constraints, child: inner);
     }
 
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
-        borderRadius:
-            isPillMode ? BorderRadius.circular(10) : BorderRadius.circular(22),
-        child: ConstrainedBox(
-          constraints: constraints,
-          child: inner,
-        ),
+        borderRadius: isPillMode
+            ? BorderRadius.circular(10)
+            : BorderRadius.circular(22),
+        child: ConstrainedBox(constraints: constraints, child: inner),
       ),
     );
   }
@@ -222,13 +223,23 @@ class CategoryChip extends StatelessWidget {
     String resolvedLabel, {
     required bool syntheticNoTagsMonochrome,
   }) {
-    final displayLabel =
-        resolvedLabel.trim().isNotEmpty ? resolvedLabel.trim() : '?';
+    final displayLabel = resolvedLabel.trim().isNotEmpty
+        ? resolvedLabel.trim()
+        : '?';
     final scheme = Theme.of(context).colorScheme;
     final rgb = color.toARGB32() & 0xFFFFFF;
+    final padding = EdgeInsets.symmetric(
+      horizontal: prominentVisuals ? 10 : 8,
+      vertical: prominentVisuals ? 4 : 2,
+    );
+    final textStyle =
+        (prominentVisuals
+                ? Theme.of(context).textTheme.labelMedium
+                : Theme.of(context).textTheme.labelSmall)
+            ?.copyWith(fontWeight: FontWeight.w600);
     if (syntheticNoTagsMonochrome && rgb == 0x000000) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: padding,
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(10),
@@ -236,16 +247,13 @@ class CategoryChip extends StatelessWidget {
         ),
         child: Text(
           displayLabel,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+          style: textStyle?.copyWith(color: Colors.white),
         ),
       );
     }
     if (syntheticNoTagsMonochrome && rgb == 0xFFFFFF) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: padding,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
@@ -253,10 +261,7 @@ class CategoryChip extends StatelessWidget {
         ),
         child: Text(
           displayLabel,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
+          style: textStyle?.copyWith(color: Colors.black),
         ),
       );
     }
@@ -264,19 +269,13 @@ class CategoryChip extends StatelessWidget {
     final fg = tagVibrantForeground(color);
     final stroke = tagLetterChipBorder(color, scheme.surface);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: padding,
       decoration: BoxDecoration(
         color: plate,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: stroke),
       ),
-      child: Text(
-        displayLabel,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: fg,
-            ),
-      ),
+      child: Text(displayLabel, style: textStyle?.copyWith(color: fg)),
     );
   }
 
@@ -284,8 +283,8 @@ class CategoryChip extends StatelessWidget {
   Widget _chipPlanStyle(BuildContext context) {
     final surface = Theme.of(context).colorScheme.surface;
     return SizedBox(
-      width: _emptyChipWidth,
-      height: _emptyChipHeight,
+      width: prominentVisuals ? 84 : _emptyChipWidth,
+      height: prominentVisuals ? 30 : _emptyChipHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: tagEmptyChipFill(color, surface),
@@ -301,13 +300,10 @@ class CategoryChip extends StatelessWidget {
 
   Widget _tagRoundDot() {
     return SizedBox(
-      width: _dotDiameter,
-      height: _dotDiameter,
+      width: prominentVisuals ? 15 : _dotDiameter,
+      height: prominentVisuals ? 15 : _dotDiameter,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       ),
     );
   }
@@ -317,13 +313,10 @@ class CategoryChip extends StatelessWidget {
   /// Filled circle + icon; explicit square [SizedBox] avoids zero/invisible layout in horizontal lists.
   Widget _iconInCircle() {
     return SizedBox(
-      width: _iconCircleDiameter,
-      height: _iconCircleDiameter,
+      width: prominentVisuals ? 36 : _iconCircleDiameter,
+      height: prominentVisuals ? 36 : _iconCircleDiameter,
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-        ),
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         child: Center(
           child: Icon(
             icon,
@@ -331,7 +324,7 @@ class CategoryChip extends StatelessWidget {
               color,
               syntheticNoTags: syntheticNoTagsMonochrome,
             ),
-            size: 18,
+            size: prominentVisuals ? 20 : 18,
           ),
         ),
       ),
@@ -347,8 +340,11 @@ class TagQuickPickStrip extends StatelessWidget {
     required this.selected,
     required this.onToggle,
     this.fallbackColor,
+    this.prominentVisuals = false,
+
     /// When set, the strip uses a horizontal [ReorderableListView]; indices match [tags].
     this.onReorder,
+
     /// Long-press on a chip (only when [onReorder] is null — avoids clashing with drag).
     this.onTagLongPress,
   });
@@ -357,6 +353,7 @@ class TagQuickPickStrip extends StatelessWidget {
   final List<Tag> selected;
   final void Function(Tag tag) onToggle;
   final Color? fallbackColor;
+  final bool prominentVisuals;
   final void Function(int oldIndex, int newIndex)? onReorder;
   final void Function(Tag tag)? onTagLongPress;
 
@@ -369,7 +366,8 @@ class TagQuickPickStrip extends StatelessWidget {
       stream: DatabaseService.instance.userSettingsStream,
       initialData: DatabaseService.instance.settings,
       builder: (context, snap) {
-        final mode = snap.data?.tagDisplayMode ?? CategoryDisplayMode.letterChip;
+        final mode =
+            snap.data?.tagDisplayMode ?? CategoryDisplayMode.letterChip;
         final reorder = onReorder;
         if (reorder != null && tags.length >= 2) {
           return ReorderableListView.builder(
@@ -408,6 +406,7 @@ class TagQuickPickStrip extends StatelessWidget {
                 color: c,
                 icon: ic,
                 selected: isSel,
+                prominentVisuals: prominentVisuals,
                 syntheticNoTagsMonochrome: tag.tagId == -1,
                 onTap: () => onToggle(tag),
               );
@@ -442,6 +441,7 @@ class TagQuickPickStrip extends StatelessWidget {
               color: c,
               icon: ic,
               selected: isSel,
+              prominentVisuals: prominentVisuals,
               syntheticNoTagsMonochrome: tag.tagId == -1,
               onTap: () => onToggle(tag),
             );

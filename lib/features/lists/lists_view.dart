@@ -1273,7 +1273,7 @@ class _ListsPageState extends State<ListsPage>
                       elevation: 0,
                       surfaceTintColor: theme.colorScheme.surfaceTint,
                       child: SizedBox(
-                        height: kToolbarHeight,
+                        height: kGlobalCompactHeaderHeight,
                         child: _listsSelectMode
                             ? Row(
                                 children: [
@@ -1315,6 +1315,7 @@ class _ListsPageState extends State<ListsPage>
                                       enabled: widget.onDateChanged != null,
                                       onDateSelected: (d) =>
                                           widget.onDateChanged?.call(d),
+                                      compact: true,
                                     ),
                                   ),
                                   if (filterId != null)

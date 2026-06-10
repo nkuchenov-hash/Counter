@@ -943,29 +943,32 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                 if (_startedAsUndatedBacklog) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TabBar(
-                      controller: _tabController!,
-                      isScrollable: false,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      labelPadding: EdgeInsets.zero,
-                      padding: EdgeInsets.zero,
-                      tabs: [
-                        AppCompactTextTab(
-                          text: t(currentLocale.value, 'notes_tab'),
-                        ),
-                        AppCompactTextTab(
-                          text: t(currentLocale.value, 'checklist_tab'),
-                        ),
-                        AppCompactTextTab(
-                          text: t(currentLocale.value, 'lists_subitems_tab'),
-                        ),
-                        AppCompactTextTab(
-                          text: t(
-                            currentLocale.value,
-                            'plan_idea_tab_schedule',
+                    child: SizedBox(
+                      height: kAppCompactControlHeight,
+                      child: TabBar(
+                        controller: _tabController!,
+                        isScrollable: false,
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        labelPadding: EdgeInsets.zero,
+                        padding: EdgeInsets.zero,
+                        tabs: [
+                          AppCompactTextTab(
+                            text: t(currentLocale.value, 'notes_tab'),
                           ),
-                        ),
-                      ],
+                          AppCompactTextTab(
+                            text: t(currentLocale.value, 'checklist_tab'),
+                          ),
+                          AppCompactTextTab(
+                            text: t(currentLocale.value, 'lists_subitems_tab'),
+                          ),
+                          AppCompactTextTab(
+                            text: t(
+                              currentLocale.value,
+                              'plan_idea_tab_schedule',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Expanded(
@@ -1534,7 +1537,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: SizedBox(
-                            height: 52,
+                            height: 62,
                             child: _tagsLoading
                                 ? Center(
                                     child: SizedBox(
@@ -1569,31 +1572,35 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     tags: _availableTags,
                                     selected: _selectedTags,
                                     onToggle: _toggleTag,
+                                    prominentVisuals: true,
                                   ),
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: TabBar(
-                            controller: _planTabController!,
-                            isScrollable: false,
-                            indicatorSize: TabBarIndicatorSize.tab,
-                            labelPadding: EdgeInsets.zero,
-                            padding: EdgeInsets.zero,
-                            tabs: [
-                              AppCompactTextTab(
-                                text: t(currentLocale.value, 'notes_tab'),
-                              ),
-                              AppCompactTextTab(
-                                text: t(currentLocale.value, 'checklist_tab'),
-                              ),
-                              AppCompactTextTab(
-                                text: t(
-                                  currentLocale.value,
-                                  'plan_parallel_plans_tab',
+                          child: SizedBox(
+                            height: kAppCompactControlHeight,
+                            child: TabBar(
+                              controller: _planTabController!,
+                              isScrollable: false,
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              labelPadding: EdgeInsets.zero,
+                              padding: EdgeInsets.zero,
+                              tabs: [
+                                AppCompactTextTab(
+                                  text: t(currentLocale.value, 'notes_tab'),
                                 ),
-                              ),
-                            ],
+                                AppCompactTextTab(
+                                  text: t(currentLocale.value, 'checklist_tab'),
+                                ),
+                                AppCompactTextTab(
+                                  text: t(
+                                    currentLocale.value,
+                                    'plan_repeat_label',
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         Expanded(
@@ -2799,24 +2806,27 @@ class _TimelineRecordSheetContentState
                     ),
                   ],
                 ),
-                TabBar(
-                  controller: _tabController,
-                  isScrollable: false,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelPadding: EdgeInsets.zero,
-                  tabAlignment: TabAlignment.start,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  tabs: [
-                    AppCompactTextTab(
-                      text: t(currentLocale.value, 'notes_tab'),
-                    ),
-                    AppCompactTextTab(
-                      text: t(currentLocale.value, 'checklist_tab'),
-                    ),
-                    AppCompactTextTab(
-                      text: t(currentLocale.value, 'parallel_activities_tab'),
-                    ),
-                  ],
+                SizedBox(
+                  height: kAppCompactControlHeight,
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: false,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelPadding: EdgeInsets.zero,
+                    tabAlignment: TabAlignment.start,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    tabs: [
+                      AppCompactTextTab(
+                        text: t(currentLocale.value, 'notes_tab'),
+                      ),
+                      AppCompactTextTab(
+                        text: t(currentLocale.value, 'checklist_tab'),
+                      ),
+                      AppCompactTextTab(
+                        text: t(currentLocale.value, 'parallel_activities_tab'),
+                      ),
+                    ],
+                  ),
                 ),
                 Expanded(
                   flex: 3,

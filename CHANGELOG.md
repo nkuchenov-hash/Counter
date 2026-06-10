@@ -12,6 +12,7 @@
 > ***
 
 ## [2026-06-10] - F2A Plans UI polish slice [shipped]
+* **`compact_nav_controls.dart` / `global_app_header.dart` / `planning_view.dart` / `shared_widgets.dart` / `chip_component.dart`:** Android F2A regression polish: fixed tab/segment height with one-line ellipsis (no per-tab font shrink), enlarged edit-sheet tag visuals, moved repeat status directly into the Planning card title row, relabeled dated-plan recurrence UI as `Repeat`, and collapsed main Timeline/Plans/Lists headers to compact date/time chrome.
 * **`compact_nav_controls.dart` / `planning_view.dart` / `timeline_view.dart` / `shared_widgets.dart`:** Added compact 44px tab/segment styling, moved `_PlanningTaskCard` play into the leading action column (hidden when done/selecting), and added repeat icon metadata for non-empty `rrule` plans. `docs/ROADMAP.md` marks F2A only; F2 remains open.
 
 ## [2026-06-10] - Docs cleanup: DATA_MAP and roadmap status [shipped]

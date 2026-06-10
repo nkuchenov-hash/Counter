@@ -9,6 +9,8 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+const double kGlobalCompactHeaderHeight = 44;
+
 Future<void> _pickDayForGlobalHeader(
   BuildContext context,
   DateTime initialDate,
@@ -60,20 +62,29 @@ class GlobalAppHeader extends StatelessWidget {
     required this.selectedDate,
     required this.onDateSelected,
     this.enabled = true,
+    this.compact = false,
   });
 
   final DateTime selectedDate;
   final void Function(DateTime date) onDateSelected;
   final bool enabled;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
-    final titleStyle = Theme.of(context).appBarTheme.titleTextStyle ??
-        const TextStyle(fontSize: 20, fontWeight: FontWeight.w500);
+    final titleStyle = compact
+        ? Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.0,
+              ) ??
+              const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)
+        : Theme.of(context).appBarTheme.titleTextStyle ??
+              const TextStyle(fontSize: 20, fontWeight: FontWeight.w500);
     final clockStyle = titleStyle.copyWith(
-      fontSize: 14,
-      fontWeight: FontWeight.w400,
+      fontSize: compact ? 12 : 14,
+      fontWeight: compact ? FontWeight.w500 : FontWeight.w400,
     );
     final weekday = DateFormat.EEEE(loc).format(selectedDate);
     final dateStr = DateFormat.yMMMd(loc).format(selectedDate);
@@ -92,7 +103,10 @@ class GlobalAppHeader extends StatelessWidget {
             : null,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          padding: EdgeInsets.symmetric(
+            vertical: compact ? 2 : 4,
+            horizontal: 2,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,

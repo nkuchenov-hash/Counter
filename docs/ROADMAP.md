@@ -159,15 +159,15 @@ Plans has several UX gaps that make it feel unfinished. All are contained to `pl
 
 User items in scope: #6, #7, #12, #13, #15, and #1.
 
-**Status (2026-06-10): F2A shipped.** Safe UI-only slice completed: compact tab/segment scale, Plans play button moved into the leading action column, repeat icon added for `rrule` plans, and main-tab header audit confirmed no redundant black `AppBar`. F2 is **not** fully complete.
+**Status (2026-06-10): F2A shipped + Android polish pass.** Safe UI-only slice completed: compact tab/segment scale stabilized for Android, Plans play button moved into the leading action column, repeat icon added directly beside `rrule` plan titles, and main-tab headers collapsed to compact date/time chrome. F2 is **not** fully complete.
 
 **What to build / fix:**
-- ✅ **F2A — Compact tabs/header polish (#6):** Shared compact 44px tab/segment styling applied to Plans, Timeline, and plan/list edit sheets. Main-tab headers keep `GlobalAppHeader`.
+- ✅ **F2A — Compact tabs/header polish (#6):** Shared compact 44px tab/segment styling applied to Plans, Timeline, and plan/list edit sheets; Android polish pass fixed selected-state/long-label height jumps. Main-tab headers keep `GlobalAppHeader` in compact height.
 - **Category default time setting (#7):** Add a per-category setting: "Default start time for new plans in this category." Stored as `default_plan_time` (HH:mm string) on the `categories` collection (new field — add to PocketBase and `DATA_MAP.md`). When a new plan is created and no time is parsed from input, apply the category's default time if set. UI: in the category edit sheet, a time picker field labeled "Default plan time". If not set, behavior unchanged (no time assigned).
 - ✅ **F2A — Move play button in Plans (#12):** `_PlanningTaskCard` play moved below the leading checkbox; hidden when done or in bulk selection.
-- ◐ **F2A — Recurring plan icon (#13 partial):** Plans with non-empty `rrule` show a repeat icon. Full edit-scope dialog/mutation remains open.
+- ◐ **F2A — Recurring plan icon (#13 partial):** Plans with non-empty `rrule` show a repeat icon beside the card title, and existing repeat controls live under a `Repeat` edit-sheet tab. Full edit-scope dialog/mutation remains open.
 - **Plan filter config (#15):** Add a small settings icon button at the end of the Plans sort/filter bar. Tapping opens a bottom sheet: a checklist of categories the user can toggle on/off to show/hide from the current plan view. Persisted to `SharedPreferences` key `plans_hidden_category_ids`. Filtered categories are hidden from the plan list but not deleted. The icon shows a badge if any categories are currently hidden.
-- ◐ **F2A — Header audit (#1 partial):** Main tabs use surface `Material` + `GlobalAppHeader`; no redundant black main-tab `AppBar`. Secondary route `AppBar` normalization remains follow-up.
+- ◐ **F2A — Header audit (#1 partial):** Main tabs use compact surface `Material` + `GlobalAppHeader` date/time chrome. Secondary route `AppBar` normalization remains follow-up.
 
 ---
 

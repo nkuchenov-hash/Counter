@@ -2340,7 +2340,7 @@ class _PlanningPageState extends State<PlanningPage>
                   elevation: 0,
                   surfaceTintColor: scheme.surfaceTint,
                   child: SizedBox(
-                    height: kToolbarHeight,
+                    height: kGlobalCompactHeaderHeight,
                     child: _planSelectMode
                         ? Row(
                             children: [
@@ -2407,6 +2407,7 @@ class _PlanningPageState extends State<PlanningPage>
                                   selectedDate: headerDate,
                                   onDateSelected: (d) =>
                                       widget.onDatePicked?.call(d),
+                                  compact: true,
                                 ),
                               ),
                               if (kIsWeb)
@@ -2469,39 +2470,54 @@ class _PlanningPageState extends State<PlanningPage>
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
             child: Align(
               alignment: AlignmentDirectional.centerStart,
-              child: SegmentedButton<_PlanSortMode>(
-                style: appCompactSegmentedButtonStyle(context),
-                segments: [
-                  ButtonSegment<_PlanSortMode>(
-                    value: _PlanSortMode.category,
-                    label: Text(t(currentLocale.value, 'plan_sort_category')),
+              child: SizedBox(
+                height: kAppCompactControlHeight,
+                child: SegmentedButton<_PlanSortMode>(
+                  showSelectedIcon: false,
+                  style: appCompactSegmentedButtonStyle(
+                    context,
+                    segmentWidth: 78,
                   ),
-                  ButtonSegment<_PlanSortMode>(
-                    value: _PlanSortMode.time,
-                    label: Text(t(currentLocale.value, 'plan_sort_time')),
-                  ),
-                  ButtonSegment<_PlanSortMode>(
-                    value: _PlanSortMode.tags,
-                    label: Text(t(currentLocale.value, 'plan_sort_tags')),
-                  ),
-                  ButtonSegment<_PlanSortMode>(
-                    value: _PlanSortMode.custom,
-                    label: Text(t(currentLocale.value, 'plan_sort_custom')),
-                  ),
-                ],
-                selected: {_sortMode},
-                onSelectionChanged: (Set<_PlanSortMode> next) {
-                  if (next.isEmpty) return;
-                  final mode = next.first;
-                  setState(() {
-                    _sortMode = mode;
-                  });
-                  unawaited(
-                    DatabaseService.instance.persistPlanActiveTabIndex(
-                      _planSortModeToPersistedIndex(mode),
+                  segments: [
+                    ButtonSegment<_PlanSortMode>(
+                      value: _PlanSortMode.category,
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'plan_sort_category'),
+                      ),
                     ),
-                  );
-                },
+                    ButtonSegment<_PlanSortMode>(
+                      value: _PlanSortMode.time,
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'plan_sort_time'),
+                      ),
+                    ),
+                    ButtonSegment<_PlanSortMode>(
+                      value: _PlanSortMode.tags,
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'plan_sort_tags'),
+                      ),
+                    ),
+                    ButtonSegment<_PlanSortMode>(
+                      value: _PlanSortMode.custom,
+                      label: AppCompactSegmentLabel(
+                        text: t(currentLocale.value, 'plan_sort_custom'),
+                      ),
+                    ),
+                  ],
+                  selected: {_sortMode},
+                  onSelectionChanged: (Set<_PlanSortMode> next) {
+                    if (next.isEmpty) return;
+                    final mode = next.first;
+                    setState(() {
+                      _sortMode = mode;
+                    });
+                    unawaited(
+                      DatabaseService.instance.persistPlanActiveTabIndex(
+                        _planSortModeToPersistedIndex(mode),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -3087,11 +3103,7 @@ List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
   final base = Theme.of(context).iconTheme.color;
   final color = base?.withValues(alpha: 0.48);
   if (color == null) return const [];
-  final hasRepeat = task.rrule?.trim().isNotEmpty ?? false;
-  if (!task.hasNotes &&
-      !task.hasChecklist &&
-      !task.hasParentPlan &&
-      !hasRepeat) {
+  if (!task.hasNotes && !task.hasChecklist && !task.hasParentPlan) {
     return const [];
   }
   final out = <Widget>[];
@@ -3102,7 +3114,6 @@ List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
 
   if (task.hasNotes) add(Icons.sticky_note_2_outlined);
   if (task.hasChecklist) add(Icons.checklist_rounded);
-  if (hasRepeat) add(Icons.repeat_rounded);
   if (task.hasParentPlan) add(Icons.account_tree_outlined);
   return out;
 }
@@ -3215,6 +3226,7 @@ class _PlanningTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metaIcons = _planningTaskMetaIcons(context, task);
+    final hasRepeat = task.rrule?.trim().isNotEmpty ?? false;
     final scheme = Theme.of(context).colorScheme;
     final categoryTrail = localizeCategoryBreadcrumbPath(
       DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
@@ -3341,6 +3353,18 @@ class _PlanningTaskCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
+                            if (hasRepeat)
+                              Padding(
+                                padding: const EdgeInsetsDirectional.only(
+                                  start: 4,
+                                  top: 1,
+                                ),
+                                child: Icon(
+                                  Icons.repeat_rounded,
+                                  size: 17,
+                                  color: scheme.primary.withValues(alpha: 0.85),
+                                ),
+                              ),
                             if (metaIcons.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsetsDirectional.only(
