@@ -23,12 +23,86 @@ The velocity rule exists because Nick is a UX designer working with AI assistant
 ## Execution order
 
 ```
-~~C1~~ ✅ → V1 (CLAUDE.md nav map) → F1 (Lists completion) → F2 (Plans completion) → F3 (Auto-save) → V3 (UX_CONTRACT) → V7 (Design Language)
+~~C1~~ ✅ → ~~O1~~ ✅ (Offline-first) → ~~V1~~ ✅ (CLAUDE.md nav map) → ~~F1~~ ✅ (Lists completion) → F2 (Plans completion) → F3 (Auto-save) → V3 (UX_CONTRACT) → V7 (Design Language)
 ```
+
+**F1 is unblocked** after O1.4 audit (2026-06-09). Start with V1 if `CLAUDE.md` nav map still lags the God Object split.
 
 ---
 
 ## 🔴 Correctness Track
+
+### ~~O1 — Offline-first core reliability~~ ✅ (shipped 2026-06-09)
+
+**Goal:** The app must remain usable without internet. User actions must update UI immediately, save locally, queue failed network mutations, and sync to PocketBase when connection returns.
+
+| Sub-phase | Scope | Status |
+| :--- | :--- | :--- |
+| **O1.1** | Record Start / Stop offline | ✅ |
+| **O1.2** | Record Edit / Delete offline | ✅ |
+| **O1.3** | Planning + Lists CRUD + done-toggle offline | ✅ |
+| **O1.4** | Audit, restart/auth/banner polish, ordering docs | ✅ |
+
+**Scope — Timeline records:**
+- Start works offline
+- Stop works offline
+- Edit/update works offline
+- Delete works offline
+
+**Scope — Planning and Lists:**
+- Create works offline
+- Update works offline
+- Delete works offline
+- Done-toggle works offline
+
+**Local mutation queue (target schema):**
+- `operation_id`
+- `collection` name
+- `operation_type`: create / update / delete
+- `business_id`: `record_id` / `plan_id` / `category_id` / `tag_id`
+- PocketBase system id if known
+- `payload`
+- `created_at`
+- `retry_count`
+- `last_error`
+- `sync_status`
+
+**Sync behavior:**
+- If network is unavailable, do not lose the action
+- Store the mutation locally
+- Replay pending mutations when connection returns
+- Merge PocketBase response back into local cache after sync
+- 401/403 pauses sync and surfaces session/sign-in error
+- 404 reconciles or purges ghost state using existing architecture
+
+**UI (`app_shell.dart`):**
+- Subtle global sync/offline indicator
+- Online and synced: no noisy UI
+- Offline with pending changes: show “Offline · X pending”
+- Syncing: show “Syncing…”
+- Sync error: show subtle warning
+
+**Rules:**
+- Respect Optimistic UI / Zero-await laws
+- Do not await network before visual update
+- Server remains final authority for Singleton Timeline Law and overlap cleanup
+- Do not rewrite unrelated features
+
+**O1.4 audit summary (2026-06-09):**
+- **Restart hydration:** `record_mutation_outbox_v1` + `plan_mutation_outbox_v1` persist in SharedPreferences — pending mutations survive app restart. `loadInitialData` → `flushPendingLocalMutations()` + `refreshPendingCount()` on boot; app resume also triggers flush.
+- **Optimistic UI after restart:** in-memory overlays (`_planningOptimisticByDateKey`, `_optimisticDeletedKeys`, `_optimisticEndByKey`) are **not** persisted. After restart the UI reflects server/cache fetch until outbox flush merges server truth. User may briefly see stale server rows until pending ops replay (banner shows pending count).
+- **Ordering:** coalescing documented in outbox `coalesceQueue` (records + plans). FIFO across entities; per-id merge/delete rules enforced on enqueue.
+- **Auth:** 401/403 sets `offlineSync.authPaused` + enqueue `paused_auth`; flush skipped until valid session. Login / tap-to-retry calls `resumeAfterAuthIfNeeded()` then flush. Auth-specific banner string + existing `_brainSnackError` on mutation paths.
+- **Banner:** quiet only when fully synced; online-with-pending shows “%s pending sync”; offline shows “Offline · %s pending”.
+- **Retry:** `SyncManager` + tap-to-retry → `flushPendingLocalMutations()`; retriable errors enqueue; non-retriable (400/404 validation) drop on flush.
+
+**O1 remaining limitations (defer):**
+- Outbox queues are **device-global**, not scoped per PocketBase user — sign-out does not clear them (single-user-per-device assumption). Multi-account on one device needs user-scoped prefs keys.
+- Virtual recurring plan rows (`virt-…`) still require network for exception/materialize flows.
+- `bulkUpdatePlans` / `markPlanningTasksCompletedBulk` / plan order debounce are not fully offline-queued.
+- Optimistic timeline/plan overlays lost on process death until outbox replay completes.
+
+---
 
 ### Phase 1 bugs — 2 remaining
 
@@ -56,28 +130,25 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 
 ## 🟢 Velocity Track
 
-### V1. Sharpen `CLAUDE.md` into a navigation map
-**Effort: small. Savings: every session, forever. Highest ROI on the board. Do immediately after C1.**
+### ~~V1. Sharpen `CLAUDE.md` into a navigation map~~ ✅ (shipped 2026-06-10)
 
-`CLAUDE.md` already has a "Where things live" table — it needs to stay current as files move. After C1 touches multiple service files, update the table in the same session so it never lags.
-
-Goal: any Claude Code session answers "where do I open first?" from `CLAUDE.md` alone.
+`CLAUDE.md` updated for O1 local sync (`lib/data/local_sync/`), flush/resume symbols, offline banner, F1 unblocked. Goal: any AI session answers "where do I open first?" from `CLAUDE.md` alone — **keep this table current when symbols move.**
 
 ---
 
-### F1 — Lists: Feature Completion
-**Do after V1. One focused session.**
+### ~~F1 — Lists: Feature Completion~~ ✅ (shipped 2026-06-10)
+**Completed after O1 + V1.**
 
-Lists is half-built. Tags exist in the data layer but are completely absent from the Lists UI. This is the single biggest usability gap in the app right now.
+Audit-first pass found the Lists UI mostly implemented already; final F1 work tightened active-chip ordering and list-tag hydration in Brain/cache paths.
 
 User items in scope: #3, #4, #8, #20, and partial #2.
 
-**What to build / fix:**
-- **Tags in Lists (#3):** Wire `tags_link` / `domain: list` tags into the Lists filter chip bar (currently shows zero tags) and into the `_BacklogPlanCard` edit sheet. Tags must use `domain: list` scope — do not mix with plan tags. Fetch via `fetchTagsForCurrentUser(scope: 'list')`. Filter chip must be reactive: selecting a tag filters the visible list items immediately, optimistically.
-- **Card text/checkbox alignment (#4):** In `_BacklogPlanCard`, the title text sits higher than the checkbox for single-line items. Fix vertical alignment so text baseline sits centered with the checkbox for both 1-line and 2-line cases.
-- **Active chip always-first (#8):** In the Lists filter chip bar, the currently active chip must always render first (index 0). Scrolling positions after it. When the user taps a chip, it moves to position 0 and the bar scrolls to start. Use a stable sort on the chip list, not a full rebuild.
-- **Export list as text (#20):** In the Lists overflow menu (or a long-press on the category header), add "Export as text". Copies the visible filtered list items to clipboard as a plain numbered text list. No file, no share sheet — just clipboard. Format: `1. Item title\n2. Item title…`
-- **Remove play button from list card (#2):** List cards (backlog/ideas) should not have a play button. Play belongs to Planning cards only. Remove from `_BacklogPlanCard`.
+**Completed:**
+- ✅ **Tags in Lists (#3):** `domain: list` tags are loaded via `fetchTagsForCurrentUser(scope: TagCatalogScope.list)`, shown in the Lists filter bar and card strip, available in the backlog edit sheet, reactive through `tagsCatalogUpdated`, and hydrated through combined plan/list tag catalogs for plain `tags_link` cache/replay paths.
+- ✅ **Card text/checkbox alignment (#4):** `_BacklogPlanCard` centers the compact checkbox/status control against the title column for one-line and two-line titles.
+- ✅ **Active chip always-first (#8):** Active category/list-tag chips move to index 0 and the bar scrolls to start on tap; manual category chip mode uses the same scroll controller.
+- ✅ **Export list as text (#20):** Visible filtered list items copy to clipboard as a numbered text list with a snackbar; no file/share sheet.
+- ✅ **Remove play button from list card (#2):** `_BacklogPlanCard` / `_ListsSemicircleMenuOverlay` have no start/play action; Planning cards remain separate.
 
 ---
 
@@ -214,4 +285,4 @@ Defined once foundation is solid.
 - **Targets:** Android, iOS, Web, Windows, macOS, Linux, Wear OS
 - **Stack:** Flutter
 - **Analyzer:** 11 info-only issues (0 errors, 0 warnings) after June 2026 hygiene pass
-- **Architecture:** Iron Laws honored. God Object split complete. Velocity track: V1 done → F1/F2 polish in progress.
+- **Architecture:** Iron Laws honored. God Object split complete. **O1 offline-first ✅** (records + plans/lists). Velocity track: V1 → F1/F2.

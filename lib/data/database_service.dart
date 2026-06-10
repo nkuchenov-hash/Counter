@@ -5,7 +5,9 @@ import 'dart:math';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/link_scalar.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
-import 'package:counter/data/local_sync/plan_create_outbox.dart';
+import 'package:counter/data/local_sync/offline_sync_state.dart';
+import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
+import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/pb_config.dart';
@@ -134,6 +136,9 @@ String _dateKeyFromDate(DateTime date) =>
 class DatabaseService {
   DatabaseService._();
   static final DatabaseService instance = DatabaseService._();
+
+  /// Offline queue + sync indicator (O1). Updated by outbox enqueue/flush and [SyncManager].
+  final OfflineSyncController offlineSync = OfflineSyncController();
 
   static final _DatabaseServiceLifecycleObserver _appLifecycleObserver =
       _DatabaseServiceLifecycleObserver();

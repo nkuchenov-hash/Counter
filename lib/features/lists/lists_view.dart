@@ -33,6 +33,7 @@ class ListsPage extends StatefulWidget {
   /// Wall day for the unified global header (Lists content stays backlog / undated).
   final DateTime? selectedDate;
   final ValueChanged<DateTime>? onDateChanged;
+
   /// Opens the shared planning task editor ([ActivityDetailSheet]).
   final ValueChanged<PlanningTask>? onEditTask;
 
@@ -56,8 +57,10 @@ class _ListsPageState extends State<ListsPage>
   int? _filterCategoryId;
   String? _filterTagPbId;
   List<Tag> _listTagsForFilter = const [];
+
   /// `'manual'` = user-pinned IDs; `'frequent'` = top categories by local backlog counts.
   String _chipMode = 'frequent';
+
   /// Manual mode: category IDs persisted under [_prefsKeyPinnedIds].
   List<int> _pinnedChipIds = [];
   StreamSubscription<void>? _planRefreshSub;
@@ -106,8 +109,7 @@ class _ListsPageState extends State<ListsPage>
     if (shell.primaryTabIndex != 3) {
       return;
     }
-    final show =
-        _filterCategoryId != null && _selectedListKeys.isNotEmpty;
+    final show = _filterCategoryId != null && _selectedListKeys.isNotEmpty;
     final next = show ? _kShellBulkBarReservePx : 0.0;
     shell.setFabBottomReservePx(next);
   }
@@ -218,8 +220,10 @@ class _ListsPageState extends State<ListsPage>
             children: [
               Expanded(
                 child: Text(
-                  t(loc, 'selected_count')
-                      .replaceFirst('%s', '${_selectedListKeys.length}'),
+                  t(
+                    loc,
+                    'selected_count',
+                  ).replaceFirst('%s', '${_selectedListKeys.length}'),
                   style: Theme.of(context).textTheme.labelLarge,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -372,8 +376,9 @@ class _ListsPageState extends State<ListsPage>
   Future<void> _loadChipModeAndPinnedIds() async {
     final prefs = await SharedPreferences.getInstance();
     final modeRaw = prefs.getString(_prefsKeyChipMode)?.trim().toLowerCase();
-    final mode =
-        (modeRaw == 'manual' || modeRaw == 'frequent') ? modeRaw! : 'frequent';
+    final mode = (modeRaw == 'manual' || modeRaw == 'frequent')
+        ? modeRaw!
+        : 'frequent';
 
     var rawPinned = prefs.getString(_prefsKeyPinnedIds);
     if (rawPinned == null || rawPinned.isEmpty) {
@@ -601,6 +606,7 @@ class _ListsPageState extends State<ListsPage>
         }
       });
     }
+
     if (kids.isEmpty) {
       return Padding(
         padding: depthPad,
@@ -629,10 +635,7 @@ class _ListsPageState extends State<ListsPage>
         tilePadding: const EdgeInsets.symmetric(horizontal: 4),
         title: Row(
           children: [
-            Checkbox(
-              value: sel.contains(r.id),
-              onChanged: toggleSel,
-            ),
+            Checkbox(value: sel.contains(r.id), onChanged: toggleSel),
             Expanded(
               child: Text(
                 titleName,
@@ -666,10 +669,10 @@ class _ListsPageState extends State<ListsPage>
         expandedIds.remove(id);
         return;
       }
-      final spine =
-          DatabaseService.instance.categoryPathFromRootToLocalId(id);
-      final ancestors =
-          spine.length > 1 ? spine.take(spine.length - 1).toSet() : <int>{};
+      final spine = DatabaseService.instance.categoryPathFromRootToLocalId(id);
+      final ancestors = spine.length > 1
+          ? spine.take(spine.length - 1).toSet()
+          : <int>{};
       expandedIds
         ..clear()
         ..addAll({...ancestors, id});
@@ -707,9 +710,9 @@ class _ListsPageState extends State<ListsPage>
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: selected ? scheme.onPrimary : scheme.onSurface,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-                  ),
+                color: selected ? scheme.onPrimary : scheme.onSurface,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+              ),
             ),
           ),
         ),
@@ -731,7 +734,9 @@ class _ListsPageState extends State<ListsPage>
         return StatefulBuilder(
           builder: (ctx, setModal) {
             var completionDraft = DatabaseService
-                .instance.settings.listCompletionBehavior
+                .instance
+                .settings
+                .listCompletionBehavior
                 .trim()
                 .toLowerCase();
             if (completionDraft != 'stay' &&
@@ -742,8 +747,8 @@ class _ListsPageState extends State<ListsPage>
             }
             var showTagsDraft =
                 DatabaseService.instance.settings.showListTagsOnCards;
-            final manualListHeight =
-                (MediaQuery.sizeOf(ctx).height * 0.45).clamp(200.0, 520.0);
+            final manualListHeight = (MediaQuery.sizeOf(ctx).height * 0.45)
+                .clamp(200.0, 520.0);
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.viewInsetsOf(ctx).bottom,
@@ -880,8 +885,9 @@ class _ListsPageState extends State<ListsPage>
                       child: FilledButton(
                         onPressed: () {
                           Navigator.of(ctx).pop();
-                          final nextPinned =
-                              _sanitizeIntCategoryIds(sel.toList());
+                          final nextPinned = _sanitizeIntCategoryIds(
+                            sel.toList(),
+                          );
                           setState(() {
                             _chipMode = mode;
                             if (mode == 'manual') {
@@ -890,8 +896,9 @@ class _ListsPageState extends State<ListsPage>
                           });
                           unawaited(_persistChipMode(mode));
                           unawaited(
-                            DatabaseService.instance
-                                .persistShowListTagsOnCards(showTagsDraft),
+                            DatabaseService.instance.persistShowListTagsOnCards(
+                              showTagsDraft,
+                            ),
                           );
                           unawaited(
                             DatabaseService.instance.saveSettings(
@@ -1111,8 +1118,9 @@ class _ListsPageState extends State<ListsPage>
   ) {
     final map = <String, List<PlanningTask>>{};
     for (final t in tasks) {
-      final path =
-          DatabaseService.instance.getCategoryPath(t.categoryId).trim();
+      final path = DatabaseService.instance
+          .getCategoryPath(t.categoryId)
+          .trim();
       final key = path.isEmpty ? '—' : path;
       map.putIfAbsent(key, () => []).add(t);
     }
@@ -1134,7 +1142,9 @@ class _ListsPageState extends State<ListsPage>
     if (cat == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t(currentLocale.value, 'lists_inline_add_no_category'))),
+        SnackBar(
+          content: Text(t(currentLocale.value, 'lists_inline_add_no_category')),
+        ),
       );
       return;
     }
@@ -1220,7 +1230,8 @@ class _ListsPageState extends State<ListsPage>
     final loc = currentLocale.value;
     final theme = Theme.of(context);
     final filterId = _filterCategoryId;
-    final headerDay = widget.selectedDate ??
+    final headerDay =
+        widget.selectedDate ??
         DatabaseService.instance.getTimelineDeviceLocalToday();
 
     return StreamBuilder<UserSettings>(
@@ -1239,6 +1250,8 @@ class _ListsPageState extends State<ListsPage>
           builder: (context, _, _) {
             final chipIds = _chipIdsForBar();
             final flat = _displayFlat;
+            final hasActiveTagFilter =
+                (_filterTagPbId?.trim() ?? '').isNotEmpty;
             final forGrouping = listBeh == 'archive'
                 ? (flat.where((t) => !t.isDone).toList()..sort(_sortTasks))
                 : _listsApplyCompletionLayout(flat, listBeh);
@@ -1247,272 +1260,306 @@ class _ListsPageState extends State<ListsPage>
                 : const <PlanningTask>[];
             final grouped = _groupByCategoryPath(forGrouping);
             final flatRows = _listsFlattenGrouped(grouped);
-            final listBodyEmpty =
-                forGrouping.isEmpty && archiveSlice.isEmpty;
+            final listBodyEmpty = forGrouping.isEmpty && archiveSlice.isEmpty;
             _syncListsShellFabBulkReserve();
             return Scaffold(
-          body: SafeArea(
-            bottom: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Material(
-                  color: theme.colorScheme.surface,
-                  elevation: 0,
-                  surfaceTintColor: theme.colorScheme.surfaceTint,
-                  child: SizedBox(
-                    height: kToolbarHeight,
-                    child: _listsSelectMode
-                        ? Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.close_rounded),
-                                onPressed: _exitListsSelectMode,
-                                tooltip: t(loc, 'plan_exit_select'),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  t(loc, 'plan_select_mode'),
-                                  style: theme.textTheme.titleMedium,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (filterId != null && flat.isNotEmpty)
-                                TextButton(
-                                  style: TextButton.styleFrom(
-                                    visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8),
-                                  ),
-                                  onPressed: () =>
-                                      _toggleSelectAllVisibleLists(flat),
-                                  child: Text(
-                                    _allVisibleListsSelected(flat)
-                                        ? t(loc, 'plan_deselect_visible')
-                                        : t(loc, 'plan_select_all'),
-                                  ),
-                                ),
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              Expanded(
-                                child: GlobalAppHeader(
-                                  selectedDate: headerDay,
-                                  enabled: widget.onDateChanged != null,
-                                  onDateSelected: (d) =>
-                                      widget.onDateChanged?.call(d),
-                                ),
-                              ),
-                              if (filterId != null)
-                                IconButton(
-                                  tooltip: t(loc, 'lists_export_text'),
-                                  onPressed: () => unawaited(
-                                    _exportVisibleListAsText(forGrouping),
-                                  ),
-                                  icon: const Icon(Icons.copy_rounded),
-                                ),
-                              IconButton(
-                                tooltip: t(loc, 'lists_chip_bar_settings_tooltip'),
-                                onPressed: _openChipBarSettingsSheet,
-                                icon: const Icon(Icons.settings_rounded),
-                              ),
-                            ],
-                          ),
-                  ),
-                ),
-                Divider(
-                  height: 1,
-                  color: theme.colorScheme.outlineVariant,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(
-                        height: 48,
-                        child: _chipMode == 'manual' && chipIds.length > 1
-                            ? ReorderableListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                buildDefaultDragHandles: false,
-                                shrinkWrap: true,
-                                physics: const ClampingScrollPhysics(),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 4),
-                                itemCount: chipIds.length,
-                                onReorder: (oldI, newI) =>
-                                    _onManualChipReorder(chipIds, oldI, newI),
-                                itemBuilder: (ctx, idx) {
-                                  final id = chipIds[idx];
-                                  return ReorderableDelayedDragStartListener(
-                                    key: ValueKey<int>(id),
-                                    index: idx,
-                                    child: Padding(
-                                      padding: const EdgeInsetsDirectional.only(
-                                          end: 8),
-                                      child: _ListsQuadraticChip(
-                                        label: _categoryRawName(id),
-                                        categoryColor:
-                                            _listsCategoryAccentColor(id),
-                                        selected: filterId == id,
-                                        onTap: () {
-                                          if (filterId == id) {
-                                            _onFilterChanged(null);
-                                          } else {
-                                            _onFilterChanged(id);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                },
-                              )
-                            : ListView(
-                                controller: _chipBarScrollController,
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
+              body: SafeArea(
+                bottom: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Material(
+                      color: theme.colorScheme.surface,
+                      elevation: 0,
+                      surfaceTintColor: theme.colorScheme.surfaceTint,
+                      child: SizedBox(
+                        height: kToolbarHeight,
+                        child: _listsSelectMode
+                            ? Row(
                                 children: [
-                                  for (final id in chipIds)
-                                    Padding(
-                                      padding: const EdgeInsetsDirectional.only(
-                                          end: 8),
-                                      child: _ListsQuadraticChip(
-                                        label: _categoryRawName(id),
-                                        categoryColor:
-                                            _listsCategoryAccentColor(id),
-                                        selected: filterId == id,
-                                        onTap: () {
-                                          if (filterId == id) {
-                                            _onFilterChanged(null);
-                                          } else {
-                                            _onFilterChanged(id);
-                                          }
-                                        },
+                                  IconButton(
+                                    icon: const Icon(Icons.close_rounded),
+                                    onPressed: _exitListsSelectMode,
+                                    tooltip: t(loc, 'plan_exit_select'),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      t(loc, 'plan_select_mode'),
+                                      style: theme.textTheme.titleMedium,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (filterId != null && flat.isNotEmpty)
+                                    TextButton(
+                                      style: TextButton.styleFrom(
+                                        visualDensity: VisualDensity.compact,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                      ),
+                                      onPressed: () =>
+                                          _toggleSelectAllVisibleLists(flat),
+                                      child: Text(
+                                        _allVisibleListsSelected(flat)
+                                            ? t(loc, 'plan_deselect_visible')
+                                            : t(loc, 'plan_select_all'),
                                       ),
                                     ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(
+                                    child: GlobalAppHeader(
+                                      selectedDate: headerDay,
+                                      enabled: widget.onDateChanged != null,
+                                      onDateSelected: (d) =>
+                                          widget.onDateChanged?.call(d),
+                                    ),
+                                  ),
+                                  if (filterId != null)
+                                    IconButton(
+                                      tooltip: t(loc, 'lists_export_text'),
+                                      onPressed: () => unawaited(
+                                        _exportVisibleListAsText(forGrouping),
+                                      ),
+                                      icon: const Icon(Icons.copy_rounded),
+                                    ),
+                                  IconButton(
+                                    tooltip: t(
+                                      loc,
+                                      'lists_chip_bar_settings_tooltip',
+                                    ),
+                                    onPressed: _openChipBarSettingsSheet,
+                                    icon: const Icon(Icons.settings_rounded),
+                                  ),
                                 ],
                               ),
                       ),
-                      if (filterId != null &&
-                          _tagsForFilterBar().isNotEmpty)
-                        SizedBox(
-                          height: 44,
-                          child: ListView(
-                            controller: _tagFilterScrollController,
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            children: [
-                              Padding(
-                                padding:
-                                    const EdgeInsetsDirectional.only(end: 8),
-                                child: _buildListTagFilterChip(
-                                  label: t(loc, 'lists_filter_tag_all'),
-                                  selected: _filterTagPbId == null,
-                                  color: theme.colorScheme.outline,
-                                  onTap: () => _onTagFilterChanged(null),
-                                ),
-                              ),
-                              for (final tag in _tagsForFilterBar())
-                                Padding(
-                                  padding: const EdgeInsetsDirectional.only(
-                                      end: 8),
-                                  child: _buildListTagFilterChip(
-                                    label: tag.name.trim().isNotEmpty
-                                        ? tag.name.trim()
-                                        : '#${tag.tagId}',
-                                    selected: (_filterTagPbId ?? '') ==
-                                        (tag.pbRecordId ?? '').trim(),
-                                    color: parseTagHexColor(tag.color) ??
-                                        theme.colorScheme.primary,
-                                    onTap: () {
-                                      final id =
-                                          (tag.pbRecordId ?? '').trim();
-                                      if (id.isEmpty) return;
-                                      if (_filterTagPbId == id) {
-                                        _onTagFilterChanged(null);
-                                      } else {
-                                        _onTagFilterChanged(id);
-                                      }
-                                    },
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      if (filterId != null)
-                        Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _inlineController,
-                                  focusNode: _inlineFocus,
-                                  textInputAction: TextInputAction.done,
-                                  decoration: InputDecoration(
-                                    hintText: t(loc, 'input_placeholder_list'),
-                                    isDense: true,
-                                    border: InputBorder.none,
-                                    enabledBorder: UnderlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: theme.colorScheme.outline
-                                            .withValues(alpha: 0.45),
-                                      ),
+                    ),
+                    Divider(height: 1, color: theme.colorScheme.outlineVariant),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(
+                            height: 48,
+                            child: _chipMode == 'manual' && chipIds.length > 1
+                                ? ReorderableListView.builder(
+                                    scrollController: _chipBarScrollController,
+                                    scrollDirection: Axis.horizontal,
+                                    buildDefaultDragHandles: false,
+                                    shrinkWrap: true,
+                                    physics: const ClampingScrollPhysics(),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 4,
                                     ),
-                                    focusedBorder: UnderlineInputBorder(
-                                      borderSide: BorderSide(
-                                        color: theme.colorScheme.primary,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  onSubmitted: (_) => _submitInline(),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              FilledButton.icon(
-                                onPressed: _submitInline,
-                                icon: const Icon(Icons.add_rounded),
-                                label: Text(t(loc, 'add')),
-                              ),
-                            ],
-                          ),
-                        ),
-                      Expanded(
-                        child: filterId == null
-                            ? ListView(
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(),
-                                children: [
-                                  SizedBox(
-                                    height: MediaQuery.sizeOf(context)
-                                            .height *
-                                        0.25,
-                                  ),
-                                  Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 24),
-                                      child: Text(
-                                        t(loc, 'lists_no_category_chosen'),
-                                        style: theme.textTheme.bodyLarge
-                                            ?.copyWith(
-                                          color: theme.colorScheme
-                                              .onSurfaceVariant,
+                                    itemCount: chipIds.length,
+                                    onReorder: (oldI, newI) =>
+                                        _onManualChipReorder(
+                                          chipIds,
+                                          oldI,
+                                          newI,
                                         ),
-                                        textAlign: TextAlign.center,
+                                    itemBuilder: (ctx, idx) {
+                                      final id = chipIds[idx];
+                                      return ReorderableDelayedDragStartListener(
+                                        key: ValueKey<int>(id),
+                                        index: idx,
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsetsDirectional.only(
+                                                end: 8,
+                                              ),
+                                          child: _ListsQuadraticChip(
+                                            label: _categoryRawName(id),
+                                            categoryColor:
+                                                _listsCategoryAccentColor(id),
+                                            selected: filterId == id,
+                                            onTap: () {
+                                              if (filterId == id) {
+                                                _onFilterChanged(null);
+                                              } else {
+                                                _onFilterChanged(id);
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : ListView(
+                                    controller: _chipBarScrollController,
+                                    scrollDirection: Axis.horizontal,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    children: [
+                                      for (final id in chipIds)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsetsDirectional.only(
+                                                end: 8,
+                                              ),
+                                          child: _ListsQuadraticChip(
+                                            label: _categoryRawName(id),
+                                            categoryColor:
+                                                _listsCategoryAccentColor(id),
+                                            selected: filterId == id,
+                                            onTap: () {
+                                              if (filterId == id) {
+                                                _onFilterChanged(null);
+                                              } else {
+                                                _onFilterChanged(id);
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                          ),
+                          if (filterId != null &&
+                              _tagsForFilterBar().isNotEmpty)
+                            SizedBox(
+                              height: 44,
+                              child: ListView(
+                                controller: _tagFilterScrollController,
+                                scrollDirection: Axis.horizontal,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                children: [
+                                  if (!hasActiveTagFilter)
+                                    Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                        end: 8,
+                                      ),
+                                      child: _buildListTagFilterChip(
+                                        label: t(loc, 'lists_filter_tag_all'),
+                                        selected: _filterTagPbId == null,
+                                        color: theme.colorScheme.outline,
+                                        onTap: () => _onTagFilterChanged(null),
                                       ),
                                     ),
+                                  for (final tag in _tagsForFilterBar())
+                                    Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                        end: 8,
+                                      ),
+                                      child: _buildListTagFilterChip(
+                                        label: tag.name.trim().isNotEmpty
+                                            ? tag.name.trim()
+                                            : '#${tag.tagId}',
+                                        selected:
+                                            (_filterTagPbId ?? '') ==
+                                            (tag.pbRecordId ?? '').trim(),
+                                        color:
+                                            parseTagHexColor(tag.color) ??
+                                            theme.colorScheme.primary,
+                                        onTap: () {
+                                          final id = (tag.pbRecordId ?? '')
+                                              .trim();
+                                          if (id.isEmpty) return;
+                                          if (_filterTagPbId == id) {
+                                            _onTagFilterChanged(null);
+                                          } else {
+                                            _onTagFilterChanged(id);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  if (hasActiveTagFilter)
+                                    Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                        end: 8,
+                                      ),
+                                      child: _buildListTagFilterChip(
+                                        label: t(loc, 'lists_filter_tag_all'),
+                                        selected: _filterTagPbId == null,
+                                        color: theme.colorScheme.outline,
+                                        onTap: () => _onTagFilterChanged(null),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          if (filterId != null)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _inlineController,
+                                      focusNode: _inlineFocus,
+                                      textInputAction: TextInputAction.done,
+                                      decoration: InputDecoration(
+                                        hintText: t(
+                                          loc,
+                                          'input_placeholder_list',
+                                        ),
+                                        isDense: true,
+                                        border: InputBorder.none,
+                                        enabledBorder: UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.outline
+                                                .withValues(alpha: 0.45),
+                                          ),
+                                        ),
+                                        focusedBorder: UnderlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: theme.colorScheme.primary,
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      onSubmitted: (_) => _submitInline(),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  FilledButton.icon(
+                                    onPressed: _submitInline,
+                                    icon: const Icon(Icons.add_rounded),
+                                    label: Text(t(loc, 'add')),
                                   ),
                                 ],
-                              )
-                            : _loading
+                              ),
+                            ),
+                          Expanded(
+                            child: filterId == null
+                                ? ListView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(
+                                        height:
+                                            MediaQuery.sizeOf(context).height *
+                                            0.25,
+                                      ),
+                                      Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 24,
+                                          ),
+                                          child: Text(
+                                            t(loc, 'lists_no_category_chosen'),
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
+                                                ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : _loading
                                 ? const AppLoading()
                                 : RefreshIndicator(
                                     onRefresh: _reload,
@@ -1522,24 +1569,28 @@ class _ListsPageState extends State<ListsPage>
                                                 const AlwaysScrollableScrollPhysics(),
                                             children: [
                                               SizedBox(
-                                                height: MediaQuery.sizeOf(
-                                                            context)
-                                                        .height *
+                                                height:
+                                                    MediaQuery.sizeOf(
+                                                      context,
+                                                    ).height *
                                                     0.25,
                                               ),
                                               Center(
                                                 child: Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 24),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 24,
+                                                      ),
                                                   child: Text(
                                                     t(loc, 'lists_empty'),
-                                                    style: theme.textTheme
+                                                    style: theme
+                                                        .textTheme
                                                         .bodyLarge
                                                         ?.copyWith(
-                                                      color: theme.colorScheme
-                                                          .onSurfaceVariant,
-                                                    ),
+                                                          color: theme
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
                                                     textAlign: TextAlign.center,
                                                   ),
                                                 ),
@@ -1553,27 +1604,32 @@ class _ListsPageState extends State<ListsPage>
                                               SliverPadding(
                                                 padding:
                                                     const EdgeInsets.fromLTRB(
-                                                        16, 8, 16, 8),
+                                                      16,
+                                                      8,
+                                                      16,
+                                                      8,
+                                                    ),
                                                 sliver: SliverReorderableList(
                                                   itemCount: flatRows.length,
                                                   onReorder: (oldI, newI) =>
                                                       _onListsReorder(
-                                                    oldI,
-                                                    newI,
-                                                    listBeh,
-                                                  ),
-                                                  itemBuilder:
-                                                      (context, index) {
+                                                        oldI,
+                                                        newI,
+                                                        listBeh,
+                                                      ),
+                                                  itemBuilder: (context, index) {
                                                     final row = flatRows[index];
                                                     final t = row.task;
                                                     return ReorderableDelayedDragStartListener(
                                                       key: ValueKey<String>(
-                                                          _listKey(t)),
+                                                        _listKey(t),
+                                                      ),
                                                       index: index,
                                                       child: Padding(
                                                         padding:
                                                             const EdgeInsets.only(
-                                                                bottom: 8),
+                                                              bottom: 8,
+                                                            ),
                                                         child: _listsBacklogCard(
                                                           t,
                                                           loc,
@@ -1590,20 +1646,26 @@ class _ListsPageState extends State<ListsPage>
                                                   child: Padding(
                                                     padding:
                                                         const EdgeInsets.fromLTRB(
-                                                            16, 0, 16, 24),
+                                                          16,
+                                                          0,
+                                                          16,
+                                                          24,
+                                                        ),
                                                     child: ExpansionTile(
                                                       initiallyExpanded:
                                                           _listsArchiveSectionExpanded,
                                                       onExpansionChanged: (x) {
-                                                        setState(() =>
-                                                            _listsArchiveSectionExpanded =
-                                                                x);
+                                                        setState(
+                                                          () =>
+                                                              _listsArchiveSectionExpanded =
+                                                                  x,
+                                                        );
                                                       },
                                                       title: Text(
                                                         t(
-                                                                loc,
-                                                                'lists_archive_section')
-                                                            .replaceFirst(
+                                                          loc,
+                                                          'lists_archive_section',
+                                                        ).replaceFirst(
                                                           '%s',
                                                           '${archiveSlice.length}',
                                                         ),
@@ -1614,9 +1676,9 @@ class _ListsPageState extends State<ListsPage>
                                                           Padding(
                                                             padding:
                                                                 const EdgeInsets.only(
-                                                                    bottom: 8),
-                                                            child:
-                                                                _listsBacklogCard(
+                                                                  bottom: 8,
+                                                                ),
+                                                            child: _listsBacklogCard(
                                                               t,
                                                               loc,
                                                               showTagsStrip:
@@ -1630,17 +1692,18 @@ class _ListsPageState extends State<ListsPage>
                                             ],
                                           ),
                                   ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          bottomNavigationBar: filterId != null && _selectedListKeys.isNotEmpty
-              ? _listsBulkBottomBar(context, theme.colorScheme, flat)
-              : null,
-        );
+              ),
+              bottomNavigationBar:
+                  filterId != null && _selectedListKeys.isNotEmpty
+                  ? _listsBulkBottomBar(context, theme.colorScheme, flat)
+                  : null,
+            );
           },
         );
       },
@@ -1697,12 +1760,9 @@ class _ListsQuadraticChip extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: selected
-                              ? scheme.onPrimary
-                              : scheme.onSurface,
-                          fontWeight:
-                              selected ? FontWeight.w800 : FontWeight.w500,
-                        ),
+                      color: selected ? scheme.onPrimary : scheme.onSurface,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -1776,16 +1836,13 @@ class _BacklogPlanCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               selectionMode
-                  ? Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => onBodyTap(),
-                    )
+                  ? Checkbox(value: isSelected, onChanged: (_) => onBodyTap())
                   : Checkbox(
                       value: task.isDone,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
-                      onChanged: task.planRowIdForBackend
-                              .startsWith('optimistic-')
+                      onChanged:
+                          task.planRowIdForBackend.startsWith('optimistic-')
                           ? null
                           : (v) {
                               if (v == null) return;
@@ -1804,7 +1861,9 @@ class _BacklogPlanCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: task.isDone
-                            ? const TextStyle(decoration: TextDecoration.lineThrough)
+                            ? const TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                              )
                             : null,
                       ),
                       if (showTagsStrip && listTags.isNotEmpty)
@@ -1814,7 +1873,8 @@ class _BacklogPlanCard extends StatelessWidget {
                             stream: DatabaseService.instance.userSettingsStream,
                             initialData: DatabaseService.instance.settings,
                             builder: (context, snap) {
-                              final mode = snap.data?.tagDisplayMode ??
+                              final mode =
+                                  snap.data?.tagDisplayMode ??
                                   CategoryDisplayMode.letterChip;
                               final sch = Theme.of(context).colorScheme;
                               return Wrap(
@@ -1829,11 +1889,13 @@ class _BacklogPlanCard extends StatelessWidget {
                                       label: tag.name.trim().isNotEmpty
                                           ? tag.name.trim()
                                           : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                                      color: parseTagHexColor(tag.color) ??
+                                      color:
+                                          parseTagHexColor(tag.color) ??
                                           sch.primary,
                                       icon: iconForTagKey(tag.icon),
                                       compactGlyphLayout: true,
-                                      syntheticNoTagsMonochrome: tag.tagId == -1,
+                                      syntheticNoTagsMonochrome:
+                                          tag.tagId == -1,
                                     ),
                                 ],
                               );
@@ -1852,8 +1914,9 @@ class _BacklogPlanCard extends StatelessWidget {
                       style: IconButton.styleFrom(
                         splashFactory: NoSplash.splashFactory,
                         hoverColor: Colors.transparent,
-                        backgroundColor: scheme.secondaryContainer
-                            .withValues(alpha: 0.92),
+                        backgroundColor: scheme.secondaryContainer.withValues(
+                          alpha: 0.92,
+                        ),
                         foregroundColor: scheme.onSecondaryContainer,
                         minimumSize: const Size(44, 44),
                         padding: EdgeInsets.zero,
@@ -1893,7 +1956,8 @@ class _ListsSemicircleMenuOverlay extends StatefulWidget {
       _ListsSemicircleMenuOverlayState();
 }
 
-class _ListsSemicircleMenuOverlayState extends State<_ListsSemicircleMenuOverlay>
+class _ListsSemicircleMenuOverlayState
+    extends State<_ListsSemicircleMenuOverlay>
     with SingleTickerProviderStateMixin {
   static const double _canvas = 300;
   static const double _hub = 44;
@@ -1922,10 +1986,7 @@ class _ListsSemicircleMenuOverlayState extends State<_ListsSemicircleMenuOverlay
   }
 
   Offset _orbitOffsetLeftArc(double radians) {
-    return Offset(
-      math.cos(radians) * _orbit,
-      -math.sin(radians) * _orbit,
-    );
+    return Offset(math.cos(radians) * _orbit, -math.sin(radians) * _orbit);
   }
 
   Widget _labeledAction({
@@ -1980,10 +2041,10 @@ class _ListsSemicircleMenuOverlayState extends State<_ListsSemicircleMenuOverlay
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                        height: 1.1,
-                      ),
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ],

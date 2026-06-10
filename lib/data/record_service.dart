@@ -4,6 +4,15 @@ part of 'database_service.dart';
 // Contains: record cache, realtime subscription, fetchRecords,
 // record CRUD, optimistic UI, streams, timeline helpers.
 
+bool _recordMutationOutboxFlushInFlight = false;
+
+bool _recordMutationRetriableHttpCode(int code) {
+  if (code == 401 || code == 403 || code == 404) return false;
+  if (code == 400 || code == 422) return false;
+  if (code >= 200 && code < 300) return false;
+  return true;
+}
+
 extension RecordServiceExtension on DatabaseService {
   Map<String, dynamic> _recordMapFromPb(RecordModel r) {
     final d = Map<String, dynamic>.from(r.data);
@@ -1443,16 +1452,556 @@ extension RecordServiceExtension on DatabaseService {
     }
   }
 
-  /// Highlander server phase (PATCH old + POST new). Runs **after** local shadow; may log [DISPATCH].
-  Future<void> _highlanderPrimaryServerSync({
-    required _HighlanderRollbackToken? rollbackToken,
-    required Map<String, dynamic> runningFields,
+  Future<void> _enqueueHighlanderStartMutation(
+    Map<String, dynamic> runningFields, {
+    Object? error,
+    String syncStatus = RecordMutationOutbox.syncStatusPending,
   }) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final normalized =
+          jsonDecode(jsonEncode(runningFields)) as Map<String, dynamic>;
+      final businessId = (normalized['record_id'] ?? '').toString().trim();
+      if (businessId.isEmpty) return;
+      await RecordMutationOutbox.enqueue(
+        prefs,
+        RecordMutationOutbox.newHighlanderStartItem(
+          businessId: businessId,
+          runningFields: normalized,
+          error: error,
+          syncStatus: syncStatus,
+        ),
+      );
+      unawaited(offlineSync.refreshPendingCount());
+    } catch (e) {
+      DatabaseService._log('RECORD_OUTBOX_ENQUEUE highlander: $e');
+    }
+  }
+
+  Future<void> _enqueueStopPatchMutation({
+    required String originalInput,
+    required String pocketBaseId,
+    Object? error,
+    String syncStatus = RecordMutationOutbox.syncStatusPending,
+  }) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final businessId = _outboxBusinessIdForRecord(originalInput);
+      if (businessId.isEmpty) return;
+      await RecordMutationOutbox.enqueue(
+        prefs,
+        RecordMutationOutbox.newStopPatchItem(
+          businessId: businessId,
+          pocketBaseId: pocketBaseId.trim(),
+          originalQueryId: originalInput.trim(),
+          error: error,
+          syncStatus: syncStatus,
+        ),
+      );
+      unawaited(offlineSync.refreshPendingCount());
+    } catch (e) {
+      DatabaseService._log('RECORD_OUTBOX_ENQUEUE stop: $e');
+    }
+  }
+
+  String _outboxBusinessIdForRecord(String originalInput) {
+    final id = originalInput.trim();
+    if (id.isEmpty) return id;
+    for (final row in _cachedFlatRecords) {
+      final pk = CategoryServiceExtension.recordsTablePk(row);
+      final biz = (row['record_id'] ?? '').toString().trim();
+      if (pk == id || biz == id) {
+        if (biz.isNotEmpty) return biz;
+        return id;
+      }
+    }
+    return id;
+  }
+
+  TimelineRecord? _timelineRecordFromCacheInput(String originalInput) {
+    final idx = _indexOfCachedRecordRow(originalInput, originalInput);
+    if (idx < 0) return null;
+    final row = _cachedFlatRecords[idx];
+    final sysId = CategoryServiceExtension.recordsTablePk(row);
+    return TimelineRecord.fromMap(
+      _rowToRecordMap(row),
+      systemId: sysId.isNotEmpty ? sysId : originalInput,
+      timezoneOffsetHours: _settings.timezoneOffsetHours,
+    );
+  }
+
+  Future<void> _enqueueRecordUpdateMutation({
+    required String originalInput,
+    required String businessId,
+    required Map<String, dynamic> patchFields,
+    String? pocketBaseId,
+    Object? error,
+    String syncStatus = RecordMutationOutbox.syncStatusPending,
+  }) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final normalized =
+          jsonDecode(jsonEncode(patchFields)) as Map<String, dynamic>;
+      if (businessId.trim().isEmpty || normalized.isEmpty) return;
+      await RecordMutationOutbox.enqueue(
+        prefs,
+        RecordMutationOutbox.newRecordUpdateItem(
+          businessId: businessId.trim(),
+          patchFields: normalized,
+          pocketBaseId: pocketBaseId?.trim(),
+          originalQueryId: originalInput.trim(),
+          error: error,
+          syncStatus: syncStatus,
+        ),
+      );
+      unawaited(offlineSync.refreshPendingCount());
+    } catch (e) {
+      DatabaseService._log('RECORD_OUTBOX_ENQUEUE update: $e');
+    }
+  }
+
+  Future<void> _enqueueRecordDeleteMutation({
+    required String originalInput,
+    required String businessId,
+    String? pocketBaseId,
+    Object? error,
+    String syncStatus = RecordMutationOutbox.syncStatusPending,
+  }) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      if (businessId.trim().isEmpty) return;
+      await RecordMutationOutbox.enqueue(
+        prefs,
+        RecordMutationOutbox.newRecordDeleteItem(
+          businessId: businessId.trim(),
+          pocketBaseId: pocketBaseId?.trim(),
+          originalQueryId: originalInput.trim(),
+          error: error,
+          syncStatus: syncStatus,
+        ),
+      );
+      unawaited(offlineSync.refreshPendingCount());
+    } catch (e) {
+      DatabaseService._log('RECORD_OUTBOX_ENQUEUE delete: $e');
+    }
+  }
+
+  Future<String?> _resolveRecordPbIdForOutboxReplay({
+    required String businessId,
+    String? pocketBaseId,
+  }) async {
+    final stored = pocketBaseId?.trim();
+    if (stored != null &&
+        stored.isNotEmpty &&
+        DatabaseService._isLikelyPocketBaseRowId(stored)) {
+      return stored;
+    }
+    final cached = _tryResolveRecordIdFromCacheOnly(businessId);
+    if (cached != null &&
+        cached.isNotEmpty &&
+        DatabaseService._isLikelyPocketBaseRowId(cached)) {
+      return cached;
+    }
+    try {
+      final resolved = await _resolveRecordIdForStopOrDelete(businessId);
+      if (DatabaseService._isLikelyPocketBaseRowId(resolved)) return resolved;
+    } catch (_) {}
+    return null;
+  }
+
+  Future<Map<String, dynamic>> _buildRecordPatchUpdates({
+    String? title,
+    DateTime? startTime,
+    DateTime? endTime,
+    int? categoryId,
+    String? note,
+    String? tags,
+    List<Map<String, dynamic>>? checklist,
+    bool syncSourcePlan = false,
+    bool clearSourcePlan = false,
+    String? sourcePlanPocketRecordId,
+  }) async {
+    var categoryForPatch = categoryId;
+    var shouldPatchCategory = categoryId != null;
+    if (syncSourcePlan && !clearSourcePlan) {
+      final sp0 =
+          DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
+      if (sp0 != null) {
+        final pc = await _resolveCategoryIdFromSourcePlanPbId(sp0);
+        if (_planLocalCategoryIdIsConcrete(pc)) {
+          categoryForPatch = pc;
+          shouldPatchCategory = true;
+        }
+      }
+    }
+    if (title != null && !shouldPatchCategory) {
+      final inferred = _smartInferCategoryId(title);
+      if (_planLocalCategoryIdIsConcrete(inferred)) {
+        categoryForPatch = inferred;
+        shouldPatchCategory = true;
+      }
+    }
+    final updates = <String, dynamic>{};
+    if (title != null) updates['title'] = title;
+    if (endTime != null) {
+      updates['end_time'] = endTime.toUtc().toIso8601String();
+      updates['status'] = 'stopped';
+    }
+    if (startTime != null) {
+      updates['start_time'] = startTime.toUtc().toIso8601String();
+      if (endTime == null && !updates.containsKey('status')) {
+        updates['status'] = 'running';
+      }
+    }
+    if (shouldPatchCategory && categoryForPatch != null) {
+      updates['category_id'] =
+          _recordCategoryBusinessPkForApi(categoryForPatch);
+    }
+    if (note != null) updates['note'] = note;
+    if (tags != null) {
+      final t = tags.trim();
+      if (t.isNotEmpty) updates['tags'] = t;
+    }
+    if (checklist != null) updates['checklist'] = checklist;
+    if (syncSourcePlan) {
+      if (clearSourcePlan) {
+        updates['source_plan_id'] = null;
+      } else {
+        final sp =
+            DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
+        if (sp != null) updates['source_plan_id'] = sp;
+      }
+    }
+    return updates;
+  }
+
+  Future<bool> _patchRecordUpdateNetworkPhase({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+    required Map<String, dynamic> updates,
+    Map<String, dynamic>? rollbackRow,
+    int rollbackIndex = -1,
+  }) async {
+    DatabaseService._log('PATCH_ID_TRACE: record update pb id=$resolvedPbId');
+    final patchCode = await _patchRecordsRowWith404Recovery(
+      originalQueryId: originalInput,
+      restId: resolvedPbId,
+      fields: _nocoFieldsForPatch(Map<String, dynamic>.from(updates)),
+    );
+    if (patchCode == 404) {
+      if (rollbackRow != null && rollbackIndex >= 0) {
+        _cachedFlatRecords[rollbackIndex] = rollbackRow;
+        _notifyTimelineAfterRecordCacheMutation();
+      }
+      _purgeGhostRecordById(resolvedPbId);
+      await _fetchRecordsIntoCache(forceNetwork: true);
+      _notifyTimelineAfterRecordCacheMutation();
+      AppSnack.failed();
+      return false;
+    }
+    if (patchCode >= 200 && patchCode < 300) {
+      try {
+        await _fetchRecordsIntoCache(forceNetwork: true);
+      } catch (_) {}
+      _notifyTimelineAfterRecordCacheMutation();
+      unawaited(offlineSync.refreshPendingCount());
+      return true;
+    }
+    if (patchCode == 401 || patchCode == 403) {
+      await _enqueueRecordUpdateMutation(
+        originalInput: originalInput,
+        businessId: businessId,
+        patchFields: updates,
+        pocketBaseId: resolvedPbId,
+        error: patchCode,
+        syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+      );
+      offlineSync.setAuthPaused(true, message: 'HTTP $patchCode');
+      final loc = currentLocale.value;
+      final msg = patchCode == 401
+          ? t(loc, 'error_record_create_unauthorized')
+          : t(loc, 'error_record_create_forbidden');
+      _brainSnackError(msg);
+      return true;
+    }
+    if (_recordMutationRetriableHttpCode(patchCode)) {
+      await _enqueueRecordUpdateMutation(
+        originalInput: originalInput,
+        businessId: businessId,
+        patchFields: updates,
+        pocketBaseId: resolvedPbId,
+        error: patchCode,
+      );
+      offlineSync.setConnectivityOffline(true);
+      return true;
+    }
+    if (rollbackRow != null && rollbackIndex >= 0) {
+      _cachedFlatRecords[rollbackIndex] = rollbackRow;
+      _notifyTimelineAfterRecordCacheMutation();
+    }
+    AppSnack.failed();
+    return false;
+  }
+
+  Future<bool> _deleteRecordNetworkPhase({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+    required Set<String> delKeys,
+  }) async {
+    DatabaseService._log('DELETE_ID_TRACE: deleteRecord pb id=$resolvedPbId');
+    final delCode = await _deleteRecordsRowWithFallback(
+      originalQueryId: originalInput,
+      restId: resolvedPbId,
+    );
+    if (delCode == 404) {
+      _purgeGhostRecordById(resolvedPbId);
+      for (final k in delKeys) {
+        _optimisticDeletedKeys.remove(k);
+      }
+      _notifyTimelineAfterRecordCacheMutation();
+      return true;
+    }
+    final ok = delCode >= 200 && delCode < 300;
+    if (ok) {
+      try {
+        await _fetchRecordsIntoCache(forceNetwork: true);
+      } catch (_) {}
+      for (final k in delKeys) {
+        _optimisticDeletedKeys.remove(k);
+      }
+      _notifyTimelineAfterRecordCacheMutation();
+      AppSnack.deleted();
+      unawaited(offlineSync.refreshPendingCount());
+      return true;
+    }
+    if (delCode == 401 || delCode == 403) {
+      await _enqueueRecordDeleteMutation(
+        originalInput: originalInput,
+        businessId: businessId,
+        pocketBaseId: resolvedPbId,
+        error: delCode,
+        syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+      );
+      offlineSync.setAuthPaused(true, message: 'HTTP $delCode');
+      _snackDeleteHttpFailure(delCode);
+      return true;
+    }
+    if (_recordMutationRetriableHttpCode(delCode)) {
+      await _enqueueRecordDeleteMutation(
+        originalInput: originalInput,
+        businessId: businessId,
+        pocketBaseId: resolvedPbId,
+        error: delCode,
+      );
+      offlineSync.setConnectivityOffline(true);
+      return true;
+    }
+    for (final k in delKeys) {
+      _optimisticDeletedKeys.remove(k);
+    }
+    _notifyTimelineAfterRecordCacheMutation();
+    _snackDeleteHttpFailure(delCode);
+    return false;
+  }
+
+  /// Drains queued PocketBase **records** mutations (offline outbox). Safe to call from [SyncManager].
+  Future<void> flushPendingRecordMutations() async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    if (_recordMutationOutboxFlushInFlight) return;
+    if (offlineSync.authPaused) return;
+    _recordMutationOutboxFlushInFlight = true;
+    offlineSync.setSyncing(true);
+    try {
+      await ensurePocketBaseReady();
+      if (_pbHttpBackoffActive) return;
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final q = await RecordMutationOutbox.load(prefs);
+      if (q.isEmpty) return;
+      var pendingTail = const <Map<String, dynamic>>[];
+      var i = 0;
+      for (; i < q.length; i++) {
+        final item = Map<String, dynamic>.from(q[i]);
+        final ok = await _flushOneRecordOutboxEntry(item);
+        if (!ok) {
+          item['retryCount'] = ((item['retryCount'] as num?)?.toInt() ?? 0) + 1;
+          item['lastError'] = offlineSync.lastError ?? 'sync_failed';
+          pendingTail = [item, ...q.sublist(i + 1)];
+          break;
+        }
+      }
+      if (pendingTail.isEmpty && i >= q.length) {
+        await RecordMutationOutbox.replaceAll(prefs, []);
+        offlineSync.clearErrors();
+      } else if (pendingTail.isNotEmpty) {
+        await RecordMutationOutbox.replaceAll(prefs, pendingTail);
+      } else {
+        await RecordMutationOutbox.replaceAll(prefs, q.sublist(i));
+      }
+    } finally {
+      offlineSync.setSyncing(false);
+      unawaited(offlineSync.refreshPendingCount());
+      _recordMutationOutboxFlushInFlight = false;
+    }
+  }
+
+  Future<bool> _flushOneRecordOutboxEntry(Map<String, dynamic> item) async {
+    final kind = (item['kind'] ?? '').toString();
+    if (kind == RecordMutationOutbox.kindHighlanderStart) {
+      final wrapped = item['payload'];
+      if (wrapped is! Map) return true;
+      final payload = Map<String, dynamic>.from(wrapped);
+      final failureCode = await _runHighlanderStartServerPhase(payload);
+      if (failureCode == null) {
+        clearOptimisticTimelineUi(notifyTimeline: false);
+        return true;
+      }
+      if (failureCode == 401 || failureCode == 403) {
+        offlineSync.setAuthPaused(
+          true,
+          message: 'HTTP $failureCode',
+        );
+        return false;
+      }
+      if (_recordMutationRetriableHttpCode(failureCode)) {
+        offlineSync.setLastError('HTTP $failureCode');
+        return false;
+      }
+      return true;
+    }
+    if (kind == RecordMutationOutbox.kindStopPatch) {
+      final originalInput =
+          (item['originalQueryId'] ?? item['businessId'] ?? '').toString().trim();
+      final pbId = (item['pocketBaseId'] ?? '').toString().trim();
+      if (originalInput.isEmpty || pbId.isEmpty) return true;
+      final nowIso =
+          DatabaseService.getPlanetaryNow().toUtc().toIso8601String();
+      final stopFields = _nocoFieldsForPatch(<String, dynamic>{
+        'end_time': nowIso,
+        'status': 'stopped',
+      });
+      final stopCode = await _patchRecordsRowWith404Recovery(
+        originalQueryId: originalInput,
+        restId: pbId,
+        fields: stopFields,
+      );
+      if (stopCode == 404) {
+        _purgeGhostRecordById(pbId);
+        _clearOptimisticStopKeysForRecord(originalInput);
+        return true;
+      }
+      if (stopCode >= 200 && stopCode < 300) {
+        _clearOptimisticStopKeysForRecord(originalInput);
+        try {
+          await _fetchRecordsIntoCache(forceNetwork: true);
+        } catch (_) {}
+        _notifyTimelineAfterRecordCacheMutation();
+        return true;
+      }
+      if (stopCode == 401 || stopCode == 403) {
+        offlineSync.setAuthPaused(true, message: 'HTTP $stopCode');
+        return false;
+      }
+      if (_recordMutationRetriableHttpCode(stopCode)) {
+        offlineSync.setLastError('HTTP $stopCode');
+        return false;
+      }
+      _clearOptimisticStopKeysForRecord(originalInput);
+      _notifyTimelineAfterRecordCacheMutation();
+      return true;
+    }
+    if (kind == RecordMutationOutbox.kindRecordUpdate) {
+      final wrapped = item['payload'];
+      if (wrapped is! Map) return true;
+      final updates = Map<String, dynamic>.from(wrapped);
+      if (updates.isEmpty) return true;
+      final businessId = _bizKey(item);
+      final originalInput =
+          (item['originalQueryId'] ?? businessId).toString().trim();
+      final pbId = await _resolveRecordPbIdForOutboxReplay(
+        businessId: businessId,
+        pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
+      );
+      if (pbId == null || pbId.isEmpty) return false;
+      final patchCode = await _patchRecordsRowWith404Recovery(
+        originalQueryId: originalInput,
+        restId: pbId,
+        fields: _nocoFieldsForPatch(updates),
+      );
+      if (patchCode == 404) {
+        _purgeGhostRecordById(pbId);
+        return true;
+      }
+      if (patchCode >= 200 && patchCode < 300) {
+        try {
+          await _fetchRecordsIntoCache(forceNetwork: true);
+        } catch (_) {}
+        _notifyTimelineAfterRecordCacheMutation();
+        return true;
+      }
+      if (patchCode == 401 || patchCode == 403) {
+        offlineSync.setAuthPaused(true, message: 'HTTP $patchCode');
+        return false;
+      }
+      if (_recordMutationRetriableHttpCode(patchCode)) {
+        offlineSync.setLastError('HTTP $patchCode');
+        return false;
+      }
+      return true;
+    }
+    if (kind == RecordMutationOutbox.kindRecordDelete) {
+      final businessId = _bizKey(item);
+      final originalInput =
+          (item['originalQueryId'] ?? businessId).toString().trim();
+      final pbId = await _resolveRecordPbIdForOutboxReplay(
+        businessId: businessId,
+        pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
+      );
+      if (pbId == null || pbId.isEmpty) {
+        return true;
+      }
+      final delCode = await _deleteRecordsRowWithFallback(
+        originalQueryId: originalInput,
+        restId: pbId,
+      );
+      if (delCode == 404) {
+        _purgeGhostRecordById(pbId);
+        return true;
+      }
+      if (delCode >= 200 && delCode < 300) {
+        try {
+          await _fetchRecordsIntoCache(forceNetwork: true);
+        } catch (_) {}
+        _notifyTimelineAfterRecordCacheMutation();
+        return true;
+      }
+      if (delCode == 401 || delCode == 403) {
+        offlineSync.setAuthPaused(true, message: 'HTTP $delCode');
+        return false;
+      }
+      if (_recordMutationRetriableHttpCode(delCode)) {
+        offlineSync.setLastError('HTTP $delCode');
+        return false;
+      }
+      return true;
+    }
+    return true;
+  }
+
+  String _bizKey(Map<String, dynamic> item) =>
+      (item['businessId'] ?? '').toString().trim();
+
+  /// Highlander server phase (PATCH old + POST new). Returns **null** on success, HTTP/synthetic code on failure.
+  Future<int?> _runHighlanderStartServerPhase(
+    Map<String, dynamic> runningFields,
+  ) async {
     try {
       final sp = runningFields['source_plan_id'];
       if (sp != null) {
         final planId =
-            DatabaseService.pocketRelationIdOrNull(sp.toString()) ?? sp.toString().trim();
+            DatabaseService.pocketRelationIdOrNull(sp.toString()) ??
+                sp.toString().trim();
         if (planId.isNotEmpty) {
           final pc = await _resolveCategoryIdFromSourcePlanPbId(planId);
           if (_planLocalCategoryIdIsConcrete(pc)) {
@@ -1465,27 +2014,20 @@ extension RecordServiceExtension on DatabaseService {
         }
       }
       await ensurePocketBaseReady();
-      if (_pbHttpBackoffActive) {
-        await _runBatchedRecordCacheTimelineNotify(() async {
-          _restoreHighlanderRollbackToken(rollbackToken);
-          clearOptimisticTimelineUi();
-          _printAtomicCheckRunningCount();
-        });
-        AppSnack.failed();
-        return;
-      }
+      if (_pbHttpBackoffActive) return 0;
 
       _recordCacheTimelineNotifyBatchDepth++;
       try {
-        final handoffIso = (runningFields['start_time'] ?? '')
-            .toString()
-            .trim();
+        final handoffIso =
+            (runningFields['start_time'] ?? '').toString().trim();
         if (handoffIso.isEmpty) {
-          throw StateError('HIGHLANDER_MISSING_START_TIME');
+          return 500;
         }
         final serverPrimaries = await _fetchServerRunningSacredPrimariesByPbId();
         if (serverPrimaries.isEmpty) {
-          DatabaseService._log('SACRED_PREFLIGHT: no running primaries on server (POST new only)');
+          DatabaseService._log(
+            'SACRED_PREFLIGHT: no running primaries on server (POST new only)',
+          );
         } else {
           DatabaseService._log(
             'SACRED_PREFLIGHT: server running primaries=${serverPrimaries.length} (PATCH to handoff start)',
@@ -1513,12 +2055,13 @@ extension RecordServiceExtension on DatabaseService {
             continue;
           }
           if (code < 200 || code >= 300) {
-            throw StateError('HIGHLANDER_PATCH_FAILED_$code');
+            return code;
           }
         }
         final createdId = await _createRecordPb(runningFields);
         if (createdId == null || createdId.trim().isEmpty) {
-          throw StateError('HIGHLANDER_POST_FAILED');
+          if (!_pb.authStore.isValid) return 401;
+          return 500;
         }
         await _finalizeRecordCreateHandshake(
           pocketCreatedRecordId: createdId,
@@ -1527,20 +2070,55 @@ extension RecordServiceExtension on DatabaseService {
           await _fetchRecordsIntoCache(forceNetwork: true);
         } catch (_) {}
         _notifyTimelineAfterRecordCacheMutation();
+        return null;
       } finally {
         _recordCacheTimelineNotifyBatchDepth--;
       }
-      clearOptimisticTimelineUi(notifyTimeline: false);
-    } catch (e, st) {
+    } on ClientException catch (e) {
+      return e.statusCode;
+    } catch (e) {
       DatabaseService._log('HIGHLANDER server phase failed: $e');
-      DatabaseService._log(st.toString());
-      await _runBatchedRecordCacheTimelineNotify(() async {
-        _restoreHighlanderRollbackToken(rollbackToken);
-        clearOptimisticTimelineUi();
-        _printAtomicCheckRunningCount();
-      });
-      AppSnack.failed();
+      return 0;
     }
+  }
+
+  /// Highlander server phase (PATCH old + POST new). Runs **after** local shadow; may log [DISPATCH].
+  Future<void> _highlanderPrimaryServerSync({
+    required _HighlanderRollbackToken? rollbackToken,
+    required Map<String, dynamic> runningFields,
+  }) async {
+    final failureCode = await _runHighlanderStartServerPhase(runningFields);
+    if (failureCode == null) {
+      clearOptimisticTimelineUi(notifyTimeline: false);
+      unawaited(offlineSync.refreshPendingCount());
+      return;
+    }
+    if (failureCode == 401 || failureCode == 403) {
+      await _enqueueHighlanderStartMutation(
+        runningFields,
+        error: failureCode,
+        syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+      );
+      offlineSync.setAuthPaused(true, message: 'HTTP $failureCode');
+      final loc = currentLocale.value;
+      final msg = failureCode == 401
+          ? t(loc, 'error_record_create_unauthorized')
+          : t(loc, 'error_record_create_forbidden');
+      _brainSnackError(msg);
+      return;
+    }
+    if (_recordMutationRetriableHttpCode(failureCode)) {
+      await _enqueueHighlanderStartMutation(runningFields, error: failureCode);
+      offlineSync.setConnectivityOffline(true);
+      return;
+    }
+    DatabaseService._log('HIGHLANDER server phase failed: HTTP $failureCode');
+    await _runBatchedRecordCacheTimelineNotify(() async {
+      _restoreHighlanderRollbackToken(rollbackToken);
+      clearOptimisticTimelineUi();
+      _printAtomicCheckRunningCount();
+    });
+    AppSnack.failed();
   }
 
   Future<String?> writeRecord(
@@ -1869,161 +2447,151 @@ extension RecordServiceExtension on DatabaseService {
     bool bypassConflictCheck = false,
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
-    Map<String, dynamic>? rollbackRow;
-    var rollbackIndex = -1;
+    final originalInput = recordId.trim();
+    if (originalInput.isEmpty) return null;
+    final businessId = _outboxBusinessIdForRecord(originalInput);
     try {
-      var rid = recordId.trim();
-      if (rid.isEmpty) return null;
-      final originalInput = rid;
-      rid = await _resolveRecordIdForRestUrl(rid);
-      DatabaseService._log('PATCH_ID_TRACE: updateRecord pb id=$rid');
-      var categoryForPatch = categoryId;
-      var shouldPatchCategory = categoryId != null;
-      if (syncSourcePlan && !clearSourcePlan) {
-        final sp0 = DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
-        if (sp0 != null) {
-          final pc = await _resolveCategoryIdFromSourcePlanPbId(sp0);
-          if (_planLocalCategoryIdIsConcrete(pc)) {
-            categoryForPatch = pc;
-            shouldPatchCategory = true;
-          }
-        }
-      }
-      if (title != null && !shouldPatchCategory) {
-        final inferred = _smartInferCategoryId(title);
-        if (_planLocalCategoryIdIsConcrete(inferred)) {
-          categoryForPatch = inferred;
-          shouldPatchCategory = true;
-        }
-      }
-      final updates = <String, dynamic>{};
-      if (title != null) updates['title'] = title;
-      if (endTime != null) {
-        updates['end_time'] = endTime.toUtc().toIso8601String();
-        updates['status'] = 'stopped';
-      }
-      if (startTime != null) {
-        updates['start_time'] = startTime.toUtc().toIso8601String();
-        if (endTime == null && !updates.containsKey('status')) {
-          updates['status'] = 'running';
-        }
-      }
-      if (shouldPatchCategory && categoryForPatch != null) {
-        updates['category_id'] =
-            _recordCategoryBusinessPkForApi(categoryForPatch);
-      }
-      if (note != null) updates['note'] = note;
-      if (tags != null) {
-        final t = tags.trim();
-        if (t.isNotEmpty) updates['tags'] = t;
-      }
-      if (checklist != null) updates['checklist'] = checklist;
-      if (syncSourcePlan) {
-        if (clearSourcePlan) {
-          updates['source_plan_id'] = null;
-        } else {
-          final sp = DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
-          if (sp != null) updates['source_plan_id'] = sp;
-        }
-      }
+      final updates = await _buildRecordPatchUpdates(
+        title: title,
+        startTime: startTime,
+        endTime: endTime,
+        categoryId: categoryId,
+        note: note,
+        tags: tags,
+        checklist: checklist,
+        syncSourcePlan: syncSourcePlan,
+        clearSourcePlan: clearSourcePlan,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+      );
       if (updates.isEmpty) {
-        final rows = await getRecords();
-        Map<String, dynamic>? found;
-        for (final r in rows) {
-          if (CategoryServiceExtension.recordsTablePk(r) == rid ||
-              (r['record_id'] ?? '').toString().trim() == rid ||
-              (r['record_id'] ?? '').toString().trim() == originalInput) {
-            found = r;
-            break;
-          }
-        }
-        if (found == null) return null;
-        return TimelineRecord.fromMap(_rowToRecordMap(found),
-            systemId: rid,
-            timezoneOffsetHours: _settings.timezoneOffsetHours);
+        return _timelineRecordFromCacheInput(originalInput);
       }
-      rollbackIndex = _indexOfCachedRecordRow(rid, originalInput);
+      Map<String, dynamic>? rollbackRow;
+      var rollbackIndex = -1;
+      final cacheRid =
+          _tryResolveRecordIdFromCacheOnly(originalInput) ?? originalInput;
+      rollbackIndex = _indexOfCachedRecordRow(cacheRid, originalInput);
       if (rollbackIndex >= 0) {
-        rollbackRow = Map<String, dynamic>.from(_cachedFlatRecords[rollbackIndex]);
-        final row = _cachedFlatRecords[rollbackIndex];
-        if (title != null) row['title'] = title;
-        if (startTime != null) {
-          row['start_time'] = startTime.toUtc().toIso8601String();
-          if (endTime == null) row['status'] = 'running';
-        }
-        if (endTime != null) {
-          row['end_time'] = endTime.toUtc().toIso8601String();
-          row['status'] = 'stopped';
-        }
-        if (shouldPatchCategory && categoryForPatch != null) {
-          row['category_id'] = updates['category_id'];
-        }
-        if (note != null) row['note'] = note;
-        if (tags != null) {
-          final t = tags.trim();
-          if (t.isNotEmpty) row['tags'] = t;
-        }
-        if (checklist != null) row['checklist'] = checklist;
-        if (syncSourcePlan) {
-          if (clearSourcePlan) {
-            row['source_plan_id'] = null;
-          } else {
-            final sp = DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
-            if (sp != null) row['source_plan_id'] = sp;
+        rollbackRow =
+            Map<String, dynamic>.from(_cachedFlatRecords[rollbackIndex]);
+      }
+      applyOptimisticRecordRowEdit(
+        recordId: originalInput,
+        title: title,
+        startTime: startTime,
+        endTime: endTime,
+        categoryId: categoryId,
+        note: note,
+        tags: tags,
+        checklist: checklist,
+        syncSourcePlan: syncSourcePlan,
+        clearSourcePlan: clearSourcePlan,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+      );
+      final optimistic = _timelineRecordFromCacheInput(originalInput);
+      final shadowRid = _tryResolveRecordIdFromCacheOnly(originalInput);
+      if (shadowRid != null &&
+          DatabaseService._isLikelyPocketBaseRowId(shadowRid)) {
+        final rb = rollbackRow;
+        final ri = rollbackIndex;
+        unawaited(
+          _patchRecordUpdateNetworkPhase(
+            originalInput: originalInput,
+            resolvedPbId: shadowRid,
+            businessId: businessId,
+            updates: updates,
+            rollbackRow: rb,
+            rollbackIndex: ri,
+          ).catchError((Object e, StackTrace st) async {
+            DatabaseService._log('updateRecord shadow async: $e');
+            DatabaseService._log(st.toString());
+            if (e is ClientException) {
+              final code = e.statusCode;
+              if (code == 401 || code == 403) {
+                await _enqueueRecordUpdateMutation(
+                  originalInput: originalInput,
+                  businessId: businessId,
+                  patchFields: updates,
+                  pocketBaseId: shadowRid,
+                  error: code,
+                  syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+                );
+                offlineSync.setAuthPaused(true, message: 'HTTP $code');
+                return true;
+              }
+              if (_recordMutationRetriableHttpCode(code)) {
+                await _enqueueRecordUpdateMutation(
+                  originalInput: originalInput,
+                  businessId: businessId,
+                  patchFields: updates,
+                  pocketBaseId: shadowRid,
+                  error: code,
+                );
+                offlineSync.setConnectivityOffline(true);
+                return true;
+              }
+            } else if (_recordMutationRetriableHttpCode(0)) {
+              await _enqueueRecordUpdateMutation(
+                originalInput: originalInput,
+                businessId: businessId,
+                patchFields: updates,
+                pocketBaseId: shadowRid,
+                error: e,
+              );
+              offlineSync.setConnectivityOffline(true);
+              return true;
+            }
+            if (rb != null && ri >= 0 && ri < _cachedFlatRecords.length) {
+              _cachedFlatRecords[ri] = rb;
+              _notifyTimelineAfterRecordCacheMutation();
+            }
+            AppSnack.failed();
+            return false;
+          }),
+        );
+        return optimistic;
+      }
+      unawaited(
+        () async {
+          try {
+            final rid = await _resolveRecordIdForRestUrl(originalInput);
+            if (!DatabaseService._isLikelyPocketBaseRowId(rid)) {
+              await _enqueueRecordUpdateMutation(
+                originalInput: originalInput,
+                businessId: businessId,
+                patchFields: updates,
+                error: 'unresolved_pb_id',
+              );
+              offlineSync.setConnectivityOffline(true);
+              return;
+            }
+            await _patchRecordUpdateNetworkPhase(
+              originalInput: originalInput,
+              resolvedPbId: rid,
+              businessId: businessId,
+              updates: updates,
+              rollbackRow: rollbackRow,
+              rollbackIndex: rollbackIndex,
+            );
+          } catch (e, st) {
+            DatabaseService._log('updateRecord resolve async: $e');
+            DatabaseService._log(st.toString());
+            if (_recordMutationRetriableHttpCode(0)) {
+              await _enqueueRecordUpdateMutation(
+                originalInput: originalInput,
+                businessId: businessId,
+                patchFields: updates,
+                error: e,
+              );
+              offlineSync.setConnectivityOffline(true);
+            }
           }
-        }
-        _notifyTimelineAfterRecordCacheMutation();
-      }
-      final patchCode = await _patchRecordsRowWith404Recovery(
-        originalQueryId: originalInput,
-        restId: rid,
-        fields: _nocoFieldsForPatch(Map<String, dynamic>.from(updates)),
+        }(),
       );
-      if (patchCode == 404) {
-        if (rollbackRow != null && rollbackIndex >= 0) {
-          _cachedFlatRecords[rollbackIndex] = rollbackRow;
-          _notifyTimelineAfterRecordCacheMutation();
-        }
-        _purgeGhostRecordById(rid);
-        await _fetchRecordsIntoCache(forceNetwork: true);
-        _notifyTimelineAfterRecordCacheMutation();
-        AppSnack.failed();
-        return null;
-      }
-      if (patchCode < 200 || patchCode >= 300) {
-        if (rollbackRow != null && rollbackIndex >= 0) {
-          _cachedFlatRecords[rollbackIndex] = rollbackRow;
-          _notifyTimelineAfterRecordCacheMutation();
-        }
-        AppSnack.failed();
-        return null;
-      }
-      await _fetchRecordsIntoCache(forceNetwork: true);
-      final rows = await getRecords(forceNetwork: true);
-      final row = rows.firstWhere(
-        (r) =>
-            CategoryServiceExtension.recordsTablePk(r) == rid ||
-            (r['record_id'] ?? '').toString().trim() == rid ||
-            (r['record_id'] ?? '').toString().trim() == originalInput,
-        orElse: () => <String, dynamic>{},
-      );
-      if (row.isEmpty) {
-        AppSnack.failed();
-        return null;
-      }
-      _notifyTimelineAfterRecordCacheMutation();
-      return TimelineRecord.fromMap(_rowToRecordMap(row),
-          systemId: rid,
-          timezoneOffsetHours: _settings.timezoneOffsetHours);
+      return optimistic;
     } catch (_) {
-      if (rollbackRow != null && rollbackIndex >= 0) {
-        if (rollbackIndex < _cachedFlatRecords.length) {
-          _cachedFlatRecords[rollbackIndex] = rollbackRow;
-          _notifyTimelineAfterRecordCacheMutation();
-        }
-      }
       AppSnack.failed();
-      return null;
+      return _timelineRecordFromCacheInput(originalInput);
     }
   }
 
@@ -2145,51 +2713,136 @@ extension RecordServiceExtension on DatabaseService {
     if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     final originalInput = recordId.trim();
     if (originalInput.isEmpty) return false;
+    final businessId = _outboxBusinessIdForRecord(originalInput);
     final delKeys = _collectRecordKeysFromCache(originalInput);
     for (final k in delKeys) {
       if (k.isNotEmpty) _optimisticDeletedKeys.add(k);
     }
     _notifyTimelineAfterRecordCacheMutation();
+
+    final shadowRid = _tryResolveRecordIdFromCacheOnly(originalInput);
+    if (shadowRid != null &&
+        DatabaseService._isLikelyPocketBaseRowId(shadowRid)) {
+      unawaited(
+        _deleteRecordNetworkPhase(
+          originalInput: originalInput,
+          resolvedPbId: shadowRid,
+          businessId: businessId,
+          delKeys: delKeys,
+        ).catchError((Object e, StackTrace st) async {
+          DatabaseService._log('deleteRecordByDocId shadow async: $e');
+          DatabaseService._log(st.toString());
+          if (e is ClientException) {
+            final code = e.statusCode;
+            if (code == 401 || code == 403) {
+              await _enqueueRecordDeleteMutation(
+                originalInput: originalInput,
+                businessId: businessId,
+                pocketBaseId: shadowRid,
+                error: code,
+                syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+              );
+              offlineSync.setAuthPaused(true, message: 'HTTP $code');
+              return true;
+            }
+            if (_recordMutationRetriableHttpCode(code)) {
+              await _enqueueRecordDeleteMutation(
+                originalInput: originalInput,
+                businessId: businessId,
+                pocketBaseId: shadowRid,
+                error: code,
+              );
+              offlineSync.setConnectivityOffline(true);
+              return true;
+            }
+          } else if (_recordMutationRetriableHttpCode(0)) {
+            await _enqueueRecordDeleteMutation(
+              originalInput: originalInput,
+              businessId: businessId,
+              pocketBaseId: shadowRid,
+              error: e,
+            );
+            offlineSync.setConnectivityOffline(true);
+            return true;
+          }
+          for (final k in delKeys) {
+            _optimisticDeletedKeys.remove(k);
+          }
+          _notifyTimelineAfterRecordCacheMutation();
+          if (e is ClientException) {
+            _snackDeleteHttpFailure(e.statusCode);
+          } else {
+            AppSnack.show(
+              t(currentLocale.value, 'error_prefix').replaceAll('%s', '$e'),
+              error: true,
+            );
+          }
+          return false;
+        }),
+      );
+      return true;
+    }
+
     try {
       final rid = await _resolveRecordIdForStopOrDelete(originalInput);
-      final delCode = await _deleteRecordsRowWithFallback(
-        originalQueryId: originalInput,
-        restId: rid,
+      return await _deleteRecordNetworkPhase(
+        originalInput: originalInput,
+        resolvedPbId: rid,
+        businessId: businessId,
+        delKeys: delKeys,
       );
-      if (delCode == 404) {
-        _purgeGhostRecordById(rid);
-      }
-      final ok = (delCode >= 200 && delCode < 300) || delCode == 404;
-      if (!ok) {
-        for (final k in delKeys) {
-          _optimisticDeletedKeys.remove(k);
-        }
-        _notifyTimelineAfterRecordCacheMutation();
-        _snackDeleteHttpFailure(delCode);
-        return false;
-      }
-      await _fetchRecordsIntoCache(forceNetwork: true);
-      for (final k in delKeys) {
-        _optimisticDeletedKeys.remove(k);
-      }
-      _notifyTimelineAfterRecordCacheMutation();
-      AppSnack.deleted();
-      return true;
     } on LegacyIdResolutionException catch (e, st) {
       DatabaseService._log('deleteRecordByDocId: $e');
       DatabaseService._log(st.toString());
+      await _enqueueRecordDeleteMutation(
+        originalInput: originalInput,
+        businessId: businessId,
+        error: e,
+      );
+      offlineSync.setConnectivityOffline(true);
+      return true;
+    } on ClientException catch (e, st) {
+      DatabaseService._log('deleteRecordByDocId failed: $e');
+      DatabaseService._log(st.toString());
+      final code = e.statusCode;
+      if (code == 401 || code == 403) {
+        await _enqueueRecordDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          error: code,
+          syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $code');
+        _snackDeleteHttpFailure(code);
+        return true;
+      }
+      if (_recordMutationRetriableHttpCode(code)) {
+        await _enqueueRecordDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          error: code,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
       for (final k in delKeys) {
         _optimisticDeletedKeys.remove(k);
       }
       _notifyTimelineAfterRecordCacheMutation();
-      AppSnack.show(
-        t(currentLocale.value, 'error_stop_id_unresolved'),
-        error: true,
-      );
+      _snackDeleteHttpFailure(code);
       return false;
     } catch (e, st) {
       DatabaseService._log('deleteRecordByDocId failed: $e');
       DatabaseService._log(st.toString());
+      if (_recordMutationRetriableHttpCode(0)) {
+        await _enqueueRecordDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          error: e,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
       for (final k in delKeys) {
         _optimisticDeletedKeys.remove(k);
       }
@@ -2239,6 +2892,27 @@ extension RecordServiceExtension on DatabaseService {
     if (ok) {
       _clearOptimisticStopKeysForRecord(originalInput);
       AppSnack.updated();
+      unawaited(offlineSync.refreshPendingCount());
+      return true;
+    }
+    if (stopCode == 401 || stopCode == 403) {
+      await _enqueueStopPatchMutation(
+        originalInput: originalInput,
+        pocketBaseId: resolvedPbId,
+        error: stopCode,
+        syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+      );
+      offlineSync.setAuthPaused(true, message: 'HTTP $stopCode');
+      _snackStopHttpFailure(stopCode);
+      return true;
+    }
+    if (_recordMutationRetriableHttpCode(stopCode)) {
+      await _enqueueStopPatchMutation(
+        originalInput: originalInput,
+        pocketBaseId: resolvedPbId,
+        error: stopCode,
+      );
+      offlineSync.setConnectivityOffline(true);
       return true;
     }
     _clearOptimisticStopKeysForRecord(originalInput);
@@ -2278,9 +2952,40 @@ extension RecordServiceExtension on DatabaseService {
     if (shadowRid != null && DatabaseService._isLikelyPocketBaseRowId(shadowRid)) {
       unawaited(
         _patchStopRecordNetworkPhase(originalInput, shadowRid)
-            .catchError((Object e, StackTrace st) {
+            .catchError((Object e, StackTrace st) async {
           DatabaseService._log('stopRecordByDocId shadow async: $e');
           DatabaseService._log(st.toString());
+          if (e is ClientException) {
+            final code = e.statusCode;
+            if (code == 401 || code == 403) {
+              await _enqueueStopPatchMutation(
+                originalInput: originalInput,
+                pocketBaseId: shadowRid,
+                error: code,
+                syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+              );
+              offlineSync.setAuthPaused(true, message: 'HTTP $code');
+              _snackStopHttpFailure(code);
+              return true;
+            }
+            if (_recordMutationRetriableHttpCode(code)) {
+              await _enqueueStopPatchMutation(
+                originalInput: originalInput,
+                pocketBaseId: shadowRid,
+                error: code,
+              );
+              offlineSync.setConnectivityOffline(true);
+              return true;
+            }
+          } else if (_recordMutationRetriableHttpCode(0)) {
+            await _enqueueStopPatchMutation(
+              originalInput: originalInput,
+              pocketBaseId: shadowRid,
+              error: e,
+            );
+            offlineSync.setConnectivityOffline(true);
+            return true;
+          }
           _clearOptimisticStopKeysForRecord(originalInput);
           _notifyTimelineAfterRecordCacheMutation();
           if (e is ClientException) {
@@ -2319,15 +3024,45 @@ extension RecordServiceExtension on DatabaseService {
       debugPrint('[ABORT_REASON] stopRecordByDocId: PocketBase ClientException status=${e.statusCode} $e');
       DatabaseService._log('stopRecordByDocId failed: $e');
       DatabaseService._log(st.toString());
+      final code = e.statusCode;
+      if (code == 401 || code == 403) {
+        await _enqueueStopPatchMutation(
+          originalInput: originalInput,
+          pocketBaseId: rid,
+          error: code,
+          syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $code');
+        _snackStopHttpFailure(code);
+        return true;
+      }
+      if (_recordMutationRetriableHttpCode(code)) {
+        await _enqueueStopPatchMutation(
+          originalInput: originalInput,
+          pocketBaseId: rid,
+          error: code,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
       _clearOptimisticStopKeysForRecord(originalInput);
       _notifyTimelineAfterRecordCacheMutation();
-      _snackStopHttpFailure(e.statusCode);
+      _snackStopHttpFailure(code);
       return false;
     } catch (e, st) {
       debugPrint('UI ERROR: $e');
       debugPrint('[ABORT_REASON] stopRecordByDocId: unexpected exception before/after PATCH: $e');
       DatabaseService._log('stopRecordByDocId failed: $e');
       DatabaseService._log(st.toString());
+      if (_recordMutationRetriableHttpCode(0)) {
+        await _enqueueStopPatchMutation(
+          originalInput: originalInput,
+          pocketBaseId: rid,
+          error: e,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
       _clearOptimisticStopKeysForRecord(originalInput);
       _notifyTimelineAfterRecordCacheMutation();
       _brainSnackError(
@@ -2345,22 +3080,13 @@ extension RecordServiceExtension on DatabaseService {
   Future<void> updateRecordChecklist(
       String recordId, List<Map<String, dynamic>> checklist) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
-    try {
-      var rid = recordId.trim();
-      if (rid.isEmpty) return;
-      final originalInput = rid;
-      rid = await _resolveRecordIdForRestUrl(rid);
-      final clFields = _nocoFieldsForPatch(<String, dynamic>{'checklist': checklist});
-      final clCode = await _patchRecordsRowWith404Recovery(
-        originalQueryId: originalInput,
-        restId: rid,
-        fields: clFields,
-      );
-      if (clCode == 404) {
-        _purgeGhostRecordById(rid);
-      }
-      await _fetchRecordsIntoCache(forceNetwork: true);
-      _notifyTimelineAfterRecordCacheMutation();
-    } catch (_) {}
+    final originalInput = recordId.trim();
+    if (originalInput.isEmpty) return;
+    unawaited(
+      updateRecord(
+        recordId: originalInput,
+        checklist: checklist,
+      ),
+    );
   }
 }

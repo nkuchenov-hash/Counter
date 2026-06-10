@@ -192,6 +192,8 @@ extension DbCoreExtension on DatabaseService {
           (Object _, StackTrace _) => <Map<String, dynamic>>[],
         ),
       );
+      unawaited(offlineSync.refreshPendingCount());
+      unawaited(flushPendingLocalMutations());
     };
     WidgetsBinding.instance.addObserver(DatabaseService._appLifecycleObserver);
     DatabaseService._appLifecycleObserverRegistered = true;
@@ -399,6 +401,8 @@ extension DbCoreExtension on DatabaseService {
       _categoryController.add(List.from(_rules));
       _tasksController.add(List.from(_tasksCache));
       _isInitialized = true;
+      unawaited(offlineSync.refreshPendingCount());
+      unawaited(flushPendingLocalMutations());
       return;
     }
     await _loadSettingsFromNoco();
@@ -426,6 +430,21 @@ extension DbCoreExtension on DatabaseService {
       _runOneShotUntitledGhostRecordCleanDeferred()
           .catchError((Object _, StackTrace _) {}),
     );
-    unawaited(flushPendingPlanCreates());
+    unawaited(offlineSync.refreshPendingCount());
+    unawaited(flushPendingLocalMutations());
+  }
+
+  /// Drains all local PocketBase mutation outboxes (records + plans/lists).
+  Future<void> flushPendingLocalMutations() async {
+    if (_hasAuthenticatedUserId) {
+      try {
+        if (_pb.authStore.isValid) {
+          offlineSync.resumeAfterAuthIfNeeded();
+        }
+      } catch (_) {}
+    }
+    await flushPendingRecordMutations();
+    await flushPendingPlanMutations();
+    unawaited(offlineSync.refreshPendingCount());
   }
 }

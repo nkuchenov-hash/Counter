@@ -6,7 +6,14 @@ const String _plansToTagsLinkColumnSystemId = 'cnmo43ed26h293n';
 
 bool get _isPlansTableConfigured => true;
 
-bool _planCreateOutboxFlushInFlight = false;
+bool _planMutationOutboxFlushInFlight = false;
+
+bool _planMutationRetriableHttpCode(int code) {
+  if (code == 401 || code == 403 || code == 404) return false;
+  if (code == 400 || code == 422) return false;
+  if (code >= 200 && code < 300) return false;
+  return true;
+}
 
 final StreamController<List<PlanningTask>> _tasksController =
     StreamController<List<PlanningTask>>.broadcast();
@@ -17,8 +24,7 @@ final StreamController<void> _planningRefreshController =
 
 /// Wall **dateKey** → (**planRowIdForBackend** → task) merged on top of server list until PATCH lands.
 /// Dateless backlog rows use [_kBacklogOptimisticDayKey], not a calendar day.
-final Map<String, Map<String, PlanningTask>> _planningOptimisticByDateKey =
-    {};
+final Map<String, Map<String, PlanningTask>> _planningOptimisticByDateKey = {};
 
 const String _kBacklogOptimisticDayKey = '__backlog__';
 
@@ -37,6 +43,7 @@ const Duration _planOrderDebounce = Duration(seconds: 2);
 
 Timer? _planOrderDebounceTimer;
 List<PlanningTask>? _pendingPlanOrderSyncList;
+
 /// `planRowId` → server `order` before the first drag of the current reorder session (for diff-only PATCH).
 Map<String, int>? _planReorderBaselineByPlanId;
 
@@ -44,6 +51,15 @@ Timer? _planAlarmRescheduleDebounceTimer;
 final Random _random = Random();
 
 extension PlanServiceExtension on DatabaseService {
+  /// Plans and Lists share the `plans.tags_link` relation but isolate chips by `tags.domain`.
+  /// Use the full cached catalog when hydrating plan/list rows so plain `tags_link` ids
+  /// can resolve whether the row is a dated plan (`plan`) or an undated list item (`list`).
+  Future<List<Tag>> _fetchPlanAndListTagCatalog() async {
+    await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
+    final all = cachedUserTagsCatalog;
+    if (all.isNotEmpty) return all;
+    return fetchTagsForCurrentUser(scope: TagCatalogScope.list);
+  }
 
   Map<String, dynamic> _planningTaskToDayCacheMap(PlanningTask t) {
     return <String, dynamic>{
@@ -79,7 +95,8 @@ extension PlanServiceExtension on DatabaseService {
       'checklist': t.checklist,
       'notes_plain': t.notesPlain,
       'notes_delta': t.notesDeltaJson,
-      if (t.parentPlanPocketId != null && t.parentPlanPocketId!.trim().isNotEmpty)
+      if (t.parentPlanPocketId != null &&
+          t.parentPlanPocketId!.trim().isNotEmpty)
         'parent_plan_pocket_id': t.parentPlanPocketId!.trim(),
       if (t.parentPlanId != null) 'parent_plan_id': t.parentPlanId,
       'isSynced': t.isSynced,
@@ -91,8 +108,9 @@ extension PlanServiceExtension on DatabaseService {
       if (t.reminderOffset != null) 'reminder_offset': t.reminderOffset,
       if (t.recurrenceInstanceDateKey != null &&
           t.recurrenceInstanceDateKey!.trim().length >= 10)
-        'recurrence_instance_date_key':
-            t.recurrenceInstanceDateKey!.trim().substring(0, 10),
+        'recurrence_instance_date_key': t.recurrenceInstanceDateKey!
+            .trim()
+            .substring(0, 10),
       'tags': <Map<String, dynamic>>[
         for (final g in t.tags)
           <String, dynamic>{
@@ -100,6 +118,7 @@ extension PlanServiceExtension on DatabaseService {
             'name': g.name,
             'pocket_id': g.pbRecordId,
             'sort_order': g.sortOrder,
+            'domain': g.domain,
           },
       ],
     };
@@ -129,7 +148,9 @@ extension PlanServiceExtension on DatabaseService {
               name: (e['name'] ?? '').toString(),
               pbRecordId: e['pocket_id']?.toString(),
               sortOrder: int.tryParse((e['sort_order'] ?? '0').toString()) ?? 0,
-              domain: 'plan',
+              domain: e['domain']?.toString().trim().toLowerCase() == 'list'
+                  ? 'list'
+                  : 'plan',
             ),
       ];
     }
@@ -152,7 +173,8 @@ extension PlanServiceExtension on DatabaseService {
       planRowId: m['plan_row_id']?.toString(),
       pocketRecordId: m['pocketRecordId']?.toString(),
       title: (m['title'] ?? '').toString(),
-      categoryId: int.tryParse(
+      categoryId:
+          int.tryParse(
             (m['category_id'] ?? m['categoryId'] ?? '0').toString(),
           ) ??
           0,
@@ -176,7 +198,9 @@ extension PlanServiceExtension on DatabaseService {
       initialDateKey: _normPlanInitialDateKey(
         m['initial_date_key'] ?? m['initialDateKey'],
       ),
-      isPostponed: _jsonBoolFromDynamic(m['is_postponed'] ?? m['isPostponed'] ?? false),
+      isPostponed: _jsonBoolFromDynamic(
+        m['is_postponed'] ?? m['isPostponed'] ?? false,
+      ),
       rrule: () {
         final s = (m['rrule'] ?? '').toString().trim();
         return s.isEmpty ? null : s;
@@ -211,8 +235,9 @@ extension PlanServiceExtension on DatabaseService {
   ) async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final payload =
-          plans.map(_planningTaskToDayCacheMap).toList(growable: false);
+      final payload = plans
+          .map(_planningTaskToDayCacheMap)
+          .toList(growable: false);
       await prefs.setString(
         '${_scopedDataCacheKey('cache_plans_day_v1')}_$targetDayStr',
         jsonEncode(payload),
@@ -234,11 +259,7 @@ extension PlanServiceExtension on DatabaseService {
       final out = <PlanningTask>[];
       for (final e in decoded) {
         if (e is! Map) continue;
-        out.add(
-          _planningTaskFromOfflineDayMap(
-            Map<String, dynamic>.from(e),
-          ),
-        );
+        out.add(_planningTaskFromOfflineDayMap(Map<String, dynamic>.from(e)));
       }
       return out;
     } catch (_) {
@@ -246,47 +267,564 @@ extension PlanServiceExtension on DatabaseService {
     }
   }
 
-  /// Drains queued PocketBase **plans** creates (offline outbox). Safe to call from [SyncManager] or after login.
-  Future<void> flushPendingPlanCreates() async {
+  /// Drains queued PocketBase **plans** mutations (offline outbox). Safe to call from [SyncManager].
+  Future<void> flushPendingPlanMutations() async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) return;
-    if (_planCreateOutboxFlushInFlight) return;
-    _planCreateOutboxFlushInFlight = true;
+    if (_planMutationOutboxFlushInFlight) return;
+    if (offlineSync.authPaused) return;
+    _planMutationOutboxFlushInFlight = true;
+    offlineSync.setSyncing(true);
     try {
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) return;
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final q = await PlanCreateOutbox.load(prefs);
+      final q = await PlanMutationOutbox.load(prefs);
       if (q.isEmpty) return;
       var pendingTail = const <Map<String, dynamic>>[];
       var i = 0;
       for (; i < q.length; i++) {
-        final item = q[i];
-        final wrapped = item['body'];
-        if (wrapped is! Map) {
-          continue;
-        }
-        final body = Map<String, dynamic>.from(wrapped);
-        body['user_id'] = _pidForPbFilter;
-        try {
-          await _pb.collection(PbCollections.plans).create(body: body);
-          notifyPlanningRefresh();
-        } catch (e) {
-          DatabaseService._log('PLAN_OUTBOX_FLUSH: $e');
-          pendingTail = q.sublist(i);
+        final item = Map<String, dynamic>.from(q[i]);
+        final ok = await _flushOnePlanOutboxEntry(item, prefs);
+        if (!ok) {
+          item['retryCount'] = ((item['retryCount'] as num?)?.toInt() ?? 0) + 1;
+          item['lastError'] = offlineSync.lastError ?? 'sync_failed';
+          pendingTail = [item, ...q.sublist(i + 1)];
           break;
         }
       }
       if (pendingTail.isEmpty && i >= q.length) {
-        await PlanCreateOutbox.replaceAll(prefs, []);
+        await PlanMutationOutbox.replaceAll(prefs, []);
+        offlineSync.clearErrors();
+      } else if (pendingTail.isNotEmpty) {
+        await PlanMutationOutbox.replaceAll(prefs, pendingTail);
       } else {
-        await PlanCreateOutbox.replaceAll(prefs, pendingTail);
+        await PlanMutationOutbox.replaceAll(prefs, q.sublist(i));
       }
+      unawaited(offlineSync.refreshPendingCount());
     } finally {
-      _planCreateOutboxFlushInFlight = false;
+      offlineSync.setSyncing(false);
+      _planMutationOutboxFlushInFlight = false;
     }
   }
 
+  /// Alias for [flushPendingPlanMutations].
+  Future<void> flushPendingPlanCreates() => flushPendingPlanMutations();
+
+  String _outboxBusinessPlanId(
+    String planRowIdForBackend, {
+    String? planBusinessId,
+  }) {
+    final biz = (planBusinessId ?? '').trim();
+    if (biz.isNotEmpty && !biz.startsWith('optimistic-')) return biz;
+    final p = planRowIdForBackend.trim();
+    for (final t in _allPlansUserCache) {
+      if (t.planRowIdForBackend == p || (t.planRowId ?? '').trim() == p) {
+        final rowBiz = (t.planRowId ?? '').trim();
+        if (rowBiz.isNotEmpty && !rowBiz.startsWith('optimistic-')) {
+          return rowBiz;
+        }
+      }
+    }
+    for (final m in _planningOptimisticByDateKey.values) {
+      for (final t in m.values) {
+        if (t.planRowIdForBackend == p || (t.planRowId ?? '').trim() == p) {
+          final rowBiz = (t.planRowId ?? '').trim();
+          if (rowBiz.isNotEmpty && !rowBiz.startsWith('optimistic-')) {
+            return rowBiz;
+          }
+        }
+      }
+    }
+    return p;
+  }
+
+  String? _tryResolvePlanPbIdFromCacheOnly(
+    String planRowIdForBackend, {
+    String? planBusinessId,
+  }) {
+    final p = planRowIdForBackend.trim();
+    if (p.isEmpty) return null;
+    if (DatabaseService._isLikelyPocketBaseRowId(p)) return p;
+    final keys = <String>{
+      p,
+      if ((planBusinessId ?? '').trim().isNotEmpty) planBusinessId!.trim(),
+    };
+    PlanningTask? found;
+    for (final t in _allPlansUserCache) {
+      if (keys.contains(t.planRowIdForBackend) ||
+          keys.contains((t.planRowId ?? '').trim())) {
+        found = t;
+        break;
+      }
+    }
+    if (found == null) {
+      for (final m in _planningOptimisticByDateKey.values) {
+        for (final t in m.values) {
+          if (keys.contains(t.planRowIdForBackend) ||
+              keys.contains((t.planRowId ?? '').trim())) {
+            found = t;
+            break;
+          }
+        }
+        if (found != null) break;
+      }
+    }
+    if (found == null) return null;
+    final pb = found.pocketRecordId?.trim() ?? '';
+    if (pb.startsWith('optimistic-')) return null;
+    if (DatabaseService._isLikelyPocketBaseRowId(pb)) return pb;
+    final backend = found.planRowIdForBackend.trim();
+    if (DatabaseService._isLikelyPocketBaseRowId(backend)) return backend;
+    return null;
+  }
+
+  Future<String?> _resolvePlanPbIdForOutboxReplay({
+    required String businessId,
+    String? pocketBaseId,
+    required String originalQueryId,
+  }) async {
+    final stored = pocketBaseId?.trim();
+    if (stored != null &&
+        stored.isNotEmpty &&
+        DatabaseService._isLikelyPocketBaseRowId(stored)) {
+      return stored;
+    }
+    final cached = _tryResolvePlanPbIdFromCacheOnly(
+      originalQueryId,
+      planBusinessId: businessId,
+    );
+    if (cached != null && cached.isNotEmpty) return cached;
+    try {
+      final resolved = await _resolvePlanRestId(
+        originalQueryId,
+        planBusinessId: businessId,
+      );
+      if (DatabaseService._isLikelyPocketBaseRowId(resolved)) return resolved;
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> _cancelPendingPlanMutationsForBusinessId(
+    String businessId,
+  ) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await PlanMutationOutbox.removePendingForBusinessId(prefs, businessId);
+      unawaited(offlineSync.refreshPendingCount());
+    } catch (e) {
+      DatabaseService._log('PLAN_OUTBOX_CANCEL: $e');
+    }
+  }
+
+  Future<void> _enqueuePlanCreateMutation(
+    Map<String, dynamic> body, {
+    required String businessId,
+    Object? error,
+    String syncStatus = PlanMutationOutbox.syncStatusPending,
+  }) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final normalized = jsonDecode(jsonEncode(body)) as Map<String, dynamic>;
+      await PlanMutationOutbox.enqueue(
+        prefs,
+        PlanMutationOutbox.newPlanCreateItem(
+          businessId: businessId,
+          payload: normalized,
+          error: error,
+          syncStatus: syncStatus,
+        ),
+      );
+      unawaited(offlineSync.refreshPendingCount());
+    } catch (e) {
+      DatabaseService._log('PLAN_OUTBOX_ENQUEUE create: $e');
+    }
+  }
+
+  Future<void> _enqueuePlanUpdateMutation({
+    required String originalInput,
+    required String businessId,
+    required Map<String, dynamic> patchFields,
+    String? pocketBaseId,
+    List<String>? tagsLinkPbIds,
+    Object? error,
+    String syncStatus = PlanMutationOutbox.syncStatusPending,
+  }) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final normalized =
+          jsonDecode(jsonEncode(patchFields)) as Map<String, dynamic>;
+      if (businessId.trim().isEmpty || normalized.isEmpty) return;
+      await PlanMutationOutbox.enqueue(
+        prefs,
+        PlanMutationOutbox.newPlanUpdateItem(
+          businessId: businessId.trim(),
+          patchFields: normalized,
+          pocketBaseId: pocketBaseId?.trim(),
+          originalQueryId: originalInput.trim(),
+          tagsLinkPbIds: tagsLinkPbIds,
+          error: error,
+          syncStatus: syncStatus,
+        ),
+      );
+      unawaited(offlineSync.refreshPendingCount());
+    } catch (e) {
+      DatabaseService._log('PLAN_OUTBOX_ENQUEUE update: $e');
+    }
+  }
+
+  Future<void> _enqueuePlanDeleteMutation({
+    required String originalInput,
+    required String businessId,
+    String? pocketBaseId,
+    Object? error,
+    String syncStatus = PlanMutationOutbox.syncStatusPending,
+  }) async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      if (businessId.trim().isEmpty) return;
+      await PlanMutationOutbox.enqueue(
+        prefs,
+        PlanMutationOutbox.newPlanDeleteItem(
+          businessId: businessId.trim(),
+          pocketBaseId: pocketBaseId?.trim(),
+          originalQueryId: originalInput.trim(),
+          error: error,
+          syncStatus: syncStatus,
+        ),
+      );
+      unawaited(offlineSync.refreshPendingCount());
+    } catch (e) {
+      DatabaseService._log('PLAN_OUTBOX_ENQUEUE delete: $e');
+    }
+  }
+
+  Future<bool> _flushOnePlanOutboxEntry(
+    Map<String, dynamic> item,
+    SharedPreferences prefs,
+  ) async {
+    final kind = (item['kind'] ?? '').toString();
+    final businessId = (item['businessId'] ?? '').toString().trim();
+    final originalInput = (item['originalQueryId'] ?? businessId)
+        .toString()
+        .trim();
+
+    if (kind == PlanMutationOutbox.kindPlanCreate) {
+      final wrapped = item['payload'];
+      if (wrapped is! Map) return true;
+      final body = Map<String, dynamic>.from(wrapped);
+      body['user_id'] = _pidForPbFilter;
+      try {
+        final record = await _pb
+            .collection(PbCollections.plans)
+            .create(body: body);
+        final tagCatalog = await _fetchPlanAndListTagCatalog();
+        final merged = record;
+        final fromServer = _planningTaskFromPocketRecord(
+          merged,
+          pocketTagCatalog: tagCatalog,
+        );
+        _upsertPlanInUserCache(fromServer);
+        _allPlansUserCacheFetchedAt = DateTime.now();
+        clearOptimisticPlanningForPlanRow('optimistic-$businessId');
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        return true;
+      } on ClientException catch (e) {
+        final code = e.statusCode;
+        if (code == 401 || code == 403) {
+          offlineSync.setAuthPaused(true, message: 'HTTP $code');
+          return false;
+        }
+        if (_planMutationRetriableHttpCode(code)) {
+          offlineSync.setLastError('HTTP $code');
+          return false;
+        }
+        return true;
+      } catch (e) {
+        if (_planMutationRetriableHttpCode(0)) {
+          offlineSync.setLastError('$e');
+          return false;
+        }
+        return true;
+      }
+    }
+
+    if (kind == PlanMutationOutbox.kindPlanUpdate) {
+      final wrapped = item['payload'];
+      if (wrapped is! Map) return true;
+      final rawPayload = Map<String, dynamic>.from(wrapped);
+      final tagsRaw = rawPayload.remove(PlanMutationOutbox.payloadTagsLinkKey);
+      final patchBody = Map<String, dynamic>.from(rawPayload);
+      patchBody.remove('user_id');
+      if (patchBody.isEmpty && tagsRaw == null) return true;
+      final pbId = await _resolvePlanPbIdForOutboxReplay(
+        businessId: businessId,
+        pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
+        originalQueryId: originalInput,
+      );
+      if (pbId == null || pbId.isEmpty) return false;
+      try {
+        if (patchBody.isNotEmpty) {
+          await _pb
+              .collection(PbCollections.plans)
+              .update(pbId, body: patchBody);
+        }
+        if (tagsRaw is List) {
+          final ids = [
+            for (final e in tagsRaw)
+              if (e != null) e.toString().trim(),
+          ].where((s) => s.isNotEmpty).toList();
+          await _pb
+              .collection(PbCollections.plans)
+              .update(pbId, body: <String, dynamic>{kPbPlanTagsExpand: ids});
+        }
+        final tagCatalog = await _fetchPlanAndListTagCatalog();
+        final merged = await _pb
+            .collection(PbCollections.plans)
+            .getOne(pbId, expand: kPbPlanTagsExpand);
+        final taskFromServer = _planningTaskFromPocketRecord(
+          merged,
+          pocketTagCatalog: tagCatalog,
+        );
+        _upsertPlanInUserCache(taskFromServer);
+        _allPlansUserCacheFetchedAt = DateTime.now();
+        clearOptimisticPlanningForPlanRow(originalInput);
+        clearOptimisticPlanningForPlanRow(pbId);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        return true;
+      } on ClientException catch (e) {
+        final code = e.statusCode;
+        if (code == 404) {
+          _removePlanFromUserCache(pbId);
+          _removePlanFromUserCache(originalInput);
+          notifyPlanningRefresh(scheduleNetworkRefresh: false);
+          return true;
+        }
+        if (code == 401 || code == 403) {
+          offlineSync.setAuthPaused(true, message: 'HTTP $code');
+          return false;
+        }
+        if (_planMutationRetriableHttpCode(code)) {
+          offlineSync.setLastError('HTTP $code');
+          return false;
+        }
+        return true;
+      } catch (e) {
+        if (_planMutationRetriableHttpCode(0)) {
+          offlineSync.setLastError('$e');
+          return false;
+        }
+        return true;
+      }
+    }
+
+    if (kind == PlanMutationOutbox.kindPlanDelete) {
+      final pbId = await _resolvePlanPbIdForOutboxReplay(
+        businessId: businessId,
+        pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
+        originalQueryId: originalInput,
+      );
+      if (pbId == null || pbId.isEmpty) return true;
+      try {
+        await _pb.collection(PbCollections.plans).delete(pbId);
+        _removePlanFromUserCache(pbId);
+        _removePlanFromUserCache(originalInput);
+        clearOptimisticPlanningForPlanRow(originalInput);
+        clearOptimisticPlanningForPlanRow(pbId);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        return true;
+      } on ClientException catch (e) {
+        if (e.statusCode == 404) {
+          _removePlanFromUserCache(pbId);
+          _removePlanFromUserCache(originalInput);
+          notifyPlanningRefresh(scheduleNetworkRefresh: false);
+          return true;
+        }
+        final code = e.statusCode;
+        if (code == 401 || code == 403) {
+          offlineSync.setAuthPaused(true, message: 'HTTP $code');
+          return false;
+        }
+        if (_planMutationRetriableHttpCode(code)) {
+          offlineSync.setLastError('HTTP $code');
+          return false;
+        }
+        return true;
+      } catch (e) {
+        if (_planMutationRetriableHttpCode(0)) {
+          offlineSync.setLastError('$e');
+          return false;
+        }
+        return true;
+      }
+    }
+    return true;
+  }
+
+  Future<bool> _patchPlanUpdateNetworkPhase({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+    required Map<String, dynamic> patchBody,
+    List<Tag>? tags,
+    bool suppressAppSnack = false,
+  }) async {
+    final scalarBody = Map<String, dynamic>.from(patchBody);
+    scalarBody.remove('user_id');
+    try {
+      if (scalarBody.isNotEmpty) {
+        await _pb
+            .collection(PbCollections.plans)
+            .update(resolvedPbId, body: scalarBody);
+      }
+      if (tags != null) {
+        await _syncPlanTagsPocket(resolvedPbId, tags);
+      }
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
+      final merged = await _pb
+          .collection(PbCollections.plans)
+          .getOne(resolvedPbId, expand: kPbPlanTagsExpand);
+      final taskFromServer = _planningTaskFromPocketRecord(
+        merged,
+        pocketTagCatalog: tagCatalog,
+      );
+      _upsertPlanInUserCache(taskFromServer);
+      _allPlansUserCacheFetchedAt = DateTime.now();
+      clearOptimisticPlanningForPlanRow(originalInput);
+      clearOptimisticPlanningForPlanRow(resolvedPbId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      unawaited(offlineSync.refreshPendingCount());
+      return true;
+    } on ClientException catch (e) {
+      final code = e.statusCode;
+      if (code == 404) {
+        _removePlanFromUserCache(resolvedPbId);
+        _removePlanFromUserCache(originalInput);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+      if (code == 401 || code == 403) {
+        List<String>? tagIds;
+        if (tags != null) {
+          tagIds = await _pbTagRecordIdsFromTags(tags);
+        }
+        await _enqueuePlanUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: scalarBody,
+          pocketBaseId: resolvedPbId,
+          tagsLinkPbIds: tagIds,
+          error: code,
+          syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
+        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $code');
+        if (!suppressAppSnack) AppSnack.failed();
+        return true;
+      }
+      if (_planMutationRetriableHttpCode(code)) {
+        List<String>? tagIds;
+        if (tags != null) {
+          tagIds = await _pbTagRecordIdsFromTags(tags);
+        }
+        await _enqueuePlanUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: scalarBody,
+          pocketBaseId: resolvedPbId,
+          tagsLinkPbIds: tagIds,
+          error: code,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    } catch (e, st) {
+      DatabaseService._log('PATCH_PLAN_NETWORK: $e');
+      DatabaseService._log(st.toString());
+      if (_planMutationRetriableHttpCode(0)) {
+        List<String>? tagIds;
+        if (tags != null) {
+          tagIds = await _pbTagRecordIdsFromTags(tags);
+        }
+        await _enqueuePlanUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: scalarBody,
+          pocketBaseId: resolvedPbId,
+          tagsLinkPbIds: tagIds,
+          error: e,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    }
+  }
+
+  Future<({bool ok, bool queued})> _deletePlanNetworkPhase({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+  }) async {
+    try {
+      await _pb.collection(PbCollections.plans).delete(resolvedPbId);
+      _removePlanFromUserCache(originalInput);
+      _removePlanFromUserCache(resolvedPbId);
+      clearOptimisticPlanningForPlanRow(originalInput);
+      clearOptimisticPlanningForPlanRow(resolvedPbId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      _notifyTimelineAfterRecordCacheMutation();
+      unawaited(offlineSync.refreshPendingCount());
+      return (ok: true, queued: false);
+    } on ClientException catch (e) {
+      final code = e.statusCode;
+      if (code == 404) {
+        _removePlanFromUserCache(resolvedPbId);
+        _removePlanFromUserCache(originalInput);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        return (ok: true, queued: false);
+      }
+      if (code == 401 || code == 403) {
+        await _enqueuePlanDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          pocketBaseId: resolvedPbId,
+          error: code,
+          syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
+        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $code');
+        return (ok: true, queued: true);
+      }
+      if (_planMutationRetriableHttpCode(code)) {
+        await _enqueuePlanDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          pocketBaseId: resolvedPbId,
+          error: code,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return (ok: true, queued: true);
+      }
+      return (ok: false, queued: false);
+    } catch (e, st) {
+      DatabaseService._log('DELETE_PLAN_NETWORK: $e');
+      DatabaseService._log(st.toString());
+      if (_planMutationRetriableHttpCode(0)) {
+        await _enqueuePlanDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          pocketBaseId: resolvedPbId,
+          error: e,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return (ok: true, queued: true);
+      }
+      return (ok: false, queued: false);
+    }
+  }
 
   /// Debounced: reschedules OS plan reminders after timeline/plan cache refresh (no await on callers).
   void _requestPlanAlarmReschedule() {
@@ -309,11 +847,13 @@ extension PlanServiceExtension on DatabaseService {
     try {
       final all = await _fetchAllPlanningTasksForCurrentUser();
       final today = getTimelineDeviceLocalToday();
-      final todayWall =
-          DateTime(today.year, today.month, today.day);
+      final todayWall = DateTime(today.year, today.month, today.day);
       final endWall = todayWall.add(const Duration(days: 6));
-      final windowTasks =
-          _collectPlanningTasksForWallRange(all, todayWall, endWall);
+      final windowTasks = _collectPlanningTasksForWallRange(
+        all,
+        todayWall,
+        endWall,
+      );
       await NotificationService.instance.syncAlarms(windowTasks);
     } catch (_) {}
   }
@@ -350,7 +890,6 @@ extension PlanServiceExtension on DatabaseService {
     if (_recordCacheTimelineNotifyBatchDepth > 0) return;
     _emitTimelineRefreshRaw();
   }
-
 
   /// Ping planning/list subscribers. UI streams emit cache+overlay first; network refresh is debounced.
   void notifyPlanningRefresh({bool scheduleNetworkRefresh = true}) {
@@ -424,10 +963,7 @@ extension PlanServiceExtension on DatabaseService {
         if ((t.pbRecordId ?? '').trim().isNotEmpty) t.pbRecordId!: t,
     };
     if (byPb.isEmpty) return tags;
-    return [
-      for (final tag in tags)
-        byPb[tag.pbRecordId ?? ''] ?? tag,
-    ];
+    return [for (final tag in tags) byPb[tag.pbRecordId ?? ''] ?? tag];
   }
 
   /// After tag catalog PATCH/create/delete, refresh embedded tag chips on cached plans.
@@ -569,7 +1105,6 @@ extension PlanServiceExtension on DatabaseService {
   Stream<void> get planningRefreshNotifications =>
       _planningRefreshController.stream;
 
-
   /// Apply client-side plan row for instant list updates; cleared when server PATCH succeeds.
   void applyOptimisticPlanningTask(PlanningTask task) {
     final pid = task.planRowIdForBackend.trim();
@@ -587,6 +1122,12 @@ extension PlanServiceExtension on DatabaseService {
     if (p.isEmpty) return;
     for (final m in _planningOptimisticByDateKey.values) {
       m.remove(p);
+    }
+    if (p.startsWith('optimistic-')) {
+      final clientPlanId = p.substring('optimistic-'.length).trim();
+      if (clientPlanId.isNotEmpty) {
+        unawaited(_cancelPendingPlanMutationsForBusinessId(clientPlanId));
+      }
     }
   }
 
@@ -628,12 +1169,10 @@ extension PlanServiceExtension on DatabaseService {
     return merged;
   }
 
-
   Stream<List<PlanningTask>> get tasksStream => Stream.multi((c) {
-        c.add(List.from(_tasksCache));
-        _tasksController.stream.listen(c.add, onError: c.addError);
-      });
-
+    c.add(List.from(_tasksCache));
+    _tasksController.stream.listen(c.add, onError: c.addError);
+  });
 
   /// 0..1 title similarity for plan–record linking heuristics (not category matching).
   static double titleSimilarityForPlanLink(String a, String b) {
@@ -683,7 +1222,6 @@ extension PlanServiceExtension on DatabaseService {
     return max(lev, max(word, contain));
   }
 
-
   /// One row: `plans.plan_id` (UUID) → system `id`.
   Future<String?> _fetchPbPlanSysIdByPlanIdField(String planBizId) async {
     final key = planBizId.trim();
@@ -695,9 +1233,9 @@ extension PlanServiceExtension on DatabaseService {
       if (authId == null || authId.isEmpty) return null;
       final uid = _escapeForPbFilter(authId);
       final esc = _escapeForPbFilter(key);
-      final rec = await _pb.collection(PbCollections.plans).getFirstListItem(
-            'plan_id = "$esc" && user_id = "$uid"',
-          );
+      final rec = await _pb
+          .collection(PbCollections.plans)
+          .getFirstListItem('plan_id = "$esc" && user_id = "$uid"');
       final id = rec.id.trim();
       return id.isEmpty ? null : id;
     } on ClientException catch (_) {
@@ -730,7 +1268,6 @@ extension PlanServiceExtension on DatabaseService {
     }
     return p;
   }
-
 
   Future<void> _loadPlanningTasksForToday() async {
     try {
@@ -773,8 +1310,9 @@ extension PlanServiceExtension on DatabaseService {
       if (ownerIds.isEmpty) return out;
 
       void addFromMerged(Map<String, dynamic> merged) {
-        final planId =
-            DatabaseService.pocketRelationIdOrNull(merged['source_plan_id']?.toString());
+        final planId = DatabaseService.pocketRelationIdOrNull(
+          merged['source_plan_id']?.toString(),
+        );
         if (planId == null) return;
         final st = merged['startTime'] as DateTime?;
         if (st == null) return;
@@ -795,10 +1333,11 @@ extension PlanServiceExtension on DatabaseService {
       for (final row in _cachedFlatRecords) {
         if (_rowHasNonEmptyParent(row['parent_id'])) continue;
         if (_optimisticRowDeletedRaw(row)) continue;
-        final rowUid =
-            (row['user_id'] ?? '').toString().trim().toLowerCase();
+        final rowUid = (row['user_id'] ?? '').toString().trim().toLowerCase();
         if (rowUid.isEmpty || !ownerIds.contains(rowUid)) continue;
-        final stUtc = CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
+        final stUtc = CategoryServiceExtension._parseDateTimeUtc(
+          row['start_time'],
+        );
         if (stUtc == null) continue;
         final recordDayStr = _timelineDeviceLocalDayKeyFromUtc(stUtc);
         if (recordDayStr != targetDayStr) continue;
@@ -838,13 +1377,17 @@ extension PlanServiceExtension on DatabaseService {
     return m + 1;
   }
 
-  Future<List<PlanningTask>> _fetchPlanningTasksForDate(DateTime selectedDate) async {
+  Future<List<PlanningTask>> _fetchPlanningTasksForDate(
+    DateTime selectedDate,
+  ) async {
     try {
       if (!_isPlansTableConfigured) {
         DatabaseService._log('TABLE_GUARD: plans fetch disabled.');
         return [];
       }
-      if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
+      if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+        return [];
+      }
       final targetDayStr =
           '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
       try {
@@ -896,9 +1439,10 @@ extension PlanServiceExtension on DatabaseService {
     if (authId == null || authId.isEmpty) return [];
     final uid = _escapeForPbFilter(authId);
     try {
-      final tagCatalog =
-          await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
-      final list = await _pb.collection(PbCollections.plans).getFullList(
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
+      final list = await _pb
+          .collection(PbCollections.plans)
+          .getFullList(
             expand: kPbPlanTagsExpand,
             filter: 'user_id = "$uid"',
             batch: 200,
@@ -944,8 +1488,7 @@ extension PlanServiceExtension on DatabaseService {
     DateTime wallDate, {
     required List<Map<String, dynamic>> recordsForDay,
   }) async {
-    final dk =
-        '${wallDate.year}-${_two(wallDate.month)}-${_two(wallDate.day)}';
+    final dk = '${wallDate.year}-${_two(wallDate.month)}-${_two(wallDate.day)}';
     final all = await _fetchAllPlanningTasksForCurrentUser();
     final dayPlans = <PlanningTask>[];
     for (final t in all) {
@@ -976,18 +1519,22 @@ extension PlanServiceExtension on DatabaseService {
     final offset = settings.timezoneOffsetHours;
     final tz = settings.preferredTimeZone;
     for (final rec in recordsForDay) {
-      final sec = CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
-        rec,
-        wallDate,
-        offset,
-        tz,
-      );
+      final sec =
+          CategoryServiceExtension.recordDurationSecondsWithinDayFromTimestamps(
+            rec,
+            wallDate,
+            offset,
+            tz,
+          );
       if (sec <= 0) continue;
       factTimeSec += sec;
-      final cid = resolvedCategoryIdForRecord(rec) ??
+      final cid =
+          resolvedCategoryIdForRecord(rec) ??
           CategoryRule.uncategorizedSyntheticId;
       actualSecByCat[cid] = (actualSecByCat[cid] ?? 0) + sec;
-      final sp = DatabaseService.pocketRelationIdOrNull(rec['source_plan_id']?.toString());
+      final sp = DatabaseService.pocketRelationIdOrNull(
+        rec['source_plan_id']?.toString(),
+      );
       if (sp != null && sp.isNotEmpty) {
         linkedPlanIds.add(sp);
       }
@@ -1060,18 +1607,24 @@ extension PlanServiceExtension on DatabaseService {
     if (want.isEmpty) return null;
     for (final t in _tasksCache) {
       if (DatabaseService.pocketRelationIdOrNull(t.pocketRecordId) == want) {
-        return _planLocalCategoryIdIsConcrete(t.categoryId) ? t.categoryId : null;
+        return _planLocalCategoryIdIsConcrete(t.categoryId)
+            ? t.categoryId
+            : null;
       }
     }
     for (final t in _allPlansUserCache) {
       if (DatabaseService.pocketRelationIdOrNull(t.pocketRecordId) == want) {
-        return _planLocalCategoryIdIsConcrete(t.categoryId) ? t.categoryId : null;
+        return _planLocalCategoryIdIsConcrete(t.categoryId)
+            ? t.categoryId
+            : null;
       }
     }
     for (final m in _planningOptimisticByDateKey.values) {
       for (final t in m.values) {
         if (DatabaseService.pocketRelationIdOrNull(t.pocketRecordId) == want) {
-          return _planLocalCategoryIdIsConcrete(t.categoryId) ? t.categoryId : null;
+          return _planLocalCategoryIdIsConcrete(t.categoryId)
+              ? t.categoryId
+              : null;
         }
       }
     }
@@ -1104,17 +1657,22 @@ extension PlanServiceExtension on DatabaseService {
     required List<Tag> pocketTagCatalog,
   }) {
     final d = r.data;
-    final startUtc = CategoryServiceExtension._parseDateTimeUtc(d['start_time']);
-    final startDisplay =
-        startUtc != null ? _profileWallFromUtc(startUtc.toUtc()) : null;
+    final startUtc = CategoryServiceExtension._parseDateTimeUtc(
+      d['start_time'],
+    );
+    final startDisplay = startUtc != null
+        ? _profileWallFromUtc(startUtc.toUtc())
+        : null;
     final endUtc = CategoryServiceExtension._parseDateTimeUtc(d['end_time']);
-    final endDisplay =
-        endUtc != null ? _profileWallFromUtc(endUtc.toUtc()) : null;
+    final endDisplay = endUtc != null
+        ? _profileWallFromUtc(endUtc.toUtc())
+        : null;
     final derivedDateKey = startDisplay != null
         ? _dateKeyFromDate(startDisplay)
         : (endDisplay != null ? _dateKeyFromDate(endDisplay) : '');
-    final derivedEndDateKey =
-        endDisplay != null ? _dateKeyFromDate(endDisplay) : derivedDateKey;
+    final derivedEndDateKey = endDisplay != null
+        ? _dateKeyFromDate(endDisplay)
+        : derivedDateKey;
     dynamic expandTagsPayload;
     final exp = r.get<dynamic>('expand.tags_link');
     if (exp is List) {
@@ -1123,7 +1681,7 @@ extension PlanServiceExtension on DatabaseService {
           if (item is RecordModel)
             <String, dynamic>{...item.data, 'id': item.id}
           else if (item is Map)
-            Map<String, dynamic>.from(item)
+            Map<String, dynamic>.from(item),
       ];
     } else if (exp is RecordModel) {
       expandTagsPayload = <String, dynamic>{...exp.data, 'id': exp.id};
@@ -1141,37 +1699,36 @@ extension PlanServiceExtension on DatabaseService {
       }
     }
     final catId =
-        categoryIdFromRecordRow(<String, dynamic>{'category_id': d['category_id']}) ??
-            0;
-    return PlanningTask.fromJson(
-      <String, dynamic>{
-        'pocketRecordId': r.id,
-        'plan_row_id': d['plan_id']?.toString(),
-        'id': 0,
-        'title': d['title']?.toString() ?? '',
-        'categoryId': catId,
-        'category_id': d['category_id'],
-        'isDone': d['is_done'],
-        'is_done': d['is_done'],
-        'dateKey': derivedDateKey,
-        'endDateKey': derivedEndDateKey,
-        'order': d['order'] is num ? (d['order'] as num).toInt() : 0,
-        'startTime': startDisplay,
-        'endDateTime': endDisplay,
-        'checklist': d['checklist'],
-        'notes_plain': d['notes_plain'] ?? d['note'],
-        'notes_delta': d['notes_delta'],
-        'parent_plan_id': d['parent_plan_id'],
-        'initial_date_key': d['initial_date_key'],
-        'is_postponed': d['is_postponed'],
-        'rrule': d['rrule'],
-        'exception_dates': d['exception_dates'],
-        'reminder_offset': d['reminder_offset'],
-        'expand': ?expandJson,
-        'tags_link': d['tags_link'],
-      },
-      pocketTagCatalog: pocketTagCatalog,
-    );
+        categoryIdFromRecordRow(<String, dynamic>{
+          'category_id': d['category_id'],
+        }) ??
+        0;
+    return PlanningTask.fromJson(<String, dynamic>{
+      'pocketRecordId': r.id,
+      'plan_row_id': d['plan_id']?.toString(),
+      'id': 0,
+      'title': d['title']?.toString() ?? '',
+      'categoryId': catId,
+      'category_id': d['category_id'],
+      'isDone': d['is_done'],
+      'is_done': d['is_done'],
+      'dateKey': derivedDateKey,
+      'endDateKey': derivedEndDateKey,
+      'order': d['order'] is num ? (d['order'] as num).toInt() : 0,
+      'startTime': startDisplay,
+      'endDateTime': endDisplay,
+      'checklist': d['checklist'],
+      'notes_plain': d['notes_plain'] ?? d['note'],
+      'notes_delta': d['notes_delta'],
+      'parent_plan_id': d['parent_plan_id'],
+      'initial_date_key': d['initial_date_key'],
+      'is_postponed': d['is_postponed'],
+      'rrule': d['rrule'],
+      'exception_dates': d['exception_dates'],
+      'reminder_offset': d['reminder_offset'],
+      'expand': ?expandJson,
+      'tags_link': d['tags_link'],
+    }, pocketTagCatalog: pocketTagCatalog);
   }
 
   String _normalizeRruleStringForDecoder(String raw) {
@@ -1209,16 +1766,20 @@ extension PlanServiceExtension on DatabaseService {
     final endWall = wallOnly(viewEnd);
     if (endWall.isBefore(startWall)) return out;
 
-    final windowStartUtc = wall_clock.utcWallClockDayBoundsUtc(
-      startWall,
-      _settings.timezoneOffsetHours,
-      _settings.preferredTimeZone,
-    ).$1;
-    final windowEndUtc = wall_clock.utcWallClockDayBoundsUtc(
-      endWall,
-      _settings.timezoneOffsetHours,
-      _settings.preferredTimeZone,
-    ).$2;
+    final windowStartUtc = wall_clock
+        .utcWallClockDayBoundsUtc(
+          startWall,
+          _settings.timezoneOffsetHours,
+          _settings.preferredTimeZone,
+        )
+        .$1;
+    final windowEndUtc = wall_clock
+        .utcWallClockDayBoundsUtc(
+          endWall,
+          _settings.timezoneOffsetHours,
+          _settings.preferredTimeZone,
+        )
+        .$2;
 
     for (final template in templates) {
       if (template.isDone) continue;
@@ -1243,8 +1804,7 @@ extension PlanServiceExtension on DatabaseService {
 
       final baseStartUtc = _profileUtcFromWall(st);
       final dur = template.endDateTime != null
-          ? _profileUtcFromWall(template.endDateTime!)
-              .difference(baseStartUtc)
+          ? _profileUtcFromWall(template.endDateTime!).difference(baseStartUtc)
           : Duration.zero;
       final durClamped = dur.isNegative ? Duration.zero : dur;
 
@@ -1275,8 +1835,7 @@ extension PlanServiceExtension on DatabaseService {
         if (wallDay.isBefore(startWall) || wallDay.isAfter(endWall)) {
           continue;
         }
-        final dk =
-            '${wall.year}-${_two(wall.month)}-${_two(wall.day)}';
+        final dk = '${wall.year}-${_two(wall.month)}-${_two(wall.day)}';
         if (ex.contains(dk)) continue;
 
         final startWallInstance = _profileWallFromUtc(instanceUtc);
@@ -1302,8 +1861,6 @@ extension PlanServiceExtension on DatabaseService {
     return out;
   }
 
-
-
   /// All **plans** for the current user (raw maps; includes `tags_link` expand when present).
   Future<List<Map<String, dynamic>>> fetchPlans() async {
     if (!(currentProfileId?.isNotEmpty ?? false)) return [];
@@ -1315,10 +1872,9 @@ extension PlanServiceExtension on DatabaseService {
       final authId = _userIdForWhere;
       if (authId == null || authId.isEmpty) return [];
       final uid = _escapeForPbFilter(authId);
-      final list = await _pb.collection(PbCollections.plans).getFullList(
-        filter: 'user_id = "$uid"',
-        expand: kPbPlanTagsExpand,
-      );
+      final list = await _pb
+          .collection(PbCollections.plans)
+          .getFullList(filter: 'user_id = "$uid"', expand: kPbPlanTagsExpand);
       final out = list.map((r) {
         final m = Map<String, dynamic>.from(r.data);
         m['id'] = r.id;
@@ -1326,9 +1882,7 @@ extension PlanServiceExtension on DatabaseService {
         return m;
       }).toList();
       if (kDebugMode) {
-        debugPrint(
-          '[PB] fetchPlans: ${out.length} rows @ $kPocketBaseUrl',
-        );
+        debugPrint('[PB] fetchPlans: ${out.length} rows @ $kPocketBaseUrl');
       }
       return out;
     } catch (e) {
@@ -1336,7 +1890,6 @@ extension PlanServiceExtension on DatabaseService {
       return [];
     }
   }
-
 
   /// Business key for plan rows: prefer **plan_id** (UUID); bulk PATCH outer `id` is [recordsTablePk] / [PlanningTask.id].
   static String planRowBusinessIdFromRow(Map<String, dynamic> row) {
@@ -1346,7 +1899,9 @@ extension PlanServiceExtension on DatabaseService {
       final s = DatabaseService._sanitizePkString(v.toString());
       if (s != null && s.isNotEmpty) return s;
     }
-    final env = DatabaseService._sanitizePkString(row[DatabaseService._nocoEnvelopePkKey]?.toString());
+    final env = DatabaseService._sanitizePkString(
+      row[DatabaseService._nocoEnvelopePkKey]?.toString(),
+    );
     if (env != null && env.isNotEmpty) return env;
     for (final key in <String>['id', 'Id', 'ID']) {
       final v = row[key];
@@ -1356,7 +1911,6 @@ extension PlanServiceExtension on DatabaseService {
     }
     return '';
   }
-
 
   /// ISO UTC for start of a calendar [dateKey] (`YYYY-MM-DD`) in profile wall-clock, then stored as UTC.
   String? _planStartUtcIsoFromDateKey(String dateKey) {
@@ -1373,8 +1927,6 @@ extension PlanServiceExtension on DatabaseService {
       return null;
     }
   }
-
-
 
   /// Natural-language → structured task hints via `POST …/api/ai/parse-task` only.
   /// Flutter stays **LLM-agnostic**; routing and provider live on the server.
@@ -1413,8 +1965,8 @@ extension PlanServiceExtension on DatabaseService {
       final map = Map<String, dynamic>.from(decoded);
       int? ih(dynamic v) => v == null ? null : int.tryParse(v.toString());
       return AiParsedTaskHint(
-        cleanedTitle: map['cleaned_title']?.toString() ??
-            map['title']?.toString(),
+        cleanedTitle:
+            map['cleaned_title']?.toString() ?? map['title']?.toString(),
         startHour: ih(map['start_hour'] ?? map['hour']),
         startMinute: ih(map['start_minute'] ?? map['minute']),
         endHour: ih(map['end_hour']),
@@ -1426,8 +1978,7 @@ extension PlanServiceExtension on DatabaseService {
     }
   }
 
-  static final RegExp _aiPlanningHhmm =
-      RegExp(r'^(\d{1,2}):(\d{2})$');
+  static final RegExp _aiPlanningHhmm = RegExp(r'^(\d{1,2}):(\d{2})$');
 
   static String _normalizeAiPlanningTimeHHmm(String raw) {
     final t = raw.trim();
@@ -1443,21 +1994,16 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   /// Accept alternate key casing / missing fields; defaults match Smart Plan expectations.
-  static Map<String, dynamic> _normalizeAiPlanningItem(
-    Map<String, dynamic> m,
-  ) {
-    final title =
-        (m['title'] ?? m['Title'] ?? '').toString().trim();
+  static Map<String, dynamic> _normalizeAiPlanningItem(Map<String, dynamic> m) {
+    final title = (m['title'] ?? m['Title'] ?? '').toString().trim();
 
-    var startRaw =
-        (m['startTime'] ?? m['start_time'] ?? m['time'] ?? '09:00').toString();
+    var startRaw = (m['startTime'] ?? m['start_time'] ?? m['time'] ?? '09:00')
+        .toString();
     startRaw = startRaw.trim();
     if (startRaw.isEmpty) startRaw = '09:00';
 
-    final durRaw = m['durationMinutes'] ??
-        m['duration_minutes'] ??
-        m['duration'] ??
-        60;
+    final durRaw =
+        m['durationMinutes'] ?? m['duration_minutes'] ?? m['duration'] ?? 60;
     var durationMinutes = 60;
     if (durRaw is int) {
       durationMinutes = durRaw;
@@ -1471,7 +2017,8 @@ extension PlanServiceExtension on DatabaseService {
 
     final hhmm = _normalizeAiPlanningTimeHHmm(startRaw);
 
-    final catRaw = m['category'] ??
+    final catRaw =
+        m['category'] ??
         m['Category'] ??
         m['categoryName'] ??
         m['category_name'];
@@ -1501,7 +2048,8 @@ extension PlanServiceExtension on DatabaseService {
     if (decoded is List<dynamic>) return decoded;
     if (decoded is! Map) return null;
     final map = Map<String, dynamic>.from(decoded);
-    final raw = map['items'] ??
+    final raw =
+        map['items'] ??
         map['tasks'] ??
         map['planning_items'] ??
         map['schedule'];
@@ -1565,16 +2113,17 @@ extension PlanServiceExtension on DatabaseService {
     final out = <Map<String, dynamic>>[];
     for (final item in rawList) {
       if (item is! Map) continue;
-      final m = _normalizeAiPlanningItem(Map<String, dynamic>.from(
-        item.map((k, v) => MapEntry(k.toString(), v)),
-      ));
+      final m = _normalizeAiPlanningItem(
+        Map<String, dynamic>.from(
+          item.map((k, v) => MapEntry(k.toString(), v)),
+        ),
+      );
       final title = (m['title'] as String).trim();
       if (title.isEmpty) continue;
       out.add(m);
     }
     return out;
   }
-
 
   int newId() => -DateTime.now().millisecondsSinceEpoch - _random.nextInt(9999);
 
@@ -1604,7 +2153,6 @@ extension PlanServiceExtension on DatabaseService {
     } catch (_) {}
   }
 
-
   Future<void> addPlannedTask(
     String dateKey,
     String taskText, {
@@ -1614,7 +2162,9 @@ extension PlanServiceExtension on DatabaseService {
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) {
-      DatabaseService._log('TABLE_GUARD: blocked addPlannedTask because plans table id equals records table id.');
+      DatabaseService._log(
+        'TABLE_GUARD: blocked addPlannedTask because plans table id equals records table id.',
+      );
       return;
     }
     try {
@@ -1655,13 +2205,16 @@ extension PlanServiceExtension on DatabaseService {
       final title = gt.title.trim();
       if (title.isEmpty) return false;
       final match = identifyCategory(title);
-      final categoryId = match?.id ??
+      final categoryId =
+          match?.id ??
           categoryIdHint ??
           defaultCategoryId ??
           (rules.isNotEmpty ? rules.first.id : 0);
 
       if (getCategoryRuleById(categoryId) == null) {
-        DatabaseService._log('VOICE_PLAN: blocked — unknown category $categoryId');
+        DatabaseService._log(
+          'VOICE_PLAN: blocked — unknown category $categoryId',
+        );
         return false;
       }
 
@@ -1689,8 +2242,7 @@ extension PlanServiceExtension on DatabaseService {
     }
 
     final ymd = DateTime(wallDay.year, wallDay.month, wallDay.day);
-    final taskDateKey =
-        '${ymd.year}-${_two(ymd.month)}-${_two(ymd.day)}';
+    final taskDateKey = '${ymd.year}-${_two(ymd.month)}-${_two(ymd.day)}';
 
     final range = SmartInputParser.parseTitleForTimeRange(rawText);
     SmartTimeParseResult? parsed;
@@ -1701,8 +2253,7 @@ extension PlanServiceExtension on DatabaseService {
     if (range != null) {
       title = range.cleanedTitle.trim();
       if (title.isEmpty) {
-        title =
-            t(currentLocale.value, 'plan_title_time_range_fallback');
+        title = t(currentLocale.value, 'plan_title_time_range_fallback');
       }
       startStored = displayTimeToUtc(range.startWallOn(ymd));
       endStored = displayTimeToUtc(range.endWallOn(ymd));
@@ -1717,13 +2268,16 @@ extension PlanServiceExtension on DatabaseService {
     }
 
     final match = identifyCategory(title);
-    final categoryId = match?.id ??
+    final categoryId =
+        match?.id ??
         categoryIdHint ??
         defaultCategoryId ??
         (rules.isNotEmpty ? rules.first.id : 0);
 
     if (getCategoryRuleById(categoryId) == null) {
-      DatabaseService._log('VOICE_PLAN: blocked — unknown category $categoryId');
+      DatabaseService._log(
+        'VOICE_PLAN: blocked — unknown category $categoryId',
+      );
       return false;
     }
 
@@ -1756,7 +2310,9 @@ extension PlanServiceExtension on DatabaseService {
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) {
-      DatabaseService._log('TABLE_GUARD: blocked addPlan because plans table id equals records table id.');
+      DatabaseService._log(
+        'TABLE_GUARD: blocked addPlan because plans table id equals records table id.',
+      );
       return;
     }
     unawaited(() async {
@@ -1773,7 +2329,6 @@ extension PlanServiceExtension on DatabaseService {
       } catch (_) {}
     }());
   }
-
 
   /// Planning list stream. **No periodic polling** (PageView keeps many days alive).
   /// [listenToGlobalPlanningRefresh]: only the **visible** planning day should be `true` so [notifyPlanningRefresh]
@@ -1827,7 +2382,8 @@ extension PlanServiceExtension on DatabaseService {
       unawaited(pump());
       if (listenToGlobalPlanningRefresh) {
         pokeSub = _planningRefreshController.stream.listen((_) {
-          final stale = _allPlansUserCache.isEmpty ||
+          final stale =
+              _allPlansUserCache.isEmpty ||
               _allPlansUserCacheFetchedAt == null ||
               DateTime.now().difference(_allPlansUserCacheFetchedAt!) >
                   _allPlansUserCacheFreshTtl;
@@ -1920,18 +2476,16 @@ extension PlanServiceExtension on DatabaseService {
     try {
       final pbIds = await _pbTagRecordIdsFromTags(tags);
       if (tags.isNotEmpty &&
-          pbIds.length <
-              tags.where((t) => t.rendersAsChip).length &&
+          pbIds.length < tags.where((t) => t.rendersAsChip).length &&
           kDebugMode) {
         debugPrint(
           '[PB] _syncPlanTagsPocket: resolved ${pbIds.length} link id(s) '
           'from ${tags.length} tag(s); missing rows need pbRecordId / tag_id in catalog. plan=$rid',
         );
       }
-      await _pb.collection(PbCollections.plans).update(
-            rid,
-            body: <String, dynamic>{kPbPlanTagsExpand: pbIds},
-          );
+      await _pb
+          .collection(PbCollections.plans)
+          .update(rid, body: <String, dynamic>{kPbPlanTagsExpand: pbIds});
     } catch (e, st) {
       DatabaseService._log('SYNC_PLAN_TAGS_PB: $e');
       DatabaseService._log(st.toString());
@@ -1969,18 +2523,17 @@ extension PlanServiceExtension on DatabaseService {
       return false;
     }
     try {
-      final record =
-          await _pb.collection(PbCollections.plans).create(body: body);
+      final record = await _pb
+          .collection(PbCollections.plans)
+          .create(body: body);
       if (task.tags.isNotEmpty) {
         await _syncPlanTagsPocket(record.id, task.tags);
       }
-      final tagCatalog =
-          await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
       final merged = task.tags.isNotEmpty
-          ? await _pb.collection(PbCollections.plans).getOne(
-                record.id,
-                expand: kPbPlanTagsExpand,
-              )
+          ? await _pb
+                .collection(PbCollections.plans)
+                .getOne(record.id, expand: kPbPlanTagsExpand)
           : record;
       final fromServer = _planningTaskFromPocketRecord(
         merged,
@@ -1991,15 +2544,41 @@ extension PlanServiceExtension on DatabaseService {
       clearOptimisticPlanningForPlanRow(optimisticId);
       notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return true;
+    } on ClientException catch (e, st) {
+      DatabaseService._log('ADD_PLAN_PB: $e');
+      DatabaseService._log(st.toString());
+      final code = e.statusCode;
+      if (code == 401 || code == 403) {
+        await _enqueuePlanCreateMutation(
+          body,
+          businessId: clientPlanId,
+          error: code,
+          syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
+        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $code');
+        return true;
+      }
+      if (_planMutationRetriableHttpCode(code) || _pbHttpBackoffActive) {
+        await _enqueuePlanCreateMutation(
+          body,
+          businessId: clientPlanId,
+          error: code,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
+      clearOptimisticPlanningForPlanRow(optimisticId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      return false;
     } catch (e, st) {
       DatabaseService._log('ADD_PLAN_PB: $e');
       DatabaseService._log(st.toString());
-      try {
-        final prefs = _prefs ?? await SharedPreferences.getInstance();
-        final normalized =
-            jsonDecode(jsonEncode(body)) as Map<String, dynamic>;
-        await PlanCreateOutbox.enqueue(prefs, normalized);
-      } catch (_) {}
+      await _enqueuePlanCreateMutation(
+        body,
+        businessId: clientPlanId,
+        error: e,
+      );
+      offlineSync.setConnectivityOffline(true);
       return true;
     }
   }
@@ -2012,14 +2591,18 @@ extension PlanServiceExtension on DatabaseService {
       return false;
     }
     if (!_isPlansTableConfigured) {
-      DatabaseService._log('TABLE_GUARD: blocked addPlanningTask because plans table id equals records table id.');
+      DatabaseService._log(
+        'TABLE_GUARD: blocked addPlanningTask because plans table id equals records table id.',
+      );
       AppSnack.failed();
       return false;
     }
     try {
       final catRule = getCategoryRuleById(task.categoryId);
       if (catRule == null) {
-        DatabaseService._log('ADD_PLAN: blocked — unknown category local id ${task.categoryId}');
+        DatabaseService._log(
+          'ADD_PLAN: blocked — unknown category local id ${task.categoryId}',
+        );
         AppSnack.failed();
         return false;
       }
@@ -2034,8 +2617,9 @@ extension PlanServiceExtension on DatabaseService {
         if (catStr != null && catStr.isNotEmpty) {
           categoryFieldForPlan = catStr;
         } else {
-          categoryFieldForPlan =
-              _recordCategoryBusinessPkForApi(task.categoryId);
+          categoryFieldForPlan = _recordCategoryBusinessPkForApi(
+            task.categoryId,
+          );
         }
       }
       final titleTrimmed = task.title.trim();
@@ -2077,7 +2661,9 @@ extension PlanServiceExtension on DatabaseService {
     _planReorderBaselineByPlanId = m;
   }
 
-  Future<void> _persistPlanningTaskOrdersBulkNow(List<PlanningTask> ordered) async {
+  Future<void> _persistPlanningTaskOrdersBulkNow(
+    List<PlanningTask> ordered,
+  ) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) return;
 
@@ -2094,12 +2680,11 @@ extension PlanServiceExtension on DatabaseService {
           id,
           planBusinessId: t.planRowId,
         );
-        await _pb.collection(PbCollections.plans).update(
+        await _pb
+            .collection(PbCollections.plans)
+            .update(
               restId,
-              body: <String, dynamic>{
-                'user_id': _pidForPbFilter,
-                'order': i,
-              },
+              body: <String, dynamic>{'user_id': _pidForPbFilter, 'order': i},
             );
       }
     } catch (e, st) {
@@ -2270,16 +2855,19 @@ extension PlanServiceExtension on DatabaseService {
     DatabaseService._log(
       'CATEGORY_ORDER_SYNC: debounce arm ${ordered.length} row(s) parent=$parentId — fire in ${DatabaseService._categoryOrderDebounce.inSeconds}s',
     );
-    _categoryOrderDebounceTimer = Timer(DatabaseService._categoryOrderDebounce, () {
-      _categoryOrderDebounceTimer = null;
-      final pending = _pendingCategoryOrderSyncList;
-      _pendingCategoryOrderSyncList = null;
-      if (pending == null || pending.isEmpty) return;
-      DatabaseService._log(
-        'CATEGORY_ORDER_SYNC: debounce elapsed — syncing ${pending.length} row(s)',
-      );
-      unawaited(_persistCategoryOrdersBulkNow(pending));
-    });
+    _categoryOrderDebounceTimer = Timer(
+      DatabaseService._categoryOrderDebounce,
+      () {
+        _categoryOrderDebounceTimer = null;
+        final pending = _pendingCategoryOrderSyncList;
+        _pendingCategoryOrderSyncList = null;
+        if (pending == null || pending.isEmpty) return;
+        DatabaseService._log(
+          'CATEGORY_ORDER_SYNC: debounce elapsed — syncing ${pending.length} row(s)',
+        );
+        unawaited(_persistCategoryOrdersBulkNow(pending));
+      },
+    );
   }
 
   Future<void> flushCategoryOrderSyncNow() async {
@@ -2347,16 +2935,18 @@ extension PlanServiceExtension on DatabaseService {
     }
     if (order != null) fields['order'] = order;
     if (startTimeDisplay != null) {
-      fields['start_time'] =
-          _profileUtcFromWall(startTimeDisplay).toIso8601String();
+      fields['start_time'] = _profileUtcFromWall(
+        startTimeDisplay,
+      ).toIso8601String();
     } else if (startTime != null) {
       fields['start_time'] = startTime.toUtc().toIso8601String();
     }
     if (clearEnd) {
       fields['end_time'] = null;
     } else if (endDateTimeDisplay != null) {
-      fields['end_time'] =
-          _profileUtcFromWall(endDateTimeDisplay).toIso8601String();
+      fields['end_time'] = _profileUtcFromWall(
+        endDateTimeDisplay,
+      ).toIso8601String();
     } else if (endDateTime != null) {
       fields['end_time'] = endDateTime.toUtc().toIso8601String();
     }
@@ -2375,8 +2965,9 @@ extension PlanServiceExtension on DatabaseService {
       final rt = (planRrule ?? '').trim();
       if (rt.isNotEmpty) {
         fields['rrule'] = rt;
-        fields['exception_dates'] =
-            List<String>.from(planExceptionDates ?? const <String>[]);
+        fields['exception_dates'] = List<String>.from(
+          planExceptionDates ?? const <String>[],
+        );
       } else {
         fields['rrule'] = null;
         fields['exception_dates'] = const <String>[];
@@ -2392,9 +2983,8 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   /// JIT expanded row id: `virt-<parentPocketId>-YYYY-MM-DD`. Never pass [virt-] IDs to PocketBase REST.
-  static ({String parentPocketId, String instanceDateKey})? _parseVirtualPlanRowId(
-    String raw,
-  ) {
+  static ({String parentPocketId, String instanceDateKey})?
+  _parseVirtualPlanRowId(String raw) {
     final s = raw.trim();
     final m = RegExp(r'^virt-(.+)-(\d{4}-\d{2}-\d{2})$').firstMatch(s);
     if (m == null) return null;
@@ -2419,19 +3009,22 @@ extension PlanServiceExtension on DatabaseService {
     bool deferPlanningNotify = false,
   }) async {
     final pid = parentPlanPocketId.trim();
-    if (pid.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pid)) return false;
+    if (pid.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pid)) {
+      return false;
+    }
     var day = instanceDateKey.trim();
     if (day.length < 10) return false;
     day = day.substring(0, 10);
 
     try {
-      final tagCatalog = await fetchTagsForCurrentUser();
-      final rec = await _pb.collection(PbCollections.plans).getOne(
-            pid,
-            expand: kPbPlanTagsExpand,
-          );
-      final parent =
-          _planningTaskFromPocketRecord(rec, pocketTagCatalog: tagCatalog);
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
+      final rec = await _pb
+          .collection(PbCollections.plans)
+          .getOne(pid, expand: kPbPlanTagsExpand);
+      final parent = _planningTaskFromPocketRecord(
+        rec,
+        pocketTagCatalog: tagCatalog,
+      );
       final rrule = parent.rrule?.trim() ?? '';
       if (rrule.isEmpty) {
         DatabaseService._log('VIRT_PLAN_PATCH: parent $pid has no rrule');
@@ -2508,9 +3101,7 @@ extension PlanServiceExtension on DatabaseService {
   List<Map<String, dynamic>> _copyChecklistForMaterialize(
     List<Map<String, dynamic>> src,
   ) {
-    return [
-      for (final m in src) Map<String, dynamic>.from(m),
-    ];
+    return [for (final m in src) Map<String, dynamic>.from(m)];
   }
 
   /// POST a new real plan row; returns **false** on any failure (no outbox “success”).
@@ -2524,7 +3115,9 @@ extension PlanServiceExtension on DatabaseService {
     try {
       final catRule = getCategoryRuleById(task.categoryId);
       if (catRule == null) {
-        DatabaseService._log('MATERIALIZE_PLAN: unknown category ${task.categoryId}');
+        DatabaseService._log(
+          'MATERIALIZE_PLAN: unknown category ${task.categoryId}',
+        );
         return false;
       }
       final Object categoryFieldForPlan;
@@ -2536,8 +3129,9 @@ extension PlanServiceExtension on DatabaseService {
         if (catStr != null && catStr.isNotEmpty) {
           categoryFieldForPlan = catStr;
         } else {
-          categoryFieldForPlan =
-              _recordCategoryBusinessPkForApi(task.categoryId);
+          categoryFieldForPlan = _recordCategoryBusinessPkForApi(
+            task.categoryId,
+          );
         }
       }
       final titleTrimmed = task.title.trim();
@@ -2552,8 +3146,9 @@ extension PlanServiceExtension on DatabaseService {
         clientPlanId: clientPlanId,
         categoryFieldForPlan: categoryFieldForPlan,
       );
-      final record =
-          await _pb.collection(PbCollections.plans).create(body: body);
+      final record = await _pb
+          .collection(PbCollections.plans)
+          .create(body: body);
       if (task.tags.isNotEmpty) {
         await _syncPlanTagsPocket(record.id, task.tags);
       }
@@ -2573,7 +3168,9 @@ extension PlanServiceExtension on DatabaseService {
     bool deferPlanningNotify = false,
   }) async {
     final pid = parentPlanPocketId.trim();
-    if (pid.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pid)) return false;
+    if (pid.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(pid)) {
+      return false;
+    }
     var day = instanceDateKey.trim();
     if (day.length < 10) return false;
     day = day.substring(0, 10);
@@ -2597,13 +3194,14 @@ extension PlanServiceExtension on DatabaseService {
     if (!patched) return false;
 
     try {
-      final tagCatalog = await fetchTagsForCurrentUser();
-      final rec = await _pb.collection(PbCollections.plans).getOne(
-            pid,
-            expand: kPbPlanTagsExpand,
-          );
-      final parent =
-          _planningTaskFromPocketRecord(rec, pocketTagCatalog: tagCatalog);
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
+      final rec = await _pb
+          .collection(PbCollections.plans)
+          .getOne(pid, expand: kPbPlanTagsExpand);
+      final parent = _planningTaskFromPocketRecord(
+        rec,
+        pocketTagCatalog: tagCatalog,
+      );
       if (parent.rrule?.trim().isEmpty ?? true) {
         await _patchRecurringTemplateExceptionDates(
           parentPlanPocketId: pid,
@@ -2671,6 +3269,7 @@ extension PlanServiceExtension on DatabaseService {
 
   Future<bool> updatePlanningTask(
     String planRowId, {
+
     /// @DATA_MAP `plan_id` (UUID) — send inside `fields` only; outer bulk `id` must be Integer Id.
     String? planBusinessId,
     String? title,
@@ -2686,8 +3285,10 @@ extension PlanServiceExtension on DatabaseService {
     DateTime? endDateTime,
     DateTime? endDateTimeDisplay,
     bool clearEnd = false,
+
     /// When true, `AppSnack` success/failure toasts are omitted (caller handles UX).
     bool suppressAppSnack = false,
+
     /// When non-null, replaces **tags_link** on PocketBase after successful scalar PATCH.
     List<Tag>? tags,
     String? planInitialDateKey,
@@ -2696,6 +3297,7 @@ extension PlanServiceExtension on DatabaseService {
     String? planRrule,
     int? planReminderOffset,
     List<String>? planExceptionDates,
+
     /// When [planRowId] is `virt-…`, prefer this wall `YYYY-MM-DD` over the id suffix (Phase 1 JIT rows).
     String? recurrenceInstanceDateKey,
   }) async {
@@ -2703,7 +3305,9 @@ extension PlanServiceExtension on DatabaseService {
       return false;
     }
     if (!_isPlansTableConfigured) {
-      DatabaseService._log('TABLE_GUARD: blocked updatePlanningTask because plans table id equals records table id.');
+      DatabaseService._log(
+        'TABLE_GUARD: blocked updatePlanningTask because plans table id equals records table id.',
+      );
       return false;
     }
     final rid = planRowId.trim();
@@ -2712,9 +3316,12 @@ extension PlanServiceExtension on DatabaseService {
     final virt = _parseVirtualPlanRowId(rid);
     if (virt != null) {
       final hint = recurrenceInstanceDateKey?.trim() ?? '';
-      final effectiveDay = hint.length >= 10 ? hint.substring(0, 10) : virt.instanceDateKey;
+      final effectiveDay = hint.length >= 10
+          ? hint.substring(0, 10)
+          : virt.instanceDateKey;
 
-      final disallowedExtras = title != null ||
+      final disallowedExtras =
+          title != null ||
           categoryId != null ||
           notesPlain != null ||
           notesDeltaJson != null ||
@@ -2757,7 +3364,10 @@ extension PlanServiceExtension on DatabaseService {
       );
     }
 
-    final restId = await _resolvePlanRestId(rid, planBusinessId: planBusinessId);
+    final businessId = _outboxBusinessPlanId(
+      rid,
+      planBusinessId: planBusinessId,
+    );
     final patchBody = _scalarPatchBodyForPlanningRow(
       planBusinessId: planBusinessId,
       title: title,
@@ -2781,35 +3391,76 @@ extension PlanServiceExtension on DatabaseService {
       planExceptionDates: planExceptionDates,
     );
     if (patchBody.isEmpty && tags == null) return false;
-    try {
-      if (patchBody.isNotEmpty) {
-        await _pb.collection(PbCollections.plans).update(restId, body: patchBody);
-      }
-      if (tags != null) {
-        await _syncPlanTagsPocket(restId, tags);
-      }
-      final tagCatalog =
-          await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
-      final merged = await _pb.collection(PbCollections.plans).getOne(
-            restId,
-            expand: kPbPlanTagsExpand,
-          );
-      final taskFromServer = _planningTaskFromPocketRecord(
-        merged,
-        pocketTagCatalog: tagCatalog,
+
+    final shadowPb = _tryResolvePlanPbIdFromCacheOnly(
+      rid,
+      planBusinessId: planBusinessId,
+    );
+    if (shadowPb != null &&
+        DatabaseService._isLikelyPocketBaseRowId(shadowPb)) {
+      unawaited(
+        _patchPlanUpdateNetworkPhase(
+          originalInput: rid,
+          resolvedPbId: shadowPb,
+          businessId: businessId,
+          patchBody: patchBody,
+          tags: tags,
+          suppressAppSnack: suppressAppSnack,
+        ),
       );
-      _upsertPlanInUserCache(taskFromServer);
-      _allPlansUserCacheFetchedAt = DateTime.now();
-      clearOptimisticPlanningForPlanRow(rid);
-      clearOptimisticPlanningForPlanRow(restId);
-      notifyPlanningRefresh(scheduleNetworkRefresh: false);
       return true;
-    } catch (e, st) {
-      DatabaseService._log('UPDATE_PLANNING_TASK_PB: $e');
-      DatabaseService._log(st.toString());
-      if (!suppressAppSnack) AppSnack.failed();
-      return false;
     }
+
+    unawaited(() async {
+      try {
+        final restId = await _resolvePlanRestId(
+          rid,
+          planBusinessId: planBusinessId,
+        );
+        if (!DatabaseService._isLikelyPocketBaseRowId(restId)) {
+          List<String>? tagIds;
+          if (tags != null) {
+            tagIds = await _pbTagRecordIdsFromTags(tags);
+          }
+          final scalarOnly = Map<String, dynamic>.from(patchBody);
+          scalarOnly.remove('user_id');
+          await _enqueuePlanUpdateMutation(
+            originalInput: rid,
+            businessId: businessId,
+            patchFields: scalarOnly,
+            tagsLinkPbIds: tagIds,
+            error: 'unresolved_pb_id',
+          );
+          offlineSync.setConnectivityOffline(true);
+          return;
+        }
+        await _patchPlanUpdateNetworkPhase(
+          originalInput: rid,
+          resolvedPbId: restId,
+          businessId: businessId,
+          patchBody: patchBody,
+          tags: tags,
+          suppressAppSnack: suppressAppSnack,
+        );
+      } catch (e, st) {
+        DatabaseService._log('UPDATE_PLANNING_TASK_PB async: $e');
+        DatabaseService._log(st.toString());
+        if (_planMutationRetriableHttpCode(0)) {
+          final scalarOnly = Map<String, dynamic>.from(patchBody);
+          scalarOnly.remove('user_id');
+          await _enqueuePlanUpdateMutation(
+            originalInput: rid,
+            businessId: businessId,
+            patchFields: scalarOnly,
+            error: e,
+          );
+          offlineSync.setConnectivityOffline(true);
+        } else if (!suppressAppSnack) {
+          AppSnack.failed();
+        }
+      }
+    }());
+    return true;
   }
 
   /// Multiple scalar `plans` PATCH calls; clears optimistic overlays per row; **one** [notifyPlanningRefresh] at end.
@@ -2851,8 +3502,13 @@ extension PlanServiceExtension on DatabaseService {
         );
         if (patchBody.isEmpty) continue;
         try {
-          final restId = await _resolvePlanRestId(rid, planBusinessId: p.planBusinessId);
-          await _pb.collection(PbCollections.plans).update(restId, body: patchBody);
+          final restId = await _resolvePlanRestId(
+            rid,
+            planBusinessId: p.planBusinessId,
+          );
+          await _pb
+              .collection(PbCollections.plans)
+              .update(restId, body: patchBody);
           clearOptimisticPlanningForPlanRow(rid);
           clearOptimisticPlanningForPlanRow(restId);
         } catch (e, st) {
@@ -2881,48 +3537,133 @@ extension PlanServiceExtension on DatabaseService {
       DatabaseService._log('TABLE_GUARD: blocked deletePlanningTasksBulk.');
       return false;
     }
-    final raw = planBackendIds.map((s) => s.trim()).where((s) => s.isNotEmpty).toSet().toList();
+    final raw = planBackendIds
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
     if (raw.isEmpty) return false;
 
-    try {
-      var deferredNotify = false;
-      for (final id in raw) {
-        final trimmed = id.trim();
-        final virt = _parseVirtualPlanRowId(trimmed);
-        if (virt != null) {
-          final ok = await _patchRecurringTemplateExceptionDates(
-            parentPlanPocketId: virt.parentPocketId,
-            instanceDateKey: virt.instanceDateKey,
-            addException: true,
-            suppressAppSnack: true,
-            deferPlanningNotify: true,
+    var deferredNotify = false;
+    var skipDeletedSnack = false;
+    for (final id in raw) {
+      final trimmed = id.trim();
+      if (trimmed.startsWith('optimistic-')) {
+        clearOptimisticPlanningForPlanRow(trimmed);
+        deferredNotify = true;
+        continue;
+      }
+      final virt = _parseVirtualPlanRowId(trimmed);
+      if (virt != null) {
+        final ok = await _patchRecurringTemplateExceptionDates(
+          parentPlanPocketId: virt.parentPocketId,
+          instanceDateKey: virt.instanceDateKey,
+          addException: true,
+          suppressAppSnack: true,
+          deferPlanningNotify: true,
+        );
+        if (!ok) {
+          AppSnack.failed();
+          return false;
+        }
+        deferredNotify = true;
+        continue;
+      }
+      final businessId = _outboxBusinessPlanId(trimmed);
+      final shadowPb = _tryResolvePlanPbIdFromCacheOnly(trimmed);
+      if (shadowPb != null &&
+          DatabaseService._isLikelyPocketBaseRowId(shadowPb)) {
+        final del = await _deletePlanNetworkPhase(
+          originalInput: trimmed,
+          resolvedPbId: shadowPb,
+          businessId: businessId,
+        );
+        if (!del.ok) {
+          AppSnack.failed();
+          return false;
+        }
+        if (del.queued) skipDeletedSnack = true;
+        deferredNotify = true;
+        continue;
+      }
+      try {
+        final restId = await _resolvePlanRestId(trimmed);
+        if (!DatabaseService._isLikelyPocketBaseRowId(restId)) {
+          await _enqueuePlanDeleteMutation(
+            originalInput: trimmed,
+            businessId: businessId,
+            error: 'unresolved_pb_id',
           );
-          if (!ok) {
-            AppSnack.failed();
-            return false;
-          }
+          offlineSync.setConnectivityOffline(true);
+          skipDeletedSnack = true;
           deferredNotify = true;
           continue;
         }
-        final restId = await _resolvePlanRestId(id);
-        await _pb.collection(PbCollections.plans).delete(restId);
-        _removePlanFromUserCache(id);
-        _removePlanFromUserCache(restId);
-        clearOptimisticPlanningForPlanRow(id);
-        clearOptimisticPlanningForPlanRow(restId);
+        final del = await _deletePlanNetworkPhase(
+          originalInput: trimmed,
+          resolvedPbId: restId,
+          businessId: businessId,
+        );
+        if (!del.ok) {
+          AppSnack.failed();
+          return false;
+        }
+        if (del.queued) skipDeletedSnack = true;
         deferredNotify = true;
+      } on ClientException catch (e, st) {
+        DatabaseService._log('DELETE_PLAN_PB_BULK: $e');
+        DatabaseService._log(st.toString());
+        final code = e.statusCode;
+        if (code == 401 || code == 403) {
+          await _enqueuePlanDeleteMutation(
+            originalInput: trimmed,
+            businessId: businessId,
+            error: code,
+            syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
+          );
+          offlineSync.setAuthPaused(true, message: 'HTTP $code');
+          skipDeletedSnack = true;
+          deferredNotify = true;
+          continue;
+        }
+        if (_planMutationRetriableHttpCode(code)) {
+          await _enqueuePlanDeleteMutation(
+            originalInput: trimmed,
+            businessId: businessId,
+            error: code,
+          );
+          offlineSync.setConnectivityOffline(true);
+          skipDeletedSnack = true;
+          deferredNotify = true;
+          continue;
+        }
+        AppSnack.failed();
+        return false;
+      } catch (e, st) {
+        DatabaseService._log('DELETE_PLAN_PB_BULK: $e');
+        DatabaseService._log(st.toString());
+        if (_planMutationRetriableHttpCode(0)) {
+          await _enqueuePlanDeleteMutation(
+            originalInput: trimmed,
+            businessId: businessId,
+            error: e,
+          );
+          offlineSync.setConnectivityOffline(true);
+          skipDeletedSnack = true;
+          deferredNotify = true;
+          continue;
+        }
+        AppSnack.failed();
+        return false;
       }
-      if (deferredNotify) {
-        notifyPlanningRefresh();
-        _notifyTimelineAfterRecordCacheMutation();
-      }
-    } catch (e, st) {
-      DatabaseService._log('DELETE_PLAN_PB_BULK: $e');
-      DatabaseService._log(st.toString());
-      AppSnack.failed();
-      return false;
     }
-    AppSnack.deleted();
+    if (deferredNotify) {
+      notifyPlanningRefresh();
+      _notifyTimelineAfterRecordCacheMutation();
+    }
+    if (!skipDeletedSnack) {
+      AppSnack.deleted();
+    }
     return true;
   }
 
@@ -2933,7 +3674,11 @@ extension PlanServiceExtension on DatabaseService {
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     if (!_isPlansTableConfigured) return false;
-    final raw = planBackendIds.map((s) => s.trim()).where((s) => s.isNotEmpty).toSet().toList();
+    final raw = planBackendIds
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
     if (raw.isEmpty) return false;
 
     const chunkSize = 10;
@@ -2972,10 +3717,9 @@ extension PlanServiceExtension on DatabaseService {
             continue;
           }
           final restId = await _resolvePlanRestId(id);
-          await _pb.collection(PbCollections.plans).update(
-                restId,
-                body: <String, dynamic>{'is_done': completed},
-              );
+          await _pb
+              .collection(PbCollections.plans)
+              .update(restId, body: <String, dynamic>{'is_done': completed});
           needsNotify = true;
         } catch (e, st) {
           allOk = false;
@@ -3031,7 +3775,9 @@ extension PlanServiceExtension on DatabaseService {
   Future<void> deletePlanningTask(String planRowId) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) {
-      DatabaseService._log('TABLE_GUARD: blocked deletePlanningTask because plans table id equals records table id.');
+      DatabaseService._log(
+        'TABLE_GUARD: blocked deletePlanningTask because plans table id equals records table id.',
+      );
       return;
     }
     final id = planRowId.trim();
@@ -3116,8 +3862,7 @@ extension PlanServiceExtension on DatabaseService {
     if (rec == null) return;
     unawaited(() async {
       try {
-        final tagCatalog =
-            await fetchTagsForCurrentUser(scope: TagCatalogScope.plan);
+        final tagCatalog = await _fetchPlanAndListTagCatalog();
         final task = _planningTaskFromPocketRecord(
           rec,
           pocketTagCatalog: tagCatalog,
@@ -3153,18 +3898,18 @@ extension PlanServiceExtension on DatabaseService {
       if (filter == null || filter.isEmpty) return;
       Future<void> Function()? unsub;
       try {
-        unsub = await _pb.collection(PbCollections.plans).subscribe(
+        unsub = await _pb
+            .collection(PbCollections.plans)
+            .subscribe(
               '*',
               _onPbPlansSubscriptionEvent,
               filter: filter,
               expand: kPbPlanTagsExpand,
             );
       } catch (_) {
-        unsub = await _pb.collection(PbCollections.plans).subscribe(
-              '*',
-              _onPbPlansSubscriptionEvent,
-              filter: filter,
-            );
+        unsub = await _pb
+            .collection(PbCollections.plans)
+            .subscribe('*', _onPbPlansSubscriptionEvent, filter: filter);
       }
       _plansRealtimeUnsubscribe = unsub;
     } catch (e) {
@@ -3190,5 +3935,4 @@ extension PlanServiceExtension on DatabaseService {
   Future<void> ensurePlansRealtimeBridge() async {
     unawaited(_startPlansRealtimeSubscription());
   }
-
 }

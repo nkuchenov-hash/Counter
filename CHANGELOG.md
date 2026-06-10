@@ -11,6 +11,38 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-10] - F1 Lists feature completion [shipped]
+* **`lists_view.dart`:** F1 audit preserved existing list-tag filter/export/no-play behavior; active list tag now renders before “All tags”, and manual category chip mode uses the same scroll-to-start controller as normal mode.
+* **`plan_service.dart` / `profile_service.dart`:** Plan/list tag hydration now uses a combined plan+list tag catalog for plain `tags_link` cache/replay paths, preserving `domain: list` tags through offline create/update sync and cache merges.
+* **`docs/ROADMAP.md`:** F1 marked shipped with all five checklist items completed.
+
+## [2026-06-10] - V1 CLAUDE.md nav map (post-O1 local sync) [shipped]
+* **`CLAUDE.md`:** New **Local sync & offline-first** section — `record_mutation_outbox.dart`, `plan_mutation_outbox.dart`, `offline_sync_state.dart`, `sync_manager.dart`; symbols `flushPendingLocalMutations`, `flushPendingRecordMutations`, `flushPendingPlanMutations`, `resumeAfterAuthIfNeeded`, `_OfflineSyncStatusBar`; O1 shipped / F1 unblocked noted; Iron Laws updated for enqueue-on-retriable-failure.
+* **`docs/ROADMAP.md`:** V1 marked shipped in execution order.
+
+## [2026-06-09] - O1.4 offline-first audit & polish [shipped]
+* **`offline_sync_state.dart`:** Banner quiet only when fully synced; online-with-pending shows “%s pending sync”; `resumeAfterAuthIfNeeded()` unblocks flush after re-auth.
+* **`db_core.dart`:** `flushPendingLocalMutations` resumes sync when `authStore.isValid`; boot + app-resume + backoff-init paths refresh pending count and attempt flush.
+* **`app_shell.dart`:** Distinct auth-paused banner string; online/offline pending labels split.
+* **`docs/ROADMAP.md`:** O1.1–O1.4 marked shipped; restart/optimistic limitations documented; **F1 unblocked**.
+
+## [2026-06-09] - O1.3 offline-first: Planning + Lists CRUD outbox [shipped]
+* **`plan_mutation_outbox.dart`:** Generic plan queue (`plan_create`, `plan_update`, `plan_delete`) with O1 schema, coalescing (delete drops pending create/update for same `plan_id`), and auto-migration from legacy `plan_create_outbox_v1`.
+* **`plan_service.dart`:** `addPlanningTask`, `updatePlanningTask`, `deletePlanningTasksBulk` keep optimistic UI; retriable failures enqueue to prefs; `flushPendingPlanMutations` replays on reconnect; `clearOptimisticPlanningForPlanRow('optimistic-…')` cancels never-synced pending creates.
+* **Done-toggle:** unchanged UI in `lists_view.dart` / `planning_view.dart` — `updatePlanningTask(isDone:)` now returns `true` when queued so optimistic toggle is not rolled back offline.
+
+## [2026-06-09] - O1.2 offline-first: record edit/delete outbox [shipped]
+* **`record_mutation_outbox.dart`:** Added `record_update` and `record_delete` kinds with `coalesceQueue` — delete drops prior pending ops for same `businessId`; updates merge payloads to avoid duplicate PATCHes.
+* **`record_service.dart`:** `updateRecord` / `patchRecord` apply cache edit immediately then async `_patchRecordUpdateNetworkPhase`; retriable failures enqueue update and keep optimistic row. `deleteRecordByDocId` keeps optimistic tombstone on failure via `_deleteRecordNetworkPhase` + delete outbox; 404 on replay = successful purge.
+* **Replay:** `flushPendingRecordMutations` resolves PB id from stored `pocketBaseId`, cache, or server lookup before PATCH/DELETE.
+
+## [2026-06-09] - O1 offline-first slice: record start/stop outbox [shipped]
+* **`lib/data/local_sync/record_mutation_outbox.dart`:** SharedPreferences queue with O1 schema (`operation_id`, `collection`, `operation_type`, `business_id`, `pocketBaseId`, `payload`, `created_at`, `retry_count`, `last_error`, `sync_status`) for Highlander **start** and **stop** mutations.
+* **`lib/data/record_service.dart`:** Primary `writeRecord` Highlander path and `stopRecordByDocId` keep optimistic UI on network failure — enqueue instead of rollback; `flushPendingRecordMutations()` replays on reconnect via `_runHighlanderStartServerPhase` / PATCH stop.
+* **`lib/data/local_sync/sync_manager.dart` + `db_core.dart`:** `flushPendingLocalMutations()` drains records + plans outboxes; connectivity probe updates `OfflineSyncController`.
+* **`lib/app_shell.dart`:** Subtle global banner — offline pending, syncing, auth/sync error (tap to retry flush).
+* **`docs/ROADMAP.md`:** O1 phase added as highest priority before F1.
+
 ## [2026-06-09] - Repo layout, docs hygiene, analyzer & deploy scripts [shipped]
 * **Folder flatten:** Real app moved from nested `counter/counter/` to `C:\Users\nkuch\Development\Apps\counter`; old outer Flutter skeleton backed up to sibling `counter_WRAPPER_BACKUP` (not in git).
 * **Root cleanup:** Reports → `docs/reports/`; prompt/archive docs → `docs/archive/`; temp zips/screenshots/logs → `Archive/root_cleanup_backup/`; manual scripts → `scripts/manual/`; dev `tool/` → `Archive/tool/`.

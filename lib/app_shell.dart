@@ -50,6 +50,97 @@ bool _shellIsNewPlanningDraft(PlanningTask t) {
 const String _shellOptimisticPurgeDateKey = '2099-12-31';
 
 // ---------------------------------------------------------------------------
+// Global offline / sync indicator (O1).
+// ---------------------------------------------------------------------------
+
+class _OfflineSyncStatusBar extends StatelessWidget {
+  const _OfflineSyncStatusBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final sync = DatabaseService.instance.offlineSync;
+    return ListenableBuilder(
+      listenable: sync,
+      builder: (context, _) {
+        if (!sync.shouldShowBanner) {
+          return const SizedBox.shrink();
+        }
+        final locale = currentLocale.value;
+        final scheme = Theme.of(context).colorScheme;
+        String label;
+        Color fg;
+        Color bg;
+        if (sync.isSyncing) {
+          label = t(locale, 'offline_sync_syncing');
+          fg = scheme.onSurfaceVariant;
+          bg = scheme.surfaceContainerHighest.withValues(alpha: 0.92);
+        } else if (sync.authPaused) {
+          label = t(locale, 'offline_sync_auth_paused');
+          fg = scheme.onErrorContainer;
+          bg = scheme.errorContainer.withValues(alpha: 0.85);
+        } else if (sync.lastError != null && sync.lastError!.isNotEmpty) {
+          label = t(locale, 'offline_sync_error');
+          fg = scheme.onErrorContainer;
+          bg = scheme.errorContainer.withValues(alpha: 0.85);
+        } else if (sync.isOffline) {
+          label = t(locale, 'offline_sync_pending')
+              .replaceAll('%s', '${sync.pendingCount}');
+          fg = scheme.onSurfaceVariant;
+          bg = scheme.surfaceContainerHighest.withValues(alpha: 0.92);
+        } else {
+          label = t(locale, 'offline_sync_pending_online')
+              .replaceAll('%s', '${sync.pendingCount}');
+          fg = scheme.onSurfaceVariant;
+          bg = scheme.surfaceContainerHighest.withValues(alpha: 0.92);
+        }
+        return Material(
+          color: bg,
+          child: SafeArea(
+            bottom: false,
+            child: InkWell(
+              onTap: () {
+                unawaited(
+                  DatabaseService.instance.flushPendingLocalMutations(),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (sync.isSyncing)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: fg,
+                          ),
+                        ),
+                      ),
+                    Flexible(
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: fg,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Settings page (Language, TimeZone). Persists to users/{uid}.
 // ---------------------------------------------------------------------------
 
@@ -242,6 +333,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _rules = List.from(DatabaseService.instance.rules);
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     unawaited(_loadTasksAndExtras());
+    unawaited(DatabaseService.instance.offlineSync.refreshPendingCount());
 
     _notificationSub = DatabaseService.instance.notifications.listen((msg) {
       if (!mounted || msg == null || msg.isEmpty) return;
@@ -1553,10 +1645,17 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             child: Scaffold(
               backgroundColor: scheme.surface,
               resizeToAvoidBottomInset: true,
-              body: IndexedStack(
-                index: _shellPageIndex,
-                sizing: StackFit.expand,
-                children: pages,
+              body: Column(
+                children: [
+                  const _OfflineSyncStatusBar(),
+                  Expanded(
+                    child: IndexedStack(
+                      index: _shellPageIndex,
+                      sizing: StackFit.expand,
+                      children: pages,
+                    ),
+                  ),
+                ],
               ),
               floatingActionButtonLocation:
                   FloatingActionButtonLocation.endFloat,

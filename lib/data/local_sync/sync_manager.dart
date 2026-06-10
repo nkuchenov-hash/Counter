@@ -17,14 +17,28 @@ class SyncManager {
     if (_attached) return;
     _attached = true;
     _sub = Connectivity().onConnectivityChanged.listen(_onConnectivity);
+    unawaited(_probeInitialConnectivity());
+  }
+
+  Future<void> _probeInitialConnectivity() async {
+    try {
+      final results = await Connectivity().checkConnectivity();
+      _applyConnectivity(results);
+    } catch (_) {}
+    unawaited(DatabaseService.instance.offlineSync.refreshPendingCount());
   }
 
   void _onConnectivity(List<ConnectivityResult> results) {
+    _applyConnectivity(results);
+  }
+
+  void _applyConnectivity(List<ConnectivityResult> results) {
     if (results.isEmpty) return;
     final onlyOffline =
         results.length == 1 && results.first == ConnectivityResult.none;
+    DatabaseService.instance.offlineSync.setConnectivityOffline(onlyOffline);
     if (onlyOffline) return;
-    unawaited(DatabaseService.instance.flushPendingPlanCreates());
+    unawaited(DatabaseService.instance.flushPendingLocalMutations());
   }
 
   Future<void> dispose() async {

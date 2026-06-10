@@ -32,8 +32,6 @@ const String _profileTzLabelKey = 'profile_preferred_timezone';
 const String _profileTzOffsetKey = 'profile_timezone_offset_hours';
 const String _profileThemeModeKey = 'profile_theme_mode';
 
-
-
 String _normalizeTimezone(String timezone) {
   final t = timezone.trim();
   if (t.isEmpty) return 'UTC';
@@ -76,7 +74,9 @@ int _fixedOffsetHoursFromLabel(String timezone) {
 }
 
 (DateTime, DateTime) utcRangeForDateInTimezone(
-    DateTime selectedDate, String timezone) {
+  DateTime selectedDate,
+  String timezone,
+) {
   final offset = _fixedOffsetHoursFromLabel(timezone);
   return wall_clock.utcWallClockDayBoundsUtc(
     DateTime(selectedDate.year, selectedDate.month, selectedDate.day),
@@ -96,8 +96,8 @@ int _fixedOffsetHoursFromLabel(String timezone) {
     preferredTimeZone,
   );
 }
-extension ProfileServiceExtension on DatabaseService {
 
+extension ProfileServiceExtension on DatabaseService {
   static const List<String> _profileTimezoneOptions = [
     'UTC',
     'London',
@@ -109,9 +109,9 @@ extension ProfileServiceExtension on DatabaseService {
       List.from(_profileTimezoneOptions);
   UserSettings get settings => _settings;
 
-
   /// Snapshot for tag-group headers (may be empty before first fetch).
-  List<Tag> get cachedUserTagsCatalog => List.unmodifiable(_userTagsCatalogCache);
+  List<Tag> get cachedUserTagsCatalog =>
+      List.unmodifiable(_userTagsCatalogCache);
 
   Stream<void> get tagsCatalogUpdated => _tagsCatalogRefreshController.stream;
 
@@ -122,7 +122,6 @@ extension ProfileServiceExtension on DatabaseService {
     syncEmbeddedPlanTagsFromCatalog();
   }
 
-
   /// Background refresh only; does not block UI.
   Future<void> reloadForDataRegionChange() async {
     if ((currentProfileId?.isNotEmpty ?? false)) {
@@ -131,8 +130,6 @@ extension ProfileServiceExtension on DatabaseService {
   }
 
   String get dataRegion => _dataRegion;
-
-
 
   /// Fetches profile row: auth store first, else list filter by [user_id] (@ARCHITECTURE §3).
   Future<Map<String, dynamic>?> getUserProfile(String id) async {
@@ -153,9 +150,9 @@ extension ProfileServiceExtension on DatabaseService {
     } catch (_) {}
     try {
       final escaped = want.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
-      final rec = await _pb.collection(PbCollections.profiles).getFirstListItem(
-        'user_id = "$escaped"',
-      );
+      final rec = await _pb
+          .collection(PbCollections.profiles)
+          .getFirstListItem('user_id = "$escaped"');
       _profilePbRecordId = rec.id;
       return Map<String, dynamic>.from(rec.data)..['id'] = rec.id;
     } on ClientException catch (e) {
@@ -213,7 +210,8 @@ extension ProfileServiceExtension on DatabaseService {
       }
       final tzLabel = prefs.getString(_profileTzLabelKey)?.trim();
       if (tzLabel != null && tzLabel.isNotEmpty) {
-        final oh = prefs.getInt(_profileTzOffsetKey) ??
+        final oh =
+            prefs.getInt(_profileTzOffsetKey) ??
             _fixedOffsetHoursFromLabel(tzLabel);
         next = next.copyWith(
           preferredTimeZone: tzLabel,
@@ -242,10 +240,7 @@ extension ProfileServiceExtension on DatabaseService {
       }
       final rowUid = data['user_id']?.toString().trim() ?? '';
       if (rowUid.isEmpty) {
-        throw _ProfileFetchFailedException(
-          422,
-          'Profile row missing user_id',
-        );
+        throw _ProfileFetchFailedException(422, 'Profile row missing user_id');
       }
       DatabaseService._log('Profile data loaded from PocketBase.');
       final authUid = _userIdForWhere ?? '';
@@ -253,20 +248,21 @@ extension ProfileServiceExtension on DatabaseService {
       final raw = data['active_languages'];
       List<String>? activeLanguages;
       if (raw is List) {
-        activeLanguages =
-            raw.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
+        activeLanguages = raw
+            .map((e) => e?.toString() ?? '')
+            .where((s) => s.isNotEmpty)
+            .toList();
         if (activeLanguages.isEmpty) activeLanguages = null;
       }
       final region = data['data_region'] as String?;
       if (region == 'russia' || region == 'global') _dataRegion = region!;
-      final tzLabel =
-          (data['preferred_timezone'] as String? ?? 'UTC').trim();
+      final tzLabel = (data['preferred_timezone'] as String? ?? 'UTC').trim();
       final tzOffsetRaw = data['timezone_offset'];
       final tzOffset = tzOffsetRaw == null
           ? _fixedOffsetHoursFromLabel(tzLabel.isEmpty ? 'UTC' : tzLabel)
           : (tzOffsetRaw is int
-              ? tzOffsetRaw
-              : int.tryParse(tzOffsetRaw.toString()) ?? 0);
+                ? tzOffsetRaw
+                : int.tryParse(tzOffsetRaw.toString()) ?? 0);
       final dc = data['default_category_id'];
       final rawTheme = (data['theme_mode'] as String?)?.trim().toLowerCase();
       String themeMode;
@@ -275,8 +271,12 @@ extension ProfileServiceExtension on DatabaseService {
       } else {
         try {
           final prefs = _prefs ?? await SharedPreferences.getInstance();
-          final cached = prefs.getString(_profileThemeModeKey)?.trim().toLowerCase();
-          themeMode = (cached == 'light' || cached == 'dark' || cached == 'system')
+          final cached = prefs
+              .getString(_profileThemeModeKey)
+              ?.trim()
+              .toLowerCase();
+          themeMode =
+              (cached == 'light' || cached == 'dark' || cached == 'system')
               ? cached!
               : 'system';
         } catch (_) {
@@ -289,14 +289,16 @@ extension ProfileServiceExtension on DatabaseService {
       final listBehRaw = rawListBeh == null
           ? ''
           : rawListBeh.toString().trim().toLowerCase();
-      final listBeh = (listBehRaw == 'stay' ||
+      final listBeh =
+          (listBehRaw == 'stay' ||
               listBehRaw == 'bottom' ||
               listBehRaw == 'hide' ||
               listBehRaw == 'archive')
           ? listBehRaw
           : (listBehRaw.isEmpty ? 'stay' : 'hide');
-      final settingsUserId =
-          authUid.isNotEmpty ? authUid : (uid != null && uid.isNotEmpty ? uid : rowUid);
+      final settingsUserId = authUid.isNotEmpty
+          ? authUid
+          : (uid != null && uid.isNotEmpty ? uid : rowUid);
       _settings = UserSettings(
         userId: settingsUserId,
         language: data['primary_language'] as String? ?? 'en',
@@ -304,15 +306,18 @@ extension ProfileServiceExtension on DatabaseService {
         timezoneOffsetHours: tzOffset,
         activeLanguages: activeLanguages,
         primaryLanguage: data['primary_language'] as String? ?? 'en',
-        defaultCategoryId: dc == null ? null : CategoryServiceExtension._rowInt(dc),
+        defaultCategoryId: dc == null
+            ? null
+            : CategoryServiceExtension._rowInt(dc),
         hasSeeded: data['has_seeded'] == true,
         dataRegion: region,
         biometricEnabled: data['biometric_enabled'] == true,
         themeMode: themeMode,
         displayName: dn != null && dn.trim().isNotEmpty ? dn.trim() : null,
         tagDisplayMode: categoryDisplayModeFromWire(tagModeRaw),
-        tagDisplayModeWireRaw:
-            (tagModeRaw != null && tagModeRaw.isNotEmpty) ? tagModeRaw : null,
+        tagDisplayModeWireRaw: (tagModeRaw != null && tagModeRaw.isNotEmpty)
+            ? tagModeRaw
+            : null,
         listCompletionBehavior: listBeh,
         showListTagsOnCards: true,
       );
@@ -324,8 +329,7 @@ extension ProfileServiceExtension on DatabaseService {
     } catch (_) {
       final authUid = _userIdForWhere ?? '';
       final fallback = currentProfileId?.trim() ?? '';
-      final uidStr =
-          authUid.isNotEmpty ? authUid : fallback;
+      final uidStr = authUid.isNotEmpty ? authUid : fallback;
       _settings = UserSettings(userId: uidStr);
       _mergeDeviceProfilePreferenceOverridesSync();
       _settingsController.add(_settings);
@@ -356,7 +360,6 @@ extension ProfileServiceExtension on DatabaseService {
 
   String getTimelineDeviceLocalTodayDateKey() => getProjectedTodayDateKey();
 
-
   void _syncMaterialAppLocaleFromSettings(UserSettings s) {
     final raw = s.primaryLanguage.trim().isNotEmpty
         ? s.primaryLanguage
@@ -367,10 +370,11 @@ extension ProfileServiceExtension on DatabaseService {
     }
   }
 
-
   /// UI-first: update state immediately; then PocketBase PATCH on **profiles** auth row.
   Future<bool> saveSettings(UserSettings s) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return false;
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+      return false;
+    }
 
     final authId = _requireAuthUserIdForWrite();
     final lang = resolvedUiLanguageCode(
@@ -391,15 +395,12 @@ extension ProfileServiceExtension on DatabaseService {
       final pbId = (_profilePbRecordId ?? _pb.authStore.record?.id)?.trim();
       if (pbId == null || pbId.isEmpty) return false;
       final profileBody = ProfileUpdate.fromSettings(coerced).toJson();
-      await _pb.collection(PbCollections.profiles).update(
-            pbId,
-            body: profileBody,
-          );
+      await _pb
+          .collection(PbCollections.profiles)
+          .update(pbId, body: profileBody);
       final patchedTagWire = profileBody['tag_display_mode']?.toString();
       if (patchedTagWire != null && patchedTagWire.isNotEmpty) {
-        _settings = _settings.copyWith(
-          tagDisplayModeWireRaw: patchedTagWire,
-        );
+        _settings = _settings.copyWith(tagDisplayModeWireRaw: patchedTagWire);
         _settingsController.add(_settings);
       }
       DatabaseService._log('Timezone synced to PocketBase.');
@@ -421,16 +422,20 @@ extension ProfileServiceExtension on DatabaseService {
   }
 
   Future<bool> updateTimeZone(String label) async {
-    final ok = await saveSettings(_settings.copyWith(
+    final ok = await saveSettings(
+      _settings.copyWith(
         preferredTimeZone: label,
-        timezoneOffsetHours: _fixedOffsetHoursFromLabel(label)));
+        timezoneOffsetHours: _fixedOffsetHoursFromLabel(label),
+      ),
+    );
     _notifyTimelineAfterRecordCacheMutation();
     return ok;
   }
 
   Future<bool> updateUserTimezone(double offsetHours) async {
-    final ok = await saveSettings(_settings.copyWith(
-        timezoneOffsetHours: offsetHours.round()));
+    final ok = await saveSettings(
+      _settings.copyWith(timezoneOffsetHours: offsetHours.round()),
+    );
     _notifyTimelineAfterRecordCacheMutation();
     return ok;
   }
@@ -446,9 +451,9 @@ extension ProfileServiceExtension on DatabaseService {
       final authId = _userIdForWhere;
       if (authId == null || authId.isEmpty) return [];
       final uid = _escapeForPbFilter(authId);
-      final list = await _pb.collection(PbCollections.tags).getFullList(
-        filter: 'user_id = "$uid"',
-      );
+      final list = await _pb
+          .collection(PbCollections.tags)
+          .getFullList(filter: 'user_id = "$uid"');
       final out = list.map((r) {
         final m = Map<String, dynamic>.from(r.data);
         m['id'] = r.id;
@@ -456,9 +461,7 @@ extension ProfileServiceExtension on DatabaseService {
         return m;
       }).toList();
       if (kDebugMode) {
-        debugPrint(
-          '[PB] fetchTags: ${out.length} rows @ $kPocketBaseUrl',
-        );
+        debugPrint('[PB] fetchTags: ${out.length} rows @ $kPocketBaseUrl');
       }
       return out;
     } catch (e, st) {
@@ -483,7 +486,8 @@ extension ProfileServiceExtension on DatabaseService {
       final out = <Tag>[];
       for (final row in flat) {
         final tag = Tag.fromPocketJson(row);
-        if (tag.tagId == 0 && (tag.pbRecordId == null || tag.pbRecordId!.isEmpty)) {
+        if (tag.tagId == 0 &&
+            (tag.pbRecordId == null || tag.pbRecordId!.isEmpty)) {
           continue;
         }
         out.add(tag);
@@ -514,7 +518,9 @@ extension ProfileServiceExtension on DatabaseService {
         final rid = ordered[i].pbRecordId?.trim() ?? '';
         if (rid.isEmpty) continue;
         jobs.add(
-          _pb.collection(PbCollections.tags).update(
+          _pb
+              .collection(PbCollections.tags)
+              .update(
                 rid,
                 body: <String, dynamic>{
                   'user_id': _pidForPbFilter,
@@ -526,7 +532,8 @@ extension ProfileServiceExtension on DatabaseService {
       if (jobs.isEmpty) return false;
       await Future.wait(jobs);
       final next = <Tag>[
-        for (var i = 0; i < ordered.length; i++) ordered[i].copyWith(sortOrder: i),
+        for (var i = 0; i < ordered.length; i++)
+          ordered[i].copyWith(sortOrder: i),
       ];
       _userTagsCatalogCache = List.unmodifiable(next);
       notifyTagsCatalogChanged();
@@ -559,7 +566,9 @@ extension ProfileServiceExtension on DatabaseService {
         if (t.tagId >= nextBiz) nextBiz = t.tagId + 1;
         if (t.sortOrder >= nextOrder) nextOrder = t.sortOrder + 1;
       }
-      final created = await _pb.collection(PbCollections.tags).create(
+      final created = await _pb
+          .collection(PbCollections.tags)
+          .create(
             body: <String, dynamic>{
               'tag_id': nextBiz,
               'user_id': _pidForPbFilter,
@@ -570,7 +579,10 @@ extension ProfileServiceExtension on DatabaseService {
               'domain': dom,
             },
           );
-      final tag = Tag.fromPocketJson(<String, dynamic>{...created.data, 'id': created.id});
+      final tag = Tag.fromPocketJson(<String, dynamic>{
+        ...created.data,
+        'id': created.id,
+      });
       _userTagsCatalogCache = [..._userTagsCatalogCache, tag];
       notifyTagsCatalogChanged();
       return tag;
@@ -590,7 +602,9 @@ extension ProfileServiceExtension on DatabaseService {
     if (id.isEmpty) return false;
     try {
       await _pb.collection(PbCollections.tags).delete(id);
-      _userTagsCatalogCache = _userTagsCatalogCache.where((t) => t.pbRecordId != id).toList();
+      _userTagsCatalogCache = _userTagsCatalogCache
+          .where((t) => t.pbRecordId != id)
+          .toList();
       notifyTagsCatalogChanged();
       return true;
     } catch (e, st) {
@@ -613,7 +627,9 @@ extension ProfileServiceExtension on DatabaseService {
     final rid = pocketRecordId.trim();
     if (rid.isEmpty) return false;
     try {
-      await _pb.collection(PbCollections.tags).update(
+      await _pb
+          .collection(PbCollections.tags)
+          .update(
             rid,
             body: <String, dynamic>{
               'user_id': _pidForPbFilter,
@@ -643,11 +659,19 @@ extension ProfileServiceExtension on DatabaseService {
   /// Never uses tag name, Noco wrapper id, or any non-PB identifier.
   Future<List<String>> _pbTagRecordIdsFromTags(List<Tag> tags) async {
     if (tags.isEmpty) return [];
-    final catalog = await fetchTagsForCurrentUser();
-    final byBiz = <int, Tag>{};
+    final planCatalog = await fetchTagsForCurrentUser(
+      scope: TagCatalogScope.plan,
+    );
+    final needsListCatalog = tags.any(TagCatalogScope.list.matchesTag);
+    final listCatalog = needsListCatalog
+        ? await fetchTagsForCurrentUser(scope: TagCatalogScope.list)
+        : const <Tag>[];
+    final catalog = <Tag>[...planCatalog, ...listCatalog];
+    final byBiz = <String, Tag>{};
     for (final t in catalog) {
       if (t.tagId != 0) {
-        byBiz[t.tagId] = t;
+        final domain = TagCatalogScope.list.matchesTag(t) ? 'list' : 'plan';
+        byBiz['$domain:${t.tagId}'] = t;
       }
     }
     final out = <String>[];
@@ -656,7 +680,8 @@ extension ProfileServiceExtension on DatabaseService {
       if (!t.rendersAsChip) continue;
       var pid = t.pbRecordId?.trim() ?? '';
       if (pid.isEmpty && t.tagId != 0) {
-        pid = byBiz[t.tagId]?.pbRecordId?.trim() ?? '';
+        final domain = TagCatalogScope.list.matchesTag(t) ? 'list' : 'plan';
+        pid = byBiz['$domain:${t.tagId}']?.pbRecordId?.trim() ?? '';
       }
       if (pid.isEmpty) {
         if (kDebugMode) {
@@ -671,5 +696,4 @@ extension ProfileServiceExtension on DatabaseService {
     }
     return out;
   }
-
 }

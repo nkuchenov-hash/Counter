@@ -2,6 +2,8 @@
 
 Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best time tracker possible, tidy codebase where every reusable thing lives in one place.
 
+**Current velocity track (2026-06-10):** ~~O1~~ Offline-first ✅ shipped · **V1** (this nav map) · **F1** Lists unblocked (do not start until V1 is done) · see `docs/ROADMAP.md` execution order.
+
 ---
 
 ## Key documents
@@ -19,7 +21,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 
 ## Structure check (vs `docs/APP_STRUCTURE.md`)
 
-Verified 2026-06-09. **Core layout matches** the documented map: `lib/data/` (Brain + part files), `lib/features/` (UI modules), `lib/core/` (theme + widgets), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
+Verified 2026-06-10. **Core layout matches** the documented map: `lib/data/` (Brain + part files), `lib/data/local_sync/` (offline outboxes), `lib/features/` (UI modules), `lib/core/` (theme + widgets), `lib/l10n/`, `lib/services/`, `app_shell.dart`, `main.dart`.
 
 **Known drift** (harmless; do not “fix” unless asked):
 
@@ -31,7 +33,31 @@ Verified 2026-06-09. **Core layout matches** the documented map: `lib/data/` (Br
 | Lists widget name | `ListsPage` in `lists_view.dart` | file name only |
 | Extra at `lib/` root | `auth_service.dart`, `auth_screen.dart` (OAuth legacy) | only `features/auth/` listed |
 | Extra data files | `base_database.dart`, `voice_audio_web.dart` | stubs only in doc |
+| Local sync (O1) | `lib/data/local_sync/*.dart` | not in older `APP_STRUCTURE.md` tree — see **Local sync** section below |
 | Governing docs path | `counter/docs/*.md` | some older refs say `lib/DATA_MAP.md` |
+
+---
+
+## Local sync & offline-first (O1 ✅)
+
+SharedPreferences mutation queues + global sync indicator. Retriable network/auth failures **enqueue** (optimistic UI kept); flush on boot, reconnect, app resume, tap-to-retry. Details: `docs/ROADMAP.md` O1.
+
+| Concept | File | Symbol / notes |
+| :--- | :--- | :--- |
+| **Record mutation outbox** | `lib/data/local_sync/record_mutation_outbox.dart` | `RecordMutationOutbox` — kinds: `highlander_start`, `stop_patch`, `record_update`, `record_delete`; `coalesceQueue` on enqueue |
+| **Plan / list mutation outbox** | `lib/data/local_sync/plan_mutation_outbox.dart` | `PlanMutationOutbox` — kinds: `plan_create`, `plan_update`, `plan_delete`; migrates legacy `plan_create_outbox_v1` |
+| **Legacy re-export** | `lib/data/local_sync/plan_create_outbox.dart` | `export 'plan_mutation_outbox.dart'` only |
+| **Sync UI state** | `lib/data/local_sync/offline_sync_state.dart` | `OfflineSyncController` — `pendingCount`, `isSyncing`, `authPaused`, `refreshPendingCount`, `resumeAfterAuthIfNeeded`, `isFullySynced` |
+| **Brain accessor** | `lib/data/database_service.dart` | `DatabaseService.instance.offlineSync` |
+| **Connectivity → drain** | `lib/data/local_sync/sync_manager.dart` | `SyncManager.instance.attachIfNeeded` — calls `flushPendingLocalMutations` when online |
+| **Flush all outboxes** | `lib/data/db_core.dart` | `DbCoreExtension.flushPendingLocalMutations` — records then plans; resumes auth if `authStore.isValid` |
+| **Flush record queue** | `lib/data/record_service.dart` | `RecordServiceExtension.flushPendingRecordMutations` |
+| **Flush plan/list queue** | `lib/data/plan_service.dart` | `PlanServiceExtension.flushPendingPlanMutations` (alias: `flushPendingPlanCreates`) |
+| **Boot / resume flush** | `lib/data/db_core.dart` | `loadInitialData` → `_loadInner` ends with `flushPendingLocalMutations`; lifecycle `onResumed` same |
+| **Offline / sync banner** | `lib/app_shell.dart` | `_OfflineSyncStatusBar` — tap → `flushPendingLocalMutations`; labels via `offline_sync_*` in `dictionary.dart` |
+| Record offline enqueue (start) | `lib/data/record_service.dart` | `_enqueueHighlanderStartMutation`, `_highlanderPrimaryServerSync` |
+| Record offline enqueue (stop/edit/delete) | `lib/data/record_service.dart` | `_enqueueStopPatchMutation`, `_enqueueRecordUpdateMutation`, `_enqueueRecordDeleteMutation` |
+| Plan offline enqueue | `lib/data/plan_service.dart` | `_enqueuePlanCreateMutation`, `_enqueuePlanUpdateMutation`, `_enqueuePlanDeleteMutation` |
 
 ---
 
@@ -56,11 +82,12 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **Tag UI — pickers** | `lib/features/shared/chip_component.dart` | `TagQuickPickStrip`, `TagChip` |
 | **Tag UI in edit sheet** | `lib/features/shared/shared_widgets.dart` | tag strip inside `_PlanningTaskEditSheet` |
 | **PB config** | `lib/data/pb_config.dart` | `kPocketBaseUrl`, `PbCollections`, expand constants |
-| **PB — records** | `lib/data/record_service.dart` | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, realtime |
-| **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `planningStream`, `_syncPlanTagsPocket` |
+| **PB — records** | `lib/data/record_service.dart` | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, `flushPendingRecordMutations`, realtime |
+| **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `deletePlanningTasksBulk`, `flushPendingPlanMutations`, `planningStream`, `_syncPlanTagsPocket` |
+| **Offline sync banner** | `lib/app_shell.dart` | `_OfflineSyncStatusBar` (top of shell `IndexedStack`) |
 | **PB — categories** | `lib/data/category_service.dart` | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
 | **PB — tags** | `lib/data/profile_service.dart` | (same as tag data row above) |
-| **PB — auth / bootstrap** | `lib/data/auth_bridge.dart`, `lib/data/db_core.dart` | session, `ensurePocketBaseReady`, `loadInitialData` |
+| **PB — auth / bootstrap** | `lib/data/auth_bridge.dart`, `lib/data/db_core.dart` | session, `ensurePocketBaseReady`, `loadInitialData`, `flushPendingLocalMutations` |
 | **Date/time header strip** | `lib/core/widgets/global_app_header.dart` | `GlobalAppHeader` + `AppBarLiveClock` |
 | **Per-screen header chrome** | `lib/features/timeline/timeline_widgets.dart` | `TimelineTopDateStrip` (timeline) |
 | | `lib/features/planning/planning_view.dart` | custom `Material` + `kToolbarHeight` row hosting `GlobalAppHeader` (~L2286) |
@@ -83,6 +110,14 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Delete a record | `lib/data/record_service.dart` | `DatabaseService.deleteRecordByDocId` (extension) |
 | Optimistic shadow — Start | `lib/data/record_service.dart` | `DatabaseService._startAtomicTaskSequenceApplyLocalPrimary` (extension) |
 | Optimistic shadow — Stop | `lib/data/record_service.dart` | `DatabaseService._applyOptimisticStopUiSnapshot` (extension) |
+| Offline queue — records | `lib/data/local_sync/record_mutation_outbox.dart` | `RecordMutationOutbox.enqueue` / `coalesceQueue` |
+| Offline queue — plans | `lib/data/local_sync/plan_mutation_outbox.dart` | `PlanMutationOutbox.enqueue` / `coalesceQueue` |
+| Flush pending mutations (all) | `lib/data/db_core.dart` | `DatabaseService.flushPendingLocalMutations` (extension) |
+| Flush pending records | `lib/data/record_service.dart` | `DatabaseService.flushPendingRecordMutations` (extension) |
+| Flush pending plans / lists | `lib/data/plan_service.dart` | `DatabaseService.flushPendingPlanMutations` (extension) |
+| Sync state / auth resume | `lib/data/local_sync/offline_sync_state.dart` | `OfflineSyncController` on `DatabaseService.offlineSync`; `resumeAfterAuthIfNeeded` |
+| Connectivity watcher | `lib/data/local_sync/sync_manager.dart` | `SyncManager.instance` |
+| Shell sync / offline banner | `lib/app_shell.dart` | `_OfflineSyncStatusBar` |
 | Singleton / stale-open detection | `lib/data/record_service.dart` | `_rowStartWallDayIsBeforeProjectedToday` / `_mergeSacredStaleOpenCandidates` (extension) |
 | Realtime subscribe handler | `lib/data/record_service.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` (extension) |
 | Record cache mutation (atomic upsert) | `lib/data/record_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` (extension) |
@@ -101,7 +136,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Plan link scoring (title similarity) | `lib/data/plan_service.dart` | `PlanServiceExtension.titleSimilarityForPlanLink` (static) |
 | Plan wall-estimate seconds | `lib/data/plan_service.dart` | `PlanServiceExtension.planningWallEstimateSeconds` (static) |
 | Plan / planning task done-toggle | `lib/features/planning/planning_view.dart` | `_PlanningViewState._toggleDone` |
-| List done-toggle (optimistic, with rollback) | `lib/features/lists/lists_view.dart` | `_ListsPageState._onListToggleDone` |
+| List done-toggle (optimistic; rollback only on hard failure) | `lib/features/lists/lists_view.dart` | `_ListsPageState._onListToggleDone` → `updatePlanningTask(isDone:)` (queues offline) |
 | Tag link to plan | `lib/data/plan_service.dart` | `DatabaseService._syncPlanTagsPocket` (extension) |
 | Timeline render (list) | `lib/features/timeline/timeline_view.dart` | `TimelinePage` |
 | Timeline edit sheet | `lib/features/shared/shared_widgets.dart` | `ActivityDetailSheet` |
@@ -149,18 +184,22 @@ See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
 ---
 
-## F1 / Lists — open TODOs
+## F1 / Lists — next feature phase (unblocked, not started)
+
+O1 offline-first is **shipped** (`docs/ROADMAP.md`). F1 is **unblocked** after V1. Do not implement F1 tags/export/pin until explicitly requested.
 
 | Item | Status | Notes |
 | :--- | :--- | :--- |
+| F1 scope (tags, export, chips, etc.) | **Not started** | See `docs/ROADMAP.md` F1 section |
 | Backlog pin / fix important items | **Schema gap** | No `plans.is_pinned` in PocketBase yet. Proposed: `plans.is_pinned` (bool) on backlog/list rows; sort pinned before unpinned. Do not implement client-only pin state. See `lists_pin_item_todo` in `dictionary.dart`. |
 
 ---
 
 ## Architecture rules (from Iron Laws)
 
-- **Optimistic UI:** Start/Stop/Update on records must never block the UI. Apply local shadow first (<100ms), sync to PocketBase async, roll back on failure.
-- **No `await` before UI update** for user-driven record actions.
+- **Optimistic UI:** Start/Stop/Update/Delete on records and Planning/Lists CRUD must never block the UI. Apply local shadow first (<100ms), sync to PocketBase async. On **retriable** network failure → enqueue to `lib/data/local_sync/*_mutation_outbox.dart` and keep optimistic state; on **non-retriable** validation errors → roll back and snack.
+- **No `await` before UI update** for user-driven record/plan actions.
+- **Offline drain:** `flushPendingLocalMutations` on login (`loadInitialData`), reconnect (`SyncManager`), app resume, and tap-to-retry (`_OfflineSyncStatusBar`). 401/403 sets `offlineSync.authPaused` until `resumeAfterAuthIfNeeded` + valid session.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
 - **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). All domain logic lives in `part of` files as named extensions: V5.1 profile/tag → `profile_service.dart`; V5.2 plan → `plan_service.dart`; V5.3 record → `record_service.dart`; V5.4 category → `category_service.dart`; V5.5 bootstrap/lifecycle → `db_core.dart`. Add bootstrap/lifecycle code to `db_core.dart`, category-domain to `category_service.dart`, record-domain to `record_service.dart`, plan-domain to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
