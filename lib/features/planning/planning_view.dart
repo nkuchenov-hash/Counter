@@ -661,6 +661,7 @@ class _PlanningPageState extends State<PlanningPage>
       onToggle: _toggleCreationTag,
       fallbackColor: scheme.primary,
       variant: CategoryChipVariant.largePicker,
+      externalSelectionRing: true,
       onReorder: canReorder ? _onPlanningQuickBarReorder : null,
     );
   }
@@ -2397,7 +2398,7 @@ class _PlanningPageState extends State<PlanningPage>
       children: [
         if (!_planSelectMode)
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
             child: Row(
               children: [
                 SizedBox(
@@ -2449,15 +2450,17 @@ class _PlanningPageState extends State<PlanningPage>
                     },
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                  tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
-                  onPressed: _openSmartPlanSheet,
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
+                  style: IconButton.styleFrom(
+                    foregroundColor: scheme.primary,
+                    splashFactory: NoSplash.splashFactory,
+                    hoverColor: Colors.transparent,
+                  ),
                   icon: const Icon(Icons.settings_rounded),
                   tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
                   onPressed: _showPlanningSettingsSheet,
@@ -2466,12 +2469,13 @@ class _PlanningPageState extends State<PlanningPage>
             ),
           ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(height: 64, child: _buildQuickAddTagStrip(scheme)),
+              SizedBox(height: 50, child: _buildQuickAddTagStrip(scheme)),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
@@ -2493,6 +2497,21 @@ class _PlanningPageState extends State<PlanningPage>
                     onPressed: _addTask,
                     icon: const Icon(Icons.add_rounded),
                     label: Text(t(currentLocale.value, 'add')),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    style: IconButton.styleFrom(
+                      foregroundColor: scheme.primary,
+                      splashFactory: NoSplash.splashFactory,
+                      hoverColor: Colors.transparent,
+                    ),
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
+                    onPressed: _openSmartPlanSheet,
                   ),
                 ],
               ),

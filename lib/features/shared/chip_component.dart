@@ -384,6 +384,7 @@ class TagQuickPickStrip extends StatelessWidget {
     this.fallbackColor,
     this.variant = CategoryChipVariant.compactCard,
     this.prominentVisuals = false,
+    this.externalSelectionRing = false,
 
     /// When set, the strip uses a horizontal [ReorderableListView]; indices match [tags].
     this.onReorder,
@@ -398,6 +399,7 @@ class TagQuickPickStrip extends StatelessWidget {
   final Color? fallbackColor;
   final CategoryChipVariant variant;
   final bool prominentVisuals;
+  final bool externalSelectionRing;
   final void Function(int oldIndex, int newIndex)? onReorder;
   final void Function(Tag tag)? onTagLongPress;
 
@@ -444,17 +446,20 @@ class TagQuickPickStrip extends StatelessWidget {
               final c = parseTagHexColor(tag.color) ?? fb;
               final ic = iconForTagKey(tag.icon);
               final isSel = selected.any((x) => x.tagId == tag.tagId);
-              final chip = CategoryChip(
+              final baseChip = CategoryChip(
                 mode: mode,
                 label: tag.name,
                 color: c,
                 icon: ic,
-                selected: isSel,
+                selected: externalSelectionRing ? false : isSel,
                 variant: variant,
                 prominentVisuals: prominentVisuals,
                 syntheticNoTagsMonochrome: tag.tagId == -1,
                 onTap: () => onToggle(tag),
               );
+              final chip = externalSelectionRing
+                  ? _TagSelectionRing(selected: isSel, child: baseChip)
+                  : baseChip;
               return ReorderableDelayedDragStartListener(
                 key: ValueKey<String>(
                   tag.pbRecordId?.trim().isNotEmpty == true
@@ -480,17 +485,20 @@ class TagQuickPickStrip extends StatelessWidget {
             final ic = iconForTagKey(tag.icon);
             final isSel = selected.any((x) => x.tagId == tag.tagId);
             final lp = onTagLongPress;
-            Widget chip = CategoryChip(
+            final baseChip = CategoryChip(
               mode: mode,
               label: tag.name,
               color: c,
               icon: ic,
-              selected: isSel,
+              selected: externalSelectionRing ? false : isSel,
               variant: variant,
               prominentVisuals: prominentVisuals,
               syntheticNoTagsMonochrome: tag.tagId == -1,
               onTap: () => onToggle(tag),
             );
+            Widget chip = externalSelectionRing
+                ? _TagSelectionRing(selected: isSel, child: baseChip)
+                : baseChip;
             if (lp != null) {
               chip = GestureDetector(
                 onLongPress: () => lp(tag),
@@ -502,6 +510,28 @@ class TagQuickPickStrip extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _TagSelectionRing extends StatelessWidget {
+  const _TagSelectionRing({required this.selected, required this.child});
+
+  final bool selected;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final ring = Theme.of(context).colorScheme.primary;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: selected ? ring : Colors.transparent,
+          width: 1.5,
+        ),
+      ),
+      child: Padding(padding: const EdgeInsets.all(3), child: child),
     );
   }
 }
