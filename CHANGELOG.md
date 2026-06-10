@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-10] - Docs sync: O1 local sync architecture [shipped]
+* **`docs/APP_STRUCTURE.md` / `docs/ARCHITECTURE.md`:** Synced governing docs with shipped O1 local mutation queues, sync state, drain triggers, auth-paused behavior, and `_OfflineSyncStatusBar` anchors.
+
 ## [2026-06-10] - F1 Lists feature completion [shipped]
 * **`lists_view.dart`:** F1 audit preserved existing list-tag filter/export/no-play behavior; active list tag now renders before “All tags”, and manual category chip mode uses the same scroll-to-start controller as normal mode.
 * **`plan_service.dart` / `profile_service.dart`:** Plan/list tag hydration now uses a combined plan+list tag catalog for plain `tags_link` cache/replay paths, preserving `domain: list` tags through offline create/update sync and cache merges.

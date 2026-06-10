@@ -17,7 +17,12 @@ lib/
 │   ├── pb_config.dart             // [CONFIG] PocketBase URL, Collections, & Expands.
 │   ├── auth_bridge.dart           // [GATE] Auth session management, OAuth, & Profile routing.
 │   ├── category_fuzzy_match.dart  // Category name fuzzy-match scoring.
-│   ├── local_sync/                // Offline outbox: plan_create_outbox.dart, sync_manager.dart
+│   ├── local_sync/                // [OFFLINE-FIRST] SharedPreferences mutation outboxes + sync state
+│   │   ├── record_mutation_outbox.dart // Records: start/stop/update/delete mutation queue
+│   │   ├── plan_mutation_outbox.dart   // Plans/Lists: create/update/delete mutation queue
+│   │   ├── plan_create_outbox.dart     // Legacy re-export to plan_mutation_outbox.dart
+│   │   ├── offline_sync_state.dart     // Pending count, syncing/auth-paused/error state
+│   │   └── sync_manager.dart           // Connectivity/app-resume drain trigger
 │   └── (platform stubs)          // html_stub.dart, voice_audio_stub.dart, web_history*.dart
 ├── l10n/                          // THE VOICE
 │   ├── dictionary.dart            // [TRANSLATIONS] EN/RU Maps & t() localization helper.
