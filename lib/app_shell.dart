@@ -410,6 +410,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     await _loadTasksForDate(_selectedDate);
   }
 
+  void _selectShellHeaderDate(DateTime date) {
+    final day = _dateOnly(date);
+    setState(() {
+      _selectedDate = day;
+      _focusedDay = day;
+    });
+    unawaited(_loadTasksForDate(day));
+  }
+
   @override
   void dispose() {
     CategoryVisibilityPrefs.hiddenIds.removeListener(
@@ -1716,6 +1725,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 resizeToAvoidBottomInset: true,
                 body: Column(
                   children: [
+                    if (_shellPageIndex <= 3)
+                      _ShellCompactHeader(
+                        selectedDate: _selectedDate,
+                        onDateSelected: _selectShellHeaderDate,
+                      ),
                     const _OfflineSyncStatusBar(),
                     Expanded(
                       child: IndexedStack(
@@ -1820,6 +1834,58 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           ),
         );
       },
+    );
+  }
+}
+
+class _ShellCompactHeader extends StatelessWidget {
+  const _ShellCompactHeader({
+    required this.selectedDate,
+    required this.onDateSelected,
+  });
+
+  final DateTime selectedDate;
+  final void Function(DateTime date) onDateSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    return Material(
+      color: kGlobalCompactHeaderColor,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: kGlobalCompactHeaderHeight,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 10, 0),
+            child: Row(
+              children: [
+                Text(
+                  t(loc, 'app_title'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: kGlobalCompactHeaderForeground,
+                    fontWeight: FontWeight.w700,
+                    height: 1.0,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: GlobalAppHeader(
+                      selectedDate: selectedDate,
+                      onDateSelected: onDateSelected,
+                      compact: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

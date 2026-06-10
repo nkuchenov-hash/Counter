@@ -89,6 +89,8 @@ class CategoryBreadcrumb extends StatelessWidget {
 /// Pill modes ([letterChip], [chip]) size like task-card tags: intrinsic width/height
 /// only — **no** forced 44×44 (avoids empty giant tiles in horizontal lists).
 /// Glyph modes keep a square tap region so circles/icons stay round.
+enum CategoryChipVariant { compactCard, largePicker }
+
 class CategoryChip extends StatelessWidget {
   const CategoryChip({
     super.key,
@@ -103,6 +105,7 @@ class CategoryChip extends StatelessWidget {
     /// layout at their **visual** size (not 44×44), keeping the glyph left-aligned
     /// with adjacent title text. Tappable strips should leave this false.
     this.compactGlyphLayout = false,
+    this.variant = CategoryChipVariant.compactCard,
 
     /// Edit-sheet pickers keep 44px touch targets but use less tiny visuals.
     this.prominentVisuals = false,
@@ -119,6 +122,7 @@ class CategoryChip extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
   final bool compactGlyphLayout;
+  final CategoryChipVariant variant;
   final bool prominentVisuals;
   final bool syntheticNoTagsMonochrome;
 
@@ -126,11 +130,12 @@ class CategoryChip extends StatelessWidget {
   static const double _glyphTapExtent = 44;
 
   double _glyphLayoutSide(CategoryDisplayMode m) {
+    final large =
+        variant == CategoryChipVariant.largePicker || prominentVisuals;
     return switch (m) {
-      CategoryDisplayMode.round => prominentVisuals ? 15 : _dotDiameter,
-      CategoryDisplayMode.icon => prominentVisuals ? 30 : 26,
-      CategoryDisplayMode.iconCircle =>
-        prominentVisuals ? 36 : _iconCircleDiameter,
+      CategoryDisplayMode.round => large ? 22 : _dotDiameter,
+      CategoryDisplayMode.icon => large ? 34 : 26,
+      CategoryDisplayMode.iconCircle => large ? 42 : _iconCircleDiameter,
       _ => _glyphTapExtent,
     };
   }
@@ -138,6 +143,8 @@ class CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final large =
+        variant == CategoryChipVariant.largePicker || prominentVisuals;
     final ring = selected ? scheme.primary : Colors.transparent;
     final displayLabel = localizeCategoryBreadcrumbPath(
       label,
@@ -156,7 +163,7 @@ class CategoryChip extends StatelessWidget {
         child: Icon(
           icon,
           color: selected ? scheme.primary : tagGlyphOnCanvas(color),
-          size: prominentVisuals ? 30 : 26,
+          size: large ? 34 : 26,
         ),
       ),
       CategoryDisplayMode.iconCircle => _iconInCircle(),
@@ -169,7 +176,9 @@ class CategoryChip extends StatelessWidget {
         mode == CategoryDisplayMode.letterChip ||
         mode == CategoryDisplayMode.chip;
     final glyphCompact = compactGlyphLayout && onTap == null && !isPillMode;
-    final glyphSide = glyphCompact ? _glyphLayoutSide(mode) : _glyphTapExtent;
+    final glyphSide = glyphCompact
+        ? _glyphLayoutSide(mode)
+        : (large ? 56.0 : _glyphTapExtent);
 
     final showOuterSelectionFrame = selected && onTap == null;
     final inner = AnimatedContainer(
@@ -190,6 +199,18 @@ class CategoryChip extends StatelessWidget {
           : null,
       child: visual,
     );
+    final selectedPickerVisual = selected && onTap != null && large
+        ? DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(isPillMode ? 14 : 28),
+              border: Border.all(color: scheme.primary, width: 2),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: isPillMode ? inner : Center(child: visual),
+            ),
+          )
+        : inner;
 
     final BoxConstraints constraints = isPillMode
         ? const BoxConstraints()
@@ -209,9 +230,12 @@ class CategoryChip extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: isPillMode
-            ? BorderRadius.circular(10)
+            ? BorderRadius.circular(14)
             : BorderRadius.circular(22),
-        child: ConstrainedBox(constraints: constraints, child: inner),
+        child: ConstrainedBox(
+          constraints: constraints,
+          child: selectedPickerVisual,
+        ),
       ),
     );
   }
@@ -230,13 +254,15 @@ class CategoryChip extends StatelessWidget {
         ? resolvedLabel.trim()
         : '?';
     final scheme = Theme.of(context).colorScheme;
+    final large =
+        variant == CategoryChipVariant.largePicker || prominentVisuals;
     final rgb = color.toARGB32() & 0xFFFFFF;
     final padding = EdgeInsets.symmetric(
-      horizontal: prominentVisuals ? 10 : 8,
-      vertical: prominentVisuals ? 4 : 2,
+      horizontal: large ? 16 : 8,
+      vertical: large ? 8 : 2,
     );
     final textStyle =
-        (prominentVisuals
+        (large
                 ? Theme.of(context).textTheme.labelMedium
                 : Theme.of(context).textTheme.labelSmall)
             ?.copyWith(fontWeight: FontWeight.w600);
@@ -289,9 +315,11 @@ class CategoryChip extends StatelessWidget {
   /// chip: fixed horizontal stadium — **not** intrinsic/flexible; matches a compact text-chip footprint.
   Widget _chipPlanStyle(BuildContext context) {
     final surface = Theme.of(context).colorScheme.surface;
+    final large =
+        variant == CategoryChipVariant.largePicker || prominentVisuals;
     return SizedBox(
-      width: prominentVisuals ? 84 : _emptyChipWidth,
-      height: prominentVisuals ? 30 : _emptyChipHeight,
+      width: large ? 108 : _emptyChipWidth,
+      height: large ? 40 : _emptyChipHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: tagEmptyChipFill(color, surface),
@@ -310,9 +338,11 @@ class CategoryChip extends StatelessWidget {
   static const double _dotDiameter = 12;
 
   Widget _tagRoundDot() {
+    final large =
+        variant == CategoryChipVariant.largePicker || prominentVisuals;
     return SizedBox(
-      width: prominentVisuals ? 15 : _dotDiameter,
-      height: prominentVisuals ? 15 : _dotDiameter,
+      width: large ? 22 : _dotDiameter,
+      height: large ? 22 : _dotDiameter,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: color,
@@ -329,9 +359,11 @@ class CategoryChip extends StatelessWidget {
 
   /// Filled circle + icon; explicit square [SizedBox] avoids zero/invisible layout in horizontal lists.
   Widget _iconInCircle() {
+    final large =
+        variant == CategoryChipVariant.largePicker || prominentVisuals;
     return SizedBox(
-      width: prominentVisuals ? 36 : _iconCircleDiameter,
-      height: prominentVisuals ? 36 : _iconCircleDiameter,
+      width: large ? 42 : _iconCircleDiameter,
+      height: large ? 42 : _iconCircleDiameter,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: color,
@@ -347,7 +379,7 @@ class CategoryChip extends StatelessWidget {
               color,
               syntheticNoTags: syntheticNoTagsMonochrome,
             ),
-            size: prominentVisuals ? 20 : 18,
+            size: large ? 24 : 18,
           ),
         ),
       ),
@@ -363,6 +395,7 @@ class TagQuickPickStrip extends StatelessWidget {
     required this.selected,
     required this.onToggle,
     this.fallbackColor,
+    this.variant = CategoryChipVariant.compactCard,
     this.prominentVisuals = false,
 
     /// When set, the strip uses a horizontal [ReorderableListView]; indices match [tags].
@@ -376,6 +409,7 @@ class TagQuickPickStrip extends StatelessWidget {
   final List<Tag> selected;
   final void Function(Tag tag) onToggle;
   final Color? fallbackColor;
+  final CategoryChipVariant variant;
   final bool prominentVisuals;
   final void Function(int oldIndex, int newIndex)? onReorder;
   final void Function(Tag tag)? onTagLongPress;
@@ -429,6 +463,7 @@ class TagQuickPickStrip extends StatelessWidget {
                 color: c,
                 icon: ic,
                 selected: isSel,
+                variant: variant,
                 prominentVisuals: prominentVisuals,
                 syntheticNoTagsMonochrome: tag.tagId == -1,
                 onTap: () => onToggle(tag),
@@ -464,6 +499,7 @@ class TagQuickPickStrip extends StatelessWidget {
               color: c,
               icon: ic,
               selected: isSel,
+              variant: variant,
               prominentVisuals: prominentVisuals,
               syntheticNoTagsMonochrome: tag.tagId == -1,
               onTap: () => onToggle(tag),

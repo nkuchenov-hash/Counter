@@ -660,6 +660,7 @@ class _PlanningPageState extends State<PlanningPage>
       selected: _creationSelectedTags,
       onToggle: _toggleCreationTag,
       fallbackColor: scheme.primary,
+      variant: CategoryChipVariant.largePicker,
       onReorder: canReorder ? _onPlanningQuickBarReorder : null,
     );
   }
@@ -683,13 +684,6 @@ class _PlanningPageState extends State<PlanningPage>
       _timelineHourEnd = e;
     });
     unawaited(PlanningSheetTimelinePrefs.saveStartEnd(s, e));
-  }
-
-  void _shiftPlanningDay(int days) {
-    if (_planSelectMode || days == 0) return;
-    final base = widget.selectedDate ?? _today;
-    final day = DateTime(base.year, base.month, base.day);
-    widget.onDatePicked?.call(day.add(Duration(days: days)));
   }
 
   void _showPlanningSettingsSheet() {
@@ -2255,7 +2249,6 @@ class _PlanningPageState extends State<PlanningPage>
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final headerDate = widget.selectedDate ?? _today;
 
     return StreamBuilder<List<PlanningTask>>(
       stream: _planningStream,
@@ -2331,132 +2324,57 @@ class _PlanningPageState extends State<PlanningPage>
         return Scaffold(
           resizeToAvoidBottomInset: true,
           body: SafeArea(
+            top: false,
             bottom: false,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Material(
-                  color: kGlobalCompactHeaderColor,
-                  elevation: 0,
-                  child: IconTheme(
-                    data: const IconThemeData(
-                      color: kGlobalCompactHeaderForeground,
-                    ),
+                if (_planSelectMode) ...[
+                  Material(
+                    color: scheme.surface,
+                    elevation: 0,
+                    surfaceTintColor: scheme.surfaceTint,
                     child: SizedBox(
                       height: kGlobalCompactHeaderHeight,
-                      child: _planSelectMode
-                          ? Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.close_rounded),
-                                  onPressed: _exitSelectMode,
-                                  tooltip: t(
-                                    currentLocale.value,
-                                    'plan_exit_select',
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    t(currentLocale.value, 'plan_select_mode'),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: kGlobalCompactHeaderForeground,
-                                        ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                if (visiblePlans != null)
-                                  TextButton(
-                                    style: TextButton.styleFrom(
-                                      visualDensity: VisualDensity.compact,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                      ),
-                                    ),
-                                    onPressed: () =>
-                                        _toggleSelectAllVisiblePlans(
-                                          visiblePlans,
-                                        ),
-                                    child: Text(
-                                      _allVisiblePlanTasksSelected(visiblePlans)
-                                          ? t(
-                                              currentLocale.value,
-                                              'plan_deselect_visible',
-                                            )
-                                          : t(
-                                              currentLocale.value,
-                                              'plan_select_all',
-                                            ),
-                                    ),
-                                  ),
-                              ],
-                            )
-                          : Row(
-                              children: [
-                                if (kIsWeb)
-                                  IconButton(
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 40,
-                                      minHeight: 40,
-                                    ),
-                                    icon: const Icon(
-                                      Icons.chevron_left_rounded,
-                                    ),
-                                    tooltip: t(
-                                      currentLocale.value,
-                                      'date_previous_day',
-                                    ),
-                                    onPressed: () => _shiftPlanningDay(-1),
-                                  ),
-                                Expanded(
-                                  child: GlobalAppHeader(
-                                    selectedDate: headerDate,
-                                    onDateSelected: (d) =>
-                                        widget.onDatePicked?.call(d),
-                                    compact: true,
-                                  ),
-                                ),
-                                if (kIsWeb)
-                                  IconButton(
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 40,
-                                      minHeight: 40,
-                                    ),
-                                    icon: const Icon(
-                                      Icons.chevron_right_rounded,
-                                    ),
-                                    tooltip: t(
-                                      currentLocale.value,
-                                      'date_next_day',
-                                    ),
-                                    onPressed: () => _shiftPlanningDay(1),
-                                  ),
-                                IconButton(
-                                  icon: const Icon(Icons.auto_awesome_rounded),
-                                  tooltip: t(
-                                    currentLocale.value,
-                                    'smart_plan_tooltip',
-                                  ),
-                                  onPressed: _openSmartPlanSheet,
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.settings_rounded),
-                                  tooltip: t(
-                                    currentLocale.value,
-                                    'plan_settings_tooltip',
-                                  ),
-                                  onPressed: _showPlanningSettingsSheet,
-                                ),
-                              ],
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: _exitSelectMode,
+                            tooltip: t(currentLocale.value, 'plan_exit_select'),
+                          ),
+                          Expanded(
+                            child: Text(
+                              t(currentLocale.value, 'plan_select_mode'),
+                              style: Theme.of(context).textTheme.titleMedium,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          if (visiblePlans != null)
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                              ),
+                              onPressed: () =>
+                                  _toggleSelectAllVisiblePlans(visiblePlans),
+                              child: Text(
+                                _allVisiblePlanTasksSelected(visiblePlans)
+                                    ? t(
+                                        currentLocale.value,
+                                        'plan_deselect_visible',
+                                      )
+                                    : t(currentLocale.value, 'plan_select_all'),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                Divider(height: 1, color: scheme.outlineVariant),
+                  Divider(height: 1, color: scheme.outlineVariant),
+                ],
                 Expanded(child: body),
               ],
             ),
@@ -2480,57 +2398,71 @@ class _PlanningPageState extends State<PlanningPage>
         if (!_planSelectMode)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: SizedBox(
-                height: kAppCompactControlHeight,
-                child: SegmentedButton<_PlanSortMode>(
-                  showSelectedIcon: false,
-                  style: appCompactSegmentedButtonStyle(
-                    context,
-                    segmentWidth: 78,
+            child: Row(
+              children: [
+                SizedBox(
+                  height: kAppCompactControlHeight,
+                  child: SegmentedButton<_PlanSortMode>(
+                    showSelectedIcon: false,
+                    style: appCompactSegmentedButtonStyle(
+                      context,
+                      segmentWidth: 78,
+                    ),
+                    segments: [
+                      ButtonSegment<_PlanSortMode>(
+                        value: _PlanSortMode.category,
+                        label: AppCompactSegmentLabel(
+                          text: t(currentLocale.value, 'plan_sort_category'),
+                        ),
+                      ),
+                      ButtonSegment<_PlanSortMode>(
+                        value: _PlanSortMode.time,
+                        label: AppCompactSegmentLabel(
+                          text: t(currentLocale.value, 'plan_sort_time'),
+                        ),
+                      ),
+                      ButtonSegment<_PlanSortMode>(
+                        value: _PlanSortMode.tags,
+                        label: AppCompactSegmentLabel(
+                          text: t(currentLocale.value, 'plan_sort_tags'),
+                        ),
+                      ),
+                      ButtonSegment<_PlanSortMode>(
+                        value: _PlanSortMode.custom,
+                        label: AppCompactSegmentLabel(
+                          text: t(currentLocale.value, 'plan_sort_custom'),
+                        ),
+                      ),
+                    ],
+                    selected: {_sortMode},
+                    onSelectionChanged: (Set<_PlanSortMode> next) {
+                      if (next.isEmpty) return;
+                      final mode = next.first;
+                      setState(() {
+                        _sortMode = mode;
+                      });
+                      unawaited(
+                        DatabaseService.instance.persistPlanActiveTabIndex(
+                          _planSortModeToPersistedIndex(mode),
+                        ),
+                      );
+                    },
                   ),
-                  segments: [
-                    ButtonSegment<_PlanSortMode>(
-                      value: _PlanSortMode.category,
-                      label: AppCompactSegmentLabel(
-                        text: t(currentLocale.value, 'plan_sort_category'),
-                      ),
-                    ),
-                    ButtonSegment<_PlanSortMode>(
-                      value: _PlanSortMode.time,
-                      label: AppCompactSegmentLabel(
-                        text: t(currentLocale.value, 'plan_sort_time'),
-                      ),
-                    ),
-                    ButtonSegment<_PlanSortMode>(
-                      value: _PlanSortMode.tags,
-                      label: AppCompactSegmentLabel(
-                        text: t(currentLocale.value, 'plan_sort_tags'),
-                      ),
-                    ),
-                    ButtonSegment<_PlanSortMode>(
-                      value: _PlanSortMode.custom,
-                      label: AppCompactSegmentLabel(
-                        text: t(currentLocale.value, 'plan_sort_custom'),
-                      ),
-                    ),
-                  ],
-                  selected: {_sortMode},
-                  onSelectionChanged: (Set<_PlanSortMode> next) {
-                    if (next.isEmpty) return;
-                    final mode = next.first;
-                    setState(() {
-                      _sortMode = mode;
-                    });
-                    unawaited(
-                      DatabaseService.instance.persistPlanActiveTabIndex(
-                        _planSortModeToPersistedIndex(mode),
-                      ),
-                    );
-                  },
                 ),
-              ),
+                const Spacer(),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
+                  onPressed: _openSmartPlanSheet,
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.settings_rounded),
+                  tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
+                  onPressed: _showPlanningSettingsSheet,
+                ),
+              ],
             ),
           ),
         Padding(
@@ -2539,7 +2471,7 @@ class _PlanningPageState extends State<PlanningPage>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(height: 46, child: _buildQuickAddTagStrip(scheme)),
+              SizedBox(height: 64, child: _buildQuickAddTagStrip(scheme)),
               Row(
                 children: [
                   Expanded(
@@ -3351,7 +3283,8 @@ class _PlanningTaskCard extends StatelessWidget {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
+                            Flexible(
+                              fit: FlexFit.loose,
                               child: Text(
                                 task.title,
                                 textAlign: TextAlign.start,

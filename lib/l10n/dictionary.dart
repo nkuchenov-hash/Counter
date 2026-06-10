@@ -56,7 +56,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'lists_pin_chips_title': 'Filter chips',
     'lists_pin_chips_subtitle':
         'Pick which categories appear as quick filters (besides All).',
-    'lists_chip_bar_settings_tooltip': 'Lists section: filter chips (manual or frequent)',
+    'lists_chip_bar_settings_tooltip':
+        'Lists section: filter chips (manual or frequent)',
     'lists_chip_mode_frequent': 'Most frequent',
     'lists_chip_mode_manual': 'Manual',
     'lists_chip_bar_sheet_title': 'Quick filters',
@@ -144,7 +145,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'add_english_en': 'Add English (en)',
     'search_timezones': 'Search timezones',
     'save_timezone': 'Save timezone',
-    'timezone_save_failed': 'Settings save failed (e.g. 404). Check connection.',
+    'timezone_save_failed':
+        'Settings save failed (e.g. 404). Check connection.',
     'sync': 'Sync',
     'refresh_categories_server': 'Refresh categories and settings from server.',
     'close': 'Close',
@@ -168,7 +170,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'waiting_planetary_data': 'Waiting for Planetary Data...',
     'settings_tooltip': 'Settings',
     'long_duration': 'Long duration',
-    'long_duration_confirm': 'This record spans multiple days or a very long time. Is this correct?',
+    'long_duration_confirm':
+        'This record spans multiple days or a very long time. Is this correct?',
     'yes_save': 'Yes, save',
     'save_failed': 'Save failed: %s',
     'dismiss': 'Dismiss',
@@ -180,7 +183,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'category_label': 'Category',
     'add_details': 'Add details…',
     'checklist_item': 'Checklist item',
-    'parallel_activities_info': 'Parallel Activities are available when editing a record.',
+    'parallel_activities_info':
+        'Parallel Activities are available when editing a record.',
     'activity_title': 'Activity title',
     'delete_record_confirm': 'Delete record?',
     'cannot_undo': 'This cannot be undone.',
@@ -201,6 +205,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_sort_custom': 'Custom',
     'plan_unscheduled': 'No time set',
     'plan_reminder_label': 'Reminder before start',
+    'plan_start_time_full': 'Start time',
+    'plan_end_time_full': 'End time',
     'plan_reminder_none': 'None',
     'plan_reminder_5m': '5 minutes',
     'plan_reminder_15m': '15 minutes',
@@ -278,8 +284,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'manage_tags': 'Manage tags',
     'planning_tag_display_style': 'Tag display style',
     'tag_settings_hub_title': 'Tag settings',
-    'tag_settings_sheet_subtitle':
-        'Manage tags and how they look in planning.',
+    'tag_settings_sheet_subtitle': 'Manage tags and how they look in planning.',
     'tag_settings_tab_tags': 'Tags',
     'tag_settings_tab_style': 'Style',
     'tag_manager_title': 'Tags',
@@ -336,7 +341,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'end_time_after_start': 'End time must be after start time.',
     'time_conflict': 'Time conflict! This overlaps with an existing record.',
     'time_conflict_with_title': 'Conflict: This overlaps with "%s".',
-    'category_rename_failed': 'Could not rename category on the server. Check your connection.',
+    'category_rename_failed':
+        'Could not rename category on the server. Check your connection.',
     'try_again': 'Try Again',
     'say_task_title': 'Say a task title or type here…',
     'start_task': 'Start task',
@@ -346,7 +352,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'done': 'Done',
     'add_keyword_hint': 'Add keyword (Space, Comma, or Enter)',
     'sync_failed': 'Sync failed',
-    'sync_failed_retry': 'Could not save. Check your connection, then try again.',
+    'sync_failed_retry':
+        'Could not save. Check your connection, then try again.',
     'appearance': 'Appearance',
     'tag_display_settings_title': 'Tag style',
     'tag_display_settings_subtitle':
@@ -381,8 +388,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'category_removed': 'Category removed.',
     'category_stale_pruned':
         'Category was not on the server — removed from your list.',
-    'category_sync_not_found':
-        'Sync failed: Category not found on server.',
+    'category_sync_not_found': 'Sync failed: Category not found on server.',
     'default_label': 'Default',
     'edit_keywords': 'Edit keywords',
     'categories_title': 'Categories',
@@ -414,7 +420,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'no_planned_tasks': 'No planned tasks.',
     'no_records_yet': 'No records for this date yet.',
     'untitled': 'Untitled',
-    'conflicting_record': 'Conflicting Record: "%s" on %s (%s). Tap to go to it.',
+    'conflicting_record':
+        'Conflicting Record: "%s" on %s (%s). Tap to go to it.',
     'voice_input': 'Voice input',
     'listening': 'Listening…',
     'plan': 'Plan',
@@ -435,7 +442,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'listen': 'Listen',
     'voice_status_say_task': 'Say your task now…',
     'voice_status_heard': 'Recognized. Tap to confirm.',
-    'speech_error_network': 'Network error. Check your connection and try again.',
+    'speech_error_network':
+        'Network error. Check your connection and try again.',
     'speech_error_network_soft':
         'Connection issue. Please try dictating again.',
     'speech_error_network_browser':
@@ -445,7 +453,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'voice_stt_recovered_hint':
         'Recognition paused — your text is kept. Tap the action button when ready.',
     'speech_error_prefix': 'Speech error: %s',
-    'speech_russian_engine_fallback': 'Russian speech is unavailable on this device. Using English recognition.',
+    'speech_russian_engine_fallback':
+        'Russian speech is unavailable on this device. Using English recognition.',
     'speech_locale_fallback_generic':
         'Speech recognition retried with the device locale. If results are wrong, check system language packs.',
     'speech_language_not_supported':
@@ -487,17 +496,21 @@ const Map<String, Map<String, String>> _l10nCore = {
     'selected_color_updates': 'Selected color updates before save',
     'default_category': 'Default category',
     'set_as_default': 'Set as default',
-    'delete_subcategories_warning': 'Deleting this will also delete all its subcategories.',
-    'delete_subcategories_confirm': 'Deleting this will also delete all its subcategories. This cannot be undone.',
+    'delete_subcategories_warning':
+        'Deleting this will also delete all its subcategories.',
+    'delete_subcategories_confirm':
+        'Deleting this will also delete all its subcategories. This cannot be undone.',
     'keywords_english': 'Keywords (English)',
     'keywords_russian': 'Ключевые слова (Русский)',
     'keywords_lang': 'Keywords (%s)',
-    'active_languages_hint': 'Active languages get a keyword field in each category. Primary is used first for matching.',
+    'active_languages_hint':
+        'Active languages get a keyword field in each category. Primary is used first for matching.',
     'layout_scrollable_rows': 'Layout: Scrollable Rows',
     'layout_wrap': 'Layout: Wrap',
     'switch_to_wrap': 'Switch to Wrap layout',
     'switch_to_scrollable': 'Switch to Scrollable Rows',
-    'create_first_category': 'Create your first category (e.g. Work or Health).',
+    'create_first_category':
+        'Create your first category (e.g. Work or Health).',
     'segment_en': 'EN',
     'segment_ru': 'RU',
     'planned_label': 'Planned',
@@ -540,11 +553,13 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_enter_password': 'Enter a password.',
     'auth_confirm_password': 'Confirm your password.',
     'auth_oauth_failed': 'Sign-in with this provider failed.',
-    'auth_oauth_not_configured': 'This sign-in method is not enabled on the server.',
+    'auth_oauth_not_configured':
+        'This sign-in method is not enabled on the server.',
     'auth_biometric_button': 'Sign in with biometrics',
     'auth_biometric_reason': 'Sign in to Life OS',
     'auth_biometric_remember': 'Allow Face ID / fingerprint sign-in next time',
-    'auth_biometric_no_credentials': 'Sign in with email first to enable biometric sign-in.',
+    'auth_biometric_no_credentials':
+        'Sign in with email first to enable biometric sign-in.',
     'auth_biometric_failed': 'Biometric sign-in failed.',
     'auth_navigation_failed': 'Navigation failed. Please try again.',
     'auth_show_password': 'Show password',
@@ -589,11 +604,11 @@ const Map<String, Map<String, String>> _l10nCore = {
     'lists_inline_add_hint': 'Добавить задачу…',
     'lists_select_leaf_hint': 'Выберите подкатегорию, чтобы добавить задачи',
     'plan_filter_no_tags': 'Без тегов',
-    'category_visibility_toggle': 'Показать или скрыть в списках и планировании',
+    'category_visibility_toggle':
+        'Показать или скрыть в списках и планировании',
     'lists_delete_backlog_confirm': 'Удалить эту задачу из списка?',
     'lists_pin_chips_title': 'Быстрые фильтры',
-    'lists_pin_chips_subtitle':
-        'Выберите категории для чипов рядом с «Все».',
+    'lists_pin_chips_subtitle': 'Выберите категории для чипов рядом с «Все».',
     'lists_chip_bar_settings_tooltip':
         'Раздел «Списки»: быстрые фильтры (вручную или по частоте)',
     'lists_chip_mode_frequent': 'Чаще всего',
@@ -667,8 +682,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'sign_in_again': 'Войти снова',
     'language_label': 'Язык',
     'add_active_language': 'Добавить язык',
-    'all_supported_languages_active':
-        'Все поддерживаемые языки уже активны.',
+    'all_supported_languages_active': 'Все поддерживаемые языки уже активны.',
     'time_zone': 'Часовой пояс',
     'loading_settings': 'Загрузка настроек...',
     'account_security': 'Безопасность аккаунта',
@@ -683,7 +697,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'add_english_en': 'Добавить English (en)',
     'search_timezones': 'Поиск часовых поясов',
     'save_timezone': 'Сохранить часовой пояс',
-    'timezone_save_failed': 'Не удалось сохранить настройки (например 404). Проверьте соединение.',
+    'timezone_save_failed':
+        'Не удалось сохранить настройки (например 404). Проверьте соединение.',
     'sync': 'Синхронизация',
     'refresh_categories_server': 'Обновить категории и настройки с сервера.',
     'close': 'Закрыть',
@@ -707,7 +722,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'waiting_planetary_data': 'Ожидание данных...',
     'settings_tooltip': 'Настройки',
     'long_duration': 'Длительная запись',
-    'long_duration_confirm': 'Эта запись охватывает несколько дней или очень долгое время. Всё верно?',
+    'long_duration_confirm':
+        'Эта запись охватывает несколько дней или очень долгое время. Всё верно?',
     'yes_save': 'Да, сохранить',
     'save_failed': 'Ошибка сохранения: %s',
     'dismiss': 'Закрыть',
@@ -719,7 +735,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'category_label': 'Категория',
     'add_details': 'Добавить детали…',
     'checklist_item': 'Пункт списка',
-    'parallel_activities_info': 'Параллельные активности доступны при редактировании записи.',
+    'parallel_activities_info':
+        'Параллельные активности доступны при редактировании записи.',
     'activity_title': 'Название активности',
     'delete_record_confirm': 'Удалить запись?',
     'cannot_undo': 'Это нельзя отменить.',
@@ -740,6 +757,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_sort_custom': 'Свой порядок',
     'plan_unscheduled': 'Без времени',
     'plan_reminder_label': 'Напоминание до начала',
+    'plan_start_time_full': 'Время начала',
+    'plan_end_time_full': 'Время окончания',
     'plan_reminder_none': 'Нет',
     'plan_reminder_5m': 'За 5 минут',
     'plan_reminder_15m': 'За 15 минут',
@@ -756,8 +775,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'profile_notifications_section': 'Уведомления',
     'profile_notifications_subtitle':
         'Разрешите приложению ставить локальные напоминания по планам (Android / iOS).',
-    'profile_notifications_request_button':
-        'Разрешить и проверить уведомления',
+    'profile_notifications_request_button': 'Разрешить и проверить уведомления',
     'profile_notifications_web_hint':
         'В веб-версии недоступно. Используйте Android или iOS.',
     'notif_status_allowed': 'Уведомления разрешены',
@@ -876,7 +894,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'end_time_after_start': 'Время окончания должно быть позже времени начала.',
     'time_conflict': 'Конфликт времени! Пересекается с существующей записью.',
     'time_conflict_with_title': 'Конфликт: пересечение с «%s».',
-    'category_rename_failed': 'Не удалось переименовать категорию на сервере. Проверьте соединение.',
+    'category_rename_failed':
+        'Не удалось переименовать категорию на сервере. Проверьте соединение.',
     'try_again': 'Попробовать снова',
     'say_task_title': 'Скажите название задачи или введите здесь…',
     'start_task': 'Начать задачу',
@@ -886,7 +905,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'done': 'Готово',
     'add_keyword_hint': 'Добавить ключевое слово (Пробел, запятая или Enter)',
     'sync_failed': 'Ошибка синхронизации',
-    'sync_failed_retry': 'Не удалось сохранить. Проверьте соединение и попробуйте снова.',
+    'sync_failed_retry':
+        'Не удалось сохранить. Проверьте соединение и попробуйте снова.',
     'appearance': 'Оформление',
     'tag_display_settings_title': 'Стиль тегов',
     'tag_display_settings_subtitle':
@@ -919,8 +939,7 @@ const Map<String, Map<String, String>> _l10nCore = {
     'rename': 'Переименовать',
     'delete_category_confirm': 'Удалить категорию?',
     'category_removed': 'Категория удалена.',
-    'category_stale_pruned':
-        'Категории нет на сервере — удалено из списка.',
+    'category_stale_pruned': 'Категории нет на сервере — удалено из списка.',
     'category_sync_not_found':
         'Синхронизация не удалась: категория не найдена на сервере.',
     'default_label': 'По умолчанию',
@@ -975,7 +994,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'listen': 'Слушать',
     'voice_status_say_task': 'Назовите задачу…',
     'voice_status_heard': 'Распознано. Нажмите для подтверждения.',
-    'speech_error_network': 'Ошибка сети. Проверьте подключение и попробуйте снова.',
+    'speech_error_network':
+        'Ошибка сети. Проверьте подключение и попробуйте снова.',
     'speech_error_network_soft':
         'Трудности с соединением. Попробуйте продиктовать ещё раз.',
     'speech_error_network_browser':
@@ -1009,7 +1029,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'offline_sync_pending_online': '%s ожидают синхронизации',
     'offline_sync_syncing': 'Синхронизация…',
     'offline_sync_error': 'Ошибка синхронизации — нажмите для повтора',
-    'offline_sync_auth_paused': 'Войдите для синхронизации — нажмите для повтора',
+    'offline_sync_auth_paused':
+        'Войдите для синхронизации — нажмите для повтора',
     'diagnostic_uid': 'UID диагностики: %s',
     'stats_group_total': '%s (Всего: %s)',
     'stats_session_line': '%s — %s (%s) — "%s"',
@@ -1029,16 +1050,19 @@ const Map<String, Map<String, String>> _l10nCore = {
     'default_category': 'Категория по умолчанию',
     'set_as_default': 'Сделать по умолчанию',
     'delete_subcategories_warning': 'Удаление также удалит все подкатегории.',
-    'delete_subcategories_confirm': 'Удаление также удалит все подкатегории. Это нельзя отменить.',
+    'delete_subcategories_confirm':
+        'Удаление также удалит все подкатегории. Это нельзя отменить.',
     'keywords_english': 'Keywords (English)',
     'keywords_russian': 'Ключевые слова (Русский)',
     'keywords_lang': 'Keywords (%s)',
-    'active_languages_hint': 'Активные языки получают поле ключевых слов в каждой категории. Основной используется первым.',
+    'active_languages_hint':
+        'Активные языки получают поле ключевых слов в каждой категории. Основной используется первым.',
     'layout_scrollable_rows': 'Макет: прокручиваемые строки',
     'layout_wrap': 'Макет: сетка',
     'switch_to_wrap': 'Переключить на сетку',
     'switch_to_scrollable': 'Переключить на прокручиваемые строки',
-    'create_first_category': 'Создайте первую категорию (напр. Работа или Здоровье).',
+    'create_first_category':
+        'Создайте первую категорию (напр. Работа или Здоровье).',
     'segment_en': 'EN',
     'segment_ru': 'RU',
     'planned_label': 'Запланировано',
@@ -1084,7 +1108,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_oauth_not_configured': 'Этот способ входа не включён на сервере.',
     'auth_biometric_button': 'Войти по биометрии',
     'auth_biometric_reason': 'Вход в Life OS',
-    'auth_biometric_remember': 'Разрешить вход по Face ID / отпечатку в следующий раз',
+    'auth_biometric_remember':
+        'Разрешить вход по Face ID / отпечатку в следующий раз',
     'auth_biometric_no_credentials':
         'Сначала войдите по email, чтобы включить вход по биометрии.',
     'auth_biometric_failed': 'Не удалось войти по биометрии.',
@@ -1108,16 +1133,16 @@ Map<String, String> _layerOnEnglish(Map<String, String> partial) {
 /// Full catalog: canonical `en`/`ru` plus merged regional bundles for RTL (e.g. `ar`).
 final Map<String, Map<String, String>> l10n =
     Map<String, Map<String, String>>.unmodifiable({
-  'en': _l10nCore['en']!,
-  'ru': _l10nCore['ru']!,
-  'ar': _layerOnEnglish(kArL10n),
-  'de': _layerOnEnglish(kDeL10n),
-  'es': _layerOnEnglish(kEsL10n),
-  'fr': _layerOnEnglish(kFrL10n),
-  'it': _layerOnEnglish(kItL10n),
-  'ko': _layerOnEnglish(kKoL10n),
-  'zh': _layerOnEnglish(kZhL10n),
-});
+      'en': _l10nCore['en']!,
+      'ru': _l10nCore['ru']!,
+      'ar': _layerOnEnglish(kArL10n),
+      'de': _layerOnEnglish(kDeL10n),
+      'es': _layerOnEnglish(kEsL10n),
+      'fr': _layerOnEnglish(kFrL10n),
+      'it': _layerOnEnglish(kItL10n),
+      'ko': _layerOnEnglish(kKoL10n),
+      'zh': _layerOnEnglish(kZhL10n),
+    });
 
 /// Safe lookup: [locale] then fallback to 'en'. Returns key if missing.
 String t(String locale, String key) {

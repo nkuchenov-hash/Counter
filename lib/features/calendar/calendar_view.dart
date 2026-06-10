@@ -22,7 +22,7 @@ class CalendarView extends StatefulWidget {
   final DateTime selectedDate;
   final DateTime focusedDay;
   final Future<void> Function(DateTime selectedDay, DateTime focusedDay)
-      onSelectDate;
+  onSelectDate;
 
   @override
   State<CalendarView> createState() => _CalendarViewState();
@@ -52,6 +52,7 @@ class _CalendarViewState extends State<CalendarView>
     try {
       return Scaffold(
         body: SafeArea(
+          top: false,
           child: TableCalendar(
             locale: currentLocale.value,
             firstDay: DateTime(2020, 1, 1),

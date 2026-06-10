@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
-import 'package:counter/features/timeline/timeline_widgets.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/chip_component.dart';
@@ -484,17 +483,9 @@ class _TimelinePageState extends State<TimelinePage> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
+        top: false,
         child: Column(
           children: [
-            TimelineTopDateStrip(
-              selectedDate: widget.selectedDate,
-              onDateSelected: (d) => widget.onNavigateToDate?.call(d),
-              onNavigateToDate: widget.onNavigateToDate,
-            ),
-            Divider(
-              height: 1,
-              color: Theme.of(context).colorScheme.outlineVariant,
-            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: SizedBox(

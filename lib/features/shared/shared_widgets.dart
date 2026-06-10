@@ -1416,28 +1416,48 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     }
                                   },
                                   child: SizedBox(
-                                    height: 44,
-                                    child: Row(
+                                    height: 56,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(
-                                          Icons.calendar_month_rounded,
-                                          size: 18,
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.calendar_month_rounded,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                t(
+                                                  currentLocale.value,
+                                                  'plan_start_time_full',
+                                                ),
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.labelMedium,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _scheduledTime == null
-                                                ? t(
-                                                    currentLocale.value,
-                                                    'scheduled',
-                                                  )
-                                                : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.bodySmall,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _scheduledTime == null
+                                              ? t(
+                                                  currentLocale.value,
+                                                  'scheduled',
+                                                )
+                                              : '${_date.day} ${_shortMonth(_date.month)} ${_date.year}, ${_scheduledTime!.hour.toString().padLeft(2, '0')}:${_scheduledTime!.minute.toString().padLeft(2, '0')}',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
                                     ),
@@ -1472,28 +1492,48 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     }
                                   },
                                   child: SizedBox(
-                                    height: 44,
-                                    child: Row(
+                                    height: 56,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        const Icon(
-                                          Icons.event_available_rounded,
-                                          size: 18,
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.event_available_rounded,
+                                              size: 18,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                t(
+                                                  currentLocale.value,
+                                                  'plan_end_time_full',
+                                                ),
+                                                style: Theme.of(
+                                                  context,
+                                                ).textTheme.labelMedium,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _endTime == null
-                                                ? t(
-                                                    currentLocale.value,
-                                                    'no_end_time',
-                                                  )
-                                                : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.bodySmall,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          _endTime == null
+                                              ? t(
+                                                  currentLocale.value,
+                                                  'no_end_time',
+                                                )
+                                              : '${_endTime!.hour.toString().padLeft(2, '0')}:${_endTime!.minute.toString().padLeft(2, '0')}',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
                                     ),
@@ -1506,7 +1546,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: SizedBox(
-                            height: 48,
+                            height: 64,
                             child: _tagsLoading
                                 ? Center(
                                     child: SizedBox(
@@ -1541,6 +1581,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     tags: _availableTags,
                                     selected: _selectedTags,
                                     onToggle: _toggleTag,
+                                    variant: CategoryChipVariant.largePicker,
                                   ),
                           ),
                         ),

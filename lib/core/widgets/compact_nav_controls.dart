@@ -10,11 +10,11 @@ ButtonStyle appCompactSegmentedButtonStyle(
   return SegmentedButton.styleFrom(
     fixedSize: Size(segmentWidth, kAppCompactControlHeight),
     tapTargetSize: MaterialTapTargetSize.padded,
-    padding: const EdgeInsets.symmetric(horizontal: 6),
+    padding: EdgeInsets.zero,
     textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
       fontSize: kAppCompactControlFontSize,
       fontWeight: FontWeight.w600,
-      height: 1.0,
+      height: 1.1,
     ),
     visualDensity: VisualDensity.compact,
   );
@@ -27,12 +27,30 @@ class AppCompactSegmentLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      softWrap: false,
-      textAlign: TextAlign.center,
+    final style = Theme.of(context).textTheme.labelMedium?.copyWith(
+      fontSize: kAppCompactControlFontSize,
+      fontWeight: FontWeight.w600,
+      height: 1.1,
+    );
+    return SizedBox(
+      height: kAppCompactControlHeight,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            softWrap: false,
+            textAlign: TextAlign.center,
+            style: style,
+            textHeightBehavior: const TextHeightBehavior(
+              applyHeightToFirstAscent: false,
+              applyHeightToLastDescent: false,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -47,9 +65,9 @@ class AppCompactTextTab extends StatelessWidget {
     final style = Theme.of(context).textTheme.labelMedium?.copyWith(
       fontSize: kAppCompactControlFontSize,
       fontWeight: FontWeight.w600,
-      height: 1.0,
+      height: 1.1,
     );
-    return Tab(
+    return SizedBox(
       height: kAppCompactControlHeight,
       child: Center(
         child: Padding(
@@ -61,6 +79,10 @@ class AppCompactTextTab extends StatelessWidget {
             softWrap: false,
             textAlign: TextAlign.center,
             style: style,
+            textHeightBehavior: const TextHeightBehavior(
+              applyHeightToFirstAscent: false,
+              applyHeightToLastDescent: false,
+            ),
           ),
         ),
       ),
