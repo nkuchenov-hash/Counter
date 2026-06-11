@@ -135,6 +135,46 @@ Production raw `IconButton(` usage is approximately 41 call sites. This count ex
 
 V7G can migrate a small low-risk icon-action surface, such as admin-only/dev surfaces or non-timer settings/navigation icon actions, after visual acceptance of `AppIconButton` in Component Lab.
 
+## V7F.2 Safe Icon Button Migration
+
+Date: 2026-06-11.
+
+### Files Migrated
+
+| File | Icon actions migrated | Notes |
+| :--- | :--- | :--- |
+| `lib/features/categories/category_list_view.dart` | Categories AppBar layout toggle and Add Category actions | Both were simple non-destructive category/settings helper actions. Existing icons, tooltips, callbacks, and enabled behavior were preserved. |
+
+### Candidate Decisions
+
+| Area | Decision | Reason |
+| :--- | :--- | :--- |
+| Categories AppBar layout toggle | Migrated | Simple local UI toggle, not timer/planning/timeline/search/selection/voice. |
+| Categories AppBar add category | Migrated | Simple category helper action with existing `unawaited(_addRule())` callback. |
+| Category tile gear/visibility controls | Skipped | Compact tile layout uses custom hit target and shrink-wrap styling. |
+| Category recursive tree controls | Skipped | Category tree expand/add/appearance/settings controls are interaction-dense. |
+| Lists selection/export/menu controls | Skipped | Selection mode, destructive, or list-card controls. |
+| Planning controls | Skipped | Planning/search/selection/play-adjacent surfaces are risky. |
+| Shared sheet, timeline, voice, auth, and tag manager controls | Skipped | Sheet/timeline/voice/auth/destructive inline areas need focused passes. |
+
+### Raw IconButton Count After Migration
+
+- Raw `IconButton(` inside `AppIconButton`: 1 allowed implementation detail.
+- Production raw `IconButton(` usage after V7F.2: approximately 39 call sites.
+- Migration is not complete; remaining raw icon actions are legacy allowed temporarily.
+
+### Intentionally Left For Later
+
+- Timer Start/Stop controls.
+- Plan play/start controls.
+- Active timeline controls.
+- Search delegate leading/clear buttons.
+- Selection mode controls.
+- Voice controls.
+- Date/time picker controls.
+- Gesture-heavy or compact custom-hit-target controls.
+- Destructive inline actions until their confirm/recovery behavior is reviewed.
+
 ## Raw Widget Usage Summary
 
 Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton`, `TextButton`, `IconButton`, `Card`, `RawChip`, `Chip`, `FilterChip`, `ChoiceChip`, `TabBar`, `SegmentedButton`.

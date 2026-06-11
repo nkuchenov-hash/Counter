@@ -12,6 +12,7 @@
 > ***
 
 ## [2026-06-11] - F2C default plan times selector wiring [shipped]
+* **`app_icon_button.dart` / `category_list_view.dart` / `DESIGN_SYSTEM_INVENTORY.md`:** [shipped] V7F.2 safely migrated the Categories AppBar layout-toggle and add-category icon actions to `AppIconButton`; planning, timeline, selection, voice, tree, and destructive icon controls remain documented legacy.
 * **`app_icon_button.dart` / `component_lab_view.dart` / `DESIGN_SYSTEM.md` / `DESIGN_SYSTEM_INVENTORY.md`:** [shipped] V7F Icon Button foundation added `AppIconButton` for Figma `Icon Button`, labeled Component Lab examples, and raw `IconButton` audit docs; no production icon-button migration yet.
 * **`component_lab_view.dart` / `DESIGN_SYSTEM.md`:** [shipped] Component Lab examples now render lab-only labels with Figma name, Flutter mapping, variant, size, and state metadata for review without changing production UI.
 * **`app_button.dart` / `component_lab_view.dart` / `DESIGN_SYSTEM.md`:** [shipped] V7E Action Buttons started: `AppButton` remains canonical and now supports Button Primary/Secondary/Danger/Ghost/Outlined variants, S/M/L sizing, loading/disabled/icon/full-width states, with Component Lab acceptance examples and inventory guardrails.

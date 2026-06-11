@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:counter/core/category_color_palette.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
+import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
@@ -11,7 +13,6 @@ import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:counter/core/widgets/app_loading.dart';
 
 // ---------------------------------------------------------------------------
 // CATEGORIES FEATURE — UI_ISOLATION (§7). All strings via t() from dictionary.
@@ -21,8 +22,9 @@ import 'package:counter/core/widgets/app_loading.dart';
 String _categoryTileLabel(CategoryRule r) {
   final loc = currentLocale.value;
   final fromMap = r.localizedNames?[loc] ?? r.localizedNames?['en'];
-  final s =
-      (fromMap != null && fromMap.trim().isNotEmpty) ? fromMap.trim() : r.name;
+  final s = (fromMap != null && fromMap.trim().isNotEmpty)
+      ? fromMap.trim()
+      : r.name;
   return localizeCategoryDbSegment(s.trim(), loc);
 }
 
@@ -55,8 +57,7 @@ double _calculateTileWidthGrid(
 ) {
   final n = _gridTargetColumns(depth);
   if (availableWidth <= 0 || n <= 0) return _kTileWidthClampMin;
-  final raw =
-      (availableWidth - (n - 1) * _kCategoryGridGap) / n;
+  final raw = (availableWidth - (n - 1) * _kCategoryGridGap) / n;
   return raw.clamp(_kTileWidthClampMin, maxSide);
 }
 
@@ -164,6 +165,7 @@ const double _kGroupStripeWidth = 6;
 enum CategoryBandLayout {
   /// Horizontal list: tile side from `N` full + 17% peek (`_calculateTileWidthScroll`).
   horizontalPeek,
+
   /// Multi-row wrap: `N` tiles per row from `_calculateTileWidthGrid` (strict 8pt gap).
   wrapGrid,
 }
@@ -190,6 +192,7 @@ class CategoryRowWidget extends StatelessWidget {
 
   final List<CategoryRule> items;
   final int depth;
+
   /// Local id of the parent category for this band (null for roots) — stripe inherits [color_value].
   final int? immediateParentId;
   final int? selectedId;
@@ -202,6 +205,7 @@ class CategoryRowWidget extends StatelessWidget {
   final bool showAdd;
   final bool editMode;
   final CategoryBandLayout layout;
+
   /// Edit mode: eye toggles [CategoryVisibilityPrefs] (client-side quarantine).
   final void Function(int categoryId)? onToggleCategoryVisibility;
 
@@ -226,15 +230,18 @@ class CategoryRowWidget extends StatelessWidget {
     final label = _categoryTileLabel(r);
     final isDefault = r.id == DatabaseService.instance.defaultCategoryId;
     final loc = currentLocale.value;
-    final glassAlpha =
-        isSelected ? _kCategoryGlassAlphaSelected : _kCategoryGlassAlpha;
+    final glassAlpha = isSelected
+        ? _kCategoryGlassAlphaSelected
+        : _kCategoryGlassAlpha;
     final fill = Color.alphaBlend(
       color.withValues(alpha: glassAlpha),
       scheme.surface,
     );
 
-    final minTap =
-        (layout.side * 0.42).clamp(32.0, 44.0); // scales down on 70px tiles
+    final minTap = (layout.side * 0.42).clamp(
+      32.0,
+      44.0,
+    ); // scales down on 70px tiles
 
     final labelStyle = textTheme.titleSmall?.copyWith(
       fontSize: layout.fontSize,
@@ -373,10 +380,7 @@ class CategoryRowWidget extends StatelessWidget {
     return tileCore;
   }
 
-  Widget _addTile(
-    BuildContext context,
-    _CategoryDepthLayout layout,
-  ) {
+  Widget _addTile(BuildContext context, _CategoryDepthLayout layout) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final neutral = scheme.outline.withValues(alpha: 0.35);
@@ -412,8 +416,11 @@ class CategoryRowWidget extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_rounded,
-                      size: layout.addGlyphSize, color: scheme.outline),
+                  Icon(
+                    Icons.add_rounded,
+                    size: layout.addGlyphSize,
+                    color: scheme.outline,
+                  ),
                   Text(
                     t(currentLocale.value, 'add'),
                     style: tileLabelStyle,
@@ -453,8 +460,9 @@ class CategoryRowWidget extends StatelessWidget {
 
           Widget cell(CategoryRule r) {
             final isSelected = selectedId == r.id;
-            final quarantined =
-                CategoryVisibilityPrefs.isHiddenOrAncestor(r.id);
+            final quarantined = CategoryVisibilityPrefs.isHiddenOrAncestor(
+              r.id,
+            );
             return _buildCategoryTile(
               context: context,
               r: r,
@@ -497,16 +505,10 @@ class CategoryRowWidget extends StatelessWidget {
                     child: SizedBox(
                       width: dLayout.side,
                       height: dLayout.side,
-                      child: Opacity(
-                        opacity: 0.92,
-                        child: child,
-                      ),
+                      child: Opacity(opacity: 0.92, child: child),
                     ),
                   ),
-                  childWhenDragging: Opacity(
-                    opacity: 0.35,
-                    child: child,
-                  ),
+                  childWhenDragging: Opacity(opacity: 0.35, child: child),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       border: highlighted
@@ -515,8 +517,9 @@ class CategoryRowWidget extends StatelessWidget {
                               width: 2,
                             )
                           : Border.all(color: Colors.transparent, width: 2),
-                      borderRadius:
-                          BorderRadius.circular(dLayout.borderRadius + 2),
+                      borderRadius: BorderRadius.circular(
+                        dLayout.borderRadius + 2,
+                      ),
                     ),
                     child: child,
                   ),
@@ -543,10 +546,7 @@ class CategoryRowWidget extends StatelessWidget {
                       return SizedBox(
                         width: dLayout.side,
                         height: dLayout.side,
-                        child: reorderMovable(
-                          i,
-                          cell(items[i]),
-                        ),
+                        child: reorderMovable(i, cell(items[i])),
                       );
                     }
                     return SizedBox(
@@ -582,15 +582,12 @@ class CategoryRowWidget extends StatelessWidget {
       final pid = immediateParentId;
       if (pid != null) {
         final parent = DatabaseService.instance.getCategoryRuleById(pid);
-        final stripeColor = parent?.colorOrDefault ??
-            Theme.of(context).colorScheme.primary;
+        final stripeColor =
+            parent?.colorOrDefault ?? Theme.of(context).colorScheme.primary;
         inner = DecoratedBox(
           decoration: BoxDecoration(
             border: Border(
-              left: BorderSide(
-                color: stripeColor,
-                width: _kGroupStripeWidth,
-              ),
+              left: BorderSide(color: stripeColor, width: _kGroupStripeWidth),
             ),
           ),
           child: Padding(
@@ -684,8 +681,14 @@ class _TagInputFieldState extends State<TagInputField> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = widget.chipBackgroundColor ?? Theme.of(context).chipTheme.backgroundColor ?? Colors.grey.shade300;
-    final fg = widget.chipLabelColor ?? Theme.of(context).chipTheme.labelStyle?.color ?? Colors.black87;
+    final bg =
+        widget.chipBackgroundColor ??
+        Theme.of(context).chipTheme.backgroundColor ??
+        Colors.grey.shade300;
+    final fg =
+        widget.chipLabelColor ??
+        Theme.of(context).chipTheme.labelStyle?.color ??
+        Colors.black87;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -707,7 +710,11 @@ class _TagInputFieldState extends State<TagInputField> {
         const SizedBox(height: 8),
         TextField(
           controller: _controller,
-          decoration: widget.decoration ?? InputDecoration(labelText: t(currentLocale.value, 'add_keyword_hint')),
+          decoration:
+              widget.decoration ??
+              InputDecoration(
+                labelText: t(currentLocale.value, 'add_keyword_hint'),
+              ),
           textCapitalization: TextCapitalization.sentences,
           onSubmitted: (_) => _commitCurrent(),
         ),
@@ -745,7 +752,8 @@ class _CategoryAppearanceSheet extends StatefulWidget {
   final VoidCallback onSaved;
 
   @override
-  State<_CategoryAppearanceSheet> createState() => _CategoryAppearanceSheetState();
+  State<_CategoryAppearanceSheet> createState() =>
+      _CategoryAppearanceSheetState();
 }
 
 class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
@@ -763,8 +771,7 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
         widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint;
   }
 
-  MaterialColor _primaryForValue(int? v) =>
-      categoryMaterialPrimaryForValue(v);
+  MaterialColor _primaryForValue(int? v) => categoryMaterialPrimaryForValue(v);
 
   Future<void> _apply() async {
     if (_busy) return;
@@ -784,10 +791,7 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
     try {
       final patch = await DatabaseService.instance.patchCategoryDelta(
         id,
-        <String, dynamic>{
-          'color_value': cv,
-          'icon_code_point': _iconCodePoint,
-        },
+        <String, dynamic>{'color_value': cv, 'icon_code_point': _iconCodePoint},
       );
       if (!patch.ok && mounted) {
         messenger.showSnackBar(
@@ -811,13 +815,16 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
     _selectedPrimary ??= _primaryForValue(_colorValue);
     _selectedShadeValue ??=
         (_colorValue != null &&
-                categoryMaterialShadeValues(_selectedPrimary!)
-                    .contains(_colorValue))
-            ? _colorValue
-            : _selectedPrimary![500]!.toARGB32();
+            categoryMaterialShadeValues(
+              _selectedPrimary!,
+            ).contains(_colorValue))
+        ? _colorValue
+        : _selectedPrimary![500]!.toARGB32();
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         child: Column(
@@ -829,8 +836,10 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
-            Text(t(loc, 'category_color'),
-                style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              t(loc, 'category_color'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -869,37 +878,40 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
               runSpacing: 8,
               children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
                   .map((tone) {
-                final c = _selectedPrimary![tone]!;
-                final v = c.toARGB32();
-                final sel = _selectedShadeValue == v;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedShadeValue = v;
-                      _colorValue = v;
-                    });
-                    HapticFeedback.lightImpact();
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: c,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: sel
-                            ? Theme.of(context).colorScheme.primary
-                            : Colors.transparent,
-                        width: sel ? 3 : 0,
+                    final c = _selectedPrimary![tone]!;
+                    final v = c.toARGB32();
+                    final sel = _selectedShadeValue == v;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedShadeValue = v;
+                          _colorValue = v;
+                        });
+                        HapticFeedback.lightImpact();
+                      },
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: c,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: sel
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.transparent,
+                            width: sel ? 3 : 0,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  })
+                  .toList(),
             ),
             const SizedBox(height: 16),
-            Text(t(loc, 'category_choose_icon'),
-                style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              t(loc, 'category_choose_icon'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 10,
@@ -925,10 +937,12 @@ class _CategoryAppearanceSheetState extends State<_CategoryAppearanceSheet> {
                         width: sel ? 2 : 1,
                       ),
                     ),
-                    child: Icon(ic,
-                        color: sel
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurface),
+                    child: Icon(
+                      ic,
+                      color: sel
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 );
               }).toList(),
@@ -985,16 +999,18 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     super.initState();
     final langs = DatabaseService.instance.settings.effectiveActiveLanguages;
     for (final lang in langs) {
-      _keywordsByLang[lang] =
-          List<String>.from(widget.category.keywordsFor(lang));
+      _keywordsByLang[lang] = List<String>.from(
+        widget.category.keywordsFor(lang),
+      );
     }
     _parentId = DatabaseService.instance.getParentId(widget.category.id);
     _selectedColorValue = widget.category.colorValue;
     _iconCodePoint =
         widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint;
     final names = widget.category.localizedNames ?? const {};
-    _primaryNameController =
-        TextEditingController(text: widget.category.name.trim());
+    _primaryNameController = TextEditingController(
+      text: widget.category.name.trim(),
+    );
     _nameEnController = TextEditingController(text: names['en'] ?? '');
     _nameRuController = TextEditingController(text: names['ru'] ?? '');
   }
@@ -1015,7 +1031,8 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final currentColor = widget.category.colorValue;
     final colorChanged =
         _selectedColorValue != null && _selectedColorValue != currentColor;
-    final iconChanged = _iconCodePoint !=
+    final iconChanged =
+        _iconCodePoint !=
         (widget.category.iconCodePoint ?? Icons.folder_rounded.codePoint);
     if (colorChanged) {
       DatabaseService.instance.updateNestedCategory(
@@ -1056,22 +1073,19 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     unawaited(() async {
       try {
         if (primaryChanged) {
-          final res =
-              await DatabaseService.instance.updateCategory(cid, primaryNew);
+          final res = await DatabaseService.instance.updateCategory(
+            cid,
+            primaryNew,
+          );
           if (!res.ok && mounted) {
             messenger.showSnackBar(
               SnackBar(content: Text(t(currentLocale.value, 'sync_failed'))),
             );
           }
         }
-        final delta = <String, dynamic>{
-          'keywords': keywords,
-        };
+        final delta = <String, dynamic>{'keywords': keywords};
         if (namesChanged) {
-          DatabaseService.instance.updateCategoryLocalizedNames(
-            cid,
-            newNames,
-          );
+          DatabaseService.instance.updateCategoryLocalizedNames(cid, newNames);
           delta['localized_names'] = newNames;
         }
         if (colorChanged) {
@@ -1084,8 +1098,10 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
         if (iconChanged) {
           delta['icon_code_point'] = _iconCodePoint;
         }
-        final patch =
-            await DatabaseService.instance.patchCategoryDelta(cid, delta);
+        final patch = await DatabaseService.instance.patchCategoryDelta(
+          cid,
+          delta,
+        );
         if (!patch.ok) {
           if (mounted) {
             messenger.showSnackBar(
@@ -1095,10 +1111,7 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           return;
         }
         if (currentEffective != newParent) {
-          await DatabaseService.instance.updateCategoryParent(
-            cid,
-            newParent,
-          );
+          await DatabaseService.instance.updateCategoryParent(cid, newParent);
         }
       } catch (_) {
         messenger.showSnackBar(
@@ -1148,8 +1161,9 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     unawaited(() async {
       try {
         await DatabaseService.instance.saveSettings(
-          DatabaseService.instance.settings
-              .copyWith(defaultCategoryId: widget.category.id),
+          DatabaseService.instance.settings.copyWith(
+            defaultCategoryId: widget.category.id,
+          ),
         );
       } on AuthenticatedUserIdRequiredException {
         // Auth store empty — cannot PATCH profile; ignore silently here.
@@ -1177,7 +1191,8 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
       case 'ru':
         return Colors.red.shade100;
       default:
-        return Theme.of(context).chipTheme.backgroundColor ?? Colors.grey.shade300;
+        return Theme.of(context).chipTheme.backgroundColor ??
+            Colors.grey.shade300;
     }
   }
 
@@ -1198,20 +1213,38 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
 
   Widget _buildParentPicker(BuildContext context) {
     final db = DatabaseService.instance;
-    final forbidden = {widget.category.id, ...db.getRecordIdsInSubtree(widget.category.id)};
-    final pairs = db.allCategoryIdPathPairs.where((p) => !forbidden.contains(p.id)).toList();
+    final forbidden = {
+      widget.category.id,
+      ...db.getRecordIdsInSubtree(widget.category.id),
+    };
+    final pairs = db.allCategoryIdPathPairs
+        .where((p) => !forbidden.contains(p.id))
+        .toList();
     return DropdownButtonFormField<int?>(
       initialValue: _parentId,
-      decoration: InputDecoration(labelText: t(currentLocale.value, 'parent_category')),
+      decoration: InputDecoration(
+        labelText: t(currentLocale.value, 'parent_category'),
+      ),
       items: [
-        DropdownMenuItem<int?>(value: null, child: Text(t(currentLocale.value, 'root_top_level'))),
-        ...pairs.map((p) => DropdownMenuItem<int?>(value: p.id, child: Text(p.path, overflow: TextOverflow.ellipsis))),
+        DropdownMenuItem<int?>(
+          value: null,
+          child: Text(t(currentLocale.value, 'root_top_level')),
+        ),
+        ...pairs.map(
+          (p) => DropdownMenuItem<int?>(
+            value: p.id,
+            child: Text(p.path, overflow: TextOverflow.ellipsis),
+          ),
+        ),
       ],
       onChanged: (v) => setState(() => _parentId = v),
     );
   }
 
-  Future<void> _translateAndAddRuIfNeeded(String langCode, String trimmed) async {
+  Future<void> _translateAndAddRuIfNeeded(
+    String langCode,
+    String trimmed,
+  ) async {
     final settings = DatabaseService.instance.settings;
     final langs = settings.effectiveActiveLanguages;
     if (langCode != 'en' || !langs.contains('ru')) return;
@@ -1237,16 +1270,19 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
     final locale = currentLocale.value;
     final scheme = Theme.of(context).colorScheme;
 
-    _selectedPrimary ??=
-        categoryMaterialPrimaryForValue(_selectedColorValue);
-    _selectedShadeValue ??= (_selectedColorValue != null &&
-            categoryMaterialShadeValues(_selectedPrimary!)
-                .contains(_selectedColorValue))
+    _selectedPrimary ??= categoryMaterialPrimaryForValue(_selectedColorValue);
+    _selectedShadeValue ??=
+        (_selectedColorValue != null &&
+            categoryMaterialShadeValues(
+              _selectedPrimary!,
+            ).contains(_selectedColorValue))
         ? _selectedColorValue
         : _selectedPrimary![500]!.toARGB32();
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         child: Column(
@@ -1254,8 +1290,10 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              t(locale, 'edit_category_tag')
-                  .replaceFirst('%s', widget.category.name),
+              t(
+                locale,
+                'edit_category_tag',
+              ).replaceFirst('%s', widget.category.name),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 20),
@@ -1287,8 +1325,10 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            Text(t(locale, 'category_color'),
-                style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              t(locale, 'category_color'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -1325,35 +1365,38 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
               runSpacing: 8,
               children: <int>[50, 100, 200, 300, 400, 500, 600, 700, 800, 900]
                   .map((tone) {
-                final c = _selectedPrimary![tone]!;
-                final v = c.toARGB32();
-                final sel = _selectedShadeValue == v;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedShadeValue = v;
-                      _selectedColorValue = v;
-                    });
-                    HapticFeedback.lightImpact();
-                  },
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: c,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: sel ? scheme.primary : Colors.transparent,
-                        width: sel ? 3 : 0,
+                    final c = _selectedPrimary![tone]!;
+                    final v = c.toARGB32();
+                    final sel = _selectedShadeValue == v;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedShadeValue = v;
+                          _selectedColorValue = v;
+                        });
+                        HapticFeedback.lightImpact();
+                      },
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: c,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: sel ? scheme.primary : Colors.transparent,
+                            width: sel ? 3 : 0,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                    );
+                  })
+                  .toList(),
             ),
             const SizedBox(height: 12),
-            Text(t(locale, 'category_choose_icon'),
-                style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              t(locale, 'category_choose_icon'),
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -1398,8 +1441,10 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_languageLabel(lang),
-                        style: Theme.of(context).textTheme.labelLarge),
+                    Text(
+                      _languageLabel(lang),
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
                     const SizedBox(height: 4),
                     TagInputField(
                       tags: keywords,
@@ -1437,9 +1482,9 @@ class _CategoryEditorSheetState extends State<CategoryEditorSheet> {
             const SizedBox(height: 8),
             Text(
               t(locale, 'delete_subcategories_warning'),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             FilledButton(
@@ -1511,7 +1556,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
 
   @override
   void dispose() {
-    CategoryVisibilityPrefs.hiddenIds.removeListener(_categoryVisibilityListener);
+    CategoryVisibilityPrefs.hiddenIds.removeListener(
+      _categoryVisibilityListener,
+    );
     unawaited(DatabaseService.instance.flushCategoryOrderSyncNow());
     super.dispose();
   }
@@ -1535,8 +1582,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
     setState(() {
       DatabaseService.instance.applyLocalCategorySiblingOrder(parentId, items);
     });
-    final after =
-        List<CategoryRule>.from(DatabaseService.instance.getChildrenOf(parentId));
+    final after = List<CategoryRule>.from(
+      DatabaseService.instance.getChildrenOf(parentId),
+    );
     unawaited(
       DatabaseService.instance.persistCategorySiblingOrder(
         parentId,
@@ -1589,8 +1637,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
       context: context,
       parentId: parentId,
       onGoToActiveCategory: (localId) {
-        final path =
-            DatabaseService.instance.categoryPathFromRootToLocalId(localId);
+        final path = DatabaseService.instance.categoryPathFromRootToLocalId(
+          localId,
+        );
         if (path.isEmpty) return;
         _navigateToCategoryPath(path);
       },
@@ -1645,7 +1694,11 @@ class _CategoriesPageState extends State<CategoriesPage> {
     await _showAddCategoryDialog(parentId: parentId);
   }
 
-  Widget buildTabRow(BuildContext context, int depth, List<CategoryRule> items) {
+  Widget buildTabRow(
+    BuildContext context,
+    int depth,
+    List<CategoryRule> items,
+  ) {
     final selectedId = depth < _maxDepth ? _selectedPath[depth] : null;
     final canAddAtThisLevel =
         depth < _maxDepth && (depth == 0 || _selectedPath[depth - 1] != null);
@@ -1674,8 +1727,9 @@ class _CategoriesPageState extends State<CategoriesPage> {
     );
 
     final hasSelection = depth < _maxDepth && selectedId != null;
-    final nextItems =
-        hasSelection ? _getItemsForDepth(depth + 1) : <CategoryRule>[];
+    final nextItems = hasSelection
+        ? _getItemsForDepth(depth + 1)
+        : <CategoryRule>[];
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1699,70 +1753,77 @@ class _CategoriesPageState extends State<CategoriesPage> {
       builder: (context, _, _) {
         final roots = _getItemsForDepth(0);
         return Scaffold(
-      resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: Text(t(loc, 'categories_title')),
-        actions: [
-          IconButton(
-            icon: Icon(_useHorizontalScrollLayout
-                ? Icons.grid_view_rounded
-                : Icons.view_week_rounded),
-            tooltip: _useHorizontalScrollLayout
-                ? t(loc, 'switch_to_wrap')
-                : t(loc, 'switch_to_scrollable'),
-            onPressed: () => setState(
-                () => _useHorizontalScrollLayout = !_useHorizontalScrollLayout),
-          ),
-          IconButton(
-            tooltip: t(loc, 'add_category'),
-            onPressed: () => unawaited(_addRule()),
-            icon: const Icon(Icons.add_rounded),
-          ),
-          const SizedBox(width: 4),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SwitchListTile(
-              dense: true,
-              visualDensity: VisualDensity.compact,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              title: Text(
-                t(loc, 'category_edit_mode'),
-                style: textTheme.titleSmall,
-              ),
-              subtitle: Text(
-                t(loc, 'category_edit_mode_subtitle'),
-                style: textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
+          resizeToAvoidBottomInset: true,
+          appBar: AppBar(
+            title: Text(t(loc, 'categories_title')),
+            actions: [
+              AppIconButton(
+                icon: _useHorizontalScrollLayout
+                    ? Icons.grid_view_rounded
+                    : Icons.view_week_rounded,
+                tooltip: _useHorizontalScrollLayout
+                    ? t(loc, 'switch_to_wrap')
+                    : t(loc, 'switch_to_scrollable'),
+                onPressed: () => setState(
+                  () =>
+                      _useHorizontalScrollLayout = !_useHorizontalScrollLayout,
                 ),
               ),
-              value: _categoryEditMode,
-              onChanged: (v) => setState(() => _categoryEditMode = v),
-            ),
-            Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
-            Expanded(
-              child: roots.isEmpty
-                  ? EmptyStatePlaceholder(
-                      icon: Icons.folder_outlined,
-                      titleL10nKey: 'empty_categories_title',
-                      subtitleL10nKey: 'empty_categories_subtitle',
-                      actionLabelL10nKey: 'add_category',
-                      onAction: () => unawaited(_addRule()),
-                      useFilledAction: true,
-                    )
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: buildTabRow(context, 0, roots),
+              AppIconButton(
+                tooltip: t(loc, 'add_category'),
+                onPressed: () => unawaited(_addRule()),
+                icon: Icons.add_rounded,
+              ),
+              const SizedBox(width: 4),
+            ],
+          ),
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SwitchListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 0,
+                  ),
+                  title: Text(
+                    t(loc, 'category_edit_mode'),
+                    style: textTheme.titleSmall,
+                  ),
+                  subtitle: Text(
+                    t(loc, 'category_edit_mode_subtitle'),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
+                  ),
+                  value: _categoryEditMode,
+                  onChanged: (v) => setState(() => _categoryEditMode = v),
+                ),
+                Divider(
+                  height: 1,
+                  color: scheme.outlineVariant.withValues(alpha: 0.5),
+                ),
+                Expanded(
+                  child: roots.isEmpty
+                      ? EmptyStatePlaceholder(
+                          icon: Icons.folder_outlined,
+                          titleL10nKey: 'empty_categories_title',
+                          subtitleL10nKey: 'empty_categories_subtitle',
+                          actionLabelL10nKey: 'add_category',
+                          onAction: () => unawaited(_addRule()),
+                          useFilledAction: true,
+                        )
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: buildTabRow(context, 0, roots),
+                        ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
       },
     );
   }
