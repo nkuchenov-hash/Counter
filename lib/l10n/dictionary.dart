@@ -316,10 +316,14 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_default_times_title': 'Default plan times',
     'plan_default_times_subtitle':
         'Apply a category time when new plan text has no time.',
+    'plan_default_time_select_category': 'Select category',
+    'plan_default_time_search_category': 'Search category',
+    'plan_default_time_own': 'Own default: %s',
     'plan_default_time_none': 'No default time',
     'plan_default_time_inherited': 'Inherited: %s',
     'plan_default_time_set': 'Set time',
-    'plan_default_time_clear': 'Clear',
+    'plan_default_time_clear': 'Clear own time',
+    'plan_default_time_configured_categories': 'Configured categories',
     'plan_day_start_hour': 'Start of day',
     'plan_day_start_hint':
         'First hour row in the time grid (0–23). End may be before start for overnight.',
@@ -876,10 +880,14 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_default_times_title': 'Время планов по умолчанию',
     'plan_default_times_subtitle':
         'Применять время категории, если в новом плане время не указано.',
+    'plan_default_time_select_category': 'Выбрать категорию',
+    'plan_default_time_search_category': 'Поиск категории',
+    'plan_default_time_own': 'Собственное время: %s',
     'plan_default_time_none': 'Без времени по умолчанию',
     'plan_default_time_inherited': 'Наследуется: %s',
     'plan_default_time_set': 'Установить время',
-    'plan_default_time_clear': 'Очистить',
+    'plan_default_time_clear': 'Очистить своё время',
+    'plan_default_time_configured_categories': 'Настроенные категории',
     'plan_day_start_hour': 'Начало дня',
     'plan_day_start_hint':
         'Первая строка сетки (0–23). Конец может быть «раньше» начала через полночь.',

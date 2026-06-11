@@ -748,6 +748,7 @@ class _PlanningPageState extends State<PlanningPage>
   }
 
   void _showDefaultPlanTimesSheet() {
+    int? selectedCategoryId;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -760,6 +761,57 @@ class _PlanningPageState extends State<PlanningPage>
             final pairs = db.allCategoryIdPathPairs
                 .where((p) => p.id != CategoryRule.uncategorizedSyntheticId)
                 .toList();
+            final configuredPairs = pairs.where((p) {
+              final rule = db.getCategoryRuleById(p.id);
+              return db.sanitizeDefaultPlanTime(rule?.defaultPlanTime) != null;
+            }).toList();
+            ({int id, String path})? selectedPair;
+            for (final p in pairs) {
+              if (p.id == selectedCategoryId) {
+                selectedPair = p;
+                break;
+              }
+            }
+            final selectedRule = selectedCategoryId == null
+                ? null
+                : db.getCategoryRuleById(selectedCategoryId!);
+            final selectedOwn = db.sanitizeDefaultPlanTime(
+              selectedRule?.defaultPlanTime,
+            );
+            final selectedEffective = selectedCategoryId == null
+                ? null
+                : db.effectiveDefaultPlanTimeForCategory(selectedCategoryId!);
+            String statusText({
+              required String? own,
+              required String? effective,
+            }) {
+              if (own != null) {
+                return t(loc, 'plan_default_time_own').replaceFirst('%s', own);
+              }
+              if (effective != null) {
+                return t(
+                  loc,
+                  'plan_default_time_inherited',
+                ).replaceFirst('%s', effective);
+              }
+              return t(loc, 'plan_default_time_none');
+            }
+
+            Future<void> pickCategory() async {
+              final picked = await showSearch<_DefaultPlanCategoryOption?>(
+                context: context,
+                delegate: _DefaultPlanCategorySearchDelegate(
+                  loc: loc,
+                  options: [
+                    for (final p in pairs)
+                      _DefaultPlanCategoryOption(id: p.id, path: p.path),
+                  ],
+                ),
+              );
+              if (picked == null || !context.mounted) return;
+              setModalState(() => selectedCategoryId = picked.id);
+            }
+
             return SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -772,69 +824,163 @@ class _PlanningPageState extends State<PlanningPage>
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+                    OutlinedButton.icon(
+                      onPressed: pairs.isEmpty
+                          ? null
+                          : () => unawaited(pickCategory()),
+                      icon: const Icon(Icons.search_rounded),
+                      label: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          selectedPair?.path ??
+                              t(loc, 'plan_default_time_select_category'),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      child: ListView.separated(
-                        itemCount: pairs.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, i) {
-                          final pair = pairs[i];
-                          final rule = db.getCategoryRuleById(pair.id);
-                          final own = db.sanitizeDefaultPlanTime(
-                            rule?.defaultPlanTime,
-                          );
-                          final effective = db
-                              .effectiveDefaultPlanTimeForCategory(pair.id);
-                          late final String subtitle;
-                          if (own != null) {
-                            subtitle = own;
-                          } else if (effective != null) {
-                            subtitle = t(
-                              loc,
-                              'plan_default_time_inherited',
-                            ).replaceFirst('%s', effective);
-                          } else {
-                            subtitle = t(loc, 'plan_default_time_none');
-                          }
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              pair.path,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: Text(subtitle),
-                            trailing: Wrap(
-                              spacing: 4,
-                              children: [
-                                TextButton(
-                                  onPressed: () => unawaited(
-                                    _setCategoryDefaultPlanTime(
-                                      pair.id,
-                                      setModalState,
-                                    ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (selectedPair != null)
+                      Builder(
+                        builder: (context) {
+                          final pair = selectedPair!;
+                          return Card(
+                            margin: EdgeInsets.zero,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    pair.path,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
                                   ),
-                                  child: Text(t(loc, 'plan_default_time_set')),
-                                ),
-                                if (own != null)
-                                  TextButton(
-                                    onPressed: () => unawaited(
-                                      _clearCategoryDefaultPlanTime(
-                                        pair.id,
-                                        setModalState,
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    statusText(
+                                      own: selectedOwn,
+                                      effective: selectedEffective,
+                                    ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      FilledButton.tonal(
+                                        onPressed: () => unawaited(
+                                          _setCategoryDefaultPlanTime(
+                                            pair.id,
+                                            setModalState,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          t(loc, 'plan_default_time_set'),
+                                        ),
                                       ),
-                                    ),
-                                    child: Text(
-                                      t(loc, 'plan_default_time_clear'),
-                                    ),
+                                      TextButton(
+                                        onPressed: selectedOwn == null
+                                            ? null
+                                            : () => unawaited(
+                                                _clearCategoryDefaultPlanTime(
+                                                  pair.id,
+                                                  setModalState,
+                                                ),
+                                              ),
+                                        child: Text(
+                                          t(loc, 'plan_default_time_clear'),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                              ],
+                                ],
+                              ),
                             ),
                           );
                         },
                       ),
+                    const SizedBox(height: 16),
+                    Text(
+                      t(loc, 'plan_default_time_configured_categories'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.45,
+                      ),
+                      child: configuredPairs.isEmpty
+                          ? Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(t(loc, 'plan_default_time_none')),
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: configuredPairs.length,
+                              separatorBuilder: (_, _) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, i) {
+                                final pair = configuredPairs[i];
+                                final own = db.sanitizeDefaultPlanTime(
+                                  db
+                                      .getCategoryRuleById(pair.id)
+                                      ?.defaultPlanTime,
+                                );
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    pair.path,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(own ?? ''),
+                                  trailing: Wrap(
+                                    spacing: 4,
+                                    children: [
+                                      IconButton(
+                                        tooltip: t(
+                                          loc,
+                                          'plan_default_time_set',
+                                        ),
+                                        icon: const Icon(Icons.edit_rounded),
+                                        onPressed: () {
+                                          setModalState(
+                                            () => selectedCategoryId = pair.id,
+                                          );
+                                          unawaited(
+                                            _setCategoryDefaultPlanTime(
+                                              pair.id,
+                                              setModalState,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      IconButton(
+                                        tooltip: t(
+                                          loc,
+                                          'plan_default_time_clear',
+                                        ),
+                                        icon: const Icon(Icons.clear_rounded),
+                                        onPressed: () => unawaited(
+                                          _clearCategoryDefaultPlanTime(
+                                            pair.id,
+                                            setModalState,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () => setModalState(
+                                    () => selectedCategoryId = pair.id,
+                                  ),
+                                );
+                              },
+                            ),
                     ),
                   ],
                 ),
@@ -3112,6 +3258,75 @@ class _PlanningNoTagsSettingsBlockState
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DefaultPlanCategoryOption {
+  const _DefaultPlanCategoryOption({required this.id, required this.path});
+
+  final int id;
+  final String path;
+
+  String get name {
+    final parts = path.split('>');
+    return parts.isEmpty ? path.trim() : parts.last.trim();
+  }
+}
+
+class _DefaultPlanCategorySearchDelegate
+    extends SearchDelegate<_DefaultPlanCategoryOption?> {
+  _DefaultPlanCategorySearchDelegate({required this.loc, required this.options})
+    : super(searchFieldLabel: t(loc, 'plan_default_time_search_category'));
+
+  final String loc;
+  final List<_DefaultPlanCategoryOption> options;
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      if (query.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear_rounded),
+          onPressed: () => query = '',
+        ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back_rounded),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) => _buildMatches(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _buildMatches(context);
+
+  Widget _buildMatches(BuildContext context) {
+    final q = query.trim().toLowerCase();
+    final matches = options.where((o) {
+      if (q.isEmpty) return false;
+      return o.path.toLowerCase().contains(q) ||
+          o.name.toLowerCase().contains(q);
+    }).toList();
+    if (matches.isEmpty) {
+      return Center(child: Text(t(loc, 'plan_default_time_search_category')));
+    }
+    return ListView.separated(
+      itemCount: matches.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final option = matches[index];
+        return ListTile(
+          title: Text(option.path),
+          onTap: () => close(context, option),
+        );
+      },
     );
   }
 }
