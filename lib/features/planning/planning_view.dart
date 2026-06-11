@@ -3318,11 +3318,12 @@ class _DefaultPlanCategorySearchDelegate
 
   Widget _buildMatches(BuildContext context) {
     final q = query.trim().toLowerCase();
-    final matches = options.where((o) {
-      if (q.isEmpty) return false;
-      return o.path.toLowerCase().contains(q) ||
-          o.name.toLowerCase().contains(q);
-    }).toList();
+    final matches = q.isEmpty
+        ? options
+        : options.where((o) {
+            return o.path.toLowerCase().contains(q) ||
+                o.name.toLowerCase().contains(q);
+          }).toList();
     if (matches.isEmpty) {
       return Center(child: Text(t(loc, 'plan_default_time_search_category')));
     }
