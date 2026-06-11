@@ -200,10 +200,13 @@ See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 - Figma names use clean design language (`Button`, `Card`, `Chip`, `Tabs`, `Sheet`, `Header`).
 - Flutter canonical components use app-namespaced names (`AppButton`, future `AppTaskCard` / `AppCard`, `AppTagChip` / `AppCategoryChip`, `AppSegmentedTabs`, `AppSheet`, `AppShellHeader`).
 - App action buttons must use `AppButton` from `lib/core/widgets/app_button.dart`.
+- Figma `Icon Button` maps to Flutter `AppIconButton`.
+- `AppIconButton` lives in `lib/core/widgets/app_icon_button.dart`.
 - Raw `FilledButton`, `ElevatedButton`, `OutlinedButton`, and `TextButton` are forbidden in feature screens for app actions unless documented as temporary legacy in `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
-- `IconButton` may remain only for icon-only navigation/control unless a future canonical icon-action component replaces it.
+- Raw `IconButton` is legacy allowed temporarily, but new app-owned icon-only actions should use `AppIconButton` unless documented.
 - Component Lab is the visual acceptance surface for canonical UI components.
 - Component Lab examples must be explicitly labeled with Figma → Flutter mapping and state metadata.
+- Component Lab must show labeled `AppIconButton` examples before production icon-button migration.
 
 ---
 

@@ -17,6 +17,7 @@ Figma component names should stay clean and designer-facing. Flutter component n
 | Figma name | Flutter name |
 | :--- | :--- |
 | `Button` | `AppButton` |
+| `Icon Button` | `AppIconButton` |
 | `Card` | `AppTaskCard` or `AppCard` |
 | `Chip` | `AppTagChip` / `AppCategoryChip` |
 | `Tabs` | `AppSegmentedTabs` |
@@ -34,6 +35,14 @@ For buttons specifically:
 | `Button / Outlined / M` | `AppButton.outlined(size: AppButtonSize.m)` |
 
 Do not rename the Flutter class to `Button`; keep `AppButton` as the executable source of truth.
+
+For icon buttons specifically:
+
+| Figma component | Flutter component |
+| :--- | :--- |
+| `Icon Button / Standard / M` | `AppIconButton(variant: AppIconButtonVariant.standard, size: AppIconButtonSize.m)` |
+| `Icon Button / Danger / M` | `AppIconButton(variant: AppIconButtonVariant.danger, size: AppIconButtonSize.m)` |
+| `Icon Button / Selected / M` | `AppIconButton(selected: true, size: AppIconButtonSize.m)` |
 
 ## Figma → Flutter Mapping Format
 
@@ -94,6 +103,17 @@ Each mapping must answer:
 - Current sizes: `AppButtonSize.s`, `AppButtonSize.m`, `AppButtonSize.l`.
 - Width behavior: content-width by default, full-width with `fullWidth: true`.
 - Raw `FilledButton`, `OutlinedButton`, `ElevatedButton`, and `TextButton` are forbidden in feature screens for app actions unless listed as temporary legacy in `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
+
+### Icon Buttons / Icon Actions
+
+- Current canonical: `AppIconButton` in `lib/core/widgets/app_icon_button.dart`.
+- Figma `Icon Button` maps to Flutter `AppIconButton`.
+- Current variants: standard, subtle, filled, danger.
+- Current sizes: `AppIconButtonSize.s`, `AppIconButtonSize.m`, `AppIconButtonSize.l`.
+- App icon-only actions should use `AppIconButton` once migration begins.
+- Raw `IconButton` remains legacy allowed temporarily until migrated.
+- New feature-screen icon actions should not introduce fresh raw `IconButton` unless documented as temporary legacy.
+- Icon-only actions require a tooltip or semantic label where practical.
 
 ### Cards
 

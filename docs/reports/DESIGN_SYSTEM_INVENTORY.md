@@ -78,6 +78,63 @@ No `ElevatedButton` usages were found.
 
 V7F should introduce or define `AppIconButton` before touching icon-heavy navigation/control surfaces, or migrate confirm dialogs broadly to `showConfirmDialog` if the next goal is low-risk action cleanup.
 
+## V7F Icon Button Foundation
+
+Date: 2026-06-11.
+
+### What Changed
+
+- `AppIconButton` was created in `lib/core/widgets/app_icon_button.dart` as the canonical Flutter component for Figma `Icon Button`.
+- `AppIconButton` supports standard, subtle, filled, and danger variants.
+- `AppIconButton` supports `AppIconButtonSize.s`, `AppIconButtonSize.m`, and `AppIconButtonSize.l`.
+- `AppIconButton` supports required tooltip/accessibility label, selected state, disabled state, and a simple loading state.
+- No production `IconButton` migration was done in V7F.
+
+### Component Lab Examples Added
+
+`lib/features/dev/component_lab_view.dart` now shows labeled `AppIconButton` examples for:
+
+- Standard enabled and disabled.
+- Subtle enabled.
+- Filled enabled.
+- Danger enabled and disabled.
+- Selected state.
+- Loading state.
+- Small, medium, and large sizes.
+- Navigation/control, inline action, and destructive action examples.
+
+### Raw IconButton Audit
+
+Search target: `IconButton(`.
+
+| Category | Representative files | Approx. count | Status |
+| :--- | :--- | :--- | :--- |
+| Allowed inside canonical component | `lib/core/widgets/app_icon_button.dart` | 1 | Allowed implementation detail. |
+| App bars / navigation | `category_list_view.dart`, search delegate controls in `planning_view.dart`, `timeline_widgets.dart` | ~8 | Legacy allowed temporarily. |
+| Inline controls | `shared_widgets.dart`, `lists_view.dart`, `tag_manager_page.dart`, `smart_plan_sheet.dart` | ~13 | Future safe migration candidates after visual review. |
+| Timeline controls | `timeline_view.dart`, `timeline_widgets.dart`, timeline edit areas in `shared_widgets.dart` | ~4 | Intentionally risky; preserve until timer/timeline control pass. |
+| Planning controls | `planning_view.dart`, `smart_plan_sheet.dart` | ~14 | Intentionally risky around plan play/start, search, selection, and row controls. |
+| Category tree / category management controls | `category_recursive_tree.dart`, `category_list_view.dart` | ~8 | Candidate for a focused category UI pass. |
+| Sheet actions | `shared_widgets.dart`, `voice_input_sheet.dart` | ~6 | Legacy until sheet chrome/controls are migrated together. |
+| Destructive actions | `lists_view.dart`, `planning_view.dart`, category management files | mixed into counts above | Must keep existing confirm/destructive behavior until reviewed. |
+
+Production raw `IconButton(` usage is approximately 41 call sites. This count excludes the single raw `IconButton` used inside `AppIconButton`.
+
+### Intentionally Left For Later
+
+- Timer Start/Stop controls.
+- Plan play/start controls.
+- Active timeline controls.
+- Search delegate leading/clear buttons.
+- Selection mode controls.
+- Category tree expand/edit/visibility controls.
+- Sheet-local controls and voice input controls.
+- Auth field suffix icon controls.
+
+### Next Recommended Migration Pass
+
+V7G can migrate a small low-risk icon-action surface, such as admin-only/dev surfaces or non-timer settings/navigation icon actions, after visual acceptance of `AppIconButton` in Component Lab.
+
 ## Raw Widget Usage Summary
 
 Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton`, `TextButton`, `IconButton`, `Card`, `RawChip`, `Chip`, `FilterChip`, `ChoiceChip`, `TabBar`, `SegmentedButton`.
@@ -89,7 +146,8 @@ Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton
 | Canonical compact labels | `lib/core/widgets/compact_nav_controls.dart` | Allowed inside canonical component | Current compact tab/segment labels; future `AppSegmentedTabs` should absorb broader behavior. |
 | Shared chips | `lib/features/shared/chip_component.dart` | Legacy allowed temporarily | `CategoryChip`, `TagQuickPickStrip`, `CategoryBreadcrumb` are shared but live in `features/shared/`; future V7 may promote canonical chip APIs. |
 | Feature buttons | `planning_view.dart`, `shared_widgets.dart`, `lists_view.dart`, `category_list_view.dart`, `profile_view.dart`, `auth_view.dart`, `tag_manager_page.dart` | Needs migration | Raw Material buttons exist in feature screens. Do not add new raw duplicates when `AppButton` can express the action. |
-| Feature icon actions | Most feature screens | Legacy allowed temporarily | `IconButton` is widely used for app bars, menus, inline actions. Future canonical icon-action patterns should define size, tooltip, danger state, and touch target. |
+| Canonical icon buttons | `lib/core/widgets/app_icon_button.dart` | Allowed inside canonical component | `AppIconButton` wraps one raw `IconButton` and owns variants, size, selected, disabled, loading, tooltip, and danger state. |
+| Feature icon actions | Most feature screens | Legacy allowed temporarily | Raw `IconButton` is widely used for app bars, menus, inline actions. Future V7 passes should migrate scoped low-risk surfaces to `AppIconButton`. |
 | Feature cards | `timeline_view.dart`, `planning_view.dart`, `lists_view.dart`, `category_list_view.dart` | Needs migration | Cards are heavily domain-shaped; migrate through `LifeCard` / `AppTaskCard` rather than one-off replacements. |
 | Feature chips / filters | `lists_view.dart`, `planning_view.dart`, `category_recursive_tree.dart`, `tag_manager_page.dart` | Needs migration | Filter/category/tag controls should converge on canonical chip APIs. |
 | Tabs / segmented controls | `planning_view.dart`, `shared_widgets.dart`, `compact_nav_controls.dart` | Needs migration | Compact labels exist; segment containers still need canonical ownership. |
@@ -116,6 +174,7 @@ Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton
 | :--- | :--- |
 | `AppButton` | Keep and upgrade as `AppButton`, or rename to `AppActionButton` only with a planned migration |
 | Raw `FilledButton` / `OutlinedButton` / `ElevatedButton` / `TextButton` in feature screens | `AppButton` variants |
+| Raw `IconButton` in feature screens | `AppIconButton` variants |
 | Raw danger buttons with `scheme.error` | `AppButton.destructive` |
 | `_PlanningTaskCard` / `_BacklogPlanCard` | `AppTaskCard` or `LifeCard.task` |
 | `_TimelineRecordCard` | `AppTimelineCard` or `LifeCard.timeline` |
@@ -131,7 +190,7 @@ Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton
 
 ## Safe Now
 
-- `AppButton`, `AppLoading`, `AppEmptyState`, `AppErrorState`, and `GlobalAppHeader` are safe canonical starting points.
+- `AppButton`, `AppIconButton`, `AppLoading`, `AppEmptyState`, `AppErrorState`, and `GlobalAppHeader` are safe canonical starting points.
 - `CategoryChip` / `TagQuickPickStrip` are safe shared legacy components for current tag/category UI.
 - `ComponentLabPage` uses mock-only data and may render these components for admin review.
 
@@ -140,6 +199,7 @@ Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton
 - Feature-local task/timeline/list cards.
 - Feature-local filter chips and category chips that bypass shared chip components.
 - Raw Material buttons in feature screens when `AppButton` covers the action.
+- Raw `IconButton` in feature screens when `AppIconButton` covers the action.
 - Raw loading/empty/error placeholders.
 - Tab/segment container implementations outside the compact label helpers.
 

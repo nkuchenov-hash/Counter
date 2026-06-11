@@ -1,4 +1,5 @@
 import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
@@ -33,6 +34,7 @@ class ComponentLabPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: const [
           _LabSection(title: 'Buttons', child: _ButtonsDemo()),
+          _LabSection(title: 'Icon Button', child: _IconButtonsDemo()),
           _LabSection(
             title: 'Loading / Empty / Error states',
             child: _StateViewsDemo(),
@@ -348,6 +350,238 @@ class _ButtonsDemo extends StatelessWidget {
 }
 
 void _mockAction() {}
+
+class _IconButtonsDemo extends StatelessWidget {
+  const _IconButtonsDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ButtonGroup(
+          label: 'Variants',
+          children: [
+            _LabExample(
+              title: 'Icon Button / Standard / M',
+              flutterMapping:
+                  'AppIconButton(variant: AppIconButtonVariant.standard, size: AppIconButtonSize.m)',
+              variant: 'standard',
+              size: 'M',
+              state: 'enabled',
+              note: 'Default icon-only action. Tooltip is required.',
+              child: AppIconButton(
+                icon: Icons.more_horiz_rounded,
+                tooltip: 'More actions',
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Standard / M',
+              flutterMapping:
+                  'AppIconButton(variant: AppIconButtonVariant.standard, size: AppIconButtonSize.m)',
+              variant: 'standard',
+              size: 'M',
+              state: 'disabled',
+              child: AppIconButton(
+                icon: Icons.more_horiz_rounded,
+                tooltip: 'More actions disabled',
+                onPressed: null,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Subtle / M',
+              flutterMapping:
+                  'AppIconButton(variant: AppIconButtonVariant.subtle, size: AppIconButtonSize.m)',
+              variant: 'subtle',
+              size: 'M',
+              state: 'enabled',
+              child: AppIconButton(
+                icon: Icons.tune_rounded,
+                tooltip: 'Adjust options',
+                variant: AppIconButtonVariant.subtle,
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Filled / M',
+              flutterMapping:
+                  'AppIconButton(variant: AppIconButtonVariant.filled, size: AppIconButtonSize.m)',
+              variant: 'filled',
+              size: 'M',
+              state: 'enabled',
+              child: AppIconButton(
+                icon: Icons.add_rounded,
+                tooltip: 'Add item',
+                variant: AppIconButtonVariant.filled,
+                onPressed: _mockAction,
+              ),
+            ),
+          ],
+        ),
+        _ButtonGroup(
+          label: 'Danger / selected',
+          children: [
+            _LabExample(
+              title: 'Icon Button / Danger / M',
+              flutterMapping:
+                  'AppIconButton(variant: AppIconButtonVariant.danger, size: AppIconButtonSize.m)',
+              variant: 'danger',
+              size: 'M',
+              state: 'enabled',
+              note: 'Use for destructive icon-only actions after confirmation.',
+              child: AppIconButton(
+                icon: Icons.delete_outline_rounded,
+                tooltip: 'Delete sample',
+                variant: AppIconButtonVariant.danger,
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Danger / M',
+              flutterMapping:
+                  'AppIconButton(variant: AppIconButtonVariant.danger, size: AppIconButtonSize.m)',
+              variant: 'danger',
+              size: 'M',
+              state: 'disabled',
+              child: AppIconButton(
+                icon: Icons.delete_outline_rounded,
+                tooltip: 'Delete sample disabled',
+                variant: AppIconButtonVariant.danger,
+                onPressed: null,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Selected / M',
+              flutterMapping:
+                  'AppIconButton(selected: true, size: AppIconButtonSize.m)',
+              variant: 'standard',
+              size: 'M',
+              state: 'selected',
+              child: AppIconButton(
+                icon: Icons.check_rounded,
+                tooltip: 'Selected sample',
+                selected: true,
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Standard / M / Loading',
+              flutterMapping:
+                  'AppIconButton(loading: true, size: AppIconButtonSize.m)',
+              variant: 'standard',
+              size: 'M',
+              state: 'loading',
+              child: AppIconButton(
+                icon: Icons.refresh_rounded,
+                tooltip: 'Loading sample',
+                loading: true,
+                onPressed: _mockAction,
+              ),
+            ),
+          ],
+        ),
+        _ButtonGroup(
+          label: 'Sizes',
+          children: [
+            _LabExample(
+              title: 'Icon Button / Standard / S',
+              flutterMapping:
+                  'AppIconButton(size: AppIconButtonSize.s, variant: AppIconButtonVariant.standard)',
+              variant: 'standard',
+              size: 'S',
+              state: 'enabled',
+              child: AppIconButton(
+                icon: Icons.close_rounded,
+                tooltip: 'Small close',
+                size: AppIconButtonSize.s,
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Standard / M',
+              flutterMapping:
+                  'AppIconButton(size: AppIconButtonSize.m, variant: AppIconButtonVariant.standard)',
+              variant: 'standard',
+              size: 'M',
+              state: 'enabled',
+              child: AppIconButton(
+                icon: Icons.close_rounded,
+                tooltip: 'Medium close',
+                size: AppIconButtonSize.m,
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Standard / L',
+              flutterMapping:
+                  'AppIconButton(size: AppIconButtonSize.l, variant: AppIconButtonVariant.standard)',
+              variant: 'standard',
+              size: 'L',
+              state: 'enabled',
+              child: AppIconButton(
+                icon: Icons.close_rounded,
+                tooltip: 'Large close',
+                size: AppIconButtonSize.l,
+                onPressed: _mockAction,
+              ),
+            ),
+          ],
+        ),
+        _ButtonGroup(
+          label: 'Usage examples',
+          children: [
+            _LabExample(
+              title: 'Icon Button / Navigation Control / M',
+              flutterMapping:
+                  'AppIconButton(icon: Icons.arrow_back_rounded, tooltip: ...)',
+              variant: 'standard',
+              size: 'M',
+              state: 'enabled',
+              note:
+                  'Navigation/control example; no production migration in V7F.',
+              child: AppIconButton(
+                icon: Icons.arrow_back_rounded,
+                tooltip: 'Back',
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Inline Action / M',
+              flutterMapping:
+                  'AppIconButton(variant: AppIconButtonVariant.subtle, icon: Icons.edit_rounded, tooltip: ...)',
+              variant: 'subtle',
+              size: 'M',
+              state: 'enabled',
+              note: 'Inline action example for future sheet/list migrations.',
+              child: AppIconButton(
+                icon: Icons.edit_rounded,
+                tooltip: 'Edit item',
+                variant: AppIconButtonVariant.subtle,
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Icon Button / Destructive Action / M',
+              flutterMapping:
+                  'AppIconButton(variant: AppIconButtonVariant.danger, icon: Icons.delete_outline_rounded, tooltip: ...)',
+              variant: 'danger',
+              size: 'M',
+              state: 'enabled',
+              note: 'Destructive action example only; no real delete.',
+              child: AppIconButton(
+                icon: Icons.delete_outline_rounded,
+                tooltip: 'Delete item',
+                variant: AppIconButtonVariant.danger,
+                onPressed: _mockAction,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
 
 class _ButtonGroup extends StatelessWidget {
   const _ButtonGroup({required this.label, required this.children});
