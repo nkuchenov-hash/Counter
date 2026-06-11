@@ -12,6 +12,7 @@
 > ***
 
 ## [2026-06-11] - F2C default plan times selector wiring [shipped]
+* **`component_lab_view.dart` / `DESIGN_SYSTEM.md`:** [shipped] Component Lab examples now render lab-only labels with Figma name, Flutter mapping, variant, size, and state metadata for review without changing production UI.
 * **`app_button.dart` / `component_lab_view.dart` / `DESIGN_SYSTEM.md`:** [shipped] V7E Action Buttons started: `AppButton` remains canonical and now supports Button Primary/Secondary/Danger/Ghost/Outlined variants, S/M/L sizing, loading/disabled/icon/full-width states, with Component Lab acceptance examples and inventory guardrails.
 * **`profile_service.dart` / `app_shell.dart` / `more_view.dart`:** [wip] Admin Component Lab gate now fetches a fresh `profiles` row before falling back to cached auth data and adds temporary `[ADMIN_FLAG]` diagnostics plus `Admin flag: true/false` More markers while verifying `profiles.is_admin`.
 * **`UX_CONTRACT.md` / `DESIGN_SYSTEM.md` / `component_lab_view.dart`:** [wip] V3/V7 foundation started: behavior/design-system docs added, UI inventory report created, `profiles.is_admin` parsed read-only into settings, and admin-only Component Lab skeleton exposed from More with mock-only canonical component samples.

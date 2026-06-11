@@ -38,10 +38,35 @@ class ComponentLabPage extends StatelessWidget {
             child: _StateViewsDemo(),
           ),
           _LabSection(title: 'Chips / Tags', child: _ChipsDemo()),
-          _LabSection(title: 'Cards', child: _PlaceholderDemo()),
-          _LabSection(title: 'Tabs / Segments', child: _PlaceholderDemo()),
+          _LabSection(
+            title: 'Cards',
+            child: _PlaceholderDemo(
+              figmaName: 'Card',
+              flutterMapping: 'Future: AppTaskCard or AppCard',
+              variant: 'placeholder',
+              note:
+                  'No card migration in V7E. Surface reserved for future V7 pass.',
+            ),
+          ),
+          _LabSection(
+            title: 'Tabs / Segments',
+            child: _PlaceholderDemo(
+              figmaName: 'Tabs',
+              flutterMapping: 'Future: AppSegmentedTabs',
+              variant: 'placeholder',
+              note: 'No tabs/segments migration in V7E.',
+            ),
+          ),
           _LabSection(title: 'Headers', child: _HeadersDemo()),
-          _LabSection(title: 'Sheets / Inputs', child: _PlaceholderDemo()),
+          _LabSection(
+            title: 'Sheets / Inputs',
+            child: _PlaceholderDemo(
+              figmaName: 'Sheet / Input',
+              flutterMapping: 'Future: AppSheet / AppTextField',
+              variant: 'placeholder',
+              note: 'No sheet/input migration in V7E.',
+            ),
+          ),
         ],
       ),
     );
@@ -84,91 +109,238 @@ class _ButtonsDemo extends StatelessWidget {
         const _ButtonGroup(
           label: 'Primary',
           children: [
-            AppButton.primary(label: 'Primary enabled', onPressed: _mockAction),
-            AppButton.primary(label: 'Primary disabled', onPressed: null),
-            AppButton.primary(
-              label: 'Primary loading',
-              onPressed: _mockAction,
-              loading: true,
+            _LabExample(
+              title: 'Button / Primary / M',
+              flutterMapping: 'AppButton.primary(size: AppButtonSize.m)',
+              variant: 'primary',
+              size: 'M',
+              state: 'enabled',
+              child: AppButton.primary(
+                label: 'Primary enabled',
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Button / Primary / M',
+              flutterMapping: 'AppButton.primary(size: AppButtonSize.m)',
+              variant: 'primary',
+              size: 'M',
+              state: 'disabled',
+              child: AppButton.primary(
+                label: 'Primary disabled',
+                onPressed: null,
+              ),
+            ),
+            _LabExample(
+              title: 'Button / Primary / M',
+              flutterMapping:
+                  'AppButton.primary(size: AppButtonSize.m, loading: true)',
+              variant: 'primary',
+              size: 'M',
+              state: 'loading',
+              child: AppButton.primary(
+                label: 'Primary loading',
+                onPressed: _mockAction,
+                loading: true,
+              ),
             ),
           ],
         ),
         const _ButtonGroup(
           label: 'Secondary',
           children: [
-            AppButton.secondary(
-              label: 'Secondary enabled',
-              onPressed: _mockAction,
+            _LabExample(
+              title: 'Button / Secondary / M',
+              flutterMapping: 'AppButton.secondary(size: AppButtonSize.m)',
+              variant: 'secondary',
+              size: 'M',
+              state: 'enabled',
+              child: AppButton.secondary(
+                label: 'Secondary enabled',
+                onPressed: _mockAction,
+              ),
             ),
-            AppButton.secondary(label: 'Secondary disabled', onPressed: null),
-            AppButton.secondary(
-              label: 'Secondary loading',
-              onPressed: _mockAction,
-              loading: true,
+            _LabExample(
+              title: 'Button / Secondary / M',
+              flutterMapping: 'AppButton.secondary(size: AppButtonSize.m)',
+              variant: 'secondary',
+              size: 'M',
+              state: 'disabled',
+              child: AppButton.secondary(
+                label: 'Secondary disabled',
+                onPressed: null,
+              ),
+            ),
+            _LabExample(
+              title: 'Button / Secondary / M',
+              flutterMapping:
+                  'AppButton.secondary(size: AppButtonSize.m, loading: true)',
+              variant: 'secondary',
+              size: 'M',
+              state: 'loading',
+              child: AppButton.secondary(
+                label: 'Secondary loading',
+                onPressed: _mockAction,
+                loading: true,
+              ),
             ),
           ],
         ),
         const _ButtonGroup(
           label: 'Danger / destructive',
           children: [
-            AppButton.danger(
-              label: 'Danger enabled',
-              icon: Icons.delete_outline_rounded,
-              onPressed: _mockAction,
+            _LabExample(
+              title: 'Button / Danger / M',
+              flutterMapping: 'AppButton.danger(size: AppButtonSize.m)',
+              variant: 'danger',
+              size: 'M',
+              state: 'enabled',
+              child: AppButton.danger(
+                label: 'Danger enabled',
+                icon: Icons.delete_outline_rounded,
+                onPressed: _mockAction,
+              ),
             ),
-            AppButton.danger(label: 'Danger disabled', onPressed: null),
-            AppButton.danger(
-              label: 'Danger loading',
-              onPressed: _mockAction,
-              loading: true,
+            _LabExample(
+              title: 'Button / Danger / M',
+              flutterMapping: 'AppButton.danger(size: AppButtonSize.m)',
+              variant: 'danger',
+              size: 'M',
+              state: 'disabled',
+              child: AppButton.danger(
+                label: 'Danger disabled',
+                onPressed: null,
+              ),
+            ),
+            _LabExample(
+              title: 'Button / Danger / M',
+              flutterMapping:
+                  'AppButton.danger(size: AppButtonSize.m, loading: true)',
+              variant: 'danger',
+              size: 'M',
+              state: 'loading',
+              child: AppButton.danger(
+                label: 'Danger loading',
+                onPressed: _mockAction,
+                loading: true,
+              ),
             ),
           ],
         ),
         const _ButtonGroup(
           label: 'Ghost / outlined / icon',
           children: [
-            AppButton.ghost(label: 'Ghost button', onPressed: _mockAction),
-            AppButton.outlined(
-              label: 'Outlined button',
-              onPressed: _mockAction,
+            _LabExample(
+              title: 'Button / Ghost / M',
+              flutterMapping: 'AppButton.ghost(size: AppButtonSize.m)',
+              variant: 'ghost',
+              size: 'M',
+              state: 'enabled',
+              child: AppButton.ghost(
+                label: 'Ghost button',
+                onPressed: _mockAction,
+              ),
             ),
-            AppButton.primary(
-              label: 'Icon + label',
-              icon: Icons.add_rounded,
-              onPressed: _mockAction,
+            _LabExample(
+              title: 'Button / Outlined / M',
+              flutterMapping: 'AppButton.outlined(size: AppButtonSize.m)',
+              variant: 'outlined',
+              size: 'M',
+              state: 'enabled',
+              child: AppButton.outlined(
+                label: 'Outlined button',
+                onPressed: _mockAction,
+              ),
+            ),
+            _LabExample(
+              title: 'Button / Primary / M / Icon',
+              flutterMapping:
+                  'AppButton.primary(size: AppButtonSize.m, icon: Icons.add_rounded)',
+              variant: 'primary',
+              size: 'M',
+              state: 'enabled',
+              note:
+                  'Use for app actions with a supporting icon and visible label.',
+              child: AppButton.primary(
+                label: 'Icon + label',
+                icon: Icons.add_rounded,
+                onPressed: _mockAction,
+              ),
             ),
           ],
         ),
         const _ButtonGroup(
           label: 'Sizes',
           children: [
-            AppButton.primary(
-              label: 'Small',
-              size: AppButtonSize.s,
-              onPressed: _mockAction,
+            _LabExample(
+              title: 'Button / Primary / S',
+              flutterMapping: 'AppButton.primary(size: AppButtonSize.s)',
+              variant: 'primary',
+              size: 'S',
+              state: 'enabled',
+              child: AppButton.primary(
+                label: 'Small',
+                size: AppButtonSize.s,
+                onPressed: _mockAction,
+              ),
             ),
-            AppButton.primary(
-              label: 'Medium',
-              size: AppButtonSize.m,
-              onPressed: _mockAction,
+            _LabExample(
+              title: 'Button / Primary / M',
+              flutterMapping: 'AppButton.primary(size: AppButtonSize.m)',
+              variant: 'primary',
+              size: 'M',
+              state: 'enabled',
+              child: AppButton.primary(
+                label: 'Medium',
+                size: AppButtonSize.m,
+                onPressed: _mockAction,
+              ),
             ),
-            AppButton.primary(
-              label: 'Large',
-              size: AppButtonSize.l,
-              onPressed: _mockAction,
+            _LabExample(
+              title: 'Button / Primary / L',
+              flutterMapping: 'AppButton.primary(size: AppButtonSize.l)',
+              variant: 'primary',
+              size: 'L',
+              state: 'enabled',
+              child: AppButton.primary(
+                label: 'Large',
+                size: AppButtonSize.l,
+                onPressed: _mockAction,
+              ),
             ),
           ],
         ),
         const _ButtonGroup(
           label: 'Width',
           children: [
-            AppButton.secondary(label: 'Content width', onPressed: _mockAction),
+            _LabExample(
+              title: 'Button / Secondary / M / Content width',
+              flutterMapping: 'AppButton.secondary(size: AppButtonSize.m)',
+              variant: 'secondary',
+              size: 'M',
+              state: 'enabled',
+              note: 'Default width follows content.',
+              child: AppButton.secondary(
+                label: 'Content width',
+                onPressed: _mockAction,
+              ),
+            ),
           ],
         ),
-        const AppButton.primary(
-          label: 'Full width',
+        const _LabExample(
+          title: 'Button / Primary / M / Full width',
+          flutterMapping:
+              'AppButton.primary(size: AppButtonSize.m, fullWidth: true)',
+          variant: 'primary',
+          size: 'M',
+          state: 'enabled',
+          note: 'Use for full-row sheet or page actions.',
           fullWidth: true,
-          onPressed: _mockAction,
+          child: AppButton.primary(
+            label: 'Full width',
+            fullWidth: true,
+            onPressed: _mockAction,
+          ),
         ),
       ],
     );
@@ -199,21 +371,156 @@ class _ButtonGroup extends StatelessWidget {
   }
 }
 
+class _LabExample extends StatelessWidget {
+  const _LabExample({
+    required this.title,
+    required this.flutterMapping,
+    required this.child,
+    this.variant,
+    this.size,
+    this.state,
+    this.note,
+    this.fullWidth = false,
+  });
+
+  final String title;
+  final String flutterMapping;
+  final Widget child;
+  final String? variant;
+  final String? size;
+  final String? state;
+  final String? note;
+  final bool fullWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final borderColor = scheme.outlineVariant.withValues(alpha: 0.8);
+    final content = Container(
+      width: fullWidth ? double.infinity : 280,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _LabCodeLabel(title),
+          const SizedBox(height: 8),
+          _LabMetaLine(label: 'Flutter', value: flutterMapping),
+          if (variant != null) _LabMetaLine(label: 'Variant', value: variant!),
+          if (size != null) _LabMetaLine(label: 'Size', value: size!),
+          if (state != null) _LabMetaLine(label: 'State', value: state!),
+          if (note != null) _LabMetaLine(label: 'Note', value: note!),
+          const SizedBox(height: 12),
+          Align(
+            alignment: fullWidth
+                ? AlignmentDirectional.center
+                : AlignmentDirectional.centerStart,
+            child: fullWidth
+                ? SizedBox(width: double.infinity, child: child)
+                : child,
+          ),
+        ],
+      ),
+    );
+    return fullWidth ? content : IntrinsicWidth(child: content);
+  }
+}
+
+class _LabCodeLabel extends StatelessWidget {
+  const _LabCodeLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+        color: scheme.onSurface,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+class _LabMetaLine extends StatelessWidget {
+  const _LabMetaLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: TextStyle(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+      ),
+    );
+  }
+}
+
 class _StateViewsDemo extends StatelessWidget {
   const _StateViewsDemo();
 
   @override
   Widget build(BuildContext context) {
     return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(height: 48, child: AppLoading(size: AppLoadingSize.medium)),
-        SizedBox(
-          height: 140,
-          child: AppEmptyState(message: 'No sample items yet.'),
+        _LabExample(
+          title: 'Loading / Spinner / M',
+          flutterMapping: 'AppLoading(size: AppLoadingSize.medium)',
+          variant: 'spinner',
+          size: 'M',
+          state: 'loading',
+          child: SizedBox(
+            height: 48,
+            child: AppLoading(size: AppLoadingSize.medium),
+          ),
         ),
-        SizedBox(
-          height: 140,
-          child: AppErrorState(message: 'Sample error state.'),
+        SizedBox(height: 12),
+        _LabExample(
+          title: 'Empty State / Default',
+          flutterMapping: 'AppEmptyState(message: ...)',
+          variant: 'default',
+          state: 'empty',
+          child: SizedBox(
+            height: 140,
+            child: AppEmptyState(message: 'No sample items yet.'),
+          ),
+        ),
+        SizedBox(height: 12),
+        _LabExample(
+          title: 'Error State / Default',
+          flutterMapping: 'AppErrorState(message: ...)',
+          variant: 'default',
+          state: 'error',
+          child: SizedBox(
+            height: 140,
+            child: AppErrorState(message: 'Sample error state.'),
+          ),
         ),
       ],
     );
@@ -231,14 +538,23 @@ class _ChipsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
-      child: TagQuickPickStrip(
-        tags: _sampleTags,
-        selected: const [
-          Tag(tagId: 1, name: 'Focus', color: '#6750A4', icon: 'work'),
-        ],
-        onToggle: (_) {},
+    return _LabExample(
+      title: 'Chip / Tag Picker Strip',
+      flutterMapping: 'TagQuickPickStrip(tags: ..., selected: ...)',
+      variant: 'tag picker',
+      state: 'one selected',
+      note:
+          'Shared feature component; future V7 may promote a canonical AppTagPickerStrip.',
+      fullWidth: true,
+      child: SizedBox(
+        height: 48,
+        child: TagQuickPickStrip(
+          tags: _sampleTags,
+          selected: const [
+            Tag(tagId: 1, name: 'Focus', color: '#6750A4', icon: 'work'),
+          ],
+          onToggle: (_) {},
+        ),
       ),
     );
   }
@@ -249,28 +565,55 @@ class _HeadersDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: kGlobalCompactHeaderHeight,
-      color: kGlobalCompactHeaderColor,
-      alignment: Alignment.center,
-      child: GlobalAppHeader(
-        selectedDate: DateTime(2026, 6, 11),
-        enabled: false,
-        compact: true,
-        onDateSelected: (_) {},
+    return _LabExample(
+      title: 'Header / Global / Compact',
+      flutterMapping: 'GlobalAppHeader(compact: true)',
+      variant: 'compact',
+      state: 'disabled sample',
+      note:
+          'Current shell header primitive; future V7 may rename/expand as AppShellHeader.',
+      fullWidth: true,
+      child: Container(
+        height: kGlobalCompactHeaderHeight,
+        color: kGlobalCompactHeaderColor,
+        alignment: Alignment.center,
+        child: GlobalAppHeader(
+          selectedDate: DateTime(2026, 6, 11),
+          enabled: false,
+          compact: true,
+          onDateSelected: (_) {},
+        ),
       ),
     );
   }
 }
 
 class _PlaceholderDemo extends StatelessWidget {
-  const _PlaceholderDemo();
+  const _PlaceholderDemo({
+    required this.figmaName,
+    required this.flutterMapping,
+    required this.variant,
+    this.note,
+  });
+
+  final String figmaName;
+  final String flutterMapping;
+  final String variant;
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      'Placeholder: canonical component surface will be added here as V7 evolves.',
-      style: Theme.of(context).textTheme.bodyMedium,
+    return _LabExample(
+      title: figmaName,
+      flutterMapping: flutterMapping,
+      variant: variant,
+      state: 'not implemented',
+      note: note,
+      fullWidth: true,
+      child: Text(
+        'Placeholder: canonical component surface will be added here as V7 evolves.',
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
     );
   }
 }

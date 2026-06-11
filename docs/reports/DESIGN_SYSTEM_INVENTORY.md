@@ -44,6 +44,11 @@ Date: 2026-06-11.
 - Small, medium, large sizes.
 - Content-width and full-width examples.
 
+### V7E.1 Component Lab Labels
+
+- Component Lab examples are now labeled for review with Figma/design-system name, Flutter mapping, variant, size, and state metadata where applicable.
+- Labeling lives only in the lab/demo wrapper and does not change production UI.
+
 ### Raw Button Audit After Migration
 
 Search target: `ElevatedButton`, `FilledButton`, `OutlinedButton`, `TextButton`, `IconButton`.

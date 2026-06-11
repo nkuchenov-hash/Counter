@@ -149,3 +149,5 @@ Allowed exceptions:
 - Access: admin-only via `profiles.is_admin`.
 - Data: sample/mock visual data only.
 - Safety: no database writes, no destructive actions, no production user data.
+- Every Component Lab example must be labeled with Figma name, Flutter mapping, variant, size, and state where applicable.
+- Labels belong to the lab/demo wrapper, not to production components.

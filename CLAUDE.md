@@ -203,6 +203,7 @@ See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 - Raw `FilledButton`, `ElevatedButton`, `OutlinedButton`, and `TextButton` are forbidden in feature screens for app actions unless documented as temporary legacy in `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
 - `IconButton` may remain only for icon-only navigation/control unless a future canonical icon-action component replaces it.
 - Component Lab is the visual acceptance surface for canonical UI components.
+- Component Lab examples must be explicitly labeled with Figma → Flutter mapping and state metadata.
 
 ---
 
