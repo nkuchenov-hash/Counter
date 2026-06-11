@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-11] - F2C default plan times selector wiring [shipped]
+* **`planning_view.dart`:** [shipped] Confirmed Plans gear → `_showPlanningSettingsSheet` → `_showDefaultPlanTimesSheet` is the sole default-times entry; added temporary `F2C selector UI` sanity marker at sheet bottom for web/APK verification after push to `main`.
+
 ## [2026-06-10] - F2A Plans UI polish slice [shipped]
 * **`planning_view.dart` / `dictionary.dart`:** [shipped] F2C default plan times UI now uses a compact category selector with searchable picker, selected-category own/inherited status, set/clear-own actions, and a small configured-categories list instead of rendering the full category tree by default.
 * **`category_service.dart` / `plan_service.dart` / `planning_view.dart`:** [wip] F2C category default plan times: category rows read optional `default_plan_time` (`HH:mm`), Plans settings exposes per-category set/clear controls with parent inheritance, and new scheduled plans without explicit parsed time apply the effective category default.

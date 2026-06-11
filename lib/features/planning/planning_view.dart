@@ -982,6 +982,15 @@ class _PlanningPageState extends State<PlanningPage>
                               },
                             ),
                     ),
+                    const SizedBox(height: 16),
+                    // TODO(F2C): remove sanity marker after web + APK verification.
+                    Text(
+                      'F2C selector UI',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ],
                 ),
               ),
