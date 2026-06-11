@@ -5,6 +5,7 @@
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_list_view.dart';
+import 'package:counter/features/dev/component_lab_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -24,10 +25,9 @@ class MoreMenuPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
+    final isAdmin = DatabaseService.instance.settings.isAdmin;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t(loc, 'tab_more')),
-      ),
+      appBar: AppBar(title: Text(t(loc, 'tab_more'))),
       body: ListView(
         children: [
           ListTile(
@@ -36,9 +36,7 @@ class MoreMenuPage extends StatelessWidget {
             onTap: () {
               Navigator.of(context).push<void>(
                 MaterialPageRoute<void>(
-                  builder: (ctx) => ProfilePage(
-                    onSaved: onProfileSaved,
-                  ),
+                  builder: (ctx) => ProfilePage(onSaved: onProfileSaved),
                 ),
               );
             },
@@ -64,6 +62,18 @@ class MoreMenuPage extends StatelessWidget {
               );
             },
           ),
+          if (isAdmin)
+            ListTile(
+              leading: const Icon(Icons.design_services_rounded),
+              title: const Text('Dev / Design Lab'),
+              onTap: () {
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (ctx) => const ComponentLabPage(),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );

@@ -49,6 +49,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 | **`id`** | **system** | **15-char primary key** for Auth; value used as **`user_id`** target on child relations. |
 | `email` | email | Auth identity. |
 | `user_id` | text | Legacy UUID on profile row (optional/historical). |
+| `is_admin` | bool | Admin-only app flag; default false; used to gate internal tools such as Component Lab. Managed manually in PocketBase Admin UI and read-only in client UI. |
 | `tag_display_mode` | text or select | App: **`text_chip`**, **`chip`**, **`dot`**, **`icon`**, **`icon_circle`**. |
 
 ### 4.2 `categories`

@@ -23,10 +23,10 @@ The velocity rule exists because Nick is a UX designer working with AI assistant
 ## Execution order
 
 ```
-~~C1~~ ✅ → ~~O1~~ ✅ (Offline-first) → ~~V1~~ ✅ (CLAUDE.md nav map) → ~~F1~~ ✅ (Lists completion) → F2 (Plans completion) → F3 (Auto-save) → V3 (UX_CONTRACT) → V7 (Design Language)
+~~C1~~ ✅ → ~~O1~~ ✅ (Offline-first) → ~~V1~~ ✅ (CLAUDE.md nav map) → ~~F1~~ ✅ (Lists completion) → F2A/F2C ✅ accepted → V3 (UX_CONTRACT) → V7 (Design System)
 ```
 
-**O1, V1, and F1 are shipped.** Next roadmap item is **F2 Plans Feature Completion**.
+**O1, V1, F1, F2A, and F2C are shipped/accepted.** Feature work is paused unless explicitly requested. The active project is **V3/V7 only**: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and the admin-only Component Lab.
 
 ---
 
@@ -171,7 +171,7 @@ User items in scope: #6, #7, #12, #13, #15, and #1.
 
 ---
 
-### F3 — Auto-save
+### F3 — Auto-save (paused)
 **Do after F2. Touches shared_widgets.dart deeply — do in isolation.**
 
 User item: #14. Also resolves the "notes deleted on close" complaint.
@@ -195,7 +195,7 @@ Short reference docs for tasks Claude Code re-derives every time. Candidates: "H
 ### V3. Phase 3c — Write `UX_CONTRACT.md`
 **Effort: medium. Savings: high — once written, every UI question gets a one-doc answer.**
 
-A single written spec for how the UI responds to every user action — tap, save, edit, delete, drag, swipe, error, offline, loading, empty state. Same authority as the Iron Laws. Unblocks V7 and V8.
+A single written spec for how the UI responds to every user action — tap, save, edit, delete, drag, swipe, error, offline, loading, empty state. Same authority as the Iron Laws. **Active now** with V7; feature work stays paused while this foundation is built.
 
 ---
 
@@ -224,8 +224,8 @@ Status: `database_service.dart` ~720 lines. All domains extracted to part files.
 
 ---
 
-### V7. Phase 4 — Design Language
-Typography scale, color tokens, spacing system, motion principles. Unblocked by V3.
+### V7. Phase 4 — Design System
+Typography scale, color tokens, spacing system, motion principles, canonical Flutter components, and admin-only Component Lab. **Active now** with V3.
 
 ---
 

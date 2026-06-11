@@ -84,6 +84,8 @@ lib/
 │   │   └── wall_clock.dart        // Profile timezone wall-clock helpers (PLANETARY_TIME).
 │   ├── more/                      // [OVERFLOW] Categories + Profile nav hub
 │   │   └── more_view.dart
+│   ├── dev/                       // [INTERNAL] Admin-only design/dev tools
+│   │   └── component_lab_view.dart // Component Lab, gated by profiles.is_admin
 │   ├── wear/                      // [WEAR OS] Watch companion
 │   │   ├── wear_timer_screen.dart
 │   │   ├── wear_main_wrapper.dart
@@ -119,4 +121,6 @@ This `APP_STRUCTURE` file is just one piece of the project's governing documents
 2. **`@ARCHITECTURE.md` (The Laws of Physics):** Dictates *how* the app is built. It defines state management patterns, error handling rules, The Omni-Picker Law, and GTD Inbox paradigms. If `APP_STRUCTURE` is the map, `ARCHITECTURE.md` is the law.
 3. **`@DATA_MAP.md` (The Schema & Iron Laws):** The absolute source of truth for the PocketBase database. It defines collections, field types, primary keys, and strict rules for relationships (e.g., The Singleton Timeline Law). NEVER alter a database call without consulting this.
 4. **`@pocketbase_MANIFEST` (The Backend):** Details the server-side environment, custom JS hooks, and PB configuration. Explains what the server does so the client doesn't try to reinvent the wheel.
-5. **`@.cursorrules` (The Enforcer):** The meta-document that forces the AI agent to read documents 1 through 4 before writing a single line of code.
+5. **`@UX_CONTRACT.md` (The Behavior Contract):** Defines tap/save/edit/delete/loading/offline/optimistic behavior for every UI surface.
+6. **`@DESIGN_SYSTEM.md` (The Design System):** Defines Figma → Flutter mapping, tokens, canonical component categories, and the forbidden local UI rule.
+7. **`@.cursorrules` (The Enforcer):** The meta-document that forces the AI agent to read governing documents before writing a single line of code.

@@ -158,6 +158,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **preferred_timezone**| String | Time | **YES** | Textual timezone name (e.g., "New York (UTC-5)"). |
 | **timezone_offset** | Number | Time | **YES** | Numerical offset from UTC (e.g., -5). |
 | **biometric_enabled**| Bool | Security | **YES** | Toggle for FaceID/Fingerprint authentication. |
+| **is_admin** | Bool | Access | NO | Admin-only app flag. Default false. Read-only for the client UI. Used to reveal internal/admin tools such as Component Lab. Managed manually in PocketBase Admin UI; normal profile settings must not PATCH this field. |
 | **tier** | Select | Monetization | **YES** | Subscription tier for server-side gating (e.g. AI parse routes). Allowed: `free`, `pro`. Default: `free`. |
 | **default_category_id** | String | Setting | NO | ID of the default category. |
 | **active_languages**| JSON | Setting | NO | Array/List of active languages. |
@@ -178,6 +179,8 @@ description: Revisions and corrections for DATA_MAP.md.
    * Add new fields as new fields in the PocketBase collection dashboard. Existing API payloads won't break.
 5. **Monetization / AI:**
    * **`tier`** MUST be enforced on the server for privileged routes (e.g. `POST /api/ai/parse-task`). Clients treat tier as read-only from the profile record.
+6. **Admin tools:**
+   * **`is_admin`** is read-only in the client. Missing/null values are treated as `false`. Normal profile settings PATCH payloads must never include this field.
 
 ## 5. Collection: `tags`
 **Business PK:** `tag_id` | **System PK (REST):** `id` (15-char String)

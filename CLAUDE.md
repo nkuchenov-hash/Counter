@@ -2,7 +2,7 @@
 
 Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best time tracker possible, tidy codebase where every reusable thing lives in one place.
 
-**Current velocity track (2026-06-11):** O1 Offline-first ✅ shipped · V1 ✅ shipped · F1 Lists ✅ shipped · F2A ✅ accepted · F2C ✅ accepted · F2B deferred · next decision pending.
+**Current velocity track (2026-06-11):** Feature work paused · active project is V3/V7 only: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and admin-only Component Lab.
 
 ---
 
@@ -16,6 +16,8 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 | `docs/ARCHITECTURE.md` | Iron Laws, core contracts, data flow. The authoritative technical reference. |
 | `docs/POCKETBASE_MANIFEST.md` | PocketBase URL, collection names, relation fields. |
 | `docs/DATA_MAP.md` | Field names and business IDs (`user_id`, `record_id`, etc.). |
+| `docs/UX_CONTRACT.md` | User interaction behavior contract: tap/save/edit/delete/loading/offline/optimistic rules. |
+| `docs/DESIGN_SYSTEM.md` | Figma → Flutter mapping, tokens, canonical component categories, and forbidden local UI rule. |
 
 ---
 
@@ -69,6 +71,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | :--- | :--- | :--- |
 | **Lists screen** | `lib/features/lists/lists_view.dart` | `ListsPage` — wired in `app_shell.dart` IndexedStack index 3 |
 | **Plans screen** | `lib/features/planning/planning_view.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |
+| **Component Lab (admin-only)** | `lib/features/dev/component_lab_view.dart` | `ComponentLabPage`; More → Dev / Design Lab only when `DatabaseService.instance.settings.isAdmin` |
 | **Shared edit sheets** | `lib/features/shared/shared_widgets.dart` | `ActivityDetailSheet` (router) → `_PlanningTaskEditSheet` (plans/lists) or `_TimelineRecordSheetContent` (timeline records); `showAppDateTimePicker` (Omni-Picker entry) |
 | **Bulk plan edit** | `lib/features/planning/bulk_planning_edit_sheet.dart` | bulk date/time moves (also uses `showAppDateTimePicker`) |
 | **Sheet host (modal)** | `lib/app_shell.dart` | `_openEditDialog` / `_showEditRecordSheetForTimeline` → `showModalBottomSheet` + `ActivityDetailSheet` |
@@ -184,9 +187,22 @@ See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
 ---
 
+## Design System / Component Lab
+
+- `docs/UX_CONTRACT.md` is the behavior contract for taps, save/edit/delete, loading/empty/error, offline/pending sync, disabled states, sheet close, selection/bulk, drag/reorder, and optimistic UI.
+- `docs/DESIGN_SYSTEM.md` is the Figma → Flutter design-system contract: token categories, canonical component categories, and the forbidden local UI rule.
+- Component Lab lives at `lib/features/dev/component_lab_view.dart` (`ComponentLabPage`) and is reachable from More → Dev / Design Lab only for admins.
+- Component Lab is gated by `profiles.is_admin`, parsed as `UserSettings.isAdmin`; missing/null is false.
+- `profiles.is_admin` is read-only in client UI, managed manually in PocketBase Admin UI, and must never be PATCHed by normal profile settings.
+- New reusable UI belongs in `lib/core/widgets/`.
+- Feature screens compose canonical components; do not recreate local copies.
+- Variations are parameters, not copies.
+
+---
+
 ## F1 / Lists — shipped
 
-O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and F2C are accepted; F2B is deferred. Next decision is pending. Do not start F2B/F2D/F3 unless explicitly requested.
+O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and F2C are accepted; F2B/F3/all feature work are paused unless explicitly requested. Active work is V3/V7.
 
 | Item | Status | Notes |
 | :--- | :--- | :--- |

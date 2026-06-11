@@ -10,6 +10,7 @@ import 'package:counter/models.dart';
 import 'package:counter/features/categories/category_list_view.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/calendar/calendar_view.dart';
+import 'package:counter/features/dev/component_lab_view.dart';
 import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
@@ -1314,6 +1315,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   void _openMoreMenu() {
     final loc = currentLocale.value;
+    final isAdmin = DatabaseService.instance.settings.isAdmin;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -1337,6 +1339,19 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 setState(() => _shellPageIndex = 4);
               },
             ),
+            if (isAdmin)
+              ListTile(
+                leading: const Icon(Icons.design_services_rounded),
+                title: const Text('Dev / Design Lab'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const ComponentLabPage(),
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),

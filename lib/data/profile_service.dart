@@ -57,6 +57,19 @@ String _normalizeTimezone(String timezone) {
   }
 }
 
+bool _profileBool(dynamic value, [bool fallback = false]) {
+  if (value == true) return true;
+  if (value == false) return false;
+  if (value == 1) return true;
+  if (value == 0) return false;
+  if (value is String) {
+    final s = value.trim().toLowerCase();
+    if (s == 'true' || s == '1' || s == 'yes') return true;
+    if (s == 'false' || s == '0' || s == 'no') return false;
+  }
+  return fallback;
+}
+
 int _fixedOffsetHoursFromLabel(String timezone) {
   final tz = _normalizeTimezone(timezone);
   switch (tz) {
@@ -312,6 +325,7 @@ extension ProfileServiceExtension on DatabaseService {
         hasSeeded: data['has_seeded'] == true,
         dataRegion: region,
         biometricEnabled: data['biometric_enabled'] == true,
+        isAdmin: _profileBool(data['is_admin']),
         themeMode: themeMode,
         displayName: dn != null && dn.trim().isNotEmpty ? dn.trim() : null,
         tagDisplayMode: categoryDisplayModeFromWire(tagModeRaw),
