@@ -2,7 +2,7 @@
 
 Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best time tracker possible, tidy codebase where every reusable thing lives in one place.
 
-**Current velocity track (2026-06-10):** O1 Offline-first ✅ shipped · V1 ✅ shipped · F1 Lists ✅ shipped · next: F2 Plans.
+**Current velocity track (2026-06-11):** O1 Offline-first ✅ shipped · V1 ✅ shipped · F1 Lists ✅ shipped · F2A ✅ accepted · F2C ✅ accepted · F2B deferred · next decision pending.
 
 ---
 
@@ -186,7 +186,7 @@ See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 
 ## F1 / Lists — shipped
 
-O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). Next roadmap item is **F2 Plans Feature Completion**. Do not start F2 unless explicitly requested.
+O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and F2C are accepted; F2B is deferred. Next decision is pending. Do not start F2B/F2D/F3 unless explicitly requested.
 
 | Item | Status | Notes |
 | :--- | :--- | :--- |
@@ -196,6 +196,17 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). Next roa
 | Card checkbox/text alignment | **Shipped** | `_BacklogPlanCard` checkbox and title column are centered for one-line and two-line titles |
 | No play button on list cards | **Shipped** | Lists cards expose checkbox/menu only; Planning play controls remain separate |
 | Backlog pin / fix important items | **Schema gap** | No `plans.is_pinned` in PocketBase yet. Proposed: `plans.is_pinned` (bool) on backlog/list rows; sort pinned before unpinned. Do not implement client-only pin state. See `lists_pin_item_todo` in `dictionary.dart`. |
+
+---
+
+## F2 / Plans — partial accepted
+
+| Item | Status | Notes |
+| :--- | :--- | :--- |
+| F2A compact tabs/header/play/repeat icon | **Accepted** | Functional/acceptable. Remaining pixel-perfect tabs/header/tags polish is deferred to V3 UX_CONTRACT / V7 Design Language. |
+| F2C category default plan time | **Accepted** | `categories.default_plan_time` was manually added in PocketBase; selector/search UI is live and accepted. |
+| F2B plan category filter | **Deferred** | Do not implement unless explicitly requested. |
+| Recurring edit scope | **Remaining F2 item** | Repeat icon/status exists; full edit-scope behavior remains future work. |
 
 ---
 
