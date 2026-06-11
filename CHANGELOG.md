@@ -12,6 +12,7 @@
 > ***
 
 ## [2026-06-11] - F2C default plan times selector wiring [shipped]
+* **`profile_service.dart` / `app_shell.dart` / `more_view.dart`:** [wip] Admin Component Lab gate now fetches a fresh `profiles` row before falling back to cached auth data and adds temporary `[ADMIN_FLAG]` diagnostics plus `Admin flag: true/false` More markers while verifying `profiles.is_admin`.
 * **`UX_CONTRACT.md` / `DESIGN_SYSTEM.md` / `component_lab_view.dart`:** [wip] V3/V7 foundation started: behavior/design-system docs added, UI inventory report created, `profiles.is_admin` parsed read-only into settings, and admin-only Component Lab skeleton exposed from More with mock-only canonical component samples.
 * **`planning_view.dart`:** [shipped] Default plan time category search now opens with all category options visible, keeps path/name filtering case-insensitive while typing, and restores the full option list when the query is cleared.
 * **`planning_view.dart`:** [shipped] Confirmed Plans gear → `_showPlanningSettingsSheet` → `_showDefaultPlanTimesSheet` is the sole default-times entry; added temporary `F2C selector UI` sanity marker at sheet bottom for web/APK verification after push to `main`.

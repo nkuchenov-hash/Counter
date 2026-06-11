@@ -144,19 +144,44 @@ extension ProfileServiceExtension on DatabaseService {
 
   String get dataRegion => _dataRegion;
 
-  /// Fetches profile row: auth store first, else list filter by [user_id] (@ARCHITECTURE §3).
+  /// Fetches profile row fresh from PocketBase; falls back to auth cache / `user_id` lookup.
   Future<Map<String, dynamic>?> getUserProfile(String id) async {
     await ensurePocketBaseReady();
     final want = id.trim();
     if (want.isEmpty) return null;
+    RecordModel? auth;
     try {
-      final auth = _pb.authStore.record;
+      auth = _pb.authStore.record;
+      if (auth != null) {
+        final cachedData = Map<String, dynamic>.from(auth.data);
+        final cachedUid = (cachedData['user_id'] ?? '').toString().trim();
+        if (cachedUid == want || auth.id == want) {
+          try {
+            final rec = await _pb
+                .collection(PbCollections.profiles)
+                .getOne(auth.id);
+            final data = Map<String, dynamic>.from(rec.data)..['id'] = rec.id;
+            _profilePbRecordId = rec.id;
+            debugPrint(
+              '[ADMIN_FLAG] getUserProfile fresh profiles.is_admin=${data['is_admin']} parsed=${_profileBool(data['is_admin'])}',
+            );
+            return data;
+          } catch (e) {
+            debugPrint('[ADMIN_FLAG] getUserProfile fresh auth row failed: $e');
+          }
+        }
+      }
+    } catch (_) {}
+    try {
       if (auth != null) {
         final data = Map<String, dynamic>.from(auth.data);
         data['id'] = auth.id;
         final uid = (data['user_id'] ?? '').toString().trim();
         if (uid == want || auth.id == want) {
           _profilePbRecordId = auth.id;
+          debugPrint(
+            '[ADMIN_FLAG] getUserProfile cached profiles.is_admin=${data['is_admin']} parsed=${_profileBool(data['is_admin'])}',
+          );
           return data;
         }
       }
@@ -167,7 +192,11 @@ extension ProfileServiceExtension on DatabaseService {
           .collection(PbCollections.profiles)
           .getFirstListItem('user_id = "$escaped"');
       _profilePbRecordId = rec.id;
-      return Map<String, dynamic>.from(rec.data)..['id'] = rec.id;
+      final data = Map<String, dynamic>.from(rec.data)..['id'] = rec.id;
+      debugPrint(
+        '[ADMIN_FLAG] getUserProfile list profiles.is_admin=${data['is_admin']} parsed=${_profileBool(data['is_admin'])}',
+      );
+      return data;
     } on ClientException catch (e) {
       if (e.statusCode == 404 || e.statusCode == 403 || e.statusCode == 422) {
         throw _ProfileFetchFailedException(
@@ -312,6 +341,11 @@ extension ProfileServiceExtension on DatabaseService {
       final settingsUserId = authUid.isNotEmpty
           ? authUid
           : (uid != null && uid.isNotEmpty ? uid : rowUid);
+      final rawAdmin = data['is_admin'];
+      final parsedAdmin = _profileBool(rawAdmin);
+      debugPrint(
+        '[ADMIN_FLAG] _loadSettingsFromNoco raw profiles.is_admin=$rawAdmin parsed=$parsedAdmin',
+      );
       _settings = UserSettings(
         userId: settingsUserId,
         language: data['primary_language'] as String? ?? 'en',
@@ -325,7 +359,7 @@ extension ProfileServiceExtension on DatabaseService {
         hasSeeded: data['has_seeded'] == true,
         dataRegion: region,
         biometricEnabled: data['biometric_enabled'] == true,
-        isAdmin: _profileBool(data['is_admin']),
+        isAdmin: parsedAdmin,
         themeMode: themeMode,
         displayName: dn != null && dn.trim().isNotEmpty ? dn.trim() : null,
         tagDisplayMode: categoryDisplayModeFromWire(tagModeRaw),
@@ -336,6 +370,9 @@ extension ProfileServiceExtension on DatabaseService {
         showListTagsOnCards: true,
       );
       _mergeDeviceProfilePreferenceOverridesSync();
+      debugPrint(
+        '[ADMIN_FLAG] _loadSettingsFromNoco settings.isAdmin=${_settings.isAdmin}',
+      );
       _settingsController.add(_settings);
       _syncMaterialAppLocaleFromSettings(_settings);
     } on _ProfileFetchFailedException {

@@ -1315,45 +1315,65 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   void _openMoreMenu() {
     final loc = currentLocale.value;
-    final isAdmin = DatabaseService.instance.settings.isAdmin;
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.person_rounded),
-              title: Text(t(loc, 'more_menu_profile')),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                setState(() => _shellPageIndex = 5);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.label_rounded),
-              title: Text(t(loc, 'more_menu_categories')),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                setState(() => _shellPageIndex = 4);
-              },
-            ),
-            if (isAdmin)
-              ListTile(
-                leading: const Icon(Icons.design_services_rounded),
-                title: const Text('Dev / Design Lab'),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const ComponentLabPage(),
+      builder: (ctx) => StreamBuilder<UserSettings>(
+        stream: DatabaseService.instance.userSettingsStream,
+        initialData: DatabaseService.instance.settings,
+        builder: (context, snapshot) {
+          final isAdmin =
+              snapshot.data?.isAdmin ??
+              DatabaseService.instance.settings.isAdmin;
+          debugPrint(
+            '[ADMIN_FLAG] More bottom sheet settings.isAdmin=$isAdmin renderDevLab=$isAdmin',
+          );
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.person_rounded),
+                  title: Text(t(loc, 'more_menu_profile')),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    setState(() => _shellPageIndex = 5);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.label_rounded),
+                  title: Text(t(loc, 'more_menu_categories')),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    setState(() => _shellPageIndex = 4);
+                  },
+                ),
+                if (isAdmin)
+                  ListTile(
+                    leading: const Icon(Icons.design_services_rounded),
+                    title: const Text('Dev / Design Lab'),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const ComponentLabPage(),
+                        ),
+                      );
+                    },
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: Text(
+                    'Admin flag: $isAdmin',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
                     ),
-                  );
-                },
-              ),
-          ],
-        ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

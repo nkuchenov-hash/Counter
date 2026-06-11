@@ -304,6 +304,11 @@ class UserSettings {
         }
       }
     }
+    final rawAdmin = json['is_admin'] ?? json['isAdmin'];
+    final parsedAdmin = _jsonBool(rawAdmin);
+    debugPrint(
+      '[ADMIN_FLAG] UserSettings.fromJson raw profiles.is_admin=$rawAdmin parsed=$parsedAdmin',
+    );
     return UserSettings(
       userId: (json['user_id'] ?? json['userId'])?.toString() ?? '',
       language: json['language'] as String? ?? 'en',
@@ -318,7 +323,7 @@ class UserSettings {
       themeMode: json['themeMode'] as String? ?? 'system',
       dataRegion: json['dataRegion'] as String?,
       biometricEnabled: json['biometricEnabled'] as bool? ?? false,
-      isAdmin: _jsonBool(json['is_admin'] ?? json['isAdmin']),
+      isAdmin: parsedAdmin,
       displayName:
           json['displayName'] as String? ?? json['display_name'] as String?,
       tagDisplayMode: categoryDisplayModeFromWire(tagWireStr),
