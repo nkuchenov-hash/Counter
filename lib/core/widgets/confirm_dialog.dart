@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/l10n/dictionary.dart';
 
 /// Show a standard confirmation dialog. Returns `true` if the user confirms,
@@ -34,31 +35,24 @@ Future<bool?> showConfirmDialog(
   bool barrierDismissible = true,
 }) {
   final loc = currentLocale.value;
-  final scheme = Theme.of(context).colorScheme;
-
   return showDialog<bool>(
     context: context,
     barrierDismissible: barrierDismissible,
     builder: (ctx) {
-      final confirmStyle = destructive
-          ? FilledButton.styleFrom(
-              backgroundColor: scheme.error,
-              foregroundColor: scheme.onError,
-            )
-          : null;
-
       return AlertDialog(
         title: Text(title),
         content: body == null ? null : Text(body),
         actions: [
-          TextButton(
+          AppButton.ghost(
+            label: cancelText ?? t(loc, 'cancel'),
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(cancelText ?? t(loc, 'cancel')),
           ),
-          FilledButton(
-            style: confirmStyle,
+          AppButton(
+            label: confirmText ?? t(loc, 'confirm'),
+            variant: destructive
+                ? AppButtonVariant.destructive
+                : AppButtonVariant.primary,
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(confirmText ?? t(loc, 'confirm')),
           ),
         ],
       );

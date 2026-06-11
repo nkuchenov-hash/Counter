@@ -4,6 +4,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'app_button.dart';
+
 /// Generic error placeholder. Use when a load/fetch fails and the surface
 /// can't render its real content.
 ///
@@ -50,9 +52,9 @@ class AppErrorState extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),
-              FilledButton.tonal(
+              AppButton.secondary(
+                label: retryLabel ?? 'Retry',
                 onPressed: onRetry,
-                child: Text(retryLabel ?? 'Retry'),
               ),
             ],
           ],
@@ -99,14 +101,11 @@ class AppEmptyState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
             ),
-            if (action != null) ...[
-              const SizedBox(height: 16),
-              action!,
-            ],
+            if (action != null) ...[const SizedBox(height: 16), action!],
           ],
         ),
       ),

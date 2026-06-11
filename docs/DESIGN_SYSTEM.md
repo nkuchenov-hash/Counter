@@ -10,6 +10,31 @@ The Life OS design system makes Figma the visual source of truth and Flutter can
 - Variations are parameters, not copied widgets.
 - Component Lab shows the current executable component state for admin review.
 
+## Naming Contract
+
+Figma component names should stay clean and designer-facing. Flutter component names should stay app-namespaced and code-owned.
+
+| Figma name | Flutter name |
+| :--- | :--- |
+| `Button` | `AppButton` |
+| `Card` | `AppTaskCard` or `AppCard` |
+| `Chip` | `AppTagChip` / `AppCategoryChip` |
+| `Tabs` | `AppSegmentedTabs` |
+| `Sheet` | `AppSheet` |
+| `Header` | `AppShellHeader` |
+
+For buttons specifically:
+
+| Figma component | Flutter component |
+| :--- | :--- |
+| `Button / Primary / M` | `AppButton.primary(size: AppButtonSize.m)` |
+| `Button / Secondary / M` | `AppButton.secondary(size: AppButtonSize.m)` |
+| `Button / Danger / M` | `AppButton.danger(size: AppButtonSize.m)` |
+| `Button / Ghost / S` | `AppButton.ghost(size: AppButtonSize.s)` |
+| `Button / Outlined / M` | `AppButton.outlined(size: AppButtonSize.m)` |
+
+Do not rename the Flutter class to `Button`; keep `AppButton` as the executable source of truth.
+
 ## Figma → Flutter Mapping Format
 
 Use this mapping for every canonical component:
@@ -64,8 +89,11 @@ Each mapping must answer:
 ### Action Buttons
 
 - Current canonical: `AppButton` in `lib/core/widgets/app_button.dart`.
-- Future direction: keep/upgrade as `AppActionButton` only if a rename is worth the migration.
-- Raw `FilledButton`, `OutlinedButton`, `ElevatedButton`, and `TextButton` should not be duplicated in feature screens once the needed canonical variant exists.
+- Figma `Button` maps to Flutter `AppButton`.
+- Current variants: primary, secondary, danger/destructive, ghost, outlined.
+- Current sizes: `AppButtonSize.s`, `AppButtonSize.m`, `AppButtonSize.l`.
+- Width behavior: content-width by default, full-width with `fullWidth: true`.
+- Raw `FilledButton`, `OutlinedButton`, `ElevatedButton`, and `TextButton` are forbidden in feature screens for app actions unless listed as temporary legacy in `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
 
 ### Cards
 

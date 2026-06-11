@@ -197,6 +197,12 @@ See `docs/ROADMAP.md` Phase 1 for the full list. Two critical ones to know:
 - New reusable UI belongs in `lib/core/widgets/`.
 - Feature screens compose canonical components; do not recreate local copies.
 - Variations are parameters, not copies.
+- Figma names use clean design language (`Button`, `Card`, `Chip`, `Tabs`, `Sheet`, `Header`).
+- Flutter canonical components use app-namespaced names (`AppButton`, future `AppTaskCard` / `AppCard`, `AppTagChip` / `AppCategoryChip`, `AppSegmentedTabs`, `AppSheet`, `AppShellHeader`).
+- App action buttons must use `AppButton` from `lib/core/widgets/app_button.dart`.
+- Raw `FilledButton`, `ElevatedButton`, `OutlinedButton`, and `TextButton` are forbidden in feature screens for app actions unless documented as temporary legacy in `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
+- `IconButton` may remain only for icon-only navigation/control unless a future canonical icon-action component replaces it.
+- Component Lab is the visual acceptance surface for canonical UI components.
 
 ---
 

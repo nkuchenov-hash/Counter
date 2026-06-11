@@ -78,24 +78,123 @@ class _ButtonsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppButton.primary(label: 'Primary', onPressed: () {}),
-        AppButton.secondary(label: 'Secondary', onPressed: () {}),
-        AppButton.outlined(label: 'Outlined', onPressed: () {}),
-        AppButton.destructive(
-          label: 'Destructive',
-          icon: Icons.delete_outline_rounded,
-          onPressed: () {},
+        const _ButtonGroup(
+          label: 'Primary',
+          children: [
+            AppButton.primary(label: 'Primary enabled', onPressed: _mockAction),
+            AppButton.primary(label: 'Primary disabled', onPressed: null),
+            AppButton.primary(
+              label: 'Primary loading',
+              onPressed: _mockAction,
+              loading: true,
+            ),
+          ],
+        ),
+        const _ButtonGroup(
+          label: 'Secondary',
+          children: [
+            AppButton.secondary(
+              label: 'Secondary enabled',
+              onPressed: _mockAction,
+            ),
+            AppButton.secondary(label: 'Secondary disabled', onPressed: null),
+            AppButton.secondary(
+              label: 'Secondary loading',
+              onPressed: _mockAction,
+              loading: true,
+            ),
+          ],
+        ),
+        const _ButtonGroup(
+          label: 'Danger / destructive',
+          children: [
+            AppButton.danger(
+              label: 'Danger enabled',
+              icon: Icons.delete_outline_rounded,
+              onPressed: _mockAction,
+            ),
+            AppButton.danger(label: 'Danger disabled', onPressed: null),
+            AppButton.danger(
+              label: 'Danger loading',
+              onPressed: _mockAction,
+              loading: true,
+            ),
+          ],
+        ),
+        const _ButtonGroup(
+          label: 'Ghost / outlined / icon',
+          children: [
+            AppButton.ghost(label: 'Ghost button', onPressed: _mockAction),
+            AppButton.outlined(
+              label: 'Outlined button',
+              onPressed: _mockAction,
+            ),
+            AppButton.primary(
+              label: 'Icon + label',
+              icon: Icons.add_rounded,
+              onPressed: _mockAction,
+            ),
+          ],
+        ),
+        const _ButtonGroup(
+          label: 'Sizes',
+          children: [
+            AppButton.primary(
+              label: 'Small',
+              size: AppButtonSize.s,
+              onPressed: _mockAction,
+            ),
+            AppButton.primary(
+              label: 'Medium',
+              size: AppButtonSize.m,
+              onPressed: _mockAction,
+            ),
+            AppButton.primary(
+              label: 'Large',
+              size: AppButtonSize.l,
+              onPressed: _mockAction,
+            ),
+          ],
+        ),
+        const _ButtonGroup(
+          label: 'Width',
+          children: [
+            AppButton.secondary(label: 'Content width', onPressed: _mockAction),
+          ],
         ),
         const AppButton.primary(
-          label: 'Loading',
-          onPressed: null,
-          loading: true,
+          label: 'Full width',
+          fullWidth: true,
+          onPressed: _mockAction,
         ),
       ],
+    );
+  }
+}
+
+void _mockAction() {}
+
+class _ButtonGroup extends StatelessWidget {
+  const _ButtonGroup({required this.label, required this.children});
+
+  final String label;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: children),
+        ],
+      ),
     );
   }
 }

@@ -11,6 +11,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
@@ -872,18 +873,20 @@ class _PlanningPageState extends State<PlanningPage>
                                     spacing: 8,
                                     runSpacing: 8,
                                     children: [
-                                      FilledButton.tonal(
+                                      AppButton.secondary(
+                                        label: t(loc, 'plan_default_time_set'),
                                         onPressed: () => unawaited(
                                           _setCategoryDefaultPlanTime(
                                             pair.id,
                                             setModalState,
                                           ),
                                         ),
-                                        child: Text(
-                                          t(loc, 'plan_default_time_set'),
-                                        ),
                                       ),
-                                      TextButton(
+                                      AppButton.ghost(
+                                        label: t(
+                                          loc,
+                                          'plan_default_time_clear',
+                                        ),
                                         onPressed: selectedOwn == null
                                             ? null
                                             : () => unawaited(
@@ -892,9 +895,6 @@ class _PlanningPageState extends State<PlanningPage>
                                                   setModalState,
                                                 ),
                                               ),
-                                        child: Text(
-                                          t(loc, 'plan_default_time_clear'),
-                                        ),
                                       ),
                                     ],
                                   ),

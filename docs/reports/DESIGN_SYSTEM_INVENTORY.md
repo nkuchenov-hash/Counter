@@ -11,6 +11,68 @@ Purpose: identify current raw/local UI so V7 can migrate screens toward canonica
 - **Legacy allowed temporarily:** Existing feature-local UI may remain until a scoped V7 migration.
 - **Needs migration:** Existing UI should be moved behind a canonical component.
 
+## V7E Action Button Migration Pass
+
+Date: 2026-06-11.
+
+### What Changed
+
+- `AppButton` remains the canonical Flutter component name for Figma `Button`.
+- `AppButton` now supports primary, secondary, danger/destructive, ghost, and outlined variants.
+- `AppButton` now supports `AppButtonSize.s`, `AppButtonSize.m`, and `AppButtonSize.l`.
+- `AppButton` now supports icon + label, loading, disabled, content-width, and `fullWidth: true`.
+- Backwards compatibility preserved for existing `AppButton.primary`, `secondary`, `outlined`, `destructive`, and `expand`.
+
+### Files Migrated
+
+| File | Migration |
+| :--- | :--- |
+| `lib/core/widgets/app_state_views.dart` | `AppErrorState` retry action now uses `AppButton.secondary`. |
+| `lib/core/widgets/confirm_dialog.dart` | Standard confirm/cancel actions now use `AppButton` variants. |
+| `lib/features/planning/planning_view.dart` | Safe F2C default-time sheet Set/Clear actions now use `AppButton.secondary` / `AppButton.ghost`; risky icon-only and long-label picker controls were left alone. |
+
+### Component Lab Examples Added
+
+`lib/features/dev/component_lab_view.dart` now shows:
+
+- Primary enabled, disabled, loading.
+- Secondary enabled, disabled, loading.
+- Danger/destructive enabled, disabled, loading.
+- Ghost button.
+- Outlined button.
+- Icon + label button.
+- Small, medium, large sizes.
+- Content-width and full-width examples.
+
+### Raw Button Audit After Migration
+
+Search target: `ElevatedButton`, `FilledButton`, `OutlinedButton`, `TextButton`, `IconButton`.
+
+| Category | Remaining examples | Status |
+| :--- | :--- | :--- |
+| Allowed inside canonical component | `lib/core/widgets/app_button.dart`; `omni_date_time_picker_dialog.dart` date/time picker actions | Allowed inside canonical component / native Material surface. |
+| Allowed icon-only navigation/control | `IconButton` in app bars, menus, search delegates, timeline/planning controls, category tree controls | Allowed until an `AppIconButton` exists. |
+| Legacy allowed temporarily | Auth/profile buttons, inline dialog buttons, sheet actions, category create/edit actions, voice input actions, Wear controls | Leave for focused follow-up passes. |
+| Still needs migration later | Feature-screen raw `FilledButton`, `OutlinedButton`, `TextButton` for non-timer app actions | Migrate incrementally to `AppButton`. |
+
+No `ElevatedButton` usages were found.
+
+### Intentionally Left For Later
+
+- Timer Start/Stop controls.
+- Plan play/start controls.
+- Timeline active record controls.
+- Complex gesture controls.
+- Icon-only navigation/control buttons.
+- Date/time picker buttons with native Material behavior.
+- Tabs, segmented controls, chips/tags, and cards.
+- Auth and biometric flows.
+- Complex sheet save/delete/cancel flows that need UX contract review before migration.
+
+### Next Recommended Migration Pass
+
+V7F should introduce or define `AppIconButton` before touching icon-heavy navigation/control surfaces, or migrate confirm dialogs broadly to `showConfirmDialog` if the next goal is low-risk action cleanup.
+
 ## Raw Widget Usage Summary
 
 Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton`, `TextButton`, `IconButton`, `Card`, `RawChip`, `Chip`, `FilterChip`, `ChoiceChip`, `TabBar`, `SegmentedButton`.
