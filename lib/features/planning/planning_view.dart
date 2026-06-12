@@ -2773,7 +2773,7 @@ class _PlanningPageState extends State<PlanningPage>
                 children: [
                   Expanded(
                     child: SizedBox(
-                      height: 36,
+                      height: 40,
                       child: _buildQuickAddTagStrip(scheme),
                     ),
                   ),

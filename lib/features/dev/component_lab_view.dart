@@ -90,7 +90,10 @@ class _LabSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            SelectableText(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             child,
           ],
@@ -596,7 +599,7 @@ class _ButtonGroup extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelLarge),
+          SelectableText(label, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8, children: children),
         ],
@@ -673,7 +676,7 @@ class _LabCodeLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Text(
+    return SelectableText(
       text,
       style: Theme.of(context).textTheme.labelLarge?.copyWith(
         color: scheme.onSurface,
@@ -694,7 +697,7 @@ class _LabMetaLine extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(top: 3),
-      child: Text.rich(
+      child: SelectableText.rich(
         TextSpan(
           children: [
             TextSpan(
@@ -767,7 +770,12 @@ class _ChipsDemo extends StatelessWidget {
   static const _sampleTags = [
     Tag(tagId: 1, name: 'urgent', color: '#C62828', icon: 'priority_high'),
     Tag(tagId: 2, name: 'Meetings', color: '#1565C0', icon: 'groups'),
-    Tag(tagId: 3, name: 'Admin', color: '#6A1B9A', icon: 'admin_panel_settings'),
+    Tag(
+      tagId: 3,
+      name: 'Admin',
+      color: '#6A1B9A',
+      icon: 'admin_panel_settings',
+    ),
     Tag(tagId: 4, name: 'gsa', color: '#2E7D32', icon: 'work'),
     Tag(tagId: 5, name: 'co', color: '#EF6C00', icon: 'business'),
     Tag(tagId: 6, name: 'check', color: '#00838F', icon: 'check_circle'),
@@ -786,7 +794,7 @@ class _ChipsDemo extends StatelessWidget {
               'CategoryChip(variant: CategoryChipVariant.compactCard)',
           variant: 'compact card',
           state: 'letter_chip',
-          note: 'Stadium pill for task/list cards; parent owns spacing.',
+          note: '22px stadium pill for task/list cards; parent owns spacing.',
           child: CategoryChip(
             mode: CategoryDisplayMode.letterChip,
             label: 'Focus',
@@ -797,18 +805,35 @@ class _ChipsDemo extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         const _LabExample(
-          title: 'Chip / Tag Pill / Interactive Picker',
+          title: 'Chip / Tag Pill / Interactive Picker / Unselected',
           flutterMapping:
               'CategoryChip(variant: CategoryChipVariant.largePicker)',
           variant: 'large picker',
-          state: 'selected',
-          note:
-              '31px stadium pill for edit sheets/menus; visible bounds = hit target.',
+          state: 'unselected',
+          note: '31px centered stadium base pill for edit sheets/menus.',
           child: CategoryChip(
             mode: CategoryDisplayMode.letterChip,
-            label: 'Focus',
-            color: Color(0xFF6750A4),
+            label: 'communication',
+            color: Color(0xFFF9A825),
             icon: Icons.work_outline_rounded,
+            variant: CategoryChipVariant.largePicker,
+            onTap: _mockAction,
+          ),
+        ),
+        const SizedBox(height: 12),
+        const _LabExample(
+          title: 'Chip / Tag Pill / Interactive Picker / Selected',
+          flutterMapping:
+              'CategoryChip(selected: true, variant: CategoryChipVariant.largePicker)',
+          variant: 'large picker',
+          state: 'selected',
+          note:
+              'Selected = normal chip border + 2px transparent gap + 2px brand border; text does not shift.',
+          child: CategoryChip(
+            mode: CategoryDisplayMode.letterChip,
+            label: 'Встречи',
+            color: Color(0xFF1565C0),
+            icon: Icons.groups_rounded,
             selected: true,
             variant: CategoryChipVariant.largePicker,
             onTap: _mockAction,
@@ -821,15 +846,25 @@ class _ChipsDemo extends StatelessWidget {
           variant: 'tag picker',
           state: 'one selected',
           note:
-              '36px row; mouse drag + wheel horizontal scroll; 8 tags overflow.',
+              '40px row; 31px base pill; selected total height 39px; 8 tags overflow.',
           fullWidth: true,
           child: SizedBox(
-            height: 36,
+            height: 40,
             child: TagQuickPickStrip(
               tags: _sampleTags,
               selected: const [
-                Tag(tagId: 1, name: 'urgent', color: '#C62828', icon: 'priority_high'),
-                Tag(tagId: 3, name: 'Admin', color: '#6A1B9A', icon: 'admin_panel_settings'),
+                Tag(
+                  tagId: 1,
+                  name: 'urgent',
+                  color: '#C62828',
+                  icon: 'priority_high',
+                ),
+                Tag(
+                  tagId: 3,
+                  name: 'Admin',
+                  color: '#6A1B9A',
+                  icon: 'admin_panel_settings',
+                ),
               ],
               variant: CategoryChipVariant.largePicker,
               onToggle: (_) {},
@@ -891,7 +926,7 @@ class _PlaceholderDemo extends StatelessWidget {
       state: 'not implemented',
       note: note,
       fullWidth: true,
-      child: Text(
+      child: SelectableText(
         'Placeholder: canonical component surface will be added here as V7 evolves.',
         style: Theme.of(context).textTheme.bodyMedium,
       ),

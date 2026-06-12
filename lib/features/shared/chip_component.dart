@@ -179,7 +179,7 @@ class CategoryChip extends StatelessWidget {
 
     final inner = AnimatedContainer(
       duration: const Duration(milliseconds: 100),
-      alignment: isPillMode ? Alignment.centerLeft : Alignment.center,
+      alignment: Alignment.center,
       width: isPillMode ? null : glyphSide,
       height: isPillMode ? null : glyphSide,
       child: visual,
@@ -200,9 +200,12 @@ class CategoryChip extends StatelessWidget {
       );
     }
 
-    final tapRadius = isPillMode ? (large ? 16.0 : 11.0) : glyphSide / 2;
+    final tapRadius = isPillMode ? 100.0 : glyphSide / 2;
+    final selectedPill = isPillMode && selected
+        ? _TagSelectionRing(selected: true, child: inner)
+        : inner;
     final tappableChild = isPillMode
-        ? inner
+        ? selectedPill
         : SizedBox(width: glyphSide, height: glyphSide, child: inner);
 
     return Material(
@@ -250,11 +253,13 @@ class CategoryChip extends StatelessWidget {
     if (syntheticNoTagsMonochrome && rgb == 0x000000) {
       return Container(
         padding: padding,
-        constraints: BoxConstraints(minHeight: large ? _interactiveChipHeight : _compactChipHeight),
+        constraints: BoxConstraints(
+          minHeight: large ? _interactiveChipHeight : _compactChipHeight,
+        ),
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: stadium,
-          border: Border.all(color: selected ? scheme.primary : Colors.black),
+          border: Border.all(color: Colors.black),
         ),
         child: Text(
           displayLabel,
@@ -265,13 +270,13 @@ class CategoryChip extends StatelessWidget {
     if (syntheticNoTagsMonochrome && rgb == 0xFFFFFF) {
       return Container(
         padding: padding,
-        constraints: BoxConstraints(minHeight: large ? _interactiveChipHeight : _compactChipHeight),
+        constraints: BoxConstraints(
+          minHeight: large ? _interactiveChipHeight : _compactChipHeight,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: stadium,
-          border: Border.all(
-            color: selected ? scheme.primary : Colors.grey.shade400,
-          ),
+          border: Border.all(color: Colors.grey.shade400),
         ),
         child: Text(
           displayLabel,
@@ -281,12 +286,12 @@ class CategoryChip extends StatelessWidget {
     }
     final plate = tagLetterChipPlate(color, scheme.surface);
     final fg = tagVibrantForeground(color);
-    final stroke = selected
-        ? scheme.primary
-        : tagLetterChipBorder(color, scheme.surface);
+    final stroke = tagLetterChipBorder(color, scheme.surface);
     return Container(
       padding: padding,
-      constraints: BoxConstraints(minHeight: large ? _interactiveChipHeight : _compactChipHeight),
+      constraints: BoxConstraints(
+        minHeight: large ? _interactiveChipHeight : _compactChipHeight,
+      ),
       decoration: BoxDecoration(
         color: plate,
         borderRadius: stadium,
@@ -308,11 +313,7 @@ class CategoryChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: tagEmptyChipFill(color, surface),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(
-          color: selected
-              ? Theme.of(context).colorScheme.primary
-              : tagEmptyChipBorderColor(color),
-        ),
+        border: Border.all(color: tagEmptyChipBorderColor(color)),
       ),
     );
   }
@@ -445,10 +446,7 @@ class _TagQuickPickStripState extends State<TagQuickPickStrip> {
   Widget _wrapScrollSurface(Widget child) {
     return ScrollConfiguration(
       behavior: const _TagStripScrollBehavior(),
-      child: Listener(
-        onPointerSignal: _onPointerSignal,
-        child: child,
-      ),
+      child: Listener(onPointerSignal: _onPointerSignal, child: child),
     );
   }
 
@@ -484,7 +482,7 @@ class _TagQuickPickStripState extends State<TagQuickPickStrip> {
         child: chip,
       );
     }
-    return chip;
+    return Align(alignment: Alignment.center, widthFactor: 1, child: chip);
   }
 
   @override
@@ -597,9 +595,9 @@ class _TagSelectionRing extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: ring, width: 1.5),
+        border: Border.all(color: ring, width: 2),
       ),
-      child: child,
+      child: Padding(padding: const EdgeInsets.all(2), child: child),
     );
   }
 }

@@ -183,8 +183,20 @@ Date: 2026-06-12.
 | :--- | :--- | :--- |
 | `lib/features/shared/chip_component.dart` | `TagQuickPickStrip` scroll | Removed `shrinkWrap` (root cause of clipped unscrollable row); `ScrollController` + mouse drag + wheel horizontal scroll. |
 | `lib/features/shared/chip_component.dart` | Pill sizes | Compact card ~22px; edit-sheet interactive ~31px (not 40px). |
-| `lib/features/shared/shared_widgets.dart` | `_PlanningTaskEditSheet` tag row | 36px finite height; same `TagQuickPickStrip`. |
-| `lib/features/planning/planning_view.dart` | Quick-add tag strip | Same shared strip at 36px. |
+| `lib/features/shared/shared_widgets.dart` | `_PlanningTaskEditSheet` tag row | Finite height; same `TagQuickPickStrip`. |
+| `lib/features/planning/planning_view.dart` | Quick-add tag strip | Same shared strip. |
+
+## Design Lab Copy + Interactive Tag Selected State Hotfix
+
+Date: 2026-06-12.
+
+| File | Fix | Notes |
+| :--- | :--- | :--- |
+| `lib/features/dev/component_lab_view.dart` | Selectable lab labels/specs | Lab-only `SelectableText` for section titles, metadata, labels, and placeholder copy. Production UI remains unchanged. |
+| `lib/features/dev/component_lab_view.dart` | Chip examples | Added separate interactive selected/unselected examples and selected-state rule copy. |
+| `lib/features/shared/chip_component.dart` | Interactive tag selected state | Normal chip fill/text/border remains unchanged; selected adds visible 2px transparent gap + 2px brand border outside the normal chip. |
+| `lib/features/shared/chip_component.dart` | Interactive tag alignment | Tag content stays centered; selected ring does not move inner text. |
+| `lib/features/shared/shared_widgets.dart` / `lib/features/planning/planning_view.dart` | Tag strip height | 40px row to fit 31px base pill + 39px selected total height without clipping. |
 
 ## P0 Startup Sync + Tag Pill Regression Fix
 

@@ -11,9 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - Design Lab copy + interactive tag selected state [shipped]
+* **`component_lab_view.dart`:** [shipped] Design Lab labels/spec text are selectable/copyable with lab-only `SelectableText`; chip examples now show compact, interactive unselected, interactive selected, and overflow scroll strip states.
+* **`chip_component.dart`:** [shipped] Interactive tag selected state is now normal chip border + 2px transparent gap + 2px brand border; base pill content stays centered and selected/unselected states do not shift inner text.
+* **`shared_widgets.dart` / `planning_view.dart`:** [shipped] Tag strip rows fit the 31px base interactive pill plus visible selected ring without changing scroll behavior.
+
 ## [2026-06-12] - Edit sheet tag strip scroll hotfix [shipped]
 * **`chip_component.dart`:** [shipped] `TagQuickPickStrip` horizontal scroll fix — removed `shrinkWrap`, added `ScrollController`, `_TagStripScrollBehavior` (mouse/trackpad/touch drag), wheel-to-horizontal `PointerScrollEvent`; interactive pills ~31px (was 40px); compact cards ~22px.
-* **`shared_widgets.dart` / `planning_view.dart` / `component_lab_view.dart`:** [shipped] edit-sheet tag row height 36px; lab overflow strip with 8 tags.
+* **`shared_widgets.dart` / `planning_view.dart` / `component_lab_view.dart`:** [shipped] edit-sheet tag row uses finite strip height; lab overflow strip with 8 tags.
 
 ## [2026-06-12] - P0 startup sync + tag pill regressions [shipped]
 * **`db_core.dart` / `plan_service.dart` / `record_service.dart`:** [shipped] P0 foreground/resume refresh via `refreshForegroundData()` force-fetches records + today's plans and pumps planning streams; debounced plan cache refresh now re-emits streams; duplicate primary running records reconcile to newest-only (optimistic stop + existing `stopRecordByDocId` for older rows).

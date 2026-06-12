@@ -1521,7 +1521,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: SizedBox(
-                            height: 36,
+                            height: 40,
                             child: _tagsLoading
                                 ? Center(
                                     child: SizedBox(

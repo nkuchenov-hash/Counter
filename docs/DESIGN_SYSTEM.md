@@ -127,10 +127,12 @@ Each mapping must answer:
 - Tag/category visual variations should be parameters.
 - **Tag pill variants (enforced):**
   - `CategoryChipVariant.compactCard` — task/list card tags; ~22px stadium pills.
-  - `CategoryChipVariant.largePicker` — edit sheets, menus, pickers; ~31px stadium pills for grip.
+  - `CategoryChipVariant.largePicker` — edit sheets, menus, pickers; ~31px base stadium pills for grip; selected total visible height is ~39px because the selected ring is outside the base pill.
   - `TagQuickPickStrip` — horizontal `ListView` (no shrinkWrap); mouse drag + wheel scroll on web.
   - Parent row owns spacing (`ListView.separated` / `SizedBox`); individual pills must not add invisible outer margin/padding.
   - Pills use full stadium radius (`BorderRadius.circular(100)`).
+  - Interactive selected tag pills keep the normal chip fill, normal chip text, and normal chip border; selected adds a visible 2px transparent gap plus a 2px brand border outside the normal chip.
+  - Selected and unselected interactive tags must not shift inner text/content alignment; no invisible outer margin/padding outside the visible pill or selected ring.
 
 ### Tabs / Segmented Controls
 
@@ -177,3 +179,4 @@ Allowed exceptions:
 - Safety: no database writes, no destructive actions, no production user data.
 - Every Component Lab example must be labeled with Figma name, Flutter mapping, variant, size, and state where applicable.
 - Labels belong to the lab/demo wrapper, not to production components.
+- Lab label/spec text is selectable/copyable for design review; this is lab-only and must not make production UI text selectable by default.
