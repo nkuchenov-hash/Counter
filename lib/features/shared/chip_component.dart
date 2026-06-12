@@ -238,6 +238,49 @@ class CategoryChip extends StatelessWidget {
   static const double _compactChipHeight = compactChipHeight;
   static const double _interactiveChipHeight = interactiveChipHeight;
 
+  static const StrutStyle _pillLabelStrut = StrutStyle(
+    forceStrutHeight: true,
+    height: 1.0,
+    leading: 0,
+  );
+
+  static const TextHeightBehavior _pillLabelHeightBehavior = TextHeightBehavior(
+    applyHeightToFirstAscent: false,
+    applyHeightToLastDescent: false,
+  );
+
+  TextStyle? _pillLabelTextStyle(BuildContext context, {required Color color}) {
+    final large =
+        variant == CategoryChipVariant.largePicker || prominentVisuals;
+    return (large
+            ? Theme.of(context).textTheme.labelMedium
+            : Theme.of(context).textTheme.labelSmall)
+        ?.copyWith(fontWeight: FontWeight.w600, height: 1.0, color: color);
+  }
+
+  Widget _letterChipPillShell({
+    required BuildContext context,
+    required String displayLabel,
+    required BoxDecoration decoration,
+    required Color textColor,
+  }) {
+    final large =
+        variant == CategoryChipVariant.largePicker || prominentVisuals;
+    return Container(
+      height: large ? _interactiveChipHeight : _compactChipHeight,
+      padding: EdgeInsets.symmetric(horizontal: large ? 12 : 6),
+      alignment: Alignment.center,
+      decoration: decoration,
+      child: Text(
+        displayLabel,
+        textAlign: TextAlign.center,
+        strutStyle: _pillLabelStrut,
+        textHeightBehavior: _pillLabelHeightBehavior,
+        style: _pillLabelTextStyle(context, color: textColor),
+      ),
+    );
+  }
+
   /// letter_chip: **same widget pattern** as task-card tag in [planning_view] — padded [Text] in tinted [Container] (tight wrap).
   Widget _letterChipPlanStyle(
     BuildContext context,
@@ -248,72 +291,43 @@ class CategoryChip extends StatelessWidget {
         ? resolvedLabel.trim()
         : '?';
     final scheme = Theme.of(context).colorScheme;
-    final large =
-        variant == CategoryChipVariant.largePicker || prominentVisuals;
     final rgb = color.toARGB32() & 0xFFFFFF;
-    final padding = EdgeInsets.symmetric(
-      horizontal: large ? 12 : 6,
-      vertical: large ? 4 : 2,
-    );
-    final textStyle =
-        (large
-                ? Theme.of(context).textTheme.labelMedium
-                : Theme.of(context).textTheme.labelSmall)
-            ?.copyWith(fontWeight: FontWeight.w600);
     final stadium = BorderRadius.circular(100);
     if (syntheticNoTagsMonochrome && rgb == 0x000000) {
-      return Container(
-        padding: padding,
-        constraints: BoxConstraints(
-          minHeight: large ? _interactiveChipHeight : _compactChipHeight,
-        ),
+      return _letterChipPillShell(
+        context: context,
+        displayLabel: displayLabel,
+        textColor: Colors.white,
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: stadium,
           border: Border.all(color: Colors.black),
         ),
-        child: Text(
-          displayLabel,
-          textAlign: TextAlign.center,
-          style: textStyle?.copyWith(color: Colors.white),
-        ),
       );
     }
     if (syntheticNoTagsMonochrome && rgb == 0xFFFFFF) {
-      return Container(
-        padding: padding,
-        constraints: BoxConstraints(
-          minHeight: large ? _interactiveChipHeight : _compactChipHeight,
-        ),
+      return _letterChipPillShell(
+        context: context,
+        displayLabel: displayLabel,
+        textColor: Colors.black,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: stadium,
           border: Border.all(color: Colors.grey.shade400),
-        ),
-        child: Text(
-          displayLabel,
-          textAlign: TextAlign.center,
-          style: textStyle?.copyWith(color: Colors.black),
         ),
       );
     }
     final plate = tagLetterChipPlate(color, scheme.surface);
     final fg = tagVibrantForeground(color);
     final stroke = tagLetterChipBorder(color, scheme.surface);
-    return Container(
-      padding: padding,
-      constraints: BoxConstraints(
-        minHeight: large ? _interactiveChipHeight : _compactChipHeight,
-      ),
+    return _letterChipPillShell(
+      context: context,
+      displayLabel: displayLabel,
+      textColor: fg,
       decoration: BoxDecoration(
         color: plate,
         borderRadius: stadium,
         border: Border.all(color: stroke),
-      ),
-      child: Text(
-        displayLabel,
-        textAlign: TextAlign.center,
-        style: textStyle?.copyWith(color: fg),
       ),
     );
   }

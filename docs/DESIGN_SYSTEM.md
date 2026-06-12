@@ -134,6 +134,7 @@ Each mapping must answer:
   - Interactive selected tag pills keep the normal chip fill, normal chip text, and normal chip border; selected adds a visible 2px transparent gap plus a 2px brand border outside the normal chip.
   - Selected and unselected interactive tags must not shift inner text/content alignment; no invisible outer margin/padding outside the visible pill or selected ring.
   - Selected ring must shrink-wrap the visible pill only; it must not expand to parent row/card width.
+  - Tag pill label text must be optically centered vertically and horizontally inside the base pill using normalized text metrics (`height: 1.0`, strut/leading control); selected state must not change inner text position.
 
 ### Tabs / Segmented Controls
 

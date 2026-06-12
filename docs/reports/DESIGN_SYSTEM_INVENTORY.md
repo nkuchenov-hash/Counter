@@ -206,6 +206,14 @@ Date: 2026-06-12.
 | :--- | :--- | :--- |
 | `lib/features/shared/chip_component.dart` | `_TagSelectionRing` + pill `CategoryChip` | `Row(mainAxisSize: min)` prevents selected ring from expanding to full parent width in stretched lab/edit-sheet layouts. |
 
+## Tag Pill Text Vertical Alignment Hotfix
+
+Date: 2026-06-12.
+
+| File | Fix | Notes |
+| :--- | :--- | :--- |
+| `lib/features/shared/chip_component.dart` | Letter-chip pill label layout | Fixed 22px/31px height, horizontal-only padding, normalized text metrics for optical vertical centering; selected/unselected inner content identical. |
+
 ## P0 Startup Sync + Tag Pill Regression Fix
 
 Date: 2026-06-12.

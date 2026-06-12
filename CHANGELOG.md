@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - Tag pill text vertical alignment [shipped]
+* **`chip_component.dart`:** [shipped] Letter-chip pills use fixed height + horizontal-only padding with `height: 1.0`, `StrutStyle`, and `TextHeightBehavior` so label text is optically centered; selected/unselected inner content stays identical.
+
 ## [2026-06-12] - Selected tag ring shrink-wrap [shipped]
 * **`chip_component.dart`:** [shipped] Pill-mode `CategoryChip` and `_TagSelectionRing` use `Row(mainAxisSize: min)` so selected ring shrink-wraps the visible pill instead of expanding to stretched parent width.
 
