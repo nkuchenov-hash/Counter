@@ -573,6 +573,10 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_oauth_failed': 'Sign-in with this provider failed.',
     'auth_oauth_not_configured':
         'This sign-in method is not enabled on the server.',
+    'auth_login_cancelled': 'Login cancelled.',
+    'auth_session_expired': 'Your session expired. Please sign in again.',
+    'auth_too_many_attempts': 'Too many attempts. Try again later.',
+    'auth_reset_token_empty': 'Enter the password reset token.',
     'auth_biometric_button': 'Sign in with biometrics',
     'auth_biometric_reason': 'Sign in to Life OS',
     'auth_biometric_remember': 'Allow Face ID / fingerprint sign-in next time',
@@ -1142,6 +1146,10 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_confirm_password': 'Подтвердите пароль.',
     'auth_oauth_failed': 'Вход через этого провайдера не удался.',
     'auth_oauth_not_configured': 'Этот способ входа не включён на сервере.',
+    'auth_login_cancelled': 'Вход отменён.',
+    'auth_session_expired': 'Сессия истекла. Пожалуйста, войдите снова.',
+    'auth_too_many_attempts': 'Слишком много попыток. Попробуйте позже.',
+    'auth_reset_token_empty': 'Введите токен сброса пароля.',
     'auth_biometric_button': 'Войти по биометрии',
     'auth_biometric_reason': 'Вход в Life OS',
     'auth_biometric_remember':

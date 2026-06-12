@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - Auth gate and account recovery [shipped]
+* **`main.dart` / `auth_bridge.dart` / `profile_service.dart`:** [shipped] Cold start and post-login now share one PocketBase auth bootstrap path; invalid profile/session verification clears unsafe auth state and surfaces login/session repair instead of falling back to cached profile data.
+* **`auth_view.dart` / `dictionary.dart`:** [shipped] Auth screen shows configured Google/Yandex fast-login before email fallback, handles OAuth cancellation calmly, and keeps neutral password-reset messaging.
+* **`docs/DEPLOY.md`:** [shipped] Documented required PocketBase auth, OAuth, SMTP, reset, and verification admin setup.
+
 ## [2026-06-12] - Biometric app-lock + plan-link suggestions [shipped]
 * **`auth_bridge.dart` / `main.dart` / `auth_view.dart` / `profile_view.dart`:** [shipped] Removed stored-password biometric quick login; biometrics are now a real Android/iOS app-lock only, hidden on web/unavailable devices, with a 7-day local inactivity threshold.
 * **`app_shell.dart` / `planning_view.dart` / `dictionary.dart`:** [shipped] Record-to-plan suggestions are device-local, non-blocking after record creation, configurable from Planning settings, and can be turned off from the suggestion snackbar; manual edit-sheet link/unlink remains available.

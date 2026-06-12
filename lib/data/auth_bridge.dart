@@ -72,6 +72,7 @@ class AuthBridge {
       final pb = DatabaseService.instance.pocketBase;
       if (!pb.authStore.isValid || pb.authStore.record == null) {
         try {
+          pb.authStore.clear();
           await _storage.delete(key: _profileIdKey);
         } catch (_) {}
         return null;
@@ -81,6 +82,7 @@ class AuthBridge {
       final id = uid.isNotEmpty ? uid : pb.authStore.record!.id;
       if (id.isEmpty) {
         try {
+          pb.authStore.clear();
           await _storage.delete(key: _profileIdKey);
         } catch (_) {}
         return null;
@@ -214,7 +216,6 @@ class AuthBridge {
   }
 
   /// Register then sign in; throws [AuthBridgeException] on failure.
-  /// On duplicate email (typical 400), falls back to [loginWithPassword].
   static Future<void> register(
     String email,
     String password,
@@ -231,6 +232,7 @@ class AuthBridge {
       throw AuthBridgeException('password_mismatch');
     }
 
+    var created = false;
     try {
       await DatabaseService.instance.ensurePocketBaseReady();
       final pb = DatabaseService.instance.pocketBase;
@@ -255,12 +257,9 @@ class AuthBridge {
               'biometric_enabled': false,
             },
           );
+      created = true;
     } on ClientException catch (e) {
       if (kDebugMode) debugPrint('[REGISTER_PB] ${e.statusCode} $e');
-      if (e.statusCode == 400) {
-        await loginWithPassword(trimmedEmail, password);
-        return;
-      }
       throw AuthBridgeException(_pbErrorMessage(e), statusCode: e.statusCode);
     } catch (e, stack) {
       if (kDebugMode) {
@@ -268,6 +267,9 @@ class AuthBridge {
         debugPrint('$stack');
       }
       throw AuthBridgeException('network');
+    }
+    if (created) {
+      unawaited(requestVerification(trimmedEmail).catchError((_) {}));
     }
     await loginWithPassword(trimmedEmail, password);
   }
@@ -283,6 +285,47 @@ class AuthBridge {
       await DatabaseService.instance.pocketBase
           .collection(PbCollections.profiles)
           .requestPasswordReset(e);
+    } on ClientException catch (ex) {
+      throw AuthBridgeException(_pbErrorMessage(ex), statusCode: ex.statusCode);
+    }
+  }
+
+  static Future<void> confirmPasswordReset(
+    String token,
+    String newPassword,
+    String newPasswordConfirm,
+  ) async {
+    final cleanToken = token.trim();
+    if (cleanToken.isEmpty) {
+      throw AuthBridgeException('empty_reset_token');
+    }
+    if (newPassword.isEmpty) {
+      throw AuthBridgeException('empty_password');
+    }
+    if (newPassword != newPasswordConfirm) {
+      throw AuthBridgeException('password_mismatch');
+    }
+    try {
+      await DatabaseService.instance.ensurePocketBaseReady();
+      await DatabaseService.instance.pocketBase
+          .collection(PbCollections.profiles)
+          .confirmPasswordReset(cleanToken, newPassword, newPasswordConfirm);
+      await signOut();
+    } on ClientException catch (ex) {
+      throw AuthBridgeException(_pbErrorMessage(ex), statusCode: ex.statusCode);
+    }
+  }
+
+  static Future<void> requestVerification(String email) async {
+    final e = email.trim();
+    if (e.isEmpty) {
+      throw AuthBridgeException('empty_email');
+    }
+    try {
+      await DatabaseService.instance.ensurePocketBaseReady();
+      await DatabaseService.instance.pocketBase
+          .collection(PbCollections.profiles)
+          .requestVerification(e);
     } on ClientException catch (ex) {
       throw AuthBridgeException(_pbErrorMessage(ex), statusCode: ex.statusCode);
     }
@@ -425,9 +468,7 @@ class AuthBridge {
       await _storage.delete(key: _profileIdKey);
     } catch (_) {}
     if (kDebugMode) {
-      debugPrint(
-        '[AUTH] Sessions cleared (PocketBase + profile_id + quick login).',
-      );
+      debugPrint('[AUTH] Sessions cleared (PocketBase + profile_id).');
     }
   }
 }

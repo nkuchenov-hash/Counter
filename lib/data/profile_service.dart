@@ -166,6 +166,17 @@ extension ProfileServiceExtension on DatabaseService {
               '[ADMIN_FLAG] getUserProfile fresh profiles.is_admin=${data['is_admin']} parsed=${_profileBool(data['is_admin'])}',
             );
             return data;
+          } on ClientException catch (e) {
+            if (e.statusCode == 401 ||
+                e.statusCode == 403 ||
+                e.statusCode == 404 ||
+                e.statusCode == 422) {
+              throw _ProfileFetchFailedException(
+                e.statusCode,
+                'Session invalid or profile not found',
+              );
+            }
+            debugPrint('[ADMIN_FLAG] getUserProfile fresh auth row failed: $e');
           } catch (e) {
             debugPrint('[ADMIN_FLAG] getUserProfile fresh auth row failed: $e');
           }

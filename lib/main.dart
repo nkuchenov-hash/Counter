@@ -68,9 +68,6 @@ void main() async {
       DatabaseService.instance.currentProfileId = bootProfileId;
     }
   } catch (_) {}
-  try {
-    await AuthService.instance.initialize();
-  } catch (_) {}
   url_strategy.usePathUrlStrategy();
   runApp(const DateTimeTrackerApp());
   if (kIsWeb) {
@@ -195,13 +192,69 @@ class RootAuthWrapper extends StatefulWidget {
 class _RootAuthWrapperState extends State<RootAuthWrapper> {
   String? _profileId;
   bool _checked = false;
+  String? _authMessageKey;
 
-  Future<void> _boot() async {
-    final id = await AuthBridge.checkSession();
+  Future<void> _postAuthBootstrap({String? failureMessageKey}) async {
     if (mounted) {
+      setState(() {
+        _checked = false;
+        _authMessageKey = null;
+      });
+    }
+    final id = await AuthBridge.checkSession();
+    if (id == null || id.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _profileId = null;
+        _checked = true;
+        _authMessageKey = failureMessageKey;
+      });
+      return;
+    }
+
+    DatabaseService.instance.currentProfileId = id;
+    final ok = appWearHost
+        ? await DatabaseService.instance.loadInitialDataWearLite(id)
+        : await DatabaseService.instance.loadInitialData(id);
+    if (!mounted) return;
+    if (ok && DatabaseService.instance.isInitialized) {
+      final lang = DatabaseService.instance.settings.primaryLanguage;
+      if (lang.isNotEmpty) {
+        currentLocale.value = resolvedUiLanguageCode(lang);
+      }
       setState(() {
         _profileId = id;
         _checked = true;
+        _authMessageKey = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _profileId = null;
+      _checked = true;
+      _authMessageKey = failureMessageKey ?? 'auth_session_expired';
+    });
+  }
+
+  Future<void> _handleSessionInvalid() async {
+    try {
+      DatabaseService.instance.offlineSync.setAuthPaused(
+        true,
+        message: 'session_invalid',
+      );
+    } catch (_) {}
+    try {
+      await AuthBridge.signOut();
+    } catch (_) {}
+    try {
+      DatabaseService.instance.clearLocalStateOnSignOut();
+    } catch (_) {}
+    if (mounted) {
+      setState(() {
+        _profileId = null;
+        _checked = true;
+        _authMessageKey = 'auth_session_expired';
       });
     }
   }
@@ -210,14 +263,18 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
   void initState() {
     super.initState();
     DatabaseService.instance.onSessionInvalid = () async {
-      await AuthBridge.signOut();
+      await _handleSessionInvalid();
     };
     DatabaseService.instance.onSignOut = clearSession;
-    _boot();
+    _postAuthBootstrap();
   }
 
   void clearSession() {
-    setState(() => _profileId = null);
+    setState(() {
+      _profileId = null;
+      _checked = true;
+      _authMessageKey = null;
+    });
   }
 
   @override
@@ -225,15 +282,20 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
     if (!_checked) return const _LoadingScreen();
     if (_profileId != null && _profileId!.isNotEmpty) {
       DatabaseService.instance.currentProfileId = _profileId;
-      return _InitGuard(uid: _profileId!, onLoadFailed: clearSession);
+      if (appWearHost) {
+        return const WearTimerScreen();
+      }
+      final biometricEnabled =
+          DatabaseService.instance.settings.biometricEnabled;
+      if (biometricEnabled) {
+        return const _BiometricGate(child: LifeOSDashboard());
+      }
+      return const LifeOSDashboard();
     }
     return AuthScreen(
+      initialMessageKey: _authMessageKey,
       onSignedIn: () async {
-        final id = await AuthBridge.checkSession();
-        if (mounted && id != null && id.isNotEmpty) {
-          setState(() => _profileId = id);
-          DatabaseService.instance.currentProfileId = id;
-        }
+        await _postAuthBootstrap(failureMessageKey: 'auth_session_expired');
       },
     );
   }
@@ -245,125 +307,6 @@ class _LoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(body: AppLoading());
-  }
-}
-
-class _InitGuard extends StatefulWidget {
-  const _InitGuard({required this.uid, this.onLoadFailed});
-
-  final String uid;
-  final VoidCallback? onLoadFailed;
-
-  @override
-  State<_InitGuard> createState() => _InitGuardState();
-}
-
-class _InitGuardState extends State<_InitGuard> {
-  bool _ready = false;
-  bool _loadFailed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialize();
-  }
-
-  Future<void> _initialize() async {
-    try {
-      final ok = appWearHost
-          ? await DatabaseService.instance.loadInitialDataWearLite(
-              widget.uid.trim(),
-            )
-          : await DatabaseService.instance.loadInitialData(widget.uid.trim());
-      if (ok) {
-        final lang = DatabaseService.instance.settings.primaryLanguage;
-        if (lang.isNotEmpty) {
-          currentLocale.value = resolvedUiLanguageCode(lang);
-        }
-      }
-      if (mounted) {
-        setState(() {
-          _ready = true;
-          _loadFailed = !ok;
-        });
-        if (!ok) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) widget.onLoadFailed?.call();
-          });
-        }
-      }
-    } catch (e, st) {
-      // Boot-only: surfaces parser/init bugs (e.g. legacy PB nulls) that would otherwise hang silently.
-      // ignore: avoid_print
-      print('_InitGuard._initialize failed: $e\n$st');
-      if (mounted) {
-        setState(() {
-          _ready = true;
-          _loadFailed = true;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) widget.onLoadFailed?.call();
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_ready) {
-      return const _LoadingScreen();
-    }
-    if (_loadFailed) {
-      final fullError =
-          DatabaseService.instance.loadErrorMessage ??
-          t(currentLocale.value, 'please_sign_in_again');
-      return Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SelectableText(
-                    fullError,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: () async {
-                      try {
-                        await AuthBridge.signOut();
-                        DatabaseService.instance.clearLocalStateOnSignOut();
-                      } catch (_) {}
-                      await AuthService.instance.signOut();
-                      final root = context
-                          .findAncestorStateOfType<_RootAuthWrapperState>();
-                      if (root != null && root.mounted) {
-                        root.clearSession();
-                      }
-                    },
-                    child: Text(t(currentLocale.value, 'sign_in_again')),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    if (!DatabaseService.instance.isInitialized) {
-      return const _LoadingScreen();
-    }
-    if (appWearHost) {
-      return const WearTimerScreen();
-    }
-    final biometricEnabled = DatabaseService.instance.settings.biometricEnabled;
-    if (biometricEnabled) {
-      return const _BiometricGate(child: LifeOSDashboard());
-    }
-    return const LifeOSDashboard();
   }
 }
 

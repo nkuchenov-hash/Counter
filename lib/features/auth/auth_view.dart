@@ -3,6 +3,8 @@
 // Styling: global themes from main.dart ([appLightTheme]/[appDarkTheme]); width [kAuthFormMaxWidth].
 // ---------------------------------------------------------------------------
 
+import 'dart:async';
+
 import 'package:counter/core/theme.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/pb_config.dart';
@@ -13,9 +15,10 @@ import 'package:flutter/material.dart';
 /// Auth gate: email/password, OAuth2 (PocketBase `profiles` collection only).
 /// All server auth goes through [AuthBridge].
 class AuthView extends StatefulWidget {
-  const AuthView({super.key, this.onSignedIn});
+  const AuthView({super.key, this.onSignedIn, this.initialMessageKey});
 
   final VoidCallback? onSignedIn;
+  final String? initialMessageKey;
 
   @override
   State<AuthView> createState() => _AuthViewState();
@@ -26,6 +29,28 @@ class _AuthViewState extends State<AuthView> {
   bool _loginMode = true;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _oauthProvidersLoaded = false;
+  Set<String> _oauthProviders = const {};
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadOauthProviders());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final key = widget.initialMessageKey?.trim();
+      if (key != null && key.isNotEmpty) {
+        _showMessage(_t(key));
+      }
+    });
+  }
+
+  Future<void> _loadOauthProviders() async {
+    final providers = await AuthBridge.availableOAuthProviderNames();
+    if (!mounted) return;
+    setState(() {
+      _oauthProviders = providers;
+      _oauthProvidersLoaded = true;
+    });
+  }
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -63,9 +88,14 @@ class _AuthViewState extends State<AuthView> {
           return _t('auth_oauth_not_configured');
         case 'oauth_failed':
           return _t('auth_oauth_failed');
+        case 'empty_reset_token':
+          return _t('auth_reset_token_empty');
         case 'network':
           return _t('auth_invalid_credentials');
         default:
+          if (e.statusCode == 429) {
+            return _t('auth_too_many_attempts');
+          }
           return e.message;
       }
     }
@@ -179,7 +209,11 @@ class _AuthViewState extends State<AuthView> {
     } on AuthBridgeException catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        _showMessage(_mapAuthError(e));
+        if (e.statusCode == 429) {
+          _showMessage(_t('auth_too_many_attempts'));
+        } else {
+          _showMessage(_t('auth_reset_email_sent'));
+        }
       }
     } catch (_) {
       if (mounted) {
@@ -198,7 +232,10 @@ class _AuthViewState extends State<AuthView> {
       setState(() => _loading = false);
       await _onSignedInSuccess();
     } on AuthBridgeCancelled {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        _showMessage(_t('auth_login_cancelled'));
+      }
     } on AuthBridgeException catch (e) {
       if (mounted) {
         setState(() => _loading = false);
@@ -265,6 +302,64 @@ class _AuthViewState extends State<AuthView> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
+                  if (_oauthProvidersLoaded &&
+                      (_oauthProviders.contains(PbOauthProviderNames.google) ||
+                          _oauthProviders.contains(
+                            PbOauthProviderNames.yandex,
+                          ))) ...[
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        if (_oauthProviders.contains(
+                          PbOauthProviderNames.google,
+                        ))
+                          OutlinedButton.icon(
+                            onPressed: _loading
+                                ? null
+                                : () => _oauth(PbOauthProviderNames.google),
+                            icon: const Icon(Icons.g_mobiledata, size: 28),
+                            label: Text(_t('auth_oauth_google')),
+                          ),
+                        if (_oauthProviders.contains(
+                          PbOauthProviderNames.yandex,
+                        ))
+                          OutlinedButton.icon(
+                            onPressed: _loading
+                                ? null
+                                : () => _oauth(PbOauthProviderNames.yandex),
+                            icon: const Icon(Icons.login),
+                            label: Text(_t('auth_oauth_yandex')),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            _t('auth_or_divider'),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   SegmentedButton<bool>(
                     segments: [
                       ButtonSegment<bool>(
@@ -373,55 +468,6 @@ class _AuthViewState extends State<AuthView> {
                         ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Divider(color: theme.colorScheme.outlineVariant),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          _t('auth_or_divider'),
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(color: theme.colorScheme.outlineVariant),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _loading
-                            ? null
-                            : () => _oauth(PbOauthProviderNames.google),
-                        icon: const Icon(Icons.g_mobiledata, size: 28),
-                        label: Text(_t('auth_oauth_google')),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _loading
-                            ? null
-                            : () => _oauth(PbOauthProviderNames.apple),
-                        icon: const Icon(Icons.apple, size: 22),
-                        label: Text(_t('auth_oauth_apple')),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _loading
-                            ? null
-                            : () => _oauth(PbOauthProviderNames.yandex),
-                        icon: const Icon(Icons.login),
-                        label: Text(_t('auth_oauth_yandex')),
-                      ),
-                    ],
                   ),
                 ],
               ),
