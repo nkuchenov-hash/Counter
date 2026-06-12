@@ -597,7 +597,7 @@ class _TagSelectionRing extends StatelessWidget {
         borderRadius: BorderRadius.circular(100),
         border: Border.all(color: ring, width: 2),
       ),
-      child: Padding(padding: const EdgeInsets.all(2), child: child),
+      child: Padding(padding: const EdgeInsets.all(4), child: child),
     );
   }
 }
