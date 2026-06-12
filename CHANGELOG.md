@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - Plan-link suggestion toggle persistence [shipped]
+* **`planning_view.dart`:** [shipped] `_PlanRecordLinkSuggestionSettingsBlock` owns record-link suggestion prefs inside the Planning settings sheet so the master switch and mode selector rebuild and persist via `plans_record_link_suggestions_enabled` / `plans_record_link_suggestion_mode` (fixes frozen modal header that blocked turning suggestions off).
+
 ## [2026-06-12] - Auth gate and account recovery [shipped]
 * **`main.dart` / `auth_bridge.dart` / `profile_service.dart`:** [shipped] Cold start and post-login now share one PocketBase auth bootstrap path; invalid profile/session verification clears unsafe auth state and surfaces login/session repair instead of falling back to cached profile data.
 * **`auth_view.dart` / `dictionary.dart`:** [shipped] Auth screen shows configured Google/Yandex fast-login before email fallback, handles OAuth cancellation calmly, and keeps neutral password-reset messaging.
