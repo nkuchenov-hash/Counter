@@ -175,6 +175,17 @@ Date: 2026-06-11.
 - Gesture-heavy or compact custom-hit-target controls.
 - Destructive inline actions until their confirm/recovery behavior is reviewed.
 
+## Edit Sheet Tag Strip Scroll Hotfix
+
+Date: 2026-06-12.
+
+| File | Fix | Notes |
+| :--- | :--- | :--- |
+| `lib/features/shared/chip_component.dart` | `TagQuickPickStrip` scroll | Removed `shrinkWrap` (root cause of clipped unscrollable row); `ScrollController` + mouse drag + wheel horizontal scroll. |
+| `lib/features/shared/chip_component.dart` | Pill sizes | Compact card ~22px; edit-sheet interactive ~31px (not 40px). |
+| `lib/features/shared/shared_widgets.dart` | `_PlanningTaskEditSheet` tag row | 36px finite height; same `TagQuickPickStrip`. |
+| `lib/features/planning/planning_view.dart` | Quick-add tag strip | Same shared strip at 36px. |
+
 ## P0 Startup Sync + Tag Pill Regression Fix
 
 Date: 2026-06-12.

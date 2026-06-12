@@ -765,9 +765,14 @@ class _ChipsDemo extends StatelessWidget {
   const _ChipsDemo();
 
   static const _sampleTags = [
-    Tag(tagId: 1, name: 'Focus', color: '#6750A4', icon: 'work'),
-    Tag(tagId: 2, name: 'Health', color: '#2E7D32', icon: 'favorite'),
-    Tag(tagId: 3, name: 'Learning', color: '#EF6C00', icon: 'school'),
+    Tag(tagId: 1, name: 'urgent', color: '#C62828', icon: 'priority_high'),
+    Tag(tagId: 2, name: 'Meetings', color: '#1565C0', icon: 'groups'),
+    Tag(tagId: 3, name: 'Admin', color: '#6A1B9A', icon: 'admin_panel_settings'),
+    Tag(tagId: 4, name: 'gsa', color: '#2E7D32', icon: 'work'),
+    Tag(tagId: 5, name: 'co', color: '#EF6C00', icon: 'business'),
+    Tag(tagId: 6, name: 'check', color: '#00838F', icon: 'check_circle'),
+    Tag(tagId: 7, name: 'communication', color: '#F9A825', icon: 'chat'),
+    Tag(tagId: 8, name: 'Learning', color: '#5E35B1', icon: 'school'),
   ];
 
   @override
@@ -797,7 +802,8 @@ class _ChipsDemo extends StatelessWidget {
               'CategoryChip(variant: CategoryChipVariant.largePicker)',
           variant: 'large picker',
           state: 'selected',
-          note: 'Larger stadium pill for edit sheets/menus; no outer margin.',
+          note:
+              '31px stadium pill for edit sheets/menus; visible bounds = hit target.',
           child: CategoryChip(
             mode: CategoryDisplayMode.letterChip,
             label: 'Focus',
@@ -814,14 +820,16 @@ class _ChipsDemo extends StatelessWidget {
           flutterMapping: 'TagQuickPickStrip(variant: largePicker)',
           variant: 'tag picker',
           state: 'one selected',
-          note: 'Horizontal scroll row for edit sheets.',
+          note:
+              '36px row; mouse drag + wheel horizontal scroll; 8 tags overflow.',
           fullWidth: true,
           child: SizedBox(
-            height: 48,
+            height: 36,
             child: TagQuickPickStrip(
               tags: _sampleTags,
               selected: const [
-                Tag(tagId: 1, name: 'Focus', color: '#6750A4', icon: 'work'),
+                Tag(tagId: 1, name: 'urgent', color: '#C62828', icon: 'priority_high'),
+                Tag(tagId: 3, name: 'Admin', color: '#6A1B9A', icon: 'admin_panel_settings'),
               ],
               variant: CategoryChipVariant.largePicker,
               onToggle: (_) {},

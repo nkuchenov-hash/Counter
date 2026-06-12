@@ -9,6 +9,7 @@ import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/shared/tag_contrast.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 /// **Timeline record category** — text-only breadcrumbs, not a tag chip.
@@ -199,7 +200,7 @@ class CategoryChip extends StatelessWidget {
       );
     }
 
-    final tapRadius = isPillMode ? (large ? 20.0 : 11.0) : glyphSide / 2;
+    final tapRadius = isPillMode ? (large ? 16.0 : 11.0) : glyphSide / 2;
     final tappableChild = isPillMode
         ? inner
         : SizedBox(width: glyphSide, height: glyphSide, child: inner);
@@ -215,10 +216,13 @@ class CategoryChip extends StatelessWidget {
   }
 
   /// Compact card pill footprint (letter_chip on task/list cards).
-  static const double _compactChipHeight = 22;
+  static const double compactChipHeight = 22;
 
   /// Interactive picker pill footprint (edit sheets / menus).
-  static const double _interactiveChipHeight = 40;
+  static const double interactiveChipHeight = 31;
+
+  static const double _compactChipHeight = compactChipHeight;
+  static const double _interactiveChipHeight = interactiveChipHeight;
 
   /// letter_chip: **same widget pattern** as task-card tag in [planning_view] — padded [Text] in tinted [Container] (tight wrap).
   Widget _letterChipPlanStyle(
@@ -234,12 +238,12 @@ class CategoryChip extends StatelessWidget {
         variant == CategoryChipVariant.largePicker || prominentVisuals;
     final rgb = color.toARGB32() & 0xFFFFFF;
     final padding = EdgeInsets.symmetric(
-      horizontal: large ? 16 : 6,
-      vertical: large ? 10 : 2,
+      horizontal: large ? 12 : 6,
+      vertical: large ? 4 : 2,
     );
     final textStyle =
         (large
-                ? Theme.of(context).textTheme.labelLarge
+                ? Theme.of(context).textTheme.labelMedium
                 : Theme.of(context).textTheme.labelSmall)
             ?.copyWith(fontWeight: FontWeight.w600);
     final stadium = BorderRadius.circular(100);
@@ -299,7 +303,7 @@ class CategoryChip extends StatelessWidget {
         variant == CategoryChipVariant.largePicker || prominentVisuals;
     return Container(
       height: large ? _interactiveChipHeight : _compactChipHeight,
-      padding: EdgeInsets.symmetric(horizontal: large ? 16 : 8),
+      padding: EdgeInsets.symmetric(horizontal: large ? 12 : 8),
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: tagEmptyChipFill(color, surface),
@@ -366,8 +370,21 @@ class CategoryChip extends StatelessWidget {
   }
 }
 
+/// Mouse / trackpad / touch drag for horizontal tag strips (edit sheets, web).
+class _TagStripScrollBehavior extends MaterialScrollBehavior {
+  const _TagStripScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => const <PointerDeviceKind>{
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.trackpad,
+  };
+}
+
 /// Horizontal tag picker using [CategoryChip] and live [UserSettings.tagDisplayMode].
-class TagQuickPickStrip extends StatelessWidget {
+class TagQuickPickStrip extends StatefulWidget {
   const TagQuickPickStrip({
     super.key,
     required this.tags,
@@ -396,9 +413,84 @@ class TagQuickPickStrip extends StatelessWidget {
   final void Function(Tag tag)? onTagLongPress;
 
   @override
+  State<TagQuickPickStrip> createState() => _TagQuickPickStripState();
+}
+
+class _TagQuickPickStripState extends State<TagQuickPickStrip> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onPointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) return;
+    if (!_scrollController.hasClients) return;
+    final delta = event.scrollDelta.dy;
+    if (delta == 0) return;
+    final pos = _scrollController.position;
+    if (delta > 0 && pos.pixels >= pos.maxScrollExtent) return;
+    if (delta < 0 && pos.pixels <= pos.minScrollExtent) return;
+    final next = (pos.pixels + delta).clamp(
+      pos.minScrollExtent,
+      pos.maxScrollExtent,
+    );
+    if (next != pos.pixels) {
+      _scrollController.jumpTo(next);
+    }
+  }
+
+  Widget _wrapScrollSurface(Widget child) {
+    return ScrollConfiguration(
+      behavior: const _TagStripScrollBehavior(),
+      child: Listener(
+        onPointerSignal: _onPointerSignal,
+        child: child,
+      ),
+    );
+  }
+
+  Widget _buildChip(
+    BuildContext context, {
+    required CategoryDisplayMode mode,
+    required Tag tag,
+    required Color fb,
+    required bool isSel,
+    void Function(Tag tag)? onLongPress,
+  }) {
+    final c = parseTagHexColor(tag.color) ?? fb;
+    final ic = iconForTagKey(tag.icon);
+    final baseChip = CategoryChip(
+      mode: mode,
+      label: tag.name,
+      color: c,
+      icon: ic,
+      selected: widget.externalSelectionRing ? false : isSel,
+      variant: widget.variant,
+      prominentVisuals: widget.prominentVisuals,
+      syntheticNoTagsMonochrome: tag.tagId == -1,
+      onTap: () => widget.onToggle(tag),
+    );
+    Widget chip = widget.externalSelectionRing
+        ? _TagSelectionRing(selected: isSel, child: baseChip)
+        : baseChip;
+    final lp = onLongPress;
+    if (lp != null) {
+      chip = GestureDetector(
+        onLongPress: () => lp(tag),
+        behavior: HitTestBehavior.opaque,
+        child: chip,
+      );
+    }
+    return chip;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final fb = fallbackColor ?? scheme.primary;
+    final fb = widget.fallbackColor ?? scheme.primary;
 
     return StreamBuilder<UserSettings>(
       stream: DatabaseService.instance.userSettingsStream,
@@ -406,104 +498,86 @@ class TagQuickPickStrip extends StatelessWidget {
       builder: (context, snap) {
         final mode =
             snap.data?.tagDisplayMode ?? CategoryDisplayMode.letterChip;
-        final reorder = onReorder;
-        if (reorder != null && tags.length >= 2) {
-          return ReorderableListView.builder(
-            scrollDirection: Axis.horizontal,
-            buildDefaultDragHandles: false,
-            shrinkWrap: true,
-            physics: const ClampingScrollPhysics(),
-            padding: EdgeInsets.zero,
-            itemCount: tags.length,
-            onReorder: reorder,
-            proxyDecorator: (child, index, animation) {
-              return AnimatedBuilder(
-                animation: animation,
-                builder: (context, _) {
-                  final v = Curves.easeInOut.transform(animation.value);
-                  return Material(
-                    elevation: 6 * v,
-                    shadowColor: Colors.black38,
-                    borderRadius: BorderRadius.circular(12),
-                    clipBehavior: Clip.antiAlias,
-                    color: Colors.transparent,
-                    child: child,
-                  );
-                },
-                child: child,
-              );
-            },
-            itemBuilder: (ctx, i) {
-              final tag = tags[i];
-              final c = parseTagHexColor(tag.color) ?? fb;
-              final ic = iconForTagKey(tag.icon);
-              final isSel = selected.any((x) => x.tagId == tag.tagId);
-              final baseChip = CategoryChip(
-                mode: mode,
-                label: tag.name,
-                color: c,
-                icon: ic,
-                selected: externalSelectionRing ? false : isSel,
-                variant: variant,
-                prominentVisuals: prominentVisuals,
-                syntheticNoTagsMonochrome: tag.tagId == -1,
-                onTap: () => onToggle(tag),
-              );
-              final chip = externalSelectionRing
-                  ? _TagSelectionRing(selected: isSel, child: baseChip)
-                  : baseChip;
-              return ReorderableDelayedDragStartListener(
-                key: ValueKey<String>(
-                  tag.pbRecordId?.trim().isNotEmpty == true
-                      ? 'pb-${tag.pbRecordId}'
-                      : 'biz-${tag.tagId}',
-                ),
-                index: i,
-                child: Padding(
-                  padding: EdgeInsets.only(right: i < tags.length - 1 ? 8 : 0),
-                  child: chip,
-                ),
-              );
-            },
+        final reorder = widget.onReorder;
+        if (reorder != null && widget.tags.length >= 2) {
+          return _wrapScrollSurface(
+            ReorderableListView.builder(
+              scrollDirection: Axis.horizontal,
+              scrollController: _scrollController,
+              buildDefaultDragHandles: false,
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.zero,
+              clipBehavior: Clip.hardEdge,
+              itemCount: widget.tags.length,
+              onReorder: reorder,
+              proxyDecorator: (child, index, animation) {
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, _) {
+                    final v = Curves.easeInOut.transform(animation.value);
+                    return Material(
+                      elevation: 6 * v,
+                      shadowColor: Colors.black38,
+                      borderRadius: BorderRadius.circular(12),
+                      clipBehavior: Clip.antiAlias,
+                      color: Colors.transparent,
+                      child: child,
+                    );
+                  },
+                  child: child,
+                );
+              },
+              itemBuilder: (ctx, i) {
+                final tag = widget.tags[i];
+                final isSel = widget.selected.any((x) => x.tagId == tag.tagId);
+                final chip = _buildChip(
+                  context,
+                  mode: mode,
+                  tag: tag,
+                  fb: fb,
+                  isSel: isSel,
+                );
+                return ReorderableDelayedDragStartListener(
+                  key: ValueKey<String>(
+                    tag.pbRecordId?.trim().isNotEmpty == true
+                        ? 'pb-${tag.pbRecordId}'
+                        : 'biz-${tag.tagId}',
+                  ),
+                  index: i,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      chip,
+                      if (i < widget.tags.length - 1) const SizedBox(width: 8),
+                    ],
+                  ),
+                );
+              },
+            ),
           );
         }
-        return ListView.separated(
-          scrollDirection: Axis.horizontal,
-          shrinkWrap: true,
-          physics: const ClampingScrollPhysics(),
-          padding: EdgeInsets.zero,
-          clipBehavior: Clip.hardEdge,
-          itemCount: tags.length,
-          separatorBuilder: (context, index) => const SizedBox(width: 8),
-          itemBuilder: (ctx, i) {
-            final tag = tags[i];
-            final c = parseTagHexColor(tag.color) ?? fb;
-            final ic = iconForTagKey(tag.icon);
-            final isSel = selected.any((x) => x.tagId == tag.tagId);
-            final lp = onTagLongPress;
-            final baseChip = CategoryChip(
-              mode: mode,
-              label: tag.name,
-              color: c,
-              icon: ic,
-              selected: externalSelectionRing ? false : isSel,
-              variant: variant,
-              prominentVisuals: prominentVisuals,
-              syntheticNoTagsMonochrome: tag.tagId == -1,
-              onTap: () => onToggle(tag),
-            );
-            Widget chip = externalSelectionRing
-                ? _TagSelectionRing(selected: isSel, child: baseChip)
-                : baseChip;
-            if (lp != null) {
-              chip = GestureDetector(
-                onLongPress: () => lp(tag),
-                behavior: HitTestBehavior.opaque,
-                child: chip,
+        return _wrapScrollSurface(
+          ListView.separated(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
+            padding: EdgeInsets.zero,
+            clipBehavior: Clip.hardEdge,
+            itemCount: widget.tags.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (ctx, i) {
+              final tag = widget.tags[i];
+              final isSel = widget.selected.any((x) => x.tagId == tag.tagId);
+              return _buildChip(
+                context,
+                mode: mode,
+                tag: tag,
+                fb: fb,
+                isSel: isSel,
+                onLongPress: widget.onTagLongPress,
               );
-            }
-            return chip;
-          },
+            },
+          ),
         );
       },
     );

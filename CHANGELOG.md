@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - Edit sheet tag strip scroll hotfix [shipped]
+* **`chip_component.dart`:** [shipped] `TagQuickPickStrip` horizontal scroll fix — removed `shrinkWrap`, added `ScrollController`, `_TagStripScrollBehavior` (mouse/trackpad/touch drag), wheel-to-horizontal `PointerScrollEvent`; interactive pills ~31px (was 40px); compact cards ~22px.
+* **`shared_widgets.dart` / `planning_view.dart` / `component_lab_view.dart`:** [shipped] edit-sheet tag row height 36px; lab overflow strip with 8 tags.
+
 ## [2026-06-12] - P0 startup sync + tag pill regressions [shipped]
 * **`db_core.dart` / `plan_service.dart` / `record_service.dart`:** [shipped] P0 foreground/resume refresh via `refreshForegroundData()` force-fetches records + today's plans and pumps planning streams; debounced plan cache refresh now re-emits streams; duplicate primary running records reconcile to newest-only (optimistic stop + existing `stopRecordByDocId` for older rows).
 * **`chip_component.dart` / `shared_widgets.dart` / `component_lab_view.dart` / `timeline_view.dart`:** [shipped] Tag pill regression fix: stadium compact card pills vs larger interactive picker pills, horizontal scroll strip restored, removed invisible outer selection padding; timeline running UI uses canonical primary id only.

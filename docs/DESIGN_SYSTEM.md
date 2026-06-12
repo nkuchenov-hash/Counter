@@ -126,8 +126,9 @@ Each mapping must answer:
 - Future canonical split: `AppTagChip`, `AppCategoryChip`, `AppBreadcrumbChip`.
 - Tag/category visual variations should be parameters.
 - **Tag pill variants (enforced):**
-  - `CategoryChipVariant.compactCard` — task/list card tags; smaller stadium pills.
-  - `CategoryChipVariant.largePicker` — edit sheets, menus, pickers; larger stadium pills for grip.
+  - `CategoryChipVariant.compactCard` — task/list card tags; ~22px stadium pills.
+  - `CategoryChipVariant.largePicker` — edit sheets, menus, pickers; ~31px stadium pills for grip.
+  - `TagQuickPickStrip` — horizontal `ListView` (no shrinkWrap); mouse drag + wheel scroll on web.
   - Parent row owns spacing (`ListView.separated` / `SizedBox`); individual pills must not add invisible outer margin/padding.
   - Pills use full stadium radius (`BorderRadius.circular(100)`).
 
