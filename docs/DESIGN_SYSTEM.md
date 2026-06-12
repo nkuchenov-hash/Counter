@@ -125,6 +125,11 @@ Each mapping must answer:
 - Current shared feature components: `CategoryChip`, `TagQuickPickStrip`, `CategoryBreadcrumb`.
 - Future canonical split: `AppTagChip`, `AppCategoryChip`, `AppBreadcrumbChip`.
 - Tag/category visual variations should be parameters.
+- **Tag pill variants (enforced):**
+  - `CategoryChipVariant.compactCard` — task/list card tags; smaller stadium pills.
+  - `CategoryChipVariant.largePicker` — edit sheets, menus, pickers; larger stadium pills for grip.
+  - Parent row owns spacing (`ListView.separated` / `SizedBox`); individual pills must not add invisible outer margin/padding.
+  - Pills use full stadium radius (`BorderRadius.circular(100)`).
 
 ### Tabs / Segmented Controls
 

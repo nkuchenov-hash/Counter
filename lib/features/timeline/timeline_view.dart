@@ -778,9 +778,15 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
         (widget.systemRowId.isNotEmpty ? widget.systemRowId : '?');
     final type = widget.data['type'] as String? ?? 'record';
     final isPlanned = type == 'planned';
+    final canonicalBiz =
+        DatabaseService.instance.canonicalPrimaryRunningBusinessId;
+    final rowBiz = _timelineBusinessRecordId(widget.data);
     final isRunning =
         type == 'record' &&
-        CategoryServiceExtension.isRecordMapActuallyRunning(widget.data);
+        CategoryServiceExtension.isRecordMapActuallyRunning(widget.data) &&
+        canonicalBiz != null &&
+        canonicalBiz.isNotEmpty &&
+        rowBiz == canonicalBiz;
 
     final categoryPath = DatabaseService.instance
         .categoryDisplayPathForRecordData(widget.data);

@@ -673,6 +673,79 @@ extension RecordServiceExtension on DatabaseService {
     return false;
   }
 
+  /// Newest primary running row in cache (after optimistic overlays), or null.
+  Map<String, dynamic>? _canonicalPrimaryRunningFlatRow() {
+    final pend = _optimisticPendingStartRecordMap;
+    if (pend != null &&
+        pend['endTime'] == null &&
+        CategoryServiceExtension.isRecordMapActuallyRunning(pend)) {
+      return Map<String, dynamic>.from(pend);
+    }
+    Map<String, dynamic>? winner;
+    DateTime? bestStart;
+    for (final r in _cachedFlatRecords) {
+      if (_rowHasNonEmptyParent(r['parent_id'])) continue;
+      final merged = _mergeOptimisticIntoRecordMap(_rowToRecordMap(r));
+      if (!CategoryServiceExtension.isRecordMapActuallyRunning(merged)) {
+        continue;
+      }
+      final st = CategoryServiceExtension.startTimeFromRecord(merged);
+      if (winner == null ||
+          (st != null && (bestStart == null || st.isAfter(bestStart)))) {
+        winner = merged;
+        bestStart = st;
+      }
+    }
+    return winner;
+  }
+
+  String? get canonicalPrimaryRunningBusinessId {
+    final row = _canonicalPrimaryRunningFlatRow();
+    if (row == null) return null;
+    final biz = (row['record_id'] ?? '').toString().trim();
+    if (biz.isNotEmpty) return biz;
+    return (row['id'] ?? '').toString().trim().isEmpty
+        ? null
+        : (row['id'] ?? '').toString().trim();
+  }
+
+  /// Sacred singleton: if multiple primaries are open, keep newest and stop older rows.
+  Future<void> _reconcileDuplicatePrimaryRunningRecords() async {
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return;
+    final primaries = <Map<String, dynamic>>[];
+    for (final row in _cachedFlatRecords) {
+      if (_rowHasNonEmptyParent(row['parent_id'])) continue;
+      if (!CategoryServiceExtension._isNocoRowActiveRunning(row)) continue;
+      primaries.add(row);
+    }
+    if (primaries.length <= 1) return;
+
+    primaries.sort((a, b) {
+      final ast = CategoryServiceExtension._parseDateTimeUtc(a['start_time']);
+      final bst = CategoryServiceExtension._parseDateTimeUtc(b['start_time']);
+      if (ast == null && bst == null) return 0;
+      if (ast == null) return 1;
+      if (bst == null) return -1;
+      return bst.compareTo(ast);
+    });
+
+    final now = DatabaseService.getPlanetaryNow();
+    for (var i = 1; i < primaries.length; i++) {
+      final loser = primaries[i];
+      final pk = CategoryServiceExtension.recordsTablePk(loser);
+      final biz = (loser['record_id'] ?? '').toString().trim();
+      for (final k in [pk, biz]) {
+        if (k.isNotEmpty) {
+          _optimisticEndByKey[k] = _OptimisticEndPatch(now);
+        }
+      }
+      if (pk.isNotEmpty) {
+        unawaited(stopRecordByDocId(pk));
+      }
+    }
+    _notifyTimelineAfterRecordCacheMutation();
+  }
+
   /// Merge [end_time] for rows the user just stopped (PATCH in flight).
   Map<String, dynamic> _mergeOptimisticIntoRecordMap(Map<String, dynamic> data) {
     final rid = (data['record_id'] ?? '').toString().trim();
@@ -1127,18 +1200,11 @@ extension RecordServiceExtension on DatabaseService {
             await _fetchRecordsIntoCache(forceNetwork: true);
           } catch (_) {}
         }
-        final rows = List<Map<String, dynamic>>.from(_cachedFlatRecords);
-        Map<String, dynamic>? row;
-        for (final r in rows) {
-          if (_rowHasNonEmptyParent(r['parent_id'])) continue;
-          if (!CategoryServiceExtension._isNocoRowActiveRunning(r)) continue;
-          row = r;
-          break;
-        }
-        if (row == null) {
+        final canonical = _canonicalPrimaryRunningFlatRow();
+        if (canonical == null) {
           yield null;
         } else {
-          final data = _mergeOptimisticIntoRecordMap(_rowToRecordMap(row));
+          final data = Map<String, dynamic>.from(canonical);
           if (data['endTime'] != null || !CategoryServiceExtension.isRecordMapActuallyRunning(data)) {
             yield null;
             await Future.delayed(const Duration(seconds: 2));

@@ -33,6 +33,7 @@ List<PlanningTask> _allPlansUserCache = [];
 DateTime? _allPlansUserCacheFetchedAt;
 const Duration _allPlansUserCacheFreshTtl = Duration(seconds: 30);
 Timer? _planningNotifyNetworkDebounceTimer;
+bool _planningRefreshWantsNetworkPump = false;
 Future<void>? _plansRealtimeSubscribeFuture;
 Future<void> Function()? _plansRealtimeUnsubscribe;
 
@@ -892,7 +893,13 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   /// Ping planning/list subscribers. UI streams emit cache+overlay first; network refresh is debounced.
-  void notifyPlanningRefresh({bool scheduleNetworkRefresh = true}) {
+  void notifyPlanningRefresh({
+    bool scheduleNetworkRefresh = true,
+    bool pumpNetworkNow = false,
+  }) {
+    if (pumpNetworkNow) {
+      _planningRefreshWantsNetworkPump = true;
+    }
     if (!_planningRefreshController.isClosed) {
       _planningRefreshController.add(null);
     }
@@ -902,7 +909,13 @@ extension PlanServiceExtension on DatabaseService {
       _planningNotifyNetworkDebounceTimer = Timer(
         const Duration(milliseconds: 400),
         () {
-          unawaited(_ensureAllPlansUserCacheFresh(force: true));
+          unawaited(() async {
+            await _ensureAllPlansUserCacheFresh(force: true);
+            _planningRefreshWantsNetworkPump = true;
+            if (!_planningRefreshController.isClosed) {
+              _planningRefreshController.add(null);
+            }
+          }());
         },
       );
     }
@@ -2406,7 +2419,12 @@ extension PlanServiceExtension on DatabaseService {
       unawaited(pump());
       if (listenToGlobalPlanningRefresh) {
         pokeSub = _planningRefreshController.stream.listen((_) {
+          final wantsNetwork = _planningRefreshWantsNetworkPump;
+          if (wantsNetwork) {
+            _planningRefreshWantsNetworkPump = false;
+          }
           final stale =
+              wantsNetwork ||
               _allPlansUserCache.isEmpty ||
               _allPlansUserCacheFetchedAt == null ||
               DateTime.now().difference(_allPlansUserCacheFetchedAt!) >

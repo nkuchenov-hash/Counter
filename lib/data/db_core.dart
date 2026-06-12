@@ -185,15 +185,7 @@ extension DbCoreExtension on DatabaseService {
   void _registerAppLifecycleObserverOnce() {
     if (DatabaseService._appLifecycleObserverRegistered) return;
     DatabaseService._appLifecycleObserver.onResumed = () {
-      unawaited(_startRecordsRealtimeSubscription());
-      _lastSuccessfulRecordsNetworkFetchAt = null;
-      unawaited(
-        _fetchRecordsIntoCache().catchError(
-          (Object _, StackTrace _) => <Map<String, dynamic>>[],
-        ),
-      );
-      unawaited(offlineSync.refreshPendingCount());
-      unawaited(flushPendingLocalMutations());
+      unawaited(refreshForegroundData());
     };
     WidgetsBinding.instance.addObserver(DatabaseService._appLifecycleObserver);
     DatabaseService._appLifecycleObserverRegistered = true;
@@ -409,6 +401,7 @@ extension DbCoreExtension on DatabaseService {
     await _loadRulesFromNoco();
     try {
       await _fetchRecordsIntoCache(forceNetwork: true);
+      await _reconcileDuplicatePrimaryRunningRecords();
     } catch (_) {}
     await _loadPlanningTasksForToday();
     // Safety re-run: finish startup with a final category load.
@@ -425,13 +418,39 @@ extension DbCoreExtension on DatabaseService {
     unawaited(
       _startPlansRealtimeSubscription().catchError((Object _, StackTrace _) {}),
     );
-    unawaited(_ensureAllPlansUserCacheFresh(force: true));
+    unawaited(() async {
+      await _ensureAllPlansUserCacheFresh(force: true);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false, pumpNetworkNow: true);
+    }());
     unawaited(
       _runOneShotUntitledGhostRecordCleanDeferred()
           .catchError((Object _, StackTrace _) {}),
     );
     unawaited(offlineSync.refreshPendingCount());
     unawaited(flushPendingLocalMutations());
+  }
+
+  /// Foreground/resume refresh: records + today's plans + stream pumps (no user input required).
+  Future<void> refreshForegroundData() async {
+    if (!(currentProfileId?.isNotEmpty ?? false)) return;
+    if (!_isInitialized) return;
+    unawaited(offlineSync.refreshPendingCount());
+    unawaited(flushPendingLocalMutations());
+    if (_pbHttpBackoffActive) return;
+    try {
+      _lastSuccessfulRecordsNetworkFetchAt = null;
+      await _fetchRecordsIntoCache(forceNetwork: true);
+      await _reconcileDuplicatePrimaryRunningRecords();
+      await _ensureAllPlansUserCacheFresh(force: true);
+      await _loadPlanningTasksForToday();
+      notifyPlanningRefresh(scheduleNetworkRefresh: false, pumpNetworkNow: true);
+      try {
+        await _startRecordsRealtimeSubscription();
+      } catch (_) {}
+      unawaited(
+        _startPlansRealtimeSubscription().catchError((Object _, StackTrace _) {}),
+      );
+    } catch (_) {}
   }
 
   /// Drains all local PocketBase mutation outboxes (records + plans/lists).

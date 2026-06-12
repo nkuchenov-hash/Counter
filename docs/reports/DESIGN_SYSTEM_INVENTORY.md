@@ -175,6 +175,28 @@ Date: 2026-06-11.
 - Gesture-heavy or compact custom-hit-target controls.
 - Destructive inline actions until their confirm/recovery behavior is reviewed.
 
+## P0 Startup Sync + Tag Pill Regression Fix
+
+Date: 2026-06-12.
+
+### Sync / Runtime Fixes
+
+| File | Fix | Notes |
+| :--- | :--- | :--- |
+| `lib/data/db_core.dart` | `refreshForegroundData()` on app resume + post-boot plan cache notify | Force network records + plans for today; no user input required to refresh UI. |
+| `lib/data/plan_service.dart` | `notifyPlanningRefresh(pumpNetworkNow:)` + debounced fetch re-ping | Planning streams no longer stall on 30s TTL stale cache after server updates. |
+| `lib/data/record_service.dart` | `_reconcileDuplicatePrimaryRunningRecords()` + canonical primary picker | Sacred singleton: newest running primary wins; older open primaries stopped via existing stop path. |
+| `lib/features/timeline/timeline_view.dart` | Running card state gated by `canonicalPrimaryRunningBusinessId` | Prevents duplicate running visuals when cache briefly has multiple open primaries. |
+
+### Tag UI Fixes
+
+| File | Fix | Notes |
+| :--- | :--- | :--- |
+| `lib/features/shared/chip_component.dart` | `CategoryChipVariant.compactCard` vs `largePicker` stadium pills | Compact cards smaller; edit-sheet/menu/picker pills larger; parent owns spacing; no outer invisible pill margin. |
+| `lib/features/shared/chip_component.dart` | `TagQuickPickStrip` horizontal `ListView` scroll | Edit-sheet tag rows scroll horizontally again (web + touch). |
+| `lib/features/shared/shared_widgets.dart` | Edit sheet tag row height tuned for interactive pills | Visual only. |
+| `lib/features/dev/component_lab_view.dart` | Lab examples for compact vs interactive tag pills + scroll strip | Lab-only labels. |
+
 ## V7G.1 Canonical State Views Migration
 
 Date: 2026-06-12.

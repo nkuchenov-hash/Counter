@@ -418,14 +418,10 @@ class DatabaseService {
 
   /// Primary running record title from cache (no parent); for planning “active” highlight.
   String? get cachedPrimaryRunningTitle {
-    for (final r in _cachedFlatRecords) {
-      if (_rowHasNonEmptyParent(r['parent_id'])) continue;
-      if (!CategoryServiceExtension._isNocoRowActiveRunning(r)) continue;
-      final tit = (r['title'] ?? '').toString().trim();
-      if (tit.isEmpty) continue;
-      return tit;
-    }
-    return null;
+    final row = _canonicalPrimaryRunningFlatRow();
+    if (row == null) return null;
+    final tit = (row['title'] ?? '').toString().trim();
+    return tit.isEmpty ? null : tit;
   }
 
   int _indexOfCachedRecordRow(String resolvedRid, String originalInput) {

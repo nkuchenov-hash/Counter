@@ -145,7 +145,6 @@ class CategoryChip extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final large =
         variant == CategoryChipVariant.largePicker || prominentVisuals;
-    final ring = selected ? scheme.primary : Colors.transparent;
     final displayLabel = localizeCategoryBreadcrumbPath(
       label,
       currentLocale.value,
@@ -177,23 +176,11 @@ class CategoryChip extends StatelessWidget {
         mode == CategoryDisplayMode.chip;
     final glyphSide = _glyphLayoutSide(mode);
 
-    final showOuterSelectionFrame = selected && onTap == null;
     final inner = AnimatedContainer(
       duration: const Duration(milliseconds: 100),
       alignment: isPillMode ? Alignment.centerLeft : Alignment.center,
       width: isPillMode ? null : glyphSide,
       height: isPillMode ? null : glyphSide,
-      padding: showOuterSelectionFrame
-          ? const EdgeInsets.all(2)
-          : EdgeInsets.zero,
-      decoration: showOuterSelectionFrame
-          ? BoxDecoration(
-              borderRadius: isPillMode
-                  ? BorderRadius.circular(10)
-                  : BorderRadius.circular(22),
-              border: Border.all(color: ring, width: 2),
-            )
-          : null,
       child: visual,
     );
 
@@ -212,7 +199,7 @@ class CategoryChip extends StatelessWidget {
       );
     }
 
-    final tapRadius = isPillMode ? (large ? 14.0 : 10.0) : glyphSide / 2;
+    final tapRadius = isPillMode ? (large ? 20.0 : 11.0) : glyphSide / 2;
     final tappableChild = isPillMode
         ? inner
         : SizedBox(width: glyphSide, height: glyphSide, child: inner);
@@ -227,9 +214,11 @@ class CategoryChip extends StatelessWidget {
     );
   }
 
-  /// Fixed outer size for empty pill — approx. typical [labelSmall] text chip (short label, 8+2 padding).
-  static const double _emptyChipWidth = 72;
-  static const double _emptyChipHeight = 24;
+  /// Compact card pill footprint (letter_chip on task/list cards).
+  static const double _compactChipHeight = 22;
+
+  /// Interactive picker pill footprint (edit sheets / menus).
+  static const double _interactiveChipHeight = 40;
 
   /// letter_chip: **same widget pattern** as task-card tag in [planning_view] — padded [Text] in tinted [Container] (tight wrap).
   Widget _letterChipPlanStyle(
@@ -245,20 +234,22 @@ class CategoryChip extends StatelessWidget {
         variant == CategoryChipVariant.largePicker || prominentVisuals;
     final rgb = color.toARGB32() & 0xFFFFFF;
     final padding = EdgeInsets.symmetric(
-      horizontal: large ? 16 : 8,
-      vertical: large ? 8 : 2,
+      horizontal: large ? 16 : 6,
+      vertical: large ? 10 : 2,
     );
     final textStyle =
         (large
-                ? Theme.of(context).textTheme.labelMedium
+                ? Theme.of(context).textTheme.labelLarge
                 : Theme.of(context).textTheme.labelSmall)
             ?.copyWith(fontWeight: FontWeight.w600);
+    final stadium = BorderRadius.circular(100);
     if (syntheticNoTagsMonochrome && rgb == 0x000000) {
       return Container(
         padding: padding,
+        constraints: BoxConstraints(minHeight: large ? _interactiveChipHeight : _compactChipHeight),
         decoration: BoxDecoration(
           color: Colors.black,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: stadium,
           border: Border.all(color: selected ? scheme.primary : Colors.black),
         ),
         child: Text(
@@ -270,9 +261,10 @@ class CategoryChip extends StatelessWidget {
     if (syntheticNoTagsMonochrome && rgb == 0xFFFFFF) {
       return Container(
         padding: padding,
+        constraints: BoxConstraints(minHeight: large ? _interactiveChipHeight : _compactChipHeight),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: stadium,
           border: Border.all(
             color: selected ? scheme.primary : Colors.grey.shade400,
           ),
@@ -290,32 +282,32 @@ class CategoryChip extends StatelessWidget {
         : tagLetterChipBorder(color, scheme.surface);
     return Container(
       padding: padding,
+      constraints: BoxConstraints(minHeight: large ? _interactiveChipHeight : _compactChipHeight),
       decoration: BoxDecoration(
         color: plate,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: stadium,
         border: Border.all(color: stroke),
       ),
       child: Text(displayLabel, style: textStyle?.copyWith(color: fg)),
     );
   }
 
-  /// chip: fixed horizontal stadium — **not** intrinsic/flexible; matches a compact text-chip footprint.
+  /// chip: stadium pill; compact on cards, larger in pickers.
   Widget _chipPlanStyle(BuildContext context) {
     final surface = Theme.of(context).colorScheme.surface;
     final large =
         variant == CategoryChipVariant.largePicker || prominentVisuals;
-    return SizedBox(
-      width: large ? 108 : _emptyChipWidth,
-      height: large ? 40 : _emptyChipHeight,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: tagEmptyChipFill(color, surface),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected
-                ? Theme.of(context).colorScheme.primary
-                : tagEmptyChipBorderColor(color),
-          ),
+    return Container(
+      height: large ? _interactiveChipHeight : _compactChipHeight,
+      padding: EdgeInsets.symmetric(horizontal: large ? 16 : 8),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: tagEmptyChipFill(color, surface),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(
+          color: selected
+              ? Theme.of(context).colorScheme.primary
+              : tagEmptyChipBorderColor(color),
         ),
       ),
     );
@@ -477,6 +469,10 @@ class TagQuickPickStrip extends StatelessWidget {
         }
         return ListView.separated(
           scrollDirection: Axis.horizontal,
+          shrinkWrap: true,
+          physics: const ClampingScrollPhysics(),
+          padding: EdgeInsets.zero,
+          clipBehavior: Clip.hardEdge,
           itemCount: tags.length,
           separatorBuilder: (context, index) => const SizedBox(width: 8),
           itemBuilder: (ctx, i) {
@@ -522,16 +518,14 @@ class _TagSelectionRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!selected) return child;
     final ring = Theme.of(context).colorScheme.primary;
     return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: selected ? ring : Colors.transparent,
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: ring, width: 1.5),
       ),
-      child: Padding(padding: const EdgeInsets.all(3), child: child),
+      child: child,
     );
   }
 }

@@ -772,24 +772,63 @@ class _ChipsDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _LabExample(
-      title: 'Chip / Tag Picker Strip',
-      flutterMapping: 'TagQuickPickStrip(tags: ..., selected: ...)',
-      variant: 'tag picker',
-      state: 'one selected',
-      note:
-          'Shared feature component; future V7 may promote a canonical AppTagPickerStrip.',
-      fullWidth: true,
-      child: SizedBox(
-        height: 48,
-        child: TagQuickPickStrip(
-          tags: _sampleTags,
-          selected: const [
-            Tag(tagId: 1, name: 'Focus', color: '#6750A4', icon: 'work'),
-          ],
-          onToggle: (_) {},
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _LabExample(
+          title: 'Chip / Tag Pill / Compact Card',
+          flutterMapping:
+              'CategoryChip(variant: CategoryChipVariant.compactCard)',
+          variant: 'compact card',
+          state: 'letter_chip',
+          note: 'Stadium pill for task/list cards; parent owns spacing.',
+          child: CategoryChip(
+            mode: CategoryDisplayMode.letterChip,
+            label: 'Focus',
+            color: Color(0xFF6750A4),
+            icon: Icons.work_outline_rounded,
+            variant: CategoryChipVariant.compactCard,
+          ),
         ),
-      ),
+        const SizedBox(height: 12),
+        const _LabExample(
+          title: 'Chip / Tag Pill / Interactive Picker',
+          flutterMapping:
+              'CategoryChip(variant: CategoryChipVariant.largePicker)',
+          variant: 'large picker',
+          state: 'selected',
+          note: 'Larger stadium pill for edit sheets/menus; no outer margin.',
+          child: CategoryChip(
+            mode: CategoryDisplayMode.letterChip,
+            label: 'Focus',
+            color: Color(0xFF6750A4),
+            icon: Icons.work_outline_rounded,
+            selected: true,
+            variant: CategoryChipVariant.largePicker,
+            onTap: _mockAction,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _LabExample(
+          title: 'Chip / Tag Picker Strip / Horizontal scroll',
+          flutterMapping: 'TagQuickPickStrip(variant: largePicker)',
+          variant: 'tag picker',
+          state: 'one selected',
+          note: 'Horizontal scroll row for edit sheets.',
+          fullWidth: true,
+          child: SizedBox(
+            height: 48,
+            child: TagQuickPickStrip(
+              tags: _sampleTags,
+              selected: const [
+                Tag(tagId: 1, name: 'Focus', color: '#6750A4', icon: 'work'),
+              ],
+              variant: CategoryChipVariant.largePicker,
+              onToggle: (_) {},
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

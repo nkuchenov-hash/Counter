@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - P0 startup sync + tag pill regressions [shipped]
+* **`db_core.dart` / `plan_service.dart` / `record_service.dart`:** [shipped] P0 foreground/resume refresh via `refreshForegroundData()` force-fetches records + today's plans and pumps planning streams; debounced plan cache refresh now re-emits streams; duplicate primary running records reconcile to newest-only (optimistic stop + existing `stopRecordByDocId` for older rows).
+* **`chip_component.dart` / `shared_widgets.dart` / `component_lab_view.dart` / `timeline_view.dart`:** [shipped] Tag pill regression fix: stadium compact card pills vs larger interactive picker pills, horizontal scroll strip restored, removed invisible outer selection padding; timeline running UI uses canonical primary id only.
+
 ## [2026-06-12] - V7G.1 canonical state views [shipped]
 * **`lists_view.dart` / `tag_manager_page.dart` / `plan_vs_fact_tab.dart` / `planning_view.dart` / `calendar_view.dart`:** [shipped] V7G.1 safely migrated simple visual loading/empty/error surfaces to `AppLoading` / `AppEmptyState` / `AppErrorState` where applicable; auth, boot, sync, voice, sheet, profile-save, timer/timeline-adjacent, and richer CTA state views remain documented legacy.
 
