@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - V7G.1 canonical state views [shipped]
+* **`lists_view.dart` / `tag_manager_page.dart` / `plan_vs_fact_tab.dart` / `planning_view.dart` / `calendar_view.dart`:** [shipped] V7G.1 safely migrated simple visual loading/empty/error surfaces to `AppLoading` / `AppEmptyState` / `AppErrorState` where applicable; auth, boot, sync, voice, sheet, profile-save, timer/timeline-adjacent, and richer CTA state views remain documented legacy.
+
 ## [2026-06-11] - F2C default plan times selector wiring [shipped]
 * **`app_icon_button.dart` / `category_list_view.dart` / `DESIGN_SYSTEM_INVENTORY.md`:** [shipped] V7F.2 safely migrated the Categories AppBar layout-toggle and add-category icon actions to `AppIconButton`; planning, timeline, selection, voice, tree, and destructive icon controls remain documented legacy.
 * **`app_icon_button.dart` / `component_lab_view.dart` / `DESIGN_SYSTEM.md` / `DESIGN_SYSTEM_INVENTORY.md`:** [shipped] V7F Icon Button foundation added `AppIconButton` for Figma `Icon Button`, labeled Component Lab examples, and raw `IconButton` audit docs; no production icon-button migration yet.

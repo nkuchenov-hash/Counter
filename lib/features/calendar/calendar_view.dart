@@ -5,6 +5,7 @@
 
 import 'dart:async';
 
+import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -87,15 +88,7 @@ class _CalendarViewState extends State<CalendarView>
         debugPrint('CalendarView: $e\n$st');
       }
       return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              t(currentLocale.value, 'no_data_found'),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
+        body: AppErrorState(message: t(currentLocale.value, 'no_data_found')),
       );
     }
   }

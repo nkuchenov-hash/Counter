@@ -7,6 +7,7 @@ import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:counter/core/widgets/app_loading.dart';
+import 'package:counter/core/widgets/app_state_views.dart';
 
 // ---------------------------------------------------------------------------
 // PLAN VS FACT — simple scheduled plan vs tracked time per category (DNA).
@@ -123,15 +124,7 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
 
         final stats = snap.data;
         if (stats == null) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                t(loc, 'no_data_found'),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
+          return AppErrorState(message: t(loc, 'no_data_found'));
         }
 
         final plannedSecByCat =
@@ -142,22 +135,12 @@ class _PlanVsFactTabState extends State<PlanVsFactTab> {
         final allCatIds = <int>{...plannedSecByCat.keys, ...actualSecByCat.keys};
 
         if (stats.planTaskCount == 0 && allCatIds.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                t(
-                  loc,
-                  widget.isFutureDate
-                      ? 'no_planned_tasks'
-                      : 'stats_pvf_no_plans',
-                ),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
+          return AppEmptyState(
+            message: t(
+              loc,
+              widget.isFutureDate ? 'no_planned_tasks' : 'stats_pvf_no_plans',
             ),
+            icon: Icons.bar_chart_rounded,
           );
         }
 

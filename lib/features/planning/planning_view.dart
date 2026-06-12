@@ -33,6 +33,7 @@ import 'package:flutter/scheduler.dart' show Ticker;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
+import 'package:counter/core/widgets/app_state_views.dart';
 
 enum _PlanSortMode { category, time, tags, custom }
 
@@ -198,15 +199,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
         debugPrint('PlanningSwipeWrapper: $e\n$st');
       }
       return Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              t(currentLocale.value, 'no_data_found'),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
+        body: AppErrorState(message: t(currentLocale.value, 'no_data_found')),
       );
     }
   }
@@ -2597,17 +2590,8 @@ class _PlanningPageState extends State<PlanningPage>
               !snapshot.hasData) {
             body = const AppLoading();
           } else if (snapshot.hasError) {
-            body = Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  t(currentLocale.value, 'no_data_found'),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
+            body = AppErrorState(
+              message: t(currentLocale.value, 'no_data_found'),
             );
           } else {
             final server = snapshot.data ?? [];
@@ -2642,17 +2626,8 @@ class _PlanningPageState extends State<PlanningPage>
           if (kDebugMode) {
             debugPrint('PlanningPage stream builder: $e\n$st');
           }
-          body = Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                t(currentLocale.value, 'no_data_found'),
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-            ),
+          body = AppErrorState(
+            message: t(currentLocale.value, 'no_data_found'),
           );
         }
 

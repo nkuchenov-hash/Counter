@@ -175,6 +175,48 @@ Date: 2026-06-11.
 - Gesture-heavy or compact custom-hit-target controls.
 - Destructive inline actions until their confirm/recovery behavior is reviewed.
 
+## V7G.1 Canonical State Views Migration
+
+Date: 2026-06-12.
+
+### Files Migrated
+
+| File | State views migrated | Notes |
+| :--- | :--- | :--- |
+| `lib/features/lists/lists_view.dart` | `lists_no_category_chosen` and `lists_empty` local text blocks → `AppEmptyState` | Static Lists informational/empty states only; loading, filtering, refresh, and list behavior unchanged. |
+| `lib/features/profile/tag_manager_page.dart` | `tag_manager_empty` local text block → `AppEmptyState` | Static empty tag catalog state only; tag CRUD and reorder behavior unchanged. |
+| `lib/features/stats/plan_vs_fact_tab.dart` | `no_data_found` fallback → `AppErrorState`; no-plan/no-fact state → `AppEmptyState` | Non-critical stats surface only; stats load/reload behavior unchanged. |
+| `lib/features/planning/planning_view.dart` | simple `no_data_found` fallback blocks → `AppErrorState` | Fallback display only; planning stream, task rendering, quick-add, and empty planning CTA unchanged. |
+| `lib/features/calendar/calendar_view.dart` | simple `no_data_found` fallback block → `AppErrorState` | Calendar catch fallback display only; date selection behavior unchanged. |
+
+### State Views Migrated
+
+- Loading: no new production loading migrations were needed; existing safe page loaders already used `AppLoading`.
+- Empty: Lists no-category, Lists empty-list, Tag Manager empty catalog, and Plan vs Fact no-data day.
+- Error: Planning simple fallback errors, Calendar simple fallback error, and Plan vs Fact null-data fallback.
+
+### Legacy State Categories Remaining
+
+- `EmptyStatePlaceholder` remains for richer title/subtitle/action states in timeline, planning, and category management because `AppEmptyState` currently accepts one message plus optional action and would flatten existing UX copy.
+- Raw `CircularProgressIndicator` / `LinearProgressIndicator` remains in canonical component internals, app boot/auth, profile setting save affordances, voice/recording, complex sheet flows, and planning inline progress areas.
+- Timeline error text remains legacy because the timeline surface is timer-adjacent and should be reviewed with active-record controls.
+
+### Risky Areas Intentionally Skipped
+
+- App boot / auth gate loading.
+- Login/register/auth screens.
+- Profile refresh/save/admin diagnostics.
+- Timer active state and active timeline controls.
+- Voice/recording flows.
+- Date/time picker and complex modal/sheet flows.
+- Inline planning parse/save progress where loading participates in row/sheet layout.
+
+### Approximate Remaining Raw State Count
+
+- Raw `CircularProgressIndicator` / `LinearProgressIndicator` search hits after V7G.1: approximately 10 outside docs/comments, including canonical internals and skipped risky areas.
+- Remaining local simple `no_data_found` text blocks found in feature screens: 2, both in `lib/features/timeline/timeline_view.dart` and intentionally skipped.
+- Migration is not complete; remaining raw/local states are legacy allowed temporarily until scoped follow-up passes.
+
 ## Raw Widget Usage Summary
 
 Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton`, `TextButton`, `IconButton`, `Card`, `RawChip`, `Chip`, `FilterChip`, `ChoiceChip`, `TabBar`, `SegmentedButton`.

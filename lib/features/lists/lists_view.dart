@@ -20,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
+import 'package:counter/core/widgets/app_state_views.dart';
 
 /// Backlog screen: grouped headers by category path, Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
@@ -1540,22 +1541,12 @@ class _ListsPageState extends State<ListsPage>
                                             MediaQuery.sizeOf(context).height *
                                             0.25,
                                       ),
-                                      Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                          ),
-                                          child: Text(
-                                            t(loc, 'lists_no_category_chosen'),
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                                  color: theme
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
-                                                ),
-                                            textAlign: TextAlign.center,
-                                          ),
+                                      AppEmptyState(
+                                        message: t(
+                                          loc,
+                                          'lists_no_category_chosen',
                                         ),
+                                        icon: Icons.category_outlined,
                                       ),
                                     ],
                                   )
@@ -1575,25 +1566,9 @@ class _ListsPageState extends State<ListsPage>
                                                     ).height *
                                                     0.25,
                                               ),
-                                              Center(
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 24,
-                                                      ),
-                                                  child: Text(
-                                                    t(loc, 'lists_empty'),
-                                                    style: theme
-                                                        .textTheme
-                                                        .bodyLarge
-                                                        ?.copyWith(
-                                                          color: theme
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
-                                                        ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ),
+                                              AppEmptyState(
+                                                message: t(loc, 'lists_empty'),
+                                                icon: Icons.inbox_outlined,
                                               ),
                                             ],
                                           )
