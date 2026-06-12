@@ -177,13 +177,24 @@ class CategoryChip extends StatelessWidget {
         mode == CategoryDisplayMode.chip;
     final glyphSide = _glyphLayoutSide(mode);
 
-    final inner = AnimatedContainer(
-      duration: const Duration(milliseconds: 100),
-      alignment: Alignment.center,
-      width: isPillMode ? null : glyphSide,
-      height: isPillMode ? null : glyphSide,
-      child: visual,
-    );
+    final inner = isPillMode
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                alignment: Alignment.center,
+                child: visual,
+              ),
+            ],
+          )
+        : AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            alignment: Alignment.center,
+            width: glyphSide,
+            height: glyphSide,
+            child: visual,
+          );
 
     if (onTap == null) {
       // Pill chips on task cards: loose BoxConstraints() would expand to parent width
@@ -263,6 +274,7 @@ class CategoryChip extends StatelessWidget {
         ),
         child: Text(
           displayLabel,
+          textAlign: TextAlign.center,
           style: textStyle?.copyWith(color: Colors.white),
         ),
       );
@@ -280,6 +292,7 @@ class CategoryChip extends StatelessWidget {
         ),
         child: Text(
           displayLabel,
+          textAlign: TextAlign.center,
           style: textStyle?.copyWith(color: Colors.black),
         ),
       );
@@ -297,7 +310,11 @@ class CategoryChip extends StatelessWidget {
         borderRadius: stadium,
         border: Border.all(color: stroke),
       ),
-      child: Text(displayLabel, style: textStyle?.copyWith(color: fg)),
+      child: Text(
+        displayLabel,
+        textAlign: TextAlign.center,
+        style: textStyle?.copyWith(color: fg),
+      ),
     );
   }
 
@@ -482,7 +499,7 @@ class _TagQuickPickStripState extends State<TagQuickPickStrip> {
         child: chip,
       );
     }
-    return Align(alignment: Alignment.center, widthFactor: 1, child: chip);
+    return Align(alignment: Alignment.center, child: chip);
   }
 
   @override
@@ -592,12 +609,17 @@ class _TagSelectionRing extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!selected) return child;
     final ring = Theme.of(context).colorScheme.primary;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: ring, width: 2),
-      ),
-      child: Padding(padding: const EdgeInsets.all(4), child: child),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(100),
+            border: Border.all(color: ring, width: 2),
+          ),
+          child: Padding(padding: const EdgeInsets.all(4), child: child),
+        ),
+      ],
     );
   }
 }

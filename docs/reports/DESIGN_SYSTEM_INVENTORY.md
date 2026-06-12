@@ -198,6 +198,14 @@ Date: 2026-06-12.
 | `lib/features/shared/chip_component.dart` | Interactive tag alignment | Tag content stays centered; selected ring does not move inner text. |
 | `lib/features/shared/shared_widgets.dart` / `lib/features/planning/planning_view.dart` | Tag strip height | 40px row to fit 31px base pill + 39px selected total height without clipping. |
 
+## Selected Tag Ring Shrink-Wrap Hotfix
+
+Date: 2026-06-12.
+
+| File | Fix | Notes |
+| :--- | :--- | :--- |
+| `lib/features/shared/chip_component.dart` | `_TagSelectionRing` + pill `CategoryChip` | `Row(mainAxisSize: min)` prevents selected ring from expanding to full parent width in stretched lab/edit-sheet layouts. |
+
 ## P0 Startup Sync + Tag Pill Regression Fix
 
 Date: 2026-06-12.

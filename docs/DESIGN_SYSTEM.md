@@ -133,6 +133,7 @@ Each mapping must answer:
   - Pills use full stadium radius (`BorderRadius.circular(100)`).
   - Interactive selected tag pills keep the normal chip fill, normal chip text, and normal chip border; selected adds a visible 2px transparent gap plus a 2px brand border outside the normal chip.
   - Selected and unselected interactive tags must not shift inner text/content alignment; no invisible outer margin/padding outside the visible pill or selected ring.
+  - Selected ring must shrink-wrap the visible pill only; it must not expand to parent row/card width.
 
 ### Tabs / Segmented Controls
 

@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - Selected tag ring shrink-wrap [shipped]
+* **`chip_component.dart`:** [shipped] Pill-mode `CategoryChip` and `_TagSelectionRing` use `Row(mainAxisSize: min)` so selected ring shrink-wraps the visible pill instead of expanding to stretched parent width.
+
 ## [2026-06-12] - Design Lab copy + interactive tag selected state [shipped]
 * **`component_lab_view.dart`:** [shipped] Design Lab labels/spec text are selectable/copyable with lab-only `SelectableText`; chip examples now show compact, interactive unselected, interactive selected, and overflow scroll strip states.
 * **`chip_component.dart`:** [shipped] Interactive tag selected state is now normal chip border + 2px transparent gap + 2px brand border; base pill content stays centered and selected/unselected states do not shift inner text.
