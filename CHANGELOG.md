@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - Biometric app-lock + plan-link suggestions [shipped]
+* **`auth_bridge.dart` / `main.dart` / `auth_view.dart` / `profile_view.dart`:** [shipped] Removed stored-password biometric quick login; biometrics are now a real Android/iOS app-lock only, hidden on web/unavailable devices, with a 7-day local inactivity threshold.
+* **`app_shell.dart` / `planning_view.dart` / `dictionary.dart`:** [shipped] Record-to-plan suggestions are device-local, non-blocking after record creation, configurable from Planning settings, and can be turned off from the suggestion snackbar; manual edit-sheet link/unlink remains available.
+
 ## [2026-06-12] - Tag pill text vertical alignment [shipped]
 * **`chip_component.dart`:** [shipped] Letter-chip pills use fixed height + horizontal-only padding with `height: 1.0`, `StrutStyle`, and `TextHeightBehavior` so label text is optically centered; selected/unselected inner content stays identical.
 

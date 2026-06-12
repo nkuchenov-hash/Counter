@@ -29,6 +29,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 // --- Shell-local time helpers (Planetary: UTC + profile offset). ---
@@ -51,6 +52,14 @@ bool _shellIsNewPlanningDraft(PlanningTask t) {
 
 /// Hides a plan on the current day in optimistic merge until DELETE completes (see [DatabaseService.applyOptimisticPlanningTask]).
 const String _shellOptimisticPurgeDateKey = '2099-12-31';
+const String _prefsRecordLinkSuggestionsEnabled =
+    'plans_record_link_suggestions_enabled';
+const String _prefsRecordLinkSuggestionMode =
+    'plans_record_link_suggestion_mode';
+const String _prefsRecordLinkSuggestionDismissed =
+    'plans_record_link_suggestion_dismissed_record_ids';
+const String _recordLinkSuggestionModeAsk = 'ask';
+const String _recordLinkSuggestionModeAuto = 'auto';
 
 // ---------------------------------------------------------------------------
 // Global offline / sync indicator (O1).
@@ -1052,43 +1061,141 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
   }
 
-  /// Returns PB **plans** row id if the user confirms; `null` if no match or dismissed.
-  Future<String?> _promptSourcePlanLinkIfEligible({
-    required String title,
-    required String dateKey,
-  }) async {
-    final sugg = await DatabaseService.instance.suggestSourcePlanForFreeStart(
-      recordTitle: title,
-      wallDateKey: dateKey,
-    );
-    if (!mounted || sugg == null) return null;
-    final loc = currentLocale.value;
-    var body = t(loc, 'link_to_plan_message');
-    body = body.replaceFirst('%s', title);
-    body = body.replaceFirst('%s', sugg.planTitle);
-    body = body.replaceFirst('%s', '${(sugg.similarity * 100).round()}%');
-    final link = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(t(loc, 'link_to_plan_title')),
-        content: Text(body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(t(loc, 'skip_link_plan')),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t(loc, 'link_plan_confirm')),
-          ),
-        ],
-      ),
-    );
-    if (link == true) return sugg.planPocketRecordId;
-    return null;
+  Future<SharedPreferences> _recordLinkPrefs() =>
+      SharedPreferences.getInstance();
+
+  Future<bool> _recordLinkSuggestionsEnabled() async {
+    final prefs = await _recordLinkPrefs();
+    return prefs.getBool(_prefsRecordLinkSuggestionsEnabled) ?? true;
   }
 
-  /// Plan-link dialog + PATCH run **after** [writeRecord] shadow (was blocking Start on `_fetchPlanningTasksForDate`).
+  Future<String> _recordLinkSuggestionMode() async {
+    final prefs = await _recordLinkPrefs();
+    final raw = prefs.getString(_prefsRecordLinkSuggestionMode);
+    return raw == _recordLinkSuggestionModeAuto
+        ? _recordLinkSuggestionModeAuto
+        : _recordLinkSuggestionModeAsk;
+  }
+
+  Future<bool> _recordLinkSuggestionDismissed(String recordBusinessId) async {
+    final rid = recordBusinessId.trim();
+    if (rid.isEmpty) return true;
+    final prefs = await _recordLinkPrefs();
+    return (prefs.getStringList(_prefsRecordLinkSuggestionDismissed) ??
+            const [])
+        .contains(rid);
+  }
+
+  Future<void> _markRecordLinkSuggestionDismissed(
+    String recordBusinessId,
+  ) async {
+    final rid = recordBusinessId.trim();
+    if (rid.isEmpty) return;
+    final prefs = await _recordLinkPrefs();
+    final existing =
+        prefs.getStringList(_prefsRecordLinkSuggestionDismissed) ?? [];
+    if (existing.contains(rid)) return;
+    existing.add(rid);
+    if (existing.length > 300) {
+      existing.removeRange(0, existing.length - 300);
+    }
+    await prefs.setStringList(_prefsRecordLinkSuggestionDismissed, existing);
+  }
+
+  Future<void> _disableRecordLinkSuggestions() async {
+    final prefs = await _recordLinkPrefs();
+    await prefs.setBool(_prefsRecordLinkSuggestionsEnabled, false);
+  }
+
+  void _showSourcePlanSuggestionSnack({
+    required String title,
+    required String recordBusinessId,
+    required SourcePlanLinkSuggestion suggestion,
+  }) {
+    if (!mounted) return;
+    final loc = currentLocale.value;
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 12),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              t(
+                loc,
+                'record_link_suggestion_message',
+              ).replaceFirst('%s', suggestion.planTitle),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    messenger.clearSnackBars();
+                    unawaited(
+                      _markRecordLinkSuggestionDismissed(recordBusinessId),
+                    );
+                    unawaited(
+                      _patchSuggestedSourcePlanLink(
+                        recordBusinessId: recordBusinessId,
+                        planPocketRecordId: suggestion.planPocketRecordId,
+                      ),
+                    );
+                  },
+                  child: Text(t(loc, 'link_plan_confirm')),
+                ),
+                TextButton(
+                  onPressed: () {
+                    messenger.clearSnackBars();
+                    unawaited(
+                      _markRecordLinkSuggestionDismissed(recordBusinessId),
+                    );
+                  },
+                  child: Text(t(loc, 'skip_link_plan')),
+                ),
+                TextButton(
+                  onPressed: () {
+                    messenger.clearSnackBars();
+                    unawaited(
+                      _markRecordLinkSuggestionDismissed(recordBusinessId),
+                    );
+                    unawaited(_disableRecordLinkSuggestions());
+                  },
+                  child: Text(t(loc, 'record_link_suggestion_turn_off')),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _patchSuggestedSourcePlanLink({
+    required String recordBusinessId,
+    required String planPocketRecordId,
+  }) async {
+    try {
+      await DatabaseService.instance.primaryRecordWriteNetworkChain;
+    } catch (_) {}
+    if (!mounted) return;
+    try {
+      await DatabaseService.instance.patchRecordSourcePlanLink(
+        recordId: recordBusinessId,
+        sourcePlanPocketRecordId: planPocketRecordId,
+      );
+    } catch (e) {
+      debugPrint('UI ERROR: $e');
+    }
+  }
+
+  /// Plan-link suggestion + optional PATCH run **after** [writeRecord] shadow.
   Future<void> _deferSourcePlanLinkAfterFreeStart({
     required String title,
     required String dateKey,
@@ -1097,23 +1204,30 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     final rid = recordBusinessId.trim();
     if (rid.isEmpty) return;
     if (!mounted) return;
-    final chosen = await _promptSourcePlanLinkIfEligible(
-      title: title,
-      dateKey: dateKey,
-    );
-    if (chosen == null || !mounted) return;
-    try {
-      await DatabaseService.instance.primaryRecordWriteNetworkChain;
-    } catch (_) {}
-    if (!mounted) return;
-    try {
-      await DatabaseService.instance.patchRecordSourcePlanLink(
-        recordId: rid,
-        sourcePlanPocketRecordId: chosen,
+    if (!await _recordLinkSuggestionsEnabled()) return;
+    if (await _recordLinkSuggestionDismissed(rid)) return;
+    final mode = await _recordLinkSuggestionMode();
+    final minSimilarity = mode == _recordLinkSuggestionModeAuto ? 0.92 : 0.72;
+    final suggestion = await DatabaseService.instance
+        .suggestSourcePlanForFreeStart(
+          recordTitle: title,
+          wallDateKey: dateKey,
+          minSimilarity: minSimilarity,
+        );
+    if (!mounted || suggestion == null) return;
+    if (mode == _recordLinkSuggestionModeAuto) {
+      await _markRecordLinkSuggestionDismissed(rid);
+      await _patchSuggestedSourcePlanLink(
+        recordBusinessId: rid,
+        planPocketRecordId: suggestion.planPocketRecordId,
       );
-    } catch (e) {
-      debugPrint('UI ERROR: $e');
+      return;
     }
+    _showSourcePlanSuggestionSnack(
+      title: title,
+      recordBusinessId: rid,
+      suggestion: suggestion,
+    );
   }
 
   Future<void> _startRecordFromPlanning(

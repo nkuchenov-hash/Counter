@@ -26,30 +26,10 @@ class _AuthViewState extends State<AuthView> {
   bool _loginMode = true;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  bool _rememberBiometric = false;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
-
-  bool _quickLoginStored = false;
-  bool _biometricCapable = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _reloadBiometricState();
-  }
-
-  Future<void> _reloadBiometricState() async {
-    final quick = await AuthBridge.hasQuickLoginCredentials();
-    final bio = await AuthBridge.canUseBiometricAuth();
-    if (!mounted) return;
-    setState(() {
-      _quickLoginStored = quick;
-      _biometricCapable = bio;
-    });
-  }
 
   @override
   void dispose() {
@@ -64,7 +44,9 @@ class _AuthViewState extends State<AuthView> {
   void _showMessage(String message) {
     if (!mounted || message.isEmpty) return;
     ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _mapAuthError(Object e) {
@@ -119,10 +101,6 @@ class _AuthViewState extends State<AuthView> {
       await AuthBridge.loginWithPassword(email, password);
       if (!mounted) return;
       setState(() => _loading = false);
-      if (!kIsWeb && _rememberBiometric && _biometricCapable) {
-        await AuthBridge.saveQuickLoginCredentials(email, password);
-      }
-      await _reloadBiometricState();
       await _onSignedInSuccess();
     } on AuthBridgeException catch (e) {
       if (mounted) {
@@ -167,10 +145,6 @@ class _AuthViewState extends State<AuthView> {
       await AuthBridge.register(email, password, confirm);
       if (!mounted) return;
       setState(() => _loading = false);
-      if (!kIsWeb && _rememberBiometric && _biometricCapable) {
-        await AuthBridge.saveQuickLoginCredentials(email, password);
-      }
-      await _reloadBiometricState();
       await _onSignedInSuccess();
     } on AuthBridgeException catch (e) {
       if (mounted) {
@@ -222,7 +196,6 @@ class _AuthViewState extends State<AuthView> {
       await AuthBridge.loginWithOAuth2(providerName);
       if (!mounted) return;
       setState(() => _loading = false);
-      await _reloadBiometricState();
       await _onSignedInSuccess();
     } on AuthBridgeCancelled {
       if (mounted) setState(() => _loading = false);
@@ -238,41 +211,6 @@ class _AuthViewState extends State<AuthView> {
       }
       if (kDebugMode) {
         debugPrint('OAUTH_UI: $e');
-        debugPrint('$stack');
-      }
-    }
-  }
-
-  Future<void> _biometricSignIn() async {
-    if (_loading) return;
-    setState(() => _loading = true);
-    try {
-      final result = await AuthBridge.signInWithBiometric(
-        localizedReason: _t('auth_biometric_reason'),
-      );
-      if (!mounted) return;
-      setState(() => _loading = false);
-      switch (result) {
-        case BiometricLoginResult.success:
-          await _onSignedInSuccess();
-        case BiometricLoginResult.cancelled:
-          break;
-        case BiometricLoginResult.noCredentials:
-          _showMessage(_t('auth_biometric_no_credentials'));
-        case BiometricLoginResult.notAvailable:
-          _showMessage(_t('biometric_not_available'));
-        case BiometricLoginResult.badCredentials:
-          _showMessage(_t('auth_invalid_credentials'));
-        case BiometricLoginResult.unknown:
-          _showMessage(_t('auth_biometric_failed'));
-      }
-    } catch (e, stack) {
-      if (mounted) {
-        setState(() => _loading = false);
-        _showMessage(_t('auth_biometric_failed'));
-      }
-      if (kDebugMode) {
-        debugPrint('BIOMETRIC_UI: $e');
         debugPrint('$stack');
       }
     }
@@ -299,9 +237,6 @@ class _AuthViewState extends State<AuthView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showBioButton =
-        !kIsWeb && _loginMode && _quickLoginStored && _biometricCapable;
-
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -350,14 +285,6 @@ class _AuthViewState extends State<AuthView> {
                     },
                   ),
                   const SizedBox(height: 20),
-                  if (showBioButton) ...[
-                    OutlinedButton.icon(
-                      onPressed: _loading ? null : _biometricSignIn,
-                      icon: const Icon(Icons.fingerprint),
-                      label: Text(_t('auth_biometric_button')),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -424,23 +351,6 @@ class _AuthViewState extends State<AuthView> {
                               ),
                             ),
                           ],
-                          if (!kIsWeb && _biometricCapable) ...[
-                            const SizedBox(height: 12),
-                            CheckboxListTile(
-                              value: _rememberBiometric,
-                              onChanged: _loading
-                                  ? null
-                                  : (v) => setState(
-                                        () => _rememberBiometric = v ?? false,
-                                      ),
-                              title: Text(
-                                _t('auth_biometric_remember'),
-                                style: theme.textTheme.bodySmall,
-                              ),
-                              controlAffinity: ListTileControlAffinity.leading,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                          ],
                           const SizedBox(height: 24),
                           FilledButton(
                             onPressed: _loading
@@ -468,9 +378,7 @@ class _AuthViewState extends State<AuthView> {
                   Row(
                     children: [
                       Expanded(
-                        child: Divider(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
+                        child: Divider(color: theme.colorScheme.outlineVariant),
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -482,9 +390,7 @@ class _AuthViewState extends State<AuthView> {
                         ),
                       ),
                       Expanded(
-                        child: Divider(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
+                        child: Divider(color: theme.colorScheme.outlineVariant),
                       ),
                     ],
                   ),

@@ -293,12 +293,20 @@ class _PlanningPageState extends State<PlanningPage>
   static const String _prefsKeyNoTagsVisible = 'no_tags_visible';
   static const String _prefsKeyNoTagsColor = 'no_tags_color';
   static const String _defaultNoTagsColorHex = '#9E9E9E';
+  static const String _prefsRecordLinkSuggestionsEnabled =
+      'plans_record_link_suggestions_enabled';
+  static const String _prefsRecordLinkSuggestionMode =
+      'plans_record_link_suggestion_mode';
+  static const String _recordLinkSuggestionModeAsk = 'ask';
+  static const String _recordLinkSuggestionModeAuto = 'auto';
 
   /// Tags for quick-add row; reloaded after returning from [TagSettingsHub].
   List<Tag> _quickAddAvailableTags = [];
   bool _quickAddTagsLoading = true;
   bool _noTagsChipVisible = true;
   String _noTagsColorHex = _defaultNoTagsColorHex;
+  bool _recordLinkSuggestionsEnabled = true;
+  String _recordLinkSuggestionMode = _recordLinkSuggestionModeAsk;
 
   /// M2M tags selected before submitting the inline task.
   List<Tag> _creationSelectedTags = [];
@@ -454,8 +462,44 @@ class _PlanningPageState extends State<PlanningPage>
       setState(() {});
     });
     unawaited(_loadPlanningTimelineBounds());
+    unawaited(_loadRecordLinkSuggestionPrefs());
     unawaited(_reloadQuickAddTags());
     _hourGridEdgeScrollTicker = createTicker(_onHourGridEdgeScrollTick);
+  }
+
+  Future<void> _loadRecordLinkSuggestionPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool(_prefsRecordLinkSuggestionsEnabled) ?? true;
+      final raw = prefs.getString(_prefsRecordLinkSuggestionMode);
+      final mode = raw == _recordLinkSuggestionModeAuto
+          ? _recordLinkSuggestionModeAuto
+          : _recordLinkSuggestionModeAsk;
+      if (!mounted) return;
+      setState(() {
+        _recordLinkSuggestionsEnabled = enabled;
+        _recordLinkSuggestionMode = mode;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveRecordLinkSuggestionPrefs({
+    bool? enabled,
+    String? mode,
+  }) async {
+    final nextEnabled = enabled ?? _recordLinkSuggestionsEnabled;
+    final nextMode = mode == _recordLinkSuggestionModeAuto
+        ? _recordLinkSuggestionModeAuto
+        : _recordLinkSuggestionModeAsk;
+    setState(() {
+      _recordLinkSuggestionsEnabled = nextEnabled;
+      _recordLinkSuggestionMode = nextMode;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_prefsRecordLinkSuggestionsEnabled, nextEnabled);
+      await prefs.setString(_prefsRecordLinkSuggestionMode, nextMode);
+    } catch (_) {}
   }
 
   Tag _syntheticNoTagsTag() {
@@ -1031,6 +1075,45 @@ class _PlanningPageState extends State<PlanningPage>
                     },
                   ),
                   const Divider(height: 1),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _recordLinkSuggestionsEnabled,
+                    title: Text(t(loc, 'record_link_suggestions_title')),
+                    subtitle: Text(
+                      t(loc, 'record_link_suggestions_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    onChanged: (value) => unawaited(
+                      _saveRecordLinkSuggestionPrefs(enabled: value),
+                    ),
+                  ),
+                  if (_recordLinkSuggestionsEnabled) ...[
+                    const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: [
+                        ButtonSegment<String>(
+                          value: _recordLinkSuggestionModeAsk,
+                          label: Text(
+                            t(loc, 'record_link_suggestion_mode_ask'),
+                          ),
+                        ),
+                        ButtonSegment<String>(
+                          value: _recordLinkSuggestionModeAuto,
+                          label: Text(
+                            t(loc, 'record_link_suggestion_mode_auto'),
+                          ),
+                        ),
+                      ],
+                      selected: {_recordLinkSuggestionMode},
+                      onSelectionChanged: (next) {
+                        if (next.isEmpty) return;
+                        unawaited(
+                          _saveRecordLinkSuggestionPrefs(mode: next.first),
+                        );
+                      },
+                    ),
+                  ],
+                  const Divider(height: 24),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.schedule_rounded),

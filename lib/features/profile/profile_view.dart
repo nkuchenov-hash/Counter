@@ -41,8 +41,10 @@ class _ProfileNotificationsSectionState
     if (kIsWeb) return null;
     try {
       final plugin = FlutterLocalNotificationsPlugin();
-      final android = plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
+      final android = plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
       return android?.areNotificationsEnabled();
     } catch (_) {
       return null;
@@ -97,15 +99,17 @@ class _ProfileNotificationsSectionState
             final line = v == null
                 ? t(loc, 'notif_status_unknown')
                 : (v
-                    ? t(loc, 'notif_status_allowed')
-                    : t(loc, 'notif_status_denied'));
+                      ? t(loc, 'notif_status_allowed')
+                      : t(loc, 'notif_status_denied'));
             return Text(line, style: theme.textTheme.bodyMedium);
           },
         ),
         const SizedBox(height: 12),
         FilledButton.tonalIcon(
           onPressed: () {
-            unawaited(NotificationService.instance.requestPermissionsIfNeeded());
+            unawaited(
+              NotificationService.instance.requestPermissionsIfNeeded(),
+            );
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _refreshStatus();
             });
@@ -118,35 +122,60 @@ class _ProfileNotificationsSectionState
   }
 }
 
-/// Security (Profile): Biometric lock toggle. Persists to profiles.biometric_enabled.
-class _SecuritySection extends StatelessWidget {
+/// Security (Profile): biometric app-lock toggle. Hidden unless this device can really authenticate.
+class _SecuritySection extends StatefulWidget {
   const _SecuritySection({this.onSaved});
 
   final VoidCallback? onSaved;
 
   @override
+  State<_SecuritySection> createState() => _SecuritySectionState();
+}
+
+class _SecuritySectionState extends State<_SecuritySection> {
+  late final Future<bool> _capabilityFuture = AuthBridge.canUseBiometricAuth();
+
+  @override
   Widget build(BuildContext context) {
-    final s = DatabaseService.instance.settings;
-    return SwitchListTile(
-      value: s.biometricEnabled,
-      onChanged: (bool value) async {
-        try {
-          final ok = await DatabaseService.instance
-              .saveSettings(s.copyWith(biometricEnabled: value));
-          if (ok) {
-            onSaved?.call();
-            AppSnack.saved();
-          } else {
-            AppSnack.failed();
-          }
-        } catch (_) {
-          AppSnack.failed();
-        }
+    if (kIsWeb) return const SizedBox.shrink();
+    return FutureBuilder<bool>(
+      future: _capabilityFuture,
+      builder: (context, snap) {
+        if (snap.data != true) return const SizedBox.shrink();
+        final s = DatabaseService.instance.settings;
+        return SwitchListTile(
+          value: s.biometricEnabled,
+          onChanged: (bool value) async {
+            try {
+              if (value) {
+                final unlocked = await AuthBridge.authenticateAppLock(
+                  localizedReason: t(
+                    currentLocale.value,
+                    'vault_locked_subtitle',
+                  ),
+                );
+                if (!unlocked) return;
+              }
+              final ok = await DatabaseService.instance.saveSettings(
+                s.copyWith(biometricEnabled: value),
+              );
+              if (ok) {
+                if (value) await AuthBridge.markAppUnlockSuccessful();
+                widget.onSaved?.call();
+                AppSnack.saved();
+              } else {
+                AppSnack.failed();
+              }
+            } catch (_) {
+              AppSnack.failed();
+            }
+          },
+          title: Text(t(currentLocale.value, 'biometric_lock')),
+          subtitle: Text(t(currentLocale.value, 'biometric_lock_subtitle')),
+          secondary: const Icon(Icons.fingerprint_rounded),
+          contentPadding: EdgeInsets.zero,
+        );
       },
-      title: Text(t(currentLocale.value, 'biometric_lock')),
-      subtitle: Text(t(currentLocale.value, 'biometric_lock_subtitle')),
-      secondary: const Icon(Icons.fingerprint_rounded),
-      contentPadding: EdgeInsets.zero,
     );
   }
 }
@@ -169,8 +198,8 @@ class _AccountSecuritySection extends StatelessWidget {
         final subtitle = (profileName != null && profileName.trim().isNotEmpty)
             ? profileName.trim()
             : (authDisplayName != null && authDisplayName.isNotEmpty
-                ? authDisplayName
-                : (email ?? user?.uid ?? '—'));
+                  ? authDisplayName
+                  : (email ?? user?.uid ?? '—'));
         final loc = currentLocale.value;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -220,7 +249,8 @@ class _AccountSecuritySection extends StatelessWidget {
     Future.delayed(const Duration(seconds: 1), () {
       if (showSlowSnackBar) {
         messenger.showSnackBar(
-            SnackBar(content: Text(t(currentLocale.value, 'logging_out'))));
+          SnackBar(content: Text(t(currentLocale.value, 'logging_out'))),
+        );
       }
     });
     try {
@@ -230,8 +260,7 @@ class _AccountSecuritySection extends StatelessWidget {
       showSlowSnackBar = false;
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(t(currentLocale.value, 'sign_out_failed'))),
+          SnackBar(content: Text(t(currentLocale.value, 'sign_out_failed'))),
         );
       }
     } finally {
@@ -279,8 +308,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _timeZone = s.preferredTimeZone;
     _themeMode = s.themeMode;
     _lastSavedDisplayName = s.displayName?.trim() ?? '';
-    _displayNameController =
-        TextEditingController(text: s.displayName ?? '');
+    _displayNameController = TextEditingController(text: s.displayName ?? '');
     _displayNameFocus = FocusNode();
     _displayNameFocus.addListener(_onDisplayNameFocusChange);
   }
@@ -365,12 +393,16 @@ class _ProfilePageState extends State<ProfilePage> {
         widget.onSaved?.call();
         AppSnack.saved();
       } else {
-        setState(() => _themeMode = DatabaseService.instance.settings.themeMode);
+        setState(
+          () => _themeMode = DatabaseService.instance.settings.themeMode,
+        );
         AppSnack.failed();
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _themeMode = DatabaseService.instance.settings.themeMode);
+        setState(
+          () => _themeMode = DatabaseService.instance.settings.themeMode,
+        );
         AppSnack.failed();
       }
     } finally {
@@ -429,13 +461,15 @@ class _ProfilePageState extends State<ProfilePage> {
         AppSnack.saved();
       } else {
         setState(
-            () => _timeZone = DatabaseService.instance.settings.preferredTimeZone);
+          () => _timeZone = DatabaseService.instance.settings.preferredTimeZone,
+        );
         AppSnack.failed();
       }
     } catch (_) {
       if (!mounted) return;
       setState(
-          () => _timeZone = DatabaseService.instance.settings.preferredTimeZone);
+        () => _timeZone = DatabaseService.instance.settings.preferredTimeZone,
+      );
       AppSnack.failed();
     } finally {
       if (mounted) setState(() => _savingTimeZone = false);
@@ -444,15 +478,15 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final validTimezones = tz_settings.kTimezoneOptions.map((e) => e.label).toList();
+    final validTimezones = tz_settings.kTimezoneOptions
+        .map((e) => e.label)
+        .toList();
     final safeTimeZone = validTimezones.contains(_timeZone) ? _timeZone : 'UTC';
     final locale = currentLocale.value;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      appBar: AppBar(
-        title: Text(t(locale, 'profile')),
-      ),
+      appBar: AppBar(title: Text(t(locale, 'profile'))),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           16,
@@ -467,8 +501,10 @@ class _ProfilePageState extends State<ProfilePage> {
           const Divider(),
           _ProfileNotificationsSection(),
           const Divider(),
-          Text(t(locale, 'appearance'),
-              style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            t(locale, 'appearance'),
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           const SizedBox(height: 8),
           Stack(
             alignment: Alignment.center,
@@ -599,8 +635,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       enableSearch: true,
                       label: Text(t(locale, 'search_timezones')),
                       dropdownMenuEntries: validTimezones
-                          .map((z) =>
-                              DropdownMenuEntry<String>(value: z, label: z))
+                          .map(
+                            (z) =>
+                                DropdownMenuEntry<String>(value: z, label: z),
+                          )
                           .toList(),
                       onSelected: (v) {
                         if (v == null) return;

@@ -25,7 +25,6 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:counter/core/widgets/app_loading.dart';
 
@@ -132,7 +131,9 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
                 return supported.first;
               },
               builder: (context, child) {
-                Intl.defaultLocale = materialLocaleForUiLanguage(locale).toString();
+                Intl.defaultLocale = materialLocaleForUiLanguage(
+                  locale,
+                ).toString();
                 if (!_startupNetworkErrorShown &&
                     _startupNetworkErrorMessage != null) {
                   _startupNetworkErrorShown = true;
@@ -144,9 +145,9 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
                         content: Text(msg),
                         actions: [
                           TextButton(
-                            onPressed: () =>
-                                ScaffoldMessenger.of(context)
-                                    .hideCurrentMaterialBanner(),
+                            onPressed: () => ScaffoldMessenger.of(
+                              context,
+                            ).hideCurrentMaterialBanner(),
                             child: const Text('OK'),
                           ),
                         ],
@@ -166,11 +167,14 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
                     name == '/Counter' ||
                     name.startsWith('/Counter/')) {
                   return MaterialPageRoute(
-                      builder: (_) => const RootAuthWrapper(),
-                      settings: settings);
+                    builder: (_) => const RootAuthWrapper(),
+                    settings: settings,
+                  );
                 }
                 return MaterialPageRoute(
-                    builder: (_) => const RootAuthWrapper(), settings: settings);
+                  builder: (_) => const RootAuthWrapper(),
+                  settings: settings,
+                );
               },
               home: const RootAuthWrapper(),
             );
@@ -221,10 +225,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
     if (!_checked) return const _LoadingScreen();
     if (_profileId != null && _profileId!.isNotEmpty) {
       DatabaseService.instance.currentProfileId = _profileId;
-      return _InitGuard(
-        uid: _profileId!,
-        onLoadFailed: clearSession,
-      );
+      return _InitGuard(uid: _profileId!, onLoadFailed: clearSession);
     }
     return AuthScreen(
       onSignedIn: () async {
@@ -243,9 +244,7 @@ class _LoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: AppLoading(),
-    );
+    return const Scaffold(body: AppLoading());
   }
 }
 
@@ -272,8 +271,9 @@ class _InitGuardState extends State<_InitGuard> {
   Future<void> _initialize() async {
     try {
       final ok = appWearHost
-          ? await DatabaseService.instance
-              .loadInitialDataWearLite(widget.uid.trim())
+          ? await DatabaseService.instance.loadInitialDataWearLite(
+              widget.uid.trim(),
+            )
           : await DatabaseService.instance.loadInitialData(widget.uid.trim());
       if (ok) {
         final lang = DatabaseService.instance.settings.primaryLanguage;
@@ -314,7 +314,8 @@ class _InitGuardState extends State<_InitGuard> {
       return const _LoadingScreen();
     }
     if (_loadFailed) {
-      final fullError = DatabaseService.instance.loadErrorMessage ??
+      final fullError =
+          DatabaseService.instance.loadErrorMessage ??
           t(currentLocale.value, 'please_sign_in_again');
       return Scaffold(
         body: SafeArea(
@@ -337,8 +338,8 @@ class _InitGuardState extends State<_InitGuard> {
                         DatabaseService.instance.clearLocalStateOnSignOut();
                       } catch (_) {}
                       await AuthService.instance.signOut();
-                      final root =
-                          context.findAncestorStateOfType<_RootAuthWrapperState>();
+                      final root = context
+                          .findAncestorStateOfType<_RootAuthWrapperState>();
                       if (root != null && root.mounted) {
                         root.clearSession();
                       }
@@ -358,8 +359,7 @@ class _InitGuardState extends State<_InitGuard> {
     if (appWearHost) {
       return const WearTimerScreen();
     }
-    final biometricEnabled =
-        DatabaseService.instance.settings.biometricEnabled;
+    final biometricEnabled = DatabaseService.instance.settings.biometricEnabled;
     if (biometricEnabled) {
       return const _BiometricGate(child: LifeOSDashboard());
     }
@@ -376,7 +376,8 @@ class _BiometricGate extends StatefulWidget {
   State<_BiometricGate> createState() => _BiometricGateState();
 }
 
-class _BiometricGateState extends State<_BiometricGate> {
+class _BiometricGateState extends State<_BiometricGate>
+    with WidgetsBindingObserver {
   bool _unlocked = false;
   bool _checking = true;
   bool _biometricAvailable = false;
@@ -385,152 +386,170 @@ class _BiometricGateState extends State<_BiometricGate> {
   @override
   void initState() {
     super.initState();
-    _checkAndAuthenticate();
+    WidgetsBinding.instance.addObserver(this);
+    _evaluateLockRequirement();
   }
 
-  Future<void> _checkAndAuthenticate() async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      unawaited(AuthBridge.markAppBackgrounded());
+      return;
+    }
+    if (state == AppLifecycleState.resumed && _unlocked) {
+      unawaited(_evaluateLockRequirement());
+    }
+  }
+
+  Future<void> _evaluateLockRequirement() async {
     if (kIsWeb) {
-      if (mounted) {
-        setState(() {
-        _checking = false;
-        _biometricAvailable = false;
-      });
-      }
+      if (mounted) setState(() => _unlocked = true);
       return;
     }
     try {
-      final auth = LocalAuthentication();
-      final canCheck = await auth.canCheckBiometrics;
-      final isDeviceSupported = await auth.isDeviceSupported();
+      final available = await AuthBridge.canUseBiometricAuth();
       if (!mounted) return;
-      if (!canCheck || !isDeviceSupported) {
+      if (!available) {
         setState(() {
+          _unlocked = true;
           _checking = false;
           _biometricAvailable = false;
         });
         return;
       }
+      final shouldLock = await AuthBridge.shouldRequireBiometricAppLock();
+      if (!mounted) return;
+      if (!shouldLock) {
+        await AuthBridge.markAppUnlockSuccessful();
+        if (!mounted) return;
+        setState(() {
+          _unlocked = true;
+          _checking = false;
+          _biometricAvailable = true;
+          _error = null;
+        });
+        return;
+      }
       setState(() {
+        _unlocked = false;
+        _checking = false;
         _biometricAvailable = true;
         _error = null;
       });
-      final authenticated = await auth.authenticate(
-        localizedReason: t(currentLocale.value, 'vault_locked_subtitle'),
-        options: const AuthenticationOptions(
-            biometricOnly: true, stickyAuth: true),
-      );
-      if (!mounted) return;
-      if (authenticated) {
-        setState(() => _unlocked = true);
-      } else {
-        setState(() => _error = t(currentLocale.value, 'invalid_code'));
-      }
+      unawaited(_authenticateAppLock());
     } catch (e) {
       if (mounted) {
         setState(() {
+          _unlocked = true;
           _checking = false;
           _biometricAvailable = false;
-          _error = e.toString();
         });
       }
+    }
+  }
+
+  Future<void> _authenticateAppLock() async {
+    if (!_biometricAvailable || _checking) return;
+    setState(() {
+      _checking = true;
+      _error = null;
+    });
+    final ok = await AuthBridge.authenticateAppLock(
+      localizedReason: t(currentLocale.value, 'vault_locked_subtitle'),
+    );
+    if (!mounted) return;
+    setState(() {
+      _checking = false;
+      _unlocked = ok;
+      _error = ok ? null : t(currentLocale.value, 'auth_biometric_failed');
+    });
+  }
+
+  Future<void> _signInAgain() async {
+    try {
+      await AuthBridge.signOut();
+      DatabaseService.instance.clearLocalStateOnSignOut();
+    } catch (_) {}
+    try {
+      await AuthService.instance.signOut();
+    } catch (_) {}
+    if (!mounted) return;
+    final root = context.findAncestorStateOfType<_RootAuthWrapperState>();
+    if (root != null && root.mounted) {
+      root.clearSession();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_unlocked) return widget.child;
-    if (!_biometricAvailable && !_checking) {
-      return Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.fingerprint_rounded,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.outline),
-                  const SizedBox(height: 16),
-                  Text(
-                    t(currentLocale.value, 'biometric_not_available'),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge,
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.lock_rounded,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  t(currentLocale.value, 'vault_locked'),
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  t(currentLocale.value, 'vault_locked_subtitle'),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: () {
-                      setState(() => _unlocked = true);
-                    },
-                    child: Text(t(currentLocale.value, 'unlock_with_biometric')),
+                  textAlign: TextAlign.center,
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
-              ),
+                const SizedBox(height: 24),
+                if (_checking)
+                  const AppLoading()
+                else ...[
+                  FilledButton.icon(
+                    onPressed: _authenticateAppLock,
+                    icon: const Icon(Icons.fingerprint_rounded),
+                    label: Text(
+                      t(currentLocale.value, 'unlock_with_biometric'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _signInAgain,
+                    child: Text(t(currentLocale.value, 'sign_in_again')),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
-      );
-    }
-    return Stack(
-      children: [
-        widget.child,
-        Material(
-          color: Theme.of(context)
-              .colorScheme
-              .surface
-              .withValues(alpha: 0.95),
-          child: SafeArea(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.lock_rounded,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 16),
-                    Text(
-                      t(currentLocale.value, 'vault_locked'),
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      t(currentLocale.value, 'vault_locked_subtitle'),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant),
-                      textAlign: TextAlign.center,
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 12),
-                      Text(_error!,
-                          style: TextStyle(
-                              color: Theme.of(context).colorScheme.error),
-                          textAlign: TextAlign.center),
-                    ],
-                    const SizedBox(height: 24),
-                    if (_checking)
-                      const AppLoading()
-                    else
-                      FilledButton.icon(
-                        onPressed: _checkAndAuthenticate,
-                        icon: const Icon(Icons.fingerprint_rounded),
-                        label: Text(
-                            t(currentLocale.value, 'unlock_with_biometric')),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

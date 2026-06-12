@@ -9,6 +9,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:pocketbase/pocketbase.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Result of a PocketBase OAuth2 sign-in attempt (UI maps to snackbars).
@@ -17,16 +18,6 @@ enum OAuthSignInResult {
   cancelled,
   providerMissing,
   networkError,
-  unknown,
-}
-
-/// Result of biometric-gated quick login using stored email/password.
-enum BiometricLoginResult {
-  success,
-  cancelled,
-  noCredentials,
-  notAvailable,
-  badCredentials,
   unknown,
 }
 
@@ -65,8 +56,11 @@ class AuthBridge {
   AuthBridge._();
 
   static const String _profileIdKey = 'profile_id';
-  static const String _quickAuthEmail = 'quick_auth_email';
-  static const String _quickAuthPassword = 'quick_auth_password';
+  static const String _appLockLastSuccessKey =
+      'biometric_app_lock_last_success_ms';
+  static const String _appLockLastBackgroundKey =
+      'biometric_app_lock_last_background_ms';
+  static const Duration appLockInactivityThreshold = Duration(days: 7);
 
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
@@ -128,6 +122,7 @@ class AuthBridge {
     final uid = (rec.data['user_id'] ?? '').toString().trim();
     final sessionId = uid.isNotEmpty ? uid : rec.id;
     await _storage.write(key: _profileIdKey, value: sessionId);
+    await markAppUnlockSuccessful();
     if (kDebugMode) {
       debugPrint(
         '[PB] auth OK — record id ${rec.id}, business user_id $sessionId @ $kPocketBaseUrl',
@@ -153,13 +148,11 @@ class AuthBridge {
     try {
       await DatabaseService.instance.ensurePocketBaseReady();
       final pb = DatabaseService.instance.pocketBase;
-      await pb.collection(PbCollections.profiles).authWithOAuth2(
-            providerName,
-            (Uri url) {
-              unawaited(_launchOAuthUrl(url));
-            },
-            createData: _oauthProfileCreateData(),
-          );
+      await pb.collection(PbCollections.profiles).authWithOAuth2(providerName, (
+        Uri url,
+      ) {
+        unawaited(_launchOAuthUrl(url));
+      }, createData: _oauthProfileCreateData());
       await _persistProfileIdAfterAuth();
       unawaited(DatabaseService.instance.ensureRecordsRealtimeBridge());
       return OAuthSignInResult.success;
@@ -203,10 +196,9 @@ class AuthBridge {
     try {
       await DatabaseService.instance.ensurePocketBaseReady();
       final pb = DatabaseService.instance.pocketBase;
-      await pb.collection(PbCollections.profiles).authWithPassword(
-            cleanEmail,
-            password,
-          );
+      await pb
+          .collection(PbCollections.profiles)
+          .authWithPassword(cleanEmail, password);
     } on ClientException catch (e) {
       if (kDebugMode) debugPrint('[AUTH_PB] ${e.statusCode} $e');
       throw AuthBridgeException(_pbErrorMessage(e), statusCode: e.statusCode);
@@ -242,11 +234,14 @@ class AuthBridge {
     try {
       await DatabaseService.instance.ensurePocketBaseReady();
       final pb = DatabaseService.instance.pocketBase;
-      final localPart =
-          trimmedEmail.contains('@') ? trimmedEmail.split('@').first : trimmedEmail;
+      final localPart = trimmedEmail.contains('@')
+          ? trimmedEmail.split('@').first
+          : trimmedEmail;
       final displayName = localPart.isNotEmpty ? localPart : 'User';
       final newUserId = DatabaseService.newClientUuid();
-      await pb.collection(PbCollections.profiles).create(
+      await pb
+          .collection(PbCollections.profiles)
+          .create(
             body: <String, dynamic>{
               'email': trimmedEmail,
               'password': password,
@@ -333,65 +328,72 @@ class AuthBridge {
     }
   }
 
-  /// Saves email/password for optional biometric quick login (secure storage).
-  static Future<void> saveQuickLoginCredentials(
-    String email,
-    String password,
-  ) async {
-    final e = email.trim();
-    if (e.isEmpty || password.isEmpty) return;
-    await _storage.write(key: _quickAuthEmail, value: e);
-    await _storage.write(key: _quickAuthPassword, value: password);
-  }
-
-  static Future<void> clearQuickLoginCredentials() async {
-    try {
-      await _storage.delete(key: _quickAuthEmail);
-      await _storage.delete(key: _quickAuthPassword);
-    } catch (_) {}
-  }
-
-  static Future<bool> hasQuickLoginCredentials() async {
-    try {
-      final e = await _storage.read(key: _quickAuthEmail);
-      final p = await _storage.read(key: _quickAuthPassword);
-      return e != null &&
-          e.isNotEmpty &&
-          p != null &&
-          p.isNotEmpty;
-    } catch (_) {
-      return false;
-    }
+  static bool get _isMobileBiometricPlatform {
+    if (kIsWeb) return false;
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android || TargetPlatform.iOS => true,
+      _ => false,
+    };
   }
 
   /// Device can use biometrics (hardware + enrolled), excluding web.
   static Future<bool> canUseBiometricAuth() async {
-    if (kIsWeb) return false;
+    if (!_isMobileBiometricPlatform) return false;
     try {
       final auth = LocalAuthentication();
       final supported = await auth.isDeviceSupported();
       final canCheck = await auth.canCheckBiometrics;
-      return supported && canCheck;
+      if (!supported || !canCheck) return false;
+      final enrolled = await auth.getAvailableBiometrics();
+      return enrolled.isNotEmpty;
     } catch (_) {
       return false;
     }
   }
 
-  /// After local biometric success, signs in with stored credentials.
-  static Future<BiometricLoginResult> signInWithBiometric({
+  static Future<void> markAppUnlockSuccessful() async {
+    if (kIsWeb) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(
+        _appLockLastSuccessKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
+    } catch (_) {}
+  }
+
+  static Future<void> markAppBackgrounded() async {
+    if (kIsWeb) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(
+        _appLockLastBackgroundKey,
+        DateTime.now().millisecondsSinceEpoch,
+      );
+    } catch (_) {}
+  }
+
+  static Future<bool> shouldRequireBiometricAppLock() async {
+    if (!await canUseBiometricAuth()) return false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final last = prefs.getInt(_appLockLastSuccessKey);
+      if (last == null || last <= 0) return true;
+      final elapsed = DateTime.now().difference(
+        DateTime.fromMillisecondsSinceEpoch(last),
+      );
+      return elapsed >= appLockInactivityThreshold;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// Local app-lock only. This never signs into PocketBase and never replaces server auth.
+  static Future<bool> authenticateAppLock({
     required String localizedReason,
   }) async {
-    if (kIsWeb) return BiometricLoginResult.notAvailable;
-    final email = await _storage.read(key: _quickAuthEmail);
-    final password = await _storage.read(key: _quickAuthPassword);
-    if (email == null ||
-        email.isEmpty ||
-        password == null ||
-        password.isEmpty) {
-      return BiometricLoginResult.noCredentials;
-    }
     final allowed = await canUseBiometricAuth();
-    if (!allowed) return BiometricLoginResult.notAvailable;
+    if (!allowed) return false;
     try {
       final auth = LocalAuthentication();
       final ok = await auth.authenticate(
@@ -401,14 +403,11 @@ class AuthBridge {
           stickyAuth: true,
         ),
       );
-      if (!ok) return BiometricLoginResult.cancelled;
-      final signedIn = await signIn(email, password);
-      return signedIn
-          ? BiometricLoginResult.success
-          : BiometricLoginResult.badCredentials;
+      if (ok) await markAppUnlockSuccessful();
+      return ok;
     } catch (e) {
-      if (kDebugMode) debugPrint('[BiometricLogin] $e');
-      return BiometricLoginResult.unknown;
+      if (kDebugMode) debugPrint('[BiometricAppLock] $e');
+      return false;
     }
   }
 
@@ -424,10 +423,11 @@ class AuthBridge {
     } catch (_) {}
     try {
       await _storage.delete(key: _profileIdKey);
-      await clearQuickLoginCredentials();
     } catch (_) {}
     if (kDebugMode) {
-      debugPrint('[AUTH] Sessions cleared (PocketBase + profile_id + quick login).');
+      debugPrint(
+        '[AUTH] Sessions cleared (PocketBase + profile_id + quick login).',
+      );
     }
   }
 }
