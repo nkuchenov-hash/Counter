@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-12] - Mid-session auth repair + PocketBase readiness docs [shipped]
+* **`main.dart` / `offline_sync_state.dart`:** [shipped] The root auth gate now listens for mid-session `offlineSync.authPaused` from 401/403 record/plan mutations, routes to the login/session repair screen, marks syncing inactive while auth is paused, keeps outbox mutations paused, and resumes through the shared post-auth bootstrap after login.
+* **`AndroidManifest.xml` / `constants.dart` / `docs/DEPLOY.md`:** [shipped] Removed Supabase-era Android callback schemes/constants and documented PocketBase `profiles` OAuth provider discovery, `/api/oauth2-redirect` setup, Android real-device verification status, and password-reset SMTP/template requirements.
+
 ## [2026-06-12] - Plan-link suggestion toggle persistence [shipped]
 * **`planning_view.dart`:** [shipped] `_PlanRecordLinkSuggestionSettingsBlock` owns record-link suggestion prefs inside the Planning settings sheet so the master switch and mode selector rebuild and persist via `plans_record_link_suggestions_enabled` / `plans_record_link_suggestion_mode` (fixes frozen modal header that blocked turning suggestions off).
 

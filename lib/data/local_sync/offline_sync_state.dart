@@ -36,6 +36,7 @@ class OfflineSyncController extends ChangeNotifier {
 
   void setAuthPaused(bool paused, {String? message}) {
     authPaused = paused;
+    if (paused) isSyncing = false;
     if (message != null) lastError = message;
     notifyListeners();
   }

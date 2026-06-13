@@ -193,6 +193,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
   String? _profileId;
   bool _checked = false;
   String? _authMessageKey;
+  bool _handlingSessionInvalid = false;
 
   Future<void> _postAuthBootstrap({String? failureMessageKey}) async {
     if (mounted) {
@@ -222,6 +223,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       if (lang.isNotEmpty) {
         currentLocale.value = resolvedUiLanguageCode(lang);
       }
+      DatabaseService.instance.offlineSync.resumeAfterAuthIfNeeded();
       setState(() {
         _profileId = id;
         _checked = true;
@@ -238,17 +240,13 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
   }
 
   Future<void> _handleSessionInvalid() async {
+    if (_handlingSessionInvalid) return;
+    _handlingSessionInvalid = true;
     try {
       DatabaseService.instance.offlineSync.setAuthPaused(
         true,
         message: 'session_invalid',
       );
-    } catch (_) {}
-    try {
-      await AuthBridge.signOut();
-    } catch (_) {}
-    try {
-      DatabaseService.instance.clearLocalStateOnSignOut();
     } catch (_) {}
     if (mounted) {
       setState(() {
@@ -257,16 +255,39 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         _authMessageKey = 'auth_session_expired';
       });
     }
+    try {
+      await AuthBridge.signOut();
+    } catch (_) {}
+    try {
+      DatabaseService.instance.clearLocalStateOnSignOut();
+    } catch (_) {}
+    _handlingSessionInvalid = false;
+  }
+
+  void _handleOfflineSyncChanged() {
+    if (!mounted || _handlingSessionInvalid) return;
+    if (_profileId == null || _profileId!.isEmpty) return;
+    if (!DatabaseService.instance.offlineSync.authPaused) return;
+    unawaited(_handleSessionInvalid());
   }
 
   @override
   void initState() {
     super.initState();
+    DatabaseService.instance.offlineSync.addListener(_handleOfflineSyncChanged);
     DatabaseService.instance.onSessionInvalid = () async {
       await _handleSessionInvalid();
     };
     DatabaseService.instance.onSignOut = clearSession;
     _postAuthBootstrap();
+  }
+
+  @override
+  void dispose() {
+    DatabaseService.instance.offlineSync.removeListener(
+      _handleOfflineSyncChanged,
+    );
+    super.dispose();
   }
 
   void clearSession() {
