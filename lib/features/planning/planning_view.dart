@@ -286,6 +286,11 @@ class _PlanningPageState extends State<PlanningPage>
   bool _timelineScrollLocked = false;
   String? _timelineVerticalDragTimeLabel;
 
+  /// Midpoint insert-before/after target while dragging over another card.
+  String? _timelineDragInsertTargetKey;
+  bool _timelineDragInsertBefore = false;
+  double? _timelineDragInsertMarkerTopPx;
+
   /// Top/bottom edge resize (Time mode); local preview until release.
   String? _timelineResizePlanKey;
   _TimelineResizeEdge? _timelineResizeEdge;
@@ -2026,47 +2031,103 @@ class _PlanningPageState extends State<PlanningPage>
     return hours.length * _kTimelineHourHeightPx;
   }
 
+  double get _timelineMinVisualMinutes =>
+      _kTimelineMinBlockHeightPx / _timelinePxPerMinute;
+
+  double _timelineVisualEndMin(double startMin, double endMin) {
+    final minDur = PlanningSheetTimelinePrefs.timelineMinDurationMinutes
+        .toDouble();
+    return math.max(
+      endMin,
+      startMin + math.max(minDur, _timelineMinVisualMinutes),
+    );
+  }
+
+  bool _timelineVisualRangesOverlap(
+    double aStart,
+    double aVisualEnd,
+    double bStart,
+    double bVisualEnd,
+  ) {
+    return aStart < bVisualEnd - 0.25 && aVisualEnd > bStart + 0.25;
+  }
+
   List<_TimelineBlockLayout> _timelineBlockLayouts(
     List<PlanningTask> scheduled,
     int rangeStart,
     int rangeEnd,
   ) {
-    final spans = <({PlanningTask task, double start, double end})>[];
+    final pxPerMin = _timelinePxPerMinute;
+    final spans =
+        <({
+          PlanningTask task,
+          double startMin,
+          double endMin,
+          double visualEndMin,
+        })>[];
     for (final t in scheduled) {
       final st = t.startTime;
       if (st == null) continue;
       final startMin = _timelineMinutesFromRangeStart(st, rangeStart, rangeEnd);
       final durMin = _timelineBlockDurationMinutes(t).toDouble();
-      spans.add((task: t, start: startMin, end: startMin + durMin));
+      final endMin = startMin + durMin;
+      spans.add((
+        task: t,
+        startMin: startMin,
+        endMin: endMin,
+        visualEndMin: _timelineVisualEndMin(startMin, endMin),
+      ));
     }
     spans.sort((a, b) {
-      final c = a.start.compareTo(b.start);
+      final c = a.startMin.compareTo(b.startMin);
       if (c != 0) return c;
-      return a.end.compareTo(b.end);
+      return a.endMin.compareTo(b.endMin);
     });
-    final layouts = <_TimelineBlockLayout>[];
-    for (var i = 0; i < spans.length; i++) {
-      final item = spans[i];
-      final overlapIdx = <int>[];
-      for (var j = 0; j < spans.length; j++) {
-        final other = spans[j];
-        if (other.end > item.start && other.start < item.end) {
-          overlapIdx.add(j);
+
+    final columnVisualEnds = <double>[];
+    final assignedColumns = <int>[];
+    for (final span in spans) {
+      var placedCol = -1;
+      for (var c = 0; c < columnVisualEnds.length; c++) {
+        if (span.startMin >= columnVisualEnds[c] - 0.25) {
+          placedCol = c;
+          columnVisualEnds[c] = span.visualEndMin;
+          break;
         }
       }
-      overlapIdx.sort();
-      final col = overlapIdx.indexOf(i).clamp(0, overlapIdx.length - 1);
-      final totalCols = overlapIdx.isEmpty ? 1 : overlapIdx.length;
+      if (placedCol < 0) {
+        placedCol = columnVisualEnds.length;
+        columnVisualEnds.add(span.visualEndMin);
+      }
+      assignedColumns.add(placedCol);
+    }
+
+    final layouts = <_TimelineBlockLayout>[];
+    for (var i = 0; i < spans.length; i++) {
+      final span = spans[i];
+      var totalCols = assignedColumns[i] + 1;
+      for (var j = 0; j < spans.length; j++) {
+        if (i == j) continue;
+        final other = spans[j];
+        if (_timelineVisualRangesOverlap(
+          span.startMin,
+          span.visualEndMin,
+          other.startMin,
+          other.visualEndMin,
+        )) {
+          totalCols = math.max(totalCols, assignedColumns[j] + 1);
+        }
+      }
       final heightPx = math.max(
         _kTimelineMinBlockHeightPx,
-        (item.end - item.start) * _kTimelineHourHeightPx / 60,
+        (span.endMin - span.startMin) * pxPerMin,
       );
       layouts.add(
         _TimelineBlockLayout(
-          task: item.task,
-          topPx: item.start * _kTimelineHourHeightPx / 60,
+          task: span.task,
+          topPx: span.startMin * pxPerMin,
           heightPx: heightPx,
-          column: col,
+          column: assignedColumns[i],
           totalColumns: totalCols,
         ),
       );
@@ -2206,6 +2267,9 @@ class _PlanningPageState extends State<PlanningPage>
     _timelineVerticalDragDeltaPx = 0;
     _timelineVerticalDragTask = null;
     _timelineVerticalDragTimeLabel = null;
+    _timelineDragInsertTargetKey = null;
+    _timelineDragInsertBefore = false;
+    _timelineDragInsertMarkerTopPx = null;
     _timelineResizePlanKey = null;
     _timelineResizeEdge = null;
     _timelineResizeTask = null;
@@ -2405,6 +2469,152 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
+  List<PlanningTask> _resolveTimelineCollisionsAfterMove({
+    required List<PlanningTask> scheduled,
+    required int rangeStart,
+    required int rangeEnd,
+    required DateTime planWallDay,
+  }) {
+    final sorted = [...scheduled]
+      ..sort((a, b) {
+        final aStart = _timelineMinutesFromRangeStart(
+          a.startTime!,
+          rangeStart,
+          rangeEnd,
+        );
+        final bStart = _timelineMinutesFromRangeStart(
+          b.startTime!,
+          rangeStart,
+          rangeEnd,
+        );
+        return aStart.compareTo(bStart);
+      });
+
+    for (var pass = 0; pass < sorted.length; pass++) {
+      var changed = false;
+      for (var i = 0; i < sorted.length - 1; i++) {
+        final a = sorted[i];
+        final b = sorted[i + 1];
+        final aStart = _timelineMinutesFromRangeStart(
+          a.startTime!,
+          rangeStart,
+          rangeEnd,
+        );
+        final aDur = _timelineBlockDurationMinutes(a);
+        final aEnd = a.endDateTime != null
+            ? _timelineMinutesFromRangeStart(
+                a.endDateTime!,
+                rangeStart,
+                rangeEnd,
+              )
+            : aStart + aDur;
+        final aVisualEnd = _timelineVisualEndMin(aStart, aEnd);
+        final bStart = _timelineMinutesFromRangeStart(
+          b.startTime!,
+          rangeStart,
+          rangeEnd,
+        );
+        if (bStart >= aVisualEnd - 0.25) continue;
+
+        final bDur = _timelineBlockDurationMinutes(b);
+        final snappedStart = _snapTimelineMinutes(aVisualEnd);
+        final newStartWall = _wallTimeFromTimelineMinutes(
+          snappedStart,
+          planWallDay,
+          rangeStart,
+        );
+        final newEndWall = b.endDateTime != null
+            ? newStartWall.add(Duration(minutes: bDur))
+            : null;
+        sorted[i + 1] = b.copyWith(
+          startTime: newStartWall,
+          endDateTime: newEndWall,
+          clearEnd: newEndWall == null,
+        );
+        changed = true;
+      }
+      if (!changed) break;
+    }
+    return sorted;
+  }
+
+  void _persistTimelineDragWithCascade({
+    required PlanningTask movedTask,
+    required DateTime newStartWall,
+    required DateTime? newEndWall,
+    required List<PlanningTask> scheduledInRange,
+    required int rangeStart,
+    required int rangeEnd,
+    required DateTime planWallDay,
+  }) {
+    final movedKey = _planKey(movedTask);
+    final movedUpdated = movedTask.copyWith(
+      startTime: newStartWall,
+      endDateTime: newEndWall,
+      clearEnd: newEndWall == null,
+    );
+    final others = scheduledInRange
+        .where((t) => _planKey(t) != movedKey)
+        .where(_planIsTimelineVerticallyDraggable)
+        .toList();
+    final resolved = _resolveTimelineCollisionsAfterMove(
+      scheduled: [...others, movedUpdated],
+      rangeStart: rangeStart,
+      rangeEnd: rangeEnd,
+      planWallDay: planWallDay,
+    );
+
+    for (final task in resolved) {
+      final key = _planKey(task);
+      final before = key == movedKey
+          ? movedTask
+          : _timelineTaskByPlanKey(others, key);
+      if (before == null) continue;
+      if (before.startTime == task.startTime &&
+          before.endDateTime == task.endDateTime) {
+        continue;
+      }
+      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      unawaited(
+        DatabaseService.instance.updatePlanningTask(
+          task.planRowIdForBackend,
+          planBusinessId: task.planRowId,
+          startTimeDisplay: task.startTime,
+          endDateTimeDisplay: task.endDateTime,
+          clearEnd: task.endDateTime == null,
+          suppressAppSnack: true,
+        ),
+      );
+    }
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+  }
+
+  PlanningTask? _timelineTaskByPlanKey(
+    List<PlanningTask> scheduled,
+    String planKey,
+  ) {
+    for (final t in scheduled) {
+      if (_planKey(t) == planKey) return t;
+    }
+    return null;
+  }
+
+  _TimelineBlockLayout? _timelineLayoutUnderDragCenter({
+    required List<_TimelineBlockLayout> layouts,
+    required double dragCenterY,
+    required String? excludePlanKey,
+  }) {
+    for (final layout in layouts) {
+      if (_planKey(layout.task) == excludePlanKey) continue;
+      final bottom = layout.topPx + layout.heightPx;
+      if (dragCenterY >= layout.topPx && dragCenterY <= bottom) {
+        return layout;
+      }
+    }
+    return null;
+  }
+
   String? _timelineDragLabelForTopPx(
     double topPx,
     DateTime planWallDay,
@@ -2459,6 +2669,7 @@ class _PlanningPageState extends State<PlanningPage>
     required int rangeStart,
     required int rangeEnd,
     required double canvasHeight,
+    required List<PlanningTask> scheduledInRange,
   }) {
     final durMin = _timelineVerticalDragDurationMin.toDouble();
     final maxTopPx = math.max(
@@ -2469,13 +2680,56 @@ class _PlanningPageState extends State<PlanningPage>
           durMin) *
           _timelinePxPerMinute,
     );
-    final clampedDelta = (_timelineVerticalDragOriginTopPx + deltaPx)
-        .clamp(0.0, maxTopPx) -
-        _timelineVerticalDragOriginTopPx;
+    final dragHeightPx = math.max(
+      _kTimelineMinBlockHeightPx,
+      durMin * _timelinePxPerMinute,
+    ).toDouble();
+    final rawTop = _timelineVerticalDragOriginTopPx + deltaPx;
+    final dragCenterY = rawTop + dragHeightPx / 2;
+    final layouts = _timelineBlockLayouts(
+      scheduledInRange,
+      rangeStart,
+      rangeEnd,
+    );
+    final insertTarget = _timelineLayoutUnderDragCenter(
+      layouts: layouts,
+      dragCenterY: dragCenterY,
+      excludePlanKey: _timelineVerticalDragPlanKey,
+    );
+
+    double previewTop;
+    String? insertKey;
+    var insertBefore = false;
+    double? markerTop;
+
+    if (insertTarget != null) {
+      final mid = insertTarget.topPx + insertTarget.heightPx / 2;
+      insertBefore = dragCenterY < mid;
+      insertKey = _planKey(insertTarget.task);
+      const gapPx = 4.0;
+      if (insertBefore) {
+        previewTop = insertTarget.topPx - dragHeightPx - gapPx;
+        markerTop = (insertTarget.topPx - 3).clamp(0.0, canvasHeight);
+      } else {
+        previewTop = insertTarget.topPx + insertTarget.heightPx + gapPx;
+        markerTop = (insertTarget.topPx + insertTarget.heightPx + 1).clamp(
+          0.0,
+          canvasHeight,
+        );
+      }
+      previewTop = (previewTop.clamp(0.0, maxTopPx) as num).toDouble();
+    } else {
+      previewTop = (rawTop.clamp(0.0, maxTopPx) as num).toDouble();
+    }
+
     setState(() {
-      _timelineVerticalDragDeltaPx = clampedDelta;
+      _timelineVerticalDragDeltaPx =
+          previewTop - _timelineVerticalDragOriginTopPx;
+      _timelineDragInsertTargetKey = insertKey;
+      _timelineDragInsertBefore = insertBefore;
+      _timelineDragInsertMarkerTopPx = markerTop;
       _timelineVerticalDragTimeLabel = _timelineDragLabelForTopPx(
-        _timelineVerticalDragOriginTopPx + clampedDelta,
+        previewTop,
         planWallDay,
         rangeStart,
         _timelineVerticalDragDurationMin,
@@ -2495,6 +2749,7 @@ class _PlanningPageState extends State<PlanningPage>
     required DateTime planWallDay,
     required int rangeStart,
     required int rangeEnd,
+    required List<PlanningTask> scheduledInRange,
   }) {
     final task = _timelineVerticalDragTask;
     final planKey = _timelineVerticalDragPlanKey;
@@ -2515,19 +2770,84 @@ class _PlanningPageState extends State<PlanningPage>
     final newTopPx = (_timelineVerticalDragOriginTopPx +
             _timelineVerticalDragDeltaPx)
         .clamp(0.0, maxTopPx);
-    final newStartWall = _wallTimeFromTimelineMinutes(
-      newTopPx / _timelinePxPerMinute,
-      planWallDay,
-      rangeStart,
-    );
-    final newEndWall = _timelineVerticalDragHadEnd
-        ? newStartWall.add(Duration(minutes: durMin))
-        : null;
+
+    DateTime newStartWall;
+    DateTime? newEndWall;
+
+    final insertKey = _timelineDragInsertTargetKey;
+    if (insertKey != null) {
+      final target = _timelineTaskByPlanKey(scheduledInRange, insertKey);
+      final targetStart = target?.startTime;
+      if (target != null && targetStart != null) {
+        if (_timelineDragInsertBefore) {
+          final endMin = _snapTimelineMinutes(
+            _timelineMinutesFromRangeStart(
+              targetStart,
+              rangeStart,
+              rangeEnd,
+            ),
+          );
+          final startMin = _snapTimelineMinutes(
+            math.max(0, endMin - durMin),
+          );
+          newStartWall = _wallTimeFromTimelineMinutes(
+            startMin,
+            planWallDay,
+            rangeStart,
+          );
+          newEndWall = _timelineVerticalDragHadEnd
+              ? _wallTimeFromTimelineMinutes(endMin, planWallDay, rangeStart)
+              : null;
+        } else {
+          final targetEnd = target.endDateTime ??
+              targetStart.add(
+                Duration(minutes: _timelineBlockDurationMinutes(target)),
+              );
+          newStartWall = _wallTimeFromTimelineMinutes(
+            _snapTimelineMinutes(
+              _timelineMinutesFromRangeStart(
+                targetEnd,
+                rangeStart,
+                rangeEnd,
+              ),
+            ),
+            planWallDay,
+            rangeStart,
+          );
+          newEndWall = _timelineVerticalDragHadEnd
+              ? newStartWall.add(Duration(minutes: durMin))
+              : null;
+        }
+      } else {
+        newStartWall = _wallTimeFromTimelineMinutes(
+          newTopPx / _timelinePxPerMinute,
+          planWallDay,
+          rangeStart,
+        );
+        newEndWall = _timelineVerticalDragHadEnd
+            ? newStartWall.add(Duration(minutes: durMin))
+            : null;
+      }
+    } else {
+      newStartWall = _wallTimeFromTimelineMinutes(
+        newTopPx / _timelinePxPerMinute,
+        planWallDay,
+        rangeStart,
+      );
+      newEndWall = _timelineVerticalDragHadEnd
+          ? newStartWall.add(Duration(minutes: durMin))
+          : null;
+    }
+
     setState(_clearTimelineInteractionState);
-    _persistTimelineScheduleChange(
-      task: task,
+    _persistTimelineDragWithCascade(
+      movedTask: task,
       newStartWall: newStartWall,
       newEndWall: newEndWall,
+      scheduledInRange: scheduledInRange,
+      rangeStart: rangeStart,
+      rangeEnd: rangeEnd,
+      planWallDay: planWallDay,
     );
   }
 
@@ -3001,6 +3321,30 @@ class _PlanningPageState extends State<PlanningPage>
                             ],
                           ),
                         ),
+                      if (_timelineDragInsertMarkerTopPx != null &&
+                          _timelineVerticalDragPlanKey != null)
+                        Positioned(
+                          top: _timelineDragInsertMarkerTopPx!.clamp(
+                            0,
+                            canvasHeight - 4,
+                          ),
+                          left: 6,
+                          right: 6,
+                          child: Container(
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: scheme.primary.withValues(alpha: 0.62),
+                              borderRadius: BorderRadius.circular(2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: scheme.primary.withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ...[
                         ...layouts
                             .where(
@@ -3018,6 +3362,7 @@ class _PlanningPageState extends State<PlanningPage>
                                 rangeStart: rangeStart,
                                 rangeEnd: rangeEnd,
                                 planActualByPbId: planActualByPbId,
+                                scheduledInRange: scheduledInRange,
                               ),
                             ),
                         ...layouts
@@ -3036,6 +3381,7 @@ class _PlanningPageState extends State<PlanningPage>
                                 rangeStart: rangeStart,
                                 rangeEnd: rangeEnd,
                                 planActualByPbId: planActualByPbId,
+                                scheduledInRange: scheduledInRange,
                               ),
                             ),
                       ],
@@ -3062,6 +3408,7 @@ class _PlanningPageState extends State<PlanningPage>
     required int rangeStart,
     required int rangeEnd,
     required Map<String, int> planActualByPbId,
+    required List<PlanningTask> scheduledInRange,
   }) {
     final planKey = _planKey(layout.task);
     final isDragging = _timelineVerticalDragPlanKey == planKey;
@@ -3175,6 +3522,7 @@ class _PlanningPageState extends State<PlanningPage>
                       rangeStart: rangeStart,
                       rangeEnd: rangeEnd,
                       canvasHeight: canvasHeight,
+                      scheduledInRange: scheduledInRange,
                     )
                   : null,
               onVerticalDragEnd: canInteract
@@ -3182,6 +3530,7 @@ class _PlanningPageState extends State<PlanningPage>
                       planWallDay: planWallDay,
                       rangeStart: rangeStart,
                       rangeEnd: rangeEnd,
+                      scheduledInRange: scheduledInRange,
                     )
                   : null,
               onVerticalDragCancel:
