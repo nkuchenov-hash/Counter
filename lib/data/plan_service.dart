@@ -931,12 +931,86 @@ extension PlanServiceExtension on DatabaseService {
     return _kBacklogOptimisticDayKey;
   }
 
+  /// Stable business **plan_id** (UUID) for merge/dedupe — not PocketBase system id.
+  String? _planBusinessUuidFromTask(PlanningTask task) {
+    final row = task.planRowId?.trim() ?? '';
+    if (row.isNotEmpty) {
+      if (row.startsWith('optimistic-')) {
+        final id = row.substring('optimistic-'.length).trim();
+        return id.isEmpty ? null : id;
+      }
+      if (!row.startsWith('virt-')) return row;
+    }
+    final pr = task.pocketRecordId?.trim() ?? '';
+    if (pr.startsWith('optimistic-')) {
+      final id = pr.substring('optimistic-'.length).trim();
+      return id.isEmpty ? null : id;
+    }
+    return null;
+  }
+
+  bool _isOptimisticPlanningTask(PlanningTask task) {
+    final pr = task.pocketRecordId?.trim() ?? '';
+    if (pr.startsWith('optimistic-')) return true;
+    final row = task.planRowId?.trim() ?? '';
+    return row.startsWith('optimistic-');
+  }
+
+  PlanningTask _preferConfirmedPlanningTask(PlanningTask a, PlanningTask b) {
+    final aOpt = _isOptimisticPlanningTask(a);
+    final bOpt = _isOptimisticPlanningTask(b);
+    if (aOpt && !bOpt) return b;
+    if (bOpt && !aOpt) return a;
+    final aPb = (a.pocketRecordId?.trim() ?? '').length == 15;
+    final bPb = (b.pocketRecordId?.trim() ?? '').length == 15;
+    if (aPb && !bPb) return a;
+    if (bPb && !aPb) return b;
+    return b;
+  }
+
+  List<PlanningTask> _dedupePlanningTasksByBusinessId(List<PlanningTask> tasks) {
+    final byBiz = <String, PlanningTask>{};
+    final noBiz = <PlanningTask>[];
+    for (final t in tasks) {
+      final biz = _planBusinessUuidFromTask(t);
+      if (biz == null || biz.isEmpty) {
+        noBiz.add(t);
+        continue;
+      }
+      final existing = byBiz[biz];
+      byBiz[biz] = existing == null
+          ? t
+          : _preferConfirmedPlanningTask(existing, t);
+    }
+    return [...byBiz.values, ...noBiz];
+  }
+
+  void _purgeOptimisticPlanRowsFromUserCache(String businessPlanId) {
+    final biz = businessPlanId.trim();
+    if (biz.isEmpty) return;
+    _allPlansUserCache = [
+      for (final t in _allPlansUserCache)
+        if (!(_isOptimisticPlanningTask(t) &&
+            _planBusinessUuidFromTask(t) == biz))
+          t,
+    ];
+  }
+
   void _upsertPlanInUserCache(PlanningTask task) {
     final pid = task.planRowIdForBackend.trim();
     if (pid.isEmpty) return;
+    final bizId = _planBusinessUuidFromTask(task);
     var i = -1;
     for (var j = 0; j < _allPlansUserCache.length; j++) {
-      if (_allPlansUserCache[j].planRowIdForBackend.trim() == pid) {
+      final t = _allPlansUserCache[j];
+      final tPid = t.planRowIdForBackend.trim();
+      if (tPid == pid) {
+        i = j;
+        break;
+      }
+      if (bizId != null &&
+          bizId.isNotEmpty &&
+          _planBusinessUuidFromTask(t) == bizId) {
         i = j;
         break;
       }
@@ -945,6 +1019,9 @@ extension PlanServiceExtension on DatabaseService {
       _allPlansUserCache[i] = task;
     } else {
       _allPlansUserCache.add(task);
+    }
+    if (bizId != null && bizId.isNotEmpty && !_isOptimisticPlanningTask(task)) {
+      _purgeOptimisticPlanRowsFromUserCache(bizId);
     }
   }
 
@@ -1133,12 +1210,25 @@ extension PlanServiceExtension on DatabaseService {
   void clearOptimisticPlanningForPlanRow(String planRowIdForBackend) {
     final p = planRowIdForBackend.trim();
     if (p.isEmpty) return;
+    final keysToRemove = <String>{p};
+    if (p.startsWith('optimistic-')) {
+      final biz = p.substring('optimistic-'.length).trim();
+      if (biz.isNotEmpty) keysToRemove.add(biz);
+    }
     for (final m in _planningOptimisticByDateKey.values) {
-      m.remove(p);
+      for (final key in keysToRemove) {
+        m.remove(key);
+      }
+      m.removeWhere((key, task) {
+        if (keysToRemove.contains(key)) return true;
+        final biz = _planBusinessUuidFromTask(task);
+        return biz != null && keysToRemove.contains(biz);
+      });
     }
     if (p.startsWith('optimistic-')) {
       final clientPlanId = p.substring('optimistic-'.length).trim();
       if (clientPlanId.isNotEmpty) {
+        _purgeOptimisticPlanRowsFromUserCache(clientPlanId);
         unawaited(_cancelPendingPlanMutationsForBusinessId(clientPlanId));
       }
     }
@@ -1165,7 +1255,7 @@ extension PlanServiceExtension on DatabaseService {
     for (final e in overlay.entries) {
       byId[e.key] = e.value;
     }
-    final merged = byId.values.toList();
+    final merged = _dedupePlanningTasksByBusinessId(byId.values.toList());
     merged.sort((a, b) {
       if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
       final o = a.order.compareTo(b.order);
@@ -3911,6 +4001,10 @@ extension PlanServiceExtension on DatabaseService {
         );
         _upsertPlanInUserCache(task);
         _allPlansUserCacheFetchedAt = DateTime.now();
+        final biz = _planBusinessUuidFromTask(task);
+        if (biz != null && biz.isNotEmpty) {
+          clearOptimisticPlanningForPlanRow('optimistic-$biz');
+        }
         clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
         notifyPlanningRefresh(scheduleNetworkRefresh: false);
       } catch (_) {}

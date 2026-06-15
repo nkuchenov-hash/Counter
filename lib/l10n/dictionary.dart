@@ -587,8 +587,12 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_show_password': 'Show password',
     'auth_hide_password': 'Hide password',
     'auth_forgot_password': 'Forgot password?',
-    'auth_reset_email_sent':
-        'If an account exists for this email, you will receive reset instructions.',
+    'auth_reset_email_sent': 'Password reset email sent. Check your inbox.',
+    'auth_reset_email_not_found':
+        'No account found with this email. Check the email or register.',
+    'auth_reset_mail_unavailable':
+        'Could not send the reset email. Mail service is not configured or unavailable.',
+    'auth_register_action': 'Register',
     'auth_oauth_apple': 'Continue with Apple',
   },
   'ru': {
@@ -1162,7 +1166,12 @@ const Map<String, Map<String, String>> _l10nCore = {
     'auth_hide_password': 'Скрыть пароль',
     'auth_forgot_password': 'Забыли пароль?',
     'auth_reset_email_sent':
-        'Если аккаунт существует, на email придут инструкции по сбросу.',
+        'Письмо для восстановления пароля отправлено. Проверьте почту.',
+    'auth_reset_email_not_found':
+        'Аккаунт с таким email не найден. Проверьте email или зарегистрируйтесь.',
+    'auth_reset_mail_unavailable':
+        'Не удалось отправить письмо. Почтовый сервис не настроен или недоступен.',
+    'auth_register_action': 'Зарегистрироваться',
     'auth_oauth_apple': 'Войти через Apple',
   },
 };

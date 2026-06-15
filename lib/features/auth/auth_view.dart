@@ -66,12 +66,21 @@ class _AuthViewState extends State<AuthView> {
 
   String _t(String key) => t(currentLocale.value, key);
 
-  void _showMessage(String message) {
+  void _showMessage(
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     if (!mounted || message.isEmpty) return;
     ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: actionLabel != null && onAction != null
+            ? SnackBarAction(label: actionLabel, onPressed: onAction)
+            : null,
+      ),
+    );
   }
 
   String _mapAuthError(Object e) {
@@ -90,6 +99,8 @@ class _AuthViewState extends State<AuthView> {
           return _t('auth_oauth_failed');
         case 'empty_reset_token':
           return _t('auth_reset_token_empty');
+        case 'reset_mail_unavailable':
+          return _t('auth_reset_mail_unavailable');
         case 'network':
           return _t('auth_invalid_credentials');
         default:
@@ -202,23 +213,37 @@ class _AuthViewState extends State<AuthView> {
     if (_loading) return;
     setState(() => _loading = true);
     try {
-      await AuthBridge.requestPasswordReset(email);
+      final result = await AuthBridge.requestPasswordReset(email);
       if (!mounted) return;
       setState(() => _loading = false);
-      _showMessage(_t('auth_reset_email_sent'));
+      switch (result) {
+        case PasswordResetRequestResult.sent:
+          _showMessage(_t('auth_reset_email_sent'));
+          break;
+        case PasswordResetRequestResult.notFound:
+          _showMessage(
+            _t('auth_reset_email_not_found'),
+            actionLabel: _t('auth_register_action'),
+            onAction: () {
+              if (!mounted) return;
+              setState(() => _loginMode = false);
+            },
+          );
+          break;
+      }
     } on AuthBridgeException catch (e) {
       if (mounted) {
         setState(() => _loading = false);
         if (e.statusCode == 429) {
           _showMessage(_t('auth_too_many_attempts'));
         } else {
-          _showMessage(_t('auth_reset_email_sent'));
+          _showMessage(_t('auth_reset_mail_unavailable'));
         }
       }
     } catch (_) {
       if (mounted) {
         setState(() => _loading = false);
-        _showMessage(_t('auth_reset_email_sent'));
+        _showMessage(_t('auth_reset_mail_unavailable'));
       }
     }
   }

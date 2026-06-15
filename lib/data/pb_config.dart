@@ -9,9 +9,8 @@ const String kPocketBaseProductionUrl = 'https://217-114-0-201.sslip.io';
 
 String _pocketBaseUrlForWeb() {
   final host = Uri.base.host;
-  final isLocalHost = host.isEmpty ||
-      host == 'localhost' ||
-      host == '127.0.0.1';
+  final isLocalHost =
+      host.isEmpty || host == 'localhost' || host == '127.0.0.1';
   if (isLocalHost) {
     return 'http://localhost:8090';
   }
@@ -40,6 +39,11 @@ abstract class PbAppApiRoutes {
   /// POST: natural-language task utterance → structured hints (title, optional clock).
   /// Body and schema are defined server-side; see POCKETBASE_MANIFEST / deployment docs.
   static const String aiParseTask = '/api/ai/parse-task';
+
+  /// POST: safe password-reset lookup/send route.
+  /// Body: `{ "email": "..." }`; response never exposes profile data.
+  static const String authRequestPasswordReset =
+      '/api/auth/request-password-reset';
 }
 
 /// PocketBase collection names (Admin → Collections). Must match server.

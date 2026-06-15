@@ -256,6 +256,7 @@ class _PlanningPageState extends State<PlanningPage>
   final _quickAddFocus = FocusNode();
   final Set<String> _selectedPlanKeys = {};
   final List<PlanningTask> _optimisticTasks = [];
+  bool _planQuickAddInFlight = false;
 
   /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
   List<PlanningTask> _latestPlanningDayTasks = const [];
@@ -1182,12 +1183,37 @@ class _PlanningPageState extends State<PlanningPage>
     }
   }
 
+  static String? _planBusinessUuidForMerge(PlanningTask t) {
+    final row = t.planRowId?.trim() ?? '';
+    if (row.isNotEmpty) {
+      if (row.startsWith('optimistic-')) {
+        final id = row.substring('optimistic-'.length).trim();
+        return id.isEmpty ? null : id;
+      }
+      if (!row.startsWith('virt-')) return row;
+    }
+    final pr = t.pocketRecordId?.trim() ?? '';
+    if (pr.startsWith('optimistic-')) {
+      final id = pr.substring('optimistic-'.length).trim();
+      return id.isEmpty ? null : id;
+    }
+    return null;
+  }
+
   List<PlanningTask> _mergeWithOptimistic(List<PlanningTask> server) {
     final pending = _optimisticTasks
         .where(
-          (o) => !server.any(
-            (s) => s.title.trim() == o.title.trim() && s.dateKey == o.dateKey,
-          ),
+          (o) => !server.any((s) {
+            final oBiz = _planBusinessUuidForMerge(o);
+            final sBiz = _planBusinessUuidForMerge(s);
+            if (oBiz != null &&
+                sBiz != null &&
+                oBiz.isNotEmpty &&
+                oBiz == sBiz) {
+              return true;
+            }
+            return s.title.trim() == o.title.trim() && s.dateKey == o.dateKey;
+          }),
         )
         .toList();
     final merged = [...pending, ...server];
@@ -1552,61 +1578,44 @@ class _PlanningPageState extends State<PlanningPage>
       }
     }
     var nextOrder = _nextPlanOrderForQuickAdd();
-    final optimisticId = -DateTime.now().millisecondsSinceEpoch;
     final clientPlanId = DatabaseService.newClientUuid();
-    final optimisticRow = 'optimistic-$clientPlanId';
     final tagsForCreate = List<Tag>.from(_creationSelectedTags);
-    final pending = PlanningTask(
-      id: optimisticId,
-      planRowId: optimisticRow,
-      title: title,
-      categoryId: categoryId,
-      isDone: false,
-      dateKey: taskDateKey,
-      order: nextOrder,
-      startTime: startStored,
-      endDateTime: endStored,
-      checklist: const [],
-      parentPlanId: null,
-      tags: tagsForCreate,
-      isSynced: false,
-    );
-    setState(() => _optimisticTasks.add(pending));
-    try {
-      final ok = await DatabaseService.instance.addPlanningTask(
-        PlanningTask(
-          id: 0,
-          title: title,
-          categoryId: categoryId,
-          isDone: false,
-          dateKey: taskDateKey,
-          order: nextOrder,
-          startTime: startStored,
-          endDateTime: endStored,
-          checklist: const [],
-          parentPlanId: null,
-          tags: tagsForCreate,
-          isSynced: false,
-        ),
-        clientPlanId: clientPlanId,
-      );
-      if (!mounted) return;
-      if (!ok) {
-        setState(
-          () =>
-              _optimisticTasks.removeWhere((o) => o.planRowId == optimisticRow),
+    if (_planQuickAddInFlight) return;
+    _planQuickAddInFlight = true;
+    unawaited(() async {
+      try {
+        final ok = await DatabaseService.instance.addPlanningTask(
+          PlanningTask(
+            id: 0,
+            title: title,
+            categoryId: categoryId,
+            isDone: false,
+            dateKey: taskDateKey,
+            order: nextOrder,
+            startTime: startStored,
+            endDateTime: endStored,
+            checklist: const [],
+            parentPlanId: null,
+            tags: tagsForCreate,
+            isSynced: false,
+          ),
+          clientPlanId: clientPlanId,
         );
-      } else {
-        _textController.clear();
-        setState(() {
-          _creationSelectedTags = [];
-        });
+        if (!mounted) return;
+        if (ok) {
+          _textController.clear();
+          setState(() {
+            _creationSelectedTags = [];
+          });
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('PLAN_ADD_UI: $e');
+        }
+      } finally {
+        _planQuickAddInFlight = false;
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('PLAN_ADD_UI: $e');
-      }
-    }
+    }());
   }
 
   DateTime _wallDateTimeFromHhmm(DateTime day, String hhmm) {
@@ -1663,26 +1672,7 @@ class _PlanningPageState extends State<PlanningPage>
               : 0);
 
       final order = nextOrder + i;
-      final optimisticId = DatabaseService.instance.newId();
       final clientPlanId = DatabaseService.newClientUuid();
-      final optimisticRow = 'optimistic-$clientPlanId';
-      final pending = PlanningTask(
-        id: optimisticId,
-        planRowId: optimisticRow,
-        title: title,
-        categoryId: categoryId,
-        isDone: false,
-        dateKey: taskDateKey,
-        order: order,
-        startTime: startStored,
-        endDateTime: endStored,
-        checklist: const [],
-        parentPlanId: null,
-        tags: <Tag>[],
-        isSynced: false,
-      );
-      if (!mounted) return created;
-      setState(() => _optimisticTasks.add(pending));
 
       try {
         final ok = await DatabaseService.instance.addPlanningTask(
@@ -1705,22 +1695,8 @@ class _PlanningPageState extends State<PlanningPage>
         if (!mounted) return created;
         if (ok) {
           created++;
-        } else {
-          setState(
-            () => _optimisticTasks.removeWhere(
-              (o) => o.planRowId == optimisticRow,
-            ),
-          );
         }
-      } catch (_) {
-        if (mounted) {
-          setState(
-            () => _optimisticTasks.removeWhere(
-              (o) => o.planRowId == optimisticRow,
-            ),
-          );
-        }
-      }
+      } catch (_) {}
     }
     return created;
   }
@@ -2600,11 +2576,18 @@ class _PlanningPageState extends State<PlanningPage>
             if (server.isNotEmpty && _optimisticTasks.isNotEmpty) {
               final toDrop = _optimisticTasks
                   .where(
-                    (o) => server.any(
-                      (s) =>
-                          s.title.trim() == o.title.trim() &&
-                          s.dateKey == o.dateKey,
-                    ),
+                    (o) => server.any((s) {
+                      final oBiz = _planBusinessUuidForMerge(o);
+                      final sBiz = _planBusinessUuidForMerge(s);
+                      if (oBiz != null &&
+                          sBiz != null &&
+                          oBiz.isNotEmpty &&
+                          oBiz == sBiz) {
+                        return true;
+                      }
+                      return s.title.trim() == o.title.trim() &&
+                          s.dateKey == o.dateKey;
+                    }),
                   )
                   .toList();
               if (toDrop.isNotEmpty) {

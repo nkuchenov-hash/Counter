@@ -1,12 +1,13 @@
 // Email+password and OAuth2 auth via PocketBase (profiles collection).
-// Session = user_id in secure storage + PB auth store.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/pb_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 import 'package:local_auth/local_auth.dart';
 import 'package:pocketbase/pocketbase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,6 +21,9 @@ enum OAuthSignInResult {
   networkError,
   unknown,
 }
+
+/// Password reset request result from the app-owned safe reset route.
+enum PasswordResetRequestResult { sent, notFound }
 
 /// UI-facing auth failure (maps from PocketBase [ClientException] or validation).
 class AuthBridgeException implements Exception {
@@ -274,19 +278,99 @@ class AuthBridge {
     await loginWithPassword(trimmedEmail, password);
   }
 
-  /// Password reset email ([PbCollections.profiles] auth collection).
-  static Future<void> requestPasswordReset(String email) async {
+  /// Password reset email via app-owned safe route.
+  ///
+  /// Falls back to PocketBase's native request endpoint only when the custom
+  /// route has not been deployed yet; that fallback cannot distinguish unknown
+  /// emails from successful sends.
+  static Future<PasswordResetRequestResult> requestPasswordReset(
+    String email,
+  ) async {
     final e = email.trim();
     if (e.isEmpty) {
       throw AuthBridgeException('empty_email');
     }
     try {
       await DatabaseService.instance.ensurePocketBaseReady();
-      await DatabaseService.instance.pocketBase
-          .collection(PbCollections.profiles)
-          .requestPasswordReset(e);
+      final uri = Uri.parse(
+        '$kPocketBaseUrl${PbAppApiRoutes.authRequestPasswordReset}',
+      );
+      final response = await http.post(
+        uri,
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode(<String, String>{'email': e}),
+      );
+      if (response.statusCode == 404) {
+        try {
+          await DatabaseService.instance.pocketBase
+              .collection(PbCollections.profiles)
+              .requestPasswordReset(e);
+          return PasswordResetRequestResult.sent;
+        } on ClientException catch (ex) {
+          if (ex.statusCode == 429) {
+            throw AuthBridgeException('rate_limited', statusCode: 429);
+          }
+          throw AuthBridgeException(
+            'reset_mail_unavailable',
+            statusCode: ex.statusCode,
+          );
+        }
+      }
+      if (response.statusCode == 429) {
+        throw AuthBridgeException('rate_limited', statusCode: 429);
+      }
+      if (response.statusCode >= 500) {
+        throw AuthBridgeException(
+          'reset_mail_unavailable',
+          statusCode: response.statusCode,
+        );
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw AuthBridgeException(
+          'reset_mail_unavailable',
+          statusCode: response.statusCode,
+        );
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw AuthBridgeException('reset_mail_unavailable');
+      }
+      if (decoded['exists'] == false) {
+        return PasswordResetRequestResult.notFound;
+      }
+      if (decoded['exists'] == true && decoded['sent'] == true) {
+        return PasswordResetRequestResult.sent;
+      }
+      throw AuthBridgeException('reset_mail_unavailable');
+    } on AuthBridgeException {
+      rethrow;
+    } on FormatException {
+      throw AuthBridgeException('reset_mail_unavailable');
     } on ClientException catch (ex) {
-      throw AuthBridgeException(_pbErrorMessage(ex), statusCode: ex.statusCode);
+      if (ex.statusCode == 429) {
+        throw AuthBridgeException('rate_limited', statusCode: 429);
+      }
+      throw AuthBridgeException(
+        'reset_mail_unavailable',
+        statusCode: ex.statusCode,
+      );
+    } catch (_) {
+      try {
+        await DatabaseService.instance.pocketBase
+            .collection(PbCollections.profiles)
+            .requestPasswordReset(e);
+        return PasswordResetRequestResult.sent;
+      } on ClientException catch (ex) {
+        if (ex.statusCode == 429) {
+          throw AuthBridgeException('rate_limited', statusCode: 429);
+        }
+        throw AuthBridgeException(
+          'reset_mail_unavailable',
+          statusCode: ex.statusCode,
+        );
+      } catch (_) {
+        throw AuthBridgeException('reset_mail_unavailable');
+      }
     }
   }
 

@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Plan create duplicate reconciliation [shipped]
+* **`plan_service.dart`:** [shipped] Plan create now reconciles optimistic and server rows by stable business `plan_id`: `_upsertPlanInUserCache` replaces matching optimistic cache entries, `_dedupePlanningTasksByBusinessId` guards `planningStream` emits, `clearOptimisticPlanningForPlanRow` purges overlay+cache by `optimistic-{plan_id}`, and plans realtime clears the optimistic overlay when the confirmed row arrives.
+* **`planning_view.dart`:** [shipped] Removed redundant UI-layer optimistic plan rows on quick-add/Smart Plan inject (Brain optimistic stream is sole source); added `_planQuickAddInFlight` guard and `plan_id`-aware merge fallback.
+
+## [2026-06-13] - Password reset lookup and messaging [shipped]
+* **`auth_bridge.dart` / `auth_view.dart` / `dictionary.dart`:** [shipped] Forgot password now calls the app-owned reset endpoint, shows explicit sent/not-registered/mail-unavailable messages, and offers a Register action when the email is not found.
+* **`pb_hooks/auth.request_password_reset.pb.js` / `pb_config.dart` / `docs/DEPLOY.md` / `docs/POCKETBASE_MANIFEST.md`:** [shipped] Added `POST /api/auth/request-password-reset` so PocketBase checks `profiles.email` server-side and sends reset mail without exposing profile search or private fields; documented SMTP/template/action URL diagnostics.
+
 ## [2026-06-12] - Mid-session auth repair + PocketBase readiness docs [shipped]
 * **`main.dart` / `offline_sync_state.dart`:** [shipped] The root auth gate now listens for mid-session `offlineSync.authPaused` from 401/403 record/plan mutations, routes to the login/session repair screen, marks syncing inactive while auth is paused, keeps outbox mutations paused, and resumes through the shared post-auth bootstrap after login.
 * **`AndroidManifest.xml` / `constants.dart` / `docs/DEPLOY.md`:** [shipped] Removed Supabase-era Android callback schemes/constants and documented PocketBase `profiles` OAuth provider discovery, `/api/oauth2-redirect` setup, Android real-device verification status, and password-reset SMTP/template requirements.

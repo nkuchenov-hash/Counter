@@ -69,9 +69,26 @@ PocketBase Admin requirements for production:
 - The deployed web origin must be allowed wherever the OAuth provider requires app origins: `https://nkuchenov-hash.github.io/Counter/`.
 - Android no longer declares Supabase-era callback schemes (`io.supabase.flutter://login-callback` or `mycounter://auth`). The current PocketBase Dart SDK all-in-one OAuth flow uses the PocketBase `/api/oauth2-redirect` endpoint; no app-owned Android deep link is active yet.
 - Real-device Android Google/Yandex OAuth still must be verified after provider admin setup is complete. If the all-in-one flow cannot survive Android browser/app lifecycle behavior, add a deliberate `authWithOAuth2Code` exchange with a new app-owned redirect scheme instead of reusing Supabase callbacks.
-- SMTP/mail settings are configured in PocketBase Admin, including sender name/address and a reachable public app/server URL.
-- Password reset email template/action URL is configured for the `profiles` auth collection. The Flutter app calls `profiles.requestPasswordReset(email)` and intentionally shows a neutral success message whether or not the account exists; PocketBase's default email flow may open a browser confirmation page unless a custom deep link/action URL is deliberately configured.
-- Email verification template/action URL is configured if verification is enabled. The app requests verification best-effort after email/password registration.
+- Deploy `pb_hooks/auth.request_password_reset.pb.js` to the production PocketBase `pb_hooks/` directory and reload/restart PocketBase. Flutter calls `POST /api/auth/request-password-reset` so the server can check `profiles.email` without exposing broad public profile search rules.
+- The reset route returns only structured booleans (`exists`, `sent`) and never profile data. If the route is missing, Flutter falls back to PocketBase's native `profiles.requestPasswordReset(email)` endpoint, but that fallback cannot reliably distinguish unknown emails from successful sends.
+- Settings → Mail settings:
+  - SMTP enabled.
+  - Correct SMTP host.
+  - Correct port.
+  - Correct encryption mode.
+  - Correct username/password or app password.
+  - Correct sender address.
+  - PocketBase Admin “Send test email” succeeds.
+- Collections → `profiles` → Options:
+  - Identity/password enabled.
+  - Password reset email template configured.
+  - Password reset Action URL configured correctly for the production reset flow.
+  - Application URL configured if the PocketBase version/templates use it for email action links.
+  - Email verification template/action URL configured if verification is enabled.
+- Password reset failure debugging:
+  - Watch PocketBase logs while clicking Forgot password.
+  - If SMTP/send fails, `pb_hooks/auth.request_password_reset.pb.js` logs the server-side reason as `auth.request_password_reset mail send failed`.
+  - Do not expose raw SMTP/server internals to Flutter users; the app shows the generic mail-service unavailable message.
 - OTP/code login is not implemented in Flutter. Enable OTP only if the app intentionally adds an OTP UI and server flow.
 
 OAuth implementation note: Flutter currently uses the PocketBase Dart SDK all-in-one `authWithOAuth2` flow for Google and Yandex on web/mobile. Android provider/admin setup must be verified on real devices; if Android lifecycle/backgrounding breaks the all-in-one flow, add a deliberate `authWithOAuth2Code` deep-link exchange instead of inventing a parallel auth path.
