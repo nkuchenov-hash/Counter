@@ -31,6 +31,23 @@ extension RecordServiceExtension on DatabaseService {
         d['category_id'] = cd['category_id']?.toString() ?? d['category_id'];
         d['_expanded_category'] = <String, dynamic>{...cd, 'id': first.id};
       }
+    } else {
+      final linkRaw = normalizeLinkScalar(d['category_link']);
+      final linkStr = linkRaw?.toString().trim() ?? '';
+      if (linkStr.isNotEmpty &&
+          DatabaseService._isLikelyPocketBaseRowId(linkStr)) {
+        final rule = getCategoryRuleByBackendRowId(linkStr);
+        if (rule != null) {
+          final biz = _categoryStringPkForApi(rule);
+          if (biz != null && biz.isNotEmpty) {
+            d['category_id'] = biz;
+          }
+          d['_expanded_category'] = <String, dynamic>{
+            'id': linkStr,
+            'category_id': d['category_id'],
+          };
+        }
+      }
     }
     final expTags = r.get<dynamic>('expand.$kPbRecordTagsExpand');
     if (expTags is List) {
@@ -218,10 +235,24 @@ extension RecordServiceExtension on DatabaseService {
         final same =
             rpk == pk || (biz.isNotEmpty && (rbiz == biz || rpk == biz));
         if (same) {
-          if (preserveExpand &&
-              m['_expanded_category'] == null &&
-              row['_expanded_category'] != null) {
-            m['_expanded_category'] = row['_expanded_category'];
+          if (preserveExpand) {
+            if (m['_expanded_category'] == null &&
+                row['_expanded_category'] != null) {
+              m['_expanded_category'] = row['_expanded_category'];
+            }
+            final priorLocal = categoryIdFromRecordRow(row);
+            final mergedLocal = categoryIdFromRecordRow(m);
+            if (_planLocalCategoryIdIsConcrete(priorLocal) &&
+                (!_planLocalCategoryIdIsConcrete(mergedLocal) ||
+                    mergedLocal != priorLocal)) {
+              m['category_id'] = row['category_id'];
+              if (row['category_link'] != null) {
+                m['category_link'] = row['category_link'];
+              }
+              if (row['_expanded_category'] != null) {
+                m['_expanded_category'] = row['_expanded_category'];
+              }
+            }
           }
           final silent =
               rbiz.isNotEmpty &&
@@ -559,7 +590,13 @@ extension RecordServiceExtension on DatabaseService {
         row['category_link'] ?? row['categoryLink'],
       );
       if (linkFlat != null && linkFlat.toString().trim().isNotEmpty) {
-        return CategoryRule.uncategorizedSyntheticId;
+        final linkStr = linkFlat.toString().trim();
+        if (DatabaseService._isLikelyPocketBaseRowId(linkStr)) {
+          final fromLink = getCategoryRuleByBackendRowId(linkStr)?.id;
+          if (fromLink != null) return fromLink;
+        }
+        final fromKey = findCategoryIdForStoredCategoryKey(linkStr);
+        if (fromKey != null) return fromKey;
       }
       if (v != null && v.toString().trim().isNotEmpty) {
         return CategoryRule.uncategorizedSyntheticId;
@@ -1410,16 +1447,22 @@ extension RecordServiceExtension on DatabaseService {
     int? categoryId,
     String? dateKey,
     String? sourcePlanPocketRecordId,
+    String? sourcePlanBusinessId,
   }) async {
     final now = DatabaseService.getPlanetaryNow();
     final trimmed = dateKey?.trim() ?? '';
     final key = trimmed.length >= 10
         ? trimmed.substring(0, 10)
         : getTimelineDeviceLocalTodayDateKey();
+    final resolvedCategory = resolveCurrentPlanCategoryForRecordStart(
+      sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+      planBusinessId: sourcePlanBusinessId,
+      uiCategoryId: categoryId,
+    );
     return writeRecord(
       key,
       title,
-      categoryId: categoryId,
+      categoryId: resolvedCategory,
       explicitStartTime: now,
       sourcePlanPocketRecordId: sourcePlanPocketRecordId,
     );
@@ -1427,13 +1470,13 @@ extension RecordServiceExtension on DatabaseService {
 
   /// One-tap start from a backlog row ([PlanningTask.startTime] may be null). Uses “now” on the server record.
   Future<String?> startRecordFromPlanTask(PlanningTask plan) {
+    final planPb = DatabaseService.pocketRelationIdOrNull(plan.pocketRecordId);
     return startTimerWithCategory(
       plan.title,
       categoryId: plan.categoryId,
       dateKey: plan.dateKey,
-      sourcePlanPocketRecordId: DatabaseService.pocketRelationIdOrNull(
-        plan.pocketRecordId,
-      ),
+      sourcePlanPocketRecordId: planPb,
+      sourcePlanBusinessId: plan.planRowIdForBackend,
     );
   }
 
@@ -1825,9 +1868,6 @@ extension RecordServiceExtension on DatabaseService {
       return false;
     }
     if (patchCode >= 200 && patchCode < 300) {
-      try {
-        await _fetchRecordsIntoCache(forceNetwork: true);
-      } catch (_) {}
       _notifyTimelineAfterRecordCacheMutation();
       unawaited(offlineSync.refreshPendingCount());
       return true;
@@ -2263,13 +2303,28 @@ extension RecordServiceExtension on DatabaseService {
     var deferWriteRecordMutationRelease = false;
     try {
       final parsed = getCleanTitleAndTags(taskText);
+      final sourcePlanForPayloadEarly = !((parentRecordId?.trim().isNotEmpty ?? false) || parentId != null)
+          ? DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId)
+          : null;
       int? cid = categoryId;
-      cid = identifyCategory(parsed.title)?.id ?? cid;
-      cid = _resolveRecordCategoryIdWithSmartLink(parsed.title, cid);
-      if (!_planLocalCategoryIdIsConcrete(cid)) {
-        final inferred = _smartInferCategoryId(parsed.title);
-        if (_planLocalCategoryIdIsConcrete(inferred)) {
-          cid = inferred;
+      if (sourcePlanForPayloadEarly != null) {
+        final planCat = resolveCurrentPlanCategoryForRecordStart(
+          sourcePlanPocketRecordId: sourcePlanForPayloadEarly,
+          uiCategoryId: categoryId,
+        );
+        if (_planLocalCategoryIdIsConcrete(planCat)) {
+          cid = planCat;
+        }
+      }
+      if (sourcePlanForPayloadEarly == null ||
+          !_planLocalCategoryIdIsConcrete(cid)) {
+        cid = identifyCategory(parsed.title)?.id ?? cid;
+        cid = _resolveRecordCategoryIdWithSmartLink(parsed.title, cid);
+        if (!_planLocalCategoryIdIsConcrete(cid)) {
+          final inferred = _smartInferCategoryId(parsed.title);
+          if (_planLocalCategoryIdIsConcrete(inferred)) {
+            cid = inferred;
+          }
         }
       }
       cid = _resolveColdStartRecordCategoryId(cid);
@@ -2548,7 +2603,7 @@ extension RecordServiceExtension on DatabaseService {
       }
     }
     if (shouldWriteCategory && resolvedCategoryId != null) {
-      row['category_id'] = _recordCategoryBusinessPkForApi(resolvedCategoryId);
+      _applyLocalRecordCategoryDualityToRow(row, resolvedCategoryId);
     }
     if (note != null) row['note'] = note;
     if (tags != null) {
@@ -2575,15 +2630,28 @@ extension RecordServiceExtension on DatabaseService {
     return DatabaseService.pocketRelationIdOrNull(raw?.toString());
   }
 
+  void _applyLocalRecordCategoryDualityToRow(
+    Map<String, dynamic> row,
+    int categoryId,
+  ) {
+    final pair = _recordCategoryDualityForLocalId(categoryId);
+    if (pair == null) {
+      row.remove('category_id');
+      row.remove('category_link');
+      row.remove('_expanded_category');
+      return;
+    }
+    row['category_id'] = pair.businessId;
+    row['category_link'] = pair.relationId;
+    row['_expanded_category'] = <String, dynamic>{
+      'id': pair.relationId,
+      'category_id': pair.businessId,
+    };
+  }
+
   void _applyCachedRecordCategoryAt(int index, int categoryId) {
     if (index < 0 || index >= _cachedFlatRecords.length) return;
-    final row = _cachedFlatRecords[index];
-    row['category_id'] = _recordCategoryBusinessPkForApi(categoryId);
-    final rule = getCategoryRuleById(categoryId);
-    final pb = _categoryBackendRowIdStrict(rule);
-    if (pb != null && pb.isNotEmpty) {
-      row['category_link'] = pb;
-    }
+    _applyLocalRecordCategoryDualityToRow(_cachedFlatRecords[index], categoryId);
   }
 
   void _propagatePlanAutoCategoryToLoadedLinkedRecords({

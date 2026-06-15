@@ -554,4 +554,8 @@ abstract final class SmartInputParser {
 
   static String _collapseSpace(String s) =>
       s.replaceAll(RegExp(r'\s+'), ' ').trim();
+
+  /// Title kept for storage/UI: basic trim + whitespace collapse only (time tokens stay).
+  static String preservedTitleFromRaw(String raw) =>
+      _collapseSpace(raw.replaceAll('\u00A0', ' '));
 }

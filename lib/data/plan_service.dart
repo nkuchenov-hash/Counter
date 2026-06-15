@@ -1809,10 +1809,21 @@ extension PlanServiceExtension on DatabaseService {
     return true;
   }
 
-  /// Cached plans only ([_tasksCache] + optimistic overlays) — for instant UI cache rows.
-  int? _tryResolveCategoryIdFromSourcePlanPbIdSync(String planPbId) {
+  /// Cached plans only — for instant UI cache rows and Play/start-from-plan.
+  int? _tryResolveCategoryIdFromSourcePlanPbIdSync(
+    String planPbId, {
+    String? planBusinessId,
+  }) {
     final want = planPbId.trim();
     if (want.isEmpty) return null;
+    final fromEdit = _findCachedPlanningTaskForEdit(
+      want,
+      planBusinessId: planBusinessId,
+    );
+    if (fromEdit != null &&
+        _planLocalCategoryIdIsConcrete(fromEdit.categoryId)) {
+      return fromEdit.categoryId;
+    }
     for (final t in _tasksCache) {
       if (DatabaseService.pocketRelationIdOrNull(t.pocketRecordId) == want) {
         return _planLocalCategoryIdIsConcrete(t.categoryId)
@@ -1839,11 +1850,43 @@ extension PlanServiceExtension on DatabaseService {
     return null;
   }
 
+  /// Fresh plan category for record create (Play). Brain cache wins over stale UI.
+  int? resolveCurrentPlanCategoryForRecordStart({
+    String? sourcePlanPocketRecordId,
+    String? planBusinessId,
+    int? uiCategoryId,
+  }) {
+    final planId = DatabaseService.pocketRelationIdOrNull(
+      sourcePlanPocketRecordId,
+    );
+    if (planId == null) {
+      return _planLocalCategoryIdIsConcrete(uiCategoryId) ? uiCategoryId : null;
+    }
+    final cached = _tryResolveCategoryIdFromSourcePlanPbIdSync(
+      planId,
+      planBusinessId: planBusinessId,
+    );
+    if (_planLocalCategoryIdIsConcrete(cached)) {
+      if (uiCategoryId != null &&
+          _planLocalCategoryIdIsConcrete(uiCategoryId) &&
+          uiCategoryId != cached) {
+        debugPrint(
+          '[PLAN_START_CATEGORY_SYNC] stale UI category replaced with current plan category',
+        );
+      }
+      return cached;
+    }
+    return _planLocalCategoryIdIsConcrete(uiCategoryId) ? uiCategoryId : null;
+  }
+
   /// PocketBase **plans** row id → local [CategoryRule.id] for `records.category_id` inheritance.
   Future<int?> _resolveCategoryIdFromSourcePlanPbId(String? planPbIdRaw) async {
     final want = DatabaseService.pocketRelationIdOrNull(planPbIdRaw);
     if (want == null) return null;
-    final cached = _tryResolveCategoryIdFromSourcePlanPbIdSync(want);
+    final cached = _tryResolveCategoryIdFromSourcePlanPbIdSync(
+      want,
+      planBusinessId: null,
+    );
     if (cached != null) return cached;
     if (!_isInitialized || !_hasAuthenticatedUserId) return null;
     try {
@@ -2458,17 +2501,14 @@ extension PlanServiceExtension on DatabaseService {
     DateTime? startStored;
     DateTime? endStored;
 
+    title = SmartInputParser.preservedTitleFromRaw(rawText);
+    if (title.isEmpty) return false;
+
     if (range != null) {
-      title = range.cleanedTitle.trim();
-      if (title.isEmpty) {
-        title = t(currentLocale.value, 'plan_title_time_range_fallback');
-      }
       startStored = displayTimeToUtc(range.startWallOn(ymd));
       endStored = displayTimeToUtc(range.endWallOn(ymd));
     } else {
       parsed = SmartInputParser.parseTitleForScheduledTime(rawText);
-      title = (parsed?.cleanedTitle ?? rawText).trim();
-      if (title.isEmpty) return false;
       startStored = parsed != null
           ? displayTimeToUtc(parsed.wallDateTimeOn(ymd))
           : null;

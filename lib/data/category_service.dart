@@ -649,39 +649,76 @@ extension CategoryServiceExtension on DatabaseService {
     return c;
   }
 
-  /// PocketBase **records**: when `category_id` is a **relation** to `categories`, the API body must
-  /// contain the **categories** row system id (~15 chars), never the business slug (`life`, etc.).
-  /// Optional field `category_link` is not sent here (timeline GET may still use `expand: category_link`
-  /// per [kPbRecordCategoryExpand] if that field exists Admin-side).
-  void _mapCategoryIdToLinkForPb(Map<String, dynamic> merged) {
-    merged.remove('category_link');
-    if (!merged.containsKey('category_id')) return;
-    final rawCat = merged['category_id'];
-    final key = rawCat?.toString().trim() ?? '';
-    if (key.isEmpty) {
-      merged.remove('category_id');
-      return;
+  /// Records POST/PATCH category duality (@DATA_MAP): business `category_id` + relation `category_link`.
+  ({String businessId, String relationId})? _recordCategoryDualityForLocalId(
+    int? localCategoryId,
+  ) {
+    if (!_planLocalCategoryIdIsConcrete(localCategoryId)) return null;
+    final rule = getCategoryRuleById(localCategoryId!);
+    if (rule == null || rule.isArchived) return null;
+    final biz = _categoryStringPkForApi(rule);
+    final rel = _categoryBackendRowIdStrict(rule);
+    if (biz == null || biz.isEmpty || biz == 'uncategorized') return null;
+    if (rel == null ||
+        rel.isEmpty ||
+        !DatabaseService._isLikelyPocketBaseRowId(rel) ||
+        !_categoryPbRowIdKnownInRules(rel)) {
+      return null;
     }
+    return (businessId: biz, relationId: rel);
+  }
+
+  int? _localCategoryIdFromRecordCategoryPayload(dynamic rawCat) {
+    final key = rawCat?.toString().trim() ?? '';
+    if (key.isEmpty) return null;
     var localId = int.tryParse(key);
     localId ??= findCategoryIdForStoredCategoryKey(key);
-    final rule = categoryRuleForRecordCategoryId(localId);
-    final bid = _categoryBackendRowIdStrict(rule);
-    if (bid != null &&
-        bid.isNotEmpty &&
-        bid != 'uncategorized' &&
-        DatabaseService._isLikelyPocketBaseRowId(bid) &&
-        _categoryPbRowIdKnownInRules(bid)) {
-      merged['category_id'] = bid;
-    } else {
+    if (localId == null &&
+        DatabaseService._isLikelyPocketBaseRowId(key)) {
+      localId = getCategoryRuleByBackendRowId(key)?.id;
+    }
+    return localId;
+  }
+
+  void _applyRecordCategoryDualityToPayload(
+    Map<String, dynamic> merged,
+    int? localCategoryId,
+  ) {
+    final pair = _recordCategoryDualityForLocalId(localCategoryId);
+    if (pair == null) {
+      merged.remove('category_id');
+      merged.remove('category_link');
+      return;
+    }
+    merged['category_id'] = pair.businessId;
+    merged['category_link'] = pair.relationId;
+  }
+
+  /// Normalize outgoing record category fields to business `category_id` + `category_link`.
+  void _mapCategoryIdToLinkForPb(Map<String, dynamic> merged) {
+    if (!merged.containsKey('category_id')) return;
+    final localId = _localCategoryIdFromRecordCategoryPayload(
+      merged['category_id'],
+    );
+    if (localId == null) {
+      merged.remove('category_id');
+      merged.remove('category_link');
+      return;
+    }
+    final pair = _recordCategoryDualityForLocalId(localId);
+    if (pair == null) {
       if (kDebugMode) {
         debugPrint(
-          '[CAT_MAP] category_id dropped from payload — no resolved PB row id '
-          '(rawCat=$rawCat, bid=$bid, ruleName=${rule.name}, ruleId=${rule.id}). '
-          'Cold-start race or unmapped category.',
+          '[CAT_MAP] record category dropped from payload — no duality pair '
+          '(rawCat=${merged['category_id']}, localId=$localId).',
         );
       }
       merged.remove('category_id');
+      merged.remove('category_link');
+      return;
     }
+    merged['category_id'] = pair.businessId;
+    merged['category_link'] = pair.relationId;
   }
 
   /// True if [pbId] matches a loaded [CategoryRule.backendRowId] (tree walk).
@@ -703,28 +740,24 @@ extension CategoryServiceExtension on DatabaseService {
     return found;
   }
 
-  /// Records POST/PATCH: strip legacy `category_link` key; ensure relation [category_id] is only a known PB id.
+  /// Records POST/PATCH: enforce business `category_id` + relation `category_link` pair.
   void _sanitizeOutgoingCategoryLink(Map<String, dynamic> merged) {
-    merged.remove('category_link');
-    if (!merged.containsKey('category_id')) return;
-    final raw = merged['category_id']?.toString().trim() ?? '';
-    if (raw.isEmpty ||
-        !DatabaseService._isLikelyPocketBaseRowId(raw) ||
-        !_categoryPbRowIdKnownInRules(raw)) {
-      merged.remove('category_id');
+    if (!merged.containsKey('category_id') &&
+        !merged.containsKey('category_link')) {
+      return;
     }
+    var localId = _localCategoryIdFromRecordCategoryPayload(
+      merged['category_id'],
+    );
+    localId ??= _localCategoryIdFromRecordCategoryPayload(
+      merged['category_link'],
+    );
+    _applyRecordCategoryDualityToPayload(merged, localId);
   }
 
-  /// True when [id] maps to a PocketBase **categories** system id for outgoing record POST/PATCH
-  /// (same conditions as [_mapCategoryIdToLinkForPb] before [merged.remove] strips the field).
+  /// True when [id] maps to a valid record category duality pair for outgoing POST/PATCH.
   bool _categoryIdResolvableForPbRecordPost(int? id) {
-    if (!_planLocalCategoryIdIsConcrete(id)) return false;
-    final rule = getCategoryRuleById(id!);
-    if (rule == null || rule.isArchived) return false;
-    final bid = _categoryBackendRowIdStrict(rule);
-    if (bid == null || bid.isEmpty) return false;
-    if (!DatabaseService._isLikelyPocketBaseRowId(bid)) return false;
-    return _categoryPbRowIdKnownInRules(bid);
+    return _recordCategoryDualityForLocalId(id) != null;
   }
 
   /// Prefer a leaf (no children) with a resolvable PB id; else first resolvable category in tree order.

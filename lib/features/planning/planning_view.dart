@@ -271,6 +271,21 @@ class _PlanningPageState extends State<PlanningPage>
   /// Hour-grid day timeline scroll (edge auto-scroll while dragging a plan).
   final ScrollController _hourGridScrollController = ScrollController();
 
+  static const double _kTimelineHourHeightPx = 80;
+  static const double _kTimelineRailWidthPx = 48;
+  static const double _kTimelineMinBlockHeightPx = 56;
+  static const int _kTimelineDefaultBlockMinutes = 30;
+
+  /// Active vertical timeline drag (Time mode); local preview only until drop.
+  String? _timelineVerticalDragPlanKey;
+  double _timelineVerticalDragDeltaPx = 0;
+  double _timelineVerticalDragOriginTopPx = 0;
+  int _timelineVerticalDragDurationMin = _kTimelineDefaultBlockMinutes;
+  PlanningTask? _timelineVerticalDragTask;
+  bool _timelineVerticalDragHadEnd = false;
+  bool _timelineScrollLocked = false;
+  String? _timelineVerticalDragTimeLabel;
+
   late final Ticker _hourGridEdgeScrollTicker;
   double _hourGridScrollVelocityPxPerSec = 0;
   Duration? _hourGridTickerElapsedLast;
@@ -1539,11 +1554,10 @@ class _PlanningPageState extends State<PlanningPage>
     DateTime? startStored;
     DateTime? endStored;
 
+    title = SmartInputParser.preservedTitleFromRaw(raw);
+    if (title.isEmpty) return;
+
     if (range != null) {
-      title = range.cleanedTitle.trim();
-      if (title.isEmpty) {
-        title = t(currentLocale.value, 'plan_title_time_range_fallback');
-      }
       startStored = DatabaseService.instance.displayTimeToUtc(
         range.startWallOn(wallDay),
       );
@@ -1552,8 +1566,6 @@ class _PlanningPageState extends State<PlanningPage>
       );
     } else {
       parsed = SmartInputParser.parseTitleForScheduledTime(raw);
-      title = (parsed?.cleanedTitle ?? raw).trim();
-      if (title.isEmpty) return;
       startStored = parsed != null
           ? DatabaseService.instance.displayTimeToUtc(
               parsed.wallDateTimeOn(wallDay),
@@ -1954,6 +1966,309 @@ class _PlanningPageState extends State<PlanningPage>
     return st.hour;
   }
 
+  /// Wall minutes from [rangeStart] o'clock on the visible day timeline.
+  double _timelineMinutesFromRangeStart(
+    DateTime wall,
+    int rangeStart,
+    int rangeEnd,
+  ) {
+    final h = wall.hour.clamp(0, 23);
+    final m = wall.minute.clamp(0, 59);
+    if (rangeStart <= rangeEnd) {
+      return ((h - rangeStart) * 60 + m).toDouble();
+    }
+    if (h >= rangeStart) {
+      return ((h - rangeStart) * 60 + m).toDouble();
+    }
+    if (h <= rangeEnd) {
+      return ((24 - rangeStart + h) * 60 + m).toDouble();
+    }
+    return 0;
+  }
+
+  int _timelineBlockDurationMinutes(PlanningTask task) {
+    final a = task.startTime;
+    final b = task.endDateTime;
+    if (a != null && b != null) {
+      final sec = b.difference(a).inSeconds;
+      if (sec > 0) return (sec / 60).ceil().clamp(5, 24 * 60);
+    }
+    return _kTimelineDefaultBlockMinutes;
+  }
+
+  double _timelineCanvasHeightPx(int rangeStart, int rangeEnd) {
+    final hours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
+      rangeStart,
+      rangeEnd,
+    );
+    return hours.length * _kTimelineHourHeightPx;
+  }
+
+  List<_TimelineBlockLayout> _timelineBlockLayouts(
+    List<PlanningTask> scheduled,
+    int rangeStart,
+    int rangeEnd,
+  ) {
+    final spans = <({PlanningTask task, double start, double end})>[];
+    for (final t in scheduled) {
+      final st = t.startTime;
+      if (st == null) continue;
+      final startMin = _timelineMinutesFromRangeStart(st, rangeStart, rangeEnd);
+      final durMin = _timelineBlockDurationMinutes(t).toDouble();
+      spans.add((task: t, start: startMin, end: startMin + durMin));
+    }
+    spans.sort((a, b) {
+      final c = a.start.compareTo(b.start);
+      if (c != 0) return c;
+      return a.end.compareTo(b.end);
+    });
+    final layouts = <_TimelineBlockLayout>[];
+    for (var i = 0; i < spans.length; i++) {
+      final item = spans[i];
+      final overlapIdx = <int>[];
+      for (var j = 0; j < spans.length; j++) {
+        final other = spans[j];
+        if (other.end > item.start && other.start < item.end) {
+          overlapIdx.add(j);
+        }
+      }
+      overlapIdx.sort();
+      final col = overlapIdx.indexOf(i).clamp(0, overlapIdx.length - 1);
+      final totalCols = overlapIdx.isEmpty ? 1 : overlapIdx.length;
+      final heightPx = math.max(
+        _kTimelineMinBlockHeightPx,
+        (item.end - item.start) * _kTimelineHourHeightPx / 60,
+      );
+      layouts.add(
+        _TimelineBlockLayout(
+          task: item.task,
+          topPx: item.start * _kTimelineHourHeightPx / 60,
+          heightPx: heightPx,
+          column: col,
+          totalColumns: totalCols,
+        ),
+      );
+    }
+    return layouts;
+  }
+
+  bool _isSelectedPlanningWallDayToday(DateTime planWallDay) {
+    final today = _today;
+    return planWallDay.year == today.year &&
+        planWallDay.month == today.month &&
+        planWallDay.day == today.day;
+  }
+
+  double? _timelineNowLineTopPx(
+    DateTime planWallDay,
+    int rangeStart,
+    int rangeEnd,
+  ) {
+    if (!_isSelectedPlanningWallDayToday(planWallDay)) return null;
+    final now = DatabaseService.getPlanetaryNow();
+    final min = _timelineMinutesFromRangeStart(now, rangeStart, rangeEnd);
+    final maxMin = PlanningSheetTimelinePrefs.visibleHoursOrdered(
+          rangeStart,
+          rangeEnd,
+        ).length *
+        60;
+    if (min < 0 || min > maxMin) return null;
+    return min * _kTimelineHourHeightPx / 60;
+  }
+
+  double get _timelinePxPerMinute => _kTimelineHourHeightPx / 60;
+
+  double _snapTimelineMinutes(double rawMinutes) {
+    final snap = PlanningSheetTimelinePrefs.timelineSnapMinutes;
+    return (rawMinutes / snap).round() * snap.toDouble();
+  }
+
+  bool _planIsTimelineVerticallyDraggable(PlanningTask task) {
+    if (_planSelectMode) return false;
+    if (task.startTime == null) return false;
+    if (task.planRowIdForBackend.startsWith('optimistic-')) return false;
+    final rrule = task.rrule?.trim() ?? '';
+    if (rrule.isNotEmpty) return false;
+    final inst = task.recurrenceInstanceDateKey?.trim() ?? '';
+    if (inst.isNotEmpty) return false;
+    return true;
+  }
+
+  DateTime _wallTimeFromTimelineMinutes(
+    double minutesFromRangeStart,
+    DateTime planWallDay,
+    int rangeStart,
+  ) {
+    final snapped = _snapTimelineMinutes(minutesFromRangeStart);
+    final total = snapped.round().clamp(0, 24 * 60 - 1);
+    final hour = (rangeStart + (total ~/ 60)) % 24;
+    final minute = total % 60;
+    return DateTime(
+      planWallDay.year,
+      planWallDay.month,
+      planWallDay.day,
+      hour,
+      minute,
+    );
+  }
+
+  String _formatTimelineWallRangeLabel(DateTime start, DateTime? end) {
+    String hhmm(DateTime t) =>
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+    if (end != null) return '${hhmm(start)} – ${hhmm(end)}';
+    return hhmm(start);
+  }
+
+  String? _timelineDragLabelForTopPx(
+    double topPx,
+    DateTime planWallDay,
+    int rangeStart,
+    int durationMin,
+    bool hadEnd,
+  ) {
+    final startMin = topPx / _timelinePxPerMinute;
+    final startWall = _wallTimeFromTimelineMinutes(
+      startMin,
+      planWallDay,
+      rangeStart,
+    );
+    final endWall = hadEnd
+        ? startWall.add(Duration(minutes: durationMin))
+        : null;
+    return _formatTimelineWallRangeLabel(startWall, endWall);
+  }
+
+  void _beginTimelineVerticalDrag({
+    required PlanningTask task,
+    required String planKey,
+    required double originTopPx,
+    required int durationMin,
+    required bool hadEnd,
+    required DateTime planWallDay,
+    required int rangeStart,
+  }) {
+    setState(() {
+      _timelineVerticalDragPlanKey = planKey;
+      _timelineVerticalDragDeltaPx = 0;
+      _timelineVerticalDragOriginTopPx = originTopPx;
+      _timelineVerticalDragDurationMin = durationMin;
+      _timelineVerticalDragTask = task;
+      _timelineVerticalDragHadEnd = hadEnd;
+      _timelineScrollLocked = true;
+      _timelineVerticalDragTimeLabel = _timelineDragLabelForTopPx(
+        originTopPx,
+        planWallDay,
+        rangeStart,
+        durationMin,
+        hadEnd,
+      );
+    });
+  }
+
+  void _updateTimelineVerticalDrag({
+    required double deltaPx,
+    required double globalDy,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+    required double canvasHeight,
+  }) {
+    final durMin = _timelineVerticalDragDurationMin.toDouble();
+    final maxTopPx = math.max(
+      0,
+      (PlanningSheetTimelinePrefs.visibleHoursOrdered(rangeStart, rangeEnd)
+                  .length *
+              60 -
+          durMin) *
+          _timelinePxPerMinute,
+    );
+    final clampedDelta = (_timelineVerticalDragOriginTopPx + deltaPx)
+        .clamp(0.0, maxTopPx) -
+        _timelineVerticalDragOriginTopPx;
+    setState(() {
+      _timelineVerticalDragDeltaPx = clampedDelta;
+      _timelineVerticalDragTimeLabel = _timelineDragLabelForTopPx(
+        _timelineVerticalDragOriginTopPx + clampedDelta,
+        planWallDay,
+        rangeStart,
+        _timelineVerticalDragDurationMin,
+        _timelineVerticalDragHadEnd,
+      );
+    });
+    _handleHourGridDragUpdateForEdgeScroll(globalDy);
+  }
+
+  void _cancelTimelineVerticalDrag() {
+    if (_timelineVerticalDragPlanKey == null) return;
+    _stopHourGridEdgeScroll();
+    setState(() {
+      _timelineVerticalDragPlanKey = null;
+      _timelineVerticalDragDeltaPx = 0;
+      _timelineVerticalDragTask = null;
+      _timelineVerticalDragTimeLabel = null;
+      _timelineScrollLocked = false;
+    });
+  }
+
+  void _commitTimelineVerticalDrag({
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+  }) {
+    final task = _timelineVerticalDragTask;
+    final planKey = _timelineVerticalDragPlanKey;
+    _stopHourGridEdgeScroll();
+    if (task == null || planKey == null) {
+      _cancelTimelineVerticalDrag();
+      return;
+    }
+    final durMin = _timelineVerticalDragDurationMin;
+    final maxTopPx = math.max(
+      0,
+      (PlanningSheetTimelinePrefs.visibleHoursOrdered(rangeStart, rangeEnd)
+                  .length *
+              60 -
+          durMin) *
+          _timelinePxPerMinute,
+    );
+    final newTopPx = (_timelineVerticalDragOriginTopPx +
+            _timelineVerticalDragDeltaPx)
+        .clamp(0.0, maxTopPx);
+    final newStartWall = _wallTimeFromTimelineMinutes(
+      newTopPx / _timelinePxPerMinute,
+      planWallDay,
+      rangeStart,
+    );
+    final newEndWall = _timelineVerticalDragHadEnd
+        ? newStartWall.add(Duration(minutes: durMin))
+        : null;
+    final updated = task.copyWith(
+      startTime: newStartWall,
+      endDateTime: newEndWall,
+      clearEnd: !_timelineVerticalDragHadEnd,
+    );
+    setState(() {
+      _timelineVerticalDragPlanKey = null;
+      _timelineVerticalDragDeltaPx = 0;
+      _timelineVerticalDragTask = null;
+      _timelineVerticalDragTimeLabel = null;
+      _timelineScrollLocked = false;
+    });
+    DatabaseService.instance.applyOptimisticPlanningTask(updated);
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+    unawaited(
+      DatabaseService.instance.updatePlanningTask(
+        task.planRowIdForBackend,
+        planBusinessId: task.planRowId,
+        startTimeDisplay: newStartWall,
+        endDateTimeDisplay: newEndWall,
+        clearEnd: !_timelineVerticalDragHadEnd,
+        suppressAppSnack: true,
+      ),
+    );
+  }
+
   Future<void> _onPlanningTaskDroppedOnHour(
     PlanningTask task,
     int targetHour,
@@ -2011,6 +2326,9 @@ class _PlanningPageState extends State<PlanningPage>
     /// When true, [InkWell.onLongPress] is omitted so [ReorderableDelayedDragStartListener] can claim long-press reorder.
     bool omitLongPressForReorder = false,
 
+    /// When true, omits list trailing padding (timeline absolute blocks).
+    bool timelineEmbedded = false,
+
     /// When set with [enableLongPressDrag], drives hour-grid edge auto-scroll from [DragUpdateDetails.globalPosition].
     ValueChanged<double>? onHourGridDragGlobalDy,
     VoidCallback? onHourGridDragEnded,
@@ -2033,14 +2351,13 @@ class _PlanningPageState extends State<PlanningPage>
         !_planSelectMode &&
         !task.planRowIdForBackend.startsWith('optimistic-');
     if (!allowLongPressDrag) {
+      if (timelineEmbedded) return card;
       return Padding(padding: const EdgeInsets.only(bottom: 6), child: card);
     }
 
     final maxFeedbackW = MediaQuery.sizeOf(context).width * 0.9;
     final onDragEnded = onHourGridDragEnded;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: LongPressDraggable<PlanningTask>(
+    final draggable = LongPressDraggable<PlanningTask>(
         delay: const Duration(milliseconds: 300),
         data: task,
         onDragUpdate: onHourGridDragGlobalDy == null
@@ -2085,8 +2402,9 @@ class _PlanningPageState extends State<PlanningPage>
           ),
         ),
         child: card,
-      ),
     );
+    if (timelineEmbedded) return draggable;
+    return Padding(padding: const EdgeInsets.only(bottom: 6), child: draggable);
   }
 
   Widget _buildHourGridView(
@@ -2100,23 +2418,24 @@ class _PlanningPageState extends State<PlanningPage>
     final ordered = _tasksForTimeMode(tasks, rangeStart);
     final unscheduled = ordered.where((t) => t.startTime == null).toList();
     final scheduled = ordered.where((t) => t.startTime != null).toList();
-    final byHour = <int, List<PlanningTask>>{};
-    for (final t in scheduled) {
-      final st = t.startTime;
-      if (st == null) continue;
-      final h = st.hour.clamp(0, 23);
-      byHour.putIfAbsent(h, () => []).add(t);
-    }
     final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
       rangeStart,
       rangeEnd,
     );
     final visibleSet = visibleHours.toSet();
 
-    /// Slot labels match [PlanningSheetTimelinePrefs] hour integers — profile wall o'clock, not device TZ.
-    String hourLabel(int hour) {
-      final safeHour = hour.clamp(0, 23);
-      return '${safeHour.toString().padLeft(2, '0')}:00';
+    final planWallDay = widget.selectedDate ?? _today;
+    final inRangeScheduled = <PlanningTask>[];
+    final outsideHourTasks = <PlanningTask>[];
+    for (final t in scheduled) {
+      final st = t.startTime;
+      if (st == null) continue;
+      final wallH = st.hour.clamp(0, 23);
+      if (!visibleSet.contains(wallH)) {
+        outsideHourTasks.add(t);
+      } else {
+        inRangeScheduled.add(t);
+      }
     }
 
     final children = <Widget>[];
@@ -2151,15 +2470,6 @@ class _PlanningPageState extends State<PlanningPage>
       }
       children.add(const SizedBox(height: 8));
     }
-    final outsideHourTasks = <PlanningTask>[];
-    for (final t in scheduled) {
-      final st = t.startTime;
-      if (st == null) continue;
-      final wallH = st.hour.clamp(0, 23);
-      if (!visibleSet.contains(wallH)) {
-        outsideHourTasks.add(t);
-      }
-    }
     if (outsideHourTasks.isNotEmpty) {
       children.add(
         Padding(
@@ -2191,107 +2501,411 @@ class _PlanningPageState extends State<PlanningPage>
       }
       children.add(const SizedBox(height: 8));
     }
-    for (final hour in visibleHours) {
-      final hourTasks = byHour[hour] ?? <PlanningTask>[];
-      final label = hourLabel(hour);
-      final dividerColor = scheme.outlineVariant.withValues(alpha: 0.45);
-      children.add(
-        Padding(
-          padding: const EdgeInsets.fromLTRB(0, 10, 0, 4),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Divider(height: 1, thickness: 1, color: dividerColor),
-                ),
-              ),
-              IconButton(
-                tooltip: t(loc, 'plan_quick_add_hour'),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints.tightFor(
-                  width: 32,
-                  height: 32,
-                ),
-                visualDensity: VisualDensity.compact,
-                style: IconButton.styleFrom(
-                  foregroundColor: scheme.onSurfaceVariant.withValues(
-                    alpha: 0.65,
-                  ),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                iconSize: 20,
-                icon: const Icon(Icons.add_rounded),
-                onPressed: () => _openQuickAddForHour(hour),
-              ),
-            ],
-          ),
-        ),
-      );
-      children.add(
-        DragTarget<PlanningTask>(
-          hitTestBehavior: HitTestBehavior.opaque,
-          onWillAcceptWithDetails: (_) => !_planSelectMode,
-          onAcceptWithDetails: (details) {
-            unawaited(_onPlanningTaskDroppedOnHour(details.data, hour));
-          },
-          builder: (context, candidate, rejected) {
-            final dropHover = candidate.isNotEmpty;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 120),
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 6),
-              padding: EdgeInsets.zero,
-              decoration: BoxDecoration(
-                color: dropHover
-                    ? scheme.primaryContainer.withValues(alpha: 0.35)
-                    : null,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: hourTasks.isEmpty
-                  ? SizedBox(height: dropHover ? 28 : 12)
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final task in hourTasks)
-                          Builder(
-                            builder: (ctx) {
-                              final key = _planKey(task);
-                              final displayDone =
-                                  _planDoneOverride[key] ?? task.isDone;
-                              return _planCardRow(
-                                context: ctx,
-                                task: task,
-                                key: key,
-                                displayDone: displayDone,
-                                isSelected: _selectedPlanKeys.contains(key),
-                                planActualByPbId: planActualByPbId,
-                                enableLongPressDrag: true,
-                                onHourGridDragGlobalDy:
-                                    _handleHourGridDragUpdateForEdgeScroll,
-                                onHourGridDragEnded: _stopHourGridEdgeScroll,
-                              );
-                            },
-                          ),
-                      ],
-                    ),
-            );
-          },
-        ),
-      );
-    }
+
+    children.add(
+      _buildProportionalDayTimelineCanvas(
+        scheme: scheme,
+        loc: loc,
+        planWallDay: planWallDay,
+        rangeStart: rangeStart,
+        rangeEnd: rangeEnd,
+        visibleHours: visibleHours,
+        scheduledInRange: inRangeScheduled,
+        planActualByPbId: planActualByPbId,
+      ),
+    );
+
     return ListView(
       controller: _hourGridScrollController,
+      physics: _timelineScrollLocked
+          ? const NeverScrollableScrollPhysics()
+          : null,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       children: children,
+    );
+  }
+
+  Widget _buildProportionalDayTimelineCanvas({
+    required ColorScheme scheme,
+    required String loc,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+    required List<int> visibleHours,
+    required List<PlanningTask> scheduledInRange,
+    required Map<String, int> planActualByPbId,
+  }) {
+    final canvasHeight = _timelineCanvasHeightPx(rangeStart, rangeEnd);
+    final timelineBg = Color.alphaBlend(
+      scheme.primary.withValues(alpha: 0.05),
+      scheme.surface,
+    );
+    final gridColor = scheme.outlineVariant.withValues(alpha: 0.35);
+    final layouts = _timelineBlockLayouts(
+      scheduledInRange,
+      rangeStart,
+      rangeEnd,
+    );
+    final nowTop = _timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd);
+    final nowLabel = nowTop != null
+        ? () {
+            final n = DatabaseService.getPlanetaryNow();
+            return '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}';
+          }()
+        : null;
+
+    String hourLabel(int hour) =>
+        '${hour.clamp(0, 23).toString().padLeft(2, '0')}:00';
+
+    return SizedBox(
+      height: canvasHeight + 8,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: _kTimelineRailWidthPx,
+            height: canvasHeight,
+            child: Stack(
+              children: [
+                for (var i = 0; i < visibleHours.length; i++)
+                  Positioned(
+                    top: i * _kTimelineHourHeightPx - 6,
+                    left: 0,
+                    right: 0,
+                    child: Text(
+                      hourLabel(visibleHours[i]),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SizedBox(
+              height: canvasHeight,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final canvasW = constraints.maxWidth;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: timelineBg,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: scheme.outlineVariant.withValues(
+                                alpha: 0.25,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      for (var i = 0; i < visibleHours.length; i++)
+                        Positioned(
+                          top: i * _kTimelineHourHeightPx,
+                          left: 0,
+                          right: 0,
+                          height: _kTimelineHourHeightPx,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                child: Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: gridColor,
+                                ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                right: 4,
+                                child: IconButton(
+                                  tooltip: t(loc, 'plan_quick_add_hour'),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 28,
+                                    height: 28,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  style: IconButton.styleFrom(
+                                    foregroundColor: scheme.onSurfaceVariant
+                                        .withValues(alpha: 0.5),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  iconSize: 18,
+                                  icon: const Icon(Icons.add_rounded),
+                                  onPressed: () =>
+                                      _openQuickAddForHour(visibleHours[i]),
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: DragTarget<PlanningTask>(
+                                  hitTestBehavior: HitTestBehavior.translucent,
+                                  onWillAcceptWithDetails: (_) =>
+                                      !_planSelectMode &&
+                                      _timelineVerticalDragPlanKey == null,
+                                  onAcceptWithDetails: (details) {
+                                    unawaited(
+                                      _onPlanningTaskDroppedOnHour(
+                                        details.data,
+                                        visibleHours[i],
+                                      ),
+                                    );
+                                  },
+                                  builder: (context, candidate, rejected) {
+                                    final hover = candidate.isNotEmpty;
+                                    return GestureDetector(
+                                      behavior: HitTestBehavior.translucent,
+                                      onTap: () => _openQuickAddForHour(
+                                        visibleHours[i],
+                                      ),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(
+                                          milliseconds: 120,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: hover
+                                              ? scheme.primaryContainer
+                                                    .withValues(alpha: 0.28)
+                                              : null,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (nowTop != null && nowLabel != null)
+                        Positioned(
+                          top: nowTop.clamp(0, canvasHeight - 1),
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: scheme.primary.withValues(
+                                    alpha: 0.88,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  nowLabel,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: scheme.onPrimary,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 10,
+                                      ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Container(
+                                  height: 2,
+                                  color: scheme.primary.withValues(
+                                    alpha: 0.55,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ...[
+                        ...layouts
+                            .where(
+                              (l) =>
+                                  _planKey(l.task) !=
+                                  _timelineVerticalDragPlanKey,
+                            )
+                            .map(
+                              (layout) => _buildTimelinePlanStackLayer(
+                                layout: layout,
+                                canvasW: canvasW,
+                                canvasHeight: canvasHeight,
+                                scheme: scheme,
+                                planWallDay: planWallDay,
+                                rangeStart: rangeStart,
+                                rangeEnd: rangeEnd,
+                                planActualByPbId: planActualByPbId,
+                              ),
+                            ),
+                        ...layouts
+                            .where(
+                              (l) =>
+                                  _planKey(l.task) ==
+                                  _timelineVerticalDragPlanKey,
+                            )
+                            .map(
+                              (layout) => _buildTimelinePlanStackLayer(
+                                layout: layout,
+                                canvasW: canvasW,
+                                canvasHeight: canvasHeight,
+                                scheme: scheme,
+                                planWallDay: planWallDay,
+                                rangeStart: rangeStart,
+                                rangeEnd: rangeEnd,
+                                planActualByPbId: planActualByPbId,
+                              ),
+                            ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelinePlanStackLayer({
+    required _TimelineBlockLayout layout,
+    required double canvasW,
+    required double canvasHeight,
+    required ColorScheme scheme,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+    required Map<String, int> planActualByPbId,
+  }) {
+    final planKey = _planKey(layout.task);
+    final isDragging = _timelineVerticalDragPlanKey == planKey;
+    final topPx = isDragging
+        ? layout.topPx + _timelineVerticalDragDeltaPx
+        : layout.topPx;
+    final left = (canvasW / layout.totalColumns) * layout.column + 4;
+    final width = canvasW / layout.totalColumns - 8;
+    final canDrag = _planIsTimelineVerticallyDraggable(layout.task);
+    final durMin = _timelineBlockDurationMinutes(layout.task);
+    final hadEnd = layout.task.endDateTime != null;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        if (isDragging)
+          Positioned(
+            top: layout.topPx,
+            left: left,
+            width: width,
+            height: layout.heightPx,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer.withValues(alpha: 0.22),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: scheme.outlineVariant.withValues(alpha: 0.45),
+                ),
+              ),
+            ),
+          ),
+        if (isDragging && (_timelineVerticalDragTimeLabel ?? '').isNotEmpty)
+          Positioned(
+            top: (topPx - 22).clamp(0, canvasHeight - 20),
+            left: left,
+            child: Material(
+              elevation: 3,
+              borderRadius: BorderRadius.circular(6),
+              color: scheme.primary.withValues(alpha: 0.92),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                child: Text(
+                  _timelineVerticalDragTimeLabel!,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: scheme.onPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (isDragging)
+          Positioned(
+            top: topPx + layout.heightPx - 2,
+            left: left,
+            width: width,
+            child: Container(
+              height: 2,
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ),
+        Positioned(
+          top: topPx,
+          left: left,
+          width: width,
+          height: layout.heightPx,
+          child: Material(
+            elevation: isDragging ? 6 : 0,
+            shadowColor: Colors.black26,
+            borderRadius: BorderRadius.circular(12),
+            clipBehavior: Clip.antiAlias,
+            child: _TimelinePlanDragBlock(
+              canDrag: canDrag,
+              onVerticalDragStart: canDrag
+                  ? () => _beginTimelineVerticalDrag(
+                      task: layout.task,
+                      planKey: planKey,
+                      originTopPx: layout.topPx,
+                      durationMin: durMin,
+                      hadEnd: hadEnd,
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                    )
+                  : null,
+              onVerticalDragUpdate: canDrag
+                  ? (delta, globalDy) => _updateTimelineVerticalDrag(
+                      deltaPx: delta,
+                      globalDy: globalDy,
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                      rangeEnd: rangeEnd,
+                      canvasHeight: canvasHeight,
+                    )
+                  : null,
+              onVerticalDragEnd: canDrag
+                  ? () => _commitTimelineVerticalDrag(
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                      rangeEnd: rangeEnd,
+                    )
+                  : null,
+              onVerticalDragCancel:
+                  canDrag ? _cancelTimelineVerticalDrag : null,
+              child: _planCardRow(
+                context: context,
+                task: layout.task,
+                key: planKey,
+                displayDone:
+                    _planDoneOverride[planKey] ?? layout.task.isDone,
+                isSelected: _selectedPlanKeys.contains(planKey),
+                planActualByPbId: planActualByPbId,
+                timelineEmbedded: true,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -3552,6 +4166,97 @@ List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
   if (task.hasChecklist) add(Icons.checklist_rounded);
   if (task.hasParentPlan) add(Icons.account_tree_outlined);
   return out;
+}
+
+/// Drag handle + vertical gesture wrapper for proportional timeline plan blocks.
+class _TimelinePlanDragBlock extends StatefulWidget {
+  const _TimelinePlanDragBlock({
+    required this.canDrag,
+    required this.child,
+    this.onVerticalDragStart,
+    this.onVerticalDragUpdate,
+    this.onVerticalDragEnd,
+    this.onVerticalDragCancel,
+  });
+
+  final bool canDrag;
+  final Widget child;
+  final VoidCallback? onVerticalDragStart;
+  final void Function(double deltaPx, double globalDy)? onVerticalDragUpdate;
+  final VoidCallback? onVerticalDragEnd;
+  final VoidCallback? onVerticalDragCancel;
+
+  @override
+  State<_TimelinePlanDragBlock> createState() => _TimelinePlanDragBlockState();
+}
+
+class _TimelinePlanDragBlockState extends State<_TimelinePlanDragBlock> {
+  double _dragAccumulatedDy = 0;
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.canDrag) return widget.child;
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onVerticalDragStart: (_) {
+            _dragAccumulatedDy = 0;
+            _dragging = true;
+            widget.onVerticalDragStart?.call();
+          },
+          onVerticalDragUpdate: (details) {
+            _dragAccumulatedDy += details.delta.dy;
+            widget.onVerticalDragUpdate?.call(
+              _dragAccumulatedDy,
+              details.globalPosition.dy,
+            );
+          },
+          onVerticalDragEnd: (_) {
+            _dragging = false;
+            widget.onVerticalDragEnd?.call();
+          },
+          onVerticalDragCancel: () {
+            _dragging = false;
+            widget.onVerticalDragCancel?.call();
+          },
+          child: Container(
+            width: 22,
+            alignment: Alignment.center,
+            color: _dragging
+                ? scheme.primaryContainer.withValues(alpha: 0.35)
+                : scheme.surfaceContainerHighest.withValues(alpha: 0.25),
+            child: Icon(
+              Icons.drag_handle_rounded,
+              size: 18,
+              color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
+            ),
+          ),
+        ),
+        Expanded(child: widget.child),
+      ],
+    );
+  }
+}
+
+/// Absolute placement for one task block on the proportional day timeline.
+class _TimelineBlockLayout {
+  const _TimelineBlockLayout({
+    required this.task,
+    required this.topPx,
+    required this.heightPx,
+    required this.column,
+    required this.totalColumns,
+  });
+
+  final PlanningTask task;
+  final double topPx;
+  final double heightPx;
+  final int column;
+  final int totalColumns;
 }
 
 /// Single planning task card. Uses Theme.of(context). No hardcoded colors.

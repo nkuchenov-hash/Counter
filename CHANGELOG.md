@@ -11,9 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
-## [2026-06-15] - Title-change auto-recategorization [wip]
-* **`category_service.dart` / `record_service.dart` / `plan_service.dart`:** [wip] Added title-change auto-recategorization for record, plan, and list/backlog edit paths: changed nonblank titles now reuse the cached category matcher unless the save explicitly supplies a category, include the inferred category in the same record/plan PATCH or outbox payload, and propagate to linked rows only when their old category still matches.
-* **`record_service.dart`:** [wip] Child/parallel record category fan-out remains deferred in this pass because the edit path has no safe loaded-child category patch helper; linked plan-to-record propagation is limited to loaded `source_plan_id` rows that still share the old category.
+## [2026-06-15] - Planning Time timeline, parser UX, drag, auto-recat persistence [shipped]
+* **`planning_view.dart` / `planning_day_start_prefs.dart`:** [shipped] Planning “Время / Time” mode is a proportional vertical day timeline (hour rail, duration-sized blocks, overlap lanes, current-time line, empty-slot quick-add); non-recurring scheduled cards drag vertically via left handle with 15-minute snap (`timelineSnapMinutes`), live time-range label, placeholder ghost, scroll lock, edge auto-scroll; drop preserves duration through `applyOptimisticPlanningTask` + async `updatePlanningTask`.
+* **`smart_input_parser.dart` / `planning_view.dart` / `plan_service.dart` / `shared_widgets.dart`:** [shipped] Smart time parsing infers schedule metadata but preserves user-visible/saved title text (`preservedTitleFromRaw`); edit-sheet `onChanged` no longer mutates `TextEditingController` while typing.
+* **`category_service.dart` / `record_service.dart` / `plan_service.dart`:** [shipped] Title-change auto-recategorization persistence: record PATCH/POST sends both `category_id` + `category_link`; Play/start-from-plan resolves freshest Brain plan category (`resolveCurrentPlanCategoryForRecordStart`) before record create.
 
 ## [2026-06-15] - V7H Card Foundation [wip]
 * **`life_card.dart` / `component_lab_view.dart`:** [wip] Added canonical `LifeCard` + `AppTaskCard` card foundation with parameterized normal/selected/completed/disabled/active states, compact/regular density, task/backlog/timeline types, and mock-only Component Lab examples; production cards remain unmigrated.

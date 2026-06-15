@@ -679,27 +679,17 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       raw.trim().isEmpty ? _titleController.text : raw,
     );
     if (_startedAsUndatedBacklog) return;
-    final v = _titleController.value;
-    if (!v.composing.isCollapsed) return;
-
+    final range = SmartInputParser.parseTitleForTimeRange(raw);
+    if (range != null) {
+      if (!mounted) return;
+      setState(() {
+        _scheduledTime = range.startWallOn(_date);
+        _endTime = range.endWallOn(_date);
+      });
+      return;
+    }
     final parsed = SmartInputParser.parseTitleForScheduledTime(raw);
     if (parsed == null) return;
-
-    final cleaned = parsed.cleanedTitle;
-    final newOffset = cleaned.length;
-    if (_titleController.text != cleaned) {
-      _titleController.value = TextEditingValue(
-        text: cleaned,
-        selection: TextSelection.collapsed(
-          offset: newOffset.clamp(0, cleaned.length),
-        ),
-        composing: TextRange.empty,
-      );
-    } else {
-      _titleController.selection = TextSelection.collapsed(
-        offset: newOffset.clamp(0, cleaned.length),
-      );
-    }
     if (!mounted) return;
     setState(() {
       _scheduledTime = parsed.wallDateTimeOn(_date);

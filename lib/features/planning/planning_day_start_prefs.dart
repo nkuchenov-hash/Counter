@@ -56,4 +56,7 @@ class PlanningSheetTimelinePrefs {
       ...List<int>.generate(e + 1, (i) => i),
     ];
   }
+
+  /// Default vertical drag snap for Planning Time timeline (minutes).
+  static const int timelineSnapMinutes = 15;
 }
