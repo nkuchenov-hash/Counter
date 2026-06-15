@@ -538,6 +538,15 @@ const Map<String, Map<String, String>> _l10nCore = {
     'manual_entry': 'Manual entry',
     'duration': 'Duration',
     'security_section': 'Security',
+    'profile_password_reset_subtitle':
+        "We'll send a password reset link to your account email.",
+    'profile_password_reset_send_button': 'Send password reset email',
+    'profile_password_reset_sending': 'Sending…',
+    'profile_password_reset_sent': 'Password reset email sent.',
+    'profile_password_reset_send_failed':
+        'Could not send the password reset email. Try again.',
+    'profile_password_reset_no_email':
+        'No email is available for this account.',
     'biometric_lock': 'Biometric lock',
     'biometric_lock_subtitle': 'Require fingerprint or Face ID on app launch',
     'vault_locked': 'Vault locked',
@@ -1116,6 +1125,16 @@ const Map<String, Map<String, String>> _l10nCore = {
     'manual_entry': 'Ручная запись',
     'duration': 'Длительность',
     'security_section': 'Безопасность',
+    'profile_password_reset_subtitle':
+        'Мы отправим ссылку для смены пароля на email вашего аккаунта.',
+    'profile_password_reset_send_button':
+        'Отправить письмо для смены пароля',
+    'profile_password_reset_sending': 'Отправляем…',
+    'profile_password_reset_sent': 'Письмо для смены пароля отправлено.',
+    'profile_password_reset_send_failed':
+        'Не удалось отправить письмо для смены пароля. Попробуйте снова.',
+    'profile_password_reset_no_email':
+        'Для этого аккаунта нет доступного email.',
     'biometric_lock': 'Биометрическая блокировка',
     'biometric_lock_subtitle': 'Требовать отпечаток или Face ID при запуске',
     'vault_locked': 'Доступ закрыт',

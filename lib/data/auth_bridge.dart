@@ -68,6 +68,12 @@ class AuthBridge {
 
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
+  static String? get currentAuthEmail {
+    final rec = DatabaseService.instance.pocketBase.authStore.record;
+    final email = rec?.data['email']?.toString().trim();
+    return (email != null && email.isNotEmpty) ? email : null;
+  }
+
   /// Valid session: [PocketBase.authStore] only (no stale secure-storage fallback).
   /// All auth I/O uses [PbCollections.profiles], never `users`.
   static Future<String?> checkSession() async {

@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Profile password reset action [shipped]
+* **`profile_view.dart` / `auth_bridge.dart` / `dictionary.dart`:** [shipped] Profile now shows a Security section with a localized email-based password reset action that uses the active PocketBase auth email, calls `AuthBridge.requestPasswordReset`, disables while sending, handles missing emails, and surfaces success/failure through one snackbar.
+
 ## [2026-06-15] - Plan create duplicate reconciliation [shipped]
 * **`plan_service.dart`:** [shipped] Plan create now reconciles optimistic and server rows by stable business `plan_id`: `_upsertPlanInUserCache` replaces matching optimistic cache entries, `_dedupePlanningTasksByBusinessId` guards `planningStream` emits, `clearOptimisticPlanningForPlanRow` purges overlay+cache by `optimistic-{plan_id}`, and plans realtime clears the optimistic overlay when the confirmed row arrives.
 * **`planning_view.dart`:** [shipped] Removed redundant UI-layer optimistic plan rows on quick-add/Smart Plan inject (Brain optimistic stream is sole source); added `_planQuickAddInFlight` guard and `plan_id`-aware merge fallback.
