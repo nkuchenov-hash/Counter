@@ -1815,10 +1815,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             _selectedDate = _dateOnly(d);
             _focusedDay = _dateOnly(f);
           });
-          await _loadTasksForDate(_selectedDate);
-          if (!mounted) return;
-          setState(() => _shellPageIndex = 0);
         },
+        onEditTask: _openEditDialog,
+        onStartRecordFromTask: _startRecordFromPlanning,
       ),
       ListsPage(
         selectedDate: _selectedDate,

@@ -1487,10 +1487,45 @@ extension PlanServiceExtension on DatabaseService {
     }
   }
 
+  /// Broadcast when planning cache should be re-read by UI (optimistic PATCH, realtime, etc.).
+  Stream<void> get planningRefreshEvents => _planningRefreshController.stream;
+
   /// Next `order` for a new plan on this wall day (for optimistic + POST).
   /// Plans for a wall day (same source as Planning tab). For UI manual `source_plan_id` linking.
   Future<List<PlanningTask>> getPlanningTasksForWallDate(DateTime wallDay) =>
       _fetchPlanningTasksForDate(wallDay);
+
+  /// Warm plans cache for Calendar month indicators (no per-day network fan-out).
+  Future<void> warmPlanningCacheForCalendar() =>
+      _ensureAllPlansUserCacheFresh();
+
+  /// Group scheduled plans by wall `YYYY-MM-DD` for [startWall]…[endWall] from Brain cache.
+  Map<String, List<PlanningTask>> planningTasksGroupedByWallDayForRange(
+    DateTime startWall,
+    DateTime endWall,
+  ) {
+    final collected = _collectPlanningTasksForWallRange(
+      _allPlansUserCache,
+      startWall,
+      endWall,
+    );
+    final map = <String, List<PlanningTask>>{};
+    for (final t in collected) {
+      if (t.startTime == null) continue;
+      final dk = planningWallScheduleDateKey(t);
+      if (dk.length < 10) continue;
+      map.putIfAbsent(dk, () => <PlanningTask>[]).add(t);
+    }
+    for (final list in map.values) {
+      list.sort((a, b) {
+        final as = a.startTime;
+        final bs = b.startTime;
+        if (as == null || bs == null) return 0;
+        return as.compareTo(bs);
+      });
+    }
+    return map;
+  }
 
   /// Wall-clock estimate from plan start/end (profile wall [PlanningTask] times). Null if unknown.
   static int? planningWallEstimateSeconds(PlanningTask task) {

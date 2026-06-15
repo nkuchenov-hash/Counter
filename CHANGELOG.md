@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Planning Time layout + Calendar screen [wip]
+* **`planning_view.dart`:** [wip] Time-mode gesture arbitration — short tap opens edit via `_TimelinePlanInteractionBlock.onBodyTap`; touch long-press move (desktop/web keeps immediate drag); tap suppressed after drag/resize; timeline cards omit select-mode long-press; dynamic `_timelineHourHeightPx` from shortest scheduled duration; proportional block heights; exact-time insert/cascade (no 15-min gap); minimal one-row card layout (checkbox + play + title + time + menu).
+* **`calendar_view.dart` / `plan_service.dart` / `app_shell.dart`:** [wip] Calendar tab — month grid + compact week strip, month/week toggle, category task indicators (+N), selected-day scheduled task list via `planningStream`, stays on Calendar tab (no jump to Timeline); `planningTasksGroupedByWallDayForRange` + `planningRefreshEvents` for indicators.
+
 ## [2026-06-15] - Planning Time resize handles [wip]
 * **`planning_view.dart` / `planning_day_start_prefs.dart`:** [wip] Time-mode scheduled non-recurring plan blocks expose subtle top/bottom resize edges (12px zones, hover grip) that preview start/end changes with live `09:00 – 10:30 · 1h 30m` labels, 15-minute snap/min duration (`timelineMinDurationMinutes`), day-bound clamps, scroll lock + edge auto-scroll; commit reuses `applyOptimisticPlanningTask` + async `updatePlanningTask`; whole-card move drag (handle + body) unchanged.
 

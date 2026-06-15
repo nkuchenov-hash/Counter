@@ -271,9 +271,14 @@ class _PlanningPageState extends State<PlanningPage>
   /// Hour-grid day timeline scroll (edge auto-scroll while dragging a plan).
   final ScrollController _hourGridScrollController = ScrollController();
 
-  static const double _kTimelineHourHeightPx = 80;
+  static const double _kTimelineHourHeightBasePx = 80;
+  static const double _kTimelineHourHeightMaxPx = 360;
+  static const double _kTimelineMinReadableCardPx = 60;
   static const double _kTimelineRailWidthPx = 48;
   static const double _kTimelineMinBlockHeightPx = 56;
+
+  /// Resolved per canvas build from shortest scheduled duration (readability over fixed scale).
+  double _timelineHourHeightPx = _kTimelineHourHeightBasePx;
   static const int _kTimelineDefaultBlockMinutes = 30;
 
   /// Active vertical timeline drag (Time mode); local preview only until drop.
@@ -2030,7 +2035,17 @@ class _PlanningPageState extends State<PlanningPage>
       rangeStart,
       rangeEnd,
     );
-    return hours.length * _kTimelineHourHeightPx;
+    return hours.length * _timelineHourHeightPx;
+  }
+
+  double _resolveTimelineHourHeightPx(List<PlanningTask> scheduled) {
+    var shortestMin = 30.0;
+    for (final t in scheduled) {
+      final dur = _timelineBlockDurationMinutes(t).toDouble();
+      if (dur > 0 && dur < shortestMin) shortestMin = dur;
+    }
+    final needed = _kTimelineMinReadableCardPx * 60 / shortestMin;
+    return needed.clamp(_kTimelineHourHeightBasePx, _kTimelineHourHeightMaxPx);
   }
 
   List<_TimelineBlockLayout> _timelineBlockLayouts(
@@ -2069,11 +2084,14 @@ class _PlanningPageState extends State<PlanningPage>
       final span = spans[i];
       final timeTopPx = span.startMin * pxPerMin;
       final heightPx = math.max(
-        _kTimelineMinBlockHeightPx,
+        1.0,
         (span.endMin - span.startMin) * pxPerMin,
       );
-      final visualTopPx = math.max(timeTopPx, prevVisualBottomPx + gapPx);
-      final hasScheduleConflict = i > 0 && span.startMin < spans[i - 1].endMin - 0.25;
+      final hasScheduleConflict =
+          i > 0 && span.startMin < spans[i - 1].endMin - 0.25;
+      final visualTopPx = hasScheduleConflict
+          ? math.max(timeTopPx, prevVisualBottomPx + gapPx)
+          : timeTopPx;
       layouts.add(
         _TimelineBlockLayout(
           task: span.task,
@@ -2110,10 +2128,10 @@ class _PlanningPageState extends State<PlanningPage>
         ).length *
         60;
     if (min < 0 || min > maxMin) return null;
-    return min * _kTimelineHourHeightPx / 60;
+    return min * _timelineHourHeightPx / 60;
   }
 
-  double get _timelinePxPerMinute => _kTimelineHourHeightPx / 60;
+  double get _timelinePxPerMinute => _timelineHourHeightPx / 60;
 
   static const double _kTimelineBlockHorizontalPadPx = 6;
 
@@ -2462,12 +2480,9 @@ class _PlanningPageState extends State<PlanningPage>
         if (bStart >= aEnd - 0.25) continue;
 
         final bDur = _timelineBlockDurationMinutes(b);
-        final snappedStart = _snapTimelineMinutes(aEnd);
-        final newStartWall = _wallTimeFromTimelineMinutes(
-          snappedStart,
-          planWallDay,
-          rangeStart,
-        );
+        final aEndWall = a.endDateTime ??
+            a.startTime!.add(Duration(minutes: aDur));
+        final newStartWall = aEndWall;
         final newEndWall = b.endDateTime != null
             ? newStartWall.add(Duration(minutes: bDur))
             : null;
@@ -2626,7 +2641,7 @@ class _PlanningPageState extends State<PlanningPage>
           _timelinePxPerMinute,
     );
     final dragHeightPx = math.max(
-      _kTimelineMinBlockHeightPx,
+      1.0,
       durMin * _timelinePxPerMinute,
     ).toDouble();
     final rawTop = _timelineVerticalDragOriginTopPx + deltaPx;
@@ -2651,20 +2666,19 @@ class _PlanningPageState extends State<PlanningPage>
       final mid = insertTarget.topPx + insertTarget.heightPx / 2;
       insertBefore = dragCenterY < mid;
       insertKey = _planKey(insertTarget.task);
-      const gapPx = 4.0;
       if (insertBefore) {
-        previewTop = insertTarget.topPx - dragHeightPx - gapPx;
-        markerTop = (insertTarget.topPx - 3).clamp(0.0, canvasHeight);
+        previewTop = insertTarget.topPx - dragHeightPx;
+        markerTop = insertTarget.topPx.clamp(0.0, canvasHeight);
       } else {
-        previewTop = insertTarget.topPx + insertTarget.heightPx + gapPx;
-        markerTop = (insertTarget.topPx + insertTarget.heightPx + 1).clamp(
+        previewTop = insertTarget.topPx + insertTarget.heightPx;
+        markerTop = (insertTarget.topPx + insertTarget.heightPx).clamp(
           0.0,
           canvasHeight,
         );
       }
-      previewTop = (previewTop.clamp(0.0, maxTopPx) as num).toDouble();
+      previewTop = previewTop.clamp(0.0, maxTopPx).toDouble();
     } else {
-      previewTop = (rawTop.clamp(0.0, maxTopPx) as num).toDouble();
+      previewTop = rawTop.clamp(0.0, maxTopPx).toDouble();
     }
 
     setState(() {
@@ -2725,40 +2739,14 @@ class _PlanningPageState extends State<PlanningPage>
       final targetStart = target?.startTime;
       if (target != null && targetStart != null) {
         if (_timelineDragInsertBefore) {
-          final endMin = _snapTimelineMinutes(
-            _timelineMinutesFromRangeStart(
-              targetStart,
-              rangeStart,
-              rangeEnd,
-            ),
-          );
-          final startMin = _snapTimelineMinutes(
-            math.max(0, endMin - durMin),
-          );
-          newStartWall = _wallTimeFromTimelineMinutes(
-            startMin,
-            planWallDay,
-            rangeStart,
-          );
-          newEndWall = _timelineVerticalDragHadEnd
-              ? _wallTimeFromTimelineMinutes(endMin, planWallDay, rangeStart)
-              : null;
+          newEndWall = targetStart;
+          newStartWall = newEndWall.subtract(Duration(minutes: durMin));
         } else {
           final targetEnd = target.endDateTime ??
               targetStart.add(
                 Duration(minutes: _timelineBlockDurationMinutes(target)),
               );
-          newStartWall = _wallTimeFromTimelineMinutes(
-            _snapTimelineMinutes(
-              _timelineMinutesFromRangeStart(
-                targetEnd,
-                rangeStart,
-                rangeEnd,
-              ),
-            ),
-            planWallDay,
-            rangeStart,
-          );
+          newStartWall = targetEnd;
           newEndWall = _timelineVerticalDragHadEnd
               ? newStartWall.add(Duration(minutes: durMin))
               : null;
@@ -2882,7 +2870,7 @@ class _PlanningPageState extends State<PlanningPage>
       displayDone,
       isSelected,
       highlightAsRunning: highlightAsRunning,
-      omitLongPress: omitLongPress,
+      omitLongPress: omitLongPress || timelineEmbedded,
       planActualByPbId: planActualByPbId,
       timelineBlock: timelineEmbedded,
       timelineInteracting: timelineInteracting,
@@ -3079,6 +3067,7 @@ class _PlanningPageState extends State<PlanningPage>
     required List<PlanningTask> scheduledInRange,
     required Map<String, int> planActualByPbId,
   }) {
+    _timelineHourHeightPx = _resolveTimelineHourHeightPx(scheduledInRange);
     final canvasHeight = _timelineCanvasHeightPx(rangeStart, rangeEnd);
     final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
     final layouts = _timelineBlockLayouts(
@@ -3109,7 +3098,7 @@ class _PlanningPageState extends State<PlanningPage>
               children: [
                 for (var i = 0; i < visibleHours.length; i++)
                   Positioned(
-                    top: i * _kTimelineHourHeightPx - 6,
+                    top: i * _timelineHourHeightPx - 6,
                     left: 0,
                     right: 0,
                     child: Text(
@@ -3150,10 +3139,10 @@ class _PlanningPageState extends State<PlanningPage>
                       ),
                       for (var i = 0; i < visibleHours.length; i++)
                         Positioned(
-                          top: i * _kTimelineHourHeightPx,
+                          top: i * _timelineHourHeightPx,
                           left: 0,
                           right: 0,
-                          height: _kTimelineHourHeightPx,
+                          height: _timelineHourHeightPx,
                           child: Stack(
                             children: [
                               Positioned(
@@ -3369,7 +3358,7 @@ class _PlanningPageState extends State<PlanningPage>
         ? _timelineResizePreviewTopPx
         : layout.topPx;
     final heightPx = isResizing
-        ? math.max(_kTimelineMinBlockHeightPx, _timelineResizePreviewHeightPx)
+        ? math.max(1.0, _timelineResizePreviewHeightPx)
         : layout.heightPx;
     final left = _kTimelineBlockHorizontalPadPx;
     final width = _timelineBlockWidth(canvasW);
@@ -3447,6 +3436,13 @@ class _PlanningPageState extends State<PlanningPage>
               canMove: canInteract,
               canResize: canInteract,
               resizeHandlePx: _kTimelineResizeHandlePx,
+              onBodyTap: () {
+                if (_planSelectMode) {
+                  _toggleKeySelection(planKey);
+                } else {
+                  _openEditDialog(layout.task);
+                }
+              },
               onVerticalDragStart: canInteract
                   ? () => _beginTimelineVerticalDrag(
                       task: layout.task,
@@ -4799,6 +4795,7 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
     required this.resizeHandlePx,
     required this.child,
     required this.isInteracting,
+    this.onBodyTap,
     this.onVerticalDragStart,
     this.onVerticalDragUpdate,
     this.onVerticalDragEnd,
@@ -4814,6 +4811,7 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
   final double resizeHandlePx;
   final bool isInteracting;
   final Widget child;
+  final VoidCallback? onBodyTap;
   final VoidCallback? onVerticalDragStart;
   final void Function(double deltaPx, double globalDy)? onVerticalDragUpdate;
   final VoidCallback? onVerticalDragEnd;
@@ -4832,6 +4830,21 @@ class _TimelinePlanInteractionBlockState
     extends State<_TimelinePlanInteractionBlock> {
   double _moveAccumulatedDy = 0;
   bool _resizing = false;
+  bool _suppressBodyTap = false;
+  bool _bodyDragActive = false;
+
+  bool get _immediateBodyDrag =>
+      kIsWeb ||
+      defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.macOS ||
+      defaultTargetPlatform == TargetPlatform.linux;
+
+  void _endBodyDragSession() {
+    _bodyDragActive = false;
+    Future<void>.delayed(const Duration(milliseconds: 250), () {
+      if (mounted) setState(() => _suppressBodyTap = false);
+    });
+  }
 
   Widget _moveZone() {
     if (!widget.canMove) return const SizedBox.shrink();
@@ -4844,23 +4857,69 @@ class _TimelinePlanInteractionBlockState
       right: 0,
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
-        onVerticalDragStart: (_) {
-          _moveAccumulatedDy = 0;
-          widget.onVerticalDragStart?.call();
-        },
-        onVerticalDragUpdate: (details) {
-          _moveAccumulatedDy += details.delta.dy;
-          widget.onVerticalDragUpdate?.call(
-            _moveAccumulatedDy,
-            details.globalPosition.dy,
-          );
-        },
-        onVerticalDragEnd: (_) {
-          widget.onVerticalDragEnd?.call();
-        },
-        onVerticalDragCancel: () {
-          widget.onVerticalDragCancel?.call();
-        },
+        onTap: widget.onBodyTap == null
+            ? null
+            : () {
+                if (_suppressBodyTap || _bodyDragActive) return;
+                widget.onBodyTap!();
+              },
+        onLongPressStart: _immediateBodyDrag
+            ? null
+            : (_) {
+                _suppressBodyTap = true;
+                _bodyDragActive = true;
+                _moveAccumulatedDy = 0;
+                widget.onVerticalDragStart?.call();
+              },
+        onLongPressMoveUpdate: _immediateBodyDrag
+            ? null
+            : (details) {
+                widget.onVerticalDragUpdate?.call(
+                  details.offsetFromOrigin.dy,
+                  details.globalPosition.dy,
+                );
+              },
+        onLongPressEnd: _immediateBodyDrag
+            ? null
+            : (_) {
+                widget.onVerticalDragEnd?.call();
+                _endBodyDragSession();
+              },
+        onLongPressCancel: _immediateBodyDrag
+            ? null
+            : () {
+                widget.onVerticalDragCancel?.call();
+                _endBodyDragSession();
+              },
+        onVerticalDragStart: _immediateBodyDrag
+            ? (_) {
+                _suppressBodyTap = true;
+                _bodyDragActive = true;
+                _moveAccumulatedDy = 0;
+                widget.onVerticalDragStart?.call();
+              }
+            : null,
+        onVerticalDragUpdate: _immediateBodyDrag
+            ? (details) {
+                _moveAccumulatedDy += details.delta.dy;
+                widget.onVerticalDragUpdate?.call(
+                  _moveAccumulatedDy,
+                  details.globalPosition.dy,
+                );
+              }
+            : null,
+        onVerticalDragEnd: _immediateBodyDrag
+            ? (_) {
+                widget.onVerticalDragEnd?.call();
+                _endBodyDragSession();
+              }
+            : null,
+        onVerticalDragCancel: _immediateBodyDrag
+            ? () {
+                widget.onVerticalDragCancel?.call();
+                _endBodyDragSession();
+              }
+            : null,
         child: const SizedBox.expand(),
       ),
     );
@@ -4876,7 +4935,10 @@ class _TimelinePlanInteractionBlockState
       active: _resizing || widget.isInteracting,
       onResizeStart: widget.canResize
           ? () {
-              setState(() => _resizing = true);
+              setState(() {
+                _resizing = true;
+                _suppressBodyTap = true;
+              });
               widget.onResizeStart?.call(
                 isTop ? _TimelineResizeEdge.top : _TimelineResizeEdge.bottom,
               );
@@ -4891,12 +4953,14 @@ class _TimelinePlanInteractionBlockState
           ? () {
               setState(() => _resizing = false);
               widget.onResizeEnd?.call();
+              _endBodyDragSession();
             }
           : null,
       onResizeCancel: widget.canResize
           ? () {
               setState(() => _resizing = false);
               widget.onResizeCancel?.call();
+              _endBodyDragSession();
             }
           : null,
       scheme: scheme,
@@ -5245,17 +5309,12 @@ class _PlanningTaskCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(color: borderColor, width: borderWidth),
       ),
-      child: InkWell(
-        onTap: onBodyTap,
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(10),
-        child: Theme(
-          data: suppressChildInk,
-          child: SizedBox(
-            height: timelineBlockHeightPx,
-            width: double.infinity,
-            child: body,
-          ),
+      child: Theme(
+        data: suppressChildInk,
+        child: SizedBox(
+          height: timelineBlockHeightPx,
+          width: double.infinity,
+          child: body,
         ),
       ),
     );
@@ -5442,49 +5501,55 @@ class _PlanningTaskCard extends StatelessWidget {
     Color categoryTone,
   ) {
     final showPlay = !selectMode && !displayIsDone;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth > 118;
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _timelineFullHeightStripe(categoryTone),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 30,
-                      child: Center(
-                        child: _timelineCheckbox(scheme, scale: 0.9),
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _timelineTitleText(context, scheme, fontSize: 13),
-                          const SizedBox(height: 1),
-                          _timelineMandatoryTimeRow(
-                            context,
-                            scheme,
-                            compact: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (showPlay && wide) _timelinePlayButton(scheme, size: 30),
-                    _timelineMenuButton(context, scheme),
-                  ],
+    final hasRepeat =
+        (task.rrule?.trim().isNotEmpty ?? false) ||
+        (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _timelineFullHeightStripe(categoryTone),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 28,
+                  child: Center(
+                    child: _timelineCheckbox(scheme, scale: 0.88),
+                  ),
                 ),
-              ),
+                if (showPlay) _timelinePlayButton(scheme, size: 28),
+                Expanded(
+                  child: _timelineTitleText(context, scheme, fontSize: 13),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, right: 2),
+                  child: SizedBox(
+                    width: 86,
+                    child: _timelineMandatoryTimeRow(
+                      context,
+                      scheme,
+                      compact: true,
+                    ),
+                  ),
+                ),
+                if (hasRepeat && timelineBlockHeightPx >= 52)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 2),
+                    child: Icon(
+                      Icons.repeat_rounded,
+                      size: 14,
+                      color: scheme.primary.withValues(alpha: 0.82),
+                    ),
+                  ),
+                _timelineMenuButton(context, scheme),
+              ],
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 
@@ -5498,7 +5563,7 @@ class _PlanningTaskCard extends StatelessWidget {
         (task.rrule?.trim().isNotEmpty ?? false) ||
         (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
     final showCategory = categoryTrail.isNotEmpty && timelineBlockHeightPx >= 78;
-    final showPlay = !selectMode && !displayIsDone && timelineBlockHeightPx >= 88;
+    final showPlay = !selectMode && !displayIsDone;
     final showProgress =
         (planEstimatedSeconds ?? 0) > 0 || planTrackedSeconds > 0;
     return Row(
