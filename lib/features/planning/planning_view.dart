@@ -286,6 +286,20 @@ class _PlanningPageState extends State<PlanningPage>
   bool _timelineScrollLocked = false;
   String? _timelineVerticalDragTimeLabel;
 
+  /// Top/bottom edge resize (Time mode); local preview until release.
+  String? _timelineResizePlanKey;
+  _TimelineResizeEdge? _timelineResizeEdge;
+  double _timelineResizeOriginTopPx = 0;
+  double _timelineResizeOriginHeightPx = 0;
+  int _timelineResizeOriginStartMin = 0;
+  int _timelineResizeOriginEndMin = 0;
+  double _timelineResizePreviewTopPx = 0;
+  double _timelineResizePreviewHeightPx = 0;
+  PlanningTask? _timelineResizeTask;
+  String? _timelineResizeTimeLabel;
+
+  static const double _kTimelineResizeHandlePx = 12;
+
   late final Ticker _hourGridEdgeScrollTicker;
   double _hourGridScrollVelocityPxPerSec = 0;
   Duration? _hourGridTickerElapsedLast;
@@ -1911,6 +1925,8 @@ class _PlanningPageState extends State<PlanningPage>
     required bool highlightAsRunning,
     bool omitLongPress = false,
     required Map<String, int> planActualByPbId,
+    bool timelineBlock = false,
+    bool timelineInteracting = false,
   }) {
     final pbId = DatabaseService.pocketRelationIdOrNull(task.pocketRecordId);
     final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
@@ -1923,6 +1939,8 @@ class _PlanningPageState extends State<PlanningPage>
       selectMode: _planSelectMode,
       isSelected: isSelected,
       highlightAsRunning: highlightAsRunning,
+      timelineBlock: timelineBlock,
+      timelineInteracting: timelineInteracting,
       toggleDoneEnabled: !task.planRowIdForBackend.startsWith('optimistic-'),
       onToggleDone: () => _toggleDone(task, displayDone),
       onBodyTap: () {
@@ -2119,6 +2137,257 @@ class _PlanningPageState extends State<PlanningPage>
     return hhmm(start);
   }
 
+  String _formatTimelineResizeLabel(DateTime start, DateTime end) {
+    final mins = end.difference(start).inMinutes.clamp(
+      PlanningSheetTimelinePrefs.timelineMinDurationMinutes,
+      24 * 60,
+    );
+    return '${_formatTimelineWallRangeLabel(start, end)} · ${_shortTimelineDuration(mins)}';
+  }
+
+  String _shortTimelineDuration(int minutes) {
+    if (minutes < 60) return '${minutes}m';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (m == 0) return '${h}h';
+    return '${h}h ${m}m';
+  }
+
+  int _timelineMaxVisibleMinutes(int rangeStart, int rangeEnd) {
+    return PlanningSheetTimelinePrefs.visibleHoursOrdered(
+          rangeStart,
+          rangeEnd,
+        ).length *
+        60;
+  }
+
+  double _timelineMinDurationPx() =>
+      PlanningSheetTimelinePrefs.timelineMinDurationMinutes *
+      _timelinePxPerMinute;
+
+  ({int startMin, int endMin}) _timelineStartEndMinutesFromTask(
+    PlanningTask task,
+    int rangeStart,
+    int rangeEnd,
+  ) {
+    final st = task.startTime;
+    final startMin = _timelineMinutesFromRangeStart(
+      st!,
+      rangeStart,
+      rangeEnd,
+    ).round();
+    var endMin = startMin + _timelineBlockDurationMinutes(task);
+    final et = task.endDateTime;
+    if (et != null) {
+      endMin = _timelineMinutesFromRangeStart(et, rangeStart, rangeEnd).round();
+    }
+    return (startMin: startMin, endMin: endMin);
+  }
+
+  void _clearTimelineInteractionState() {
+    _timelineVerticalDragPlanKey = null;
+    _timelineVerticalDragDeltaPx = 0;
+    _timelineVerticalDragTask = null;
+    _timelineVerticalDragTimeLabel = null;
+    _timelineResizePlanKey = null;
+    _timelineResizeEdge = null;
+    _timelineResizeTask = null;
+    _timelineResizeTimeLabel = null;
+    _timelineScrollLocked = false;
+  }
+
+  void _updateTimelineResizeLabel({
+    required int startMin,
+    required int endMin,
+    required DateTime planWallDay,
+    required int rangeStart,
+  }) {
+    final startWall = _wallTimeFromTimelineMinutes(
+      startMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    final endWall = _wallTimeFromTimelineMinutes(
+      endMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    _timelineResizeTimeLabel = _formatTimelineResizeLabel(startWall, endWall);
+  }
+
+  void _beginTimelineResize({
+    required _TimelineResizeEdge edge,
+    required PlanningTask task,
+    required String planKey,
+    required double originTopPx,
+    required double originHeightPx,
+    required int originStartMin,
+    required int originEndMin,
+    required DateTime planWallDay,
+    required int rangeStart,
+  }) {
+    _clearTimelineInteractionState();
+    setState(() {
+      _timelineResizePlanKey = planKey;
+      _timelineResizeEdge = edge;
+      _timelineResizeOriginTopPx = originTopPx;
+      _timelineResizeOriginHeightPx = originHeightPx;
+      _timelineResizeOriginStartMin = originStartMin;
+      _timelineResizeOriginEndMin = originEndMin;
+      _timelineResizePreviewTopPx = originTopPx;
+      _timelineResizePreviewHeightPx = originHeightPx;
+      _timelineResizeTask = task;
+      _timelineScrollLocked = true;
+      _updateTimelineResizeLabel(
+        startMin: originStartMin,
+        endMin: originEndMin,
+        planWallDay: planWallDay,
+        rangeStart: rangeStart,
+      );
+    });
+  }
+
+  void _updateTimelineResize({
+    required double deltaPx,
+    required double globalDy,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+  }) {
+    final edge = _timelineResizeEdge;
+    if (edge == null) return;
+    final minDur = PlanningSheetTimelinePrefs.timelineMinDurationMinutes;
+    final maxEndMin = _timelineMaxVisibleMinutes(rangeStart, rangeEnd);
+    final pxPerMin = _timelinePxPerMinute;
+    final minHeightPx = _timelineMinDurationPx();
+
+    var previewTop = _timelineResizeOriginTopPx;
+    var previewHeight = _timelineResizeOriginHeightPx;
+    var startMin = _timelineResizeOriginStartMin;
+    var endMin = _timelineResizeOriginEndMin;
+
+    if (edge == _TimelineResizeEdge.top) {
+      final fixedEndPx =
+          _timelineResizeOriginTopPx + _timelineResizeOriginHeightPx;
+      previewTop = (_timelineResizeOriginTopPx + deltaPx).clamp(
+        0.0,
+        fixedEndPx - minHeightPx,
+      );
+      startMin = _snapTimelineMinutes(previewTop / pxPerMin).round();
+      endMin = _timelineResizeOriginEndMin;
+      if (endMin - startMin < minDur) {
+        startMin = endMin - minDur;
+      }
+      if (startMin < 0) {
+        startMin = 0;
+        endMin = math.max(endMin, minDur);
+      }
+      previewTop = startMin * pxPerMin;
+      previewHeight = math.max(
+        minHeightPx,
+        (endMin - startMin) * pxPerMin,
+      );
+    } else {
+      previewTop = _timelineResizeOriginTopPx;
+      startMin = _timelineResizeOriginStartMin;
+      final maxHeightPx = math.max(
+        minHeightPx,
+        (maxEndMin - startMin) * pxPerMin,
+      );
+      previewHeight = (_timelineResizeOriginHeightPx + deltaPx).clamp(
+        minHeightPx,
+        maxHeightPx,
+      );
+      endMin = _snapTimelineMinutes(
+        startMin + previewHeight / pxPerMin,
+      ).round();
+      if (endMin > maxEndMin) endMin = maxEndMin;
+      if (endMin - startMin < minDur) endMin = startMin + minDur;
+      previewHeight = math.max(
+        minHeightPx,
+        (endMin - startMin) * pxPerMin,
+      );
+    }
+
+    setState(() {
+      _timelineResizePreviewTopPx = previewTop;
+      _timelineResizePreviewHeightPx = previewHeight;
+      _updateTimelineResizeLabel(
+        startMin: startMin,
+        endMin: endMin,
+        planWallDay: planWallDay,
+        rangeStart: rangeStart,
+      );
+    });
+    _handleHourGridDragUpdateForEdgeScroll(globalDy);
+  }
+
+  void _cancelTimelineResize() {
+    if (_timelineResizePlanKey == null) return;
+    _stopHourGridEdgeScroll();
+    setState(_clearTimelineInteractionState);
+  }
+
+  void _commitTimelineResize({
+    required DateTime planWallDay,
+    required int rangeStart,
+  }) {
+    final task = _timelineResizeTask;
+    _stopHourGridEdgeScroll();
+    if (task == null || _timelineResizePlanKey == null) {
+      _cancelTimelineResize();
+      return;
+    }
+    final startMin = _snapTimelineMinutes(
+      _timelineResizePreviewTopPx / _timelinePxPerMinute,
+    ).round();
+    final endMin = _snapTimelineMinutes(
+      (_timelineResizePreviewTopPx + _timelineResizePreviewHeightPx) /
+          _timelinePxPerMinute,
+    ).round();
+    final newStartWall = _wallTimeFromTimelineMinutes(
+      startMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    final newEndWall = _wallTimeFromTimelineMinutes(
+      endMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    setState(_clearTimelineInteractionState);
+    _persistTimelineScheduleChange(
+      task: task,
+      newStartWall: newStartWall,
+      newEndWall: newEndWall,
+    );
+  }
+
+  void _persistTimelineScheduleChange({
+    required PlanningTask task,
+    required DateTime newStartWall,
+    required DateTime? newEndWall,
+  }) {
+    final updated = task.copyWith(
+      startTime: newStartWall,
+      endDateTime: newEndWall,
+      clearEnd: newEndWall == null,
+    );
+    DatabaseService.instance.applyOptimisticPlanningTask(updated);
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+    unawaited(
+      DatabaseService.instance.updatePlanningTask(
+        task.planRowIdForBackend,
+        planBusinessId: task.planRowId,
+        startTimeDisplay: newStartWall,
+        endDateTimeDisplay: newEndWall,
+        clearEnd: newEndWall == null,
+        suppressAppSnack: true,
+      ),
+    );
+  }
+
   String? _timelineDragLabelForTopPx(
     double topPx,
     DateTime planWallDay,
@@ -2147,6 +2416,7 @@ class _PlanningPageState extends State<PlanningPage>
     required DateTime planWallDay,
     required int rangeStart,
   }) {
+    _clearTimelineInteractionState();
     setState(() {
       _timelineVerticalDragPlanKey = planKey;
       _timelineVerticalDragDeltaPx = 0;
@@ -2201,13 +2471,7 @@ class _PlanningPageState extends State<PlanningPage>
   void _cancelTimelineVerticalDrag() {
     if (_timelineVerticalDragPlanKey == null) return;
     _stopHourGridEdgeScroll();
-    setState(() {
-      _timelineVerticalDragPlanKey = null;
-      _timelineVerticalDragDeltaPx = 0;
-      _timelineVerticalDragTask = null;
-      _timelineVerticalDragTimeLabel = null;
-      _timelineScrollLocked = false;
-    });
+    setState(_clearTimelineInteractionState);
   }
 
   void _commitTimelineVerticalDrag({
@@ -2242,30 +2506,11 @@ class _PlanningPageState extends State<PlanningPage>
     final newEndWall = _timelineVerticalDragHadEnd
         ? newStartWall.add(Duration(minutes: durMin))
         : null;
-    final updated = task.copyWith(
-      startTime: newStartWall,
-      endDateTime: newEndWall,
-      clearEnd: !_timelineVerticalDragHadEnd,
-    );
-    setState(() {
-      _timelineVerticalDragPlanKey = null;
-      _timelineVerticalDragDeltaPx = 0;
-      _timelineVerticalDragTask = null;
-      _timelineVerticalDragTimeLabel = null;
-      _timelineScrollLocked = false;
-    });
-    DatabaseService.instance.applyOptimisticPlanningTask(updated);
-    DatabaseService.instance.notifyPlanningRefresh();
-    if (mounted) setState(() {});
-    unawaited(
-      DatabaseService.instance.updatePlanningTask(
-        task.planRowIdForBackend,
-        planBusinessId: task.planRowId,
-        startTimeDisplay: newStartWall,
-        endDateTimeDisplay: newEndWall,
-        clearEnd: !_timelineVerticalDragHadEnd,
-        suppressAppSnack: true,
-      ),
+    setState(_clearTimelineInteractionState);
+    _persistTimelineScheduleChange(
+      task: task,
+      newStartWall: newStartWall,
+      newEndWall: newEndWall,
     );
   }
 
@@ -2329,6 +2574,9 @@ class _PlanningPageState extends State<PlanningPage>
     /// When true, omits list trailing padding (timeline absolute blocks).
     bool timelineEmbedded = false,
 
+    /// When true with [timelineEmbedded], elevates border during drag/resize preview.
+    bool timelineInteracting = false,
+
     /// When set with [enableLongPressDrag], drives hour-grid edge auto-scroll from [DragUpdateDetails.globalPosition].
     ValueChanged<double>? onHourGridDragGlobalDy,
     VoidCallback? onHourGridDragEnded,
@@ -2345,6 +2593,8 @@ class _PlanningPageState extends State<PlanningPage>
       highlightAsRunning: highlightAsRunning,
       omitLongPress: omitLongPress,
       planActualByPbId: planActualByPbId,
+      timelineBlock: timelineEmbedded,
+      timelineInteracting: timelineInteracting,
     );
     final allowLongPressDrag =
         enableLongPressDrag &&
@@ -2652,7 +2902,8 @@ class _PlanningPageState extends State<PlanningPage>
                                   hitTestBehavior: HitTestBehavior.translucent,
                                   onWillAcceptWithDetails: (_) =>
                                       !_planSelectMode &&
-                                      _timelineVerticalDragPlanKey == null,
+                                      _timelineVerticalDragPlanKey == null &&
+                                      _timelineResizePlanKey == null,
                                   onAcceptWithDetails: (details) {
                                     unawaited(
                                       _onPlanningTaskDroppedOnHour(
@@ -2732,7 +2983,7 @@ class _PlanningPageState extends State<PlanningPage>
                             .where(
                               (l) =>
                                   _planKey(l.task) !=
-                                  _timelineVerticalDragPlanKey,
+                                  _timelineElevatedPlanKey(),
                             )
                             .map(
                               (layout) => _buildTimelinePlanStackLayer(
@@ -2750,7 +3001,7 @@ class _PlanningPageState extends State<PlanningPage>
                             .where(
                               (l) =>
                                   _planKey(l.task) ==
-                                  _timelineVerticalDragPlanKey,
+                                  _timelineElevatedPlanKey(),
                             )
                             .map(
                               (layout) => _buildTimelinePlanStackLayer(
@@ -2776,6 +3027,9 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
+  String? _timelineElevatedPlanKey() =>
+      _timelineResizePlanKey ?? _timelineVerticalDragPlanKey;
+
   Widget _buildTimelinePlanStackLayer({
     required _TimelineBlockLayout layout,
     required double canvasW,
@@ -2788,19 +3042,34 @@ class _PlanningPageState extends State<PlanningPage>
   }) {
     final planKey = _planKey(layout.task);
     final isDragging = _timelineVerticalDragPlanKey == planKey;
+    final isResizing = _timelineResizePlanKey == planKey;
+    final isInteracting = isDragging || isResizing;
     final topPx = isDragging
         ? layout.topPx + _timelineVerticalDragDeltaPx
+        : isResizing
+        ? _timelineResizePreviewTopPx
         : layout.topPx;
+    final heightPx = isResizing
+        ? math.max(_kTimelineMinBlockHeightPx, _timelineResizePreviewHeightPx)
+        : layout.heightPx;
     final left = (canvasW / layout.totalColumns) * layout.column + 4;
     final width = canvasW / layout.totalColumns - 8;
-    final canDrag = _planIsTimelineVerticallyDraggable(layout.task);
+    final canInteract = _planIsTimelineVerticallyDraggable(layout.task);
     final durMin = _timelineBlockDurationMinutes(layout.task);
     final hadEnd = layout.task.endDateTime != null;
+    final times = _timelineStartEndMinutesFromTask(
+      layout.task,
+      rangeStart,
+      rangeEnd,
+    );
+    final interactionLabel = isResizing
+        ? _timelineResizeTimeLabel
+        : _timelineVerticalDragTimeLabel;
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        if (isDragging)
+        if (isInteracting)
           Positioned(
             top: layout.topPx,
             left: left,
@@ -2816,7 +3085,7 @@ class _PlanningPageState extends State<PlanningPage>
               ),
             ),
           ),
-        if (isDragging && (_timelineVerticalDragTimeLabel ?? '').isNotEmpty)
+        if (isInteracting && (interactionLabel ?? '').isNotEmpty)
           Positioned(
             top: (topPx - 22).clamp(0, canvasHeight - 20),
             left: left,
@@ -2827,7 +3096,7 @@ class _PlanningPageState extends State<PlanningPage>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 child: Text(
-                  _timelineVerticalDragTimeLabel!,
+                  interactionLabel!,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: scheme.onPrimary,
                     fontWeight: FontWeight.w700,
@@ -2837,9 +3106,9 @@ class _PlanningPageState extends State<PlanningPage>
               ),
             ),
           ),
-        if (isDragging)
+        if (isInteracting)
           Positioned(
-            top: topPx + layout.heightPx - 2,
+            top: topPx + heightPx - 2,
             left: left,
             width: width,
             child: Container(
@@ -2854,15 +3123,14 @@ class _PlanningPageState extends State<PlanningPage>
           top: topPx,
           left: left,
           width: width,
-          height: layout.heightPx,
-          child: Material(
-            elevation: isDragging ? 6 : 0,
-            shadowColor: Colors.black26,
+          height: heightPx,
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            clipBehavior: Clip.antiAlias,
-            child: _TimelinePlanDragBlock(
-              canDrag: canDrag,
-              onVerticalDragStart: canDrag
+            child: _TimelinePlanInteractionBlock(
+              canMove: canInteract,
+              canResize: canInteract,
+              resizeHandlePx: _kTimelineResizeHandlePx,
+              onVerticalDragStart: canInteract
                   ? () => _beginTimelineVerticalDrag(
                       task: layout.task,
                       planKey: planKey,
@@ -2873,7 +3141,7 @@ class _PlanningPageState extends State<PlanningPage>
                       rangeStart: rangeStart,
                     )
                   : null,
-              onVerticalDragUpdate: canDrag
+              onVerticalDragUpdate: canInteract
                   ? (delta, globalDy) => _updateTimelineVerticalDrag(
                       deltaPx: delta,
                       globalDy: globalDy,
@@ -2883,7 +3151,7 @@ class _PlanningPageState extends State<PlanningPage>
                       canvasHeight: canvasHeight,
                     )
                   : null,
-              onVerticalDragEnd: canDrag
+              onVerticalDragEnd: canInteract
                   ? () => _commitTimelineVerticalDrag(
                       planWallDay: planWallDay,
                       rangeStart: rangeStart,
@@ -2891,7 +3159,38 @@ class _PlanningPageState extends State<PlanningPage>
                     )
                   : null,
               onVerticalDragCancel:
-                  canDrag ? _cancelTimelineVerticalDrag : null,
+                  canInteract ? _cancelTimelineVerticalDrag : null,
+              onResizeStart: canInteract
+                  ? (edge) => _beginTimelineResize(
+                      edge: edge,
+                      task: layout.task,
+                      planKey: planKey,
+                      originTopPx: layout.topPx,
+                      originHeightPx: layout.heightPx,
+                      originStartMin: times.startMin,
+                      originEndMin: times.endMin,
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                    )
+                  : null,
+              onResizeUpdate: canInteract
+                  ? (delta, globalDy) => _updateTimelineResize(
+                      deltaPx: delta,
+                      globalDy: globalDy,
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                      rangeEnd: rangeEnd,
+                    )
+                  : null,
+              onResizeEnd:
+                  canInteract
+                      ? () => _commitTimelineResize(
+                          planWallDay: planWallDay,
+                          rangeStart: rangeStart,
+                        )
+                      : null,
+              onResizeCancel: canInteract ? _cancelTimelineResize : null,
+              isInteracting: isInteracting,
               child: _planCardRow(
                 context: context,
                 task: layout.task,
@@ -2901,6 +3200,7 @@ class _PlanningPageState extends State<PlanningPage>
                 isSelected: _selectedPlanKeys.contains(planKey),
                 planActualByPbId: planActualByPbId,
                 timelineEmbedded: true,
+                timelineInteracting: isInteracting,
               ),
             ),
           ),
@@ -4168,76 +4468,224 @@ List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
   return out;
 }
 
-/// Drag handle + vertical gesture wrapper for proportional timeline plan blocks.
-class _TimelinePlanDragBlock extends StatefulWidget {
-  const _TimelinePlanDragBlock({
-    required this.canDrag,
+enum _TimelineResizeEdge { top, bottom }
+
+/// Invisible move/resize gesture zones for proportional timeline plan blocks.
+class _TimelinePlanInteractionBlock extends StatefulWidget {
+  const _TimelinePlanInteractionBlock({
+    required this.canMove,
+    required this.canResize,
+    required this.resizeHandlePx,
     required this.child,
+    required this.isInteracting,
     this.onVerticalDragStart,
     this.onVerticalDragUpdate,
     this.onVerticalDragEnd,
     this.onVerticalDragCancel,
+    this.onResizeStart,
+    this.onResizeUpdate,
+    this.onResizeEnd,
+    this.onResizeCancel,
   });
 
-  final bool canDrag;
+  final bool canMove;
+  final bool canResize;
+  final double resizeHandlePx;
+  final bool isInteracting;
   final Widget child;
   final VoidCallback? onVerticalDragStart;
   final void Function(double deltaPx, double globalDy)? onVerticalDragUpdate;
   final VoidCallback? onVerticalDragEnd;
   final VoidCallback? onVerticalDragCancel;
+  final void Function(_TimelineResizeEdge edge)? onResizeStart;
+  final void Function(double deltaPx, double globalDy)? onResizeUpdate;
+  final VoidCallback? onResizeEnd;
+  final VoidCallback? onResizeCancel;
 
   @override
-  State<_TimelinePlanDragBlock> createState() => _TimelinePlanDragBlockState();
+  State<_TimelinePlanInteractionBlock> createState() =>
+      _TimelinePlanInteractionBlockState();
 }
 
-class _TimelinePlanDragBlockState extends State<_TimelinePlanDragBlock> {
-  double _dragAccumulatedDy = 0;
-  bool _dragging = false;
+class _TimelinePlanInteractionBlockState
+    extends State<_TimelinePlanInteractionBlock> {
+  double _moveAccumulatedDy = 0;
+  bool _resizing = false;
+
+  Widget _moveZone() {
+    if (!widget.canMove) return const SizedBox.shrink();
+    final topInset = widget.canResize ? widget.resizeHandlePx : 0.0;
+    final bottomInset = widget.canResize ? widget.resizeHandlePx : 0.0;
+    return Positioned(
+      top: topInset,
+      bottom: bottomInset,
+      left: 0,
+      right: 0,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onVerticalDragStart: (_) {
+          _moveAccumulatedDy = 0;
+          widget.onVerticalDragStart?.call();
+        },
+        onVerticalDragUpdate: (details) {
+          _moveAccumulatedDy += details.delta.dy;
+          widget.onVerticalDragUpdate?.call(
+            _moveAccumulatedDy,
+            details.globalPosition.dy,
+          );
+        },
+        onVerticalDragEnd: (_) {
+          widget.onVerticalDragEnd?.call();
+        },
+        onVerticalDragCancel: () {
+          widget.onVerticalDragCancel?.call();
+        },
+        child: const SizedBox.expand(),
+      ),
+    );
+  }
+
+  Widget _resizeEdge({
+    required bool isTop,
+    required ColorScheme scheme,
+  }) {
+    return _TimelineResizeEdgeHandle(
+      isTop: isTop,
+      height: widget.resizeHandlePx,
+      active: _resizing || widget.isInteracting,
+      onResizeStart: widget.canResize
+          ? () {
+              setState(() => _resizing = true);
+              widget.onResizeStart?.call(
+                isTop ? _TimelineResizeEdge.top : _TimelineResizeEdge.bottom,
+              );
+            }
+          : null,
+      onResizeUpdate: widget.canResize
+          ? (delta, globalDy) {
+              widget.onResizeUpdate?.call(delta, globalDy);
+            }
+          : null,
+      onResizeEnd: widget.canResize
+          ? () {
+              setState(() => _resizing = false);
+              widget.onResizeEnd?.call();
+            }
+          : null,
+      onResizeCancel: widget.canResize
+          ? () {
+              setState(() => _resizing = false);
+              widget.onResizeCancel?.call();
+            }
+          : null,
+      scheme: scheme,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.canDrag) return widget.child;
+    if (!widget.canMove && !widget.canResize) return widget.child;
     final scheme = Theme.of(context).colorScheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onVerticalDragStart: (_) {
-            _dragAccumulatedDy = 0;
-            _dragging = true;
-            widget.onVerticalDragStart?.call();
-          },
-          onVerticalDragUpdate: (details) {
-            _dragAccumulatedDy += details.delta.dy;
-            widget.onVerticalDragUpdate?.call(
-              _dragAccumulatedDy,
-              details.globalPosition.dy,
-            );
-          },
-          onVerticalDragEnd: (_) {
-            _dragging = false;
-            widget.onVerticalDragEnd?.call();
-          },
-          onVerticalDragCancel: () {
-            _dragging = false;
-            widget.onVerticalDragCancel?.call();
-          },
-          child: Container(
-            width: 22,
-            alignment: Alignment.center,
-            color: _dragging
-                ? scheme.primaryContainer.withValues(alpha: 0.35)
-                : scheme.surfaceContainerHighest.withValues(alpha: 0.25),
-            child: Icon(
-              Icons.drag_handle_rounded,
-              size: 18,
-              color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
-            ),
+        widget.child,
+        _moveZone(),
+        if (widget.canResize)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _resizeEdge(isTop: true, scheme: scheme),
           ),
-        ),
-        Expanded(child: widget.child),
+        if (widget.canResize)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _resizeEdge(isTop: false, scheme: scheme),
+          ),
       ],
+    );
+  }
+}
+
+class _TimelineResizeEdgeHandle extends StatefulWidget {
+  const _TimelineResizeEdgeHandle({
+    required this.isTop,
+    required this.height,
+    required this.active,
+    required this.scheme,
+    this.onResizeStart,
+    this.onResizeUpdate,
+    this.onResizeEnd,
+    this.onResizeCancel,
+  });
+
+  final bool isTop;
+  final double height;
+  final bool active;
+  final ColorScheme scheme;
+  final VoidCallback? onResizeStart;
+  final void Function(double deltaPx, double globalDy)? onResizeUpdate;
+  final VoidCallback? onResizeEnd;
+  final VoidCallback? onResizeCancel;
+
+  @override
+  State<_TimelineResizeEdgeHandle> createState() =>
+      _TimelineResizeEdgeHandleState();
+}
+
+class _TimelineResizeEdgeHandleState extends State<_TimelineResizeEdgeHandle> {
+  bool _hover = false;
+  bool _dragging = false;
+  double _accumulatedDy = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = widget.scheme;
+    final showHairline = _hover || _dragging;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onVerticalDragStart: (_) {
+          _accumulatedDy = 0;
+          setState(() => _dragging = true);
+          widget.onResizeStart?.call();
+        },
+        onVerticalDragUpdate: (details) {
+          _accumulatedDy += details.delta.dy;
+          widget.onResizeUpdate?.call(
+            _accumulatedDy,
+            details.globalPosition.dy,
+          );
+        },
+        onVerticalDragEnd: (_) {
+          setState(() => _dragging = false);
+          widget.onResizeEnd?.call();
+        },
+        onVerticalDragCancel: () {
+          setState(() => _dragging = false);
+          widget.onResizeCancel?.call();
+        },
+        child: SizedBox(
+          height: widget.height,
+          child: showHairline
+              ? Align(
+                  alignment: widget.isTop
+                      ? Alignment.topCenter
+                      : Alignment.bottomCenter,
+                  child: Container(
+                    height: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    color: scheme.primary.withValues(alpha: 0.38),
+                  ),
+                )
+              : null,
+        ),
+      ),
     );
   }
 }
@@ -4276,6 +4724,8 @@ class _PlanningTaskCard extends StatelessWidget {
     required this.onPlay,
     required this.onOpenMenu,
     required this.onDateTap,
+    this.timelineBlock = false,
+    this.timelineInteracting = false,
   });
 
   final PlanningTask task;
@@ -4298,6 +4748,8 @@ class _PlanningTaskCard extends StatelessWidget {
   final VoidCallback onPlay;
   final void Function(BuildContext anchorContext) onOpenMenu;
   final VoidCallback onDateTap;
+  final bool timelineBlock;
+  final bool timelineInteracting;
 
   static String _formatPlanningTaskDate(PlanningTask task) {
     if (task.dateKey.isEmpty) return '';
@@ -4380,10 +4832,26 @@ class _PlanningTaskCard extends StatelessWidget {
     );
     final bg = selectMode && isSelected
         ? scheme.primaryContainer
+        : timelineBlock
+        ? Color.alphaBlend(
+            scheme.primary.withValues(alpha: 0.05),
+            scheme.surface,
+          )
         : scheme.surfaceContainerHighest.withValues(alpha: 0.35);
     final borderColor = highlightAsRunning
         ? scheme.primary
+        : timelineInteracting
+        ? scheme.primary.withValues(alpha: 0.55)
+        : timelineBlock
+        ? scheme.outlineVariant.withValues(alpha: 0.62)
         : Colors.transparent;
+    final borderWidth = highlightAsRunning
+        ? 2.0
+        : timelineInteracting
+        ? 1.5
+        : timelineBlock
+        ? 1.0
+        : 0.0;
     final showPlayButton = !selectMode && !displayIsDone;
     final suppressChildInk = Theme.of(context).copyWith(
       splashFactory: NoSplash.splashFactory,
@@ -4396,10 +4864,12 @@ class _PlanningTaskCard extends StatelessWidget {
     );
     return Material(
       color: bg,
+      elevation: timelineBlock ? (timelineInteracting ? 3 : 1.5) : 0,
+      shadowColor: scheme.shadow.withValues(alpha: 0.16),
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: borderColor, width: highlightAsRunning ? 2 : 0),
+        side: BorderSide(color: borderColor, width: borderWidth),
       ),
       child: InkWell(
         onTap: onBodyTap,
@@ -4410,8 +4880,23 @@ class _PlanningTaskCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (timelineBlock)
+                  Container(
+                    width: 3,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: categoryTone.withValues(alpha: 0.82),
+                      borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(12),
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 2, top: 4),
                   child: Column(
@@ -4680,6 +5165,9 @@ class _PlanningTaskCard extends StatelessWidget {
                       onPressed: () => onOpenMenu(menuCtx),
                     );
                   },
+                ),
+                    ],
+                  ),
                 ),
               ],
             ),

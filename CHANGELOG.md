@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Planning Time resize handles [wip]
+* **`planning_view.dart` / `planning_day_start_prefs.dart`:** [wip] Time-mode scheduled non-recurring plan blocks expose subtle top/bottom resize edges (12px zones, hover grip) that preview start/end changes with live `09:00 – 10:30 · 1h 30m` labels, 15-minute snap/min duration (`timelineMinDurationMinutes`), day-bound clamps, scroll lock + edge auto-scroll; commit reuses `applyOptimisticPlanningTask` + async `updatePlanningTask`; whole-card move drag (handle + body) unchanged.
+
 ## [2026-06-15] - Planning Time timeline, parser UX, drag, auto-recat persistence [shipped]
 * **`planning_view.dart` / `planning_day_start_prefs.dart`:** [shipped] Planning “Время / Time” mode is a proportional vertical day timeline (hour rail, duration-sized blocks, overlap lanes, current-time line, empty-slot quick-add); non-recurring scheduled cards drag vertically via left handle with 15-minute snap (`timelineSnapMinutes`), live time-range label, placeholder ghost, scroll lock, edge auto-scroll; drop preserves duration through `applyOptimisticPlanningTask` + async `updatePlanningTask`.
 * **`smart_input_parser.dart` / `planning_view.dart` / `plan_service.dart` / `shared_widgets.dart`:** [shipped] Smart time parsing infers schedule metadata but preserves user-visible/saved title text (`preservedTitleFromRaw`); edit-sheet `onChanged` no longer mutates `TextEditingController` while typing.
