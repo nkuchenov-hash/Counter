@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Title-change auto-recategorization [wip]
+* **`category_service.dart` / `record_service.dart` / `plan_service.dart`:** [wip] Added title-change auto-recategorization for record, plan, and list/backlog edit paths: changed nonblank titles now reuse the cached category matcher unless the save explicitly supplies a category, include the inferred category in the same record/plan PATCH or outbox payload, and propagate to linked rows only when their old category still matches.
+* **`record_service.dart`:** [wip] Child/parallel record category fan-out remains deferred in this pass because the edit path has no safe loaded-child category patch helper; linked plan-to-record propagation is limited to loaded `source_plan_id` rows that still share the old category.
+
+## [2026-06-15] - V7H Card Foundation [wip]
+* **`life_card.dart` / `component_lab_view.dart`:** [wip] Added canonical `LifeCard` + `AppTaskCard` card foundation with parameterized normal/selected/completed/disabled/active states, compact/regular density, task/backlog/timeline types, and mock-only Component Lab examples; production cards remain unmigrated.
+* **`docs/DESIGN_SYSTEM.md` / `docs/reports/DESIGN_SYSTEM_INVENTORY.md`:** [wip] Documented Figma `Card` → Flutter `LifeCard` / `AppTaskCard` mapping, supported variants, metadata parameters, and the explicit V7H no-production-migration boundary.
+
 ## [2026-06-15] - Profile password reset action [shipped]
 * **`profile_view.dart` / `auth_bridge.dart` / `dictionary.dart`:** [shipped] Profile now shows a Security section with a localized email-based password reset action that uses the active PocketBase auth email, calls `AuthBridge.requestPasswordReset`, disables while sending, handles missing emails, and surfaces success/failure through one snackbar.
 

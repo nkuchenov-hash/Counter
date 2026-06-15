@@ -3,6 +3,7 @@ import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
+import 'package:counter/core/widgets/life_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/chip_component.dart';
@@ -40,16 +41,7 @@ class ComponentLabPage extends StatelessWidget {
             child: _StateViewsDemo(),
           ),
           _LabSection(title: 'Chips / Tags', child: _ChipsDemo()),
-          _LabSection(
-            title: 'Cards',
-            child: _PlaceholderDemo(
-              figmaName: 'Card',
-              flutterMapping: 'Future: AppTaskCard or AppCard',
-              variant: 'placeholder',
-              note:
-                  'No card migration in V7E. Surface reserved for future V7 pass.',
-            ),
-          ),
+          _LabSection(title: 'Cards', child: _CardsDemo()),
           _LabSection(
             title: 'Tabs / Segments',
             child: _PlaceholderDemo(
@@ -869,6 +861,147 @@ class _ChipsDemo extends StatelessWidget {
               variant: CategoryChipVariant.largePicker,
               onToggle: (_) {},
             ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CardsDemo extends StatelessWidget {
+  const _CardsDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _LabExample(
+          title: 'Card / Task / Default',
+          flutterMapping: 'AppTaskCard(type: AppTaskCardType.task)',
+          variant: 'task',
+          size: 'regular',
+          state: 'normal',
+          fullWidth: true,
+          note: 'Figma: Card / Task / Default → Flutter: AppTaskCard.',
+          child: AppTaskCard(
+            title: 'Review weekly priorities',
+            subtitle: 'Work · Today',
+            timeLabel: '09:30',
+            categoryColor: Color(0xFF6750A4),
+          ),
+        ),
+        SizedBox(height: 12),
+        _LabExample(
+          title: 'Card / Task / Done',
+          flutterMapping:
+              'AppTaskCard(state: LifeCardState.completed, type: AppTaskCardType.task)',
+          variant: 'task',
+          size: 'regular',
+          state: 'done / completed',
+          fullWidth: true,
+          child: AppTaskCard(
+            title: 'Send invoice draft',
+            subtitle: 'Admin · Completed',
+            state: LifeCardState.completed,
+            timeLabel: '11:00',
+            categoryColor: Color(0xFF2E7D32),
+          ),
+        ),
+        SizedBox(height: 12),
+        _LabExample(
+          title: 'Card / Task / Selected',
+          flutterMapping:
+              'AppTaskCard(state: LifeCardState.selected, type: AppTaskCardType.task)',
+          variant: 'task',
+          size: 'regular',
+          state: 'selected',
+          fullWidth: true,
+          child: AppTaskCard(
+            title: 'Plan design-system review',
+            subtitle: 'Design · Selected for bulk action',
+            state: LifeCardState.selected,
+            timeLabel: '14:00',
+            tags: ['V7', 'Review'],
+            categoryColor: Color(0xFF1565C0),
+          ),
+        ),
+        SizedBox(height: 12),
+        _LabExample(
+          title: 'Card / List / Backlog',
+          flutterMapping:
+              'AppTaskCard(type: AppTaskCardType.backlog, density: LifeCardDensity.compact)',
+          variant: 'backlog',
+          size: 'compact',
+          state: 'normal',
+          fullWidth: true,
+          note:
+              'Mock-only backlog/list row; production Lists cards not migrated.',
+          child: AppTaskCard(
+            title: 'Refine onboarding notes',
+            subtitle: 'Backlog · No scheduled date',
+            type: AppTaskCardType.backlog,
+            density: LifeCardDensity.compact,
+            tags: ['List', 'Draft'],
+            categoryColor: Color(0xFFEF6C00),
+          ),
+        ),
+        SizedBox(height: 12),
+        _LabExample(
+          title: 'Card / Timeline / Running mock',
+          flutterMapping:
+              'AppTaskCard(type: AppTaskCardType.timeline, state: LifeCardState.active)',
+          variant: 'timeline',
+          size: 'regular',
+          state: 'running / active mock',
+          fullWidth: true,
+          note: 'Visual mock only; no timer state, stream, or production data.',
+          child: AppTaskCard(
+            title: 'Cursor coding session',
+            subtitle: 'Timeline · Started 10:12',
+            type: AppTaskCardType.timeline,
+            state: LifeCardState.active,
+            activeLabel: 'Running',
+            timeLabel: '00:55',
+            categoryColor: Color(0xFFC62828),
+          ),
+        ),
+        SizedBox(height: 12),
+        _LabExample(
+          title: 'Card / Task / Metadata',
+          flutterMapping:
+              'AppTaskCard(tags: ..., checklistCount: ..., notes: ..., repeats: true)',
+          variant: 'task',
+          size: 'regular',
+          state: 'metadata',
+          fullWidth: true,
+          note: 'Tags/checklist/notes/repeat metadata lives behind parameters.',
+          child: AppTaskCard(
+            title: 'Prepare launch checklist',
+            subtitle: 'Operations · Mock metadata surface',
+            timeLabel: '16:30',
+            tags: ['Launch', 'Ops', 'Checklist'],
+            checklistCount: 5,
+            notes: 'Notes',
+            repeats: true,
+            categoryColor: Color(0xFF6A1B9A),
+          ),
+        ),
+        SizedBox(height: 12),
+        _LabExample(
+          title: 'Card / Task / Disabled Compact',
+          flutterMapping:
+              'AppTaskCard(state: LifeCardState.disabled, density: LifeCardDensity.compact)',
+          variant: 'task',
+          size: 'compact',
+          state: 'disabled',
+          fullWidth: true,
+          child: AppTaskCard(
+            title: 'Disabled future action',
+            subtitle: 'Unavailable mock state',
+            state: LifeCardState.disabled,
+            density: LifeCardDensity.compact,
+            categoryColor: Color(0xFF607D8B),
           ),
         ),
       ],

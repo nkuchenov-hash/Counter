@@ -1649,6 +1649,43 @@ extension CategoryServiceExtension on DatabaseService {
     return (id: r.id, path: getCategoryPath(r.id));
   }
 
+  int? _resolveCategoryIdForEditedTitle({
+    required String? newTitle,
+    required String? oldTitle,
+    required int? currentCategoryId,
+    required bool manualCategoryChanged,
+  }) {
+    if (manualCategoryChanged) return null;
+    final t = newTitle?.trim() ?? '';
+    if (t.isEmpty) return null;
+    final old = oldTitle?.trim() ?? '';
+    if (old.isNotEmpty && old == t) return null;
+    final match = identifyCategory(t);
+    if (match == null || match.isArchived) return null;
+    if (match.id == CategoryRule.uncategorizedSyntheticId) return null;
+    if (currentCategoryId != null && match.id == currentCategoryId) return null;
+    final pb = _categoryBackendRowIdStrict(match);
+    if (pb == null ||
+        pb.isEmpty ||
+        !DatabaseService._isLikelyPocketBaseRowId(pb)) {
+      return null;
+    }
+    return match.id;
+  }
+
+  String? _categoryRelationIdForPlanPatch(int? localCategoryId) {
+    if (!_planLocalCategoryIdIsConcrete(localCategoryId)) return null;
+    final rule = getCategoryRuleById(localCategoryId!);
+    if (rule == null || rule.isArchived) return null;
+    final pb = _categoryBackendRowIdStrict(rule);
+    if (pb != null &&
+        pb.isNotEmpty &&
+        DatabaseService._isLikelyPocketBaseRowId(pb)) {
+      return pb;
+    }
+    return null;
+  }
+
   List<({int id, String path})> get allCategoryIdPathPairs {
     final out = <({int id, String path})>[];
     void visit(List<CategoryRule> rules, List<String> soFar) {

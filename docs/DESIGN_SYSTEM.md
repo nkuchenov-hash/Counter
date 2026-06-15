@@ -44,6 +44,17 @@ For icon buttons specifically:
 | `Icon Button / Danger / M` | `AppIconButton(variant: AppIconButtonVariant.danger, size: AppIconButtonSize.m)` |
 | `Icon Button / Selected / M` | `AppIconButton(selected: true, size: AppIconButtonSize.m)` |
 
+For cards specifically:
+
+| Figma component | Flutter component |
+| :--- | :--- |
+| `Card / Task / Default` | `AppTaskCard(type: AppTaskCardType.task, state: LifeCardState.normal)` |
+| `Card / Task / Done` | `AppTaskCard(type: AppTaskCardType.task, state: LifeCardState.completed)` |
+| `Card / Task / Selected` | `AppTaskCard(type: AppTaskCardType.task, state: LifeCardState.selected)` |
+| `Card / List / Backlog` | `AppTaskCard(type: AppTaskCardType.backlog, density: LifeCardDensity.compact)` |
+| `Card / Timeline / Running` | `AppTaskCard(type: AppTaskCardType.timeline, state: LifeCardState.active)` |
+| `Card / Task / Metadata` | `AppTaskCard(tags: ..., checklistCount: ..., notes: ..., repeats: true)` |
+
 ## Figma → Flutter Mapping Format
 
 Use this mapping for every canonical component:
@@ -117,8 +128,13 @@ Each mapping must answer:
 
 ### Cards
 
-- Future canonical: `LifeCard` / `AppTaskCard` family.
-- Existing local task cards are legacy until V7 migration.
+- Current canonical foundation: `LifeCard` and `AppTaskCard` in `lib/core/widgets/life_card.dart`.
+- Figma `Card` maps to the `LifeCard` surface and task/list/timeline rows map to `AppTaskCard`.
+- Current states: `LifeCardState.normal`, `selected`, `completed`, `disabled`, `active`.
+- Current densities: `LifeCardDensity.regular`, `compact`.
+- Current task types: `AppTaskCardType.task`, `backlog`, `timeline`.
+- Metadata is parameterized: `tags`, `checklistCount`, `notes`, `repeats`, `timeLabel`, and `activeLabel`.
+- V7H is a foundation pass only: `_PlanningTaskCard`, `_BacklogPlanCard`, and `_TimelineRecordCard` remain legacy production cards until scoped migration passes.
 
 ### Chips / Tags
 

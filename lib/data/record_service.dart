@@ -113,7 +113,9 @@ extension RecordServiceExtension on DatabaseService {
     final pending = Map<String, dynamic>.from(createBody);
     final bizId = (pending['record_id'] ?? '').toString().trim();
     if (bizId.isEmpty) {
-      DatabaseService._log('HIGHLANDER: createBody missing record_id — aborting local append');
+      DatabaseService._log(
+        'HIGHLANDER: createBody missing record_id — aborting local append',
+      );
       _cachedFlatRecords = next;
       return;
     }
@@ -145,9 +147,21 @@ extension RecordServiceExtension on DatabaseService {
         final ua = da.toUtc();
         final ub = db.toUtc();
         final aSec = DateTime.utc(
-            ua.year, ua.month, ua.day, ua.hour, ua.minute, ua.second);
+          ua.year,
+          ua.month,
+          ua.day,
+          ua.hour,
+          ua.minute,
+          ua.second,
+        );
         final bSec = DateTime.utc(
-            ub.year, ub.month, ub.day, ub.hour, ub.minute, ub.second);
+          ub.year,
+          ub.month,
+          ub.day,
+          ub.hour,
+          ub.minute,
+          ub.second,
+        );
         return aSec == bSec;
       }
       final sa = normalizeRecordIsoToUtcSecondPrecision(a);
@@ -209,7 +223,8 @@ extension RecordServiceExtension on DatabaseService {
               row['_expanded_category'] != null) {
             m['_expanded_category'] = row['_expanded_category'];
           }
-          final silent = rbiz.isNotEmpty &&
+          final silent =
+              rbiz.isNotEmpty &&
               biz.isNotEmpty &&
               rbiz == biz &&
               _flatTimelineVisuallyEquivalent(row, m);
@@ -308,25 +323,27 @@ extension RecordServiceExtension on DatabaseService {
       if (filter == null || filter.isEmpty) return;
       Future<void> Function()? unsub;
       try {
-        unsub = await _pb.collection(PbCollections.records).subscribe(
-          '*',
-          _onPbRecordsSubscriptionEvent,
-          filter: filter,
-          expand: '$kPbRecordCategoryExpand,$kPbRecordTagsExpand',
-        );
+        unsub = await _pb
+            .collection(PbCollections.records)
+            .subscribe(
+              '*',
+              _onPbRecordsSubscriptionEvent,
+              filter: filter,
+              expand: '$kPbRecordCategoryExpand,$kPbRecordTagsExpand',
+            );
       } on ClientException catch (_) {
-        unsub = await _pb.collection(PbCollections.records).subscribe(
-          '*',
-          _onPbRecordsSubscriptionEvent,
-          filter: filter,
-          expand: kPbRecordCategoryExpand,
-        );
+        unsub = await _pb
+            .collection(PbCollections.records)
+            .subscribe(
+              '*',
+              _onPbRecordsSubscriptionEvent,
+              filter: filter,
+              expand: kPbRecordCategoryExpand,
+            );
       } catch (_) {
-        unsub = await _pb.collection(PbCollections.records).subscribe(
-          '*',
-          _onPbRecordsSubscriptionEvent,
-          filter: filter,
-        );
+        unsub = await _pb
+            .collection(PbCollections.records)
+            .subscribe('*', _onPbRecordsSubscriptionEvent, filter: filter);
       }
       _recordsRealtimeUnsubscribe = unsub;
       _recordsRealtimeFailureStreak = 0;
@@ -343,7 +360,9 @@ extension RecordServiceExtension on DatabaseService {
   ///
   /// When [forceNetwork] is false (default), returns **cached** rows for [\DatabaseService._kMinGapRecordsNetworkFetch]
   /// after a successful sync — kills VPS spam from UI/timer loops. Use **true** after mutations / pull-to-refresh.
-  Future<List<Map<String, dynamic>>> fetchRecords({bool forceNetwork = false}) async {
+  Future<List<Map<String, dynamic>>> fetchRecords({
+    bool forceNetwork = false,
+  }) async {
     final pid = currentProfileId;
     if (pid == null || pid.isEmpty) {
       _cachedFlatRecords = [];
@@ -367,19 +386,16 @@ extension RecordServiceExtension on DatabaseService {
         _cachedFlatRecords = [];
         return [];
       }
-      final expandRel =
-          '$kPbRecordCategoryExpand,$kPbRecordTagsExpand';
+      final expandRel = '$kPbRecordCategoryExpand,$kPbRecordTagsExpand';
       List<RecordModel> list;
       try {
-        list = await _pb.collection(PbCollections.records).getFullList(
-          filter: filterClause,
-          expand: expandRel,
-        );
+        list = await _pb
+            .collection(PbCollections.records)
+            .getFullList(filter: filterClause, expand: expandRel);
       } on ClientException catch (_) {
-        list = await _pb.collection(PbCollections.records).getFullList(
-          filter: filterClause,
-          expand: kPbRecordCategoryExpand,
-        );
+        list = await _pb
+            .collection(PbCollections.records)
+            .getFullList(filter: filterClause, expand: kPbRecordCategoryExpand);
         if (kDebugMode) {
           debugPrint(
             '[PB] fetchRecords: retry without $kPbRecordTagsExpand (schema?)',
@@ -421,7 +437,9 @@ extension RecordServiceExtension on DatabaseService {
       if (forceNetwork && _isInitialized) {
         _notifyTimelineAfterRecordCacheMutation();
       }
-      final cacheKey = _scopedDataCacheKey(DatabaseService._cacheRecordsFlatKey);
+      final cacheKey = _scopedDataCacheKey(
+        DatabaseService._cacheRecordsFlatKey,
+      );
       final keptJson = await compute(_encodeRecordsFlatForPrefs, kept);
       unawaited(() async {
         try {
@@ -439,8 +457,7 @@ extension RecordServiceExtension on DatabaseService {
 
   Future<List<Map<String, dynamic>>> _fetchRecordsIntoCache({
     bool forceNetwork = false,
-  }) =>
-      fetchRecords(forceNetwork: forceNetwork);
+  }) => fetchRecords(forceNetwork: forceNetwork);
 
   Future<List<Map<String, dynamic>>> getRecords({bool forceNetwork = false}) =>
       fetchRecords(forceNetwork: forceNetwork);
@@ -506,8 +523,7 @@ extension RecordServiceExtension on DatabaseService {
   /// Maps stored `category_id` (number, slug, UUID, link expand) to [CategoryRule.id].
   int? categoryIdFromRecordRow(Map<String, dynamic> row) {
     try {
-      dynamic v =
-          row['category_id'] ?? row['Category_id'] ?? row['categoryId'];
+      dynamic v = row['category_id'] ?? row['Category_id'] ?? row['categoryId'];
       v = normalizeLinkScalar(v);
       if (v != null) {
         final s = v.toString().trim();
@@ -520,8 +536,7 @@ extension RecordServiceExtension on DatabaseService {
       }
       final exp = row['_expanded_category'];
       if (exp is Map) {
-        final pid =
-            (exp['id'] ?? exp['Id'] ?? '').toString().trim();
+        final pid = (exp['id'] ?? exp['Id'] ?? '').toString().trim();
         if (pid.isNotEmpty) {
           int? byBackend;
           void visit(List<CategoryRule> rules) {
@@ -540,8 +555,9 @@ extension RecordServiceExtension on DatabaseService {
           return CategoryRule.uncategorizedSyntheticId;
         }
       }
-      final linkFlat =
-          normalizeLinkScalar(row['category_link'] ?? row['categoryLink']);
+      final linkFlat = normalizeLinkScalar(
+        row['category_link'] ?? row['categoryLink'],
+      );
       if (linkFlat != null && linkFlat.toString().trim().isNotEmpty) {
         return CategoryRule.uncategorizedSyntheticId;
       }
@@ -568,8 +584,9 @@ extension RecordServiceExtension on DatabaseService {
         parentInt = ri == 0 ? null : ri;
       }
     }
-    final categoryRaw =
-        normalizeLinkScalar(row['category_id'] ?? row['Category_id'] ?? row['categoryId']);
+    final categoryRaw = normalizeLinkScalar(
+      row['category_id'] ?? row['Category_id'] ?? row['categoryId'],
+    );
     final catInt = categoryIdFromRecordRow(row);
     final statusFromRow = row['status']?.toString();
     // Basta: any row with end_time is closed — never surface as running in app maps.
@@ -584,23 +601,28 @@ extension RecordServiceExtension on DatabaseService {
     final restPk = CategoryServiceExtension.recordsTablePk(row);
     final bizRid = (row['record_id'] ?? '').toString().trim();
     final sysObj = row[DatabaseService._nocoSystemRowIdKey];
-    final int? sysInt =
-        sysObj is int ? sysObj : int.tryParse(restPk.isNotEmpty ? restPk : '');
+    final int? sysInt = sysObj is int
+        ? sysObj
+        : int.tryParse(restPk.isNotEmpty ? restPk : '');
     // Calendar day for timeline bucket: profile wall Y-M-D ([DATA_MAP] records §8; [wall_clock]).
     String calendarDayStr;
     if (start != null) {
       calendarDayStr = _timelineDeviceLocalDayKeyFromUtc(start);
     } else {
-      final stFallback = CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
+      final stFallback = CategoryServiceExtension._parseDateTimeUtc(
+        row['start_time'],
+      );
       calendarDayStr = stFallback != null
           ? _timelineDeviceLocalDayKeyFromUtc(stFallback)
           : '';
     }
     final ownerUid = normalizeLinkScalar(row['user_id'])?.toString().trim();
-    final srcPlanRaw = normalizeLinkScalar(row['source_plan_id'])?.toString() ??
+    final srcPlanRaw =
+        normalizeLinkScalar(row['source_plan_id'])?.toString() ??
         row['source_plan_id']?.toString().trim();
-    final srcPlan =
-        srcPlanRaw != null && srcPlanRaw.isNotEmpty ? srcPlanRaw : null;
+    final srcPlan = srcPlanRaw != null && srcPlanRaw.isNotEmpty
+        ? srcPlanRaw
+        : null;
     return <String, dynamic>{
       'id': restPk,
       'backendRestPathId': restPk,
@@ -747,14 +769,17 @@ extension RecordServiceExtension on DatabaseService {
   }
 
   /// Merge [end_time] for rows the user just stopped (PATCH in flight).
-  Map<String, dynamic> _mergeOptimisticIntoRecordMap(Map<String, dynamic> data) {
+  Map<String, dynamic> _mergeOptimisticIntoRecordMap(
+    Map<String, dynamic> data,
+  ) {
     final rid = (data['record_id'] ?? '').toString().trim();
-    final nid = (data['id'] ??
-            data['backendRestPathId'] ??
-            data['nocoRestPathId'] ??
-            '')
-        .toString()
-        .trim();
+    final nid =
+        (data['id'] ??
+                data['backendRestPathId'] ??
+                data['nocoRestPathId'] ??
+                '')
+            .toString()
+            .trim();
     _OptimisticEndPatch? p;
     for (final k in [rid, nid]) {
       if (k.isNotEmpty && _optimisticEndByKey.containsKey(k)) {
@@ -863,7 +888,9 @@ extension RecordServiceExtension on DatabaseService {
       );
       _notifyTimelineAfterRecordCacheMutation();
     } catch (e, st) {
-      DatabaseService._log('applyOptimisticSacredHandoffForNewStart failed: $e');
+      DatabaseService._log(
+        'applyOptimisticSacredHandoffForNewStart failed: $e',
+      );
       DatabaseService._log(st.toString());
     }
   }
@@ -871,8 +898,7 @@ extension RecordServiceExtension on DatabaseService {
   List<Map<String, dynamic>> _filterCachedRecordsForDate(DateTime date) {
     try {
       // Selected calendar day + record day: profile wall-clock Y-M-D (derived from getTimelineDeviceLocalToday); callers must pass a profile wall-clock date.
-      final targetDayStr =
-          '${date.year}-${_two(date.month)}-${_two(date.day)}';
+      final targetDayStr = '${date.year}-${_two(date.month)}-${_two(date.day)}';
       final ownerIds = _recordRowOwnerIdMatchSet();
       final filtered = <Map<String, dynamic>>[];
       for (final row in _cachedFlatRecords) {
@@ -882,8 +908,7 @@ extension RecordServiceExtension on DatabaseService {
         if (_optimisticRowDeletedRaw(row)) {
           continue;
         }
-        final rowUid =
-            (row['user_id'] ?? '').toString().trim().toLowerCase();
+        final rowUid = (row['user_id'] ?? '').toString().trim().toLowerCase();
         if (ownerIds.isEmpty) {
           continue;
         }
@@ -891,7 +916,9 @@ extension RecordServiceExtension on DatabaseService {
           continue;
         }
 
-        final stUtc = CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
+        final stUtc = CategoryServiceExtension._parseDateTimeUtc(
+          row['start_time'],
+        );
         if (stUtc == null) {
           continue;
         }
@@ -901,8 +928,7 @@ extension RecordServiceExtension on DatabaseService {
         }
 
         try {
-          filtered.add(
-              _mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
+          filtered.add(_mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
         } catch (e, st) {
           final rowData =
               '${CategoryServiceExtension.recordsTablePk(row)} ${(row['record_id'] ?? '').toString().trim()} data=$row';
@@ -913,7 +939,8 @@ extension RecordServiceExtension on DatabaseService {
       final pend = _optimisticPendingStartRecordMap;
       if (pend != null) {
         final pRid = (pend['record_id'] ?? '').toString().trim();
-        final cacheAlreadyHasPendId = pRid.isNotEmpty &&
+        final cacheAlreadyHasPendId =
+            pRid.isNotEmpty &&
             filtered.any(
               (e) => (e['record_id'] ?? '').toString().trim() == pRid,
             );
@@ -962,9 +989,9 @@ extension RecordServiceExtension on DatabaseService {
   }
 
   List<Map<String, dynamic>> _withDisplayTimes(
-      List<Map<String, dynamic>> filtered) {
-    final list =
-        filtered.map((e) => Map<String, dynamic>.from(e)).toList();
+    List<Map<String, dynamic>> filtered,
+  ) {
+    final list = filtered.map((e) => Map<String, dynamic>.from(e)).toList();
     for (final data in list) {
       final st = data['startTime'] as DateTime?;
       final en = data['endTime'] as DateTime?;
@@ -980,7 +1007,8 @@ extension RecordServiceExtension on DatabaseService {
 
   /// Fingerprint for [recordsStream] — skips a [timeUpdates] tick when the day’s rows are visually unchanged.
   String _timelineRecordsStreamDistinctSignature(
-      List<Map<String, dynamic>> rows) {
+    List<Map<String, dynamic>> rows,
+  ) {
     final b = StringBuffer();
     for (final r in rows) {
       b.write((r['record_id'] ?? '').toString().trim());
@@ -1070,8 +1098,11 @@ extension RecordServiceExtension on DatabaseService {
     bool bypassConflictCheck = false,
   }) async {
     if (bypassConflictCheck) return false;
-    final c = await findFirstOverlappingRecord(start, end,
-        excludeRecordId: excludeRecordId);
+    final c = await findFirstOverlappingRecord(
+      start,
+      end,
+      excludeRecordId: excludeRecordId,
+    );
     return c != null;
   }
 
@@ -1090,11 +1121,13 @@ extension RecordServiceExtension on DatabaseService {
         final path = (data['backendRestPathId'] ?? data['nocoRestPathId'] ?? '')
             .toString()
             .trim();
-        final sys = (data['backendNumericId'] ?? data['nocoSystemId'])
+        final sys =
+            (data['backendNumericId'] ?? data['nocoSystemId'])
                 ?.toString()
                 .trim() ??
             '';
-        final matches = q == biz ||
+        final matches =
+            q == biz ||
             q == pk ||
             (path.isNotEmpty && q == path) ||
             (sys.isNotEmpty && q == sys);
@@ -1122,8 +1155,7 @@ extension RecordServiceExtension on DatabaseService {
           .trim(),
       if (data['backendNumericId'] != null)
         data['backendNumericId'].toString().trim(),
-      if (data['nocoSystemId'] != null)
-        data['nocoSystemId'].toString().trim(),
+      if (data['nocoSystemId'] != null) data['nocoSystemId'].toString().trim(),
       if (data['docId'] != null && data['docId'] != 0)
         data['docId'].toString().trim(),
     }.where((s) => s.isNotEmpty).toSet();
@@ -1141,7 +1173,8 @@ extension RecordServiceExtension on DatabaseService {
     try {
       final rows = await getRecords();
       final now = DatabaseService.getPlanetaryNow();
-      final excludeKeys = excludeRecordId == null || excludeRecordId.trim().isEmpty
+      final excludeKeys =
+          excludeRecordId == null || excludeRecordId.trim().isEmpty
           ? <String>{}
           : _excludeOverlapIdentityKeys(excludeRecordId);
       for (final row in rows) {
@@ -1150,7 +1183,8 @@ extension RecordServiceExtension on DatabaseService {
         if (_recordMapOverlapsExcludeKeys(data, excludeKeys)) continue;
         final otherStart = CategoryServiceExtension.startTimeFromRecord(data);
         if (otherStart == null) continue;
-        final otherEnd = CategoryServiceExtension.endTimeFromRecord(data) ?? now;
+        final otherEnd =
+            CategoryServiceExtension.endTimeFromRecord(data) ?? now;
         if (_rangesOverlap(start, end, otherStart, otherEnd)) return data;
       }
       return null;
@@ -1159,8 +1193,7 @@ extension RecordServiceExtension on DatabaseService {
     }
   }
 
-  bool _rangesOverlap(
-      DateTime a1, DateTime a2, DateTime b1, DateTime b2) {
+  bool _rangesOverlap(DateTime a1, DateTime a2, DateTime b1, DateTime b2) {
     final a = _truncateToMinuteUtc(a1);
     final b = _truncateToMinuteUtc(a2);
     final c = _truncateToMinuteUtc(b1);
@@ -1205,7 +1238,8 @@ extension RecordServiceExtension on DatabaseService {
           yield null;
         } else {
           final data = Map<String, dynamic>.from(canonical);
-          if (data['endTime'] != null || !CategoryServiceExtension.isRecordMapActuallyRunning(data)) {
+          if (data['endTime'] != null ||
+              !CategoryServiceExtension.isRecordMapActuallyRunning(data)) {
             yield null;
             await Future.delayed(const Duration(seconds: 2));
             continue;
@@ -1228,15 +1262,19 @@ extension RecordServiceExtension on DatabaseService {
   }
 
   bool _parentFieldEqualsRecordId(
-      Map<String, dynamic> childRow, String parentRecordId) {
+    Map<String, dynamic> childRow,
+    String parentRecordId,
+  ) {
     if (parentRecordId.isEmpty) return false;
     final raw = childRow['parent_id'];
-    final u = normalizeLinkScalar(raw)?.toString().trim() ??
+    final u =
+        normalizeLinkScalar(raw)?.toString().trim() ??
         raw?.toString().trim() ??
         '';
     if (u == parentRecordId) return true;
     final pInt = int.tryParse(parentRecordId);
-    if (pInt != null && CategoryServiceExtension._rowInt(raw) == pInt) return true;
+    if (pInt != null && CategoryServiceExtension._rowInt(raw) == pInt)
+      return true;
     return false;
   }
 
@@ -1277,11 +1315,13 @@ extension RecordServiceExtension on DatabaseService {
         final out = <TimelineRecord>[];
         for (final row in list) {
           try {
-            out.add(TimelineRecord.fromMap(
-              _rowToRecordMap(row),
-              systemId: CategoryServiceExtension.recordsTablePk(row),
-              timezoneOffsetHours: _settings.timezoneOffsetHours,
-            ));
+            out.add(
+              TimelineRecord.fromMap(
+                _rowToRecordMap(row),
+                systemId: CategoryServiceExtension.recordsTablePk(row),
+                timezoneOffsetHours: _settings.timezoneOffsetHours,
+              ),
+            );
           } catch (e, st) {
             final rid = CategoryServiceExtension.recordsTablePk(row);
             debugPrint('[CHILD_RECORD_PARSE] $e row=$rid data=${row.keys}');
@@ -1304,8 +1344,10 @@ extension RecordServiceExtension on DatabaseService {
         final rows = await getRecords();
         final list = rows
             .where((r) => _parentFieldEqualsRecordId(r, pid))
-            .where((r) =>
-                r['end_time'] != null && r['end_time'].toString().isNotEmpty)
+            .where(
+              (r) =>
+                  r['end_time'] != null && r['end_time'].toString().isNotEmpty,
+            )
             .toList();
         list.sort((a, b) {
           final at = a['start_time']?.toString() ?? '';
@@ -1315,11 +1357,13 @@ extension RecordServiceExtension on DatabaseService {
         final out = <TimelineRecord>[];
         for (final row in list.take(50)) {
           try {
-            out.add(TimelineRecord.fromMap(
-              _rowToRecordMap(row),
-              systemId: CategoryServiceExtension.recordsTablePk(row),
-              timezoneOffsetHours: _settings.timezoneOffsetHours,
-            ));
+            out.add(
+              TimelineRecord.fromMap(
+                _rowToRecordMap(row),
+                systemId: CategoryServiceExtension.recordsTablePk(row),
+                timezoneOffsetHours: _settings.timezoneOffsetHours,
+              ),
+            );
           } catch (e, st) {
             final rid = CategoryServiceExtension.recordsTablePk(row);
             debugPrint('[CHILD_RECORD_PARSE] $e row=$rid');
@@ -1361,17 +1405,24 @@ extension RecordServiceExtension on DatabaseService {
     await stopAllRunningRecords();
   }
 
-  Future<String?> startTimerWithCategory(String title,
-      {int? categoryId, String? dateKey, String? sourcePlanPocketRecordId}) async {
+  Future<String?> startTimerWithCategory(
+    String title, {
+    int? categoryId,
+    String? dateKey,
+    String? sourcePlanPocketRecordId,
+  }) async {
     final now = DatabaseService.getPlanetaryNow();
     final trimmed = dateKey?.trim() ?? '';
     final key = trimmed.length >= 10
         ? trimmed.substring(0, 10)
         : getTimelineDeviceLocalTodayDateKey();
-    return writeRecord(key, title,
-        categoryId: categoryId,
-        explicitStartTime: now,
-        sourcePlanPocketRecordId: sourcePlanPocketRecordId);
+    return writeRecord(
+      key,
+      title,
+      categoryId: categoryId,
+      explicitStartTime: now,
+      sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+    );
   }
 
   /// One-tap start from a backlog row ([PlanningTask.startTime] may be null). Uses “now” on the server record.
@@ -1380,7 +1431,9 @@ extension RecordServiceExtension on DatabaseService {
       plan.title,
       categoryId: plan.categoryId,
       dateKey: plan.dateKey,
-      sourcePlanPocketRecordId: DatabaseService.pocketRelationIdOrNull(plan.pocketRecordId),
+      sourcePlanPocketRecordId: DatabaseService.pocketRelationIdOrNull(
+        plan.pocketRecordId,
+      ),
     );
   }
 
@@ -1391,7 +1444,9 @@ extension RecordServiceExtension on DatabaseService {
   Future<bool> stopAllRunningRecords() async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return false;
     try {
-      final nowIso = DatabaseService.getPlanetaryNow().toUtc().toIso8601String();
+      final nowIso = DatabaseService.getPlanetaryNow()
+          .toUtc()
+          .toIso8601String();
       final byPk = <String, Map<String, dynamic>>{};
       var serverOk = false;
 
@@ -1414,7 +1469,9 @@ extension RecordServiceExtension on DatabaseService {
           );
         }
       } catch (e) {
-        DatabaseService._log('SACRED_LAW: server running-query failed ($e); using cache merge');
+        DatabaseService._log(
+          'SACRED_LAW: server running-query failed ($e); using cache merge',
+        );
       }
 
       if (!serverOk) {
@@ -1423,7 +1480,8 @@ extension RecordServiceExtension on DatabaseService {
           final local = _cachedFlatRecords;
           for (final r in local) {
             if (_rowHasNonEmptyParent(r['parent_id'])) continue;
-            if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r)) continue;
+            if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r))
+              continue;
             if (!_rowStartWallDayIsProjectedToday(r)) continue;
             final id = CategoryServiceExtension.recordsTablePk(r);
             if (id.isEmpty) continue;
@@ -1435,7 +1493,9 @@ extension RecordServiceExtension on DatabaseService {
         }
       }
 
-      DatabaseService._log('SACRED_LAW: PocketBase per-row stop ${byPk.length} record(s)');
+      DatabaseService._log(
+        'SACRED_LAW: PocketBase per-row stop ${byPk.length} record(s)',
+      );
       for (final id in byPk.keys) {
         final row = byPk[id];
         if (row == null) continue;
@@ -1456,7 +1516,9 @@ extension RecordServiceExtension on DatabaseService {
           continue;
         }
         if (code < 200 || code >= 300) {
-          DatabaseService._log('STOP_SWITCH_ABORT: failed to stop record id=$id status=$code');
+          DatabaseService._log(
+            'STOP_SWITCH_ABORT: failed to stop record id=$id status=$code',
+          );
           return false;
         }
       }
@@ -1690,21 +1752,15 @@ extension RecordServiceExtension on DatabaseService {
     var categoryForPatch = categoryId;
     var shouldPatchCategory = categoryId != null;
     if (syncSourcePlan && !clearSourcePlan) {
-      final sp0 =
-          DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
+      final sp0 = DatabaseService.pocketRelationIdOrNull(
+        sourcePlanPocketRecordId,
+      );
       if (sp0 != null) {
         final pc = await _resolveCategoryIdFromSourcePlanPbId(sp0);
         if (_planLocalCategoryIdIsConcrete(pc)) {
           categoryForPatch = pc;
           shouldPatchCategory = true;
         }
-      }
-    }
-    if (title != null && !shouldPatchCategory) {
-      final inferred = _smartInferCategoryId(title);
-      if (_planLocalCategoryIdIsConcrete(inferred)) {
-        categoryForPatch = inferred;
-        shouldPatchCategory = true;
       }
     }
     final updates = <String, dynamic>{};
@@ -1720,8 +1776,9 @@ extension RecordServiceExtension on DatabaseService {
       }
     }
     if (shouldPatchCategory && categoryForPatch != null) {
-      updates['category_id'] =
-          _recordCategoryBusinessPkForApi(categoryForPatch);
+      updates['category_id'] = _recordCategoryBusinessPkForApi(
+        categoryForPatch,
+      );
     }
     if (note != null) updates['note'] = note;
     if (tags != null) {
@@ -1733,8 +1790,9 @@ extension RecordServiceExtension on DatabaseService {
       if (clearSourcePlan) {
         updates['source_plan_id'] = null;
       } else {
-        final sp =
-            DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
+        final sp = DatabaseService.pocketRelationIdOrNull(
+          sourcePlanPocketRecordId,
+        );
         if (sp != null) updates['source_plan_id'] = sp;
       }
     }
@@ -1924,10 +1982,7 @@ extension RecordServiceExtension on DatabaseService {
         return true;
       }
       if (failureCode == 401 || failureCode == 403) {
-        offlineSync.setAuthPaused(
-          true,
-          message: 'HTTP $failureCode',
-        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $failureCode');
         return false;
       }
       if (_recordMutationRetriableHttpCode(failureCode)) {
@@ -1938,11 +1993,14 @@ extension RecordServiceExtension on DatabaseService {
     }
     if (kind == RecordMutationOutbox.kindStopPatch) {
       final originalInput =
-          (item['originalQueryId'] ?? item['businessId'] ?? '').toString().trim();
+          (item['originalQueryId'] ?? item['businessId'] ?? '')
+              .toString()
+              .trim();
       final pbId = (item['pocketBaseId'] ?? '').toString().trim();
       if (originalInput.isEmpty || pbId.isEmpty) return true;
-      final nowIso =
-          DatabaseService.getPlanetaryNow().toUtc().toIso8601String();
+      final nowIso = DatabaseService.getPlanetaryNow()
+          .toUtc()
+          .toIso8601String();
       final stopFields = _nocoFieldsForPatch(<String, dynamic>{
         'end_time': nowIso,
         'status': 'stopped',
@@ -1983,8 +2041,9 @@ extension RecordServiceExtension on DatabaseService {
       final updates = Map<String, dynamic>.from(wrapped);
       if (updates.isEmpty) return true;
       final businessId = _bizKey(item);
-      final originalInput =
-          (item['originalQueryId'] ?? businessId).toString().trim();
+      final originalInput = (item['originalQueryId'] ?? businessId)
+          .toString()
+          .trim();
       final pbId = await _resolveRecordPbIdForOutboxReplay(
         businessId: businessId,
         pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
@@ -2018,8 +2077,9 @@ extension RecordServiceExtension on DatabaseService {
     }
     if (kind == RecordMutationOutbox.kindRecordDelete) {
       final businessId = _bizKey(item);
-      final originalInput =
-          (item['originalQueryId'] ?? businessId).toString().trim();
+      final originalInput = (item['originalQueryId'] ?? businessId)
+          .toString()
+          .trim();
       final pbId = await _resolveRecordPbIdForOutboxReplay(
         businessId: businessId,
         pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
@@ -2067,14 +2127,15 @@ extension RecordServiceExtension on DatabaseService {
       if (sp != null) {
         final planId =
             DatabaseService.pocketRelationIdOrNull(sp.toString()) ??
-                sp.toString().trim();
+            sp.toString().trim();
         if (planId.isNotEmpty) {
           final pc = await _resolveCategoryIdFromSourcePlanPbId(planId);
           if (_planLocalCategoryIdIsConcrete(pc)) {
             final resolved = _resolveColdStartRecordCategoryId(pc);
             if (_categoryIdResolvableForPbRecordPost(resolved)) {
-              runningFields['category_id'] =
-                  _recordCategoryBusinessPkForApi(resolved);
+              runningFields['category_id'] = _recordCategoryBusinessPkForApi(
+                resolved,
+              );
             }
           }
         }
@@ -2084,12 +2145,14 @@ extension RecordServiceExtension on DatabaseService {
 
       _recordCacheTimelineNotifyBatchDepth++;
       try {
-        final handoffIso =
-            (runningFields['start_time'] ?? '').toString().trim();
+        final handoffIso = (runningFields['start_time'] ?? '')
+            .toString()
+            .trim();
         if (handoffIso.isEmpty) {
           return 500;
         }
-        final serverPrimaries = await _fetchServerRunningSacredPrimariesByPbId();
+        final serverPrimaries =
+            await _fetchServerRunningSacredPrimariesByPbId();
         if (serverPrimaries.isEmpty) {
           DatabaseService._log(
             'SACRED_PREFLIGHT: no running primaries on server (POST new only)',
@@ -2129,9 +2192,7 @@ extension RecordServiceExtension on DatabaseService {
           if (!_pb.authStore.isValid) return 401;
           return 500;
         }
-        await _finalizeRecordCreateHandshake(
-          pocketCreatedRecordId: createdId,
-        );
+        await _finalizeRecordCreateHandshake(pocketCreatedRecordId: createdId);
         try {
           await _fetchRecordsIntoCache(forceNetwork: true);
         } catch (_) {}
@@ -2213,21 +2274,24 @@ extension RecordServiceExtension on DatabaseService {
       }
       cid = _resolveColdStartRecordCategoryId(cid);
       if (!_categoryIdResolvableForPbRecordPost(cid)) {
-        DatabaseService._log('writeRecord: cold-start could not resolve category_id');
+        DatabaseService._log(
+          'writeRecord: cold-start could not resolve category_id',
+        );
         AppSnack.failed();
         return null;
       }
       final now = DatabaseService.getPlanetaryNow();
       final start = explicitStartTime ?? now;
       final isStartingNow = explicitStartTime != null;
-      final status =
-          isStartingNow ? 'running' : (dateKey == _todayKey ? 'running' : 'completed');
-      DateTime? endTime =
-          isStartingNow ? null : (dateKey == _todayKey ? null : start);
+      final status = isStartingNow
+          ? 'running'
+          : (dateKey == _todayKey ? 'running' : 'completed');
+      DateTime? endTime = isStartingNow
+          ? null
+          : (dateKey == _todayKey ? null : start);
       final startIso = start.toUtc().toIso8601String();
       final pr = parentRecordId?.trim();
-      final hasParent =
-          (pr != null && pr.isNotEmpty) || parentId != null;
+      final hasParent = (pr != null && pr.isNotEmpty) || parentId != null;
       final sourcePlanForPayload = !hasParent
           ? DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId)
           : null;
@@ -2296,23 +2360,23 @@ extension RecordServiceExtension on DatabaseService {
               }
             }
             deferWriteRecordMutationRelease = true;
-            unawaited(
-              () async {
-                try {
-                  await prevNet;
-                  await _highlanderPrimaryServerSync(
-                    rollbackToken: rollbackToken,
-                    runningFields: runningFields,
-                  );
-                } finally {
-                  if (!netDone.isCompleted) netDone.complete();
-                  _writeRecordMutationInFlight = false;
-                }
-              }(),
-            );
+            unawaited(() async {
+              try {
+                await prevNet;
+                await _highlanderPrimaryServerSync(
+                  rollbackToken: rollbackToken,
+                  runningFields: runningFields,
+                );
+              } finally {
+                if (!netDone.isCompleted) netDone.complete();
+                _writeRecordMutationInFlight = false;
+              }
+            }());
             return runningRecordBizId;
           } catch (e, st) {
-            DatabaseService._log('writeRecord primary Highlander local phase: $e');
+            DatabaseService._log(
+              'writeRecord primary Highlander local phase: $e',
+            );
             DatabaseService._log(st.toString());
             clearOptimisticTimelineUi();
             if (!netDone.isCompleted) netDone.complete();
@@ -2326,7 +2390,8 @@ extension RecordServiceExtension on DatabaseService {
           if (pr != null && pr.isNotEmpty) {
             sameParent = _parentFieldEqualsRecordId(r, pr);
           } else if (parentId != null) {
-            sameParent = CategoryServiceExtension._rowInt(r['parent_id']) == parentId;
+            sameParent =
+                CategoryServiceExtension._rowInt(r['parent_id']) == parentId;
           }
           if (!sameParent) continue;
           if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r)) continue;
@@ -2386,7 +2451,9 @@ extension RecordServiceExtension on DatabaseService {
         }
         cidForCompleted = _resolveColdStartRecordCategoryId(cidForCompleted);
         if (!_categoryIdResolvableForPbRecordPost(cidForCompleted)) {
-          DatabaseService._log('writeRecord completed branch: cold-start could not resolve category_id');
+          DatabaseService._log(
+            'writeRecord completed branch: cold-start could not resolve category_id',
+          );
           AppSnack.failed();
           return null;
         }
@@ -2411,7 +2478,9 @@ extension RecordServiceExtension on DatabaseService {
         }
         final newId = await _createRecordPb(completedFields);
         if (newId == null) {
-          DatabaseService._log('writeRecord PocketBase create failed (completed branch)');
+          DatabaseService._log(
+            'writeRecord PocketBase create failed (completed branch)',
+          );
           return null;
         }
         await _finalizeRecordCreateHandshake(pocketCreatedRecordId: newId);
@@ -2421,14 +2490,13 @@ extension RecordServiceExtension on DatabaseService {
     } catch (e, st) {
       DatabaseService._log('writeRecord failed: $e');
       DatabaseService._log(st);
-      final isChildPost = (parentRecordId?.trim().isNotEmpty ?? false) ||
-          parentId != null;
+      final isChildPost =
+          (parentRecordId?.trim().isNotEmpty ?? false) || parentId != null;
       if (!isChildPost) {
         clearOptimisticTimelineUi();
       }
       return null;
-    }
-    finally {
+    } finally {
       if (!deferWriteRecordMutationRelease) {
         _writeRecordMutationInFlight = false;
       }
@@ -2468,7 +2536,9 @@ extension RecordServiceExtension on DatabaseService {
     var resolvedCategoryId = categoryId;
     var shouldWriteCategory = categoryId != null;
     if (syncSourcePlan && !clearSourcePlan) {
-      final sp = DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
+      final sp = DatabaseService.pocketRelationIdOrNull(
+        sourcePlanPocketRecordId,
+      );
       if (sp != null) {
         final ic = _tryResolveCategoryIdFromSourcePlanPbIdSync(sp);
         if (_planLocalCategoryIdIsConcrete(ic)) {
@@ -2490,11 +2560,171 @@ extension RecordServiceExtension on DatabaseService {
       if (clearSourcePlan) {
         row['source_plan_id'] = null;
       } else {
-        final sp = DatabaseService.pocketRelationIdOrNull(sourcePlanPocketRecordId);
+        final sp = DatabaseService.pocketRelationIdOrNull(
+          sourcePlanPocketRecordId,
+        );
         if (sp != null) row['source_plan_id'] = sp;
       }
     }
     _notifyTimelineAfterRecordCacheMutation();
+  }
+
+  String? _cachedRecordSourcePlanId(Map<String, dynamic> row) {
+    final raw =
+        normalizeLinkScalar(row['source_plan_id']) ?? row['source_plan_id'];
+    return DatabaseService.pocketRelationIdOrNull(raw?.toString());
+  }
+
+  void _applyCachedRecordCategoryAt(int index, int categoryId) {
+    if (index < 0 || index >= _cachedFlatRecords.length) return;
+    final row = _cachedFlatRecords[index];
+    row['category_id'] = _recordCategoryBusinessPkForApi(categoryId);
+    final rule = getCategoryRuleById(categoryId);
+    final pb = _categoryBackendRowIdStrict(rule);
+    if (pb != null && pb.isNotEmpty) {
+      row['category_link'] = pb;
+    }
+  }
+
+  void _propagatePlanAutoCategoryToLoadedLinkedRecords({
+    required String planPocketId,
+    required int oldCategoryId,
+    required int newCategoryId,
+  }) {
+    final planId = DatabaseService.pocketRelationIdOrNull(planPocketId);
+    if (planId == null) return;
+    if (!_planLocalCategoryIdIsConcrete(oldCategoryId) ||
+        !_planLocalCategoryIdIsConcrete(newCategoryId) ||
+        oldCategoryId == newCategoryId) {
+      return;
+    }
+    final targets =
+        <
+          ({
+            int index,
+            String originalInput,
+            String businessId,
+            String? pbId,
+            Map<String, dynamic> rollback,
+          })
+        >[];
+    for (var i = 0; i < _cachedFlatRecords.length; i++) {
+      final row = _cachedFlatRecords[i];
+      if (_cachedRecordSourcePlanId(row) != planId) continue;
+      final current = categoryIdFromRecordRow(row);
+      if (current != oldCategoryId) continue;
+      final pbId = _pbSystemIdFromCachedRecordRow(row);
+      final biz = (row['record_id'] ?? '').toString().trim();
+      final original = (pbId != null && pbId.isNotEmpty) ? pbId : biz;
+      if (original.isEmpty || biz.isEmpty) continue;
+      targets.add((
+        index: i,
+        originalInput: original,
+        businessId: biz,
+        pbId: pbId,
+        rollback: Map<String, dynamic>.from(row),
+      ));
+    }
+    if (targets.isEmpty) return;
+    for (final t in targets) {
+      _applyCachedRecordCategoryAt(t.index, newCategoryId);
+    }
+    _notifyTimelineAfterRecordCacheMutation();
+    for (final t in targets) {
+      unawaited(
+        _patchLoadedLinkedRecordCategory(
+          originalInput: t.originalInput,
+          businessId: t.businessId,
+          pocketBaseId: t.pbId,
+          rollbackIndex: t.index,
+          rollbackRow: t.rollback,
+          newCategoryId: newCategoryId,
+        ),
+      );
+    }
+  }
+
+  Future<void> _patchLoadedLinkedRecordCategory({
+    required String originalInput,
+    required String businessId,
+    required String? pocketBaseId,
+    required int rollbackIndex,
+    required Map<String, dynamic> rollbackRow,
+    required int newCategoryId,
+  }) async {
+    final updates = <String, dynamic>{
+      'category_id': _recordCategoryBusinessPkForApi(newCategoryId),
+    };
+    try {
+      var rid = pocketBaseId?.trim();
+      if (rid == null ||
+          rid.isEmpty ||
+          !DatabaseService._isLikelyPocketBaseRowId(rid)) {
+        rid = await _resolveRecordPbIdForOutboxReplay(
+          businessId: businessId,
+          pocketBaseId: pocketBaseId,
+        );
+      }
+      if (rid == null ||
+          rid.isEmpty ||
+          !DatabaseService._isLikelyPocketBaseRowId(rid)) {
+        await _enqueueRecordUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: updates,
+          error: 'unresolved_pb_id',
+        );
+        offlineSync.setConnectivityOffline(true);
+        return;
+      }
+      final code = await _patchRecordsRowWith404Recovery(
+        originalQueryId: originalInput,
+        restId: rid,
+        fields: _nocoFieldsForPatch(Map<String, dynamic>.from(updates)),
+      );
+      if (code >= 200 && code < 300) {
+        unawaited(offlineSync.refreshPendingCount());
+        return;
+      }
+      if (code == 401 || code == 403) {
+        await _enqueueRecordUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: updates,
+          pocketBaseId: rid,
+          error: code,
+          syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $code');
+        return;
+      }
+      if (_recordMutationRetriableHttpCode(code)) {
+        await _enqueueRecordUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: updates,
+          pocketBaseId: rid,
+          error: code,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return;
+      }
+      if (rollbackIndex >= 0 && rollbackIndex < _cachedFlatRecords.length) {
+        _cachedFlatRecords[rollbackIndex] = rollbackRow;
+        _notifyTimelineAfterRecordCacheMutation();
+      }
+    } catch (e, st) {
+      DatabaseService._log('AUTO_RECAT_RECORD_LINKED: $e');
+      DatabaseService._log(st.toString());
+      await _enqueueRecordUpdateMutation(
+        originalInput: originalInput,
+        businessId: businessId,
+        patchFields: updates,
+        pocketBaseId: pocketBaseId,
+        error: e,
+      );
+      offlineSync.setConnectivityOffline(true);
+    }
   }
 
   Future<TimelineRecord?> updateRecord({
@@ -2504,6 +2734,7 @@ extension RecordServiceExtension on DatabaseService {
     DateTime? endTime,
     int? categoryId,
     String? note,
+
     /// Comma-separated tag **names** (@DATA_MAP `records.tags` string). Omitted when null or blank.
     String? tags,
     List<Map<String, dynamic>>? checklist,
@@ -2517,11 +2748,27 @@ extension RecordServiceExtension on DatabaseService {
     if (originalInput.isEmpty) return null;
     final businessId = _outboxBusinessIdForRecord(originalInput);
     try {
+      final cacheRid =
+          _tryResolveRecordIdFromCacheOnly(originalInput) ?? originalInput;
+      final existingIndex = _indexOfCachedRecordRow(cacheRid, originalInput);
+      final existingRow = existingIndex >= 0
+          ? _cachedFlatRecords[existingIndex]
+          : null;
+      final oldCategoryId = existingRow != null
+          ? categoryIdFromRecordRow(existingRow)
+          : null;
+      final autoCategoryId = _resolveCategoryIdForEditedTitle(
+        newTitle: title,
+        oldTitle: existingRow?['title']?.toString(),
+        currentCategoryId: oldCategoryId,
+        manualCategoryChanged: categoryId != null || syncSourcePlan,
+      );
+      final effectiveCategoryId = categoryId ?? autoCategoryId;
       final updates = await _buildRecordPatchUpdates(
         title: title,
         startTime: startTime,
         endTime: endTime,
-        categoryId: categoryId,
+        categoryId: effectiveCategoryId,
         note: note,
         tags: tags,
         checklist: checklist,
@@ -2534,19 +2781,18 @@ extension RecordServiceExtension on DatabaseService {
       }
       Map<String, dynamic>? rollbackRow;
       var rollbackIndex = -1;
-      final cacheRid =
-          _tryResolveRecordIdFromCacheOnly(originalInput) ?? originalInput;
-      rollbackIndex = _indexOfCachedRecordRow(cacheRid, originalInput);
+      rollbackIndex = existingIndex;
       if (rollbackIndex >= 0) {
-        rollbackRow =
-            Map<String, dynamic>.from(_cachedFlatRecords[rollbackIndex]);
+        rollbackRow = Map<String, dynamic>.from(
+          _cachedFlatRecords[rollbackIndex],
+        );
       }
       applyOptimisticRecordRowEdit(
         recordId: originalInput,
         title: title,
         startTime: startTime,
         endTime: endTime,
-        categoryId: categoryId,
+        categoryId: effectiveCategoryId,
         note: note,
         tags: tags,
         checklist: checklist,
@@ -2554,6 +2800,21 @@ extension RecordServiceExtension on DatabaseService {
         clearSourcePlan: clearSourcePlan,
         sourcePlanPocketRecordId: sourcePlanPocketRecordId,
       );
+      if (autoCategoryId != null &&
+          oldCategoryId != null &&
+          oldCategoryId != autoCategoryId &&
+          existingRow != null) {
+        final sourcePlanId = _cachedRecordSourcePlanId(existingRow);
+        if (sourcePlanId != null) {
+          unawaited(
+            _propagateRecordAutoCategoryToLinkedPlan(
+              planPocketId: sourcePlanId,
+              oldCategoryId: oldCategoryId,
+              newCategoryId: autoCategoryId,
+            ),
+          );
+        }
+      }
       final optimistic = _timelineRecordFromCacheInput(originalInput);
       final shadowRid = _tryResolveRecordIdFromCacheOnly(originalInput);
       if (shadowRid != null &&
@@ -2617,43 +2878,41 @@ extension RecordServiceExtension on DatabaseService {
         );
         return optimistic;
       }
-      unawaited(
-        () async {
-          try {
-            final rid = await _resolveRecordIdForRestUrl(originalInput);
-            if (!DatabaseService._isLikelyPocketBaseRowId(rid)) {
-              await _enqueueRecordUpdateMutation(
-                originalInput: originalInput,
-                businessId: businessId,
-                patchFields: updates,
-                error: 'unresolved_pb_id',
-              );
-              offlineSync.setConnectivityOffline(true);
-              return;
-            }
-            await _patchRecordUpdateNetworkPhase(
+      unawaited(() async {
+        try {
+          final rid = await _resolveRecordIdForRestUrl(originalInput);
+          if (!DatabaseService._isLikelyPocketBaseRowId(rid)) {
+            await _enqueueRecordUpdateMutation(
               originalInput: originalInput,
-              resolvedPbId: rid,
               businessId: businessId,
-              updates: updates,
-              rollbackRow: rollbackRow,
-              rollbackIndex: rollbackIndex,
+              patchFields: updates,
+              error: 'unresolved_pb_id',
             );
-          } catch (e, st) {
-            DatabaseService._log('updateRecord resolve async: $e');
-            DatabaseService._log(st.toString());
-            if (_recordMutationRetriableHttpCode(0)) {
-              await _enqueueRecordUpdateMutation(
-                originalInput: originalInput,
-                businessId: businessId,
-                patchFields: updates,
-                error: e,
-              );
-              offlineSync.setConnectivityOffline(true);
-            }
+            offlineSync.setConnectivityOffline(true);
+            return;
           }
-        }(),
-      );
+          await _patchRecordUpdateNetworkPhase(
+            originalInput: originalInput,
+            resolvedPbId: rid,
+            businessId: businessId,
+            updates: updates,
+            rollbackRow: rollbackRow,
+            rollbackIndex: rollbackIndex,
+          );
+        } catch (e, st) {
+          DatabaseService._log('updateRecord resolve async: $e');
+          DatabaseService._log(st.toString());
+          if (_recordMutationRetriableHttpCode(0)) {
+            await _enqueueRecordUpdateMutation(
+              originalInput: originalInput,
+              businessId: businessId,
+              patchFields: updates,
+              error: e,
+            );
+            offlineSync.setConnectivityOffline(true);
+          }
+        }
+      }());
       return optimistic;
     } catch (_) {
       AppSnack.failed();
@@ -2680,7 +2939,9 @@ extension RecordServiceExtension on DatabaseService {
           rid.isEmpty ||
           !DatabaseService._isLikelyPocketBaseRowId(rid)) {
         final resolved = await _resolveRecordIdForRestUrl(originalInput);
-        rid = DatabaseService._isLikelyPocketBaseRowId(resolved) ? resolved : null;
+        rid = DatabaseService._isLikelyPocketBaseRowId(resolved)
+            ? resolved
+            : null;
       }
       if (rid == null || rid.isEmpty) {
         DatabaseService._log(
@@ -2688,19 +2949,20 @@ extension RecordServiceExtension on DatabaseService {
         );
         return false;
       }
-      DatabaseService._log('PATCH_ID_TRACE: patchRecordSourcePlanLink pb id=$rid');
+      DatabaseService._log(
+        'PATCH_ID_TRACE: patchRecordSourcePlanLink pb id=$rid',
+      );
       final pc = await _resolveCategoryIdFromSourcePlanPbId(sp);
       final shouldPatchCategory = _planLocalCategoryIdIsConcrete(pc);
-      final updates = <String, dynamic>{
-        'source_plan_id': sp,
-      };
+      final updates = <String, dynamic>{'source_plan_id': sp};
       if (shouldPatchCategory && pc != null) {
         updates['category_id'] = _recordCategoryBusinessPkForApi(pc);
       }
       rollbackIndex = _indexOfCachedRecordRow(rid, originalInput);
       if (rollbackIndex >= 0) {
-        rollbackRow =
-            Map<String, dynamic>.from(_cachedFlatRecords[rollbackIndex]);
+        rollbackRow = Map<String, dynamic>.from(
+          _cachedFlatRecords[rollbackIndex],
+        );
         final row = _cachedFlatRecords[rollbackIndex];
         row['source_plan_id'] = sp;
         if (shouldPatchCategory && pc != null) {
@@ -2759,21 +3021,20 @@ extension RecordServiceExtension on DatabaseService {
     bool clearSourcePlan = false,
     String? sourcePlanPocketRecordId,
     bool bypassConflictCheck = false,
-  }) =>
-      updateRecord(
-        recordId: recordId,
-        title: title,
-        startTime: startTime,
-        endTime: endTime,
-        categoryId: categoryId,
-        note: note,
-        tags: tags,
-        checklist: checklist,
-        syncSourcePlan: syncSourcePlan,
-        clearSourcePlan: clearSourcePlan,
-        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
-        bypassConflictCheck: bypassConflictCheck,
-      );
+  }) => updateRecord(
+    recordId: recordId,
+    title: title,
+    startTime: startTime,
+    endTime: endTime,
+    categoryId: categoryId,
+    note: note,
+    tags: tags,
+    checklist: checklist,
+    syncSourcePlan: syncSourcePlan,
+    clearSourcePlan: clearSourcePlan,
+    sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+    bypassConflictCheck: bypassConflictCheck,
+  );
 
   Future<bool> deleteRecordByDocId(String recordId) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return false;
@@ -2931,7 +3192,9 @@ extension RecordServiceExtension on DatabaseService {
     String resolvedPbId,
   ) async {
     final nowIso = DatabaseService.getPlanetaryNow().toUtc().toIso8601String();
-    DatabaseService._log('PATCH_ID_TRACE: stopRecordByDocId pb id=$resolvedPbId');
+    DatabaseService._log(
+      'PATCH_ID_TRACE: stopRecordByDocId pb id=$resolvedPbId',
+    );
     final stopFields = _nocoFieldsForPatch(<String, dynamic>{
       'end_time': nowIso,
       'status': 'stopped',
@@ -2946,9 +3209,7 @@ extension RecordServiceExtension on DatabaseService {
       _purgeGhostRecordById(resolvedPbId);
       _clearOptimisticStopKeysForRecord(originalInput);
       if (_lastRecordsPatchSkippedDeadLetter) {
-        _brainSnackError(
-          t(currentLocale.value, 'error_stop_dead_letter_skip'),
-        );
+        _brainSnackError(t(currentLocale.value, 'error_stop_dead_letter_skip'));
       } else {
         _snackStopHttpFailure(404);
       }
@@ -2992,18 +3253,24 @@ extension RecordServiceExtension on DatabaseService {
   /// Returns **`true` only** for **2xx** (not 404). Optimistic UI reverts when the request fails.
   Future<bool> stopRecordByDocId(String recordId) async {
     if (!_isInitialized) {
-      debugPrint('[ABORT_REASON] Exiting early because: !_isInitialized (_isInitialized=$_isInitialized). No PATCH.');
+      debugPrint(
+        '[ABORT_REASON] Exiting early because: !_isInitialized (_isInitialized=$_isInitialized). No PATCH.',
+      );
       _brainSnackError(t(currentLocale.value, 'error_stop_brain_not_ready'));
       return false;
     }
     if (!_hasAuthenticatedUserId) {
-      debugPrint('[ABORT_REASON] Exiting early because: PocketBase auth record id is missing (_isInitialized=$_isInitialized, currentProfileId=$currentProfileId). No PATCH.');
+      debugPrint(
+        '[ABORT_REASON] Exiting early because: PocketBase auth record id is missing (_isInitialized=$_isInitialized, currentProfileId=$currentProfileId). No PATCH.',
+      );
       _brainSnackError(t(currentLocale.value, 'error_stop_brain_not_ready'));
       return false;
     }
     var rid = recordId.trim();
     if (rid.isEmpty) {
-      debugPrint('[ABORT_REASON] Exiting early because: trimmed recordId is empty. No PATCH.');
+      debugPrint(
+        '[ABORT_REASON] Exiting early because: trimmed recordId is empty. No PATCH.',
+      );
       _brainSnackError(t(currentLocale.value, 'error_stop_empty_doc_id'));
       return false;
     }
@@ -3015,56 +3282,58 @@ extension RecordServiceExtension on DatabaseService {
     _applyOptimisticStopUiSnapshot(originalInput);
 
     final shadowRid = _tryResolveRecordIdFromCacheOnly(originalInput);
-    if (shadowRid != null && DatabaseService._isLikelyPocketBaseRowId(shadowRid)) {
+    if (shadowRid != null &&
+        DatabaseService._isLikelyPocketBaseRowId(shadowRid)) {
       unawaited(
         _patchStopRecordNetworkPhase(originalInput, shadowRid)
             .catchError((Object e, StackTrace st) async {
-          DatabaseService._log('stopRecordByDocId shadow async: $e');
-          DatabaseService._log(st.toString());
-          if (e is ClientException) {
-            final code = e.statusCode;
-            if (code == 401 || code == 403) {
-              await _enqueueStopPatchMutation(
-                originalInput: originalInput,
-                pocketBaseId: shadowRid,
-                error: code,
-                syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
-              );
-              offlineSync.setAuthPaused(true, message: 'HTTP $code');
-              _snackStopHttpFailure(code);
-              return true;
-            }
-            if (_recordMutationRetriableHttpCode(code)) {
-              await _enqueueStopPatchMutation(
-                originalInput: originalInput,
-                pocketBaseId: shadowRid,
-                error: code,
-              );
-              offlineSync.setConnectivityOffline(true);
-              return true;
-            }
-          } else if (_recordMutationRetriableHttpCode(0)) {
-            await _enqueueStopPatchMutation(
-              originalInput: originalInput,
-              pocketBaseId: shadowRid,
-              error: e,
-            );
-            offlineSync.setConnectivityOffline(true);
-            return true;
-          }
-          _clearOptimisticStopKeysForRecord(originalInput);
-          _notifyTimelineAfterRecordCacheMutation();
-          if (e is ClientException) {
-            _snackStopHttpFailure(e.statusCode);
-          } else {
-            _brainSnackError(
-              t(currentLocale.value, 'error_prefix').replaceAll('%s', '$e'),
-            );
-          }
-          return false;
-        }).whenComplete(() {
-          _stopRecordInFlightKeys.remove(originalInput);
-        }),
+              DatabaseService._log('stopRecordByDocId shadow async: $e');
+              DatabaseService._log(st.toString());
+              if (e is ClientException) {
+                final code = e.statusCode;
+                if (code == 401 || code == 403) {
+                  await _enqueueStopPatchMutation(
+                    originalInput: originalInput,
+                    pocketBaseId: shadowRid,
+                    error: code,
+                    syncStatus: RecordMutationOutbox.syncStatusPausedAuth,
+                  );
+                  offlineSync.setAuthPaused(true, message: 'HTTP $code');
+                  _snackStopHttpFailure(code);
+                  return true;
+                }
+                if (_recordMutationRetriableHttpCode(code)) {
+                  await _enqueueStopPatchMutation(
+                    originalInput: originalInput,
+                    pocketBaseId: shadowRid,
+                    error: code,
+                  );
+                  offlineSync.setConnectivityOffline(true);
+                  return true;
+                }
+              } else if (_recordMutationRetriableHttpCode(0)) {
+                await _enqueueStopPatchMutation(
+                  originalInput: originalInput,
+                  pocketBaseId: shadowRid,
+                  error: e,
+                );
+                offlineSync.setConnectivityOffline(true);
+                return true;
+              }
+              _clearOptimisticStopKeysForRecord(originalInput);
+              _notifyTimelineAfterRecordCacheMutation();
+              if (e is ClientException) {
+                _snackStopHttpFailure(e.statusCode);
+              } else {
+                _brainSnackError(
+                  t(currentLocale.value, 'error_prefix').replaceAll('%s', '$e'),
+                );
+              }
+              return false;
+            })
+            .whenComplete(() {
+              _stopRecordInFlightKeys.remove(originalInput);
+            }),
       );
       return true;
     }
@@ -3072,13 +3341,17 @@ extension RecordServiceExtension on DatabaseService {
     try {
       rid = await _resolveRecordIdForStopOrDelete(rid);
       if (!DatabaseService._isLikelyPocketBaseRowId(rid)) {
-        debugPrint('[ABORT_REASON] After resolve, rid="$rid" is not a PocketBase row id segment (fails _isLikelyPocketBaseRowId). Throwing LegacyIdResolutionException.');
+        debugPrint(
+          '[ABORT_REASON] After resolve, rid="$rid" is not a PocketBase row id segment (fails _isLikelyPocketBaseRowId). Throwing LegacyIdResolutionException.',
+        );
         throw LegacyIdResolutionException(originalInput);
       }
       return await _patchStopRecordNetworkPhase(originalInput, rid);
     } on LegacyIdResolutionException catch (e, st) {
       debugPrint('UI ERROR: $e');
-      debugPrint('[ABORT_REASON] LegacyIdResolutionException — could not map input to PB row id: $e');
+      debugPrint(
+        '[ABORT_REASON] LegacyIdResolutionException — could not map input to PB row id: $e',
+      );
       DatabaseService._log('stopRecordByDocId: $e');
       DatabaseService._log(st.toString());
       _clearOptimisticStopKeysForRecord(originalInput);
@@ -3087,7 +3360,9 @@ extension RecordServiceExtension on DatabaseService {
       return false;
     } on ClientException catch (e, st) {
       debugPrint('UI ERROR: $e');
-      debugPrint('[ABORT_REASON] stopRecordByDocId: PocketBase ClientException status=${e.statusCode} $e');
+      debugPrint(
+        '[ABORT_REASON] stopRecordByDocId: PocketBase ClientException status=${e.statusCode} $e',
+      );
       DatabaseService._log('stopRecordByDocId failed: $e');
       DatabaseService._log(st.toString());
       final code = e.statusCode;
@@ -3117,7 +3392,9 @@ extension RecordServiceExtension on DatabaseService {
       return false;
     } catch (e, st) {
       debugPrint('UI ERROR: $e');
-      debugPrint('[ABORT_REASON] stopRecordByDocId: unexpected exception before/after PATCH: $e');
+      debugPrint(
+        '[ABORT_REASON] stopRecordByDocId: unexpected exception before/after PATCH: $e',
+      );
       DatabaseService._log('stopRecordByDocId failed: $e');
       DatabaseService._log(st.toString());
       if (_recordMutationRetriableHttpCode(0)) {
@@ -3144,15 +3421,12 @@ extension RecordServiceExtension on DatabaseService {
   Future<bool> stopRecord(String recordId) async => stopRecordByDocId(recordId);
 
   Future<void> updateRecordChecklist(
-      String recordId, List<Map<String, dynamic>> checklist) async {
+    String recordId,
+    List<Map<String, dynamic>> checklist,
+  ) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     final originalInput = recordId.trim();
     if (originalInput.isEmpty) return;
-    unawaited(
-      updateRecord(
-        recordId: originalInput,
-        checklist: checklist,
-      ),
-    );
+    unawaited(updateRecord(recordId: originalInput, checklist: checklist));
   }
 }

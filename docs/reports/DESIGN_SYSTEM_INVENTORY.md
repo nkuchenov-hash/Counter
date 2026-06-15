@@ -135,6 +135,47 @@ Production raw `IconButton(` usage is approximately 41 call sites. This count ex
 
 V7G can migrate a small low-risk icon-action surface, such as admin-only/dev surfaces or non-timer settings/navigation icon actions, after visual acceptance of `AppIconButton` in Component Lab.
 
+## V7H Card Foundation
+
+Date: 2026-06-15.
+
+### What Changed
+
+- `LifeCard` was created in `lib/core/widgets/life_card.dart` as the canonical Flutter surface for Figma `Card`.
+- `AppTaskCard` was created in the same file as the first task/list/timeline wrapper over `LifeCard`.
+- Card state is parameterized with `LifeCardState.normal`, `selected`, `completed`, `disabled`, and `active`.
+- Card density is parameterized with `LifeCardDensity.regular` and `compact`.
+- Task-card domain shape is parameterized with `AppTaskCardType.task`, `backlog`, and `timeline`.
+- Metadata is parameterized through `tags`, `checklistCount`, `notes`, `repeats`, `timeLabel`, and `activeLabel`.
+- No production card migration was done in V7H.
+
+### Component Lab Examples Added
+
+`lib/features/dev/component_lab_view.dart` now shows labeled mock-only examples for:
+
+- `Card / Task / Default` → `AppTaskCard(type: AppTaskCardType.task)`.
+- `Card / Task / Done` → `AppTaskCard(state: LifeCardState.completed)`.
+- `Card / Task / Selected` → `AppTaskCard(state: LifeCardState.selected)`.
+- `Card / List / Backlog` → `AppTaskCard(type: AppTaskCardType.backlog, density: LifeCardDensity.compact)`.
+- `Card / Timeline / Running mock` → `AppTaskCard(type: AppTaskCardType.timeline, state: LifeCardState.active)`.
+- `Card / Task / Metadata` → `AppTaskCard(tags/checklist/notes/repeat parameters)`.
+- `Card / Task / Disabled Compact` → `AppTaskCard(state: LifeCardState.disabled, density: LifeCardDensity.compact)`.
+
+### Production Migration Boundary
+
+| Existing production card | Status | Future target |
+| :--- | :--- | :--- |
+| `_PlanningTaskCard` in `lib/features/planning/planning_view.dart` | Legacy allowed temporarily | `AppTaskCard(type: task)` |
+| `_BacklogPlanCard` in `lib/features/lists/lists_view.dart` | Legacy allowed temporarily | `AppTaskCard(type: backlog)` |
+| `_TimelineRecordCard` in `lib/features/timeline/timeline_view.dart` | Legacy allowed temporarily | `AppTaskCard(type: timeline)` or a later timeline-specific wrapper |
+
+### Intentionally Left For Later
+
+- No replacement of planning, lists, or timeline production card classes.
+- No timer/start/stop behavior changes.
+- No database reads/writes, no real user data in Component Lab.
+- No card gesture, reorder, or selection behavior migration beyond visual mock states.
+
 ## V7F.2 Safe Icon Button Migration
 
 Date: 2026-06-11.

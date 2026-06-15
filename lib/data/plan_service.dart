@@ -380,6 +380,109 @@ extension PlanServiceExtension on DatabaseService {
     return null;
   }
 
+  PlanningTask? _findCachedPlanningTaskForEdit(
+    String planRowIdForBackend, {
+    String? planBusinessId,
+  }) {
+    final p = planRowIdForBackend.trim();
+    if (p.isEmpty) return null;
+    final keys = <String>{
+      p,
+      if ((planBusinessId ?? '').trim().isNotEmpty) planBusinessId!.trim(),
+    };
+    for (final t in _allPlansUserCache) {
+      if (keys.contains(t.planRowIdForBackend) ||
+          keys.contains((t.planRowId ?? '').trim()) ||
+          keys.contains((t.pocketRecordId ?? '').trim())) {
+        return t;
+      }
+    }
+    for (final m in _planningOptimisticByDateKey.values) {
+      for (final t in m.values) {
+        if (keys.contains(t.planRowIdForBackend) ||
+            keys.contains((t.planRowId ?? '').trim()) ||
+            keys.contains((t.pocketRecordId ?? '').trim())) {
+          return t;
+        }
+      }
+    }
+    return null;
+  }
+
+  void _applyOptimisticPlanningTaskPatch({
+    required String planRowId,
+    String? planBusinessId,
+    String? title,
+    int? categoryId,
+    bool? isDone,
+    String? notesPlain,
+    String? notesDeltaJson,
+    List<Map<String, dynamic>>? checklist,
+    int? parentPlanId,
+    int? order,
+    DateTime? startTime,
+    DateTime? startTimeDisplay,
+    DateTime? endDateTime,
+    DateTime? endDateTimeDisplay,
+    bool clearEnd = false,
+    List<Tag>? tags,
+    String? planInitialDateKey,
+    bool? planIsPostponed,
+    bool patchPlanAlarmRecurrence = false,
+    String? planRrule,
+    int? planReminderOffset,
+    List<String>? planExceptionDates,
+  }) {
+    final current = _findCachedPlanningTaskForEdit(
+      planRowId,
+      planBusinessId: planBusinessId,
+    );
+    if (current == null) return;
+    final next = current.copyWith(
+      title: title,
+      categoryId: categoryId,
+      isDone: isDone,
+      notesPlain: notesPlain,
+      notesDeltaJson: notesDeltaJson,
+      checklist: checklist,
+      parentPlanId: parentPlanId,
+      order: order,
+      startTime: startTimeDisplay ?? startTime,
+      endDateTime: endDateTimeDisplay ?? endDateTime,
+      clearEnd: clearEnd,
+      tags: tags,
+      initialDateKey: planInitialDateKey,
+      isPostponed: planIsPostponed,
+      rrule: patchPlanAlarmRecurrence ? planRrule : null,
+      exceptionDates: patchPlanAlarmRecurrence ? planExceptionDates : null,
+      reminderOffset: patchPlanAlarmRecurrence ? planReminderOffset : null,
+      clearRrule: patchPlanAlarmRecurrence && (planRrule ?? '').trim().isEmpty,
+      clearReminderOffset:
+          patchPlanAlarmRecurrence && planReminderOffset == null,
+      isSynced: false,
+    );
+    applyOptimisticPlanningTask(next);
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
+  }
+
+  Future<void> _propagateRecordAutoCategoryToLinkedPlan({
+    required String planPocketId,
+    required int oldCategoryId,
+    required int newCategoryId,
+  }) async {
+    final planId = DatabaseService.pocketRelationIdOrNull(planPocketId);
+    if (planId == null) return;
+    final task = _findCachedPlanningTaskForEdit(planId);
+    if (task == null) return;
+    if (task.categoryId != oldCategoryId) return;
+    await updatePlanningTask(
+      planId,
+      planBusinessId: task.planRowId,
+      categoryId: newCategoryId,
+      suppressAppSnack: true,
+    );
+  }
+
   Future<String?> _resolvePlanPbIdForOutboxReplay({
     required String businessId,
     String? pocketBaseId,
@@ -968,7 +1071,9 @@ extension PlanServiceExtension on DatabaseService {
     return b;
   }
 
-  List<PlanningTask> _dedupePlanningTasksByBusinessId(List<PlanningTask> tasks) {
+  List<PlanningTask> _dedupePlanningTasksByBusinessId(
+    List<PlanningTask> tasks,
+  ) {
     final byBiz = <String, PlanningTask>{};
     final noBiz = <PlanningTask>[];
     for (final t in tasks) {
@@ -3039,7 +3144,7 @@ extension PlanServiceExtension on DatabaseService {
     final fields = <String, dynamic>{'user_id': _pidForPbFilter};
     if (title != null) fields['title'] = title;
     if (categoryId != null) {
-      final cs = _categoryStringPkForApi(getCategoryRuleById(categoryId));
+      final cs = _categoryRelationIdForPlanPatch(categoryId);
       if (cs != null && cs.isNotEmpty) {
         fields['category_id'] = cs;
       }
@@ -3500,10 +3605,22 @@ extension PlanServiceExtension on DatabaseService {
       rid,
       planBusinessId: planBusinessId,
     );
+    final existingTask = _findCachedPlanningTaskForEdit(
+      rid,
+      planBusinessId: planBusinessId,
+    );
+    final oldCategoryId = existingTask?.categoryId;
+    final autoCategoryId = _resolveCategoryIdForEditedTitle(
+      newTitle: title,
+      oldTitle: existingTask?.title,
+      currentCategoryId: oldCategoryId,
+      manualCategoryChanged: categoryId != null,
+    );
+    final effectiveCategoryId = categoryId ?? autoCategoryId;
     final patchBody = _scalarPatchBodyForPlanningRow(
       planBusinessId: planBusinessId,
       title: title,
-      categoryId: categoryId,
+      categoryId: effectiveCategoryId,
       isDone: isDone,
       notesPlain: notesPlain,
       notesDeltaJson: notesDeltaJson,
@@ -3524,10 +3641,45 @@ extension PlanServiceExtension on DatabaseService {
     );
     if (patchBody.isEmpty && tags == null) return false;
 
+    _applyOptimisticPlanningTaskPatch(
+      planRowId: rid,
+      planBusinessId: planBusinessId,
+      title: title,
+      categoryId: effectiveCategoryId,
+      isDone: isDone,
+      notesPlain: notesPlain,
+      notesDeltaJson: notesDeltaJson,
+      checklist: checklist,
+      parentPlanId: parentPlanId,
+      order: order,
+      startTime: startTime,
+      startTimeDisplay: startTimeDisplay,
+      endDateTime: endDateTime,
+      endDateTimeDisplay: endDateTimeDisplay,
+      clearEnd: clearEnd,
+      tags: tags,
+      planInitialDateKey: planInitialDateKey,
+      planIsPostponed: planIsPostponed,
+      patchPlanAlarmRecurrence: patchPlanAlarmRecurrence,
+      planRrule: planRrule,
+      planReminderOffset: planReminderOffset,
+      planExceptionDates: planExceptionDates,
+    );
+
     final shadowPb = _tryResolvePlanPbIdFromCacheOnly(
       rid,
       planBusinessId: planBusinessId,
     );
+    if (autoCategoryId != null &&
+        oldCategoryId != null &&
+        oldCategoryId != autoCategoryId &&
+        shadowPb != null) {
+      _propagatePlanAutoCategoryToLoadedLinkedRecords(
+        planPocketId: shadowPb,
+        oldCategoryId: oldCategoryId,
+        newCategoryId: autoCategoryId,
+      );
+    }
     if (shadowPb != null &&
         DatabaseService._isLikelyPocketBaseRowId(shadowPb)) {
       unawaited(
