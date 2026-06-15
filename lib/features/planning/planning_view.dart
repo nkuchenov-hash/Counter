@@ -1927,6 +1927,8 @@ class _PlanningPageState extends State<PlanningPage>
     required Map<String, int> planActualByPbId,
     bool timelineBlock = false,
     bool timelineInteracting = false,
+    double timelineBlockHeightPx = _kTimelineMinBlockHeightPx,
+    int timelineDurationMin = _kTimelineDefaultBlockMinutes,
   }) {
     final pbId = DatabaseService.pocketRelationIdOrNull(task.pocketRecordId);
     final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
@@ -1941,6 +1943,8 @@ class _PlanningPageState extends State<PlanningPage>
       highlightAsRunning: highlightAsRunning,
       timelineBlock: timelineBlock,
       timelineInteracting: timelineInteracting,
+      timelineBlockHeightPx: timelineBlockHeightPx,
+      timelineDurationMin: timelineDurationMin,
       toggleDoneEnabled: !task.planRowIdForBackend.startsWith('optimistic-'),
       onToggleDone: () => _toggleDone(task, displayDone),
       onBodyTap: () {
@@ -2095,6 +2099,19 @@ class _PlanningPageState extends State<PlanningPage>
   }
 
   double get _timelinePxPerMinute => _kTimelineHourHeightPx / 60;
+
+  static const double _kTimelineBlockColumnGapPx = 4;
+
+  double _timelineBlockColumnWidth(double canvasW, int column, int totalColumns) {
+    final cols = math.max(1, totalColumns);
+    final gaps = _kTimelineBlockColumnGapPx * (cols - 1);
+    return (canvasW - gaps - 6) / cols;
+  }
+
+  double _timelineBlockColumnLeft(double canvasW, int column, int totalColumns) {
+    final w = _timelineBlockColumnWidth(canvasW, column, totalColumns);
+    return 3 + column * (w + _kTimelineBlockColumnGapPx);
+  }
 
   double _snapTimelineMinutes(double rawMinutes) {
     final snap = PlanningSheetTimelinePrefs.timelineSnapMinutes;
@@ -2577,6 +2594,12 @@ class _PlanningPageState extends State<PlanningPage>
     /// When true with [timelineEmbedded], elevates border during drag/resize preview.
     bool timelineInteracting = false,
 
+    /// Proportional block height in px (Time mode absolute layout).
+    double timelineBlockHeightPx = _kTimelineMinBlockHeightPx,
+
+    /// Scheduled duration in minutes for adaptive timeline card density.
+    int timelineDurationMin = _kTimelineDefaultBlockMinutes,
+
     /// When set with [enableLongPressDrag], drives hour-grid edge auto-scroll from [DragUpdateDetails.globalPosition].
     ValueChanged<double>? onHourGridDragGlobalDy,
     VoidCallback? onHourGridDragEnded,
@@ -2595,6 +2618,8 @@ class _PlanningPageState extends State<PlanningPage>
       planActualByPbId: planActualByPbId,
       timelineBlock: timelineEmbedded,
       timelineInteracting: timelineInteracting,
+      timelineBlockHeightPx: timelineBlockHeightPx,
+      timelineDurationMin: timelineDurationMin,
     );
     final allowLongPressDrag =
         enableLongPressDrag &&
@@ -2786,11 +2811,7 @@ class _PlanningPageState extends State<PlanningPage>
     required Map<String, int> planActualByPbId,
   }) {
     final canvasHeight = _timelineCanvasHeightPx(rangeStart, rangeEnd);
-    final timelineBg = Color.alphaBlend(
-      scheme.primary.withValues(alpha: 0.05),
-      scheme.surface,
-    );
-    final gridColor = scheme.outlineVariant.withValues(alpha: 0.35);
+    final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
     final layouts = _timelineBlockLayouts(
       scheduledInRange,
       rangeStart,
@@ -2846,11 +2867,13 @@ class _PlanningPageState extends State<PlanningPage>
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: timelineBg,
-                            borderRadius: BorderRadius.circular(12),
+                            color: scheme.surfaceContainerLowest.withValues(
+                              alpha: 0.35,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: scheme.outlineVariant.withValues(
-                                alpha: 0.25,
+                                alpha: 0.16,
                               ),
                             ),
                           ),
@@ -3052,8 +3075,13 @@ class _PlanningPageState extends State<PlanningPage>
     final heightPx = isResizing
         ? math.max(_kTimelineMinBlockHeightPx, _timelineResizePreviewHeightPx)
         : layout.heightPx;
-    final left = (canvasW / layout.totalColumns) * layout.column + 4;
-    final width = canvasW / layout.totalColumns - 8;
+    final left =
+        _timelineBlockColumnLeft(canvasW, layout.column, layout.totalColumns);
+    final width = _timelineBlockColumnWidth(
+      canvasW,
+      layout.column,
+      layout.totalColumns,
+    );
     final canInteract = _planIsTimelineVerticallyDraggable(layout.task);
     final durMin = _timelineBlockDurationMinutes(layout.task);
     final hadEnd = layout.task.endDateTime != null;
@@ -3124,9 +3152,7 @@ class _PlanningPageState extends State<PlanningPage>
           left: left,
           width: width,
           height: heightPx,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _TimelinePlanInteractionBlock(
+          child: _TimelinePlanInteractionBlock(
               canMove: canInteract,
               canResize: canInteract,
               resizeHandlePx: _kTimelineResizeHandlePx,
@@ -3201,9 +3227,10 @@ class _PlanningPageState extends State<PlanningPage>
                 planActualByPbId: planActualByPbId,
                 timelineEmbedded: true,
                 timelineInteracting: isInteracting,
+                timelineBlockHeightPx: heightPx,
+                timelineDurationMin: durMin,
               ),
             ),
-          ),
         ),
       ],
     );
@@ -4707,6 +4734,9 @@ class _TimelineBlockLayout {
   final int totalColumns;
 }
 
+/// Adaptive density for proportional timeline blocks.
+enum _TimelineBlockDensity { compact, medium, expanded }
+
 /// Single planning task card. Uses Theme.of(context). No hardcoded colors.
 class _PlanningTaskCard extends StatelessWidget {
   const _PlanningTaskCard({
@@ -4726,6 +4756,8 @@ class _PlanningTaskCard extends StatelessWidget {
     required this.onDateTap,
     this.timelineBlock = false,
     this.timelineInteracting = false,
+    this.timelineBlockHeightPx = 56,
+    this.timelineDurationMin = 30,
   });
 
   final PlanningTask task;
@@ -4750,6 +4782,8 @@ class _PlanningTaskCard extends StatelessWidget {
   final VoidCallback onDateTap;
   final bool timelineBlock;
   final bool timelineInteracting;
+  final double timelineBlockHeightPx;
+  final int timelineDurationMin;
 
   static String _formatPlanningTaskDate(PlanningTask task) {
     if (task.dateKey.isEmpty) return '';
@@ -4816,8 +4850,573 @@ class _PlanningTaskCard extends StatelessWidget {
     return displayDate;
   }
 
+  static String _timelineTimeRangeLabel(PlanningTask task) {
+    final start = task.startTime;
+    if (start == null) return '';
+    final startLabel = _formatPlanningWallTime(start);
+    final end = task.endDateTime;
+    if (end != null) {
+      return '$startLabel – ${_formatPlanningWallTime(end)}';
+    }
+    return startLabel;
+  }
+
+  static _TimelineBlockDensity _densityForBlock(
+    double heightPx,
+    int durationMin,
+  ) {
+    if (heightPx < 72 || durationMin <= 40) {
+      return _TimelineBlockDensity.compact;
+    }
+    if (heightPx < 132 || durationMin < 100) {
+      return _TimelineBlockDensity.medium;
+    }
+    return _TimelineBlockDensity.expanded;
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (timelineBlock) {
+      return _buildTimelineBlockCard(context);
+    }
+    return _buildListPlanningCard(context);
+  }
+
+  Widget _buildTimelineBlockCard(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final categoryTrail = localizeCategoryBreadcrumbPath(
+      DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
+      currentLocale.value,
+    );
+    final categoryTone = DatabaseService.instance.getCategoryColor(
+      task.categoryId,
+    );
+    final density = _densityForBlock(
+      timelineBlockHeightPx,
+      timelineDurationMin,
+    );
+    final bg = selectMode && isSelected
+        ? scheme.primaryContainer
+        : scheme.surface;
+    final borderColor = highlightAsRunning
+        ? scheme.primary
+        : timelineInteracting
+        ? scheme.primary.withValues(alpha: 0.5)
+        : scheme.outlineVariant.withValues(alpha: 0.55);
+    final borderWidth = highlightAsRunning
+        ? 2.0
+        : timelineInteracting
+        ? 1.5
+        : 1.0;
+    final suppressChildInk = Theme.of(context).copyWith(
+      splashFactory: NoSplash.splashFactory,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
+      hoverColor: Colors.transparent,
+      checkboxTheme: CheckboxThemeData(
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+      ),
+    );
+
+    Widget body;
+    switch (density) {
+      case _TimelineBlockDensity.compact:
+        body = _timelineCompactBody(context, scheme, categoryTone);
+      case _TimelineBlockDensity.medium:
+        body = _timelineMediumBody(
+          context,
+          scheme,
+          categoryTrail,
+          categoryTone,
+        );
+      case _TimelineBlockDensity.expanded:
+        body = _timelineExpandedBody(
+          context,
+          scheme,
+          categoryTrail,
+          categoryTone,
+        );
+    }
+
+    return Material(
+      color: bg,
+      elevation: timelineInteracting ? 3 : 1,
+      shadowColor: scheme.shadow.withValues(alpha: 0.14),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: borderColor, width: borderWidth),
+      ),
+      child: InkWell(
+        onTap: onBodyTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(10),
+        child: Theme(
+          data: suppressChildInk,
+          child: SizedBox(
+            height: timelineBlockHeightPx,
+            width: double.infinity,
+            child: body,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _timelineAccentStripe(Color categoryTone, {double hPad = 8}) {
+    return Container(
+      width: 3,
+      margin: EdgeInsets.symmetric(vertical: hPad),
+      decoration: BoxDecoration(
+        color: categoryTone.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+
+  Widget _timelineCheckbox(ColorScheme scheme, {double scale = 1}) {
+    final box = selectMode
+        ? Checkbox(
+            value: isSelected,
+            tristate: false,
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            onChanged: (_) => onBodyTap(),
+          )
+        : Checkbox(
+            value: displayIsDone,
+            tristate: false,
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            onChanged: toggleDoneEnabled ? (_) => onToggleDone() : null,
+          );
+    if (scale == 1) return box;
+    return Transform.scale(scale: scale, child: box);
+  }
+
+  Widget _timelinePlayButton(ColorScheme scheme, {double size = 32}) {
+    if (selectMode || displayIsDone) return const SizedBox.shrink();
+    return IconButton(
+      padding: EdgeInsets.zero,
+      constraints: BoxConstraints.tightFor(width: size, height: size),
+      iconSize: size * 0.62,
+      style: IconButton.styleFrom(
+        splashFactory: NoSplash.splashFactory,
+        hoverColor: Colors.transparent,
+      ),
+      icon: const Icon(Icons.play_arrow_rounded),
+      onPressed: onPlay,
+      tooltip: t(currentLocale.value, 'start'),
+    );
+  }
+
+  Widget _timelineMenuButton(BuildContext context, ColorScheme scheme) {
+    return Builder(
+      builder: (menuCtx) => IconButton(
+        tooltip: t(currentLocale.value, 'plan_radial_menu_tip'),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+        iconSize: 20,
+        style: IconButton.styleFrom(
+          splashFactory: NoSplash.splashFactory,
+          hoverColor: Colors.transparent,
+          backgroundColor: scheme.secondaryContainer.withValues(alpha: 0.82),
+          foregroundColor: scheme.onSecondaryContainer,
+          shape: const CircleBorder(),
+        ),
+        icon: const Icon(Icons.more_horiz_rounded),
+        onPressed: () => onOpenMenu(menuCtx),
+      ),
+    );
+  }
+
+  Widget _timelineTitleText(
+    BuildContext context,
+    ColorScheme scheme, {
+    int maxLines = 1,
+    double fontSize = 14,
+  }) {
+    return Text(
+      task.title,
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: fontSize,
+        height: 1.15,
+        decoration: displayIsDone ? TextDecoration.lineThrough : null,
+        color: displayIsDone
+            ? scheme.onSurface.withValues(alpha: 0.62)
+            : scheme.onSurface,
+      ),
+    );
+  }
+
+  Widget _timelineProgressFooter(BuildContext context, ColorScheme scheme) {
+    final est = planEstimatedSeconds ?? 0;
+    if (est <= 0 && planTrackedSeconds <= 0) {
+      final time = _timelineTimeRangeLabel(task);
+      if (time.isEmpty) return const SizedBox.shrink();
+      return Text(
+        time,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          fontSize: 10,
+          color: scheme.onSurfaceVariant,
+        ),
+      );
+    }
+    if (est <= 0) {
+      return Text(
+        t(
+          currentLocale.value,
+          'plan_card_fact_time',
+        ).replaceFirst('%s', _trackedDurationAsHhMm(planTrackedSeconds)),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          fontSize: 10,
+          color: scheme.primary.withValues(alpha: 0.9),
+        ),
+      );
+    }
+    final pct = est > 0 ? ((planTrackedSeconds * 100) / est).round() : 0;
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              minHeight: 3,
+              value: planTrackedSeconds <= est
+                  ? planTrackedSeconds / est
+                  : 1.0,
+              backgroundColor: scheme.surfaceContainerHighest.withValues(
+                alpha: 0.55,
+              ),
+              color: planTrackedSeconds > est ? scheme.error : scheme.primary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '${_shortDur(planTrackedSeconds)} / ${_shortDur(est)} ($pct%)',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            fontSize: 10,
+            color: planTrackedSeconds > est
+                ? scheme.error
+                : scheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _timelineCompactBody(
+    BuildContext context,
+    ColorScheme scheme,
+    Color categoryTone,
+  ) {
+    final time = _timelineTimeRangeLabel(task);
+    final showPlay = !selectMode && !displayIsDone;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth > 118;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _timelineAccentStripe(categoryTone, hPad: 6),
+              SizedBox(
+                width: 30,
+                child: Center(child: _timelineCheckbox(scheme, scale: 0.9)),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _timelineTitleText(context, scheme, fontSize: 13),
+                    if (time.isNotEmpty)
+                      Text(
+                        time,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontSize: 10,
+                          height: 1.1,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              if (showPlay && wide) _timelinePlayButton(scheme, size: 30),
+              _timelineMenuButton(context, scheme),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _timelineMediumBody(
+    BuildContext context,
+    ColorScheme scheme,
+    String categoryTrail,
+    Color categoryTone,
+  ) {
+    final hasRepeat =
+        (task.rrule?.trim().isNotEmpty ?? false) ||
+        (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
+    final showCategory = categoryTrail.isNotEmpty && timelineBlockHeightPx >= 78;
+    final showPlay = !selectMode && !displayIsDone && timelineBlockHeightPx >= 88;
+    final showProgress =
+        (planEstimatedSeconds ?? 0) > 0 || planTrackedSeconds > 0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 4, 4, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showCategory)
+            Padding(
+              padding: const EdgeInsets.only(left: 6, right: 2, bottom: 2),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      categoryTrail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        height: 1.1,
+                        fontWeight: FontWeight.w500,
+                        color: categoryTone.withValues(alpha: 0.88),
+                      ),
+                    ),
+                  ),
+                  _timelineMenuButton(context, scheme),
+                ],
+              ),
+            ),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _timelineAccentStripe(categoryTone, hPad: 4),
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _timelineCheckbox(scheme),
+                      if (showPlay) _timelinePlayButton(scheme, size: 30),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 2, right: 2, top: 1),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _timelineTitleText(
+                                context,
+                                scheme,
+                                maxLines: 2,
+                                fontSize: 14,
+                              ),
+                            ),
+                            if (hasRepeat)
+                              Icon(
+                                Icons.repeat_rounded,
+                                size: 15,
+                                color: scheme.primary.withValues(alpha: 0.82),
+                              ),
+                            if (!showCategory)
+                              _timelineMenuButton(context, scheme),
+                          ],
+                        ),
+                        if (!showProgress)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              _timelineTimeRangeLabel(task),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    fontSize: 10,
+                                    color: scheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (showProgress)
+            Padding(
+              padding: const EdgeInsets.only(left: 6, right: 2, top: 2),
+              child: _timelineProgressFooter(context, scheme),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _timelineExpandedBody(
+    BuildContext context,
+    ColorScheme scheme,
+    String categoryTrail,
+    Color categoryTone,
+  ) {
+    final hasRepeat =
+        (task.rrule?.trim().isNotEmpty ?? false) ||
+        (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
+    final metaIcons = _planningTaskMetaIcons(context, task);
+    final showTags =
+        task.tags.any((t) => t.rendersAsChip) && timelineBlockHeightPx >= 168;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 6, 4, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (categoryTrail.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 6, right: 2, bottom: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      categoryTrail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        fontSize: 10,
+                        height: 1.15,
+                        fontWeight: FontWeight.w500,
+                        color: categoryTone.withValues(alpha: 0.88),
+                      ),
+                    ),
+                  ),
+                  _timelineMenuButton(context, scheme),
+                ],
+              ),
+            ),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _timelineAccentStripe(categoryTone, hPad: 6),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Column(
+                    children: [
+                      _timelineCheckbox(scheme),
+                      if (!selectMode && !displayIsDone)
+                        _timelinePlayButton(scheme),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4, right: 4, top: 2),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _timelineTitleText(
+                                context,
+                                scheme,
+                                maxLines: 3,
+                                fontSize: 15,
+                              ),
+                            ),
+                            if (hasRepeat)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 4, top: 1),
+                                child: Icon(
+                                  Icons.repeat_rounded,
+                                  size: 16,
+                                  color: scheme.primary.withValues(
+                                    alpha: 0.85,
+                                  ),
+                                ),
+                              ),
+                            if (categoryTrail.isEmpty)
+                              _timelineMenuButton(context, scheme),
+                          ],
+                        ),
+                        if (metaIcons.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: metaIcons,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (showTags)
+            Padding(
+              padding: const EdgeInsets.only(left: 6, bottom: 4),
+              child: SizedBox(
+                height: 24,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: task.tags
+                      .where((tag) => tag.rendersAsChip)
+                      .length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 4),
+                  itemBuilder: (context, i) {
+                    final visible = task.tags
+                        .where((tag) => tag.rendersAsChip)
+                        .toList(growable: false);
+                    final tag = visible[i];
+                    return CategoryChip(
+                      mode: CategoryDisplayMode.letterChip,
+                      label: tag.name.trim().isNotEmpty
+                          ? tag.name.trim()
+                          : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
+                      color:
+                          parseTagHexColor(tag.color) ?? scheme.primary,
+                      icon: iconForTagKey(tag.icon),
+                      compactGlyphLayout: true,
+                      syntheticNoTagsMonochrome: tag.tagId == -1,
+                    );
+                  },
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(left: 6, right: 2),
+            child: _timelineProgressFooter(context, scheme),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListPlanningCard(BuildContext context) {
     final metaIcons = _planningTaskMetaIcons(context, task);
     final hasRepeat =
         (task.rrule?.trim().isNotEmpty ?? false) ||
