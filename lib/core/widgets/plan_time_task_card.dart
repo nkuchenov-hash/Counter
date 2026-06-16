@@ -97,13 +97,23 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
     final loc = currentLocale.value;
     final categoryTone =
         DatabaseService.instance.getCategoryColor(widget.task.categoryId);
-    final categoryTrail = localizeCategoryBreadcrumbPath(
-      DatabaseService.instance.getCategoryPath(widget.task.categoryId).trim(),
-      loc,
-    );
+    final categoryTrailRaw = widget.showFooterBreadcrumb
+        ? localizeCategoryBreadcrumbPath(
+            DatabaseService.instance
+                .getCategoryPath(widget.task.categoryId)
+                .trim(),
+            loc,
+          ).trim()
+        : '';
+    final categoryTrail = categoryTrailRaw.isNotEmpty
+        ? categoryTrailRaw
+        : (widget.showFooterBreadcrumb ? t(loc, 'uncategorized') : '');
     final categoryIcon = DatabaseService.instance
         .getCategoryRuleById(widget.task.categoryId)
         ?.iconOrDefault;
+    final effectiveTimeLabel = widget.timeLabel.trim().isNotEmpty
+        ? widget.timeLabel.trim()
+        : _planCardWallTimeLabel(widget.task);
 
     final hovered = _hovered && !widget.interacting;
     final borderColor = widget.highlightAsRunning
@@ -135,22 +145,18 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
     }
 
     final pinFooter = widget.heightPx != null;
-    final footerSeparator = switch (widget.density) {
-      PlanTimeTaskCardDensity.compact =>
-        _showMetrics
-            ? _PlanCardFooterSeparator(
+    final isTimeline = widget.surface == PlanCardSurface.timeline;
+    final footerSeparator =
+        (widget.density == PlanTimeTaskCardDensity.compact &&
+                _isListLike &&
+                !_showMetrics)
+            ? null
+            : _PlanCardFooterSeparator(
                 planTrackedSeconds: widget.planTrackedSeconds,
                 planEstimatedSeconds: widget.planEstimatedSeconds,
                 categoryColor: categoryTone,
-              )
-            : null,
-      _ => _PlanCardFooterSeparator(
-          planTrackedSeconds: widget.planTrackedSeconds,
-          planEstimatedSeconds: widget.planEstimatedSeconds,
-          categoryColor: categoryTone,
-          alwaysShowTrack: true,
-        ),
-    };
+                alwaysShowTrack: isTimeline || !_isListLike || _showMetrics,
+              );
 
     Widget body;
     switch (widget.density) {
@@ -177,7 +183,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
       case PlanTimeTaskCardDensity.medium:
         body = _TimelinePlanCardMedium(
           task: widget.task,
-          timeLabel: widget.timeLabel,
+          timeLabel: effectiveTimeLabel,
           categoryTrail:
               widget.showFooterBreadcrumb ? categoryTrail : '',
           categoryColor: categoryTone,
@@ -204,7 +210,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
       case PlanTimeTaskCardDensity.large:
         body = _TimelinePlanCardLarge(
           task: widget.task,
-          timeLabel: widget.timeLabel,
+          timeLabel: effectiveTimeLabel,
           categoryTrail:
               widget.showFooterBreadcrumb ? categoryTrail : '',
           categoryColor: categoryTone,
@@ -472,7 +478,7 @@ class _PlanCardProgressRow extends StatelessWidget {
                   ? (trackedSeconds <= estimatedSeconds
                       ? trackedSeconds / estimatedSeconds
                       : 1.0)
-                  : null,
+                  : (alwaysShowTrack ? 0.0 : null),
               backgroundColor: const Color(0x61D9D9D9),
               color: over
                   ? Theme.of(context).colorScheme.error
@@ -1358,22 +1364,21 @@ class _PlanCardFooterRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (categoryTrail.isNotEmpty)
-            Expanded(
-              child: Text(
-                categoryTrail,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 11,
-                  height: 1.2,
-                  fontWeight: FontWeight.w400,
-                  color: trailColor,
-                ),
+          Expanded(
+            child: Text(
+              categoryTrail,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                height: 1.2,
+                fontWeight: FontWeight.w400,
+                color: trailColor,
               ),
             ),
+          ),
           if (timeLabel.isNotEmpty) ...[
-            if (categoryTrail.isNotEmpty) const SizedBox(width: 8),
+            const SizedBox(width: 8),
             _PlanCardTimeText(label: timeLabel),
             if (scheduleConflict)
               Padding(
@@ -1443,18 +1448,28 @@ class _PlanCardWatermark extends StatelessWidget {
   }
 }
 
-/// Maps timeline block metrics to CardPlan_Small / Medium / Large density.
+/// Maps timeline block metrics to CardPlan_Medium / Large density.
+/// Time-mode blocks always use medium+ so footer (breadcrumb + planned time + progress track) renders.
 PlanTimeTaskCardDensity planTimeCardDensityForBlock(
   double heightPx,
   int durationMin,
 ) {
-  if (heightPx < 59 || durationMin <= 35) {
-    return PlanTimeTaskCardDensity.compact;
-  }
   if (heightPx < 121) {
     return PlanTimeTaskCardDensity.medium;
   }
   return PlanTimeTaskCardDensity.large;
+}
+
+String _planCardWallTimeLabel(PlanningTask task) {
+  final start = task.startTime;
+  if (start == null) return '';
+  final startLabel =
+      '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
+  final end = task.endDateTime;
+  if (end != null) {
+    return '$startLabel – ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+  }
+  return startLabel;
 }
 
 /// List/calendar row density — compact when minimal, medium when tags/progress/schedule.
