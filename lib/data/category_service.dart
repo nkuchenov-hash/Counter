@@ -680,45 +680,78 @@ extension CategoryServiceExtension on DatabaseService {
     return localId;
   }
 
-  void _applyRecordCategoryDualityToPayload(
-    Map<String, dynamic> merged,
-    int? localCategoryId,
-  ) {
-    final pair = _recordCategoryDualityForLocalId(localCategoryId);
-    if (pair == null) {
-      merged.remove('category_id');
-      merged.remove('category_link');
-      return;
+  /// Normalize outgoing record category fields for PocketBase POST/PATCH.
+  /// Returns false when no resolvable category relation id exists (caller may drop/reject).
+  bool _normalizeRecordCategoryFieldsForPbApi(
+    Map<String, dynamic> merged, {
+    String? logBusinessId,
+    bool allowFallback = true,
+  }) {
+    if (!merged.containsKey('category_id') &&
+        !merged.containsKey('category_link')) {
+      return true;
     }
-    merged['category_id'] = pair.businessId;
-    merged['category_link'] = pair.relationId;
-  }
+    final recordBizId =
+        logBusinessId ?? (merged['record_id'] ?? '').toString().trim();
+    final beforeCat = merged['category_id'];
+    final beforeLink = merged['category_link'];
+    final oldCategory = beforeCat ?? beforeLink;
 
-  /// Normalize outgoing record category fields to business `category_id` + `category_link`.
-  void _mapCategoryIdToLinkForPb(Map<String, dynamic> merged) {
-    if (!merged.containsKey('category_id')) return;
-    final localId = _localCategoryIdFromRecordCategoryPayload(
-      merged['category_id'],
-    );
-    if (localId == null) {
-      merged.remove('category_id');
-      merged.remove('category_link');
-      return;
+    var localId = _localCategoryIdFromRecordCategoryPayload(beforeCat);
+    localId ??= _localCategoryIdFromRecordCategoryPayload(beforeLink);
+    var resolvedBy = 'cache';
+
+    if (localId != null &&
+        _planLocalCategoryIdIsConcrete(localId) &&
+        !_categoryIdResolvableForPbRecordPost(localId)) {
+      localId = null;
     }
+
+    if (localId == null || !_categoryIdResolvableForPbRecordPost(localId)) {
+      if (!allowFallback) {
+        merged.remove('category_id');
+        merged.remove('category_link');
+        return false;
+      }
+      final fallback = _resolveColdStartRecordCategoryId(localId);
+      if (fallback == null || !_categoryIdResolvableForPbRecordPost(fallback)) {
+        merged.remove('category_id');
+        merged.remove('category_link');
+        return false;
+      }
+      localId = fallback;
+      resolvedBy = fallback == defaultCategoryId ? 'default' : 'fallback';
+    }
+
     final pair = _recordCategoryDualityForLocalId(localId);
     if (pair == null) {
-      if (kDebugMode) {
-        debugPrint(
-          '[CAT_MAP] record category dropped from payload — no duality pair '
-          '(rawCat=${merged['category_id']}, localId=$localId).',
-        );
-      }
       merged.remove('category_id');
       merged.remove('category_link');
-      return;
+      return false;
     }
-    merged['category_id'] = pair.businessId;
+
+    merged['category_id'] = pair.relationId;
     merged['category_link'] = pair.relationId;
+
+    final after = pair.relationId;
+    if (beforeCat?.toString() != after || beforeLink?.toString() != after) {
+      // ignore: avoid_print
+      print(
+        'RECORD_CATEGORY_NORMALIZED businessId=${recordBizId.isEmpty ? '-' : recordBizId} '
+        'before=$oldCategory after=$after resolvedBy=$resolvedBy',
+      );
+      if (resolvedBy != 'cache' &&
+          oldCategory != null &&
+          oldCategory.toString().trim().isNotEmpty &&
+          oldCategory.toString() != after) {
+        // ignore: avoid_print
+        print(
+          'RECORD_OUTBOX_REPAIRED_CATEGORY businessId=${recordBizId.isEmpty ? '-' : recordBizId} '
+          'oldCategory=$oldCategory newCategoryPbId=$after',
+        );
+      }
+    }
+    return true;
   }
 
   /// True if [pbId] matches a loaded [CategoryRule.backendRowId] (tree walk).
@@ -738,21 +771,6 @@ extension CategoryServiceExtension on DatabaseService {
 
     visit(_rules);
     return found;
-  }
-
-  /// Records POST/PATCH: enforce business `category_id` + relation `category_link` pair.
-  void _sanitizeOutgoingCategoryLink(Map<String, dynamic> merged) {
-    if (!merged.containsKey('category_id') &&
-        !merged.containsKey('category_link')) {
-      return;
-    }
-    var localId = _localCategoryIdFromRecordCategoryPayload(
-      merged['category_id'],
-    );
-    localId ??= _localCategoryIdFromRecordCategoryPayload(
-      merged['category_link'],
-    );
-    _applyRecordCategoryDualityToPayload(merged, localId);
   }
 
   /// True when [id] maps to a valid record category duality pair for outgoing POST/PATCH.
@@ -821,8 +839,7 @@ extension CategoryServiceExtension on DatabaseService {
       final merged = _recordsPatchFieldsJsonStrings(
         _nocoFieldsForPatch(mergedRaw),
       );
-      _mapCategoryIdToLinkForPb(merged);
-      _sanitizeOutgoingCategoryLink(merged);
+      _normalizeRecordCategoryFieldsForPbApi(merged);
       merged['user_id'] = _pidForPbFilter;
       payloadForError = merged;
       _logRecordsPatchDispatch(rid);
@@ -889,6 +906,7 @@ extension CategoryServiceExtension on DatabaseService {
   }
 
   Future<String?> _createRecordPb(Map<String, dynamic> rawFields) async {
+    _lastRecordCreateFailureHttpCode = 0;
     try {
       await ensurePocketBaseReady();
       // DATA_MAP: identity is pb.authStore.model.id — in SDK 0.21 [model] aliases [record].
@@ -897,11 +915,28 @@ extension CategoryServiceExtension on DatabaseService {
       if (authRowId.isEmpty) {
         throw AuthenticatedUserIdRequiredException();
       }
+      final businessId = (rawFields['record_id'] ?? '').toString().trim();
+      // ignore: avoid_print
+      print(
+        'RECORD_OUTBOX_CREATE_PAYLOAD op=create businessId=${businessId.isEmpty ? '-' : businessId} '
+        'category_id=${rawFields['category_id']} category_link=${rawFields['category_link']} '
+        'source_plan_id=${rawFields['source_plan_id']}',
+      );
       final merged = _recordsPatchFieldsJsonStrings(
         _nocoFieldsForPatch(Map<String, dynamic>.from(rawFields)),
       );
-      _mapCategoryIdToLinkForPb(merged);
-      _sanitizeOutgoingCategoryLink(merged);
+      if (!_normalizeRecordCategoryFieldsForPbApi(
+        merged,
+        logBusinessId: businessId.isEmpty ? null : businessId,
+      )) {
+        _lastRecordCreateFailureHttpCode = 400;
+        // ignore: avoid_print
+        print(
+          'PB_CREATE_ERROR_DETAILS: status=400 category relation not resolved '
+          'rawCategory=${rawFields['category_id']}',
+        );
+        return null;
+      }
       merged['user_id'] = authRowId;
       final created = await _pb
           .collection(PbCollections.records)
@@ -913,7 +948,11 @@ extension CategoryServiceExtension on DatabaseService {
       );
       return created.id;
     } on ClientException catch (e) {
-      debugPrint('PB_CREATE_ERROR_DETAILS: ${e.response}');
+      _lastRecordCreateFailureHttpCode = e.statusCode;
+      // ignore: avoid_print
+      print(
+        'PB_CREATE_ERROR_DETAILS: status=${e.statusCode} ${e.response}',
+      );
       DatabaseService._log('RECORDS_PB create failed: ${e.statusCode}');
       final code = e.statusCode;
       if (code == 403 || code == 401) {

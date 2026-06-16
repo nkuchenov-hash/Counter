@@ -524,6 +524,9 @@ class DatabaseService {
   /// Dedupes overlapping **writeRecord** / **writeCompletedRecord** calls.
   bool _writeRecordMutationInFlight = false;
 
+  /// Last PocketBase HTTP status from [_createRecordPb] (0 = none / non-HTTP failure).
+  int _lastRecordCreateFailureHttpCode = 0;
+
   Stream<String?> get notifications => _notify.stream;
   List<CategoryRule> get rules => List.unmodifiable(_rules);
   static DateTime getPlanetaryNow() => DateTime.now().toUtc();

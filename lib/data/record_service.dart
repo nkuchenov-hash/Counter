@@ -2016,6 +2016,28 @@ extension RecordServiceExtension on DatabaseService {
       final wrapped = item['payload'];
       if (wrapped is! Map) return true;
       final payload = Map<String, dynamic>.from(wrapped);
+      final businessId = (item['businessId'] ?? payload['record_id'] ?? '')
+          .toString()
+          .trim();
+      // ignore: avoid_print
+      print(
+        'RECORD_OUTBOX_CREATE_PAYLOAD op=highlander_start '
+        'businessId=${businessId.isEmpty ? '-' : businessId} '
+        'category_id=${payload['category_id']} category_link=${payload['category_link']} '
+        'source_plan_id=${payload['source_plan_id']}',
+      );
+      if (!_normalizeRecordCategoryFieldsForPbApi(
+        payload,
+        logBusinessId: businessId.isEmpty ? null : businessId,
+      )) {
+        // ignore: avoid_print
+        print(
+          'RECORD_OUTBOX_DROPPED_INVALID_CATEGORY '
+          'businessId=${businessId.isEmpty ? '-' : businessId} '
+          'reason=category_relation_not_resolved',
+        );
+        return true;
+      }
       final failureCode = await _runHighlanderStartServerPhase(payload);
       if (failureCode == null) {
         clearOptimisticTimelineUi(notifyTimeline: false);
@@ -2030,12 +2052,19 @@ extension RecordServiceExtension on DatabaseService {
         DatabaseService.logSyncFlushFailure(
           collection: PbCollections.records,
           operation: RecordMutationOutbox.kindHighlanderStart,
-          businessId: (item['businessId'] ?? '').toString(),
+          businessId: businessId,
           pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
           httpStatus: failureCode,
         );
         return false;
       }
+      DatabaseService.logSyncFlushFailure(
+        collection: PbCollections.records,
+        operation: RecordMutationOutbox.kindHighlanderStart,
+        businessId: businessId,
+        pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
+        httpStatus: failureCode,
+      );
       return true;
     }
     if (kind == RecordMutationOutbox.kindStopPatch) {
@@ -2220,9 +2249,11 @@ extension RecordServiceExtension on DatabaseService {
           if (_planLocalCategoryIdIsConcrete(pc)) {
             final resolved = _resolveColdStartRecordCategoryId(pc);
             if (_categoryIdResolvableForPbRecordPost(resolved)) {
-              runningFields['category_id'] = _recordCategoryBusinessPkForApi(
-                resolved,
-              );
+              final pair = _recordCategoryDualityForLocalId(resolved);
+              if (pair != null) {
+                runningFields['category_id'] = pair.relationId;
+                runningFields['category_link'] = pair.relationId;
+              }
             }
           }
         }
@@ -2277,6 +2308,8 @@ extension RecordServiceExtension on DatabaseService {
         final createdId = await _createRecordPb(runningFields);
         if (createdId == null || createdId.trim().isEmpty) {
           if (!_pb.authStore.isValid) return 401;
+          final last = _lastRecordCreateFailureHttpCode;
+          if (last > 0) return last;
           return 500;
         }
         await _finalizeRecordCreateHandshake(pocketCreatedRecordId: createdId);

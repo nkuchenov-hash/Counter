@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-16] - Record outbox highlander_start category relation fix [shipped]
+* **`category_service.dart` / `record_service.dart`:** [shipped] PocketBase records POST/PATCH now send 15-char `categories.id` in both `category_id` and `category_link` (was business slug → `validation_missing_rel_records` 400); `_normalizeRecordCategoryFieldsForPbApi` with cache/default/fallback repair + `RECORD_*` diagnostics; outbox replay pre-sanitizes/drops unmappable rows; `_lastRecordCreateFailureHttpCode` so `SYNC_FLUSH_FAIL` reports actual HTTP 400 not 500.
+
 ## [2026-06-16] - Sync banner empty-outbox invariant [wip]
 * **`offline_sync_state.dart` / `app_shell.dart`:** [wip] Red sync banner requires `hasBlockingSyncError` (pendingCount>0 && lastError); stale lastError with empty outbox suppressed via `SYNC_STALE_ERROR_SUPPRESSED`; `ensureBannerInvariant()` on every banner build.
 
