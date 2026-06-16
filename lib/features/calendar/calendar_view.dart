@@ -8,9 +8,9 @@ import 'dart:async';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
+import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -1072,27 +1072,57 @@ class _SelectedDayTaskPanel extends StatelessWidget {
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
                   final task = scheduled[index];
-                  return _CalendarPlanCard(
+                  String timeLabel() {
+                    final st = task.startTime;
+                    if (st == null) return '';
+                    String hhmm(DateTime t) =>
+                        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+                    final et = task.endDateTime;
+                    if (et != null) return '${hhmm(st)} – ${hhmm(et)}';
+                    return hhmm(st);
+                  }
+                  return PlanTimeTaskCard(
                     task: task,
-                    loc: loc,
-                    onEdit: () => onEditTask(task),
-                    onPlay: () {
-                      final dateKey = task.startTime != null
-                          ? task.dateKey
-                          : DatabaseService.instance
-                              .getTimelineDeviceLocalTodayDateKey();
+                    density: PlanTimeTaskCardDensity.medium,
+                    timeLabel: timeLabel(),
+                    displayIsDone: task.isDone,
+                    toggleDoneEnabled:
+                        !task.planRowIdForBackend.startsWith('optimistic-'),
+                    onToggleDone: () {
+                      final next = !task.isDone;
+                      DatabaseService.instance.applyOptimisticPlanningTask(
+                        task.copyWith(isDone: next),
+                      );
                       unawaited(
-                        onStartRecordFromTask(
-                          task.title,
-                          task.categoryId,
-                          dateKey,
-                          sourcePlanPocketRecordId:
-                              DatabaseService.pocketRelationIdOrNull(
-                            task.pocketRecordId,
-                          ),
+                        DatabaseService.instance.updatePlanningTask(
+                          task.planRowIdForBackend,
+                          planBusinessId: task.planRowId,
+                          isDone: next,
+                          suppressAppSnack: true,
                         ),
                       );
                     },
+                    onPlay: task.isDone
+                        ? null
+                        : () {
+                            final dateKey = task.startTime != null
+                                ? task.dateKey
+                                : DatabaseService.instance
+                                    .getTimelineDeviceLocalTodayDateKey();
+                            unawaited(
+                              onStartRecordFromTask(
+                                task.title,
+                                task.categoryId,
+                                dateKey,
+                                sourcePlanPocketRecordId:
+                                    DatabaseService.pocketRelationIdOrNull(
+                                  task.pocketRecordId,
+                                ),
+                              ),
+                            );
+                          },
+                    onOpenMenu: (_) => onEditTask(task),
+                    onTap: () => onEditTask(task),
                   );
                 },
               );
@@ -1100,159 +1130,6 @@ class _SelectedDayTaskPanel extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CalendarPlanCard extends StatelessWidget {
-  const _CalendarPlanCard({
-    required this.task,
-    required this.loc,
-    required this.onEdit,
-    required this.onPlay,
-  });
-
-  final PlanningTask task;
-  final String loc;
-  final VoidCallback onEdit;
-  final VoidCallback onPlay;
-
-  String _timeLabel() {
-    final st = task.startTime;
-    if (st == null) return '';
-    String hhmm(DateTime t) =>
-        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-    final et = task.endDateTime;
-    if (et != null) return '${hhmm(st)} – ${hhmm(et)}';
-    return hhmm(st);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final categoryTone =
-        DatabaseService.instance.getCategoryColor(task.categoryId);
-    final categoryPath = localizeCategoryBreadcrumbPath(
-      DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
-      loc,
-    );
-    return Material(
-      color: scheme.surface,
-      elevation: 1,
-      shadowColor: scheme.shadow.withValues(alpha: 0.12),
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(
-          color: scheme.outlineVariant.withValues(alpha: 0.55),
-        ),
-      ),
-      child: InkWell(
-        onTap: onEdit,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: 3,
-                color: categoryTone.withValues(alpha: 0.82),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Checkbox(
-                        value: task.isDone,
-                        visualDensity: VisualDensity.compact,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        onChanged: task.planRowIdForBackend
-                                .startsWith('optimistic-')
-                            ? null
-                            : (_) {
-                                final next = !task.isDone;
-                                DatabaseService.instance
-                                    .applyOptimisticPlanningTask(
-                                  task.copyWith(isDone: next),
-                                );
-                                unawaited(
-                                  DatabaseService.instance.updatePlanningTask(
-                                    task.planRowIdForBackend,
-                                    planBusinessId: task.planRowId,
-                                    isDone: next,
-                                    suppressAppSnack: true,
-                                  ),
-                                );
-                              },
-                      ),
-                      if (!task.isDone)
-                        IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints:
-                              const BoxConstraints.tightFor(width: 32, height: 32),
-                          icon: const Icon(Icons.play_arrow_rounded),
-                          onPressed: onPlay,
-                          tooltip: t(loc, 'start'),
-                        ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (categoryPath.isNotEmpty)
-                              Text(
-                                categoryPath,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(
-                                      color: categoryTone.withValues(
-                                        alpha: 0.88,
-                                      ),
-                                    ),
-                              ),
-                            Text(
-                              task.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                decoration: task.isDone
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                color: task.isDone
-                                    ? scheme.onSurfaceVariant
-                                    : scheme.onSurface,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _timeLabel(),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    color: scheme.onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.more_horiz_rounded),
-                        tooltip: t(loc, 'plan_radial_menu_tip'),
-                        onPressed: onEdit,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

@@ -34,6 +34,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
+import 'package:counter/core/widgets/plan_time_task_card.dart';
 
 enum _PlanSortMode { category, time, tags, custom }
 
@@ -5094,9 +5095,6 @@ class _TimelineBlockLayout {
   final bool hasScheduleConflict;
 }
 
-/// Adaptive density for proportional timeline blocks.
-enum _TimelineBlockDensity { compact, medium, expanded }
-
 /// Single planning task card. Uses Theme.of(context). No hardcoded colors.
 class _PlanningTaskCard extends StatelessWidget {
   const _PlanningTaskCard({
@@ -5223,19 +5221,6 @@ class _PlanningTaskCard extends StatelessWidget {
     return startLabel;
   }
 
-  static _TimelineBlockDensity _densityForBlock(
-    double heightPx,
-    int durationMin,
-  ) {
-    if (heightPx < 72 || durationMin <= 40) {
-      return _TimelineBlockDensity.compact;
-    }
-    if (heightPx < 132 || durationMin < 100) {
-      return _TimelineBlockDensity.medium;
-    }
-    return _TimelineBlockDensity.expanded;
-  }
-
   @override
   Widget build(BuildContext context) {
     if (timelineBlock) {
@@ -5245,31 +5230,6 @@ class _PlanningTaskCard extends StatelessWidget {
   }
 
   Widget _buildTimelineBlockCard(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final categoryTrail = localizeCategoryBreadcrumbPath(
-      DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
-      currentLocale.value,
-    );
-    final categoryTone = DatabaseService.instance.getCategoryColor(
-      task.categoryId,
-    );
-    final density = _densityForBlock(
-      timelineBlockHeightPx,
-      timelineDurationMin,
-    );
-    final bg = selectMode && isSelected
-        ? scheme.primaryContainer
-        : scheme.surface;
-    final borderColor = highlightAsRunning
-        ? scheme.primary
-        : timelineInteracting
-        ? scheme.primary.withValues(alpha: 0.5)
-        : scheme.outlineVariant.withValues(alpha: 0.55);
-    final borderWidth = highlightAsRunning
-        ? 2.0
-        : timelineInteracting
-        ? 1.5
-        : 1.0;
     final suppressChildInk = Theme.of(context).copyWith(
       splashFactory: NoSplash.splashFactory,
       splashColor: Colors.transparent,
@@ -5279,501 +5239,30 @@ class _PlanningTaskCard extends StatelessWidget {
         overlayColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
-
-    Widget body;
-    switch (density) {
-      case _TimelineBlockDensity.compact:
-        body = _timelineCompactBody(context, scheme, categoryTone);
-      case _TimelineBlockDensity.medium:
-        body = _timelineMediumBody(
-          context,
-          scheme,
-          categoryTrail,
-          categoryTone,
-        );
-      case _TimelineBlockDensity.expanded:
-        body = _timelineExpandedBody(
-          context,
-          scheme,
-          categoryTrail,
-          categoryTone,
-        );
-    }
-
-    return Material(
-      color: bg,
-      elevation: timelineInteracting ? 3 : 1,
-      shadowColor: scheme.shadow.withValues(alpha: 0.14),
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: borderColor, width: borderWidth),
-      ),
-      child: Theme(
-        data: suppressChildInk,
-        child: SizedBox(
-          height: timelineBlockHeightPx,
-          width: double.infinity,
-          child: body,
-        ),
-      ),
+    final density = planTimeCardDensityForBlock(
+      timelineBlockHeightPx,
+      timelineDurationMin,
     );
-  }
-
-  Widget _timelineFullHeightStripe(Color categoryTone) {
-    return Container(
-      width: 3,
-      color: categoryTone.withValues(alpha: 0.82),
-    );
-  }
-
-  Widget _timelineMandatoryTimeRow(
-    BuildContext context,
-    ColorScheme scheme, {
-    bool compact = false,
-  }) {
-    final start = task.startTime;
-    var time = _timelineTimeRangeLabel(task);
-    if (time.isEmpty && start != null) {
-      time = _formatPlanningWallTime(start);
-    }
-    return Row(
-      children: [
-        Flexible(
-          child: Text(
-            time,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontSize: compact ? 10 : 11,
-              height: 1.1,
-              fontWeight: FontWeight.w500,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        if (timelineScheduleConflict)
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Icon(
-              Icons.warning_amber_rounded,
-              size: compact ? 12 : 13,
-              color: scheme.error.withValues(alpha: 0.75),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _timelineCheckbox(ColorScheme scheme, {double scale = 1}) {
-    final box = selectMode
-        ? Checkbox(
-            value: isSelected,
-            tristate: false,
-            visualDensity: VisualDensity.compact,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            onChanged: (_) => onBodyTap(),
-          )
-        : Checkbox(
-            value: displayIsDone,
-            tristate: false,
-            visualDensity: VisualDensity.compact,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            onChanged: toggleDoneEnabled ? (_) => onToggleDone() : null,
-          );
-    if (scale == 1) return box;
-    return Transform.scale(scale: scale, child: box);
-  }
-
-  Widget _timelinePlayButton(ColorScheme scheme, {double size = 32}) {
-    if (selectMode || displayIsDone) return const SizedBox.shrink();
-    return IconButton(
-      padding: EdgeInsets.zero,
-      constraints: BoxConstraints.tightFor(width: size, height: size),
-      iconSize: size * 0.62,
-      style: IconButton.styleFrom(
-        splashFactory: NoSplash.splashFactory,
-        hoverColor: Colors.transparent,
-      ),
-      icon: const Icon(Icons.play_arrow_rounded),
-      onPressed: onPlay,
-      tooltip: t(currentLocale.value, 'start'),
-    );
-  }
-
-  Widget _timelineMenuButton(BuildContext context, ColorScheme scheme) {
-    return Builder(
-      builder: (menuCtx) => IconButton(
-        tooltip: t(currentLocale.value, 'plan_radial_menu_tip'),
-        padding: EdgeInsets.zero,
-        constraints: const BoxConstraints.tightFor(width: 32, height: 32),
-        iconSize: 20,
-        style: IconButton.styleFrom(
-          splashFactory: NoSplash.splashFactory,
-          hoverColor: Colors.transparent,
-          backgroundColor: scheme.secondaryContainer.withValues(alpha: 0.82),
-          foregroundColor: scheme.onSecondaryContainer,
-          shape: const CircleBorder(),
-        ),
-        icon: const Icon(Icons.more_horiz_rounded),
-        onPressed: () => onOpenMenu(menuCtx),
-      ),
-    );
-  }
-
-  Widget _timelineTitleText(
-    BuildContext context,
-    ColorScheme scheme, {
-    int maxLines = 1,
-    double fontSize = 14,
-  }) {
-    return Text(
-      task.title,
-      maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(
-        fontSize: fontSize,
-        height: 1.15,
-        decoration: displayIsDone ? TextDecoration.lineThrough : null,
-        color: displayIsDone
-            ? scheme.onSurface.withValues(alpha: 0.62)
-            : scheme.onSurface,
-      ),
-    );
-  }
-
-  Widget _timelineProgressFooter(BuildContext context, ColorScheme scheme) {
-    final est = planEstimatedSeconds ?? 0;
-    if (est <= 0 && planTrackedSeconds <= 0) {
-      return const SizedBox.shrink();
-    }
-    if (est <= 0) {
-      return Text(
-        t(
-          currentLocale.value,
-          'plan_card_fact_time',
-        ).replaceFirst('%s', _trackedDurationAsHhMm(planTrackedSeconds)),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          fontSize: 10,
-          color: scheme.primary.withValues(alpha: 0.9),
-        ),
-      );
-    }
-    final pct = est > 0 ? ((planTrackedSeconds * 100) / est).round() : 0;
-    return Row(
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              minHeight: 3,
-              value: planTrackedSeconds <= est
-                  ? planTrackedSeconds / est
-                  : 1.0,
-              backgroundColor: scheme.surfaceContainerHighest.withValues(
-                alpha: 0.55,
-              ),
-              color: planTrackedSeconds > est ? scheme.error : scheme.primary,
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          '${_shortDur(planTrackedSeconds)} / ${_shortDur(est)} ($pct%)',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            fontSize: 10,
-            color: planTrackedSeconds > est
-                ? scheme.error
-                : scheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
-  static const double _kTimelineControlRailWidthPx = 44;
-
-  /// Medium/large timeline shell: [stripe][control rail][text column][menu].
-  Widget _timelineRailTextMenuShell({
-    required BuildContext context,
-    required ColorScheme scheme,
-    required Color categoryTone,
-    required bool showPlay,
-    required Widget textColumn,
-    EdgeInsets padding = const EdgeInsets.fromLTRB(4, 4, 4, 4),
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _timelineFullHeightStripe(categoryTone),
-        Expanded(
-          child: Padding(
-            padding: padding,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(
-                  width: _kTimelineControlRailWidthPx,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _timelineCheckbox(scheme),
-                      if (showPlay) _timelinePlayButton(scheme, size: 30),
-                    ],
-                  ),
-                ),
-                Expanded(child: textColumn),
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: _timelineMenuButton(context, scheme),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _timelineCategoryBreadcrumb(
-    BuildContext context,
-    String categoryTrail,
-    Color categoryTone, {
-    double bottomGap = 2,
-  }) {
-    if (categoryTrail.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomGap),
-      child: Text(
-        categoryTrail,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          fontSize: 10,
-          height: 1.1,
-          fontWeight: FontWeight.w500,
-          color: categoryTone.withValues(alpha: 0.88),
-        ),
-      ),
-    );
-  }
-
-  Widget _timelineTitleWithRepeat(
-    BuildContext context,
-    ColorScheme scheme, {
-    required bool hasRepeat,
-    int maxLines = 1,
-    double fontSize = 14,
-    double repeatIconSize = 15,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: _timelineTitleText(
-            context,
-            scheme,
-            maxLines: maxLines,
-            fontSize: fontSize,
-          ),
-        ),
-        if (hasRepeat)
-          Padding(
-            padding: const EdgeInsets.only(left: 4, top: 1),
-            child: Icon(
-              Icons.repeat_rounded,
-              size: repeatIconSize,
-              color: scheme.primary.withValues(alpha: 0.82),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _timelineCompactBody(
-    BuildContext context,
-    ColorScheme scheme,
-    Color categoryTone,
-  ) {
-    final showPlay = !selectMode && !displayIsDone;
-    final hasRepeat =
-        (task.rrule?.trim().isNotEmpty ?? false) ||
-        (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _timelineFullHeightStripe(categoryTone),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 28,
-                  child: Center(
-                    child: _timelineCheckbox(scheme, scale: 0.88),
-                  ),
-                ),
-                if (showPlay) _timelinePlayButton(scheme, size: 28),
-                Expanded(
-                  child: _timelineTitleText(context, scheme, fontSize: 13),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4, right: 2),
-                  child: SizedBox(
-                    width: 86,
-                    child: _timelineMandatoryTimeRow(
-                      context,
-                      scheme,
-                      compact: true,
-                    ),
-                  ),
-                ),
-                if (hasRepeat && timelineBlockHeightPx >= 52)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 2),
-                    child: Icon(
-                      Icons.repeat_rounded,
-                      size: 14,
-                      color: scheme.primary.withValues(alpha: 0.82),
-                    ),
-                  ),
-                _timelineMenuButton(context, scheme),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _timelineMediumBody(
-    BuildContext context,
-    ColorScheme scheme,
-    String categoryTrail,
-    Color categoryTone,
-  ) {
-    final hasRepeat =
-        (task.rrule?.trim().isNotEmpty ?? false) ||
-        (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
-    final showCategory = categoryTrail.isNotEmpty && timelineBlockHeightPx >= 78;
-    final showPlay = !selectMode && !displayIsDone;
-    final showProgress =
-        (planEstimatedSeconds ?? 0) > 0 || planTrackedSeconds > 0;
-    return _timelineRailTextMenuShell(
-      context: context,
-      scheme: scheme,
-      categoryTone: categoryTone,
-      showPlay: showPlay,
-      textColumn: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (showCategory)
-            _timelineCategoryBreadcrumb(context, categoryTrail, categoryTone),
-          _timelineTitleWithRepeat(
-            context,
-            scheme,
-            hasRepeat: hasRepeat,
-            maxLines: 2,
-          ),
-          _timelineMandatoryTimeRow(context, scheme),
-          if (showProgress)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: _timelineProgressFooter(context, scheme),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _timelineExpandedBody(
-    BuildContext context,
-    ColorScheme scheme,
-    String categoryTrail,
-    Color categoryTone,
-  ) {
-    final hasRepeat =
-        (task.rrule?.trim().isNotEmpty ?? false) ||
-        (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
-    final metaIcons = _planningTaskMetaIcons(context, task);
-    final showTags =
-        task.tags.any((t) => t.rendersAsChip) && timelineBlockHeightPx >= 168;
-    final showPlay = !selectMode && !displayIsDone;
-    return _timelineRailTextMenuShell(
-      context: context,
-      scheme: scheme,
-      categoryTone: categoryTone,
-      showPlay: showPlay,
-      padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
-      textColumn: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _timelineCategoryBreadcrumb(
-            context,
-            categoryTrail,
-            categoryTone,
-            bottomGap: 4,
-          ),
-          _timelineTitleWithRepeat(
-            context,
-            scheme,
-            hasRepeat: hasRepeat,
-            maxLines: 3,
-            fontSize: 15,
-            repeatIconSize: 16,
-          ),
-          if (metaIcons.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: metaIcons,
-              ),
-            ),
-          if (showTags)
-            Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 4),
-              child: SizedBox(
-                height: 24,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: task.tags
-                      .where((tag) => tag.rendersAsChip)
-                      .length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 4),
-                  itemBuilder: (context, i) {
-                    final visible = task.tags
-                        .where((tag) => tag.rendersAsChip)
-                        .toList(growable: false);
-                    final tag = visible[i];
-                    return CategoryChip(
-                      mode: CategoryDisplayMode.letterChip,
-                      label: tag.name.trim().isNotEmpty
-                          ? tag.name.trim()
-                          : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                      color: parseTagHexColor(tag.color) ?? scheme.primary,
-                      icon: iconForTagKey(tag.icon),
-                      compactGlyphLayout: true,
-                      syntheticNoTagsMonochrome: tag.tagId == -1,
-                    );
-                  },
-                ),
-              ),
-            ),
-          _timelineMandatoryTimeRow(context, scheme),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: _timelineProgressFooter(context, scheme),
-          ),
-        ],
+    return Theme(
+      data: suppressChildInk,
+      child: PlanTimeTaskCard(
+        task: task,
+        density: density,
+        timeLabel: _timelineTimeRangeLabel(task),
+        heightPx: timelineBlockHeightPx,
+        displayIsDone: displayIsDone,
+        selectMode: selectMode,
+        isSelected: isSelected,
+        highlightAsRunning: highlightAsRunning,
+        interacting: timelineInteracting,
+        toggleDoneEnabled: toggleDoneEnabled,
+        planTrackedSeconds: planTrackedSeconds,
+        planEstimatedSeconds: planEstimatedSeconds,
+        scheduleConflict: timelineScheduleConflict,
+        onToggleDone: onToggleDone,
+        onSelectToggle: onBodyTap,
+        onPlay: onPlay,
+        onOpenMenu: onOpenMenu,
       ),
     );
   }

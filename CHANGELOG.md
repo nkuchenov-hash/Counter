@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - CardPlan visual redesign (Planning Time + Calendar rows) [wip]
+* **`plan_time_task_card.dart` / `planning_view.dart` / `calendar_view.dart`:** [wip] Canonical `PlanTimeTaskCard` (Small/Medium/Large densities per `design/CardPlan *.png`) — white surface, soft border/shadow, left control rail, unified text column, repeat inline with title, circular menu top-right, category watermark (4–8% opacity); Planning Time timeline blocks and Calendar focused-day rows use shared card; timeline gestures/scale/cascade unchanged.
+
 ## [2026-06-16] - Calendar full-screen + desktop side nav [wip]
 * **`calendar_view.dart` / `shell_adaptive.dart` / `app_shell.dart`:** [wip] Calendar browsing state fills content area (month grid + week planner columns with event pills); focused-day state condenses calendar and shows task list; collapse via close/up controls; desktop ≥900px uses 200px left nav rail (Timeline/Plan/Calendar/Lists/More), bottom nav hidden on wide web.
 
