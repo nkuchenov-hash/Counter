@@ -5495,6 +5495,105 @@ class _PlanningTaskCard extends StatelessWidget {
     );
   }
 
+  static const double _kTimelineControlRailWidthPx = 44;
+
+  /// Medium/large timeline shell: [stripe][control rail][text column][menu].
+  Widget _timelineRailTextMenuShell({
+    required BuildContext context,
+    required ColorScheme scheme,
+    required Color categoryTone,
+    required bool showPlay,
+    required Widget textColumn,
+    EdgeInsets padding = const EdgeInsets.fromLTRB(4, 4, 4, 4),
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _timelineFullHeightStripe(categoryTone),
+        Expanded(
+          child: Padding(
+            padding: padding,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  width: _kTimelineControlRailWidthPx,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _timelineCheckbox(scheme),
+                      if (showPlay) _timelinePlayButton(scheme, size: 30),
+                    ],
+                  ),
+                ),
+                Expanded(child: textColumn),
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: _timelineMenuButton(context, scheme),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _timelineCategoryBreadcrumb(
+    BuildContext context,
+    String categoryTrail,
+    Color categoryTone, {
+    double bottomGap = 2,
+  }) {
+    if (categoryTrail.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomGap),
+      child: Text(
+        categoryTrail,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          fontSize: 10,
+          height: 1.1,
+          fontWeight: FontWeight.w500,
+          color: categoryTone.withValues(alpha: 0.88),
+        ),
+      ),
+    );
+  }
+
+  Widget _timelineTitleWithRepeat(
+    BuildContext context,
+    ColorScheme scheme, {
+    required bool hasRepeat,
+    int maxLines = 1,
+    double fontSize = 14,
+    double repeatIconSize = 15,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _timelineTitleText(
+            context,
+            scheme,
+            maxLines: maxLines,
+            fontSize: fontSize,
+          ),
+        ),
+        if (hasRepeat)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, top: 1),
+            child: Icon(
+              Icons.repeat_rounded,
+              size: repeatIconSize,
+              color: scheme.primary.withValues(alpha: 0.82),
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _timelineCompactBody(
     BuildContext context,
     ColorScheme scheme,
@@ -5566,98 +5665,31 @@ class _PlanningTaskCard extends StatelessWidget {
     final showPlay = !selectMode && !displayIsDone;
     final showProgress =
         (planEstimatedSeconds ?? 0) > 0 || planTrackedSeconds > 0;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _timelineFullHeightStripe(categoryTone),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (showCategory)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            categoryTrail,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  fontSize: 10,
-                                  height: 1.1,
-                                  fontWeight: FontWeight.w500,
-                                  color: categoryTone.withValues(alpha: 0.88),
-                                ),
-                          ),
-                        ),
-                        _timelineMenuButton(context, scheme),
-                      ],
-                    ),
-                  ),
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 1),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _timelineCheckbox(scheme),
-                            if (showPlay) _timelinePlayButton(scheme, size: 30),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 2, right: 2),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: _timelineTitleText(
-                                  context,
-                                  scheme,
-                                  maxLines: 2,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              if (hasRepeat)
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 4, top: 1),
-                                  child: Icon(
-                                    Icons.repeat_rounded,
-                                    size: 15,
-                                    color: scheme.primary.withValues(
-                                      alpha: 0.82,
-                                    ),
-                                  ),
-                                ),
-                              if (!showCategory)
-                                _timelineMenuButton(context, scheme),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                _timelineMandatoryTimeRow(context, scheme),
-                if (showProgress)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: _timelineProgressFooter(context, scheme),
-                  ),
-              ],
-            ),
+    return _timelineRailTextMenuShell(
+      context: context,
+      scheme: scheme,
+      categoryTone: categoryTone,
+      showPlay: showPlay,
+      textColumn: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (showCategory)
+            _timelineCategoryBreadcrumb(context, categoryTrail, categoryTone),
+          _timelineTitleWithRepeat(
+            context,
+            scheme,
+            hasRepeat: hasRepeat,
+            maxLines: 2,
           ),
-        ),
-      ],
+          _timelineMandatoryTimeRow(context, scheme),
+          if (showProgress)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: _timelineProgressFooter(context, scheme),
+            ),
+        ],
+      ),
     );
   }
 
@@ -5673,144 +5705,76 @@ class _PlanningTaskCard extends StatelessWidget {
     final metaIcons = _planningTaskMetaIcons(context, task);
     final showTags =
         task.tags.any((t) => t.rendersAsChip) && timelineBlockHeightPx >= 168;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _timelineFullHeightStripe(categoryTone),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (categoryTrail.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            categoryTrail,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  fontSize: 10,
-                                  height: 1.15,
-                                  fontWeight: FontWeight.w500,
-                                  color: categoryTone.withValues(alpha: 0.88),
-                                ),
-                          ),
-                        ),
-                        _timelineMenuButton(context, scheme),
-                      ],
-                    ),
-                  ),
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: Column(
-                          children: [
-                            _timelineCheckbox(scheme),
-                            if (!selectMode && !displayIsDone)
-                              _timelinePlayButton(scheme),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 4, right: 4),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: _timelineTitleText(
-                                      context,
-                                      scheme,
-                                      maxLines: 3,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  if (hasRepeat)
-                                    Padding(
-                                      padding: const EdgeInsets.only(
-                                        left: 4,
-                                        top: 1,
-                                      ),
-                                      child: Icon(
-                                        Icons.repeat_rounded,
-                                        size: 16,
-                                        color: scheme.primary.withValues(
-                                          alpha: 0.85,
-                                        ),
-                                      ),
-                                    ),
-                                  if (categoryTrail.isEmpty)
-                                    _timelineMenuButton(context, scheme),
-                                ],
-                              ),
-                              if (metaIcons.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: metaIcons,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (showTags)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: SizedBox(
-                      height: 24,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: task.tags
-                            .where((tag) => tag.rendersAsChip)
-                            .length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 4),
-                        itemBuilder: (context, i) {
-                          final visible = task.tags
-                              .where((tag) => tag.rendersAsChip)
-                              .toList(growable: false);
-                          final tag = visible[i];
-                          return CategoryChip(
-                            mode: CategoryDisplayMode.letterChip,
-                            label: tag.name.trim().isNotEmpty
-                                ? tag.name.trim()
-                                : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                            color:
-                                parseTagHexColor(tag.color) ?? scheme.primary,
-                            icon: iconForTagKey(tag.icon),
-                            compactGlyphLayout: true,
-                            syntheticNoTagsMonochrome: tag.tagId == -1,
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                _timelineMandatoryTimeRow(context, scheme),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: _timelineProgressFooter(context, scheme),
-                ),
-              ],
-            ),
+    final showPlay = !selectMode && !displayIsDone;
+    return _timelineRailTextMenuShell(
+      context: context,
+      scheme: scheme,
+      categoryTone: categoryTone,
+      showPlay: showPlay,
+      padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
+      textColumn: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _timelineCategoryBreadcrumb(
+            context,
+            categoryTrail,
+            categoryTone,
+            bottomGap: 4,
           ),
-        ),
-      ],
+          _timelineTitleWithRepeat(
+            context,
+            scheme,
+            hasRepeat: hasRepeat,
+            maxLines: 3,
+            fontSize: 15,
+            repeatIconSize: 16,
+          ),
+          if (metaIcons.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: metaIcons,
+              ),
+            ),
+          if (showTags)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 4),
+              child: SizedBox(
+                height: 24,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: task.tags
+                      .where((tag) => tag.rendersAsChip)
+                      .length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 4),
+                  itemBuilder: (context, i) {
+                    final visible = task.tags
+                        .where((tag) => tag.rendersAsChip)
+                        .toList(growable: false);
+                    final tag = visible[i];
+                    return CategoryChip(
+                      mode: CategoryDisplayMode.letterChip,
+                      label: tag.name.trim().isNotEmpty
+                          ? tag.name.trim()
+                          : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
+                      color: parseTagHexColor(tag.color) ?? scheme.primary,
+                      icon: iconForTagKey(tag.icon),
+                      compactGlyphLayout: true,
+                      syntheticNoTagsMonochrome: tag.tagId == -1,
+                    );
+                  },
+                ),
+              ),
+            ),
+          _timelineMandatoryTimeRow(context, scheme),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: _timelineProgressFooter(context, scheme),
+          ),
+        ],
+      ),
     );
   }
 
