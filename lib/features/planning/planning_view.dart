@@ -5312,7 +5312,9 @@ class _PlanningTaskCard extends StatelessWidget {
         overlayColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
-    return Material(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 52),
+      child: Material(
       color: bg,
       elevation: timelineBlock ? (timelineInteracting ? 3 : 1.5) : 0,
       shadowColor: scheme.shadow.withValues(alpha: 0.16),
@@ -5330,7 +5332,7 @@ class _PlanningTaskCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (timelineBlock)
                   Container(
@@ -5623,6 +5625,7 @@ class _PlanningTaskCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }
