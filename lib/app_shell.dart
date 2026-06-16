@@ -15,6 +15,7 @@ import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
@@ -1427,6 +1428,24 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _loadTasksForDate(_selectedDate);
   }
 
+  void _onShellTabSelected(int i) {
+    if (i == 4) {
+      _openMoreMenu();
+      return;
+    }
+    setState(() {
+      _shellPageIndex = i;
+    });
+    if (i == 0 || i == 1) {
+      final target = DatabaseService.instance.getTimelineDeviceLocalToday();
+      setState(() {
+        _selectedDate = target;
+        _focusedDay = target;
+      });
+      unawaited(_loadTasksForDate(target));
+    }
+  }
+
   void _openMoreMenu() {
     final loc = currentLocale.value;
     showModalBottomSheet<void>(
@@ -1910,17 +1929,36 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                         ),
                       )
                     : null,
-                body: Column(
-                  children: [
-                    const _OfflineSyncStatusBar(),
-                    Expanded(
-                      child: IndexedStack(
-                        index: _shellPageIndex,
-                        sizing: StackFit.expand,
-                        children: pages,
-                      ),
-                    ),
-                  ],
+                body: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final useSideNav = shellUsesSideNavigation(
+                      constraints.maxWidth,
+                    );
+                    final mainColumn = Column(
+                      children: [
+                        const _OfflineSyncStatusBar(),
+                        Expanded(
+                          child: IndexedStack(
+                            index: _shellPageIndex,
+                            sizing: StackFit.expand,
+                            children: pages,
+                          ),
+                        ),
+                      ],
+                    );
+                    if (!useSideNav) return mainColumn;
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _ShellSideNavigation(
+                          width: kShellSideNavWidth,
+                          selectedIndex: _navBarSelectedIndex,
+                          onTabSelected: _onShellTabSelected,
+                        ),
+                        Expanded(child: mainColumn),
+                      ],
+                    );
+                  },
                 ),
                 floatingActionButtonLocation:
                     FloatingActionButtonLocation.endFloat,
@@ -1953,69 +1991,184 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                           ),
                         ),
                       ),
-                bottomNavigationBar: NavigationBar(
-                  selectedIndex: _navBarSelectedIndex,
-                  onDestinationSelected: (i) {
-                    if (i == 4) {
-                      _openMoreMenu();
-                      return;
+                bottomNavigationBar: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (shellUsesSideNavigation(constraints.maxWidth)) {
+                      return const SizedBox.shrink();
                     }
-                    setState(() {
-                      _shellPageIndex = i;
-                    });
-                    if (i == 0) {
-                      final target = DatabaseService.instance
-                          .getTimelineDeviceLocalToday();
-                      setState(() {
-                        _selectedDate = target;
-                        _focusedDay = target;
-                      });
-                      unawaited(_loadTasksForDate(target));
-                    } else if (i == 1) {
-                      final target = DatabaseService.instance
-                          .getTimelineDeviceLocalToday();
-                      setState(() {
-                        _selectedDate = target;
-                        _focusedDay = target;
-                      });
-                      unawaited(_loadTasksForDate(target));
-                    }
+                    return NavigationBar(
+                      selectedIndex: _navBarSelectedIndex,
+                      onDestinationSelected: _onShellTabSelected,
+                      destinations: [
+                        NavigationDestination(
+                          icon: const Icon(Icons.timeline_outlined),
+                          selectedIcon: const Icon(Icons.timeline_rounded),
+                          label: t(currentLocale.value, 'tab_timeline'),
+                        ),
+                        NavigationDestination(
+                          icon: const Icon(Icons.checklist_outlined),
+                          selectedIcon: const Icon(Icons.checklist_rounded),
+                          label: t(currentLocale.value, 'tab_planning'),
+                        ),
+                        NavigationDestination(
+                          icon: const Icon(Icons.calendar_month_outlined),
+                          selectedIcon: const Icon(Icons.calendar_month_rounded),
+                          label: t(currentLocale.value, 'calendar'),
+                        ),
+                        NavigationDestination(
+                          icon: const Icon(Icons.format_list_bulleted_outlined),
+                          selectedIcon: const Icon(
+                            Icons.format_list_bulleted_rounded,
+                          ),
+                          label: t(currentLocale.value, 'tab_lists'),
+                        ),
+                        NavigationDestination(
+                          icon: const Icon(Icons.menu_rounded),
+                          selectedIcon: const Icon(Icons.menu_rounded),
+                          label: t(currentLocale.value, 'tab_more'),
+                        ),
+                      ],
+                    );
                   },
-                  destinations: [
-                    NavigationDestination(
-                      icon: const Icon(Icons.timeline_outlined),
-                      selectedIcon: const Icon(Icons.timeline_rounded),
-                      label: t(currentLocale.value, 'tab_timeline'),
-                    ),
-                    NavigationDestination(
-                      icon: const Icon(Icons.checklist_outlined),
-                      selectedIcon: const Icon(Icons.checklist_rounded),
-                      label: t(currentLocale.value, 'tab_planning'),
-                    ),
-                    NavigationDestination(
-                      icon: const Icon(Icons.calendar_month_outlined),
-                      selectedIcon: const Icon(Icons.calendar_month_rounded),
-                      label: t(currentLocale.value, 'calendar'),
-                    ),
-                    NavigationDestination(
-                      icon: const Icon(Icons.format_list_bulleted_outlined),
-                      selectedIcon: const Icon(
-                        Icons.format_list_bulleted_rounded,
-                      ),
-                      label: t(currentLocale.value, 'tab_lists'),
-                    ),
-                    NavigationDestination(
-                      icon: const Icon(Icons.menu_rounded),
-                      selectedIcon: const Icon(Icons.menu_rounded),
-                      label: t(currentLocale.value, 'tab_more'),
-                    ),
-                  ],
                 ),
               ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+/// Desktop/web left navigation rail (replaces bottom nav at wide breakpoints).
+class _ShellSideNavigation extends StatelessWidget {
+  const _ShellSideNavigation({
+    required this.width,
+    required this.selectedIndex,
+    required this.onTabSelected,
+  });
+
+  final double width;
+  final int selectedIndex;
+  final ValueChanged<int> onTabSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final loc = currentLocale.value;
+    final items = <({IconData icon, IconData selectedIcon, String label, int index})>[
+      (
+        icon: Icons.timeline_outlined,
+        selectedIcon: Icons.timeline_rounded,
+        label: t(loc, 'tab_timeline'),
+        index: 0,
+      ),
+      (
+        icon: Icons.checklist_outlined,
+        selectedIcon: Icons.checklist_rounded,
+        label: t(loc, 'tab_planning'),
+        index: 1,
+      ),
+      (
+        icon: Icons.calendar_month_outlined,
+        selectedIcon: Icons.calendar_month_rounded,
+        label: t(loc, 'calendar'),
+        index: 2,
+      ),
+      (
+        icon: Icons.format_list_bulleted_outlined,
+        selectedIcon: Icons.format_list_bulleted_rounded,
+        label: t(loc, 'tab_lists'),
+        index: 3,
+      ),
+      (
+        icon: Icons.menu_rounded,
+        selectedIcon: Icons.menu_rounded,
+        label: t(loc, 'tab_more'),
+        index: 4,
+      ),
+    ];
+    return Material(
+      color: scheme.surfaceContainerLow.withValues(alpha: 0.55),
+      child: SizedBox(
+        width: width,
+        child: SafeArea(
+          right: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final item in items)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: _ShellSideNavItem(
+                      icon: item.icon,
+                      selectedIcon: item.selectedIcon,
+                      label: item.label,
+                      selected: selectedIndex == item.index,
+                      onTap: () => onTabSelected(item.index),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ShellSideNavItem extends StatelessWidget {
+  const _ShellSideNavItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final bg = selected
+        ? scheme.primaryContainer.withValues(alpha: 0.72)
+        : Colors.transparent;
+    final fg = selected ? scheme.onPrimaryContainer : scheme.onSurfaceVariant;
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(10),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(selected ? selectedIcon : icon, size: 22, color: fg),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: fg,
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

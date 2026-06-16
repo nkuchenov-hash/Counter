@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-16] - Calendar full-screen + desktop side nav [wip]
+* **`calendar_view.dart` / `shell_adaptive.dart` / `app_shell.dart`:** [wip] Calendar browsing state fills content area (month grid + week planner columns with event pills); focused-day state condenses calendar and shows task list; collapse via close/up controls; desktop ≥900px uses 200px left nav rail (Timeline/Plan/Calendar/Lists/More), bottom nav hidden on wide web.
+
 ## [2026-06-15] - Planning Time layout + Calendar screen [wip]
 * **`planning_view.dart`:** [wip] Time-mode gesture arbitration — short tap opens edit via `_TimelinePlanInteractionBlock.onBodyTap`; touch long-press move (desktop/web keeps immediate drag); tap suppressed after drag/resize; timeline cards omit select-mode long-press; dynamic `_timelineHourHeightPx` from shortest scheduled duration; proportional block heights; exact-time insert/cascade (no 15-min gap); minimal one-row card layout (checkbox + play + title + time + menu).
 * **`calendar_view.dart` / `plan_service.dart` / `app_shell.dart`:** [wip] Calendar tab — month grid + compact week strip, month/week toggle, category task indicators (+N), selected-day scheduled task list via `planningStream`, stays on Calendar tab (no jump to Timeline); `planningTasksGroupedByWallDayForRange` + `planningRefreshEvents` for indicators.
