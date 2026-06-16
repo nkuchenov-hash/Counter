@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Plan card polish: hover, footer, actual time [shipped]
+* **`plan_time_task_card.dart` / `planning_view.dart`:** [shipped] Full-card `MouseRegion` hover (border/shadow/tint) while controls stay independent; footer row `minHeight` 14 + pinned bottom pad/gaps fix breadcrumb/time clipping; removed legacy subtitle date/time row (`subtitleLabel`/`onSubtitleTap`); compact actual time right-aligned above progress via `_PlanCardMetricsBlock`; planned time only in `_PlanCardFooterRow`.
+
 ## [2026-06-16] - Time mode TZ projection + desktop side nav [shipped]
 * **`plan_service.dart` / `models/planning.dart` / `profile_service.dart` / `planning_view.dart`:** [shipped] Plans store UTC instants (`startUtcInstant`/`endUtcInstant`); day filter + Time mode placement project via `_profileWallFromUtc` (fixes TZ switch misplacing blocks); `reprojectAllPlansForProfileTimezone` on profile TZ change; debounced `PLAN_TIME_TZ_PROJECT` logs.
 * **`app_shell.dart`:** [shipped] Desktop/web side nav (≥900px) shows Timeline/Plan/Calendar/Lists/Categories/Profile directly; More (index 6) is secondary overflow (Dev Lab admin only); mobile bottom nav unchanged.

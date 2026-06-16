@@ -2006,7 +2006,6 @@ class _PlanningPageState extends State<PlanningPage>
         if (mounted) setState(() {});
       },
       onOpenMenu: (anchorCtx) => _showPlanRadialMenu(anchorCtx, task),
-      onDateTap: () => unawaited(_changeSingleTaskDate(task)),
     );
   }
 
@@ -5133,7 +5132,6 @@ class _PlanningTaskCard extends StatelessWidget {
     this.onLongPress,
     required this.onPlay,
     required this.onOpenMenu,
-    required this.onDateTap,
     this.timelineBlock = false,
     this.timelineInteracting = false,
     this.timelineBlockHeightPx = 56,
@@ -5160,59 +5158,15 @@ class _PlanningTaskCard extends StatelessWidget {
   final VoidCallback? onLongPress;
   final VoidCallback onPlay;
   final void Function(BuildContext anchorContext) onOpenMenu;
-  final VoidCallback onDateTap;
   final bool timelineBlock;
   final bool timelineInteracting;
   final double timelineBlockHeightPx;
   final int timelineDurationMin;
   final bool timelineScheduleConflict;
 
-  static String _formatPlanningTaskDate(PlanningTask task) {
-    if (task.dateKey.isEmpty) return '';
-    final d = _dateFromKey(task.dateKey);
-    if (d == null) return task.dateKey;
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final m = d.month >= 1 && d.month <= 12 ? months[d.month - 1] : '';
-    return '${d.day} $m';
-  }
-
-  static DateTime? _dateFromKey(String key) {
-    if (key.length < 10) return null;
-    final y = int.tryParse(key.substring(0, 4));
-    final m = int.tryParse(key.substring(5, 7));
-    final d = int.tryParse(key.substring(8, 10));
-    if (y == null || m == null || d == null) return null;
-    return DateTime.utc(y, m, d);
-  }
-
   /// [wall] is profile wall time from [PlanningTask.startTime] / end (not UTC).
   static String _formatPlanningWallTime(DateTime wall) {
     return '${wall.hour.toString().padLeft(2, '0')}:${wall.minute.toString().padLeft(2, '0')}';
-  }
-
-  static String _subtitle(PlanningTask task) {
-    final dateStr = _formatPlanningTaskDate(task);
-    final displayDate = dateStr.isNotEmpty ? dateStr : task.dateKey;
-    if (task.startTime != null && task.endDateTime != null) {
-      return '$displayDate • ${_formatPlanningWallTime(task.startTime!)} - ${_formatPlanningWallTime(task.endDateTime!)}';
-    }
-    if (task.startTime != null) {
-      return '$displayDate • ${_formatPlanningWallTime(task.startTime!)}';
-    }
-    return displayDate;
   }
 
   static String _timelineTimeRangeLabel(PlanningTask task) {
@@ -5315,14 +5269,12 @@ class _PlanningTaskCard extends StatelessWidget {
         planTrackedSeconds: planTrackedSeconds,
         planEstimatedSeconds: planEstimatedSeconds,
         metaIcons: metaIcons,
-        subtitleLabel: _subtitle(task),
         onToggleDone: onToggleDone,
         onSelectToggle: onBodyTap,
         onPlay: (!selectMode && !displayIsDone) ? onPlay : null,
         onOpenMenu: onOpenMenu,
         onTap: onBodyTap,
         onLongPress: onLongPress,
-        onSubtitleTap: selectMode ? null : onDateTap,
       ),
     );
   }

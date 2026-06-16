@@ -34,7 +34,6 @@ class PlanTimeTaskCard extends StatefulWidget {
     this.planTrackedSeconds = 0,
     this.planEstimatedSeconds,
     this.scheduleConflict = false,
-    this.subtitleLabel,
     this.metaIcons = const [],
     this.showFooterBreadcrumb = true,
     this.onToggleDone,
@@ -43,7 +42,6 @@ class PlanTimeTaskCard extends StatefulWidget {
     this.onOpenMenu,
     this.onTap,
     this.onLongPress,
-    this.onSubtitleTap,
   });
 
   final PlanningTask task;
@@ -60,7 +58,6 @@ class PlanTimeTaskCard extends StatefulWidget {
   final int planTrackedSeconds;
   final int? planEstimatedSeconds;
   final bool scheduleConflict;
-  final String? subtitleLabel;
   final List<Widget> metaIcons;
   final bool showFooterBreadcrumb;
   final VoidCallback? onToggleDone;
@@ -69,7 +66,6 @@ class PlanTimeTaskCard extends StatefulWidget {
   final void Function(BuildContext menuContext)? onOpenMenu;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final VoidCallback? onSubtitleTap;
 
   @override
   State<PlanTimeTaskCard> createState() => _PlanTimeTaskCardState();
@@ -92,15 +88,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
       widget.surface == PlanCardSurface.list ||
       widget.surface == PlanCardSurface.calendar;
 
-  _PlanCardListExtras? get _listExtras {
-    if (!_isListLike) return null;
-    return _PlanCardListExtras(
-      subtitleLabel: widget.subtitleLabel,
-      onSubtitleTap: widget.onSubtitleTap,
-      planTrackedSeconds: widget.planTrackedSeconds,
-      planEstimatedSeconds: widget.planEstimatedSeconds,
-    );
-  }
+  bool get _showMetrics =>
+      widget.planTrackedSeconds > 0 || (widget.planEstimatedSeconds ?? 0) > 0;
 
   @override
   Widget build(BuildContext context) {
@@ -116,28 +105,42 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
         .getCategoryRuleById(widget.task.categoryId)
         ?.iconOrDefault;
 
+    final hovered = _hovered && !widget.interacting;
     final borderColor = widget.highlightAsRunning
         ? scheme.primary
         : widget.interacting
             ? scheme.primary.withValues(alpha: 0.45)
-            : _hovered && _isListLike
-                ? scheme.outlineVariant.withValues(alpha: 0.55)
+            : hovered
+                ? scheme.outlineVariant.withValues(alpha: 0.62)
                 : scheme.outlineVariant.withValues(alpha: 0.38);
     final borderWidth = widget.highlightAsRunning
         ? 2.0
         : widget.interacting
             ? 1.5
-            : 1.0;
+            : hovered
+                ? 1.25
+                : 1.0;
 
-    final surface = widget.selectMode && widget.isSelected
+    var surface = widget.selectMode && widget.isSelected
         ? Color.alphaBlend(
             scheme.primaryContainer.withValues(alpha: 0.35),
             _PlanCardTokens.surface,
           )
         : _PlanCardTokens.surface;
+    if (hovered) {
+      surface = Color.alphaBlend(
+        scheme.surfaceContainerHighest.withValues(alpha: 0.28),
+        surface,
+      );
+    }
 
     final pinFooter = widget.heightPx != null;
-    final listExtras = _listExtras;
+    final metricsBlock = _showMetrics
+        ? _PlanCardMetricsBlock(
+            planTrackedSeconds: widget.planTrackedSeconds,
+            planEstimatedSeconds: widget.planEstimatedSeconds,
+          )
+        : null;
 
     Widget body;
     switch (widget.density) {
@@ -153,7 +156,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           visibleTags: _visibleTags,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          listExtras: listExtras,
+          metricsBlock: metricsBlock,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
@@ -176,7 +179,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           scheduleConflict: widget.scheduleConflict,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          listExtras: listExtras,
+          metricsBlock: metricsBlock,
           pinFooter: pinFooter,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
@@ -202,7 +205,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           scheduleConflict: widget.scheduleConflict,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          listExtras: listExtras,
+          metricsBlock: metricsBlock,
           pinFooter: pinFooter,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
@@ -225,7 +228,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
         border: Border.all(color: borderColor, width: borderWidth),
         boxShadow: _PlanCardTokens.cardShadow(
           widget.interacting,
-          hovered: _hovered && _isListLike,
+          hovered: hovered,
         ),
       ),
       child: ClipRRect(
@@ -269,16 +272,14 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
       );
     }
 
-    if (_isListLike) {
-      card = MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        cursor: widget.onTap != null
-            ? SystemMouseCursors.click
-            : SystemMouseCursors.basic,
-        child: card,
-      );
-    }
+    card = MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      child: card,
+    );
 
     return card;
   }
@@ -308,8 +309,11 @@ abstract final class _PlanCardGeom {
   static const double refHeightLarge = 147;
   static const double titleToTagsGap = 12;
   static const double footerBlockGap = 8;
+  static const double footerBlockGapPinned = 4;
   static const double dividerHeight = 1;
-  static const double footerTextHeight = 8;
+  static const double footerTextHeight = 14;
+  static const double footerBottomPadPinned = 6;
+  static const double padTopPinned = 8;
   static const double tagRowHeight = 16;
   static const double tagGap = 5;
 
@@ -342,96 +346,57 @@ abstract final class _PlanCardTokens {
 
   static List<BoxShadow> cardShadow(bool interacting, {bool hovered = false}) => [
         BoxShadow(
-          color: const Color(0x0A000000),
-          blurRadius: interacting ? 6 : (hovered ? 6 : 4),
+          color: Color(hovered ? 0x14000000 : 0x0A000000),
+          blurRadius: interacting ? 6 : (hovered ? 8 : 4),
           offset: const Offset(0, 4),
         ),
       ];
 }
 
-class _PlanCardListExtras extends StatelessWidget {
-  const _PlanCardListExtras({
-    this.subtitleLabel,
-    this.onSubtitleTap,
-    this.planTrackedSeconds = 0,
+class _PlanCardMetricsBlock extends StatelessWidget {
+  const _PlanCardMetricsBlock({
+    required this.planTrackedSeconds,
     this.planEstimatedSeconds,
   });
 
-  final String? subtitleLabel;
-  final VoidCallback? onSubtitleTap;
   final int planTrackedSeconds;
   final int? planEstimatedSeconds;
 
   @override
   Widget build(BuildContext context) {
-    final children = <Widget>[];
-    if ((planEstimatedSeconds ?? 0) > 0) {
-      children.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: _PlanCardProgressRow(
-            trackedSeconds: planTrackedSeconds,
-            estimatedSeconds: planEstimatedSeconds!,
-          ),
-        ),
-      );
-    } else if (planTrackedSeconds > 0) {
-      children.add(
-        Padding(
-          padding: const EdgeInsets.only(top: 6),
-          child: Text(
-            t(currentLocale.value, 'plan_card_fact_time').replaceFirst(
-              '%s',
-              _PlanCardProgressRow.formatTracked(planTrackedSeconds),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 10,
-              height: 1.1,
-              color: _PlanCardTokens.breadcrumbColor,
-            ),
-          ),
-        ),
-      );
+    final estimated = planEstimatedSeconds ?? 0;
+    if (planTrackedSeconds <= 0 && estimated <= 0) {
+      return const SizedBox.shrink();
     }
-    if (subtitleLabel != null && subtitleLabel!.isNotEmpty) {
-      children.add(
-        Padding(
-          padding: EdgeInsets.only(top: children.isEmpty ? 6 : 4),
-          child: onSubtitleTap == null
-              ? Text(
-                  subtitleLabel!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    height: 1.1,
-                    color: _PlanCardTokens.timeColor,
-                  ),
-                )
-              : GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onSubtitleTap,
-                  child: Text(
-                    subtitleLabel!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11,
-                      height: 1.1,
-                      color: _PlanCardTokens.timeColor,
-                    ),
-                  ),
-                ),
-        ),
-      );
-    }
-    if (children.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
-      children: children,
+      children: [
+        if (planTrackedSeconds > 0)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              _PlanCardProgressRow.formatCompact(planTrackedSeconds),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10,
+                height: 1.2,
+                fontWeight: FontWeight.w500,
+                color: _PlanCardTokens.timeColor,
+              ),
+            ),
+          ),
+        if (estimated > 0)
+          Padding(
+            padding: EdgeInsets.only(top: planTrackedSeconds > 0 ? 4 : 0),
+            child: _PlanCardProgressRow(
+              trackedSeconds: planTrackedSeconds,
+              estimatedSeconds: estimated,
+              compact: true,
+            ),
+          ),
+      ],
     );
   }
 }
@@ -440,10 +405,12 @@ class _PlanCardProgressRow extends StatelessWidget {
   const _PlanCardProgressRow({
     required this.trackedSeconds,
     required this.estimatedSeconds,
+    this.compact = false,
   });
 
   final int trackedSeconds;
   final int estimatedSeconds;
+  final bool compact;
 
   static String formatTracked(int sec) {
     final s = sec.clamp(0, 8640000);
@@ -452,19 +419,21 @@ class _PlanCardProgressRow extends StatelessWidget {
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   }
 
-  static String _shortDur(int sec) {
-    if (sec < 60) return '${sec}s';
-    if (sec < 3600) return '${(sec / 60).round()}m';
-    final h = sec ~/ 3600;
-    final m = (sec % 3600) ~/ 60;
+  static String formatCompact(int sec) {
+    final s = sec.clamp(0, 8640000);
+    if (s < 60) return '${s}s';
+    if (s < 3600) return '${(s / 60).round()}m';
+    final h = s ~/ 3600;
+    final m = (s % 3600) ~/ 60;
     if (m == 0) return '${h}h';
     return '${h}h ${m}m';
   }
 
   @override
   Widget build(BuildContext context) {
-    final pct =
-        estimatedSeconds > 0 ? ((trackedSeconds * 100) / estimatedSeconds).round() : 0;
+    final pct = estimatedSeconds > 0
+        ? ((trackedSeconds * 100) / estimatedSeconds).round()
+        : 0;
     final over = trackedSeconds > estimatedSeconds;
     return Row(
       children: [
@@ -483,19 +452,21 @@ class _PlanCardProgressRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        Text(
-          '${_shortDur(trackedSeconds)} / ${_shortDur(estimatedSeconds)} ($pct%)',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 10,
-            height: 1.1,
-            color: over
-                ? Theme.of(context).colorScheme.error
-                : _PlanCardTokens.timeColor,
+        if (!compact) ...[
+          const SizedBox(width: 8),
+          Text(
+            '${formatCompact(trackedSeconds)} / ${formatCompact(estimatedSeconds)} ($pct%)',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              height: 1.1,
+              color: over
+                  ? Theme.of(context).colorScheme.error
+                  : _PlanCardTokens.timeColor,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -515,7 +486,7 @@ class _TimelinePlanCardSmall extends StatelessWidget {
     required this.visibleTags,
     required this.toggleDoneEnabled,
     this.metaIcons = const [],
-    this.listExtras,
+    this.metricsBlock,
     this.onToggleDone,
     this.onSelectToggle,
     this.onPlay,
@@ -534,7 +505,7 @@ class _TimelinePlanCardSmall extends StatelessWidget {
   final List<Tag> visibleTags;
   final bool toggleDoneEnabled;
   final List<Widget> metaIcons;
-  final _PlanCardListExtras? listExtras;
+  final _PlanCardMetricsBlock? metricsBlock;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
@@ -544,7 +515,7 @@ class _TimelinePlanCardSmall extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showTagRow = visibleTags.isNotEmpty || timeLabel.isNotEmpty;
+    final showTagRow = visibleTags.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
@@ -577,7 +548,6 @@ class _TimelinePlanCardSmall extends StatelessWidget {
             child: _PlanCardBodyTapShell(
               onTap: onBodyTap,
               onLongPress: onBodyLongPress,
-              listLike: listExtras != null,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
@@ -592,14 +562,13 @@ class _TimelinePlanCardSmall extends StatelessWidget {
                   if (showTagRow)
                     Padding(
                       padding: const EdgeInsets.only(top: 10),
-                      child: _PlanCardTagsRow(
-                        tags: visibleTags,
-                        trailing: timeLabel.isNotEmpty
-                            ? _PlanCardTimeText(label: timeLabel)
-                            : null,
-                      ),
+                      child: _PlanCardTagsRow(tags: visibleTags),
                     ),
-                  if (listExtras != null) listExtras!,
+                  if (metricsBlock != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: metricsBlock!,
+                    ),
                 ],
               ),
             ),
@@ -632,7 +601,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
     required this.toggleDoneEnabled,
     required this.titleMaxLines,
     this.metaIcons = const [],
-    this.listExtras,
+    this.metricsBlock,
     this.pinFooter = false,
     this.heightPx,
     this.onToggleDone,
@@ -656,7 +625,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final bool toggleDoneEnabled;
   final int titleMaxLines;
   final List<Widget> metaIcons;
-  final _PlanCardListExtras? listExtras;
+  final _PlanCardMetricsBlock? metricsBlock;
   final bool pinFooter;
   final double? heightPx;
   final VoidCallback? onToggleDone;
@@ -668,16 +637,17 @@ class _TimelinePlanCardMedium extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fixedListHeight = heightPx == null && listExtras != null;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
-        _PlanCardGeom.padTopMediumLarge,
+        pinFooter ? _PlanCardGeom.padTopPinned : _PlanCardGeom.padTopMediumLarge,
         _PlanCardGeom.padRight,
-        _PlanCardGeom.padTopMediumLarge,
+        pinFooter
+            ? _PlanCardGeom.footerBottomPadPinned
+            : _PlanCardGeom.padTopMediumLarge,
       ),
       child: SizedBox(
-        height: pinFooter || fixedListHeight
+        height: pinFooter
             ? null
             : _PlanCardGeom.refHeightMedium -
                 _PlanCardGeom.padTopMediumLarge * 2,
@@ -700,7 +670,6 @@ class _TimelinePlanCardMedium extends StatelessWidget {
               child: _PlanCardBodyTapShell(
                 onTap: onBodyTap,
                 onLongPress: onBodyLongPress,
-                listLike: listExtras != null,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -728,7 +697,6 @@ class _TimelinePlanCardMedium extends StatelessWidget {
                                 ),
                                 child: _PlanCardTagsRow(tags: visibleTags),
                               ),
-                            if (listExtras != null) listExtras!,
                           ],
                         ),
                       ),
@@ -737,8 +705,16 @@ class _TimelinePlanCardMedium extends StatelessWidget {
                     ],
                   ),
                   if (pinFooter) const Spacer() else const SizedBox(height: 8),
+                  if (metricsBlock != null) ...[
+                    metricsBlock!,
+                    const SizedBox(height: 4),
+                  ],
                   const _PlanCardDividerLine(),
-                  const SizedBox(height: _PlanCardGeom.footerBlockGap),
+                  SizedBox(
+                    height: pinFooter
+                        ? _PlanCardGeom.footerBlockGapPinned
+                        : _PlanCardGeom.footerBlockGap,
+                  ),
                   _PlanCardFooterRow(
                     categoryTrail: categoryTrail,
                     timeLabel: timeLabel,
@@ -771,7 +747,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
     required this.scheduleConflict,
     required this.toggleDoneEnabled,
     this.metaIcons = const [],
-    this.listExtras,
+    this.metricsBlock,
     this.pinFooter = false,
     this.heightPx,
     this.onToggleDone,
@@ -794,7 +770,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final bool scheduleConflict;
   final bool toggleDoneEnabled;
   final List<Widget> metaIcons;
-  final _PlanCardListExtras? listExtras;
+  final _PlanCardMetricsBlock? metricsBlock;
   final bool pinFooter;
   final double? heightPx;
   final VoidCallback? onToggleDone;
@@ -807,11 +783,13 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
-        _PlanCardGeom.padTopMediumLarge,
+        pinFooter ? _PlanCardGeom.padTopPinned : _PlanCardGeom.padTopMediumLarge,
         _PlanCardGeom.padRight,
-        _PlanCardGeom.padTopMediumLarge,
+        pinFooter
+            ? _PlanCardGeom.footerBottomPadPinned
+            : _PlanCardGeom.padTopMediumLarge,
       ),
       child: SizedBox(
         height: pinFooter
@@ -838,7 +816,6 @@ class _TimelinePlanCardLarge extends StatelessWidget {
               child: _PlanCardBodyTapShell(
                 onTap: onBodyTap,
                 onLongPress: onBodyLongPress,
-                listLike: listExtras != null,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -866,7 +843,6 @@ class _TimelinePlanCardLarge extends StatelessWidget {
                                 ),
                                 child: _PlanCardTagsRow(tags: visibleTags),
                               ),
-                            if (listExtras != null) listExtras!,
                           ],
                         ),
                       ),
@@ -875,8 +851,16 @@ class _TimelinePlanCardLarge extends StatelessWidget {
                     ],
                   ),
                   if (pinFooter) const Spacer(),
+                  if (metricsBlock != null) ...[
+                    metricsBlock!,
+                    const SizedBox(height: 4),
+                  ],
                   const _PlanCardDividerLine(),
-                  const SizedBox(height: _PlanCardGeom.footerBlockGap),
+                  SizedBox(
+                    height: pinFooter
+                        ? _PlanCardGeom.footerBlockGapPinned
+                        : _PlanCardGeom.footerBlockGap,
+                  ),
                   _PlanCardFooterRow(
                     categoryTrail: categoryTrail,
                     timeLabel: timeLabel,
@@ -900,26 +884,21 @@ class _PlanCardBodyTapShell extends StatelessWidget {
     required this.child,
     this.onTap,
     this.onLongPress,
-    this.listLike = false,
   });
 
   final Widget child;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
-  final bool listLike;
 
   @override
   Widget build(BuildContext context) {
     if (onTap == null && onLongPress == null) return child;
-    final scheme = Theme.of(context).colorScheme;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        hoverColor: listLike
-            ? scheme.primary.withValues(alpha: 0.04)
-            : Colors.transparent,
+        hoverColor: Colors.transparent,
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
         child: child,
@@ -1354,8 +1333,10 @@ class _PlanCardFooterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      height: _PlanCardGeom.footerTextHeight,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        minHeight: _PlanCardGeom.footerTextHeight,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -1367,7 +1348,7 @@ class _PlanCardFooterRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 11,
-                  height: 1.0,
+                  height: 1.2,
                   fontWeight: FontWeight.w400,
                   color: _PlanCardTokens.breadcrumbColor,
                 ),
