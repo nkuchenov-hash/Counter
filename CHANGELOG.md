@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-16] - Plan Play button gesture + category fallback fix [shipped]
+* **`plan_time_task_card.dart` / `planning_view.dart`:** [shipped] Play/checkbox/menu no longer blocked — body tap/drag limited to content column (`_PlanCardBodyTapShell`); timeline `_TimelinePlanInteractionBlock` move zone excludes control rail + menu via `planCardBodyGestureLeftInsetPx` / `planCardBodyGestureRightInsetPx`.
+* **`category_service.dart`:** [shipped] `_resolveColdStartRecordCategoryId` falls back to default/leaf when plan UI category is concrete but missing PB relation id — Play no longer aborts before optimistic Highlander shadow.
+
 ## [2026-06-16] - Record outbox highlander_start category relation fix [shipped]
 * **`category_service.dart` / `record_service.dart`:** [shipped] PocketBase records POST/PATCH now send 15-char `categories.id` in both `category_id` and `category_link` (was business slug → `validation_missing_rel_records` 400); `_normalizeRecordCategoryFieldsForPbApi` with cache/default/fallback repair + `RECORD_*` diagnostics; outbox replay pre-sanitizes/drops unmappable rows; `_lastRecordCreateFailureHttpCode` so `SYNC_FLUSH_FAIL` reports actual HTTP 400 not 500.
 

@@ -797,11 +797,9 @@ extension CategoryServiceExtension on DatabaseService {
     return null;
   }
 
-  /// Cold-start: when [preferred] is not a concrete local choice, use [defaultCategoryId] then first leaf.
-  /// Does not replace a concrete [preferred] (even if it cannot be sent to PocketBase — caller may fail).
+  /// Cold-start: prefer resolvable [preferred]; else [defaultCategoryId]; else first leaf.
   int? _resolveColdStartRecordCategoryId(int? preferred) {
     if (_categoryIdResolvableForPbRecordPost(preferred)) return preferred;
-    if (_planLocalCategoryIdIsConcrete(preferred)) return preferred;
 
     final d = defaultCategoryId;
     if (_categoryIdResolvableForPbRecordPost(d)) return d;

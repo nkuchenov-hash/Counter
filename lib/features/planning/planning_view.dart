@@ -3374,6 +3374,7 @@ class _PlanningPageState extends State<PlanningPage>
     final interactionLabel = isResizing
         ? _timelineResizeTimeLabel
         : _timelineVerticalDragTimeLabel;
+    final blockDensity = planTimeCardDensityForBlock(heightPx, durMin);
 
     return Stack(
       clipBehavior: Clip.none,
@@ -3437,6 +3438,8 @@ class _PlanningPageState extends State<PlanningPage>
               canMove: canInteract,
               canResize: canInteract,
               resizeHandlePx: _kTimelineResizeHandlePx,
+              controlsLeftInset: planCardBodyGestureLeftInsetPx(blockDensity),
+              controlsRightInset: planCardBodyGestureRightInsetPx(),
               onBodyTap: () {
                 if (_planSelectMode) {
                   _toggleKeySelection(planKey);
@@ -4796,6 +4799,8 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
     required this.resizeHandlePx,
     required this.child,
     required this.isInteracting,
+    this.controlsLeftInset = 0,
+    this.controlsRightInset = 0,
     this.onBodyTap,
     this.onVerticalDragStart,
     this.onVerticalDragUpdate,
@@ -4812,6 +4817,8 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
   final double resizeHandlePx;
   final bool isInteracting;
   final Widget child;
+  final double controlsLeftInset;
+  final double controlsRightInset;
   final VoidCallback? onBodyTap;
   final VoidCallback? onVerticalDragStart;
   final void Function(double deltaPx, double globalDy)? onVerticalDragUpdate;
@@ -4854,8 +4861,8 @@ class _TimelinePlanInteractionBlockState
     return Positioned(
       top: topInset,
       bottom: bottomInset,
-      left: 0,
-      right: 0,
+      left: widget.controlsLeftInset,
+      right: widget.controlsRightInset,
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: widget.onBodyTap == null

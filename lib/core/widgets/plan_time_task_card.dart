@@ -158,6 +158,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
           onOpenMenu: widget.onOpenMenu,
+          onBodyTap: widget.onTap,
+          onBodyLongPress: widget.onLongPress,
         );
       case PlanTimeTaskCardDensity.medium:
         body = _TimelinePlanCardMedium(
@@ -180,6 +182,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
           onOpenMenu: widget.onOpenMenu,
+          onBodyTap: widget.onTap,
+          onBodyLongPress: widget.onLongPress,
           titleMaxLines: 1,
           heightPx: widget.heightPx,
         );
@@ -204,6 +208,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
           onOpenMenu: widget.onOpenMenu,
+          onBodyTap: widget.onTap,
+          onBodyLongPress: widget.onLongPress,
           heightPx: widget.heightPx,
         );
     }
@@ -267,28 +273,14 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
       card = MouseRegion(
         onEnter: (_) => setState(() => _hovered = true),
         onExit: (_) => setState(() => _hovered = false),
-        cursor: SystemMouseCursors.click,
+        cursor: widget.onTap != null
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
         child: card,
       );
     }
 
-    final hasBodyGesture = widget.onTap != null || widget.onLongPress != null;
-    if (!hasBodyGesture) return card;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: widget.onTap,
-        onLongPress: widget.onLongPress,
-        hoverColor: _isListLike
-            ? scheme.primary.withValues(alpha: 0.04)
-            : Colors.transparent,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-        borderRadius: BorderRadius.circular(_PlanCardGeom.radius),
-        child: card,
-      ),
-    );
+    return card;
   }
 }
 
@@ -528,6 +520,8 @@ class _TimelinePlanCardSmall extends StatelessWidget {
     this.onSelectToggle,
     this.onPlay,
     this.onOpenMenu,
+    this.onBodyTap,
+    this.onBodyLongPress,
   });
 
   final PlanningTask task;
@@ -545,6 +539,8 @@ class _TimelinePlanCardSmall extends StatelessWidget {
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
   final void Function(BuildContext)? onOpenMenu;
+  final VoidCallback? onBodyTap;
+  final VoidCallback? onBodyLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -578,29 +574,34 @@ class _TimelinePlanCardSmall extends StatelessWidget {
                   _PlanCardGeom.controlSize,
             ),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _PlanCardTitleRow(
-                  title: task.title,
-                  displayIsDone: displayIsDone,
-                  hasRepeat: hasRepeat,
-                  maxLines: 1,
-                  metaIcons: metaIcons,
-                ),
-                if (showTagRow)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10),
-                    child: _PlanCardTagsRow(
-                      tags: visibleTags,
-                      trailing: timeLabel.isNotEmpty
-                          ? _PlanCardTimeText(label: timeLabel)
-                          : null,
-                    ),
+            child: _PlanCardBodyTapShell(
+              onTap: onBodyTap,
+              onLongPress: onBodyLongPress,
+              listLike: listExtras != null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _PlanCardTitleRow(
+                    title: task.title,
+                    displayIsDone: displayIsDone,
+                    hasRepeat: hasRepeat,
+                    maxLines: 1,
+                    metaIcons: metaIcons,
                   ),
-                if (listExtras != null) listExtras!,
-              ],
+                  if (showTagRow)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: _PlanCardTagsRow(
+                        tags: visibleTags,
+                        trailing: timeLabel.isNotEmpty
+                            ? _PlanCardTimeText(label: timeLabel)
+                            : null,
+                      ),
+                    ),
+                  if (listExtras != null) listExtras!,
+                ],
+              ),
             ),
           ),
           if (onOpenMenu != null)
@@ -638,6 +639,8 @@ class _TimelinePlanCardMedium extends StatelessWidget {
     this.onSelectToggle,
     this.onPlay,
     this.onOpenMenu,
+    this.onBodyTap,
+    this.onBodyLongPress,
   });
 
   final PlanningTask task;
@@ -660,6 +663,8 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
   final void Function(BuildContext)? onOpenMenu;
+  final VoidCallback? onBodyTap;
+  final VoidCallback? onBodyLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -692,50 +697,55 @@ class _TimelinePlanCardMedium extends StatelessWidget {
             ),
             const SizedBox(width: _PlanCardGeom.railToContentGap),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: _PlanCardTitleRow(
-                                title: task.title,
-                                displayIsDone: displayIsDone,
-                                hasRepeat: hasRepeat,
-                                maxLines: titleMaxLines,
-                                metaIcons: metaIcons,
+              child: _PlanCardBodyTapShell(
+                onTap: onBodyTap,
+                onLongPress: onBodyLongPress,
+                listLike: listExtras != null,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: _PlanCardTitleRow(
+                                  title: task.title,
+                                  displayIsDone: displayIsDone,
+                                  hasRepeat: hasRepeat,
+                                  maxLines: titleMaxLines,
+                                  metaIcons: metaIcons,
+                                ),
                               ),
-                            ),
-                          if (visibleTags.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: _PlanCardGeom.titleToTagsGap,
+                            if (visibleTags.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: _PlanCardGeom.titleToTagsGap,
+                                ),
+                                child: _PlanCardTagsRow(tags: visibleTags),
                               ),
-                              child: _PlanCardTagsRow(tags: visibleTags),
-                            ),
-                          if (listExtras != null) listExtras!,
-                        ],
+                            if (listExtras != null) listExtras!,
+                          ],
+                        ),
                       ),
-                    ),
-                    if (onOpenMenu != null)
-                      _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+                      if (onOpenMenu != null)
+                        _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+                    ],
+                  ),
+                  if (pinFooter) const Spacer() else const SizedBox(height: 8),
+                  const _PlanCardDividerLine(),
+                  const SizedBox(height: _PlanCardGeom.footerBlockGap),
+                  _PlanCardFooterRow(
+                    categoryTrail: categoryTrail,
+                    timeLabel: timeLabel,
+                    scheduleConflict: scheduleConflict,
+                  ),
                   ],
                 ),
-                if (pinFooter) const Spacer() else const SizedBox(height: 8),
-                const _PlanCardDividerLine(),
-                const SizedBox(height: _PlanCardGeom.footerBlockGap),
-                _PlanCardFooterRow(
-                  categoryTrail: categoryTrail,
-                  timeLabel: timeLabel,
-                  scheduleConflict: scheduleConflict,
-                ),
-                ],
               ),
             ),
           ],
@@ -768,6 +778,8 @@ class _TimelinePlanCardLarge extends StatelessWidget {
     this.onSelectToggle,
     this.onPlay,
     this.onOpenMenu,
+    this.onBodyTap,
+    this.onBodyLongPress,
   });
 
   final PlanningTask task;
@@ -789,6 +801,8 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
   final void Function(BuildContext)? onOpenMenu;
+  final VoidCallback? onBodyTap;
+  final VoidCallback? onBodyLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -821,26 +835,30 @@ class _TimelinePlanCardLarge extends StatelessWidget {
             ),
             const SizedBox(width: _PlanCardGeom.railToContentGap),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: _PlanCardTitleRow(
-                                title: task.title,
-                                displayIsDone: displayIsDone,
-                                hasRepeat: hasRepeat,
-                                maxLines: 3,
-                                metaIcons: metaIcons,
+              child: _PlanCardBodyTapShell(
+                onTap: onBodyTap,
+                onLongPress: onBodyLongPress,
+                listLike: listExtras != null,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: _PlanCardTitleRow(
+                                  title: task.title,
+                                  displayIsDone: displayIsDone,
+                                  hasRepeat: hasRepeat,
+                                  maxLines: 3,
+                                  metaIcons: metaIcons,
+                                ),
                               ),
-                            ),
                             if (visibleTags.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(
@@ -864,7 +882,8 @@ class _TimelinePlanCardLarge extends StatelessWidget {
                     timeLabel: timeLabel,
                     scheduleConflict: scheduleConflict,
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -875,6 +894,39 @@ class _TimelinePlanCardLarge extends StatelessWidget {
 }
 
 // --- Shared parts -------------------------------------------------------------
+
+class _PlanCardBodyTapShell extends StatelessWidget {
+  const _PlanCardBodyTapShell({
+    required this.child,
+    this.onTap,
+    this.onLongPress,
+    this.listLike = false,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final bool listLike;
+
+  @override
+  Widget build(BuildContext context) {
+    if (onTap == null && onLongPress == null) return child;
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        hoverColor: listLike
+            ? scheme.primary.withValues(alpha: 0.04)
+            : Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        child: child,
+      ),
+    );
+  }
+}
 
 class _PlanCardControlRail extends StatelessWidget {
   const _PlanCardControlRail({
@@ -1428,3 +1480,18 @@ double planTimeCardListMinHeight(PlanTimeTaskCardDensity density) =>
       PlanTimeTaskCardDensity.medium => _PlanCardGeom.refHeightMedium,
       PlanTimeTaskCardDensity.large => _PlanCardGeom.refHeightLarge,
     };
+
+/// Left inset for timeline drag/tap body zone — excludes checkbox + play rail.
+double planCardBodyGestureLeftInsetPx(PlanTimeTaskCardDensity density) =>
+    switch (density) {
+      PlanTimeTaskCardDensity.compact => _PlanCardGeom.contentXSmall,
+      PlanTimeTaskCardDensity.medium ||
+      PlanTimeTaskCardDensity.large =>
+        _PlanCardGeom.padLeft +
+            _PlanCardGeom.railWidth +
+            _PlanCardGeom.railToContentGap,
+    };
+
+/// Right inset for timeline drag/tap body zone — excludes menu button column.
+double planCardBodyGestureRightInsetPx({bool hasMenu = true}) =>
+    hasMenu ? _PlanCardGeom.menuSize + _PlanCardGeom.padRight : 0;
