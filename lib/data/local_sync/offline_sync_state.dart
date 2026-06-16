@@ -43,6 +43,9 @@ class OfflineSyncController extends ChangeNotifier {
 
   void setLastError(String? error) {
     lastError = error;
+    if (error != null && error.isNotEmpty) {
+      _debouncedSyncErrorLog(error);
+    }
     notifyListeners();
   }
 
@@ -50,6 +53,38 @@ class OfflineSyncController extends ChangeNotifier {
     authPaused = false;
     lastError = null;
     notifyListeners();
+  }
+
+  /// After drain attempt: hide error banner when no pending work remains.
+  void reconcileAfterDrain() {
+    if (pendingCount != 0 || authPaused || isSyncing) return;
+    if (lastError == null || lastError!.isEmpty) {
+      if (isOffline) {
+        isOffline = false;
+        notifyListeners();
+      }
+      return;
+    }
+    lastError = null;
+    if (isOffline) isOffline = false;
+    notifyListeners();
+  }
+
+  static String? _lastDebouncedLogLine;
+  static DateTime? _lastDebouncedLogAt;
+  static const Duration _syncLogDebounce = Duration(seconds: 15);
+
+  void _debouncedSyncErrorLog(String error) {
+    final now = DateTime.now();
+    final line = 'SYNC_BANNER_ERROR: $error (pending=$pendingCount)';
+    if (_lastDebouncedLogLine == line &&
+        _lastDebouncedLogAt != null &&
+        now.difference(_lastDebouncedLogAt!) < _syncLogDebounce) {
+      return;
+    }
+    _lastDebouncedLogLine = line;
+    _lastDebouncedLogAt = now;
+    debugPrint(line);
   }
 
   /// Call when PocketBase session is valid again (login / tap-to-retry) so flush can resume.

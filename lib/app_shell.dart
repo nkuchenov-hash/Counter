@@ -363,7 +363,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _rules = List.from(DatabaseService.instance.rules);
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     unawaited(_loadTasksAndExtras());
-    unawaited(DatabaseService.instance.offlineSync.refreshPendingCount());
+    unawaited(() async {
+      await DatabaseService.instance.offlineSync.refreshPendingCount();
+      DatabaseService.instance.offlineSync.reconcileAfterDrain();
+    }());
 
     _notificationSub = DatabaseService.instance.notifications.listen((msg) {
       if (!mounted || msg == null || msg.isEmpty) return;

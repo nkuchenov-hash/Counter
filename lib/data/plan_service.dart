@@ -635,18 +635,36 @@ extension PlanServiceExtension on DatabaseService {
         return true;
       } on ClientException catch (e) {
         final code = e.statusCode;
+        _debugPrintPocketBaseClientException(
+          operation: 'plan outbox create',
+          e: e,
+          payload: body,
+        );
         if (code == 401 || code == 403) {
           offlineSync.setAuthPaused(true, message: 'HTTP $code');
           return false;
         }
         if (_planMutationRetriableHttpCode(code)) {
           offlineSync.setLastError('HTTP $code');
+          DatabaseService.logSyncFlushFailure(
+            collection: PbCollections.plans,
+            operation: PlanMutationOutbox.kindPlanCreate,
+            businessId: businessId,
+            httpStatus: code,
+            message: e.response['message']?.toString(),
+          );
           return false;
         }
         return true;
       } catch (e) {
         if (_planMutationRetriableHttpCode(0)) {
           offlineSync.setLastError('$e');
+          DatabaseService.logSyncFlushFailure(
+            collection: PbCollections.plans,
+            operation: PlanMutationOutbox.kindPlanCreate,
+            businessId: businessId,
+            message: e.toString(),
+          );
           return false;
         }
         return true;
@@ -666,7 +684,29 @@ extension PlanServiceExtension on DatabaseService {
         pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
         originalQueryId: originalInput,
       );
-      if (pbId == null || pbId.isEmpty) return false;
+      if (pbId == null || pbId.isEmpty) {
+        final cached = _tryResolvePlanPbIdFromCacheOnly(
+          originalInput,
+          planBusinessId: businessId,
+        );
+        if (cached == null || cached.isEmpty) {
+          DatabaseService.logSyncFlushFailure(
+            collection: PbCollections.plans,
+            operation: PlanMutationOutbox.kindPlanUpdate,
+            businessId: businessId,
+            message: 'dropped_stale_no_cache',
+          );
+          return true;
+        }
+        offlineSync.setLastError('resolve_failed:plans/update');
+        DatabaseService.logSyncFlushFailure(
+          collection: PbCollections.plans,
+          operation: PlanMutationOutbox.kindPlanUpdate,
+          businessId: businessId,
+          message: 'unresolved_pb_id',
+        );
+        return false;
+      }
       try {
         if (patchBody.isNotEmpty) {
           await _pb
@@ -698,6 +738,11 @@ extension PlanServiceExtension on DatabaseService {
         return true;
       } on ClientException catch (e) {
         final code = e.statusCode;
+        _debugPrintPocketBaseClientException(
+          operation: 'plan outbox update',
+          e: e,
+          payload: patchBody,
+        );
         if (code == 404) {
           _removePlanFromUserCache(pbId);
           _removePlanFromUserCache(originalInput);
@@ -710,12 +755,27 @@ extension PlanServiceExtension on DatabaseService {
         }
         if (_planMutationRetriableHttpCode(code)) {
           offlineSync.setLastError('HTTP $code');
+          DatabaseService.logSyncFlushFailure(
+            collection: PbCollections.plans,
+            operation: PlanMutationOutbox.kindPlanUpdate,
+            businessId: businessId,
+            pocketBaseId: pbId,
+            httpStatus: code,
+            message: e.response['message']?.toString(),
+          );
           return false;
         }
         return true;
       } catch (e) {
         if (_planMutationRetriableHttpCode(0)) {
           offlineSync.setLastError('$e');
+          DatabaseService.logSyncFlushFailure(
+            collection: PbCollections.plans,
+            operation: PlanMutationOutbox.kindPlanUpdate,
+            businessId: businessId,
+            pocketBaseId: pbId,
+            message: e.toString(),
+          );
           return false;
         }
         return true;
@@ -745,18 +805,38 @@ extension PlanServiceExtension on DatabaseService {
           return true;
         }
         final code = e.statusCode;
+        _debugPrintPocketBaseClientException(
+          operation: 'plan outbox delete',
+          e: e,
+          payload: <String, dynamic>{'pbId': pbId},
+        );
         if (code == 401 || code == 403) {
           offlineSync.setAuthPaused(true, message: 'HTTP $code');
           return false;
         }
         if (_planMutationRetriableHttpCode(code)) {
           offlineSync.setLastError('HTTP $code');
+          DatabaseService.logSyncFlushFailure(
+            collection: PbCollections.plans,
+            operation: PlanMutationOutbox.kindPlanDelete,
+            businessId: businessId,
+            pocketBaseId: pbId,
+            httpStatus: code,
+            message: e.response['message']?.toString(),
+          );
           return false;
         }
         return true;
       } catch (e) {
         if (_planMutationRetriableHttpCode(0)) {
           offlineSync.setLastError('$e');
+          DatabaseService.logSyncFlushFailure(
+            collection: PbCollections.plans,
+            operation: PlanMutationOutbox.kindPlanDelete,
+            businessId: businessId,
+            pocketBaseId: pbId,
+            message: e.toString(),
+          );
           return false;
         }
         return true;

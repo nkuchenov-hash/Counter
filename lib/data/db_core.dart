@@ -464,6 +464,7 @@ extension DbCoreExtension on DatabaseService {
     }
     await flushPendingRecordMutations();
     await flushPendingPlanMutations();
-    unawaited(offlineSync.refreshPendingCount());
+    await offlineSync.refreshPendingCount();
+    offlineSync.reconcileAfterDrain();
   }
 }

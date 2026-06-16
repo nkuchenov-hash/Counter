@@ -2027,6 +2027,13 @@ extension RecordServiceExtension on DatabaseService {
       }
       if (_recordMutationRetriableHttpCode(failureCode)) {
         offlineSync.setLastError('HTTP $failureCode');
+        DatabaseService.logSyncFlushFailure(
+          collection: PbCollections.records,
+          operation: RecordMutationOutbox.kindHighlanderStart,
+          businessId: (item['businessId'] ?? '').toString(),
+          pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
+          httpStatus: failureCode,
+        );
         return false;
       }
       return true;
@@ -2069,6 +2076,13 @@ extension RecordServiceExtension on DatabaseService {
       }
       if (_recordMutationRetriableHttpCode(stopCode)) {
         offlineSync.setLastError('HTTP $stopCode');
+        DatabaseService.logSyncFlushFailure(
+          collection: PbCollections.records,
+          operation: RecordMutationOutbox.kindStopPatch,
+          businessId: originalInput,
+          pocketBaseId: pbId,
+          httpStatus: stopCode,
+        );
         return false;
       }
       _clearOptimisticStopKeysForRecord(originalInput);
@@ -2088,7 +2102,26 @@ extension RecordServiceExtension on DatabaseService {
         businessId: businessId,
         pocketBaseId: (item['pocketBaseId'] ?? '').toString(),
       );
-      if (pbId == null || pbId.isEmpty) return false;
+      if (pbId == null || pbId.isEmpty) {
+        final cached = _tryResolveRecordIdFromCacheOnly(businessId);
+        if (cached == null || cached.isEmpty) {
+          DatabaseService.logSyncFlushFailure(
+            collection: PbCollections.records,
+            operation: RecordMutationOutbox.kindRecordUpdate,
+            businessId: businessId,
+            message: 'dropped_stale_no_cache',
+          );
+          return true;
+        }
+        offlineSync.setLastError('resolve_failed:records/update');
+        DatabaseService.logSyncFlushFailure(
+          collection: PbCollections.records,
+          operation: RecordMutationOutbox.kindRecordUpdate,
+          businessId: businessId,
+          message: 'unresolved_pb_id',
+        );
+        return false;
+      }
       final patchCode = await _patchRecordsRowWith404Recovery(
         originalQueryId: originalInput,
         restId: pbId,
@@ -2111,6 +2144,13 @@ extension RecordServiceExtension on DatabaseService {
       }
       if (_recordMutationRetriableHttpCode(patchCode)) {
         offlineSync.setLastError('HTTP $patchCode');
+        DatabaseService.logSyncFlushFailure(
+          collection: PbCollections.records,
+          operation: RecordMutationOutbox.kindRecordUpdate,
+          businessId: businessId,
+          pocketBaseId: pbId,
+          httpStatus: patchCode,
+        );
         return false;
       }
       return true;
@@ -2148,6 +2188,13 @@ extension RecordServiceExtension on DatabaseService {
       }
       if (_recordMutationRetriableHttpCode(delCode)) {
         offlineSync.setLastError('HTTP $delCode');
+        DatabaseService.logSyncFlushFailure(
+          collection: PbCollections.records,
+          operation: RecordMutationOutbox.kindRecordDelete,
+          businessId: businessId,
+          pocketBaseId: pbId,
+          httpStatus: delCode,
+        );
         return false;
       }
       return true;

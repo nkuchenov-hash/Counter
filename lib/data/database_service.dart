@@ -277,6 +277,34 @@ class DatabaseService {
   /// Brain tracing is off by default (production-quiet). Enable temporarily when debugging Noco locally.
   static void _log(Object? message) {}
 
+  static String? _lastSyncFlushFailLog;
+  static DateTime? _lastSyncFlushFailLogAt;
+  static const Duration _syncFlushFailLogDebounce = Duration(seconds: 15);
+
+  /// Debounced console line for outbox flush failures (tap-to-retry banner).
+  static void logSyncFlushFailure({
+    required String collection,
+    required String operation,
+    String? businessId,
+    String? pocketBaseId,
+    int? httpStatus,
+    String? message,
+  }) {
+    final now = DateTime.now();
+    final line =
+        'SYNC_FLUSH_FAIL collection=$collection op=$operation '
+        'businessId=${businessId ?? '-'} pbId=${pocketBaseId ?? '-'} '
+        'http=${httpStatus ?? '-'} msg=${message ?? '-'}';
+    if (_lastSyncFlushFailLog == line &&
+        _lastSyncFlushFailLogAt != null &&
+        now.difference(_lastSyncFlushFailLogAt!) < _syncFlushFailLogDebounce) {
+      return;
+    }
+    _lastSyncFlushFailLog = line;
+    _lastSyncFlushFailLogAt = now;
+    debugPrint(line);
+  }
+
   /// Resolves waiting UI (SnackBar via [notifications] in app_shell) after category 404 = gone.
   void _emitCategorySyncNotice(String l10nKey) {
     try {

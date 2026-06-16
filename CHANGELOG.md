@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-16] - Sync error banner stabilization [wip]
+* **`offline_sync_state.dart` / `db_core.dart` / `record_service.dart` / `plan_service.dart` / `app_shell.dart`:** [wip] Fix sticky red sync banner when outboxes drain but `lastError` lingered — `reconcileAfterDrain()` after flush + boot refresh; debounced `SYNC_FLUSH_FAIL` / `SYNC_BANNER_ERROR` console logs; stale outbox rows without cache drop safely; unresolved PB id logs `resolve_failed` without blocking unrelated sync.
+
 ## [2026-06-15] - Unified PlanTimeTaskCard across all Plan modes [shipped]
 * **`plan_time_task_card.dart` / `planning_view.dart` / `calendar_view.dart`:** [shipped] One CardPlan visual system via `PlanCardSurface` (`list` / `timeline` / `calendar`) — Category/Tags/Custom/Time list rows + Calendar day list use `PlanTimeTaskCard`; list intrinsic min-heights (`planTimeCardDensityForList` / `planTimeCardListMinHeight`); preserved checkbox/play/menu/tap-edit/long-press/subtitle-date callbacks; web hover on card border/shadow + control buttons.
 
