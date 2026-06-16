@@ -77860,7 +77860,7 @@ s.r=null
 s.ak()},
 zx(a){return this.bdK(a)},
 kY(){return this.zx(!1)},
-bdK(a){var s=0,r=A.v(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h
+bdK(a){var s=0,r=A.v(t.H),q=1,p=[],o=this,n,m,l,k,j,i,h,g,f,e
 var $async$zx=A.p(function(b,c){if(b===1){p.push(c)
 s=q}for(;;)switch(s){case 0:q=3
 s=6
@@ -77874,17 +77874,19 @@ return A.h(A.ae1(n),$async$zx)
 case 8:l=c
 o.c=J.ad(l)
 o.d=J.ad(m)
-j=J.ad(l)+J.ad(m)
-o.b=j
-if(a||j===0)o.Aj()
-else o.ak()
+k=J.ad(l)+J.ad(m)
+j=o.b!==k
+g=k
+o.b=g
+if(g===0){i=o.Aj()
+if(!i&&j)o.ak()}else o.ak()
 q=1
 s=5
 break
 case 3:q=2
-h=p.pop()
-k=A.a7(h)
-A.uO("SYNC_REFRESH_PENDING_COUNT_FAIL: "+A.l(k))
+e=p.pop()
+h=A.a7(e)
+A.uO("SYNC_REFRESH_PENDING_COUNT_FAIL: "+A.l(h))
 s=5
 break
 case 2:s=1
