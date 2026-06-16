@@ -41,9 +41,6 @@ String _two(int n) => n.toString().padLeft(2, '0');
 DateTime _localToday() =>
     DatabaseService.instance.getTimelineDeviceLocalToday();
 
-DateTime _displayToUtc(DateTime displayNaive) =>
-    DatabaseService.instance.displayTimeToUtc(displayNaive);
-
 /// Planning task opened from quick-add / draft: not yet on server (no PATCH id).
 bool _shellIsNewPlanningDraft(PlanningTask t) {
   if (t.id != 0) return false;
@@ -1712,10 +1709,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             DatabaseService.instance.getTimelineDeviceLocalToday();
         final nextOrder = await DatabaseService.instance
             .nextPlanningOrderForDate(day);
-        final startUtc = result.startTime != null
-            ? _displayToUtc(result.startTime!)
-            : null;
-        final toCreate = result.copyWith(order: nextOrder, startTime: startUtc);
+        final toCreate = result.copyWith(order: nextOrder);
         final ok = await DatabaseService.instance.addPlanningTask(toCreate);
         if (!mounted) return;
         if (!ok) {

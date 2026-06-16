@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Plan create/edit wall-clock timezone fix [shipped]
+* **`plan_service.dart` / `planning_view.dart` / `app_shell.dart`:** [shipped] Plan create paths pass profile **wall** `startTime`/`endDateTime` (not UTC); `_coalescePlanningTaskWallUtcFields` sets `startUtcInstant` once and reprojects cache; fixes 7:45 Moscow showing as 4:45; `PLAN_TIME_CREATE_WALL_TO_UTC` / `PLAN_TIME_EDIT_WALL_TO_UTC` / `PLAN_TIME_CACHE_PROJECTED` logs.
+
 ## [2026-06-15] - Plan card separator + category color + recurring time edit [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Removed duplicate `_PlanCardDividerLine`; progress track is sole content/footer separator; breadcrumbs/progress use `getCategoryColor` (not hardcoded blue `#609CE1`).
 * **`plan_service.dart` / `app_shell.dart` / `planning_view.dart`:** [shipped] Virtual recurring occurrence edits materialize one-off row + `exception_dates` skip; series-row time PATCH preserved; `RECURRENCE_INSTANCE_*` logs.

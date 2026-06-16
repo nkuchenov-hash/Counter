@@ -438,7 +438,9 @@ extension PlanServiceExtension on DatabaseService {
       planBusinessId: planBusinessId,
     );
     if (current == null) return;
-    final next = _reprojectPlanningTaskWallTimes(
+    final oldStartWall = current.startTime;
+    final newStartWallInput = startTimeDisplay ?? startTime;
+    final next = _coalescePlanningTaskWallUtcFields(
       current.copyWith(
         title: title,
         categoryId: categoryId,
@@ -448,7 +450,7 @@ extension PlanServiceExtension on DatabaseService {
         checklist: checklist,
         parentPlanId: parentPlanId,
         order: order,
-        startTime: startTimeDisplay ?? startTime,
+        startTime: newStartWallInput,
         endDateTime: endDateTimeDisplay ?? endDateTime,
         clearEnd: clearEnd,
         tags: tags,
@@ -461,8 +463,8 @@ extension PlanServiceExtension on DatabaseService {
         clearReminderOffset:
             patchPlanAlarmRecurrence && planReminderOffset == null,
         isSynced: false,
-        startUtcInstant: (startTimeDisplay ?? startTime) != null
-            ? _profileUtcFromWall((startTimeDisplay ?? startTime)!).toUtc()
+        startUtcInstant: newStartWallInput != null
+            ? _profileUtcFromWall(newStartWallInput).toUtc()
             : current.startUtcInstant,
         endUtcInstant: clearEnd
             ? null
@@ -472,6 +474,18 @@ extension PlanServiceExtension on DatabaseService {
         clearEndUtc: clearEnd,
       ),
     );
+    if (newStartWallInput != null && next.startTime != null) {
+      final instants = _planUtcInstants(next);
+      if (instants != null) {
+        _logPlanTimeEditWallToUtc(
+          planId: (planBusinessId ?? planRowId).trim(),
+          oldWall: oldStartWall,
+          newWall: newStartWallInput,
+          storedUtc: instants.startUtc,
+          projectedWall: next.startTime!,
+        );
+      }
+    }
     applyOptimisticPlanningTask(next);
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
   }
@@ -1394,6 +1408,77 @@ extension PlanServiceExtension on DatabaseService {
     );
   }
 
+  String _planLogWallIso(DateTime d) =>
+      '${d.year}-${_two(d.month)}-${_two(d.day)}T'
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  void _logPlanTimeCreateWallToUtc({
+    required String title,
+    required DateTime inputWall,
+    required DateTime storedUtc,
+    required DateTime projectedWall,
+  }) {
+    print(
+      'PLAN_TIME_CREATE_WALL_TO_UTC title=$title '
+      'inputWall=${_planLogWallIso(inputWall)} '
+      'profileOffset=${_settings.timezoneOffsetHours} '
+      'storedUtc=${storedUtc.toUtc().toIso8601String()} '
+      'projectedWall=${_planLogWallIso(projectedWall)}',
+    );
+  }
+
+  void _logPlanTimeEditWallToUtc({
+    required String planId,
+    DateTime? oldWall,
+    DateTime? newWall,
+    required DateTime storedUtc,
+    required DateTime projectedWall,
+  }) {
+    print(
+      'PLAN_TIME_EDIT_WALL_TO_UTC planId=$planId '
+      'oldWall=${oldWall != null ? _planLogWallIso(oldWall) : '-'} '
+      'newWall=${newWall != null ? _planLogWallIso(newWall) : '-'} '
+      'storedUtc=${storedUtc.toUtc().toIso8601String()} '
+      'projectedWall=${_planLogWallIso(projectedWall)}',
+    );
+  }
+
+  void _logPlanTimeCacheProjected(PlanningTask task) {
+    final instants = _planUtcInstants(task);
+    if (instants == null || task.startTime == null) return;
+    final planId = (task.planRowId ?? task.pocketRecordId ?? '').trim();
+    print(
+      'PLAN_TIME_CACHE_PROJECTED planId=${planId.isEmpty ? '-' : planId} '
+      'startUtc=${instants.startUtc.toUtc().toIso8601String()} '
+      'wallStart=${_planLogWallIso(task.startTime!)} '
+      'dateKey=${task.dateKey}',
+    );
+  }
+
+  /// Ensures [PlanningTask.startTime]/[PlanningTask.endDateTime] are profile wall-clock
+  /// and [PlanningTask.startUtcInstant]/[PlanningTask.endUtcInstant] hold UTC source of truth.
+  PlanningTask _coalescePlanningTaskWallUtcFields(
+    PlanningTask task, {
+    bool logCreate = false,
+    String? titleForLog,
+  }) {
+    if (task.startTime == null && task.startUtcInstant == null) return task;
+    final inputWall = task.startTime;
+    final projected = _reprojectPlanningTaskWallTimes(task);
+    if (logCreate && inputWall != null && projected.startTime != null) {
+      final instants = _planUtcInstants(projected);
+      if (instants != null) {
+        _logPlanTimeCreateWallToUtc(
+          title: titleForLog ?? task.title,
+          inputWall: inputWall,
+          storedUtc: instants.startUtc,
+          projectedWall: projected.startTime!,
+        );
+      }
+    }
+    return projected;
+  }
+
   PlanningTask _reprojectPlanningTaskWallTimes(PlanningTask t) {
     final instants = _planUtcInstants(t);
     if (instants == null) return t;
@@ -1498,7 +1583,8 @@ extension PlanServiceExtension on DatabaseService {
       m.remove(pid);
     }
     final dk = _planOptimisticDayKeyFor(task);
-    final projected = _reprojectPlanningTaskWallTimes(task);
+    final projected = _coalescePlanningTaskWallUtcFields(task);
+    _logPlanTimeCacheProjected(projected);
     _planningOptimisticByDateKey.putIfAbsent(dk, () => {})[pid] = projected;
     _upsertPlanInUserCache(projected);
   }
@@ -2934,21 +3020,14 @@ extension PlanServiceExtension on DatabaseService {
     final range = SmartInputParser.parseTitleForTimeRange(rawText);
     SmartTimeParseResult? parsed;
     String title;
-    DateTime? startStored;
-    DateTime? endStored;
 
     title = SmartInputParser.preservedTitleFromRaw(rawText);
     if (title.isEmpty) return false;
 
     if (range != null) {
-      startStored = displayTimeToUtc(range.startWallOn(ymd));
-      endStored = displayTimeToUtc(range.endWallOn(ymd));
+      parsed = null;
     } else {
       parsed = SmartInputParser.parseTitleForScheduledTime(rawText);
-      startStored = parsed != null
-          ? displayTimeToUtc(parsed.wallDateTimeOn(ymd))
-          : null;
-      endStored = null;
     }
 
     final match = identifyCategory(title);
@@ -2973,8 +3052,6 @@ extension PlanServiceExtension on DatabaseService {
       hasExplicitTimeRange: range != null,
       timelineDayStartHour: 0,
     );
-    startStored = displayTimeToUtc(schedule.startWall);
-    endStored = displayTimeToUtc(schedule.endWall);
 
     if (getCategoryRuleById(categoryId) == null) {
       DatabaseService._log(
@@ -2994,8 +3071,8 @@ extension PlanServiceExtension on DatabaseService {
         isDone: false,
         dateKey: taskDateKey,
         order: nextOrder,
-        startTime: startStored,
-        endDateTime: endStored,
+        startTime: schedule.startWall,
+        endDateTime: schedule.endWall,
         checklist: const [],
         parentPlanId: null,
         tags: const [],
@@ -3019,8 +3096,8 @@ extension PlanServiceExtension on DatabaseService {
     }
     unawaited(() async {
       try {
-        DateTime? startStored;
-        DateTime? endStored;
+        DateTime? startWall;
+        DateTime? endWall;
         final d = dateKey.trim();
         if (d.length >= 10) {
           final y = int.tryParse(d.substring(0, 4));
@@ -3036,8 +3113,8 @@ extension PlanServiceExtension on DatabaseService {
               existingDayPlans: existingDay,
               timelineDayStartHour: 0,
             );
-            startStored = displayTimeToUtc(schedule.startWall);
-            endStored = displayTimeToUtc(schedule.endWall);
+            startWall = schedule.startWall;
+            endWall = schedule.endWall;
           }
         }
         await addPlanningTask(
@@ -3047,8 +3124,8 @@ extension PlanServiceExtension on DatabaseService {
             categoryId: categoryId,
             dateKey: dateKey,
             order: 0,
-            startTime: startStored,
-            endDateTime: endStored,
+            startTime: startWall,
+            endDateTime: endWall,
           ),
         );
       } catch (_) {}
@@ -3375,8 +3452,13 @@ extension PlanServiceExtension on DatabaseService {
       final cid = (clientPlanId != null && clientPlanId.trim().isNotEmpty)
           ? clientPlanId.trim()
           : DatabaseService._newClientRecordUuid();
-      return _addPlanningTaskPocket(
+      final normalized = _coalescePlanningTaskWallUtcFields(
         task,
+        logCreate: task.startTime != null || task.startUtcInstant != null,
+        titleForLog: titleTrimmed,
+      );
+      return _addPlanningTaskPocket(
+        normalized,
         titleTrimmed: titleTrimmed,
         clientPlanId: cid,
         categoryFieldForPlan: categoryFieldForPlan,

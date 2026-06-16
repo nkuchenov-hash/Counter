@@ -1624,28 +1624,11 @@ class _PlanningPageState extends State<PlanningPage>
 
     final range = SmartInputParser.parseTitleForTimeRange(raw);
     SmartTimeParseResult? parsed;
-    String title;
-    DateTime? startStored;
-    DateTime? endStored;
-
-    title = SmartInputParser.preservedTitleFromRaw(raw);
+    final title = SmartInputParser.preservedTitleFromRaw(raw);
     if (title.isEmpty) return;
 
-    if (range != null) {
-      startStored = DatabaseService.instance.displayTimeToUtc(
-        range.startWallOn(wallDay),
-      );
-      endStored = DatabaseService.instance.displayTimeToUtc(
-        range.endWallOn(wallDay),
-      );
-    } else {
+    if (range == null) {
       parsed = SmartInputParser.parseTitleForScheduledTime(raw);
-      startStored = parsed != null
-          ? DatabaseService.instance.displayTimeToUtc(
-              parsed.wallDateTimeOn(wallDay),
-            )
-          : null;
-      endStored = null;
     }
 
     final match = DatabaseService.instance.identifyCategory(title);
@@ -1677,8 +1660,6 @@ class _PlanningPageState extends State<PlanningPage>
       hasExplicitTimeRange: range != null,
       timelineDayStartHour: _timelineHourStart,
     );
-    startStored = DatabaseService.instance.displayTimeToUtc(schedule.startWall);
-    endStored = DatabaseService.instance.displayTimeToUtc(schedule.endWall);
     var nextOrder = _nextPlanOrderForQuickAdd();
     final clientPlanId = DatabaseService.newClientUuid();
     if (_planQuickAddInFlight) return;
@@ -1693,8 +1674,8 @@ class _PlanningPageState extends State<PlanningPage>
             isDone: false,
             dateKey: taskDateKey,
             order: nextOrder,
-            startTime: startStored,
-            endDateTime: endStored,
+            startTime: schedule.startWall,
+            endDateTime: schedule.endWall,
             checklist: const [],
             parentPlanId: null,
             tags: tagsForCreate,
@@ -1790,10 +1771,6 @@ class _PlanningPageState extends State<PlanningPage>
         timelineDayStartHour: _timelineHourStart,
         explicitDurationMinutes: explicitDuration,
       );
-      final startStored =
-          DatabaseService.instance.displayTimeToUtc(schedule.startWall);
-      final endStored =
-          DatabaseService.instance.displayTimeToUtc(schedule.endWall);
 
       final order = nextOrder + i;
       final clientPlanId = DatabaseService.newClientUuid();
@@ -1807,8 +1784,8 @@ class _PlanningPageState extends State<PlanningPage>
             isDone: false,
             dateKey: taskDateKey,
             order: order,
-            startTime: startStored,
-            endDateTime: endStored,
+            startTime: schedule.startWall,
+            endDateTime: schedule.endWall,
             checklist: const [],
             parentPlanId: null,
             tags: const [],
