@@ -85,6 +85,7 @@ class _OfflineSyncStatusBarState extends State<_OfflineSyncStatusBar> {
     return ListenableBuilder(
       listenable: sync,
       builder: (context, _) {
+        sync.ensureBannerInvariant();
         final showing = sync.shouldShowBanner;
         if (showing && !_wasShowing) {
           _wasShowing = true;
@@ -115,7 +116,7 @@ class _OfflineSyncStatusBarState extends State<_OfflineSyncStatusBar> {
           label = t(locale, 'offline_sync_auth_paused');
           fg = scheme.onErrorContainer;
           bg = scheme.errorContainer.withValues(alpha: 0.85);
-        } else if (sync.lastError != null && sync.lastError!.isNotEmpty) {
+        } else if (sync.hasBlockingSyncError) {
           label = t(locale, 'offline_sync_error');
           fg = scheme.onErrorContainer;
           bg = scheme.errorContainer.withValues(alpha: 0.85);

@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-16] - Sync banner empty-outbox invariant [wip]
+* **`offline_sync_state.dart` / `app_shell.dart`:** [wip] Red sync banner requires `hasBlockingSyncError` (pendingCount>0 && lastError); stale lastError with empty outbox suppressed via `SYNC_STALE_ERROR_SUPPRESSED`; `ensureBannerInvariant()` on every banner build.
+
 ## [2026-06-16] - Sync banner diagnostics + stale state fix v2 [wip]
 * **`offline_sync_state.dart` / `db_core.dart` / `app_shell.dart` / `main.dart`:** [wip] Root cause: `debugPrint` silent on release web + boot `unawaited(flush)` race; `print`-based `SYNC_BANNER_VISIBLE` / `TAP_RETRY` / `AFTER_RETRY` / `SYNC_BOOTSTRAP`; `bootstrapFromOutboxes()` clears stale in-memory `lastError` when both outboxes empty; await flush on `loadInitialData`; banner wired to canonical `DatabaseService.instance.offlineSync` only.
 
