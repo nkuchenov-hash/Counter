@@ -190,9 +190,12 @@ class OfflineSyncController extends ChangeNotifier {
       final records = await RecordMutationOutbox.load(prefs);
       recordsOutboxCount = records.length;
       plansOutboxCount = plans.length;
-      pendingCount = records.length + plans.length;
-      if (reconcile || pendingCount == 0) {
-        suppressStaleErrorIfEmptyOutbox();
+      final next = records.length + plans.length;
+      final countChanged = pendingCount != next;
+      pendingCount = next;
+      if (pendingCount == 0) {
+        final suppressed = suppressStaleErrorIfEmptyOutbox();
+        if (!suppressed && countChanged) notifyListeners();
       } else {
         notifyListeners();
       }
