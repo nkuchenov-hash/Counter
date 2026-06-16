@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - CardPlan_Small/Medium/Large Figma geometry pass [wip]
+* **`plan_time_task_card.dart`:** [wip] Rebuilt `PlanTimeTaskCard` from recalculated Figma MCP metadata (328×54/95/147) — Small inline checkbox+play (x=12/48, content x=84); Medium/Large vertical 32px rail (content x=56); 1px divider + footer span full content width; rounded-triangle play + thin menu icon (33×33); watermark at Figma positions with wide-card scale; density thresholds Small &lt;59 / Medium 59–120 / Large ≥121.
+
 ## [2026-06-15] - CardPlan visual redesign (Planning Time + Calendar rows) [wip]
 * **`plan_time_task_card.dart` / `planning_view.dart` / `calendar_view.dart`:** [wip] Canonical `PlanTimeTaskCard` (Small/Medium/Large densities per `design/CardPlan *.png`) — white surface, soft border/shadow, left control rail, unified text column, repeat inline with title, circular menu top-right, category watermark (4–8% opacity); Planning Time timeline blocks and Calendar focused-day rows use shared card; timeline gestures/scale/cascade unchanged.
 

@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
-// PlanTimeTaskCard — CardPlan Small/Medium/Large visual for Planning Time + Calendar.
-// Reference: design/CardPlan Small.png, Medium.png, Large.png
+// PlanTimeTaskCard — CardPlan_Small / CardPlan_Medium / CardPlan_Large
+// Geometry source: Figma MCP metadata (328px ref). Visual tokens: design/*.svg
 // ---------------------------------------------------------------------------
 
 import 'package:counter/data/database_service.dart';
@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 
 enum PlanTimeTaskCardDensity { compact, medium, large }
 
-/// CardPlan-style task card: white surface, watermark, control rail, text column.
+/// CardPlan-style task card for Planning Time + Calendar focused-day rows.
 class PlanTimeTaskCard extends StatelessWidget {
   const PlanTimeTaskCard({
     super.key,
@@ -56,8 +56,6 @@ class PlanTimeTaskCard extends StatelessWidget {
   final void Function(BuildContext menuContext)? onOpenMenu;
   final VoidCallback? onTap;
 
-  static const double kControlRailWidth = 44;
-
   bool get _hasRepeat =>
       (task.rrule?.trim().isNotEmpty ?? false) ||
       (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
@@ -94,60 +92,103 @@ class PlanTimeTaskCard extends StatelessWidget {
     final surface = selectMode && isSelected
         ? Color.alphaBlend(
             scheme.primaryContainer.withValues(alpha: 0.35),
-            scheme.surface,
+            _PlanCardTokens.surface,
           )
-        : scheme.surface;
+        : _PlanCardTokens.surface;
 
-    Widget content;
+    Widget body;
     switch (density) {
       case PlanTimeTaskCardDensity.compact:
-        content = _compactBody(context, scheme, categoryTone);
+        body = _TimelinePlanCardSmall(
+          task: task,
+          timeLabel: timeLabel,
+          displayIsDone: displayIsDone,
+          selectMode: selectMode,
+          isSelected: isSelected,
+          hasRepeat: _hasRepeat,
+          showPlay: _showPlay,
+          visibleTags: _visibleTags,
+          toggleDoneEnabled: toggleDoneEnabled,
+          onToggleDone: onToggleDone,
+          onSelectToggle: onSelectToggle,
+          onPlay: onPlay,
+          onOpenMenu: onOpenMenu,
+        );
       case PlanTimeTaskCardDensity.medium:
-        content = _mediumLargeBody(
-          context,
-          scheme,
-          categoryTone,
-          categoryTrail,
-          large: false,
+        body = _TimelinePlanCardMedium(
+          task: task,
+          timeLabel: timeLabel,
+          categoryTrail: categoryTrail,
+          displayIsDone: displayIsDone,
+          selectMode: selectMode,
+          isSelected: isSelected,
+          hasRepeat: _hasRepeat,
+          showPlay: _showPlay,
+          visibleTags: _visibleTags,
+          scheduleConflict: scheduleConflict,
+          toggleDoneEnabled: toggleDoneEnabled,
+          onToggleDone: onToggleDone,
+          onSelectToggle: onSelectToggle,
+          onPlay: onPlay,
+          onOpenMenu: onOpenMenu,
+          titleMaxLines: 1,
+          heightPx: heightPx,
         );
       case PlanTimeTaskCardDensity.large:
-        content = _mediumLargeBody(
-          context,
-          scheme,
-          categoryTone,
-          categoryTrail,
-          large: true,
+        body = _TimelinePlanCardLarge(
+          task: task,
+          timeLabel: timeLabel,
+          categoryTrail: categoryTrail,
+          displayIsDone: displayIsDone,
+          selectMode: selectMode,
+          isSelected: isSelected,
+          hasRepeat: _hasRepeat,
+          showPlay: _showPlay,
+          visibleTags: _visibleTags,
+          scheduleConflict: scheduleConflict,
+          toggleDoneEnabled: toggleDoneEnabled,
+          onToggleDone: onToggleDone,
+          onSelectToggle: onSelectToggle,
+          onPlay: onPlay,
+          onOpenMenu: onOpenMenu,
+          heightPx: heightPx,
         );
     }
 
     final card = DecoratedBox(
       decoration: BoxDecoration(
         color: surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_PlanCardGeom.radius),
         border: Border.all(color: borderColor, width: borderWidth),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withValues(alpha: interacting ? 0.14 : 0.08),
-            blurRadius: interacting ? 6 : 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        boxShadow: _PlanCardTokens.cardShadow(interacting),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Stack(
-          fit: heightPx != null ? StackFit.expand : StackFit.passthrough,
-          children: [
-            _CategoryWatermark(
-              icon: categoryIcon,
-              color: categoryTone,
-              density: density,
-            ),
-            if (heightPx != null)
-              SizedBox(height: heightPx, width: double.infinity, child: content)
-            else
-              content,
-          ],
+        borderRadius: BorderRadius.circular(_PlanCardGeom.radius),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final w = constraints.maxWidth;
+            final h = heightPx ?? constraints.maxHeight;
+            return Stack(
+              fit: heightPx != null ? StackFit.expand : StackFit.passthrough,
+              children: [
+                _PlanCardWatermark(
+                  icon: categoryIcon,
+                  color: categoryTone,
+                  density: density,
+                  cardWidth: w.isFinite ? w : _PlanCardGeom.refWidth,
+                  cardHeight: h.isFinite ? h : _PlanCardGeom.refHeight(density),
+                ),
+                if (heightPx != null)
+                  SizedBox(
+                    height: heightPx,
+                    width: double.infinity,
+                    child: body,
+                  )
+                else
+                  body,
+              ],
+            );
+          },
         ),
       ),
     );
@@ -157,406 +198,874 @@ class PlanTimeTaskCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(_PlanCardGeom.radius),
         child: card,
       ),
     );
   }
+}
 
-  Widget _compactBody(
-    BuildContext context,
-    ColorScheme scheme,
-    Color categoryTone,
-  ) {
-    final h = heightPx ?? 56;
-    final showSecondRow =
-        h >= 46 && (_visibleTags.isNotEmpty || timeLabel.isNotEmpty);
+// --- Figma geometry (328px reference) ----------------------------------------
+
+abstract final class _PlanCardGeom {
+  static const double refWidth = 328;
+  static const double padLeft = 12;
+  static const double padRight = 12;
+  static const double padTopSmall = 10;
+  static const double padTopMediumLarge = 12;
+  static const double controlSize = 32;
+  static const double playInlineX = 48;
+  static const double contentXSmall = 84;
+  static const double contentXMediumLarge = 56;
+  static const double railWidth = 32;
+  static const double railToContentGap = 12;
+  static const double checkboxPlayGap = 8;
+  static const double playAfterCheckboxGap = 4;
+  static const double menuSize = 33;
+  static const double contentSpanMediumLarge = 260;
+  static const double radius = 12;
+  static const double refHeightSmall = 54;
+  static const double refHeightMedium = 95;
+  static const double refHeightLarge = 147;
+  static const double titleToTagsGap = 12;
+  static const double footerBlockGap = 8;
+  static const double dividerHeight = 1;
+  static const double footerTextHeight = 8;
+  static const double tagRowHeight = 16;
+  static const double tagGap = 5;
+
+  static double refHeight(PlanTimeTaskCardDensity d) => switch (d) {
+        PlanTimeTaskCardDensity.compact => refHeightSmall,
+        PlanTimeTaskCardDensity.medium => refHeightMedium,
+        PlanTimeTaskCardDensity.large => refHeightLarge,
+      };
+
+  static double contentSpanWidth(double cardWidth) =>
+      cardWidth - contentXMediumLarge - padRight;
+}
+
+// --- Visual tokens (design/CardPlan *.svg fallback) ---------------------------
+
+abstract final class _PlanCardTokens {
+  static const Color surface = Color(0xFFF8F8F8);
+  static const Color titleColor = Color(0xFF353535);
+  static const Color checkboxStroke = Color(0xFFCCCCCC);
+  static const Color playFill = Color(0xFF696969);
+  static const Color menuBg = Color(0xFFEBEBEB);
+  static const Color menuStroke = Color(0xFF8E8E8E);
+  static const Color dividerColor = Color(0x61D9D9D9);
+  static const Color breadcrumbColor = Color(0xFF609CE1);
+  static const Color timeColor = Color(0xB8878787);
+  static const Color tagPinkBg = Color(0xFFFFE8E8);
+  static const Color tagPinkText = Color(0xFFF55D88);
+  static const Color tagPurpleBg = Color(0xFFEEE5F8);
+  static const Color tagPurpleText = Color(0xFF7118E5);
+
+  static List<BoxShadow> cardShadow(bool interacting) => [
+        BoxShadow(
+          color: const Color(0x0A000000),
+          blurRadius: interacting ? 6 : 4,
+          offset: const Offset(0, 4),
+        ),
+      ];
+}
+
+// --- CardPlan_Small -----------------------------------------------------------
+
+class _TimelinePlanCardSmall extends StatelessWidget {
+  const _TimelinePlanCardSmall({
+    required this.task,
+    required this.timeLabel,
+    required this.displayIsDone,
+    required this.selectMode,
+    required this.isSelected,
+    required this.hasRepeat,
+    required this.showPlay,
+    required this.visibleTags,
+    required this.toggleDoneEnabled,
+    this.onToggleDone,
+    this.onSelectToggle,
+    this.onPlay,
+    this.onOpenMenu,
+  });
+
+  final PlanningTask task;
+  final String timeLabel;
+  final bool displayIsDone;
+  final bool selectMode;
+  final bool isSelected;
+  final bool hasRepeat;
+  final bool showPlay;
+  final List<Tag> visibleTags;
+  final bool toggleDoneEnabled;
+  final VoidCallback? onToggleDone;
+  final VoidCallback? onSelectToggle;
+  final VoidCallback? onPlay;
+  final void Function(BuildContext)? onOpenMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final showTagRow = visibleTags.isNotEmpty || timeLabel.isNotEmpty;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 5, 6, 5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _checkbox(scheme, scale: 0.92),
-              if (_showPlay) _playButton(scheme, size: 28),
-              Expanded(
-                child: _titleInlineRepeat(
-                  context,
-                  scheme,
-                  maxLines: 1,
-                  fontSize: 13,
-                ),
-              ),
-              _menuButton(context, scheme),
-            ],
-          ),
-          if (showSecondRow)
-            Padding(
-              padding: const EdgeInsets.only(left: 52, top: 2),
-              child: Row(
-                children: [
-                  Expanded(child: _tagStrip(context, scheme, compact: true)),
-                  if (timeLabel.isNotEmpty) ...[
-                    const SizedBox(width: 6),
-                    _timeText(context, scheme, compact: true),
-                  ],
-                ],
-              ),
-            )
-          else if (timeLabel.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 52, top: 1),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: _timeText(context, scheme, compact: true),
-              ),
-            ),
-        ],
+      padding: const EdgeInsets.fromLTRB(
+        _PlanCardGeom.padLeft,
+        _PlanCardGeom.padTopSmall,
+        _PlanCardGeom.padRight,
+        _PlanCardGeom.padTopSmall,
       ),
-    );
-  }
-
-  Widget _mediumLargeBody(
-    BuildContext context,
-    ColorScheme scheme,
-    Color categoryTone,
-    String categoryTrail, {
-    required bool large,
-  }) {
-    final showTags = _visibleTags.isNotEmpty;
-    final showProgress =
-        (planEstimatedSeconds ?? 0) > 0 || planTrackedSeconds > 0;
-    final showBreadcrumb = categoryTrail.isNotEmpty;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(10, large ? 8 : 6, 8, large ? 8 : 6),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: kControlRailWidth,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _checkbox(scheme),
-                if (_showPlay) _playButton(scheme, size: 30),
-                if (large) const Spacer(),
-              ],
-            ),
+          _PlanCardCheckbox(
+            selectMode: selectMode,
+            isSelected: isSelected,
+            displayIsDone: displayIsDone,
+            toggleDoneEnabled: toggleDoneEnabled,
+            onToggleDone: onToggleDone,
+            onSelectToggle: onSelectToggle,
           ),
+          if (showPlay) ...[
+            const SizedBox(width: _PlanCardGeom.playAfterCheckboxGap),
+            _PlanCardPlayButton(onPlay: onPlay),
+            const SizedBox(width: _PlanCardGeom.playAfterCheckboxGap),
+          ] else
+            SizedBox(
+              width: _PlanCardGeom.contentXSmall -
+                  _PlanCardGeom.padLeft -
+                  _PlanCardGeom.controlSize,
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _titleInlineRepeat(
-                  context,
-                  scheme,
-                  maxLines: large ? 3 : 2,
-                  fontSize: large ? 15 : 14,
+                _PlanCardTitleRow(
+                  title: task.title,
+                  displayIsDone: displayIsDone,
+                  hasRepeat: hasRepeat,
+                  maxLines: 1,
                 ),
-                if (showTags)
+                if (showTagRow)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: _tagStrip(context, scheme, compact: false),
-                  ),
-                if (large) const Spacer(),
-                if (showBreadcrumb || timeLabel.isNotEmpty)
-                  Padding(
-                    padding: EdgeInsets.only(top: large ? 0 : 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        if (showBreadcrumb)
-                          Expanded(
-                            child: Text(
-                              categoryTrail,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(
-                                    fontSize: 11,
-                                    height: 1.15,
-                                    fontWeight: FontWeight.w500,
-                                    color: categoryTone.withValues(alpha: 0.92),
-                                  ),
-                            ),
-                          ),
-                        if (timeLabel.isNotEmpty) ...[
-                          if (showBreadcrumb) const SizedBox(width: 8),
-                          _timeText(context, scheme),
-                          if (scheduleConflict)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4),
-                              child: Icon(
-                                Icons.warning_amber_rounded,
-                                size: 13,
-                                color: scheme.error.withValues(alpha: 0.75),
-                              ),
-                            ),
-                        ],
-                      ],
+                    padding: const EdgeInsets.only(top: 10),
+                    child: _PlanCardTagsRow(
+                      tags: visibleTags,
+                      trailing: timeLabel.isNotEmpty
+                          ? _PlanCardTimeText(label: timeLabel)
+                          : null,
                     ),
-                  ),
-                if (showProgress)
-                  Padding(
-                    padding: EdgeInsets.only(top: large ? 6 : 4),
-                    child: _progressFooter(context, scheme),
                   ),
               ],
             ),
           ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: _menuButton(context, scheme),
-          ),
+          if (onOpenMenu != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+            ),
         ],
       ),
     );
   }
+}
 
-  Widget _titleInlineRepeat(
-    BuildContext context,
-    ColorScheme scheme, {
-    int maxLines = 1,
-    double fontSize = 14,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Flexible(
-          fit: FlexFit.loose,
-          child: Text(
-            task.title,
-            maxLines: maxLines,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: fontSize,
-              height: 1.2,
-              fontWeight: FontWeight.w500,
-              decoration: displayIsDone ? TextDecoration.lineThrough : null,
-              color: displayIsDone
-                  ? scheme.onSurface.withValues(alpha: 0.55)
-                  : scheme.onSurface,
+// --- CardPlan_Medium ----------------------------------------------------------
+
+class _TimelinePlanCardMedium extends StatelessWidget {
+  const _TimelinePlanCardMedium({
+    required this.task,
+    required this.timeLabel,
+    required this.categoryTrail,
+    required this.displayIsDone,
+    required this.selectMode,
+    required this.isSelected,
+    required this.hasRepeat,
+    required this.showPlay,
+    required this.visibleTags,
+    required this.scheduleConflict,
+    required this.toggleDoneEnabled,
+    required this.titleMaxLines,
+    this.heightPx,
+    this.onToggleDone,
+    this.onSelectToggle,
+    this.onPlay,
+    this.onOpenMenu,
+  });
+
+  final PlanningTask task;
+  final String timeLabel;
+  final String categoryTrail;
+  final bool displayIsDone;
+  final bool selectMode;
+  final bool isSelected;
+  final bool hasRepeat;
+  final bool showPlay;
+  final List<Tag> visibleTags;
+  final bool scheduleConflict;
+  final bool toggleDoneEnabled;
+  final int titleMaxLines;
+  final double? heightPx;
+  final VoidCallback? onToggleDone;
+  final VoidCallback? onSelectToggle;
+  final VoidCallback? onPlay;
+  final void Function(BuildContext)? onOpenMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final bounded = heightPx != null;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        _PlanCardGeom.padLeft,
+        _PlanCardGeom.padTopMediumLarge,
+        _PlanCardGeom.padRight,
+        _PlanCardGeom.padTopMediumLarge,
+      ),
+      child: SizedBox(
+        height: bounded
+            ? null
+            : _PlanCardGeom.refHeightMedium -
+                _PlanCardGeom.padTopMediumLarge * 2,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _PlanCardControlRail(
+              showPlay: showPlay,
+              selectMode: selectMode,
+              isSelected: isSelected,
+              displayIsDone: displayIsDone,
+              toggleDoneEnabled: toggleDoneEnabled,
+              onToggleDone: onToggleDone,
+              onSelectToggle: onSelectToggle,
+              onPlay: onPlay,
+            ),
+            const SizedBox(width: _PlanCardGeom.railToContentGap),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: _PlanCardTitleRow(
+                                title: task.title,
+                                displayIsDone: displayIsDone,
+                                hasRepeat: hasRepeat,
+                                maxLines: titleMaxLines,
+                              ),
+                            ),
+                            if (visibleTags.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: _PlanCardGeom.titleToTagsGap,
+                                ),
+                                child: _PlanCardTagsRow(tags: visibleTags),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (onOpenMenu != null)
+                        _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+                    ],
+                  ),
+                  if (bounded) const Spacer(),
+                  const _PlanCardDividerLine(),
+                  const SizedBox(height: _PlanCardGeom.footerBlockGap),
+                  _PlanCardFooterRow(
+                    categoryTrail: categoryTrail,
+                    timeLabel: timeLabel,
+                    scheduleConflict: scheduleConflict,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- CardPlan_Large -----------------------------------------------------------
+
+class _TimelinePlanCardLarge extends StatelessWidget {
+  const _TimelinePlanCardLarge({
+    required this.task,
+    required this.timeLabel,
+    required this.categoryTrail,
+    required this.displayIsDone,
+    required this.selectMode,
+    required this.isSelected,
+    required this.hasRepeat,
+    required this.showPlay,
+    required this.visibleTags,
+    required this.scheduleConflict,
+    required this.toggleDoneEnabled,
+    this.heightPx,
+    this.onToggleDone,
+    this.onSelectToggle,
+    this.onPlay,
+    this.onOpenMenu,
+  });
+
+  final PlanningTask task;
+  final String timeLabel;
+  final String categoryTrail;
+  final bool displayIsDone;
+  final bool selectMode;
+  final bool isSelected;
+  final bool hasRepeat;
+  final bool showPlay;
+  final List<Tag> visibleTags;
+  final bool scheduleConflict;
+  final bool toggleDoneEnabled;
+  final double? heightPx;
+  final VoidCallback? onToggleDone;
+  final VoidCallback? onSelectToggle;
+  final VoidCallback? onPlay;
+  final void Function(BuildContext)? onOpenMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    final bounded = heightPx != null;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        _PlanCardGeom.padLeft,
+        _PlanCardGeom.padTopMediumLarge,
+        _PlanCardGeom.padRight,
+        _PlanCardGeom.padTopMediumLarge,
+      ),
+      child: SizedBox(
+        height: bounded
+            ? null
+            : _PlanCardGeom.refHeightLarge -
+                _PlanCardGeom.padTopMediumLarge * 2,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _PlanCardControlRail(
+              showPlay: showPlay,
+              selectMode: selectMode,
+              isSelected: isSelected,
+              displayIsDone: displayIsDone,
+              toggleDoneEnabled: toggleDoneEnabled,
+              onToggleDone: onToggleDone,
+              onSelectToggle: onSelectToggle,
+              onPlay: onPlay,
+              expandSpacer: true,
+            ),
+            const SizedBox(width: _PlanCardGeom.railToContentGap),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: _PlanCardTitleRow(
+                                title: task.title,
+                                displayIsDone: displayIsDone,
+                                hasRepeat: hasRepeat,
+                                maxLines: 3,
+                              ),
+                            ),
+                            if (visibleTags.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: _PlanCardGeom.titleToTagsGap,
+                                ),
+                                child: _PlanCardTagsRow(tags: visibleTags),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (onOpenMenu != null)
+                        _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+                    ],
+                  ),
+                  if (bounded) const Spacer(),
+                  const _PlanCardDividerLine(),
+                  const SizedBox(height: _PlanCardGeom.footerBlockGap),
+                  _PlanCardFooterRow(
+                    categoryTrail: categoryTrail,
+                    timeLabel: timeLabel,
+                    scheduleConflict: scheduleConflict,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- Shared parts -------------------------------------------------------------
+
+class _PlanCardControlRail extends StatelessWidget {
+  const _PlanCardControlRail({
+    required this.showPlay,
+    required this.selectMode,
+    required this.isSelected,
+    required this.displayIsDone,
+    required this.toggleDoneEnabled,
+    this.onToggleDone,
+    this.onSelectToggle,
+    this.onPlay,
+    this.expandSpacer = false,
+  });
+
+  final bool showPlay;
+  final bool selectMode;
+  final bool isSelected;
+  final bool displayIsDone;
+  final bool toggleDoneEnabled;
+  final VoidCallback? onToggleDone;
+  final VoidCallback? onSelectToggle;
+  final VoidCallback? onPlay;
+  final bool expandSpacer;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _PlanCardGeom.railWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _PlanCardCheckbox(
+            selectMode: selectMode,
+            isSelected: isSelected,
+            displayIsDone: displayIsDone,
+            toggleDoneEnabled: toggleDoneEnabled,
+            onToggleDone: onToggleDone,
+            onSelectToggle: onSelectToggle,
+          ),
+          if (showPlay) ...[
+            const SizedBox(height: _PlanCardGeom.checkboxPlayGap),
+            _PlanCardPlayButton(onPlay: onPlay),
+          ],
+          if (expandSpacer) const Spacer(),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanCardCheckbox extends StatelessWidget {
+  const _PlanCardCheckbox({
+    required this.selectMode,
+    required this.isSelected,
+    required this.displayIsDone,
+    required this.toggleDoneEnabled,
+    this.onToggleDone,
+    this.onSelectToggle,
+  });
+
+  final bool selectMode;
+  final bool isSelected;
+  final bool displayIsDone;
+  final bool toggleDoneEnabled;
+  final VoidCallback? onToggleDone;
+  final VoidCallback? onSelectToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final checked = selectMode ? isSelected : displayIsDone;
+    final enabled = selectMode
+        ? onSelectToggle != null
+        : toggleDoneEnabled && onToggleDone != null;
+    return Semantics(
+      checked: checked,
+      button: true,
+      enabled: enabled,
+      child: GestureDetector(
+        onTap: enabled
+            ? (selectMode ? onSelectToggle : onToggleDone)
+            : null,
+        child: SizedBox(
+          width: _PlanCardGeom.controlSize,
+          height: _PlanCardGeom.controlSize,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: _PlanCardTokens.checkboxStroke),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x38000000),
+                  blurRadius: 4,
+                  spreadRadius: -2,
+                ),
+              ],
+            ),
+            child: checked
+                ? const Center(
+                    child: Icon(
+                      Icons.check_rounded,
+                      size: 18,
+                      color: _PlanCardTokens.playFill,
+                    ),
+                  )
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanCardPlayButton extends StatelessWidget {
+  const _PlanCardPlayButton({this.onPlay});
+
+  final VoidCallback? onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: t(currentLocale.value, 'start'),
+      child: GestureDetector(
+        onTap: onPlay,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          width: _PlanCardGeom.controlSize,
+          height: _PlanCardGeom.controlSize,
+          child: Center(
+            child: CustomPaint(
+              size: const Size(16, 18),
+              painter: const _PlanCardPlayIconPainter(),
             ),
           ),
         ),
-        if (_hasRepeat)
+      ),
+    );
+  }
+}
+
+class _PlanCardPlayIconPainter extends CustomPainter {
+  const _PlanCardPlayIconPainter();
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = _PlanCardTokens.playFill
+      ..style = PaintingStyle.fill;
+    final w = size.width;
+    final h = size.height;
+    final path = Path()
+      ..moveTo(w * 0.08, h * 0.05)
+      ..quadraticBezierTo(w * 0.92, h * 0.48, w * 0.92, h * 0.52)
+      ..quadraticBezierTo(w * 0.92, h * 0.56, w * 0.08, h * 0.95)
+      ..quadraticBezierTo(w * 0.02, h * 0.5, w * 0.08, h * 0.05)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _PlanCardMenuButton extends StatelessWidget {
+  const _PlanCardMenuButton({required this.onOpenMenu});
+
+  final void Function(BuildContext) onOpenMenu;
+
+  @override
+  Widget build(BuildContext context) {
+    return Builder(
+      builder: (menuCtx) => Semantics(
+        button: true,
+        label: t(currentLocale.value, 'plan_radial_menu_tip'),
+        child: GestureDetector(
+          onTap: () => onOpenMenu(menuCtx),
+          behavior: HitTestBehavior.opaque,
+          child: SizedBox(
+            width: _PlanCardGeom.menuSize,
+            height: _PlanCardGeom.menuSize,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: _PlanCardTokens.menuBg,
+                shape: BoxShape.circle,
+              ),
+              child: CustomPaint(
+                painter: const _PlanCardMenuIconPainter(),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanCardMenuIconPainter extends CustomPainter {
+  const _PlanCardMenuIconPainter();
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = _PlanCardTokens.menuStroke
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    const pad = 11.0;
+    final w = size.width;
+    final midY1 = size.height * 0.36;
+    final midY2 = size.height * 0.52;
+    final midY3 = size.height * 0.68;
+    canvas.drawLine(Offset(pad, midY1), Offset(w - pad - 6, midY1), paint);
+    canvas.drawLine(Offset(pad, midY2), Offset(w - pad - 10, midY2), paint);
+    canvas.drawLine(Offset(pad, midY3), Offset(w - pad - 6, midY3), paint);
+    final bracket = Path()
+      ..moveTo(w - pad - 2, midY2 + 6)
+      ..lineTo(w - pad - 6, midY2)
+      ..lineTo(w - pad - 2, midY2 - 6);
+    canvas.drawPath(bracket, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _PlanCardTitleRow extends StatelessWidget {
+  const _PlanCardTitleRow({
+    required this.title,
+    required this.displayIsDone,
+    required this.hasRepeat,
+    required this.maxLines,
+  });
+
+  final String title;
+  final bool displayIsDone;
+  final bool hasRepeat;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.1,
+              fontWeight: FontWeight.w400,
+              decoration:
+                  displayIsDone ? TextDecoration.lineThrough : null,
+              color: displayIsDone
+                  ? _PlanCardTokens.titleColor.withValues(alpha: 0.55)
+                  : _PlanCardTokens.titleColor,
+            ),
+          ),
+        ),
+        if (hasRepeat)
           Padding(
             padding: const EdgeInsets.only(left: 4),
             child: Icon(
               Icons.repeat_rounded,
-              size: fontSize + 1,
-              color: scheme.primary.withValues(alpha: 0.78),
+              size: 15,
+              color: _PlanCardTokens.breadcrumbColor.withValues(alpha: 0.85),
             ),
           ),
       ],
     );
-  }
-
-  Widget _tagStrip(
-    BuildContext context,
-    ColorScheme scheme, {
-    required bool compact,
-  }) {
-    if (_visibleTags.isEmpty) return const SizedBox.shrink();
-    return Wrap(
-      spacing: 4,
-      runSpacing: 2,
-      children: [
-        for (final tag in _visibleTags.take(compact ? 2 : 4))
-          CategoryChip(
-            mode: CategoryDisplayMode.letterChip,
-            label: tag.name.trim().isNotEmpty
-                ? tag.name.trim()
-                : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-            color: parseTagHexColor(tag.color) ?? scheme.primary,
-            icon: iconForTagKey(tag.icon),
-            compactGlyphLayout: true,
-            syntheticNoTagsMonochrome: tag.tagId == -1,
-          ),
-      ],
-    );
-  }
-
-  Widget _timeText(BuildContext context, ColorScheme scheme, {bool compact = false}) {
-    if (timeLabel.isEmpty) return const SizedBox.shrink();
-    return Text(
-      timeLabel,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            fontSize: compact ? 10 : 11,
-            fontWeight: FontWeight.w500,
-            color: scheme.onSurfaceVariant.withValues(alpha: 0.88),
-          ),
-    );
-  }
-
-  Widget _checkbox(ColorScheme scheme, {double scale = 1}) {
-    final box = selectMode
-        ? Checkbox(
-            value: isSelected,
-            visualDensity: VisualDensity.compact,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            onChanged: (_) => onSelectToggle?.call(),
-          )
-        : Checkbox(
-            value: displayIsDone,
-            visualDensity: VisualDensity.compact,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            onChanged: toggleDoneEnabled ? (_) => onToggleDone?.call() : null,
-          );
-    if (scale == 1) return box;
-    return Transform.scale(scale: scale, child: box);
-  }
-
-  Widget _playButton(ColorScheme scheme, {double size = 32}) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: IconButton(
-        padding: EdgeInsets.zero,
-        constraints: BoxConstraints.tightFor(width: size, height: size),
-        iconSize: size * 0.58,
-        style: IconButton.styleFrom(
-          splashFactory: NoSplash.splashFactory,
-          hoverColor: Colors.transparent,
-          foregroundColor: scheme.onSurface.withValues(alpha: 0.72),
-        ),
-        icon: const Icon(Icons.play_arrow_rounded),
-        onPressed: onPlay,
-        tooltip: t(currentLocale.value, 'start'),
-      ),
-    );
-  }
-
-  Widget _menuButton(BuildContext context, ColorScheme scheme) {
-    if (onOpenMenu == null) return const SizedBox.shrink();
-    return Builder(
-      builder: (menuCtx) => Material(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: IconButton(
-          tooltip: t(currentLocale.value, 'plan_radial_menu_tip'),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints.tightFor(width: 32, height: 32),
-          iconSize: 18,
-          style: IconButton.styleFrom(
-            splashFactory: NoSplash.splashFactory,
-            hoverColor: Colors.transparent,
-            foregroundColor: scheme.onSurfaceVariant,
-          ),
-          icon: const Icon(Icons.tune_rounded),
-          onPressed: () => onOpenMenu!(menuCtx),
-        ),
-      ),
-    );
-  }
-
-  Widget _progressFooter(BuildContext context, ColorScheme scheme) {
-    final est = planEstimatedSeconds ?? 0;
-    if (est <= 0 && planTrackedSeconds <= 0) {
-      return const SizedBox.shrink();
-    }
-    if (est <= 0) {
-      return Text(
-        t(currentLocale.value, 'plan_card_fact_time')
-            .replaceFirst('%s', _trackedDurationAsHhMm(planTrackedSeconds)),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontSize: 10,
-              color: scheme.onSurfaceVariant,
-            ),
-      );
-    }
-    final pct = est > 0 ? ((planTrackedSeconds * 100) / est).round() : 0;
-    return Row(
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(
-              minHeight: 3,
-              value: planTrackedSeconds <= est
-                  ? planTrackedSeconds / est
-                  : 1.0,
-              backgroundColor:
-                  scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              color: planTrackedSeconds > est ? scheme.error : scheme.primary,
-            ),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          '${_shortDur(planTrackedSeconds)} / ${_shortDur(est)} ($pct%)',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontSize: 10,
-                color: scheme.onSurfaceVariant,
-              ),
-        ),
-      ],
-    );
-  }
-
-  static String _trackedDurationAsHhMm(int seconds) {
-    final m = seconds ~/ 60;
-    if (m < 60) return '${m}m';
-    final h = m ~/ 60;
-    final r = m % 60;
-    if (r == 0) return '${h}h';
-    return '${h}h ${r}m';
-  }
-
-  static String _shortDur(int seconds) {
-    final m = seconds ~/ 60;
-    if (m < 60) return '${m}m';
-    final h = m ~/ 60;
-    final r = m % 60;
-    if (r == 0) return '${h}h';
-    return '${h}h${r}m';
   }
 }
 
-class _CategoryWatermark extends StatelessWidget {
-  const _CategoryWatermark({
+class _PlanCardTagsRow extends StatelessWidget {
+  const _PlanCardTagsRow({
+    required this.tags,
+    this.trailing,
+  });
+
+  final List<Tag> tags;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: _PlanCardGeom.tagRowHeight,
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const ClampingScrollPhysics(),
+              itemCount: tags.length.clamp(0, 4),
+              separatorBuilder: (_, _) =>
+                  const SizedBox(width: _PlanCardGeom.tagGap),
+              itemBuilder: (context, index) {
+                final tag = tags[index];
+                return CategoryChip(
+                  mode: CategoryDisplayMode.letterChip,
+                  label: tag.name.trim().isNotEmpty
+                      ? tag.name.trim()
+                      : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
+                  color: parseTagHexColor(tag.color) ?? scheme.primary,
+                  icon: iconForTagKey(tag.icon),
+                  compactGlyphLayout: true,
+                  syntheticNoTagsMonochrome: tag.tagId == -1,
+                );
+              },
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing!,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanCardTimeText extends StatelessWidget {
+  const _PlanCardTimeText({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        fontSize: 11,
+        height: 1.0,
+        fontWeight: FontWeight.w400,
+        color: _PlanCardTokens.timeColor,
+      ),
+    );
+  }
+}
+
+class _PlanCardDividerLine extends StatelessWidget {
+  const _PlanCardDividerLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: _PlanCardGeom.dividerHeight,
+      width: double.infinity,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: _PlanCardTokens.dividerColor),
+      ),
+    );
+  }
+}
+
+class _PlanCardFooterRow extends StatelessWidget {
+  const _PlanCardFooterRow({
+    required this.categoryTrail,
+    required this.timeLabel,
+    required this.scheduleConflict,
+  });
+
+  final String categoryTrail;
+  final String timeLabel;
+  final bool scheduleConflict;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: _PlanCardGeom.footerTextHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (categoryTrail.isNotEmpty)
+            Expanded(
+              child: Text(
+                categoryTrail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  height: 1.0,
+                  fontWeight: FontWeight.w400,
+                  color: _PlanCardTokens.breadcrumbColor,
+                ),
+              ),
+            ),
+          if (timeLabel.isNotEmpty) ...[
+            if (categoryTrail.isNotEmpty) const SizedBox(width: 8),
+            _PlanCardTimeText(label: timeLabel),
+            if (scheduleConflict)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  size: 12,
+                  color: scheme.error.withValues(alpha: 0.75),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanCardWatermark extends StatelessWidget {
+  const _PlanCardWatermark({
     required this.icon,
     required this.color,
     required this.density,
+    required this.cardWidth,
+    required this.cardHeight,
   });
 
   final IconData? icon;
   final Color color;
   final PlanTimeTaskCardDensity density;
+  final double cardWidth;
+  final double cardHeight;
+
+  static const double _opacity = 0.04;
 
   @override
   Widget build(BuildContext context) {
     if (icon == null) return const SizedBox.shrink();
-    final size = switch (density) {
-      PlanTimeTaskCardDensity.compact => 0.0,
-      PlanTimeTaskCardDensity.medium => 84.0,
-      PlanTimeTaskCardDensity.large => 148.0,
+
+    final ref = switch (density) {
+      PlanTimeTaskCardDensity.compact => (left: 213.0, top: 18.86, size: 102.68),
+      PlanTimeTaskCardDensity.medium => (left: 183.0, top: 33.40, size: 149.80),
+      PlanTimeTaskCardDensity.large => (left: 128.93, top: 60.01, size: 230.48),
     };
-    if (size <= 0) return const SizedBox.shrink();
+
+    final widthScale = cardWidth / _PlanCardGeom.refWidth;
+    final wideBoost = widthScale > 1
+        ? 1.0 + (widthScale - 1).clamp(0.0, 0.6) * 0.45
+        : 1.0;
+    final size = ref.size * wideBoost;
+    final left = ref.left * widthScale;
+    final top = ref.top * (cardHeight / _PlanCardGeom.refHeight(density));
+
     return Positioned(
-      right: density == PlanTimeTaskCardDensity.large ? 12 : 8,
-      bottom: density == PlanTimeTaskCardDensity.large ? 16 : 10,
+      left: left,
+      top: top,
       child: IgnorePointer(
         child: Transform.rotate(
-          angle: -0.28,
+          angle: -0.457,
           child: Icon(
             icon,
             size: size,
-            color: color.withValues(alpha: 0.06),
+            color: color.withValues(alpha: _opacity),
           ),
         ),
       ),
@@ -564,15 +1073,15 @@ class _CategoryWatermark extends StatelessWidget {
   }
 }
 
-/// Maps timeline block metrics to CardPlan density.
+/// Maps timeline block metrics to CardPlan_Small / Medium / Large density.
 PlanTimeTaskCardDensity planTimeCardDensityForBlock(
   double heightPx,
   int durationMin,
 ) {
-  if (heightPx < 72 || durationMin <= 40) {
+  if (heightPx < 59 || durationMin <= 35) {
     return PlanTimeTaskCardDensity.compact;
   }
-  if (heightPx < 132 || durationMin < 100) {
+  if (heightPx < 121) {
     return PlanTimeTaskCardDensity.medium;
   }
   return PlanTimeTaskCardDensity.large;
