@@ -66,16 +66,40 @@ const String _recordLinkSuggestionModeAuto = 'auto';
 // Global offline / sync indicator (O1).
 // ---------------------------------------------------------------------------
 
-class _OfflineSyncStatusBar extends StatelessWidget {
-  const _OfflineSyncStatusBar();
+class _OfflineSyncStatusBar extends StatefulWidget {
+  const _OfflineSyncStatusBar({this.routeTab});
+
+  final String? routeTab;
+
+  @override
+  State<_OfflineSyncStatusBar> createState() => _OfflineSyncStatusBarState();
+}
+
+class _OfflineSyncStatusBarState extends State<_OfflineSyncStatusBar> {
+  bool _wasShowing = false;
 
   @override
   Widget build(BuildContext context) {
     final sync = DatabaseService.instance.offlineSync;
+    final brain = DatabaseService.instance;
     return ListenableBuilder(
       listenable: sync,
       builder: (context, _) {
-        if (!sync.shouldShowBanner) {
+        final showing = sync.shouldShowBanner;
+        if (showing && !_wasShowing) {
+          _wasShowing = true;
+          final kind = sync.bannerKindLabel;
+          unawaited(
+            sync.logVisibleBannerState(
+              bannerKind: kind,
+              routeTab: widget.routeTab,
+              pbBackoffActive: brain.pbHttpBackoffActive,
+            ),
+          );
+        } else if (!showing) {
+          _wasShowing = false;
+        }
+        if (!showing) {
           return const SizedBox.shrink();
         }
         final locale = currentLocale.value;
@@ -116,9 +140,11 @@ class _OfflineSyncStatusBar extends StatelessWidget {
             bottom: false,
             child: InkWell(
               onTap: () {
-                unawaited(
-                  DatabaseService.instance.flushPendingLocalMutations(),
-                );
+                unawaited(() async {
+                  sync.logTapRetry(phase: 'TAP_RETRY');
+                  await DatabaseService.instance.flushPendingLocalMutations();
+                  sync.logTapRetry(phase: 'AFTER_RETRY');
+                }());
               },
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -294,6 +320,18 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   int get _navBarSelectedIndex => _shellPageIndex <= 3 ? _shellPageIndex : 4;
 
+  static String _shellTabDiagnosticLabel(int shellPageIndex) {
+    return switch (shellPageIndex) {
+      0 => 'timeline',
+      1 => 'plan',
+      2 => 'calendar',
+      3 => 'lists',
+      4 => 'more',
+      5 => 'settings',
+      _ => 'tab$shellPageIndex',
+    };
+  }
+
   late DateTime _selectedDate;
   late DateTime _focusedDay;
 
@@ -364,8 +402,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     unawaited(_loadTasksAndExtras());
     unawaited(() async {
-      await DatabaseService.instance.offlineSync.refreshPendingCount();
-      DatabaseService.instance.offlineSync.reconcileAfterDrain();
+      await DatabaseService.instance.offlineSync.bootstrapFromOutboxes(
+        pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
+      );
     }());
 
     _notificationSub = DatabaseService.instance.notifications.listen((msg) {
@@ -1939,7 +1978,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                     );
                     final mainColumn = Column(
                       children: [
-                        const _OfflineSyncStatusBar(),
+                        _OfflineSyncStatusBar(
+                          routeTab: _shellTabDiagnosticLabel(_shellPageIndex),
+                        ),
                         Expanded(
                           child: IndexedStack(
                             index: _shellPageIndex,

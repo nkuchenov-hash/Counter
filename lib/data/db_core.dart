@@ -393,7 +393,9 @@ extension DbCoreExtension on DatabaseService {
       _categoryController.add(List.from(_rules));
       _tasksController.add(List.from(_tasksCache));
       _isInitialized = true;
-      unawaited(offlineSync.refreshPendingCount());
+      await offlineSync.bootstrapFromOutboxes(
+        pbBackoffActive: _pbHttpBackoffActive,
+      );
       unawaited(flushPendingLocalMutations());
       return;
     }
@@ -426,16 +428,20 @@ extension DbCoreExtension on DatabaseService {
       _runOneShotUntitledGhostRecordCleanDeferred()
           .catchError((Object _, StackTrace _) {}),
     );
-    unawaited(offlineSync.refreshPendingCount());
-    unawaited(flushPendingLocalMutations());
+    await offlineSync.bootstrapFromOutboxes(
+      pbBackoffActive: _pbHttpBackoffActive,
+    );
+    await flushPendingLocalMutations();
   }
 
   /// Foreground/resume refresh: records + today's plans + stream pumps (no user input required).
   Future<void> refreshForegroundData() async {
     if (!(currentProfileId?.isNotEmpty ?? false)) return;
     if (!_isInitialized) return;
-    unawaited(offlineSync.refreshPendingCount());
-    unawaited(flushPendingLocalMutations());
+    await offlineSync.bootstrapFromOutboxes(
+      pbBackoffActive: _pbHttpBackoffActive,
+    );
+    await flushPendingLocalMutations();
     if (_pbHttpBackoffActive) return;
     try {
       _lastSuccessfulRecordsNetworkFetchAt = null;

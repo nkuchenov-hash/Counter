@@ -259,6 +259,9 @@ class DatabaseService {
     return DateTime.now().isBefore(t);
   }
 
+  /// Exposed for sync-banner diagnostics only.
+  bool get pbHttpBackoffActive => _pbHttpBackoffActive;
+
   String _scopedDataCacheKey(String base) {
     final u = (currentProfileId ?? _userIdForWhere ?? '').trim();
     if (u.isEmpty) return '${base}_anon';
@@ -281,7 +284,7 @@ class DatabaseService {
   static DateTime? _lastSyncFlushFailLogAt;
   static const Duration _syncFlushFailLogDebounce = Duration(seconds: 15);
 
-  /// Debounced console line for outbox flush failures (tap-to-retry banner).
+  /// Debounced console line for outbox flush failures (release-safe via print).
   static void logSyncFlushFailure({
     required String collection,
     required String operation,
@@ -302,7 +305,8 @@ class DatabaseService {
     }
     _lastSyncFlushFailLog = line;
     _lastSyncFlushFailLogAt = now;
-    debugPrint(line);
+    // ignore: avoid_print
+    print(line);
   }
 
   /// Resolves waiting UI (SnackBar via [notifications] in app_shell) after category 404 = gone.

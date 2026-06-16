@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-16] - Sync banner diagnostics + stale state fix v2 [wip]
+* **`offline_sync_state.dart` / `db_core.dart` / `app_shell.dart` / `main.dart`:** [wip] Root cause: `debugPrint` silent on release web + boot `unawaited(flush)` race; `print`-based `SYNC_BANNER_VISIBLE` / `TAP_RETRY` / `AFTER_RETRY` / `SYNC_BOOTSTRAP`; `bootstrapFromOutboxes()` clears stale in-memory `lastError` when both outboxes empty; await flush on `loadInitialData`; banner wired to canonical `DatabaseService.instance.offlineSync` only.
+
 ## [2026-06-16] - Sync error banner stabilization [wip]
 * **`offline_sync_state.dart` / `db_core.dart` / `record_service.dart` / `plan_service.dart` / `app_shell.dart`:** [wip] Fix sticky red sync banner when outboxes drain but `lastError` lingered — `reconcileAfterDrain()` after flush + boot refresh; debounced `SYNC_FLUSH_FAIL` / `SYNC_BANNER_ERROR` console logs; stale outbox rows without cache drop safely; unresolved PB id logs `resolve_failed` without blocking unrelated sync.
 

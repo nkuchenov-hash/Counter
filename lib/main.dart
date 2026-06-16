@@ -5,6 +5,7 @@ import 'package:counter/app_shell.dart';
 import 'package:counter/features/auth/auth_screen.dart';
 import 'package:counter/auth_service.dart';
 import 'package:counter/data/auth_bridge.dart';
+import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/database_service.dart';
 import 'package:counter/services/notification_service.dart';
 import 'package:counter/l10n/app_locales.dart';
@@ -224,6 +225,10 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         currentLocale.value = resolvedUiLanguageCode(lang);
       }
       DatabaseService.instance.offlineSync.resumeAfterAuthIfNeeded();
+      OfflineSyncController.resetVisibleDiagForNewSession();
+      await DatabaseService.instance.offlineSync.bootstrapFromOutboxes(
+        pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
+      );
       setState(() {
         _profileId = id;
         _checked = true;
