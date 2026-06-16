@@ -14,6 +14,8 @@ class Tag {
     this.isSynced = true,
     /// PocketBase `tags.domain`: `plan` | `list`. Legacy rows: treat as plan when empty.
     this.domain = 'plan',
+    /// PocketBase `tags.default_plan_duration_minutes` — optional default block length.
+    this.defaultPlanDurationMinutes,
   });
 
   final int tagId;
@@ -30,6 +32,8 @@ class Tag {
   final bool isSynced;
   /// Isolation scope for Lists vs Planning tag pickers (@DATA_MAP `tags.domain`).
   final String domain;
+  /// Minutes for auto-scheduled plan blocks when this tag is on the task (null = none).
+  final int? defaultPlanDurationMinutes;
 
   Tag copyWith({
     int? tagId,
@@ -41,6 +45,8 @@ class Tag {
     int? sortOrder,
     bool? isSynced,
     String? domain,
+    int? defaultPlanDurationMinutes,
+    bool clearDefaultPlanDuration = false,
   }) {
     return Tag(
       tagId: tagId ?? this.tagId,
@@ -52,6 +58,9 @@ class Tag {
       sortOrder: sortOrder ?? this.sortOrder,
       isSynced: isSynced ?? this.isSynced,
       domain: domain ?? this.domain,
+      defaultPlanDurationMinutes: clearDefaultPlanDuration
+          ? null
+          : (defaultPlanDurationMinutes ?? this.defaultPlanDurationMinutes),
     );
   }
 
@@ -106,7 +115,18 @@ class Tag {
       sortOrder: _jsonInt(json['sort_order'] ?? json['sortOrder']),
       isSynced: true,
       domain: dom,
+      defaultPlanDurationMinutes: _jsonOptionalPositiveInt(
+        json['default_plan_duration_minutes'] ??
+            json['defaultPlanDurationMinutes'],
+      ),
     );
+  }
+
+  static int? _jsonOptionalPositiveInt(dynamic raw) {
+    if (raw == null) return null;
+    final n = raw is int ? raw : int.tryParse(raw.toString().trim());
+    if (n == null || n < 1) return null;
+    return n;
   }
 
   @override

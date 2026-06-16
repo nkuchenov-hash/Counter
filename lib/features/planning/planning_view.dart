@@ -1104,6 +1104,27 @@ class _PlanningPageState extends State<PlanningPage>
                   const Divider(height: 1),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.timer_outlined),
+                    title: Text(t(loc, 'tag_default_durations_title')),
+                    subtitle: Text(
+                      t(loc, 'tag_default_durations_sheet_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(sheetCtx).pop();
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TagSettingsHub(
+                            initialTabIndex: 2,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.label_outline_rounded),
                     title: Text(t(loc, 'tag_settings_hub_title')),
                     subtitle: Text(
@@ -1582,6 +1603,18 @@ class _PlanningPageState extends State<PlanningPage>
     overlay.insert(entry);
   }
 
+  void _maybeShowPlanScheduleOverloadWarning({
+    required List<PlanningTask> dayPlans,
+  }) {
+    final report = DatabaseService.instance.evaluatePlanDayScheduleOverload(
+      dayPlans: dayPlans,
+      timelineStartHour: _timelineHourStart,
+      timelineEndHour: _timelineHourEnd,
+    );
+    if (!report.shouldWarn) return;
+    AppSnack.warning(t(currentLocale.value, 'plan_schedule_overload_warning'));
+  }
+
   Future<void> _addTask() async {
     final taskDateKey = widget.selectedDateString;
     final raw = _textController.text;
@@ -1622,16 +1655,31 @@ class _PlanningPageState extends State<PlanningPage>
         (DatabaseService.instance.rules.isNotEmpty
             ? DatabaseService.instance.rules.first.id
             : 0);
-    if (startStored == null && range == null && parsed == null) {
-      final defaultWall = DatabaseService.instance
-          .wallDateTimeForCategoryDefaultPlanTime(categoryId, wallDay);
-      if (defaultWall != null) {
-        startStored = DatabaseService.instance.displayTimeToUtc(defaultWall);
-      }
-    }
+    final tagsForCreate = List<Tag>.from(_creationSelectedTags);
+    final existingDay = [
+      ..._latestPlanningDayTasks,
+      ..._optimisticTasks.where(
+        (t) => t.dateKey == taskDateKey || t.startTime != null,
+      ),
+    ];
+    final explicitStartWall = range != null
+        ? range.startWallOn(wallDay)
+        : parsed?.wallDateTimeOn(wallDay);
+    final explicitEndWall = range?.endWallOn(wallDay);
+    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: wallDay,
+      categoryId: categoryId,
+      tags: tagsForCreate,
+      existingDayPlans: existingDay,
+      explicitStartWall: explicitStartWall,
+      explicitEndWall: explicitEndWall,
+      hasExplicitTimeRange: range != null,
+      timelineDayStartHour: _timelineHourStart,
+    );
+    startStored = DatabaseService.instance.displayTimeToUtc(schedule.startWall);
+    endStored = DatabaseService.instance.displayTimeToUtc(schedule.endWall);
     var nextOrder = _nextPlanOrderForQuickAdd();
     final clientPlanId = DatabaseService.newClientUuid();
-    final tagsForCreate = List<Tag>.from(_creationSelectedTags);
     if (_planQuickAddInFlight) return;
     _planQuickAddInFlight = true;
     unawaited(() async {
@@ -1659,6 +1707,22 @@ class _PlanningPageState extends State<PlanningPage>
           setState(() {
             _creationSelectedTags = [];
           });
+          _maybeShowPlanScheduleOverloadWarning(
+            dayPlans: [
+              ...existingDay,
+              PlanningTask(
+                id: 0,
+                title: title,
+                categoryId: categoryId,
+                isDone: false,
+                dateKey: taskDateKey,
+                order: nextOrder,
+                startTime: schedule.startWall,
+                endDateTime: schedule.endWall,
+                tags: tagsForCreate,
+              ),
+            ],
+          );
         }
       } catch (e) {
         if (kDebugMode) {
@@ -1670,20 +1734,7 @@ class _PlanningPageState extends State<PlanningPage>
     }());
   }
 
-  DateTime _wallDateTimeFromHhmm(DateTime day, String hhmm) {
-    final parts = hhmm.trim().split(':');
-    final h = int.tryParse(parts[0].trim()) ?? 9;
-    final mi = parts.length > 1 ? (int.tryParse(parts[1].trim()) ?? 0) : 0;
-    return DateTime(
-      day.year,
-      day.month,
-      day.day,
-      h.clamp(0, 23),
-      mi.clamp(0, 59),
-    );
-  }
-
-  /// Smart Plan: append AI-parsed tasks for [widget.selectedDateString] (does not remove existing).
+  /// Smart Plan: append AI-parsed tasks sequentially on [widget.selectedDateString].
   Future<int> _injectSmartPlanTasks(List<Map<String, dynamic>> items) async {
     if (items.isEmpty) return 0;
     final taskDateKey = widget.selectedDateString;
@@ -1691,24 +1742,31 @@ class _PlanningPageState extends State<PlanningPage>
     final wallDay = DateTime(baseDay.year, baseDay.month, baseDay.day);
 
     var nextOrder = _nextPlanOrderForQuickAdd();
+    var cursorPlans = [
+      ..._latestPlanningDayTasks,
+      ..._optimisticTasks.where(
+        (t) => t.dateKey == taskDateKey || t.startTime != null,
+      ),
+    ];
 
     var created = 0;
+    PlanningTask? lastCreated;
     for (var i = 0; i < items.length; i++) {
       final m = items[i];
       final title = (m['title'] ?? '').toString().trim();
       if (title.isEmpty) continue;
-      final hhmm = (m['startTime'] ?? '09:00').toString().trim();
-      final durRaw = m['durationMinutes'] ?? 60;
-      final minutes = durRaw is int
-          ? durRaw
-          : (durRaw is num ? durRaw.round() : int.tryParse('$durRaw') ?? 60);
-      final safeMinutes = minutes < 1 ? 1 : minutes;
-
-      final startWall = _wallDateTimeFromHhmm(wallDay, hhmm);
-      final endWall = startWall.add(Duration(minutes: safeMinutes));
-
-      final startStored = DatabaseService.instance.displayTimeToUtc(startWall);
-      final endStored = DatabaseService.instance.displayTimeToUtc(endWall);
+      final durRaw = m['durationMinutes'];
+      int? explicitDuration;
+      if (durRaw != null) {
+        explicitDuration = durRaw is int
+            ? durRaw
+            : (durRaw is num
+                ? durRaw.round()
+                : int.tryParse('$durRaw'));
+        if (explicitDuration != null && explicitDuration < 1) {
+          explicitDuration = null;
+        }
+      }
 
       final aiCategoryStr = m['category']?.toString().trim();
       final fromAiId = DatabaseService.instance
@@ -1722,6 +1780,19 @@ class _PlanningPageState extends State<PlanningPage>
           (DatabaseService.instance.rules.isNotEmpty
               ? DatabaseService.instance.rules.first.id
               : 0);
+
+      final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+        wallDay: wallDay,
+        categoryId: categoryId,
+        tags: const [],
+        existingDayPlans: cursorPlans,
+        timelineDayStartHour: _timelineHourStart,
+        explicitDurationMinutes: explicitDuration,
+      );
+      final startStored =
+          DatabaseService.instance.displayTimeToUtc(schedule.startWall);
+      final endStored =
+          DatabaseService.instance.displayTimeToUtc(schedule.endWall);
 
       final order = nextOrder + i;
       final clientPlanId = DatabaseService.newClientUuid();
@@ -1739,7 +1810,7 @@ class _PlanningPageState extends State<PlanningPage>
             endDateTime: endStored,
             checklist: const [],
             parentPlanId: null,
-            tags: <Tag>[],
+            tags: const [],
             isSynced: false,
           ),
           clientPlanId: clientPlanId,
@@ -1747,8 +1818,23 @@ class _PlanningPageState extends State<PlanningPage>
         if (!mounted) return created;
         if (ok) {
           created++;
+          lastCreated = PlanningTask(
+            id: 0,
+            title: title,
+            categoryId: categoryId,
+            isDone: false,
+            dateKey: taskDateKey,
+            order: order,
+            startTime: schedule.startWall,
+            endDateTime: schedule.endWall,
+            tags: const [],
+          );
+          cursorPlans = [...cursorPlans, lastCreated];
         }
       } catch (_) {}
+    }
+    if (created > 0 && lastCreated != null) {
+      _maybeShowPlanScheduleOverloadWarning(dayPlans: cursorPlans);
     }
     return created;
   }

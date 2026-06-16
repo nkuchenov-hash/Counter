@@ -720,6 +720,48 @@ extension ProfileServiceExtension on DatabaseService {
     }
   }
 
+  /// PATCH `tags.default_plan_duration_minutes` for the current user.
+  Future<bool> patchTagDefaultPlanDurationForCurrentUser({
+    required String pocketRecordId,
+    int? durationMinutes,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    final rid = pocketRecordId.trim();
+    if (rid.isEmpty) return false;
+    final sanitized = durationMinutes == null
+        ? null
+        : DatabaseService.instance.sanitizeTagDefaultPlanDurationMinutes(
+            durationMinutes,
+          );
+    try {
+      final body = <String, dynamic>{
+        'user_id': _pidForPbFilter,
+      };
+      if (sanitized == null) {
+        body['default_plan_duration_minutes'] = null;
+      } else {
+        body['default_plan_duration_minutes'] = sanitized;
+      }
+      await _pb.collection(PbCollections.tags).update(rid, body: body);
+      _userTagsCatalogCache = [
+        for (final t in _userTagsCatalogCache)
+          if (t.pbRecordId == rid)
+            t.copyWith(
+              defaultPlanDurationMinutes: sanitized,
+              clearDefaultPlanDuration: sanitized == null,
+            )
+          else
+            t,
+      ];
+      notifyTagsCatalogChanged();
+      return true;
+    } catch (e, st) {
+      DatabaseService._log('TAG_DURATION_PATCH: $e');
+      DatabaseService._log(st.toString());
+      return false;
+    }
+  }
+
   /// PocketBase `tags_link` values: **only** `tags` collection record ids ([Tag.pbRecordId]).
   /// Resolves by business [Tag.tagId] against [fetchTagsForCurrentUser] when pb id missing on the instance.
   /// Never uses tag name, Noco wrapper id, or any non-PB identifier.

@@ -287,6 +287,23 @@ const Map<String, Map<String, String>> _l10nCore = {
     'tag_settings_sheet_subtitle': 'Manage tags and how they look in planning.',
     'tag_settings_tab_tags': 'Tags',
     'tag_settings_tab_style': 'Style',
+    'tag_settings_tab_durations': 'Durations',
+    'tag_default_durations_title': 'Default plan durations',
+    'tag_default_durations_subtitle':
+        'When a plan has this tag, its block length is set automatically on the day timeline.',
+    'tag_default_durations_sheet_subtitle':
+        'Assign minutes per tag for sequential day scheduling.',
+    'tag_default_durations_empty': 'Create planning tags first, then set durations here.',
+    'tag_default_duration_not_set': 'No default',
+    'tag_default_duration_minutes_value': '{n} min',
+    'tag_default_duration_min_suffix': 'min',
+    'tag_default_duration_edit': 'Edit duration',
+    'tag_default_duration_edit_title': 'Default duration',
+    'tag_default_duration_custom': 'Custom minutes',
+    'tag_default_duration_apply_custom': 'Apply custom',
+    'tag_default_duration_clear': 'Clear default',
+    'plan_schedule_overload_warning':
+        'Possible overload: you may want to move some plans to tomorrow or reduce today\'s load.',
     'tag_manager_title': 'Tags',
     'tag_manager_reorder_hint':
         'Drag the handle to set order. Planning groups follow this order.',
@@ -880,6 +897,23 @@ const Map<String, Map<String, String>> _l10nCore = {
         'Список тегов и стиль отображения в планировании.',
     'tag_settings_tab_tags': 'Теги',
     'tag_settings_tab_style': 'Стиль',
+    'tag_settings_tab_durations': 'Длительность',
+    'tag_default_durations_title': 'Длительность планов по тегам',
+    'tag_default_durations_subtitle':
+        'Если у плана есть этот тег, длительность блока задаётся автоматически на шкале дня.',
+    'tag_default_durations_sheet_subtitle':
+        'Задайте минуты для каждого тега — планы выстроятся последовательно.',
+    'tag_default_durations_empty': 'Сначала создайте теги планирования, затем задайте длительности.',
+    'tag_default_duration_not_set': 'Не задано',
+    'tag_default_duration_minutes_value': '{n} мин',
+    'tag_default_duration_min_suffix': 'мин',
+    'tag_default_duration_edit': 'Изменить длительность',
+    'tag_default_duration_edit_title': 'Длительность по умолчанию',
+    'tag_default_duration_custom': 'Свои минуты',
+    'tag_default_duration_apply_custom': 'Применить',
+    'tag_default_duration_clear': 'Сбросить',
+    'plan_schedule_overload_warning':
+        'Возможная перегрузка: перенесите часть планов на завтра или сократите нагрузку на сегодня.',
     'tag_manager_title': 'Теги',
     'tag_manager_reorder_hint':
         'Тяните за значок, чтобы задать порядок. Группы в планировании следуют ему.',

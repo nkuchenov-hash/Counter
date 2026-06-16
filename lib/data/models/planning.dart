@@ -40,6 +40,22 @@ class SourcePlanLinkSuggestion {
   final double similarity;
 }
 
+/// Non-blocking schedule overload hints for a single planning day.
+class PlanDayOverloadReport {
+  const PlanDayOverloadReport({
+    required this.exceedsVisibleDay,
+    required this.exceedsDailyTotal,
+    required this.hasCategoryOverload,
+  });
+
+  final bool exceedsVisibleDay;
+  final bool exceedsDailyTotal;
+  final bool hasCategoryOverload;
+
+  bool get shouldWarn =>
+      exceedsVisibleDay || exceedsDailyTotal || hasCategoryOverload;
+}
+
 /// Planning task (intent / todo). Stored in plans.
 class PlanningTask {
   PlanningTask({

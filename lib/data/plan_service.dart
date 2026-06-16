@@ -1867,6 +1867,208 @@ extension PlanServiceExtension on DatabaseService {
     return newScheduleKey.compareTo(anchorKey) > 0;
   }
 
+  /// Default plan block minutes when no tag duration applies.
+  static const int kDefaultPlanDurationMinutes = 30;
+
+  /// Keep in sync with [PlanningSheetTimelinePrefs.timelineSnapMinutes].
+  static const int kPlanScheduleSnapMinutes = 15;
+
+  static const int kPlanDayOverloadTotalMinutes = 12 * 60;
+
+  static const int kPlanCategoryOverloadMinutes = 8 * 60;
+
+  int? sanitizeTagDefaultPlanDurationMinutes(dynamic raw) {
+    if (raw == null) return null;
+    final n = raw is int ? raw : int.tryParse(raw.toString().trim());
+    if (n == null || n < 1) return null;
+    return n.clamp(1, 24 * 60);
+  }
+
+  /// First tag in [tags] list order with a configured duration wins.
+  int? resolveExplicitPlanDurationMinutesFromTags(List<Tag> tags) {
+    for (final tag in tags) {
+      final d = tagDefaultPlanDurationMinutesOrNull(tag);
+      if (d != null) return d;
+    }
+    return null;
+  }
+
+  int? tagDefaultPlanDurationMinutesOrNull(Tag tag) {
+    final own = sanitizeTagDefaultPlanDurationMinutes(
+      tag.defaultPlanDurationMinutes,
+    );
+    if (own != null) return own;
+    final pid = tag.pbRecordId?.trim() ?? '';
+    if (pid.isNotEmpty) {
+      for (final t in _userTagsCatalogCache) {
+        if (t.pbRecordId == pid) {
+          return sanitizeTagDefaultPlanDurationMinutes(
+            t.defaultPlanDurationMinutes,
+          );
+        }
+      }
+    }
+    if (tag.tagId != 0) {
+      for (final t in _userTagsCatalogCache) {
+        if (t.tagId == tag.tagId && TagCatalogScope.plan.matchesTag(t)) {
+          return sanitizeTagDefaultPlanDurationMinutes(
+            t.defaultPlanDurationMinutes,
+          );
+        }
+      }
+    }
+    return null;
+  }
+
+  int resolvePlanDurationMinutesFromTags(List<Tag> tags) {
+    return resolveExplicitPlanDurationMinutesFromTags(tags) ??
+        kDefaultPlanDurationMinutes;
+  }
+
+  DateTime _snapPlanWallDateTime(DateTime wall) {
+    final snap = kPlanScheduleSnapMinutes;
+    final totalMin = wall.hour * 60 + wall.minute;
+    final snapped = ((totalMin / snap).round() * snap).clamp(0, 24 * 60 - 1);
+    return DateTime(
+      wall.year,
+      wall.month,
+      wall.day,
+      snapped ~/ 60,
+      snapped % 60,
+    );
+  }
+
+  DateTime? _resolvedPlanWallEnd(PlanningTask task) {
+    final st = task.startTime;
+    if (st == null) return null;
+    final en = task.endDateTime;
+    if (en != null && !en.isBefore(st)) return en;
+    return st.add(
+      Duration(minutes: resolvePlanDurationMinutesFromTags(task.tags)),
+    );
+  }
+
+  /// Cache + optimistic overlay for one wall day (no network).
+  List<PlanningTask> planningDayTasksSnapshot(DateTime wallDay) {
+    final key =
+        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+    final base = _filterPlansForWallDay(_allPlansUserCache, wallDay);
+    return _mergePlanningOptimistic(key, base);
+  }
+
+  /// Auto start/end for a new plan on a day. Explicit parsed range always wins.
+  ({DateTime startWall, DateTime endWall}) resolveAutoPlanSchedule({
+    required DateTime wallDay,
+    required int categoryId,
+    required List<Tag> tags,
+    required List<PlanningTask> existingDayPlans,
+    DateTime? explicitStartWall,
+    DateTime? explicitEndWall,
+    bool hasExplicitTimeRange = false,
+    int timelineDayStartHour = 0,
+    int? explicitDurationMinutes,
+  }) {
+    if (hasExplicitTimeRange &&
+        explicitStartWall != null &&
+        explicitEndWall != null) {
+      return (startWall: explicitStartWall, endWall: explicitEndWall);
+    }
+
+    final durationMin = explicitDurationMinutes != null &&
+            explicitDurationMinutes > 0
+        ? explicitDurationMinutes.clamp(1, 24 * 60)
+        : resolvePlanDurationMinutesFromTags(tags);
+
+    late final DateTime startWall;
+    if (explicitStartWall != null) {
+      startWall = explicitStartWall;
+    } else {
+      DateTime? latestEnd;
+      for (final p in existingDayPlans) {
+        if (p.startTime == null) continue;
+        final end = _resolvedPlanWallEnd(p);
+        if (end == null) continue;
+        if (latestEnd == null || end.isAfter(latestEnd)) latestEnd = end;
+      }
+      if (latestEnd != null) {
+        startWall = _snapPlanWallDateTime(latestEnd);
+      } else {
+        final catDefault = wallDateTimeForCategoryDefaultPlanTime(
+          categoryId,
+          wallDay,
+        );
+        startWall = _snapPlanWallDateTime(
+          catDefault ??
+              DateTime(
+                wallDay.year,
+                wallDay.month,
+                wallDay.day,
+                timelineDayStartHour.clamp(0, 23),
+                0,
+              ),
+        );
+      }
+    }
+
+    if (explicitEndWall != null && explicitEndWall.isAfter(startWall)) {
+      return (startWall: startWall, endWall: explicitEndWall);
+    }
+    return (
+      startWall: startWall,
+      endWall: startWall.add(Duration(minutes: durationMin)),
+    );
+  }
+
+  /// Non-blocking overload hints after scheduling plans on a day.
+  PlanDayOverloadReport evaluatePlanDayScheduleOverload({
+    required List<PlanningTask> dayPlans,
+    required int timelineStartHour,
+    required int timelineEndHour,
+  }) {
+    var totalMinutes = 0;
+    final byCategory = <int, int>{};
+    DateTime? latestEnd;
+
+    for (final p in dayPlans) {
+      final st = p.startTime;
+      if (st == null) continue;
+      final end = _resolvedPlanWallEnd(p);
+      if (end == null) continue;
+      final dur = end.difference(st).inMinutes.clamp(1, 24 * 60);
+      totalMinutes += dur;
+      byCategory[p.categoryId] = (byCategory[p.categoryId] ?? 0) + dur;
+      if (latestEnd == null || end.isAfter(latestEnd)) latestEnd = end;
+    }
+
+    var exceedsVisibleDay = false;
+    if (latestEnd != null) {
+      final endMin = latestEnd.hour * 60 + latestEnd.minute;
+      final startMin = timelineStartHour.clamp(0, 23) * 60;
+      final endBoundMin = timelineEndHour.clamp(0, 23) * 60 + 59;
+      if (timelineStartHour <= timelineEndHour) {
+        exceedsVisibleDay = endMin > endBoundMin;
+      } else {
+        final inLate = latestEnd.hour >= timelineStartHour;
+        final inEarly = latestEnd.hour <= timelineEndHour;
+        exceedsVisibleDay = !(inLate || inEarly) && endMin > endBoundMin;
+      }
+      if (endMin < startMin && timelineStartHour <= timelineEndHour) {
+        exceedsVisibleDay = true;
+      }
+    }
+
+    final exceedsDailyTotal = totalMinutes > kPlanDayOverloadTotalMinutes;
+    final hasCategoryOverload = byCategory.values.any(
+      (m) => m > kPlanCategoryOverloadMinutes,
+    );
+
+    return PlanDayOverloadReport(
+      exceedsVisibleDay: exceedsVisibleDay,
+      exceedsDailyTotal: exceedsDailyTotal,
+      hasCategoryOverload: hasCategoryOverload,
+    );
+  }
+
   Future<List<PlanningTask>> _fetchAllPlanningTasksForCurrentUser() async {
     if (!_isPlansTableConfigured) return [];
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return [];
@@ -2755,15 +2957,24 @@ extension PlanServiceExtension on DatabaseService {
         categoryIdHint ??
         defaultCategoryId ??
         (rules.isNotEmpty ? rules.first.id : 0);
-    if (startStored == null && range == null && parsed == null) {
-      final defaultWall = wallDateTimeForCategoryDefaultPlanTime(
-        categoryId,
-        ymd,
-      );
-      if (defaultWall != null) {
-        startStored = displayTimeToUtc(defaultWall);
-      }
-    }
+
+    final existingDay = planningDayTasksSnapshot(ymd);
+    final explicitStartWall = range != null
+        ? range.startWallOn(ymd)
+        : parsed?.wallDateTimeOn(ymd);
+    final explicitEndWall = range?.endWallOn(ymd);
+    final schedule = resolveAutoPlanSchedule(
+      wallDay: ymd,
+      categoryId: categoryId,
+      tags: const [],
+      existingDayPlans: existingDay,
+      explicitStartWall: explicitStartWall,
+      explicitEndWall: explicitEndWall,
+      hasExplicitTimeRange: range != null,
+      timelineDayStartHour: 0,
+    );
+    startStored = displayTimeToUtc(schedule.startWall);
+    endStored = displayTimeToUtc(schedule.endWall);
 
     if (getCategoryRuleById(categoryId) == null) {
       DatabaseService._log(
@@ -2808,18 +3019,25 @@ extension PlanServiceExtension on DatabaseService {
     }
     unawaited(() async {
       try {
-        DateTime? defaultStart;
+        DateTime? startStored;
+        DateTime? endStored;
         final d = dateKey.trim();
         if (d.length >= 10) {
           final y = int.tryParse(d.substring(0, 4));
           final m = int.tryParse(d.substring(5, 7));
           final day = int.tryParse(d.substring(8, 10));
           if (y != null && m != null && day != null) {
-            final wall = wallDateTimeForCategoryDefaultPlanTime(
-              categoryId,
-              DateTime(y, m, day),
+            final wallDay = DateTime(y, m, day);
+            final existingDay = planningDayTasksSnapshot(wallDay);
+            final schedule = resolveAutoPlanSchedule(
+              wallDay: wallDay,
+              categoryId: categoryId,
+              tags: const [],
+              existingDayPlans: existingDay,
+              timelineDayStartHour: 0,
             );
-            if (wall != null) defaultStart = displayTimeToUtc(wall);
+            startStored = displayTimeToUtc(schedule.startWall);
+            endStored = displayTimeToUtc(schedule.endWall);
           }
         }
         await addPlanningTask(
@@ -2829,7 +3047,8 @@ extension PlanServiceExtension on DatabaseService {
             categoryId: categoryId,
             dateKey: dateKey,
             order: 0,
-            startTime: defaultStart,
+            startTime: startStored,
+            endDateTime: endStored,
           ),
         );
       } catch (_) {}

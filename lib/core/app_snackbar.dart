@@ -42,4 +42,19 @@ class AppSnack {
 
   static void failed() =>
       show(t(currentLocale.value, 'toast_error'), error: true);
+
+  static void warning(String message) {
+    final messenger = appSnackMessengerKey.currentState;
+    if (messenger == null) return;
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.orange.shade900,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+  }
 }

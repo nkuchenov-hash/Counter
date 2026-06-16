@@ -98,6 +98,7 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | :--- | :--- | :--- |
 | **`id`** | **system** | 15-char. |
 | `user_id` | relation | → `profiles.id`. |
+| `default_plan_duration_minutes` | number | Optional minutes for auto-scheduled plan blocks when this tag is on the task. |
 
 ---
 

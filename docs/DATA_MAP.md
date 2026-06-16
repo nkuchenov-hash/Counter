@@ -195,3 +195,4 @@ description: Revisions and corrections for DATA_MAP.md.
 | **icon** | String | UI | NO | Material icon string identifier. |
 | **sort_order** | Number | UI | NO | Manual order in Tag Manager; lower = earlier. Planning **Sort by Tags** uses this order. |
 | **domain** | String (Select) | Data | NO | Tag isolation: `plan` (Planning / timeline tag pickers) vs `list` (Lists / backlog tag pickers). Legacy rows with empty domain are treated as **`plan`**. New list tags MUST be created with `list`. |
+| **default_plan_duration_minutes** | Number | Planning | NO | Optional default block length in minutes for auto-scheduled plans carrying this tag. Empty/null = no tag default. Client clamps 1–1440. |

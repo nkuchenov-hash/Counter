@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Tag default plan durations + sequential auto-schedule [shipped]
+* **`models/tag.dart` / `profile_service.dart` / `plan_service.dart` / `tag_default_duration_settings_view.dart` / `tag_settings_hub.dart` / `planning_view.dart`:** [shipped] `tags.default_plan_duration_minutes` per-tag settings (Durations tab); `resolveAutoPlanSchedule` sequential placement (append after last plan, snap 15m); duration rule: explicit range → tag order → 30m fallback; `evaluatePlanDayScheduleOverload` warning snack.
+
 ## [2026-06-15] - Plan card polish: hover, footer, actual time [shipped]
 * **`plan_time_task_card.dart` / `planning_view.dart`:** [shipped] Full-card `MouseRegion` hover (border/shadow/tint) while controls stay independent; footer row `minHeight` 14 + pinned bottom pad/gaps fix breadcrumb/time clipping; removed legacy subtitle date/time row (`subtitleLabel`/`onSubtitleTap`); compact actual time right-aligned above progress via `_PlanCardMetricsBlock`; planned time only in `_PlanCardFooterRow`.
 
