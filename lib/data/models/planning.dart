@@ -70,6 +70,8 @@ class PlanningTask {
     this.exceptionDates = const [],
     this.reminderOffset,
     this.recurrenceInstanceDateKey,
+    this.startUtcInstant,
+    this.endUtcInstant,
   })  : date = date ?? _dateFromDateKey(dateKey),
         endDateKey = endDateKey ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey),
         subRecordIds = subRecordIds ?? const [],
@@ -144,6 +146,12 @@ class PlanningTask {
 
   /// JIT expansion only: which wall day this virtual row represents; not stored on PB.
   final String? recurrenceInstanceDateKey;
+
+  /// Stored PocketBase `start_time` as UTC instant (source of truth for TZ projection).
+  final DateTime? startUtcInstant;
+
+  /// Stored PocketBase `end_time` as UTC instant.
+  final DateTime? endUtcInstant;
 
   /// True when rich notes or legacy plain-only content exists.
   bool get hasNotes {
@@ -552,6 +560,9 @@ class PlanningTask {
     String? recurrenceInstanceDateKey,
     bool clearRrule = false,
     bool clearReminderOffset = false,
+    DateTime? startUtcInstant,
+    DateTime? endUtcInstant,
+    bool clearEndUtc = false,
   }) {
     final eDt = clearEnd ? null : (endDateTime ?? this.endDateTime);
     final eDk = endDateKey ?? (eDt != null ? _dateKeyFromDate(eDt) : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
@@ -585,6 +596,10 @@ class PlanningTask {
           clearReminderOffset ? null : (reminderOffset ?? this.reminderOffset),
       recurrenceInstanceDateKey:
           recurrenceInstanceDateKey ?? this.recurrenceInstanceDateKey,
+      startUtcInstant: startUtcInstant ?? this.startUtcInstant,
+      endUtcInstant: clearEndUtc || clearEnd
+          ? null
+          : (endUtcInstant ?? this.endUtcInstant),
     );
   }
 }

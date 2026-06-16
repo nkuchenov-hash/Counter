@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-16] - Time mode TZ projection + desktop side nav [shipped]
+* **`plan_service.dart` / `models/planning.dart` / `profile_service.dart` / `planning_view.dart`:** [shipped] Plans store UTC instants (`startUtcInstant`/`endUtcInstant`); day filter + Time mode placement project via `_profileWallFromUtc` (fixes TZ switch misplacing blocks); `reprojectAllPlansForProfileTimezone` on profile TZ change; debounced `PLAN_TIME_TZ_PROJECT` logs.
+* **`app_shell.dart`:** [shipped] Desktop/web side nav (≥900px) shows Timeline/Plan/Calendar/Lists/Categories/Profile directly; More (index 6) is secondary overflow (Dev Lab admin only); mobile bottom nav unchanged.
+
 ## [2026-06-16] - Plan Play button gesture + category fallback fix [shipped]
 * **`plan_time_task_card.dart` / `planning_view.dart`:** [shipped] Play/checkbox/menu no longer blocked — body tap/drag limited to content column (`_PlanCardBodyTapShell`); timeline `_TimelinePlanInteractionBlock` move zone excludes control rail + menu via `planCardBodyGestureLeftInsetPx` / `planCardBodyGestureRightInsetPx`.
 * **`category_service.dart`:** [shipped] `_resolveColdStartRecordCategoryId` falls back to default/leaf when plan UI category is concrete but missing PB relation id — Play no longer aborts before optimistic Highlander shadow.

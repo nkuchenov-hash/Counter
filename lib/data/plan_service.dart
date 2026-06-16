@@ -438,28 +438,39 @@ extension PlanServiceExtension on DatabaseService {
       planBusinessId: planBusinessId,
     );
     if (current == null) return;
-    final next = current.copyWith(
-      title: title,
-      categoryId: categoryId,
-      isDone: isDone,
-      notesPlain: notesPlain,
-      notesDeltaJson: notesDeltaJson,
-      checklist: checklist,
-      parentPlanId: parentPlanId,
-      order: order,
-      startTime: startTimeDisplay ?? startTime,
-      endDateTime: endDateTimeDisplay ?? endDateTime,
-      clearEnd: clearEnd,
-      tags: tags,
-      initialDateKey: planInitialDateKey,
-      isPostponed: planIsPostponed,
-      rrule: patchPlanAlarmRecurrence ? planRrule : null,
-      exceptionDates: patchPlanAlarmRecurrence ? planExceptionDates : null,
-      reminderOffset: patchPlanAlarmRecurrence ? planReminderOffset : null,
-      clearRrule: patchPlanAlarmRecurrence && (planRrule ?? '').trim().isEmpty,
-      clearReminderOffset:
-          patchPlanAlarmRecurrence && planReminderOffset == null,
-      isSynced: false,
+    final next = _reprojectPlanningTaskWallTimes(
+      current.copyWith(
+        title: title,
+        categoryId: categoryId,
+        isDone: isDone,
+        notesPlain: notesPlain,
+        notesDeltaJson: notesDeltaJson,
+        checklist: checklist,
+        parentPlanId: parentPlanId,
+        order: order,
+        startTime: startTimeDisplay ?? startTime,
+        endDateTime: endDateTimeDisplay ?? endDateTime,
+        clearEnd: clearEnd,
+        tags: tags,
+        initialDateKey: planInitialDateKey,
+        isPostponed: planIsPostponed,
+        rrule: patchPlanAlarmRecurrence ? planRrule : null,
+        exceptionDates: patchPlanAlarmRecurrence ? planExceptionDates : null,
+        reminderOffset: patchPlanAlarmRecurrence ? planReminderOffset : null,
+        clearRrule: patchPlanAlarmRecurrence && (planRrule ?? '').trim().isEmpty,
+        clearReminderOffset:
+            patchPlanAlarmRecurrence && planReminderOffset == null,
+        isSynced: false,
+        startUtcInstant: (startTimeDisplay ?? startTime) != null
+            ? _profileUtcFromWall((startTimeDisplay ?? startTime)!).toUtc()
+            : current.startUtcInstant,
+        endUtcInstant: clearEnd
+            ? null
+            : ((endDateTimeDisplay ?? endDateTime) != null
+                ? _profileUtcFromWall((endDateTimeDisplay ?? endDateTime)!).toUtc()
+                : current.endUtcInstant),
+        clearEndUtc: clearEnd,
+      ),
     );
     applyOptimisticPlanningTask(next);
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
@@ -1330,6 +1341,92 @@ extension PlanServiceExtension on DatabaseService {
     return _mergeBacklogOptimistic(base);
   }
 
+  static String? _lastPlanTimeTzLogKey;
+  static DateTime? _lastPlanTimeTzLogAt;
+  static const Duration _planTimeTzLogDebounce = Duration(seconds: 8);
+
+  void _logPlanTimeTzProjection({
+    required PlanningTask task,
+    required String selectedDay,
+    required bool visible,
+    DateTime? startUtc,
+    DateTime? endUtc,
+    DateTime? wallStart,
+    DateTime? wallEnd,
+  }) {
+    final planId = task.planRowIdForBackend.trim();
+    final lineKey =
+        '$planId|$selectedDay|${task.startUtcInstant?.toIso8601String()}|visible=$visible';
+    final now = DateTime.now();
+    if (_lastPlanTimeTzLogKey == lineKey &&
+        _lastPlanTimeTzLogAt != null &&
+        now.difference(_lastPlanTimeTzLogAt!) < _planTimeTzLogDebounce) {
+      return;
+    }
+    _lastPlanTimeTzLogKey = lineKey;
+    _lastPlanTimeTzLogAt = now;
+    // ignore: avoid_print
+    print(
+      'PLAN_TIME_TZ_PROJECT planId=${planId.isEmpty ? '-' : planId} '
+      'startUtc=${startUtc?.toUtc().toIso8601String() ?? '-'} '
+      'endUtc=${endUtc?.toUtc().toIso8601String() ?? '-'} '
+      'profileOffset=${_settings.timezoneOffsetHours} '
+      'wallStart=${wallStart != null ? '${wallStart.hour.toString().padLeft(2, '0')}:${wallStart.minute.toString().padLeft(2, '0')}' : '-'} '
+      'wallEnd=${wallEnd != null ? '${wallEnd.hour.toString().padLeft(2, '0')}:${wallEnd.minute.toString().padLeft(2, '0')}' : '-'} '
+      'selectedDay=$selectedDay visible=$visible',
+    );
+  }
+
+  ({DateTime startUtc, DateTime? endUtc})? _planUtcInstants(PlanningTask t) {
+    if (t.startUtcInstant != null) {
+      return (
+        startUtc: t.startUtcInstant!.toUtc(),
+        endUtc: t.endUtcInstant?.toUtc(),
+      );
+    }
+    final st = t.startTime;
+    if (st == null) return null;
+    return (
+      startUtc: _profileUtcFromWall(st).toUtc(),
+      endUtc: t.endDateTime != null
+          ? _profileUtcFromWall(t.endDateTime!).toUtc()
+          : null,
+    );
+  }
+
+  PlanningTask _reprojectPlanningTaskWallTimes(PlanningTask t) {
+    final instants = _planUtcInstants(t);
+    if (instants == null) return t;
+    final startWall = _profileWallFromUtc(instants.startUtc);
+    final endWall = instants.endUtc != null
+        ? _profileWallFromUtc(instants.endUtc!)
+        : null;
+    final dk = _dateKeyFromDate(startWall);
+    final edk = endWall != null ? _dateKeyFromDate(endWall) : dk;
+    return t.copyWith(
+      startUtcInstant: instants.startUtc,
+      endUtcInstant: instants.endUtc,
+      startTime: startWall,
+      endDateTime: endWall,
+      dateKey: dk,
+      endDateKey: edk,
+      date: DateTime.utc(startWall.year, startWall.month, startWall.day),
+    );
+  }
+
+  /// Recompute profile wall-clock fields after timezone change (UTC instants unchanged).
+  void reprojectAllPlansForProfileTimezone() {
+    _allPlansUserCache = [
+      for (final t in _allPlansUserCache) _reprojectPlanningTaskWallTimes(t),
+    ];
+    for (final m in _planningOptimisticByDateKey.values) {
+      for (final k in m.keys.toList()) {
+        final v = m[k];
+        if (v != null) m[k] = _reprojectPlanningTaskWallTimes(v);
+      }
+    }
+  }
+
   List<PlanningTask> _filterPlansForWallDay(
     List<PlanningTask> all,
     DateTime selectedDate,
@@ -1339,12 +1436,25 @@ extension PlanServiceExtension on DatabaseService {
     final plans = <PlanningTask>[];
     for (final t in all) {
       if (t.rrule != null && t.rrule!.trim().isNotEmpty) continue;
-      if (t.startTime == null) continue;
-      final anchorUtc = _profileUtcFromWall(t.startTime!).toUtc();
-      final w = _profileWallFromUtc(anchorUtc);
-      final planDayStr = '${w.year}-${_two(w.month)}-${_two(w.day)}';
-      if (planDayStr != targetDayStr) continue;
-      plans.add(t);
+      final instants = _planUtcInstants(t);
+      if (instants == null) continue;
+      final startWall = _profileWallFromUtc(instants.startUtc);
+      final endWall = instants.endUtc != null
+          ? _profileWallFromUtc(instants.endUtc!)
+          : null;
+      final planDayStr = _dateKeyFromDate(startWall);
+      final visible = planDayStr == targetDayStr;
+      _logPlanTimeTzProjection(
+        task: t,
+        selectedDay: targetDayStr,
+        visible: visible,
+        startUtc: instants.startUtc,
+        endUtc: instants.endUtc,
+        wallStart: startWall,
+        wallEnd: endWall,
+      );
+      if (!visible) continue;
+      plans.add(_reprojectPlanningTaskWallTimes(t));
     }
     plans.addAll(expandRecurringPlans(all, selectedDate, selectedDate));
     plans.sort((a, b) {
@@ -1388,8 +1498,9 @@ extension PlanServiceExtension on DatabaseService {
       m.remove(pid);
     }
     final dk = _planOptimisticDayKeyFor(task);
-    _planningOptimisticByDateKey.putIfAbsent(dk, () => {})[pid] = task;
-    _upsertPlanInUserCache(task);
+    final projected = _reprojectPlanningTaskWallTimes(task);
+    _planningOptimisticByDateKey.putIfAbsent(dk, () => {})[pid] = projected;
+    _upsertPlanInUserCache(projected);
   }
 
   void clearOptimisticPlanningForPlanRow(String planRowIdForBackend) {
@@ -1728,11 +1839,12 @@ extension PlanServiceExtension on DatabaseService {
     }
   }
 
-  /// Wall `YYYY-MM-DD` where the plan is currently scheduled (start wall, else [PlanningTask.dateKey]).
+  /// Wall `YYYY-MM-DD` where the plan is currently scheduled (profile TZ projection).
   String planningWallScheduleDateKey(PlanningTask t) {
-    final st = t.startTime;
-    if (st != null) {
-      return '${st.year}-${_two(st.month)}-${_two(st.day)}';
+    final instants = _planUtcInstants(t);
+    if (instants != null) {
+      final wall = _profileWallFromUtc(instants.startUtc);
+      return _dateKeyFromDate(wall);
     }
     final dk = t.dateKey.trim();
     if (dk.length >= 10) return dk.substring(0, 10);
@@ -2094,7 +2206,10 @@ extension PlanServiceExtension on DatabaseService {
       'reminder_offset': d['reminder_offset'],
       'expand': ?expandJson,
       'tags_link': d['tags_link'],
-    }, pocketTagCatalog: pocketTagCatalog);
+    }, pocketTagCatalog: pocketTagCatalog).copyWith(
+      startUtcInstant: startUtc?.toUtc(),
+      endUtcInstant: endUtc?.toUtc(),
+    );
   }
 
   String _normalizeRruleStringForDecoder(String raw) {
@@ -2151,8 +2266,6 @@ extension PlanServiceExtension on DatabaseService {
       if (template.isDone) continue;
       final pr = template.pocketRecordId?.trim() ?? '';
       if (pr.isEmpty) continue;
-      final st = template.startTime;
-      if (st == null) continue;
       RecurrenceRule rule;
       try {
         rule = RecurrenceRule.fromString(
@@ -2168,9 +2281,11 @@ extension PlanServiceExtension on DatabaseService {
         continue;
       }
 
-      final baseStartUtc = _profileUtcFromWall(st);
-      final dur = template.endDateTime != null
-          ? _profileUtcFromWall(template.endDateTime!).difference(baseStartUtc)
+      final instants = _planUtcInstants(template);
+      if (instants == null) continue;
+      final baseStartUtc = instants.startUtc;
+      final dur = instants.endUtc != null
+          ? instants.endUtc!.difference(baseStartUtc)
           : Duration.zero;
       final durClamped = dur.isNegative ? Duration.zero : dur;
 
@@ -2220,6 +2335,10 @@ extension PlanServiceExtension on DatabaseService {
             recurrenceInstanceDateKey: dk,
             clearRrule: true,
             exceptionDates: const [],
+            startUtcInstant: instanceUtc.toUtc(),
+            endUtcInstant: durClamped.inSeconds > 0
+                ? instanceUtc.add(durClamped).toUtc()
+                : null,
           ),
         );
       }
@@ -2808,7 +2927,14 @@ extension PlanServiceExtension on DatabaseService {
     final isDatelessBacklog =
         task.startTime == null && task.dateKey.trim().length < 10;
     if (task.startTime != null) {
-      body['start_time'] = task.startTime!.toUtc().toIso8601String();
+      final instants = _planUtcInstants(task);
+      if (instants != null) {
+        body['start_time'] = instants.startUtc.toIso8601String();
+      } else {
+        body['start_time'] = _profileUtcFromWall(task.startTime!)
+            .toUtc()
+            .toIso8601String();
+      }
     } else if (!isDatelessBacklog) {
       final dk = task.dateKey.trim();
       if (dk.length >= 10) {
@@ -2817,7 +2943,14 @@ extension PlanServiceExtension on DatabaseService {
       }
     }
     if (task.endDateTime != null) {
-      body['end_time'] = task.endDateTime!.toUtc().toIso8601String();
+      final instants = _planUtcInstants(task);
+      if (instants?.endUtc != null) {
+        body['end_time'] = instants!.endUtc!.toIso8601String();
+      } else {
+        body['end_time'] = _profileUtcFromWall(task.endDateTime!)
+            .toUtc()
+            .toIso8601String();
+      }
     }
     if (task.parentPlanPocketId != null &&
         task.parentPlanPocketId!.trim().isNotEmpty) {

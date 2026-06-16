@@ -322,6 +322,7 @@ class _PlanningPageState extends State<PlanningPage>
 
   StreamSubscription<void>? _planningTimeSub;
   StreamSubscription<void>? _tagsCatalogSub;
+  StreamSubscription<UserSettings>? _settingsSub;
   String? _activeRecordingTitleNorm;
 
   static const int _kUntaggedPlanGroupId = -1;
@@ -492,6 +493,19 @@ class _PlanningPageState extends State<PlanningPage>
     _tagsCatalogSub = DatabaseService.instance.tagsCatalogUpdated.listen((_) {
       if (!mounted) return;
       setState(() {});
+    });
+    var lastTzOffset = DatabaseService.instance.settings.timezoneOffsetHours;
+    var lastTzLabel = DatabaseService.instance.settings.preferredTimeZone;
+    _settingsSub = DatabaseService.instance.userSettingsStream.listen((s) {
+      if (!mounted) return;
+      if (s.timezoneOffsetHours != lastTzOffset ||
+          s.preferredTimeZone != lastTzLabel) {
+        lastTzOffset = s.timezoneOffsetHours;
+        lastTzLabel = s.preferredTimeZone;
+        setState(() {
+          _planningStream = _createPlanningStream();
+        });
+      }
     });
     unawaited(_loadPlanningTimelineBounds());
     unawaited(_reloadQuickAddTags());
@@ -1149,6 +1163,7 @@ class _PlanningPageState extends State<PlanningPage>
   void dispose() {
     _planningTimeSub?.cancel();
     _tagsCatalogSub?.cancel();
+    _settingsSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     unawaited(DatabaseService.instance.flushPlanningOrderSyncNow());
     _stopHourGridEdgeScroll();

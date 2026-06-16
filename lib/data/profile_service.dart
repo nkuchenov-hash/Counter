@@ -490,6 +490,8 @@ extension ProfileServiceExtension on DatabaseService {
         timezoneOffsetHours: _fixedOffsetHoursFromLabel(label),
       ),
     );
+    reprojectAllPlansForProfileTimezone();
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
     _notifyTimelineAfterRecordCacheMutation();
     return ok;
   }
@@ -498,6 +500,8 @@ extension ProfileServiceExtension on DatabaseService {
     final ok = await saveSettings(
       _settings.copyWith(timezoneOffsetHours: offsetHours.round()),
     );
+    reprojectAllPlansForProfileTimezone();
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
     _notifyTimelineAfterRecordCacheMutation();
     return ok;
   }

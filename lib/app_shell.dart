@@ -1473,7 +1473,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   void _onShellTabSelected(int i) {
     if (i == 4) {
-      _openMoreMenu();
+      _openMoreMenu(secondaryOnly: false);
       return;
     }
     setState(() {
@@ -1489,7 +1489,33 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
   }
 
-  void _openMoreMenu() {
+  void _onDesktopSideNavSelected(int navIndex) {
+    // 0–3 primary tabs, 4 Categories, 5 Profile, 6 More (secondary overflow).
+    if (navIndex == 6) {
+      _openMoreMenu(secondaryOnly: true);
+      return;
+    }
+    if (navIndex <= 5) {
+      setState(() => _shellPageIndex = navIndex);
+      if (navIndex == 0 || navIndex == 1) {
+        final target = DatabaseService.instance.getTimelineDeviceLocalToday();
+        setState(() {
+          _selectedDate = target;
+          _focusedDay = target;
+        });
+        unawaited(_loadTasksForDate(target));
+      }
+    }
+  }
+
+  int _desktopSideNavSelectedIndex(int shellPageIndex) {
+    return switch (shellPageIndex) {
+      0 || 1 || 2 || 3 || 4 || 5 => shellPageIndex,
+      _ => 6,
+    };
+  }
+
+  void _openMoreMenu({bool secondaryOnly = false}) {
     final loc = currentLocale.value;
     showModalBottomSheet<void>(
       context: context,
@@ -1508,22 +1534,24 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.person_rounded),
-                  title: Text(t(loc, 'more_menu_profile')),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    setState(() => _shellPageIndex = 5);
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.label_rounded),
-                  title: Text(t(loc, 'more_menu_categories')),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    setState(() => _shellPageIndex = 4);
-                  },
-                ),
+                if (!secondaryOnly) ...[
+                  ListTile(
+                    leading: const Icon(Icons.person_rounded),
+                    title: Text(t(loc, 'more_menu_profile')),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      setState(() => _shellPageIndex = 5);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.label_rounded),
+                    title: Text(t(loc, 'more_menu_categories')),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      setState(() => _shellPageIndex = 4);
+                    },
+                  ),
+                ],
                 if (isAdmin)
                   ListTile(
                     leading: const Icon(Icons.design_services_rounded),
@@ -1997,8 +2025,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                       children: [
                         _ShellSideNavigation(
                           width: kShellSideNavWidth,
-                          selectedIndex: _navBarSelectedIndex,
-                          onTabSelected: _onShellTabSelected,
+                          selectedIndex:
+                              _desktopSideNavSelectedIndex(_shellPageIndex),
+                          onTabSelected: _onDesktopSideNavSelected,
                         ),
                         Expanded(child: mainColumn),
                       ],
@@ -2127,10 +2156,22 @@ class _ShellSideNavigation extends StatelessWidget {
         index: 3,
       ),
       (
-        icon: Icons.menu_rounded,
-        selectedIcon: Icons.menu_rounded,
-        label: t(loc, 'tab_more'),
+        icon: Icons.label_outlined,
+        selectedIcon: Icons.label_rounded,
+        label: t(loc, 'more_menu_categories'),
         index: 4,
+      ),
+      (
+        icon: Icons.person_outline_rounded,
+        selectedIcon: Icons.person_rounded,
+        label: t(loc, 'more_menu_profile'),
+        index: 5,
+      ),
+      (
+        icon: Icons.more_horiz_rounded,
+        selectedIcon: Icons.more_horiz_rounded,
+        label: t(loc, 'tab_more'),
+        index: 6,
       ),
     ];
     return Material(
