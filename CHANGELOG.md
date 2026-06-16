@@ -11,8 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
-## [2026-06-15] - Plan tab list cards visibility regression [wip]
-* **`planning_view.dart` (`_buildListPlanningCard`):** [wip] Fix zero-height plan rows in Category/Tags/Custom sort modes — `Row` cross-axis `stretch` inside `ListView` collapsed cards; use `CrossAxisAlignment.start` + `minHeight: 52`; `PlanTimeTaskCard` remains Time-mode + Calendar only.
+## [2026-06-15] - Unified PlanTimeTaskCard across all Plan modes [shipped]
+* **`plan_time_task_card.dart` / `planning_view.dart` / `calendar_view.dart`:** [shipped] One CardPlan visual system via `PlanCardSurface` (`list` / `timeline` / `calendar`) — Category/Tags/Custom/Time list rows + Calendar day list use `PlanTimeTaskCard`; list intrinsic min-heights (`planTimeCardDensityForList` / `planTimeCardListMinHeight`); preserved checkbox/play/menu/tap-edit/long-press/subtitle-date callbacks; web hover on card border/shadow + control buttons.
+
+## [2026-06-15] - Plan tab list cards visibility regression [shipped]
+* **`planning_view.dart` (`_buildListPlanningCard`):** [shipped] Fix zero-height plan rows in Category/Tags/Custom sort modes — superseded by unified `PlanTimeTaskCard` list surface.
 
 ## [2026-06-15] - CardPlan_Small/Medium/Large Figma geometry pass [wip]
 * **`plan_time_task_card.dart`:** [wip] Rebuilt `PlanTimeTaskCard` from recalculated Figma MCP metadata (328×54/95/147) — Small inline checkbox+play (x=12/48, content x=84); Medium/Large vertical 32px rail (content x=56); 1px divider + footer span full content width; rounded-triangle play + thin menu icon (33×33); watermark at Figma positions with wide-card scale; density thresholds Small &lt;59 / Medium 59–120 / Large ≥121.

@@ -1083,7 +1083,8 @@ class _SelectedDayTaskPanel extends StatelessWidget {
                   }
                   return PlanTimeTaskCard(
                     task: task,
-                    density: PlanTimeTaskCardDensity.medium,
+                    density: planTimeCardDensityForList(task: task),
+                    surface: PlanCardSurface.calendar,
                     timeLabel: timeLabel(),
                     displayIsDone: task.isDone,
                     toggleDoneEnabled:

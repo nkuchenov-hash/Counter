@@ -13,13 +13,17 @@ import 'package:flutter/material.dart';
 
 enum PlanTimeTaskCardDensity { compact, medium, large }
 
-/// CardPlan-style task card for Planning Time + Calendar focused-day rows.
-class PlanTimeTaskCard extends StatelessWidget {
+/// Where the card is rendered — drives height/interaction assumptions.
+enum PlanCardSurface { list, timeline, calendar }
+
+/// CardPlan-style unified plan task card (list, timeline, calendar).
+class PlanTimeTaskCard extends StatefulWidget {
   const PlanTimeTaskCard({
     super.key,
     required this.task,
     required this.density,
     required this.timeLabel,
+    this.surface = PlanCardSurface.timeline,
     this.heightPx,
     this.displayIsDone = false,
     this.selectMode = false,
@@ -30,15 +34,21 @@ class PlanTimeTaskCard extends StatelessWidget {
     this.planTrackedSeconds = 0,
     this.planEstimatedSeconds,
     this.scheduleConflict = false,
+    this.subtitleLabel,
+    this.metaIcons = const [],
+    this.showFooterBreadcrumb = true,
     this.onToggleDone,
     this.onSelectToggle,
     this.onPlay,
     this.onOpenMenu,
     this.onTap,
+    this.onLongPress,
+    this.onSubtitleTap,
   });
 
   final PlanningTask task;
   final PlanTimeTaskCardDensity density;
+  final PlanCardSurface surface;
   final String timeLabel;
   final double? heightPx;
   final bool displayIsDone;
@@ -50,137 +60,190 @@ class PlanTimeTaskCard extends StatelessWidget {
   final int planTrackedSeconds;
   final int? planEstimatedSeconds;
   final bool scheduleConflict;
+  final String? subtitleLabel;
+  final List<Widget> metaIcons;
+  final bool showFooterBreadcrumb;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
   final void Function(BuildContext menuContext)? onOpenMenu;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onSubtitleTap;
+
+  @override
+  State<PlanTimeTaskCard> createState() => _PlanTimeTaskCardState();
+}
+
+class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
+  bool _hovered = false;
 
   bool get _hasRepeat =>
-      (task.rrule?.trim().isNotEmpty ?? false) ||
-      (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
+      (widget.task.rrule?.trim().isNotEmpty ?? false) ||
+      (widget.task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
 
-  bool get _showPlay => !selectMode && !displayIsDone && onPlay != null;
+  bool get _showPlay =>
+      !widget.selectMode && !widget.displayIsDone && widget.onPlay != null;
 
   List<Tag> get _visibleTags =>
-      task.tags.where((t) => t.rendersAsChip).toList(growable: false);
+      widget.task.tags.where((t) => t.rendersAsChip).toList(growable: false);
+
+  bool get _isListLike =>
+      widget.surface == PlanCardSurface.list ||
+      widget.surface == PlanCardSurface.calendar;
+
+  _PlanCardListExtras? get _listExtras {
+    if (!_isListLike) return null;
+    return _PlanCardListExtras(
+      subtitleLabel: widget.subtitleLabel,
+      onSubtitleTap: widget.onSubtitleTap,
+      planTrackedSeconds: widget.planTrackedSeconds,
+      planEstimatedSeconds: widget.planEstimatedSeconds,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final categoryTone =
-        DatabaseService.instance.getCategoryColor(task.categoryId);
+        DatabaseService.instance.getCategoryColor(widget.task.categoryId);
     final categoryTrail = localizeCategoryBreadcrumbPath(
-      DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
+      DatabaseService.instance.getCategoryPath(widget.task.categoryId).trim(),
       loc,
     );
-    final categoryIcon =
-        DatabaseService.instance.getCategoryRuleById(task.categoryId)?.iconOrDefault;
+    final categoryIcon = DatabaseService.instance
+        .getCategoryRuleById(widget.task.categoryId)
+        ?.iconOrDefault;
 
-    final borderColor = highlightAsRunning
+    final borderColor = widget.highlightAsRunning
         ? scheme.primary
-        : interacting
+        : widget.interacting
             ? scheme.primary.withValues(alpha: 0.45)
-            : scheme.outlineVariant.withValues(alpha: 0.38);
-    final borderWidth = highlightAsRunning
+            : _hovered && _isListLike
+                ? scheme.outlineVariant.withValues(alpha: 0.55)
+                : scheme.outlineVariant.withValues(alpha: 0.38);
+    final borderWidth = widget.highlightAsRunning
         ? 2.0
-        : interacting
+        : widget.interacting
             ? 1.5
             : 1.0;
 
-    final surface = selectMode && isSelected
+    final surface = widget.selectMode && widget.isSelected
         ? Color.alphaBlend(
             scheme.primaryContainer.withValues(alpha: 0.35),
             _PlanCardTokens.surface,
           )
         : _PlanCardTokens.surface;
 
+    final pinFooter = widget.heightPx != null;
+    final listExtras = _listExtras;
+
     Widget body;
-    switch (density) {
+    switch (widget.density) {
       case PlanTimeTaskCardDensity.compact:
         body = _TimelinePlanCardSmall(
-          task: task,
-          timeLabel: timeLabel,
-          displayIsDone: displayIsDone,
-          selectMode: selectMode,
-          isSelected: isSelected,
+          task: widget.task,
+          timeLabel: widget.timeLabel,
+          displayIsDone: widget.displayIsDone,
+          selectMode: widget.selectMode,
+          isSelected: widget.isSelected,
           hasRepeat: _hasRepeat,
           showPlay: _showPlay,
           visibleTags: _visibleTags,
-          toggleDoneEnabled: toggleDoneEnabled,
-          onToggleDone: onToggleDone,
-          onSelectToggle: onSelectToggle,
-          onPlay: onPlay,
-          onOpenMenu: onOpenMenu,
+          toggleDoneEnabled: widget.toggleDoneEnabled,
+          metaIcons: widget.metaIcons,
+          listExtras: listExtras,
+          onToggleDone: widget.onToggleDone,
+          onSelectToggle: widget.onSelectToggle,
+          onPlay: widget.onPlay,
+          onOpenMenu: widget.onOpenMenu,
         );
       case PlanTimeTaskCardDensity.medium:
         body = _TimelinePlanCardMedium(
-          task: task,
-          timeLabel: timeLabel,
-          categoryTrail: categoryTrail,
-          displayIsDone: displayIsDone,
-          selectMode: selectMode,
-          isSelected: isSelected,
+          task: widget.task,
+          timeLabel: widget.timeLabel,
+          categoryTrail:
+              widget.showFooterBreadcrumb ? categoryTrail : '',
+          displayIsDone: widget.displayIsDone,
+          selectMode: widget.selectMode,
+          isSelected: widget.isSelected,
           hasRepeat: _hasRepeat,
           showPlay: _showPlay,
           visibleTags: _visibleTags,
-          scheduleConflict: scheduleConflict,
-          toggleDoneEnabled: toggleDoneEnabled,
-          onToggleDone: onToggleDone,
-          onSelectToggle: onSelectToggle,
-          onPlay: onPlay,
-          onOpenMenu: onOpenMenu,
+          scheduleConflict: widget.scheduleConflict,
+          toggleDoneEnabled: widget.toggleDoneEnabled,
+          metaIcons: widget.metaIcons,
+          listExtras: listExtras,
+          pinFooter: pinFooter,
+          onToggleDone: widget.onToggleDone,
+          onSelectToggle: widget.onSelectToggle,
+          onPlay: widget.onPlay,
+          onOpenMenu: widget.onOpenMenu,
           titleMaxLines: 1,
-          heightPx: heightPx,
+          heightPx: widget.heightPx,
         );
       case PlanTimeTaskCardDensity.large:
         body = _TimelinePlanCardLarge(
-          task: task,
-          timeLabel: timeLabel,
-          categoryTrail: categoryTrail,
-          displayIsDone: displayIsDone,
-          selectMode: selectMode,
-          isSelected: isSelected,
+          task: widget.task,
+          timeLabel: widget.timeLabel,
+          categoryTrail:
+              widget.showFooterBreadcrumb ? categoryTrail : '',
+          displayIsDone: widget.displayIsDone,
+          selectMode: widget.selectMode,
+          isSelected: widget.isSelected,
           hasRepeat: _hasRepeat,
           showPlay: _showPlay,
           visibleTags: _visibleTags,
-          scheduleConflict: scheduleConflict,
-          toggleDoneEnabled: toggleDoneEnabled,
-          onToggleDone: onToggleDone,
-          onSelectToggle: onSelectToggle,
-          onPlay: onPlay,
-          onOpenMenu: onOpenMenu,
-          heightPx: heightPx,
+          scheduleConflict: widget.scheduleConflict,
+          toggleDoneEnabled: widget.toggleDoneEnabled,
+          metaIcons: widget.metaIcons,
+          listExtras: listExtras,
+          pinFooter: pinFooter,
+          onToggleDone: widget.onToggleDone,
+          onSelectToggle: widget.onSelectToggle,
+          onPlay: widget.onPlay,
+          onOpenMenu: widget.onOpenMenu,
+          heightPx: widget.heightPx,
         );
     }
 
-    final card = DecoratedBox(
+    final minH = _isListLike
+        ? planTimeCardListMinHeight(widget.density)
+        : null;
+
+    Widget card = DecoratedBox(
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(_PlanCardGeom.radius),
         border: Border.all(color: borderColor, width: borderWidth),
-        boxShadow: _PlanCardTokens.cardShadow(interacting),
+        boxShadow: _PlanCardTokens.cardShadow(
+          widget.interacting,
+          hovered: _hovered && _isListLike,
+        ),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(_PlanCardGeom.radius),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth;
-            final h = heightPx ?? constraints.maxHeight;
+            final h = widget.heightPx ?? constraints.maxHeight;
             return Stack(
-              fit: heightPx != null ? StackFit.expand : StackFit.passthrough,
+              fit: widget.heightPx != null
+                  ? StackFit.expand
+                  : StackFit.passthrough,
               children: [
                 _PlanCardWatermark(
                   icon: categoryIcon,
                   color: categoryTone,
-                  density: density,
+                  density: widget.density,
                   cardWidth: w.isFinite ? w : _PlanCardGeom.refWidth,
-                  cardHeight: h.isFinite ? h : _PlanCardGeom.refHeight(density),
+                  cardHeight:
+                      h.isFinite ? h : _PlanCardGeom.refHeight(widget.density),
                 ),
-                if (heightPx != null)
+                if (widget.heightPx != null)
                   SizedBox(
-                    height: heightPx,
+                    height: widget.heightPx,
                     width: double.infinity,
                     child: body,
                   )
@@ -193,11 +256,35 @@ class PlanTimeTaskCard extends StatelessWidget {
       ),
     );
 
-    if (onTap == null) return card;
+    if (minH != null) {
+      card = ConstrainedBox(
+        constraints: BoxConstraints(minHeight: minH),
+        child: card,
+      );
+    }
+
+    if (_isListLike) {
+      card = MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
+        child: card,
+      );
+    }
+
+    final hasBodyGesture = widget.onTap != null || widget.onLongPress != null;
+    if (!hasBodyGesture) return card;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
+        hoverColor: _isListLike
+            ? scheme.primary.withValues(alpha: 0.04)
+            : Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
         borderRadius: BorderRadius.circular(_PlanCardGeom.radius),
         child: card,
       ),
@@ -261,13 +348,165 @@ abstract final class _PlanCardTokens {
   static const Color tagPurpleBg = Color(0xFFEEE5F8);
   static const Color tagPurpleText = Color(0xFF7118E5);
 
-  static List<BoxShadow> cardShadow(bool interacting) => [
+  static List<BoxShadow> cardShadow(bool interacting, {bool hovered = false}) => [
         BoxShadow(
           color: const Color(0x0A000000),
-          blurRadius: interacting ? 6 : 4,
+          blurRadius: interacting ? 6 : (hovered ? 6 : 4),
           offset: const Offset(0, 4),
         ),
       ];
+}
+
+class _PlanCardListExtras extends StatelessWidget {
+  const _PlanCardListExtras({
+    this.subtitleLabel,
+    this.onSubtitleTap,
+    this.planTrackedSeconds = 0,
+    this.planEstimatedSeconds,
+  });
+
+  final String? subtitleLabel;
+  final VoidCallback? onSubtitleTap;
+  final int planTrackedSeconds;
+  final int? planEstimatedSeconds;
+
+  @override
+  Widget build(BuildContext context) {
+    final children = <Widget>[];
+    if ((planEstimatedSeconds ?? 0) > 0) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: _PlanCardProgressRow(
+            trackedSeconds: planTrackedSeconds,
+            estimatedSeconds: planEstimatedSeconds!,
+          ),
+        ),
+      );
+    } else if (planTrackedSeconds > 0) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            t(currentLocale.value, 'plan_card_fact_time').replaceFirst(
+              '%s',
+              _PlanCardProgressRow.formatTracked(planTrackedSeconds),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 10,
+              height: 1.1,
+              color: _PlanCardTokens.breadcrumbColor,
+            ),
+          ),
+        ),
+      );
+    }
+    if (subtitleLabel != null && subtitleLabel!.isNotEmpty) {
+      children.add(
+        Padding(
+          padding: EdgeInsets.only(top: children.isEmpty ? 6 : 4),
+          child: onSubtitleTap == null
+              ? Text(
+                  subtitleLabel!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    height: 1.1,
+                    color: _PlanCardTokens.timeColor,
+                  ),
+                )
+              : GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onSubtitleTap,
+                  child: Text(
+                    subtitleLabel!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      height: 1.1,
+                      color: _PlanCardTokens.timeColor,
+                    ),
+                  ),
+                ),
+        ),
+      );
+    }
+    if (children.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: children,
+    );
+  }
+}
+
+class _PlanCardProgressRow extends StatelessWidget {
+  const _PlanCardProgressRow({
+    required this.trackedSeconds,
+    required this.estimatedSeconds,
+  });
+
+  final int trackedSeconds;
+  final int estimatedSeconds;
+
+  static String formatTracked(int sec) {
+    final s = sec.clamp(0, 8640000);
+    final h = s ~/ 3600;
+    final m = (s % 3600) ~/ 60;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  }
+
+  static String _shortDur(int sec) {
+    if (sec < 60) return '${sec}s';
+    if (sec < 3600) return '${(sec / 60).round()}m';
+    final h = sec ~/ 3600;
+    final m = (sec % 3600) ~/ 60;
+    if (m == 0) return '${h}h';
+    return '${h}h ${m}m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pct =
+        estimatedSeconds > 0 ? ((trackedSeconds * 100) / estimatedSeconds).round() : 0;
+    final over = trackedSeconds > estimatedSeconds;
+    return Row(
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              minHeight: 3,
+              value: trackedSeconds <= estimatedSeconds
+                  ? trackedSeconds / estimatedSeconds
+                  : 1.0,
+              backgroundColor: const Color(0x61D9D9D9),
+              color: over
+                  ? Theme.of(context).colorScheme.error
+                  : _PlanCardTokens.breadcrumbColor,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '${_shortDur(trackedSeconds)} / ${_shortDur(estimatedSeconds)} ($pct%)',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 10,
+            height: 1.1,
+            color: over
+                ? Theme.of(context).colorScheme.error
+                : _PlanCardTokens.timeColor,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 // --- CardPlan_Small -----------------------------------------------------------
@@ -283,6 +522,8 @@ class _TimelinePlanCardSmall extends StatelessWidget {
     required this.showPlay,
     required this.visibleTags,
     required this.toggleDoneEnabled,
+    this.metaIcons = const [],
+    this.listExtras,
     this.onToggleDone,
     this.onSelectToggle,
     this.onPlay,
@@ -298,6 +539,8 @@ class _TimelinePlanCardSmall extends StatelessWidget {
   final bool showPlay;
   final List<Tag> visibleTags;
   final bool toggleDoneEnabled;
+  final List<Widget> metaIcons;
+  final _PlanCardListExtras? listExtras;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
@@ -344,6 +587,7 @@ class _TimelinePlanCardSmall extends StatelessWidget {
                   displayIsDone: displayIsDone,
                   hasRepeat: hasRepeat,
                   maxLines: 1,
+                  metaIcons: metaIcons,
                 ),
                 if (showTagRow)
                   Padding(
@@ -355,6 +599,7 @@ class _TimelinePlanCardSmall extends StatelessWidget {
                           : null,
                     ),
                   ),
+                if (listExtras != null) listExtras!,
               ],
             ),
           ),
@@ -385,6 +630,9 @@ class _TimelinePlanCardMedium extends StatelessWidget {
     required this.scheduleConflict,
     required this.toggleDoneEnabled,
     required this.titleMaxLines,
+    this.metaIcons = const [],
+    this.listExtras,
+    this.pinFooter = false,
     this.heightPx,
     this.onToggleDone,
     this.onSelectToggle,
@@ -404,6 +652,9 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final bool scheduleConflict;
   final bool toggleDoneEnabled;
   final int titleMaxLines;
+  final List<Widget> metaIcons;
+  final _PlanCardListExtras? listExtras;
+  final bool pinFooter;
   final double? heightPx;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
@@ -412,7 +663,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bounded = heightPx != null;
+    final fixedListHeight = heightPx == null && listExtras != null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
@@ -421,12 +672,13 @@ class _TimelinePlanCardMedium extends StatelessWidget {
         _PlanCardGeom.padTopMediumLarge,
       ),
       child: SizedBox(
-        height: bounded
+        height: pinFooter || fixedListHeight
             ? null
             : _PlanCardGeom.refHeightMedium -
                 _PlanCardGeom.padTopMediumLarge * 2,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment:
+              pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
           children: [
             _PlanCardControlRail(
               showPlay: showPlay,
@@ -457,30 +709,32 @@ class _TimelinePlanCardMedium extends StatelessWidget {
                                 displayIsDone: displayIsDone,
                                 hasRepeat: hasRepeat,
                                 maxLines: titleMaxLines,
+                                metaIcons: metaIcons,
                               ),
                             ),
-                            if (visibleTags.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: _PlanCardGeom.titleToTagsGap,
-                                ),
-                                child: _PlanCardTagsRow(tags: visibleTags),
+                          if (visibleTags.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: _PlanCardGeom.titleToTagsGap,
                               ),
-                          ],
-                        ),
+                              child: _PlanCardTagsRow(tags: visibleTags),
+                            ),
+                          if (listExtras != null) listExtras!,
+                        ],
                       ),
-                      if (onOpenMenu != null)
-                        _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
-                    ],
-                  ),
-                  if (bounded) const Spacer(),
-                  const _PlanCardDividerLine(),
-                  const SizedBox(height: _PlanCardGeom.footerBlockGap),
-                  _PlanCardFooterRow(
-                    categoryTrail: categoryTrail,
-                    timeLabel: timeLabel,
-                    scheduleConflict: scheduleConflict,
-                  ),
+                    ),
+                    if (onOpenMenu != null)
+                      _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+                  ],
+                ),
+                if (pinFooter) const Spacer() else const SizedBox(height: 8),
+                const _PlanCardDividerLine(),
+                const SizedBox(height: _PlanCardGeom.footerBlockGap),
+                _PlanCardFooterRow(
+                  categoryTrail: categoryTrail,
+                  timeLabel: timeLabel,
+                  scheduleConflict: scheduleConflict,
+                ),
                 ],
               ),
             ),
@@ -506,6 +760,9 @@ class _TimelinePlanCardLarge extends StatelessWidget {
     required this.visibleTags,
     required this.scheduleConflict,
     required this.toggleDoneEnabled,
+    this.metaIcons = const [],
+    this.listExtras,
+    this.pinFooter = false,
     this.heightPx,
     this.onToggleDone,
     this.onSelectToggle,
@@ -524,6 +781,9 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final List<Tag> visibleTags;
   final bool scheduleConflict;
   final bool toggleDoneEnabled;
+  final List<Widget> metaIcons;
+  final _PlanCardListExtras? listExtras;
+  final bool pinFooter;
   final double? heightPx;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
@@ -532,7 +792,6 @@ class _TimelinePlanCardLarge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bounded = heightPx != null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
@@ -541,12 +800,13 @@ class _TimelinePlanCardLarge extends StatelessWidget {
         _PlanCardGeom.padTopMediumLarge,
       ),
       child: SizedBox(
-        height: bounded
+        height: pinFooter
             ? null
             : _PlanCardGeom.refHeightLarge -
                 _PlanCardGeom.padTopMediumLarge * 2,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment:
+              pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
           children: [
             _PlanCardControlRail(
               showPlay: showPlay,
@@ -578,6 +838,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
                                 displayIsDone: displayIsDone,
                                 hasRepeat: hasRepeat,
                                 maxLines: 3,
+                                metaIcons: metaIcons,
                               ),
                             ),
                             if (visibleTags.isNotEmpty)
@@ -587,6 +848,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
                                 ),
                                 child: _PlanCardTagsRow(tags: visibleTags),
                               ),
+                            if (listExtras != null) listExtras!,
                           ],
                         ),
                       ),
@@ -594,7 +856,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
                         _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
                     ],
                   ),
-                  if (bounded) const Spacer(),
+                  if (pinFooter) const Spacer(),
                   const _PlanCardDividerLine(),
                   const SizedBox(height: _PlanCardGeom.footerBlockGap),
                   _PlanCardFooterRow(
@@ -663,7 +925,7 @@ class _PlanCardControlRail extends StatelessWidget {
   }
 }
 
-class _PlanCardCheckbox extends StatelessWidget {
+class _PlanCardCheckbox extends StatefulWidget {
   const _PlanCardCheckbox({
     required this.selectMode,
     required this.isSelected,
@@ -681,44 +943,61 @@ class _PlanCardCheckbox extends StatelessWidget {
   final VoidCallback? onSelectToggle;
 
   @override
+  State<_PlanCardCheckbox> createState() => _PlanCardCheckboxState();
+}
+
+class _PlanCardCheckboxState extends State<_PlanCardCheckbox> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final checked = selectMode ? isSelected : displayIsDone;
-    final enabled = selectMode
-        ? onSelectToggle != null
-        : toggleDoneEnabled && onToggleDone != null;
+    final checked = widget.selectMode ? widget.isSelected : widget.displayIsDone;
+    final enabled = widget.selectMode
+        ? widget.onSelectToggle != null
+        : widget.toggleDoneEnabled && widget.onToggleDone != null;
+    final borderColor = _hovered && enabled
+        ? _PlanCardTokens.playFill.withValues(alpha: 0.55)
+        : _PlanCardTokens.checkboxStroke;
     return Semantics(
       checked: checked,
       button: true,
       enabled: enabled,
-      child: GestureDetector(
-        onTap: enabled
-            ? (selectMode ? onSelectToggle : onToggleDone)
-            : null,
-        child: SizedBox(
-          width: _PlanCardGeom.controlSize,
-          height: _PlanCardGeom.controlSize,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: _PlanCardTokens.checkboxStroke),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x38000000),
-                  blurRadius: 4,
-                  spreadRadius: -2,
-                ),
-              ],
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        child: GestureDetector(
+          onTap: enabled
+              ? (widget.selectMode
+                  ? widget.onSelectToggle
+                  : widget.onToggleDone)
+              : null,
+          child: SizedBox(
+            width: _PlanCardGeom.controlSize,
+            height: _PlanCardGeom.controlSize,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(9),
+                border: Border.all(color: borderColor),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x38000000),
+                    blurRadius: 4,
+                    spreadRadius: -2,
+                  ),
+                ],
+              ),
+              child: checked
+                  ? const Center(
+                      child: Icon(
+                        Icons.check_rounded,
+                        size: 18,
+                        color: _PlanCardTokens.playFill,
+                      ),
+                    )
+                  : null,
             ),
-            child: checked
-                ? const Center(
-                    child: Icon(
-                      Icons.check_rounded,
-                      size: 18,
-                      color: _PlanCardTokens.playFill,
-                    ),
-                  )
-                : null,
           ),
         ),
       ),
@@ -726,26 +1005,42 @@ class _PlanCardCheckbox extends StatelessWidget {
   }
 }
 
-class _PlanCardPlayButton extends StatelessWidget {
+class _PlanCardPlayButton extends StatefulWidget {
   const _PlanCardPlayButton({this.onPlay});
 
   final VoidCallback? onPlay;
+
+  @override
+  State<_PlanCardPlayButton> createState() => _PlanCardPlayButtonState();
+}
+
+class _PlanCardPlayButtonState extends State<_PlanCardPlayButton> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
       label: t(currentLocale.value, 'start'),
-      child: GestureDetector(
-        onTap: onPlay,
-        behavior: HitTestBehavior.opaque,
-        child: SizedBox(
-          width: _PlanCardGeom.controlSize,
-          height: _PlanCardGeom.controlSize,
-          child: Center(
-            child: CustomPaint(
-              size: const Size(16, 18),
-              painter: const _PlanCardPlayIconPainter(),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: widget.onPlay,
+          behavior: HitTestBehavior.opaque,
+          child: SizedBox(
+            width: _PlanCardGeom.controlSize,
+            height: _PlanCardGeom.controlSize,
+            child: Center(
+              child: CustomPaint(
+                size: const Size(16, 18),
+                painter: _PlanCardPlayIconPainter(
+                  fill: _hovered
+                      ? const Color(0xFF4A4A4A)
+                      : _PlanCardTokens.playFill,
+                ),
+              ),
             ),
           ),
         ),
@@ -755,11 +1050,14 @@ class _PlanCardPlayButton extends StatelessWidget {
 }
 
 class _PlanCardPlayIconPainter extends CustomPainter {
-  const _PlanCardPlayIconPainter();
+  const _PlanCardPlayIconPainter({this.fill = _PlanCardTokens.playFill});
+
+  final Color fill;
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = _PlanCardTokens.playFill
+      ..color = fill
       ..style = PaintingStyle.fill;
     final w = size.width;
     final h = size.height;
@@ -776,10 +1074,17 @@ class _PlanCardPlayIconPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _PlanCardMenuButton extends StatelessWidget {
+class _PlanCardMenuButton extends StatefulWidget {
   const _PlanCardMenuButton({required this.onOpenMenu});
 
   final void Function(BuildContext) onOpenMenu;
+
+  @override
+  State<_PlanCardMenuButton> createState() => _PlanCardMenuButtonState();
+}
+
+class _PlanCardMenuButtonState extends State<_PlanCardMenuButton> {
+  bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
@@ -787,19 +1092,26 @@ class _PlanCardMenuButton extends StatelessWidget {
       builder: (menuCtx) => Semantics(
         button: true,
         label: t(currentLocale.value, 'plan_radial_menu_tip'),
-        child: GestureDetector(
-          onTap: () => onOpenMenu(menuCtx),
-          behavior: HitTestBehavior.opaque,
-          child: SizedBox(
-            width: _PlanCardGeom.menuSize,
-            height: _PlanCardGeom.menuSize,
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                color: _PlanCardTokens.menuBg,
-                shape: BoxShape.circle,
-              ),
-              child: CustomPaint(
-                painter: const _PlanCardMenuIconPainter(),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hovered = true),
+          onExit: (_) => setState(() => _hovered = false),
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () => widget.onOpenMenu(menuCtx),
+            behavior: HitTestBehavior.opaque,
+            child: SizedBox(
+              width: _PlanCardGeom.menuSize,
+              height: _PlanCardGeom.menuSize,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: _hovered
+                      ? const Color(0xFFDEDEDE)
+                      : _PlanCardTokens.menuBg,
+                  shape: BoxShape.circle,
+                ),
+                child: const CustomPaint(
+                  painter: _PlanCardMenuIconPainter(),
+                ),
               ),
             ),
           ),
@@ -843,12 +1155,14 @@ class _PlanCardTitleRow extends StatelessWidget {
     required this.displayIsDone,
     required this.hasRepeat,
     required this.maxLines,
+    this.metaIcons = const [],
   });
 
   final String title;
   final bool displayIsDone;
   final bool hasRepeat;
   final int maxLines;
+  final List<Widget> metaIcons;
 
   @override
   Widget build(BuildContext context) {
@@ -879,6 +1193,11 @@ class _PlanCardTitleRow extends StatelessWidget {
               size: 15,
               color: _PlanCardTokens.breadcrumbColor.withValues(alpha: 0.85),
             ),
+          ),
+        if (metaIcons.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Row(mainAxisSize: MainAxisSize.min, children: metaIcons),
           ),
       ],
     );
@@ -1086,3 +1405,26 @@ PlanTimeTaskCardDensity planTimeCardDensityForBlock(
   }
   return PlanTimeTaskCardDensity.large;
 }
+
+/// List/calendar row density — compact when minimal, medium when tags/progress/schedule.
+PlanTimeTaskCardDensity planTimeCardDensityForList({
+  required PlanningTask task,
+  int? planEstimatedSeconds,
+  int planTrackedSeconds = 0,
+}) {
+  final hasTags = task.tags.any((t) => t.rendersAsChip);
+  final hasProgress =
+      (planEstimatedSeconds ?? 0) > 0 || planTrackedSeconds > 0;
+  if (!hasTags && !hasProgress && task.startTime == null) {
+    return PlanTimeTaskCardDensity.compact;
+  }
+  return PlanTimeTaskCardDensity.medium;
+}
+
+/// Minimum visible height for list/calendar surfaces (never collapse to 0).
+double planTimeCardListMinHeight(PlanTimeTaskCardDensity density) =>
+    switch (density) {
+      PlanTimeTaskCardDensity.compact => _PlanCardGeom.refHeightSmall,
+      PlanTimeTaskCardDensity.medium => _PlanCardGeom.refHeightMedium,
+      PlanTimeTaskCardDensity.large => _PlanCardGeom.refHeightLarge,
+    };

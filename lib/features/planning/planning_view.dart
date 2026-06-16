@@ -5181,23 +5181,6 @@ class _PlanningTaskCard extends StatelessWidget {
     return '${wall.hour.toString().padLeft(2, '0')}:${wall.minute.toString().padLeft(2, '0')}';
   }
 
-  static String _shortDur(int sec) {
-    if (sec < 60) return '${sec}s';
-    if (sec < 3600) return '${(sec / 60).round()}m';
-    final h = sec ~/ 3600;
-    final m = (sec % 3600) ~/ 60;
-    if (m == 0) return '${h}h';
-    return '${h}h ${m}m';
-  }
-
-  /// Elapsed duration as `HH:mm` for compact “fact” line (not wall-clock time).
-  static String _trackedDurationAsHhMm(int sec) {
-    final s = sec.clamp(0, 8640000);
-    final h = s ~/ 3600;
-    final m = (s % 3600) ~/ 60;
-    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
-  }
-
   static String _subtitle(PlanningTask task) {
     final dateStr = _formatPlanningTaskDate(task);
     final displayDate = dateStr.isNotEmpty ? dateStr : task.dateKey;
@@ -5248,6 +5231,7 @@ class _PlanningTaskCard extends StatelessWidget {
       child: PlanTimeTaskCard(
         task: task,
         density: density,
+        surface: PlanCardSurface.timeline,
         timeLabel: _timelineTimeRangeLabel(task),
         heightPx: timelineBlockHeightPx,
         displayIsDone: displayIsDone,
@@ -5267,42 +5251,24 @@ class _PlanningTaskCard extends StatelessWidget {
     );
   }
 
+  static String _listTimeLabel(PlanningTask task) {
+    final start = task.startTime;
+    if (start == null) return '';
+    final startLabel = _formatPlanningWallTime(start);
+    final end = task.endDateTime;
+    if (end != null) {
+      return '$startLabel – ${_formatPlanningWallTime(end)}';
+    }
+    return startLabel;
+  }
+
   Widget _buildListPlanningCard(BuildContext context) {
     final metaIcons = _planningTaskMetaIcons(context, task);
-    final hasRepeat =
-        (task.rrule?.trim().isNotEmpty ?? false) ||
-        (task.recurrenceInstanceDateKey?.trim().isNotEmpty ?? false);
-    final scheme = Theme.of(context).colorScheme;
-    final categoryTrail = localizeCategoryBreadcrumbPath(
-      DatabaseService.instance.getCategoryPath(task.categoryId).trim(),
-      currentLocale.value,
+    final density = planTimeCardDensityForList(
+      task: task,
+      planEstimatedSeconds: planEstimatedSeconds,
+      planTrackedSeconds: planTrackedSeconds,
     );
-    final categoryTone = DatabaseService.instance.getCategoryColor(
-      task.categoryId,
-    );
-    final bg = selectMode && isSelected
-        ? scheme.primaryContainer
-        : timelineBlock
-        ? Color.alphaBlend(
-            scheme.primary.withValues(alpha: 0.05),
-            scheme.surface,
-          )
-        : scheme.surfaceContainerHighest.withValues(alpha: 0.35);
-    final borderColor = highlightAsRunning
-        ? scheme.primary
-        : timelineInteracting
-        ? scheme.primary.withValues(alpha: 0.55)
-        : timelineBlock
-        ? scheme.outlineVariant.withValues(alpha: 0.62)
-        : Colors.transparent;
-    final borderWidth = highlightAsRunning
-        ? 2.0
-        : timelineInteracting
-        ? 1.5
-        : timelineBlock
-        ? 1.0
-        : 0.0;
-    final showPlayButton = !selectMode && !displayIsDone;
     final suppressChildInk = Theme.of(context).copyWith(
       splashFactory: NoSplash.splashFactory,
       splashColor: Colors.transparent,
@@ -5312,320 +5278,29 @@ class _PlanningTaskCard extends StatelessWidget {
         overlayColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 52),
-      child: Material(
-      color: bg,
-      elevation: timelineBlock ? (timelineInteracting ? 3 : 1.5) : 0,
-      shadowColor: scheme.shadow.withValues(alpha: 0.16),
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: borderColor, width: borderWidth),
-      ),
-      child: InkWell(
+    return Theme(
+      data: suppressChildInk,
+      child: PlanTimeTaskCard(
+        task: task,
+        density: density,
+        surface: PlanCardSurface.list,
+        timeLabel: _listTimeLabel(task),
+        displayIsDone: displayIsDone,
+        selectMode: selectMode,
+        isSelected: isSelected,
+        highlightAsRunning: highlightAsRunning,
+        toggleDoneEnabled: toggleDoneEnabled,
+        planTrackedSeconds: planTrackedSeconds,
+        planEstimatedSeconds: planEstimatedSeconds,
+        metaIcons: metaIcons,
+        subtitleLabel: _subtitle(task),
+        onToggleDone: onToggleDone,
+        onSelectToggle: onBodyTap,
+        onPlay: (!selectMode && !displayIsDone) ? onPlay : null,
+        onOpenMenu: onOpenMenu,
         onTap: onBodyTap,
         onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(12),
-        child: Theme(
-          data: suppressChildInk,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (timelineBlock)
-                  Container(
-                    width: 3,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: categoryTone.withValues(alpha: 0.82),
-                      borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(12),
-                      ),
-                    ),
-                  ),
-                Expanded(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(start: 2, top: 4),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      selectMode
-                          ? Checkbox(
-                              value: isSelected,
-                              tristate: false,
-                              onChanged: (_) => onBodyTap(),
-                            )
-                          : Checkbox(
-                              value: displayIsDone,
-                              tristate: false,
-                              onChanged: toggleDoneEnabled
-                                  ? (_) => onToggleDone()
-                                  : null,
-                            ),
-                      if (showPlayButton)
-                        IconButton(
-                          constraints: const BoxConstraints(
-                            minWidth: 40,
-                            minHeight: 40,
-                          ),
-                          padding: EdgeInsets.zero,
-                          style: IconButton.styleFrom(
-                            splashFactory: NoSplash.splashFactory,
-                            hoverColor: Colors.transparent,
-                          ),
-                          icon: const Icon(Icons.play_arrow_rounded),
-                          onPressed: onPlay,
-                          tooltip: t(currentLocale.value, 'start'),
-                        ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      top: 6,
-                      bottom: 2,
-                      end: 4,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (categoryTrail.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Text(
-                              categoryTrail,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.start,
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    fontSize: 10,
-                                    height: 1.2,
-                                    letterSpacing: 0.12,
-                                    fontWeight: FontWeight.w500,
-                                    color: categoryTone.withValues(alpha: 0.88),
-                                  ),
-                            ),
-                          ),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Flexible(
-                              fit: FlexFit.loose,
-                              child: Text(
-                                task.title,
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  decoration: displayIsDone
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                  color: displayIsDone
-                                      ? scheme.onSurface.withValues(alpha: 0.62)
-                                      : null,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            if (hasRepeat)
-                              Padding(
-                                padding: const EdgeInsetsDirectional.only(
-                                  start: 4,
-                                  top: 1,
-                                ),
-                                child: Icon(
-                                  Icons.repeat_rounded,
-                                  size: 17,
-                                  color: scheme.primary.withValues(alpha: 0.85),
-                                ),
-                              ),
-                            if (metaIcons.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsetsDirectional.only(
-                                  start: 4,
-                                  top: 1,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: metaIcons,
-                                ),
-                              ),
-                          ],
-                        ),
-                        if ((planEstimatedSeconds ?? 0) > 0) ...[
-                          const SizedBox(height: 6),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(2),
-                                  child: LinearProgressIndicator(
-                                    minHeight: 3,
-                                    value:
-                                        planTrackedSeconds <=
-                                            planEstimatedSeconds!
-                                        ? planTrackedSeconds /
-                                              planEstimatedSeconds!
-                                        : 1.0,
-                                    backgroundColor: scheme
-                                        .surfaceContainerHighest
-                                        .withValues(alpha: 0.65),
-                                    color:
-                                        planTrackedSeconds >
-                                            planEstimatedSeconds!
-                                        ? scheme.error
-                                        : scheme.primary,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                flex: 0,
-                                child: Text(
-                                  () {
-                                    final est = planEstimatedSeconds!;
-                                    final a = planTrackedSeconds;
-                                    final pct = est > 0
-                                        ? ((a * 100) / est).round()
-                                        : 0;
-                                    return '${_shortDur(a)} / ${_shortDur(est)} ($pct%)';
-                                  }(),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.labelSmall
-                                      ?.copyWith(
-                                        fontSize: 10,
-                                        height: 1.1,
-                                        color:
-                                            planTrackedSeconds >
-                                                planEstimatedSeconds!
-                                            ? scheme.error
-                                            : scheme.onSurfaceVariant,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ] else if (planTrackedSeconds > 0) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            t(
-                              currentLocale.value,
-                              'plan_card_fact_time',
-                            ).replaceFirst(
-                              '%s',
-                              _trackedDurationAsHhMm(planTrackedSeconds),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  fontSize: 10,
-                                  height: 1.1,
-                                  color: scheme.primary.withValues(alpha: 0.92),
-                                ),
-                          ),
-                        ],
-                        if (task.tags.any((t) => t.rendersAsChip)) ...[
-                          const SizedBox(height: 6),
-                          StreamBuilder<UserSettings>(
-                            stream: DatabaseService.instance.userSettingsStream,
-                            initialData: DatabaseService.instance.settings,
-                            builder: (context, snap) {
-                              final mode =
-                                  snap.data?.tagDisplayMode ??
-                                  CategoryDisplayMode.letterChip;
-                              return SizedBox(
-                                height: 28,
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  itemCount: task.tags
-                                      .where((tag) => tag.rendersAsChip)
-                                      .length,
-                                  separatorBuilder: (_, _) =>
-                                      const SizedBox(width: 6),
-                                  itemBuilder: (context, i) {
-                                    final visible = task.tags
-                                        .where((tag) => tag.rendersAsChip)
-                                        .toList(growable: false);
-                                    final tag = visible[i];
-                                    return Center(
-                                      child: CategoryChip(
-                                        mode: mode,
-                                        label: tag.name.trim().isNotEmpty
-                                            ? tag.name.trim()
-                                            : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                                        color:
-                                            parseTagHexColor(tag.color) ??
-                                            scheme.primary,
-                                        icon: iconForTagKey(tag.icon),
-                                        compactGlyphLayout: true,
-                                        syntheticNoTagsMonochrome:
-                                            tag.tagId == -1,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                        selectMode
-                            ? Text(
-                                _subtitle(task),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: scheme.onSurfaceVariant),
-                              )
-                            : GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: onDateTap,
-                                child: Text(
-                                  _subtitle(task),
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: scheme.onSurfaceVariant,
-                                      ),
-                                ),
-                              ),
-                      ],
-                    ),
-                  ),
-                ),
-                Builder(
-                  builder: (menuCtx) {
-                    return IconButton(
-                      tooltip: t(currentLocale.value, 'plan_radial_menu_tip'),
-                      style: IconButton.styleFrom(
-                        splashFactory: NoSplash.splashFactory,
-                        hoverColor: Colors.transparent,
-                        backgroundColor: scheme.secondaryContainer.withValues(
-                          alpha: 0.92,
-                        ),
-                        foregroundColor: scheme.onSecondaryContainer,
-                        minimumSize: const Size(44, 44),
-                        padding: EdgeInsets.zero,
-                        shape: const CircleBorder(),
-                      ),
-                      icon: const Icon(Icons.menu_open_rounded, size: 24),
-                      onPressed: () => onOpenMenu(menuCtx),
-                    );
-                  },
-                ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+        onSubtitleTap: selectMode ? null : onDateTap,
       ),
     );
   }
