@@ -1794,6 +1794,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             (edited.rrule != null && edited.rrule!.trim().isNotEmpty)
             ? edited.exceptionDates
             : const <String>[],
+        recurrenceInstanceDateKey:
+            edited.recurrenceInstanceDateKey ?? baseline.recurrenceInstanceDateKey,
       );
       if (!mounted) return;
       if (!ok) {

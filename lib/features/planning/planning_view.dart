@@ -437,6 +437,7 @@ class _PlanningPageState extends State<PlanningPage>
       endDateTimeDisplay: wallEnd,
       clearEnd: task.endDateTime == null,
       suppressAppSnack: true,
+      recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
       planInitialDateKey: initForPatch.length >= minKeyLen
           ? initForPatch
           : null,
@@ -1859,6 +1860,7 @@ class _PlanningPageState extends State<PlanningPage>
         task.planRowIdForBackend,
         planBusinessId: task.planRowId,
         isDone: next,
+        recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
       );
       if (!mounted) return;
       if (!ok) {
@@ -2530,6 +2532,7 @@ class _PlanningPageState extends State<PlanningPage>
         endDateTimeDisplay: newEndWall,
         clearEnd: newEndWall == null,
         suppressAppSnack: true,
+        recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
       ),
     );
   }
@@ -2644,6 +2647,7 @@ class _PlanningPageState extends State<PlanningPage>
           endDateTimeDisplay: task.endDateTime,
           clearEnd: task.endDateTime == null,
           suppressAppSnack: true,
+          recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
         ),
       );
     }
@@ -2906,6 +2910,7 @@ class _PlanningPageState extends State<PlanningPage>
       planBusinessId: task.planRowId,
       startTimeDisplay: wallStart,
       suppressAppSnack: true,
+      recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
     );
     if (!mounted) return;
     final loc = currentLocale.value;

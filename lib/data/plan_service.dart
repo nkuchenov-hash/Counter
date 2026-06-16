@@ -4011,6 +4011,227 @@ extension PlanServiceExtension on DatabaseService {
     }
   }
 
+  bool _virtualPlanPatchIsDoneOnly({
+    bool? isDone,
+    String? title,
+    int? categoryId,
+    String? notesPlain,
+    String? notesDeltaJson,
+    List<Map<String, dynamic>>? checklist,
+    int? parentPlanId,
+    int? order,
+    DateTime? startTime,
+    DateTime? startTimeDisplay,
+    DateTime? endDateTime,
+    DateTime? endDateTimeDisplay,
+    bool clearEnd = false,
+    List<Tag>? tags,
+    String? planInitialDateKey,
+    bool? planIsPostponed,
+    bool patchPlanAlarmRecurrence = false,
+    String? planRrule,
+    int? planReminderOffset,
+    List<String>? planExceptionDates,
+  }) {
+    if (isDone == null) return false;
+    return title == null &&
+        categoryId == null &&
+        notesPlain == null &&
+        notesDeltaJson == null &&
+        checklist == null &&
+        parentPlanId == null &&
+        order == null &&
+        startTime == null &&
+        startTimeDisplay == null &&
+        endDateTime == null &&
+        endDateTimeDisplay == null &&
+        !clearEnd &&
+        tags == null &&
+        planInitialDateKey == null &&
+        planIsPostponed == null &&
+        !patchPlanAlarmRecurrence &&
+        planRrule == null &&
+        planReminderOffset == null &&
+        planExceptionDates == null;
+  }
+
+  /// Materialize a JIT virtual occurrence as a concrete one-off plan (time/metadata edit).
+  Future<bool> _materializeRecurringInstanceFromVirtualPatch({
+    required String planRowId,
+    required String parentPlanPocketId,
+    required String instanceDateKey,
+    String? planBusinessId,
+    String? title,
+    int? categoryId,
+    bool? isDone,
+    String? notesPlain,
+    String? notesDeltaJson,
+    List<Map<String, dynamic>>? checklist,
+    int? order,
+    DateTime? startTime,
+    DateTime? startTimeDisplay,
+    DateTime? endDateTime,
+    DateTime? endDateTimeDisplay,
+    bool clearEnd = false,
+    List<Tag>? tags,
+    String? planInitialDateKey,
+    bool? planIsPostponed,
+    int? planReminderOffset,
+    bool suppressAppSnack = false,
+  }) async {
+    final pid = parentPlanPocketId.trim();
+    var day = instanceDateKey.trim();
+    if (day.length < 10) return false;
+    day = day.substring(0, 10);
+
+    final cached = _findCachedPlanningTaskForEdit(
+      planRowId,
+      planBusinessId: planBusinessId,
+    );
+    final oldStart = cached?.startTime;
+    final oldEnd = cached?.endDateTime;
+
+    final newStartWall = startTimeDisplay ?? startTime ?? cached?.startTime;
+    DateTime? newEndWall;
+    if (clearEnd) {
+      newEndWall = null;
+    } else {
+      newEndWall = endDateTimeDisplay ?? endDateTime ?? cached?.endDateTime;
+    }
+
+    // ignore: avoid_print
+    print(
+      'RECURRENCE_INSTANCE_EDIT_REQUEST planId=${planBusinessId ?? planRowId} '
+      'pocketId=$pid isVirtual=true oldStart=${oldStart != null ? '${oldStart.hour.toString().padLeft(2, '0')}:${oldStart.minute.toString().padLeft(2, '0')}' : '-'} '
+      'oldEnd=${oldEnd != null ? '${oldEnd.hour.toString().padLeft(2, '0')}:${oldEnd.minute.toString().padLeft(2, '0')}' : '-'} '
+      'newStart=${newStartWall != null ? '${newStartWall.hour.toString().padLeft(2, '0')}:${newStartWall.minute.toString().padLeft(2, '0')}' : '-'} '
+      'newEnd=${newEndWall != null ? '${newEndWall.hour.toString().padLeft(2, '0')}:${newEndWall.minute.toString().padLeft(2, '0')}' : '-'}',
+    );
+
+    final patched = await _patchRecurringTemplateExceptionDates(
+      parentPlanPocketId: pid,
+      instanceDateKey: day,
+      addException: true,
+      suppressAppSnack: true,
+      deferPlanningNotify: true,
+    );
+    if (!patched) {
+      // ignore: avoid_print
+      print(
+        'RECURRENCE_INSTANCE_EDIT_FAIL reason=exception_patch_failed '
+        'payload=parent=$pid day=$day',
+      );
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    }
+
+    try {
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
+      final rec = await _pb
+          .collection(PbCollections.plans)
+          .getOne(pid, expand: kPbPlanTagsExpand);
+      final parent = _planningTaskFromPocketRecord(
+        rec,
+        pocketTagCatalog: tagCatalog,
+      );
+      if (parent.rrule?.trim().isEmpty ?? true) {
+        await _patchRecurringTemplateExceptionDates(
+          parentPlanPocketId: pid,
+          instanceDateKey: day,
+          addException: false,
+          suppressAppSnack: true,
+          deferPlanningNotify: true,
+        );
+        // ignore: avoid_print
+        print(
+          'RECURRENCE_INSTANCE_EDIT_FAIL reason=parent_missing_rrule payload=$pid',
+        );
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+
+      final scheduleDay = newStartWall != null
+          ? DateTime(
+              newStartWall.year,
+              newStartWall.month,
+              newStartWall.day,
+            )
+          : DateTime(
+              int.parse(day.substring(0, 4)),
+              int.parse(day.substring(5, 7)),
+              int.parse(day.substring(8, 10)),
+            );
+      final scheduleKey =
+          '${scheduleDay.year}-${_two(scheduleDay.month)}-${_two(scheduleDay.day)}';
+      final ord = order ?? await nextPlanningOrderForDate(scheduleDay);
+
+      final material = PlanningTask(
+        id: 0,
+        title: (title ?? cached?.title ?? parent.title).trim(),
+        categoryId: categoryId ?? cached?.categoryId ?? parent.categoryId,
+        isDone: isDone ?? cached?.isDone ?? false,
+        dateKey: scheduleKey,
+        order: ord,
+        startTime: newStartWall,
+        endDateTime: newEndWall,
+        checklist: checklist != null
+            ? _copyChecklistForMaterialize(checklist)
+            : _copyChecklistForMaterialize(
+                cached?.checklist ?? parent.checklist,
+              ),
+        notesPlain: notesPlain ?? cached?.notesPlain ?? parent.notesPlain,
+        notesDeltaJson:
+            notesDeltaJson ?? cached?.notesDeltaJson ?? parent.notesDeltaJson,
+        tags: List<Tag>.from(tags ?? cached?.tags ?? parent.tags),
+        initialDateKey: planInitialDateKey ?? day,
+        isPostponed: planIsPostponed ?? false,
+        reminderOffset: planReminderOffset ?? cached?.reminderOffset,
+      );
+
+      final created = await _createPlanningTaskPocketStrict(material);
+      if (!created) {
+        await _patchRecurringTemplateExceptionDates(
+          parentPlanPocketId: pid,
+          instanceDateKey: day,
+          addException: false,
+          suppressAppSnack: true,
+          deferPlanningNotify: true,
+        );
+        // ignore: avoid_print
+        print(
+          'RECURRENCE_INSTANCE_EDIT_FAIL reason=materialize_create_failed '
+          'payload=$scheduleKey',
+        );
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+
+      clearOptimisticPlanningForPlanRow(planRowId);
+      notifyPlanningRefresh();
+      _notifyTimelineAfterRecordCacheMutation();
+      // ignore: avoid_print
+      print(
+        'RECURRENCE_INSTANCE_MATERIALIZED parentPlanId=$pid '
+        'newPlanId=${material.planRowId ?? 'pending'} exceptionDate=$day',
+      );
+      return true;
+    } catch (e, st) {
+      DatabaseService._log('RECURRENCE_INSTANCE_MATERIALIZE: $e');
+      DatabaseService._log(st.toString());
+      await _patchRecurringTemplateExceptionDates(
+        parentPlanPocketId: pid,
+        instanceDateKey: day,
+        addException: false,
+        suppressAppSnack: true,
+        deferPlanningNotify: true,
+      );
+      // ignore: avoid_print
+      print('RECURRENCE_INSTANCE_EDIT_FAIL reason=$e payload=parent=$pid');
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    }
+  }
+
   Future<bool> updatePlanningTask(
     String planRowId, {
 
@@ -4064,46 +4285,64 @@ extension PlanServiceExtension on DatabaseService {
           ? hint.substring(0, 10)
           : virt.instanceDateKey;
 
-      final disallowedExtras =
-          title != null ||
-          categoryId != null ||
-          notesPlain != null ||
-          notesDeltaJson != null ||
-          checklist != null ||
-          parentPlanId != null ||
-          order != null ||
-          startTime != null ||
-          startTimeDisplay != null ||
-          endDateTime != null ||
-          endDateTimeDisplay != null ||
-          clearEnd ||
-          planInitialDateKey != null ||
-          planIsPostponed != null ||
-          patchPlanAlarmRecurrence ||
-          tags != null ||
-          planRrule != null ||
-          planReminderOffset != null ||
-          planExceptionDates != null;
-
-      if (isDone == null || disallowedExtras) {
-        DatabaseService._log(
-          'VIRT_PLAN_UPDATE: blocked — virtual clone supports only is_done toggle '
-          '(complete materializes a real row; uncomplete uses exception_dates only).',
-        );
-        if (!suppressAppSnack) AppSnack.failed();
-        return false;
-      }
-      if (isDone) {
-        return _completeVirtualRecurringInstance(
+      if (_virtualPlanPatchIsDoneOnly(
+        isDone: isDone,
+        title: title,
+        categoryId: categoryId,
+        notesPlain: notesPlain,
+        notesDeltaJson: notesDeltaJson,
+        checklist: checklist,
+        parentPlanId: parentPlanId,
+        order: order,
+        startTime: startTime,
+        startTimeDisplay: startTimeDisplay,
+        endDateTime: endDateTime,
+        endDateTimeDisplay: endDateTimeDisplay,
+        clearEnd: clearEnd,
+        tags: tags,
+        planInitialDateKey: planInitialDateKey,
+        planIsPostponed: planIsPostponed,
+        patchPlanAlarmRecurrence: patchPlanAlarmRecurrence,
+        planRrule: planRrule,
+        planReminderOffset: planReminderOffset,
+        planExceptionDates: planExceptionDates,
+      )) {
+        if (isDone!) {
+          return _completeVirtualRecurringInstance(
+            parentPlanPocketId: virt.parentPocketId,
+            instanceDateKey: effectiveDay,
+            suppressAppSnack: suppressAppSnack,
+          );
+        }
+        return _patchRecurringTemplateExceptionDates(
           parentPlanPocketId: virt.parentPocketId,
           instanceDateKey: effectiveDay,
+          addException: false,
           suppressAppSnack: suppressAppSnack,
         );
       }
-      return _patchRecurringTemplateExceptionDates(
+
+      return _materializeRecurringInstanceFromVirtualPatch(
+        planRowId: rid,
         parentPlanPocketId: virt.parentPocketId,
         instanceDateKey: effectiveDay,
-        addException: false,
+        planBusinessId: planBusinessId,
+        title: title,
+        categoryId: categoryId,
+        isDone: isDone,
+        notesPlain: notesPlain,
+        notesDeltaJson: notesDeltaJson,
+        checklist: checklist,
+        order: order,
+        startTime: startTime,
+        startTimeDisplay: startTimeDisplay,
+        endDateTime: endDateTime,
+        endDateTimeDisplay: endDateTimeDisplay,
+        clearEnd: clearEnd,
+        tags: tags,
+        planInitialDateKey: planInitialDateKey,
+        planIsPostponed: planIsPostponed,
+        planReminderOffset: planReminderOffset,
         suppressAppSnack: suppressAppSnack,
       );
     }
@@ -4116,6 +4355,18 @@ extension PlanServiceExtension on DatabaseService {
       rid,
       planBusinessId: planBusinessId,
     );
+    if (existingTask?.rrule?.trim().isNotEmpty == true &&
+        (startTime != null ||
+            startTimeDisplay != null ||
+            endDateTime != null ||
+            endDateTimeDisplay != null ||
+            clearEnd)) {
+      // ignore: avoid_print
+      print(
+        'RECURRENCE_INSTANCE_EDIT_SERIES_ROW planId=${planBusinessId ?? rid} '
+        'pocketId=${existingTask?.pocketRecordId ?? '-'}',
+      );
+    }
     final oldCategoryId = existingTask?.categoryId;
     final autoCategoryId = _resolveCategoryIdForEditedTitle(
       newTitle: title,

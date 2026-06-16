@@ -135,12 +135,22 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
     }
 
     final pinFooter = widget.heightPx != null;
-    final metricsBlock = _showMetrics
-        ? _PlanCardMetricsBlock(
-            planTrackedSeconds: widget.planTrackedSeconds,
-            planEstimatedSeconds: widget.planEstimatedSeconds,
-          )
-        : null;
+    final footerSeparator = switch (widget.density) {
+      PlanTimeTaskCardDensity.compact =>
+        _showMetrics
+            ? _PlanCardFooterSeparator(
+                planTrackedSeconds: widget.planTrackedSeconds,
+                planEstimatedSeconds: widget.planEstimatedSeconds,
+                categoryColor: categoryTone,
+              )
+            : null,
+      _ => _PlanCardFooterSeparator(
+          planTrackedSeconds: widget.planTrackedSeconds,
+          planEstimatedSeconds: widget.planEstimatedSeconds,
+          categoryColor: categoryTone,
+          alwaysShowTrack: true,
+        ),
+    };
 
     Widget body;
     switch (widget.density) {
@@ -156,7 +166,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           visibleTags: _visibleTags,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          metricsBlock: metricsBlock,
+          metricsBlock: footerSeparator,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
@@ -170,6 +180,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           timeLabel: widget.timeLabel,
           categoryTrail:
               widget.showFooterBreadcrumb ? categoryTrail : '',
+          categoryColor: categoryTone,
           displayIsDone: widget.displayIsDone,
           selectMode: widget.selectMode,
           isSelected: widget.isSelected,
@@ -179,7 +190,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           scheduleConflict: widget.scheduleConflict,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          metricsBlock: metricsBlock,
+          metricsBlock: footerSeparator,
           pinFooter: pinFooter,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
@@ -196,6 +207,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           timeLabel: widget.timeLabel,
           categoryTrail:
               widget.showFooterBreadcrumb ? categoryTrail : '',
+          categoryColor: categoryTone,
           displayIsDone: widget.displayIsDone,
           selectMode: widget.selectMode,
           isSelected: widget.isSelected,
@@ -205,7 +217,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           scheduleConflict: widget.scheduleConflict,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          metricsBlock: metricsBlock,
+          metricsBlock: footerSeparator,
           pinFooter: pinFooter,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
@@ -338,6 +350,7 @@ abstract final class _PlanCardTokens {
   static const Color menuStroke = Color(0xFF8E8E8E);
   static const Color dividerColor = Color(0x61D9D9D9);
   static const Color breadcrumbColor = Color(0xFF609CE1);
+  static const Color breadcrumbFallbackColor = Color(0xFF878787);
   static const Color timeColor = Color(0xB8878787);
   static const Color tagPinkBg = Color(0xFFFFE8E8);
   static const Color tagPinkText = Color(0xFFF55D88);
@@ -353,19 +366,23 @@ abstract final class _PlanCardTokens {
       ];
 }
 
-class _PlanCardMetricsBlock extends StatelessWidget {
-  const _PlanCardMetricsBlock({
+class _PlanCardFooterSeparator extends StatelessWidget {
+  const _PlanCardFooterSeparator({
     required this.planTrackedSeconds,
+    required this.categoryColor,
     this.planEstimatedSeconds,
+    this.alwaysShowTrack = false,
   });
 
   final int planTrackedSeconds;
   final int? planEstimatedSeconds;
+  final Color categoryColor;
+  final bool alwaysShowTrack;
 
   @override
   Widget build(BuildContext context) {
     final estimated = planEstimatedSeconds ?? 0;
-    if (planTrackedSeconds <= 0 && estimated <= 0) {
+    if (!alwaysShowTrack && planTrackedSeconds <= 0 && estimated <= 0) {
       return const SizedBox.shrink();
     }
     return Column(
@@ -387,15 +404,16 @@ class _PlanCardMetricsBlock extends StatelessWidget {
               ),
             ),
           ),
-        if (estimated > 0)
-          Padding(
-            padding: EdgeInsets.only(top: planTrackedSeconds > 0 ? 4 : 0),
-            child: _PlanCardProgressRow(
-              trackedSeconds: planTrackedSeconds,
-              estimatedSeconds: estimated,
-              compact: true,
-            ),
+        Padding(
+          padding: EdgeInsets.only(top: planTrackedSeconds > 0 ? 4 : 0),
+          child: _PlanCardProgressRow(
+            trackedSeconds: planTrackedSeconds,
+            estimatedSeconds: estimated,
+            categoryColor: categoryColor,
+            compact: true,
+            alwaysShowTrack: alwaysShowTrack || estimated > 0,
           ),
+        ),
       ],
     );
   }
@@ -405,12 +423,16 @@ class _PlanCardProgressRow extends StatelessWidget {
   const _PlanCardProgressRow({
     required this.trackedSeconds,
     required this.estimatedSeconds,
+    required this.categoryColor,
     this.compact = false,
+    this.alwaysShowTrack = false,
   });
 
   final int trackedSeconds;
   final int estimatedSeconds;
+  final Color categoryColor;
   final bool compact;
+  final bool alwaysShowTrack;
 
   static String formatTracked(int sec) {
     final s = sec.clamp(0, 8640000);
@@ -434,7 +456,11 @@ class _PlanCardProgressRow extends StatelessWidget {
     final pct = estimatedSeconds > 0
         ? ((trackedSeconds * 100) / estimatedSeconds).round()
         : 0;
-    final over = trackedSeconds > estimatedSeconds;
+    final over = estimatedSeconds > 0 && trackedSeconds > estimatedSeconds;
+    final accent = categoryColor.a > 0
+        ? categoryColor
+        : _PlanCardTokens.breadcrumbFallbackColor;
+    final showFill = estimatedSeconds > 0;
     return Row(
       children: [
         Expanded(
@@ -442,13 +468,15 @@ class _PlanCardProgressRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(2),
             child: LinearProgressIndicator(
               minHeight: 3,
-              value: trackedSeconds <= estimatedSeconds
-                  ? trackedSeconds / estimatedSeconds
-                  : 1.0,
+              value: showFill
+                  ? (trackedSeconds <= estimatedSeconds
+                      ? trackedSeconds / estimatedSeconds
+                      : 1.0)
+                  : null,
               backgroundColor: const Color(0x61D9D9D9),
               color: over
                   ? Theme.of(context).colorScheme.error
-                  : _PlanCardTokens.breadcrumbColor,
+                  : accent,
             ),
           ),
         ),
@@ -505,7 +533,7 @@ class _TimelinePlanCardSmall extends StatelessWidget {
   final List<Tag> visibleTags;
   final bool toggleDoneEnabled;
   final List<Widget> metaIcons;
-  final _PlanCardMetricsBlock? metricsBlock;
+  final _PlanCardFooterSeparator? metricsBlock;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
@@ -602,6 +630,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
     required this.titleMaxLines,
     this.metaIcons = const [],
     this.metricsBlock,
+    this.categoryColor = _PlanCardTokens.breadcrumbFallbackColor,
     this.pinFooter = false,
     this.heightPx,
     this.onToggleDone,
@@ -625,7 +654,8 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final bool toggleDoneEnabled;
   final int titleMaxLines;
   final List<Widget> metaIcons;
-  final _PlanCardMetricsBlock? metricsBlock;
+  final _PlanCardFooterSeparator? metricsBlock;
+  final Color categoryColor;
   final bool pinFooter;
   final double? heightPx;
   final VoidCallback? onToggleDone;
@@ -705,11 +735,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
                     ],
                   ),
                   if (pinFooter) const Spacer() else const SizedBox(height: 8),
-                  if (metricsBlock != null) ...[
-                    metricsBlock!,
-                    const SizedBox(height: 4),
-                  ],
-                  const _PlanCardDividerLine(),
+                  if (metricsBlock != null) metricsBlock!,
                   SizedBox(
                     height: pinFooter
                         ? _PlanCardGeom.footerBlockGapPinned
@@ -719,6 +745,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
                     categoryTrail: categoryTrail,
                     timeLabel: timeLabel,
                     scheduleConflict: scheduleConflict,
+                    categoryColor: categoryColor,
                   ),
                   ],
                 ),
@@ -748,6 +775,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
     required this.toggleDoneEnabled,
     this.metaIcons = const [],
     this.metricsBlock,
+    this.categoryColor = _PlanCardTokens.breadcrumbFallbackColor,
     this.pinFooter = false,
     this.heightPx,
     this.onToggleDone,
@@ -770,7 +798,8 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final bool scheduleConflict;
   final bool toggleDoneEnabled;
   final List<Widget> metaIcons;
-  final _PlanCardMetricsBlock? metricsBlock;
+  final _PlanCardFooterSeparator? metricsBlock;
+  final Color categoryColor;
   final bool pinFooter;
   final double? heightPx;
   final VoidCallback? onToggleDone;
@@ -851,11 +880,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
                     ],
                   ),
                   if (pinFooter) const Spacer(),
-                  if (metricsBlock != null) ...[
-                    metricsBlock!,
-                    const SizedBox(height: 4),
-                  ],
-                  const _PlanCardDividerLine(),
+                  if (metricsBlock != null) metricsBlock!,
                   SizedBox(
                     height: pinFooter
                         ? _PlanCardGeom.footerBlockGapPinned
@@ -865,6 +890,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
                     categoryTrail: categoryTrail,
                     timeLabel: timeLabel,
                     scheduleConflict: scheduleConflict,
+                    categoryColor: categoryColor,
                   ),
                   ],
                 ),
@@ -1222,7 +1248,9 @@ class _PlanCardTitleRow extends StatelessWidget {
             child: Icon(
               Icons.repeat_rounded,
               size: 15,
-              color: _PlanCardTokens.breadcrumbColor.withValues(alpha: 0.85),
+              color: _PlanCardTokens.breadcrumbFallbackColor.withValues(
+                alpha: 0.85,
+              ),
             ),
           ),
         if (metaIcons.isNotEmpty)
@@ -1304,35 +1332,25 @@ class _PlanCardTimeText extends StatelessWidget {
   }
 }
 
-class _PlanCardDividerLine extends StatelessWidget {
-  const _PlanCardDividerLine();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      height: _PlanCardGeom.dividerHeight,
-      width: double.infinity,
-      child: DecoratedBox(
-        decoration: BoxDecoration(color: _PlanCardTokens.dividerColor),
-      ),
-    );
-  }
-}
-
 class _PlanCardFooterRow extends StatelessWidget {
   const _PlanCardFooterRow({
     required this.categoryTrail,
     required this.timeLabel,
     required this.scheduleConflict,
+    required this.categoryColor,
   });
 
   final String categoryTrail;
   final String timeLabel;
   final bool scheduleConflict;
+  final Color categoryColor;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final trailColor = categoryColor.a > 0
+        ? categoryColor
+        : _PlanCardTokens.breadcrumbFallbackColor;
     return ConstrainedBox(
       constraints: const BoxConstraints(
         minHeight: _PlanCardGeom.footerTextHeight,
@@ -1346,11 +1364,11 @@ class _PlanCardFooterRow extends StatelessWidget {
                 categoryTrail,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   height: 1.2,
                   fontWeight: FontWeight.w400,
-                  color: _PlanCardTokens.breadcrumbColor,
+                  color: trailColor,
                 ),
               ),
             ),

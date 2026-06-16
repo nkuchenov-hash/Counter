@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Plan card separator + category color + recurring time edit [shipped]
+* **`plan_time_task_card.dart`:** [shipped] Removed duplicate `_PlanCardDividerLine`; progress track is sole content/footer separator; breadcrumbs/progress use `getCategoryColor` (not hardcoded blue `#609CE1`).
+* **`plan_service.dart` / `app_shell.dart` / `planning_view.dart`:** [shipped] Virtual recurring occurrence edits materialize one-off row + `exception_dates` skip; series-row time PATCH preserved; `RECURRENCE_INSTANCE_*` logs.
+
 ## [2026-06-15] - Tag default plan durations + sequential auto-schedule [shipped]
 * **`models/tag.dart` / `profile_service.dart` / `plan_service.dart` / `tag_default_duration_settings_view.dart` / `tag_settings_hub.dart` / `planning_view.dart`:** [shipped] `tags.default_plan_duration_minutes` per-tag settings (Durations tab); `resolveAutoPlanSchedule` sequential placement (append after last plan, snap 15m); duration rule: explicit range → tag order → 30m fallback; `evaluatePlanDayScheduleOverload` warning snack.
 
