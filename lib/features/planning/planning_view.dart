@@ -273,13 +273,12 @@ class _PlanningPageState extends State<PlanningPage>
   final ScrollController _hourGridScrollController = ScrollController();
 
   static const double _kTimelineHourHeightBasePx = 80;
-  static const double _kTimelineHourHeightMaxPx = 720;
-  static const double _kTimelineMinReadableCardPxDesktop = 52;
-  static const double _kTimelineMinReadableCardPxTouch = 64;
   static const double _kTimelineRailWidthPx = 48;
   static const double _kTimelineMinBlockHeightPx = 56;
+  /// Minimum rendered card height for short blocks (layout only; does not change stored duration).
+  static const double _kTimelineMicroMinCardPx = 38;
 
-  /// Resolved per canvas build from shortest scheduled duration (readability over fixed scale).
+  /// Fixed hour-grid scale — not driven by shortest visible task.
   double _timelineHourHeightPx = _kTimelineHourHeightBasePx;
   static const int _kTimelineDefaultBlockMinutes = 30;
 
@@ -2119,25 +2118,6 @@ class _PlanningPageState extends State<PlanningPage>
     return hours.length * _timelineHourHeightPx;
   }
 
-  double _timelineMinReadableCardTargetPx() {
-    if (defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS) {
-      return _kTimelineMinReadableCardPxTouch;
-    }
-    return _kTimelineMinReadableCardPxDesktop;
-  }
-
-  double _resolveTimelineHourHeightPx(List<PlanningTask> scheduled) {
-    var shortestMin = 5.0;
-    for (final t in scheduled) {
-      final dur = _timelineBlockDurationMinutes(t).toDouble();
-      if (dur > 0 && dur < shortestMin) shortestMin = dur;
-    }
-    final needed =
-        _timelineMinReadableCardTargetPx() * 60 / shortestMin;
-    return needed.clamp(_kTimelineHourHeightBasePx, _kTimelineHourHeightMaxPx);
-  }
-
   List<_TimelineBlockLayout> _timelineBlockLayouts(
     List<PlanningTask> scheduled,
     int rangeStart,
@@ -2173,12 +2153,15 @@ class _PlanningPageState extends State<PlanningPage>
     for (var i = 0; i < spans.length; i++) {
       final span = spans[i];
       final timeTopPx = span.startMin * pxPerMin;
-      final heightPx = math.max(
+      final timeHeightPx = math.max(
         1.0,
         (span.endMin - span.startMin) * pxPerMin,
       );
-      final hasScheduleConflict =
+      final heightPx = math.max(timeHeightPx, _kTimelineMicroMinCardPx);
+      final timeOverlap =
           i > 0 && span.startMin < spans[i - 1].endMin - 0.25;
+      final visualOverlap = i > 0 && timeTopPx < prevVisualBottomPx + gapPx;
+      final hasScheduleConflict = timeOverlap || visualOverlap;
       final visualTopPx = hasScheduleConflict
           ? math.max(timeTopPx, prevVisualBottomPx + gapPx)
           : timeTopPx;
@@ -3191,7 +3174,7 @@ class _PlanningPageState extends State<PlanningPage>
     required List<PlanningTask> scheduledInRange,
     required Map<String, int> planActualByPbId,
   }) {
-    _timelineHourHeightPx = _resolveTimelineHourHeightPx(scheduledInRange);
+    _timelineHourHeightPx = _kTimelineHourHeightBasePx;
     final canvasHeight = _timelineCanvasHeightPx(rangeStart, rangeEnd);
     final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
     final layouts = _timelineBlockLayouts(
@@ -3561,6 +3544,7 @@ class _PlanningPageState extends State<PlanningPage>
               canMove: canInteract,
               canResize: canInteract,
               resizeHandlePx: _kTimelineResizeHandlePx,
+              blockHeightPx: heightPx,
               controlsLeftInset: planCardBodyGestureLeftInsetPx(
                 blockDensity,
                 timeline: true,
@@ -4925,6 +4909,7 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
     required this.resizeHandlePx,
     required this.child,
     required this.isInteracting,
+    this.blockHeightPx,
     this.controlsLeftInset = 0,
     this.controlsRightInset = 0,
     this.onBodyTap,
@@ -4942,6 +4927,7 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
   final bool canResize;
   final double resizeHandlePx;
   final bool isInteracting;
+  final double? blockHeightPx;
   final Widget child;
   final double controlsLeftInset;
   final double controlsRightInset;
@@ -4973,6 +4959,14 @@ class _TimelinePlanInteractionBlockState
       defaultTargetPlatform == TargetPlatform.macOS ||
       defaultTargetPlatform == TargetPlatform.linux;
 
+  double get _resizeZoneInset {
+    final h = widget.blockHeightPx ?? widget.resizeHandlePx * 2;
+    if (h < 48) {
+      return math.max(6.0, (h - 6) / 2);
+    }
+    return widget.resizeHandlePx;
+  }
+
   void _endBodyDragSession() {
     _bodyDragActive = false;
     Future<void>.delayed(const Duration(milliseconds: 250), () {
@@ -4982,11 +4976,10 @@ class _TimelinePlanInteractionBlockState
 
   Widget _moveZone() {
     if (!widget.canMove) return const SizedBox.shrink();
-    final topInset = widget.canResize ? widget.resizeHandlePx : 0.0;
-    final bottomInset = widget.canResize ? widget.resizeHandlePx : 0.0;
+    final inset = widget.canResize ? _resizeZoneInset : 0.0;
     return Positioned(
-      top: topInset,
-      bottom: bottomInset,
+      top: inset,
+      bottom: inset,
       left: widget.controlsLeftInset,
       right: widget.controlsRightInset,
       child: MouseRegion(
@@ -5070,7 +5063,7 @@ class _TimelinePlanInteractionBlockState
   }) {
     return _TimelineResizeEdgeHandle(
       isTop: isTop,
-      height: widget.resizeHandlePx,
+      height: _resizeZoneInset,
       active: _resizing || widget.isInteracting,
       onResizeStart: widget.canResize
           ? () {
@@ -5118,15 +5111,15 @@ class _TimelinePlanInteractionBlockState
         if (widget.canResize)
           Positioned(
             top: 0,
-            left: 0,
-            right: 0,
+            left: widget.controlsLeftInset,
+            right: widget.controlsRightInset,
             child: _resizeEdge(isTop: true, scheme: scheme),
           ),
         if (widget.canResize)
           Positioned(
             bottom: 0,
-            left: 0,
-            right: 0,
+            left: widget.controlsLeftInset,
+            right: widget.controlsRightInset,
             child: _resizeEdge(isTop: false, scheme: scheme),
           ),
       ],

@@ -170,6 +170,10 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
         body = _TimelinePlanCardMicro(
           task: widget.task,
           timeLabel: effectiveTimeLabel,
+          categoryShort: widget.showFooterBreadcrumb
+              ? _planCardMicroCategoryShort(categoryTrail)
+              : '',
+          visibleTags: _visibleTags,
           displayIsDone: widget.displayIsDone,
           selectMode: widget.selectMode,
           isSelected: widget.isSelected,
@@ -369,7 +373,7 @@ abstract final class _PlanCardGeom {
   static const double menuSize = 33;
   static const double contentSpanMediumLarge = 260;
   static const double radius = 12;
-  static const double refHeightMicro = 48;
+  static const double refHeightMicro = 40;
   static const double refHeightSmall = 54;
   static const double refHeightMedium = 95;
   static const double refHeightLarge = 147;
@@ -561,6 +565,8 @@ class _TimelinePlanCardMicro extends StatelessWidget {
   const _TimelinePlanCardMicro({
     required this.task,
     required this.timeLabel,
+    required this.categoryShort,
+    required this.visibleTags,
     required this.displayIsDone,
     required this.selectMode,
     required this.isSelected,
@@ -579,6 +585,8 @@ class _TimelinePlanCardMicro extends StatelessWidget {
 
   final PlanningTask task;
   final String timeLabel;
+  final String categoryShort;
+  final List<Tag> visibleTags;
   final bool displayIsDone;
   final bool selectMode;
   final bool isSelected;
@@ -594,24 +602,40 @@ class _TimelinePlanCardMicro extends StatelessWidget {
   final VoidCallback? onBodyTap;
   final VoidCallback? onBodyLongPress;
 
-  static Widget _scaledControl(Widget child) {
+  static const double _controlBox = 24;
+
+  static Widget _microControl(Widget child) {
     return SizedBox(
-      width: 28,
-      height: 28,
-      child: Center(child: Transform.scale(scale: 0.82, child: child)),
+      width: _controlBox,
+      height: _controlBox,
+      child: Center(
+        child: Transform.scale(scale: 0.72, child: child),
+      ),
     );
+  }
+
+  String get _timeDisplay {
+    final trimmed = timeLabel.trim();
+    if (trimmed.isNotEmpty) return trimmed;
+    return _planCardWallTimeLabel(task);
   }
 
   @override
   Widget build(BuildContext context) {
-    final durationLabel = _planCardShortDurationLabel(task, timeLabel);
+    final wide = MediaQuery.sizeOf(context).width >= 480;
+    final timeDisplay = _timeDisplay;
+    final tagsToShow = wide
+        ? visibleTags.take(2).toList(growable: false)
+        : const <Tag>[];
+    final showCategory = wide && categoryShort.trim().isNotEmpty;
+
     return Stack(
       fit: StackFit.expand,
       children: [
         Positioned(
           left: 0,
-          top: 5,
-          bottom: 5,
+          top: 2,
+          bottom: 2,
           child: Container(
             width: 3,
             decoration: BoxDecoration(
@@ -623,11 +647,11 @@ class _TimelinePlanCardMicro extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(7, 3, 4, 3),
+          padding: const EdgeInsets.fromLTRB(6, 1, 2, 1),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _scaledControl(
+              _microControl(
                 _PlanCardCheckbox(
                   selectMode: selectMode,
                   isSelected: isSelected,
@@ -639,9 +663,9 @@ class _TimelinePlanCardMicro extends StatelessWidget {
               ),
               if (showPlay) ...[
                 const SizedBox(width: 2),
-                _scaledControl(_PlanCardPlayButton(onPlay: onPlay)),
+                _microControl(_PlanCardPlayButton(onPlay: onPlay)),
               ],
-              const SizedBox(width: 6),
+              const SizedBox(width: 4),
               Expanded(
                 child: _PlanCardBodyTapShell(
                   onTap: onBodyTap,
@@ -655,28 +679,112 @@ class _TimelinePlanCardMicro extends StatelessWidget {
                   ),
                 ),
               ),
-              if (durationLabel.isNotEmpty) ...[
+              if (tagsToShow.isNotEmpty) ...[
+                const SizedBox(width: 4),
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0; i < tagsToShow.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 3),
+                        _MicroInlineTagPill(tag: tagsToShow[i]),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+              if (showCategory) ...[
+                const SizedBox(width: 4),
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: _MicroCategoryChip(
+                    label: categoryShort,
+                    color: categoryColor,
+                  ),
+                ),
+              ],
+              if (timeDisplay.isNotEmpty) ...[
                 const SizedBox(width: 4),
                 Text(
-                  durationLabel,
+                  timeDisplay,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 10,
-                    height: 1.1,
+                    height: 1.0,
                     fontWeight: FontWeight.w600,
                     color: _PlanCardTokens.timeColor,
                   ),
                 ),
               ],
               if (onOpenMenu != null)
-                _scaledControl(
+                _microControl(
                   _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
                 ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _MicroInlineTagPill extends StatelessWidget {
+  const _MicroInlineTagPill({required this.tag});
+
+  final Tag tag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        color: _PlanCardTokens.tagPinkBg.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        tag.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 9,
+          height: 1.0,
+          fontWeight: FontWeight.w500,
+          color: _PlanCardTokens.tagPinkText,
+        ),
+      ),
+    );
+  }
+}
+
+class _MicroCategoryChip extends StatelessWidget {
+  const _MicroCategoryChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 72),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 9,
+          height: 1.0,
+          fontWeight: FontWeight.w600,
+          color: color.withValues(alpha: 0.95),
+        ),
+      ),
     );
   }
 }
@@ -1753,9 +1861,9 @@ class _PlanCardWatermark extends StatelessWidget {
 }
 
 /// Height-based density tiers for proportional timeline blocks.
-const double _kPlanTimeCardMicroMaxPx = 56;
-const double _kPlanTimeCardCompactMaxPx = 90;
-const double _kPlanTimeCardMediumMaxPx = 130;
+const double _kPlanTimeCardMicroMaxPx = 45;
+const double _kPlanTimeCardCompactMaxPx = 70;
+const double _kPlanTimeCardMediumMaxPx = 110;
 
 PlanTimeTaskCardDensity planTimeCardDensityForBlock(
   double heightPx,
@@ -1773,18 +1881,15 @@ PlanTimeTaskCardDensity planTimeCardDensityForBlock(
   return PlanTimeTaskCardDensity.large;
 }
 
-String _planCardShortDurationLabel(PlanningTask task, String timeLabel) {
-  final start = task.startTime;
-  final end = task.endDateTime;
-  if (start != null && end != null) {
-    final min = end.difference(start).inMinutes;
-    if (min > 0) return '${min}m';
+String _planCardMicroCategoryShort(String trail) {
+  final t = trail.trim();
+  if (t.isEmpty) return '';
+  for (final sep in [' > ', ' › ', ' / ']) {
+    if (t.contains(sep)) {
+      return t.split(sep).last.trim();
+    }
   }
-  final trimmed = timeLabel.trim();
-  if (trimmed.contains('–')) {
-    return trimmed.split('–').last.trim();
-  }
-  return trimmed;
+  return t;
 }
 
 String _planCardWallTimeLabel(PlanningTask task) {
@@ -1829,9 +1934,9 @@ double planCardBodyGestureLeftInsetPx(
   bool timeline = false,
 }) =>
     switch (density) {
-      PlanTimeTaskCardDensity.micro => 68,
+      PlanTimeTaskCardDensity.micro => 62,
       PlanTimeTaskCardDensity.compact =>
-        timeline ? 72 : _PlanCardGeom.contentXSmall,
+        timeline ? 66 : _PlanCardGeom.contentXSmall,
       PlanTimeTaskCardDensity.medium ||
       PlanTimeTaskCardDensity.large =>
         _PlanCardGeom.padLeft +

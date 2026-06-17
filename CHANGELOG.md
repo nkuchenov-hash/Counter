@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Time mode: revert shortest-task zoom; micro layout at fixed scale [shipped]
+* **`planning_view.dart`:** [shipped] Removed dynamic `hourHeight` from shortest visible plan (was up to 720px/h); fixed **80px/hour** scale; short blocks use **38px min layout height** + sequential visual push (duration unchanged).
+* **`plan_time_task_card.dart`:** [shipped] Micro one-line row ~38–44px with full time label; desktop wide row adds inline tags/category chip; density thresholds 45/70/110px.
+
 ## [2026-06-15] - Governing docs sync (category relations, Time mode, tag duration) [shipped]
 * **Docs-only:** Aligned `DATA_MAP.md`, `POCKETBASE_MANIFEST.md`, `ARCHITECTURE.md`, `UX_CONTRACT.md`, `DESIGN_SYSTEM.md`, `AI_CONTEXT.md`, `CLAUDE.md`, `ROADMAP.md`, `APP_STRUCTURE.md` with shipped fixes.
 * **Record category law (final):** `records.category_id` and `records.category_link` are PB relations → `categories.id` (15-char); business slug only in `categories.category_id` / Brain cache — never in record API payloads.
