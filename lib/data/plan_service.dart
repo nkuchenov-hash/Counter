@@ -1464,7 +1464,10 @@ extension PlanServiceExtension on DatabaseService {
   }) {
     if (task.startTime == null && task.startUtcInstant == null) return task;
     final inputWall = task.startTime;
-    final projected = _reprojectPlanningTaskWallTimes(task);
+    // User-entered wall time wins over any stale startUtcInstant on create/edit.
+    final projected = task.startTime != null
+        ? _reprojectPlanningTaskWallTimesFromWallInput(task)
+        : _reprojectPlanningTaskWallTimes(task);
     if (logCreate && inputWall != null && projected.startTime != null) {
       final instants = _planUtcInstants(projected);
       if (instants != null) {
@@ -1477,6 +1480,40 @@ extension PlanServiceExtension on DatabaseService {
       }
     }
     return projected;
+  }
+
+  /// Derive UTC instants from profile wall fields only (create/edit path).
+  ({DateTime startUtc, DateTime? endUtc})? _planUtcInstantsFromWall(
+    PlanningTask t,
+  ) {
+    final st = t.startTime;
+    if (st == null) return null;
+    return (
+      startUtc: _profileUtcFromWall(st).toUtc(),
+      endUtc: t.endDateTime != null
+          ? _profileUtcFromWall(t.endDateTime!).toUtc()
+          : null,
+    );
+  }
+
+  PlanningTask _reprojectPlanningTaskWallTimesFromWallInput(PlanningTask t) {
+    final instants = _planUtcInstantsFromWall(t);
+    if (instants == null) return t;
+    final startWall = _profileWallFromUtc(instants.startUtc);
+    final endWall = instants.endUtc != null
+        ? _profileWallFromUtc(instants.endUtc!)
+        : null;
+    final dk = _dateKeyFromDate(startWall);
+    final edk = endWall != null ? _dateKeyFromDate(endWall) : dk;
+    return t.copyWith(
+      startUtcInstant: instants.startUtc,
+      endUtcInstant: instants.endUtc,
+      startTime: startWall,
+      endDateTime: endWall,
+      dateKey: dk,
+      endDateKey: edk,
+      date: DateTime.utc(startWall.year, startWall.month, startWall.day),
+    );
   }
 
   PlanningTask _reprojectPlanningTaskWallTimes(PlanningTask t) {
@@ -3223,14 +3260,8 @@ extension PlanServiceExtension on DatabaseService {
     final isDatelessBacklog =
         task.startTime == null && task.dateKey.trim().length < 10;
     if (task.startTime != null) {
-      final instants = _planUtcInstants(task);
-      if (instants != null) {
-        body['start_time'] = instants.startUtc.toIso8601String();
-      } else {
-        body['start_time'] = _profileUtcFromWall(task.startTime!)
-            .toUtc()
-            .toIso8601String();
-      }
+      final instants = _planUtcInstantsFromWall(task)!;
+      body['start_time'] = instants.startUtc.toIso8601String();
     } else if (!isDatelessBacklog) {
       final dk = task.dateKey.trim();
       if (dk.length >= 10) {
@@ -3239,13 +3270,9 @@ extension PlanServiceExtension on DatabaseService {
       }
     }
     if (task.endDateTime != null) {
-      final instants = _planUtcInstants(task);
-      if (instants?.endUtc != null) {
-        body['end_time'] = instants!.endUtc!.toIso8601String();
-      } else {
-        body['end_time'] = _profileUtcFromWall(task.endDateTime!)
-            .toUtc()
-            .toIso8601String();
+      final instants = _planUtcInstantsFromWall(task)!;
+      if (instants.endUtc != null) {
+        body['end_time'] = instants.endUtc!.toIso8601String();
       }
     }
     if (task.parentPlanPocketId != null &&
@@ -3765,7 +3792,9 @@ extension PlanServiceExtension on DatabaseService {
         startTimeDisplay,
       ).toIso8601String();
     } else if (startTime != null) {
-      fields['start_time'] = startTime.toUtc().toIso8601String();
+      fields['start_time'] = _profileUtcFromWall(
+        startTime,
+      ).toIso8601String();
     }
     if (clearEnd) {
       fields['end_time'] = null;
@@ -3774,7 +3803,9 @@ extension PlanServiceExtension on DatabaseService {
         endDateTimeDisplay,
       ).toIso8601String();
     } else if (endDateTime != null) {
-      fields['end_time'] = endDateTime.toUtc().toIso8601String();
+      fields['end_time'] = _profileUtcFromWall(
+        endDateTime,
+      ).toIso8601String();
     }
     final bizPid = planBusinessId?.trim() ?? '';
     if (bizPid.isNotEmpty && !bizPid.startsWith('optimistic-')) {

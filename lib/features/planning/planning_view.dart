@@ -2194,21 +2194,86 @@ class _PlanningPageState extends State<PlanningPage>
         planWallDay.day == today.day;
   }
 
+  String? _lastPlanTimeNowLineLogKey;
+  DateTime? _lastPlanTimeNowLineLogAt;
+  static const Duration _planTimeNowLineLogDebounce = Duration(seconds: 8);
+
+  void _logPlanTimeNowLine({
+    required DateTime nowUtc,
+    required DateTime wallNow,
+    required String selectedDay,
+    required bool visible,
+    required double? yPx,
+  }) {
+    final lineKey =
+        '$selectedDay|${wallNow.hour}:${wallNow.minute}|visible=$visible|y=${yPx?.toStringAsFixed(1) ?? '-'}';
+    final now = DateTime.now();
+    if (_lastPlanTimeNowLineLogKey == lineKey &&
+        _lastPlanTimeNowLineLogAt != null &&
+        now.difference(_lastPlanTimeNowLineLogAt!) <
+            _planTimeNowLineLogDebounce) {
+      return;
+    }
+    _lastPlanTimeNowLineLogKey = lineKey;
+    _lastPlanTimeNowLineLogAt = now;
+    final offset = DatabaseService.instance.settings.timezoneOffsetHours;
+    // ignore: avoid_print
+    print(
+      'PLAN_TIME_NOW_LINE nowUtc=${nowUtc.toUtc().toIso8601String()} '
+      'profileOffset=$offset '
+      'wallNow=${wallNow.year}-${wallNow.month.toString().padLeft(2, '0')}-${wallNow.day.toString().padLeft(2, '0')}T'
+      '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')} '
+      'selectedDay=$selectedDay visible=$visible y=${yPx?.toStringAsFixed(1) ?? '-'}',
+    );
+  }
+
+  DateTime _profileWallNow() =>
+      DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
+
   double? _timelineNowLineTopPx(
     DateTime planWallDay,
     int rangeStart,
     int rangeEnd,
   ) {
-    if (!_isSelectedPlanningWallDayToday(planWallDay)) return null;
-    final now = DatabaseService.getPlanetaryNow();
-    final min = _timelineMinutesFromRangeStart(now, rangeStart, rangeEnd);
+    final selectedDay =
+        '${planWallDay.year}-${planWallDay.month.toString().padLeft(2, '0')}-${planWallDay.day.toString().padLeft(2, '0')}';
+    if (!_isSelectedPlanningWallDayToday(planWallDay)) {
+      _logPlanTimeNowLine(
+        nowUtc: DatabaseService.getPlanetaryNow(),
+        wallNow: _profileWallNow(),
+        selectedDay: selectedDay,
+        visible: false,
+        yPx: null,
+      );
+      return null;
+    }
+    final nowUtc = DatabaseService.getPlanetaryNow();
+    final wallNow = _profileWallNow();
+    final min = _timelineMinutesFromRangeStart(wallNow, rangeStart, rangeEnd);
     final maxMin = PlanningSheetTimelinePrefs.visibleHoursOrdered(
           rangeStart,
           rangeEnd,
         ).length *
         60;
-    if (min < 0 || min > maxMin) return null;
-    return min * _timelineHourHeightPx / 60;
+    if (min < 0 || min > maxMin) {
+      _logPlanTimeNowLine(
+        nowUtc: nowUtc,
+        wallNow: wallNow,
+        selectedDay: selectedDay,
+        visible: false,
+        yPx: null,
+      );
+      return null;
+    }
+    final y = min * _timelineHourHeightPx / 60;
+    _logPlanTimeNowLine(
+      nowUtc: nowUtc,
+      wallNow: wallNow,
+      selectedDay: selectedDay,
+      visible: true,
+      yPx: y,
+    );
+    return y;
   }
 
   double get _timelinePxPerMinute => _timelineHourHeightPx / 60;
@@ -3041,14 +3106,11 @@ class _PlanningPageState extends State<PlanningPage>
 
     final planWallDay = widget.selectedDate ?? _today;
     final inRangeScheduled = <PlanningTask>[];
-    final outsideHourTasks = <PlanningTask>[];
     for (final t in scheduled) {
       final st = t.startTime;
       if (st == null) continue;
       final wallH = st.hour.clamp(0, 23);
-      if (!visibleSet.contains(wallH)) {
-        outsideHourTasks.add(t);
-      } else {
+      if (visibleSet.contains(wallH)) {
         inRangeScheduled.add(t);
       }
     }
@@ -3067,37 +3129,6 @@ class _PlanningPageState extends State<PlanningPage>
         ),
       );
       for (final task in unscheduled) {
-        final key = _planKey(task);
-        final displayDone = _planDoneOverride[key] ?? task.isDone;
-        children.add(
-          _planCardRow(
-            context: context,
-            task: task,
-            key: key,
-            displayDone: displayDone,
-            isSelected: _selectedPlanKeys.contains(key),
-            planActualByPbId: planActualByPbId,
-            enableLongPressDrag: true,
-            onHourGridDragGlobalDy: _handleHourGridDragUpdateForEdgeScroll,
-            onHourGridDragEnded: _stopHourGridEdgeScroll,
-          ),
-        );
-      }
-      children.add(const SizedBox(height: 8));
-    }
-    if (outsideHourTasks.isNotEmpty) {
-      children.add(
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-          child: Text(
-            t(loc, 'plan_outside_visible_hours'),
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-        ),
-      );
-      for (final task in outsideHourTasks) {
         final key = _planKey(task);
         final displayDone = _planDoneOverride[key] ?? task.isDone;
         children.add(
@@ -3159,11 +3190,9 @@ class _PlanningPageState extends State<PlanningPage>
       rangeEnd,
     );
     final nowTop = _timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd);
+    final wallNow = _profileWallNow();
     final nowLabel = nowTop != null
-        ? () {
-            final n = DatabaseService.getPlanetaryNow();
-            return '${n.hour.toString().padLeft(2, '0')}:${n.minute.toString().padLeft(2, '0')}';
-          }()
+        ? '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')}'
         : null;
 
     String hourLabel(int hour) =>

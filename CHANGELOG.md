@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Time mode now-line TZ + remove out-of-range bucket + wall-first create [shipped]
+* **`planning_view.dart`:** [shipped] Now-line uses `applyUserOffset(getPlanetaryNow())` for position/label; `PLAN_TIME_NOW_LINE` log; removed “Другое время (вне видимого диапазона)” fallback section.
+* **`plan_service.dart`:** [shipped] `_coalescePlanningTaskWallUtcFields` / `_buildPocketPlanCreateBody` / PATCH body derive UTC from profile wall (wall wins over stale `startUtcInstant`); fixed `startTime.toUtc()` on naive wall in patch fallback.
+
 ## [2026-06-15] - Time mode card footer regression fix [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Timeline blocks never use compact density (`planTimeCardDensityForBlock` → medium/large only); footer row + `alwaysShowTrack` progress separator restored for scheduled Time mode cards; category fallback `uncategorized`; planned time from task wall fields when label empty.
 
