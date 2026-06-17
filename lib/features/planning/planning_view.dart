@@ -3330,47 +3330,6 @@ class _PlanningPageState extends State<PlanningPage>
                             ],
                           ),
                         ),
-                      if (nowTop != null && nowLabel != null)
-                        Positioned(
-                          top: nowTop.clamp(0, canvasHeight - 1),
-                          left: 0,
-                          right: 0,
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: scheme.primary.withValues(
-                                    alpha: 0.88,
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  nowLabel,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.copyWith(
-                                        color: scheme.onPrimary,
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 10,
-                                      ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Container(
-                                  height: 2,
-                                  color: scheme.primary.withValues(
-                                    alpha: 0.55,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       if (_timelineDragInsertMarkerTopPx != null &&
                           _timelineVerticalDragPlanKey != null)
                         Positioned(
@@ -3435,6 +3394,49 @@ class _PlanningPageState extends State<PlanningPage>
                               ),
                             ),
                       ],
+                      if (nowTop != null && nowLabel != null)
+                        Positioned(
+                          top: nowTop.clamp(0, canvasHeight - 1),
+                          left: 0,
+                          right: 0,
+                          child: IgnorePointer(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: scheme.primary.withValues(
+                                      alpha: 0.88,
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    nowLabel,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: scheme.onPrimary,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 10,
+                                        ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Container(
+                                    height: 2,
+                                    color: scheme.primary.withValues(
+                                      alpha: 0.72,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   );
                 },

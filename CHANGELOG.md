@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Time mode now-line z-order above cards [shipped]
+* **`planning_view.dart`:** [shipped] Current-time indicator moved after plan cards in timeline Stack + `IgnorePointer` so line renders above cards without blocking taps.
+
 ## [2026-06-15] - Tag default duration persistence fix [shipped]
 * **`models/tag.dart` / `profile_service.dart` / `tag_default_duration_settings_view.dart`:** [shipped] Parse PB number as int/double; verify PATCH response; optimistic UI + rollback; `TAG_DURATION_*` logs; no success toast unless persisted; schema-missing error key.
 
