@@ -2002,7 +2002,20 @@ extension PlanServiceExtension on DatabaseService {
 
   int? sanitizeTagDefaultPlanDurationMinutes(dynamic raw) {
     if (raw == null) return null;
-    final n = raw is int ? raw : int.tryParse(raw.toString().trim());
+    if (raw is int) {
+      if (raw < 1) return null;
+      return raw.clamp(1, 24 * 60);
+    }
+    if (raw is double) {
+      if (!raw.isFinite || raw < 1) return null;
+      return raw.round().clamp(1, 24 * 60);
+    }
+    if (raw is num) {
+      final n = raw.round();
+      if (n < 1) return null;
+      return n.clamp(1, 24 * 60);
+    }
+    final n = int.tryParse(raw.toString().trim());
     if (n == null || n < 1) return null;
     return n.clamp(1, 24 * 60);
   }

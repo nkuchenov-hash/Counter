@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Tag default duration persistence fix [shipped]
+* **`models/tag.dart` / `profile_service.dart` / `tag_default_duration_settings_view.dart`:** [shipped] Parse PB number as int/double; verify PATCH response; optimistic UI + rollback; `TAG_DURATION_*` logs; no success toast unless persisted; schema-missing error key.
+
 ## [2026-06-15] - Time mode now-line TZ + remove out-of-range bucket + wall-first create [shipped]
 * **`planning_view.dart`:** [shipped] Now-line uses `applyUserOffset(getPlanetaryNow())` for position/label; `PLAN_TIME_NOW_LINE` log; removed “Другое время (вне видимого диапазона)” fallback section.
 * **`plan_service.dart`:** [shipped] `_coalescePlanningTaskWallUtcFields` / `_buildPocketPlanCreateBody` / PATCH body derive UTC from profile wall (wall wins over stale `startUtcInstant`); fixed `startTime.toUtc()` on naive wall in patch fallback.

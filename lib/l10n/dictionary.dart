@@ -302,6 +302,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'tag_default_duration_custom': 'Custom minutes',
     'tag_default_duration_apply_custom': 'Apply custom',
     'tag_default_duration_clear': 'Clear default',
+    'tag_duration_field_not_configured':
+        'Tag duration field is not configured on the server (tags.default_plan_duration_minutes).',
     'plan_schedule_overload_warning':
         'Possible overload: you may want to move some plans to tomorrow or reduce today\'s load.',
     'tag_manager_title': 'Tags',
@@ -912,6 +914,8 @@ const Map<String, Map<String, String>> _l10nCore = {
     'tag_default_duration_custom': 'Свои минуты',
     'tag_default_duration_apply_custom': 'Применить',
     'tag_default_duration_clear': 'Сбросить',
+    'tag_duration_field_not_configured':
+        'Поле длительности не настроено на сервере (tags.default_plan_duration_minutes).',
     'plan_schedule_overload_warning':
         'Возможная перегрузка: перенесите часть планов на завтра или сократите нагрузку на сегодня.',
     'tag_manager_title': 'Теги',

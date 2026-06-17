@@ -721,18 +721,32 @@ extension ProfileServiceExtension on DatabaseService {
   }
 
   /// PATCH `tags.default_plan_duration_minutes` for the current user.
-  Future<bool> patchTagDefaultPlanDurationForCurrentUser({
+  /// Returns `null` on success, or a [dictionary] error key on failure.
+  Future<String?> patchTagDefaultPlanDurationForCurrentUser({
     required String pocketRecordId,
     int? durationMinutes,
   }) async {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    if (!_isInitialized || !_hasAuthenticatedUserId) {
+      return 'toast_error';
+    }
     final rid = pocketRecordId.trim();
-    if (rid.isEmpty) return false;
+    if (rid.isEmpty) return 'toast_error';
     final sanitized = durationMinutes == null
         ? null
         : DatabaseService.instance.sanitizeTagDefaultPlanDurationMinutes(
             durationMinutes,
           );
+    Tag? prior;
+    for (final t in _userTagsCatalogCache) {
+      if (t.pbRecordId?.trim() == rid) {
+        prior = t;
+        break;
+      }
+    }
+    final tagBizId = prior?.tagId ?? 0;
+    print(
+      'TAG_DURATION_SAVE_REQUEST tagId=$tagBizId pbId=$rid minutes=${sanitized ?? 'null'}',
+    );
     try {
       final body = <String, dynamic>{
         'user_id': _pidForPbFilter,
@@ -742,23 +756,57 @@ extension ProfileServiceExtension on DatabaseService {
       } else {
         body['default_plan_duration_minutes'] = sanitized;
       }
-      await _pb.collection(PbCollections.tags).update(rid, body: body);
+      final record = await _pb
+          .collection(PbCollections.tags)
+          .update(rid, body: body);
+      final row = Map<String, dynamic>.from(record.data);
+      row['id'] = record.id;
+      final verified = Tag.fromPocketJson(row);
+      final persisted = verified.defaultPlanDurationMinutes;
+      if (sanitized == null) {
+        if (persisted != null) {
+          print(
+            'TAG_DURATION_SAVE_FAIL tagId=$tagBizId pbId=$rid status=verify '
+            'error=clear_expected_null_got_$persisted',
+          );
+          return 'tag_duration_field_not_configured';
+        }
+      } else if (persisted != sanitized) {
+        print(
+          'TAG_DURATION_SAVE_FAIL tagId=$tagBizId pbId=$rid status=verify '
+          'error=expected_${sanitized}_got_${persisted ?? 'null'}',
+        );
+        return 'tag_duration_field_not_configured';
+      }
       _userTagsCatalogCache = [
         for (final t in _userTagsCatalogCache)
-          if (t.pbRecordId == rid)
-            t.copyWith(
-              defaultPlanDurationMinutes: sanitized,
-              clearDefaultPlanDuration: sanitized == null,
-            )
-          else
-            t,
+          if (t.pbRecordId?.trim() == rid) verified else t,
       ];
       notifyTagsCatalogChanged();
-      return true;
+      print(
+        'TAG_DURATION_SAVE_SUCCESS tagId=$tagBizId pbId=$rid minutes=${persisted ?? 'null'}',
+      );
+      print(
+        'TAG_DURATION_CACHE_UPDATED tagId=$tagBizId minutes=${persisted ?? 'null'}',
+      );
+      return null;
+    } on ClientException catch (e, st) {
+      DatabaseService._log('TAG_DURATION_PATCH: $e');
+      DatabaseService._log(st.toString());
+      print(
+        'TAG_DURATION_SAVE_FAIL tagId=$tagBizId pbId=$rid status=${e.statusCode} error=$e',
+      );
+      if (e.statusCode == 400 || e.statusCode == 404) {
+        return 'tag_duration_field_not_configured';
+      }
+      return 'toast_error';
     } catch (e, st) {
       DatabaseService._log('TAG_DURATION_PATCH: $e');
       DatabaseService._log(st.toString());
-      return false;
+      print(
+        'TAG_DURATION_SAVE_FAIL tagId=$tagBizId pbId=$rid status=- error=$e',
+      );
+      return 'toast_error';
     }
   }
 

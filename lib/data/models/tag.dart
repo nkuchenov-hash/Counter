@@ -115,18 +115,32 @@ class Tag {
       sortOrder: _jsonInt(json['sort_order'] ?? json['sortOrder']),
       isSynced: true,
       domain: dom,
-      defaultPlanDurationMinutes: _jsonOptionalPositiveInt(
+      defaultPlanDurationMinutes: Tag._positiveMinutesFromJson(
         json['default_plan_duration_minutes'] ??
             json['defaultPlanDurationMinutes'],
       ),
     );
   }
 
-  static int? _jsonOptionalPositiveInt(dynamic raw) {
+  /// PocketBase number fields may arrive as int or double.
+  static int? _positiveMinutesFromJson(dynamic raw) {
     if (raw == null) return null;
-    final n = raw is int ? raw : int.tryParse(raw.toString().trim());
-    if (n == null || n < 1) return null;
-    return n;
+    if (raw is int) {
+      if (raw < 1) return null;
+      return raw.clamp(1, 24 * 60);
+    }
+    if (raw is double) {
+      if (!raw.isFinite || raw < 1) return null;
+      return raw.round().clamp(1, 24 * 60);
+    }
+    if (raw is num) {
+      final n = raw.round();
+      if (n < 1) return null;
+      return n.clamp(1, 24 * 60);
+    }
+    final parsed = int.tryParse(raw.toString().trim());
+    if (parsed == null || parsed < 1) return null;
+    return parsed.clamp(1, 24 * 60);
   }
 
   @override

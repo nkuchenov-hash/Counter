@@ -35,18 +35,24 @@ class _TagDefaultDurationSettingsViewState
     super.initState();
     _load();
     DatabaseService.instance.tagsCatalogUpdated.listen((_) {
-      if (mounted) _load();
+      if (mounted) _syncFromCache();
     });
   }
 
   Future<void> _load() async {
-    final list = await DatabaseService.instance.fetchTagsForCurrentUser(
+    await DatabaseService.instance.fetchTagsForCurrentUser(
       scope: TagCatalogScope.plan,
     );
     if (!mounted) return;
+    _syncFromCache(markLoaded: true);
+  }
+
+  void _syncFromCache({bool markLoaded = false}) {
     setState(() {
-      _tags = list;
-      _loading = false;
+      _tags = DatabaseService.instance.cachedUserTagsCatalog
+          .where(TagCatalogScope.plan.matchesTag)
+          .toList();
+      if (markLoaded) _loading = false;
     });
   }
 
@@ -55,11 +61,32 @@ class _TagDefaultDurationSettingsViewState
         .replaceAll('{n}', '$minutes');
   }
 
+  List<Tag> _tagsWithDuration(String pocketRecordId, int? minutes) {
+    final rid = pocketRecordId.trim();
+    return [
+      for (final t in _tags)
+        if (t.pbRecordId?.trim() == rid)
+          t.copyWith(
+            defaultPlanDurationMinutes: minutes,
+            clearDefaultPlanDuration: minutes == null,
+          )
+        else
+          t,
+    ];
+  }
+
   Future<void> _editDuration(Tag tag) async {
     final loc = currentLocale.value;
     final rid = tag.pbRecordId?.trim() ?? '';
-    if (rid.isEmpty) return;
+    if (rid.isEmpty) {
+      AppSnack.show(t(loc, 'toast_error'), error: true);
+      return;
+    }
     final current = tag.defaultPlanDurationMinutes;
+    // ignore: avoid_print
+    print(
+      'TAG_DURATION_EDIT_OPEN tagId=${tag.tagId} pbId=$rid current=${current ?? 'null'}',
+    );
     final customCtrl = TextEditingController(
       text: current?.toString() ?? '',
     );
@@ -131,17 +158,22 @@ class _TagDefaultDurationSettingsViewState
     if (!mounted || picked == null) return;
 
     final clear = picked < 0;
-    final ok = await DatabaseService.instance
+    final nextMinutes = clear ? null : picked;
+    final snapshot = _tags;
+    setState(() => _tags = _tagsWithDuration(rid, nextMinutes));
+
+    final err = await DatabaseService.instance
         .patchTagDefaultPlanDurationForCurrentUser(
           pocketRecordId: rid,
-          durationMinutes: clear ? null : picked,
+          durationMinutes: nextMinutes,
         );
     if (!mounted) return;
-    if (ok) {
+    if (err == null) {
+      _syncFromCache();
       AppSnack.updated();
-      await _load();
     } else {
-      AppSnack.failed();
+      setState(() => _tags = snapshot);
+      AppSnack.show(t(loc, err), error: true);
     }
   }
 
