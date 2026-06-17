@@ -136,6 +136,20 @@ Each mapping must answer:
 - Metadata is parameterized: `tags`, `checklistCount`, `notes`, `repeats`, `timeLabel`, and `activeLabel`.
 - V7H is a foundation pass only: `_PlanningTaskCard`, `_BacklogPlanCard`, and `_TimelineRecordCard` remain legacy production cards until scoped migration passes.
 
+### PlanTimeTaskCard (Time mode scheduled plans)
+
+Canonical widget: `PlanTimeTaskCard` in `lib/core/widgets/plan_time_task_card.dart` (`_PlanningTaskCard` in Time mode).
+
+| Rule | Detail |
+| :--- | :--- |
+| **Separator** | Progress bar is the **only** separator between content and footer. **No** duplicate divider line. |
+| **Footer** | Category breadcrumbs **left**, planned time **right** (medium/large only). |
+| **Category color** | Breadcrumb/path and watermark use the **category color**, not link blue. Watermark = low-opacity category icon. |
+| **Density tiers** | **micro** (&lt;56px), **compact** (56–90px), **medium** (90–130px), **large** (≥130px) — chosen by **rendered block height**, not duration label alone. |
+| **Micro / compact** | Checkbox, play, title, duration/time, menu only. **Do not** force full footer, tag row, or large watermark on 5–15 minute / short blocks. |
+| **Hover** | Full-card hover surface; checkbox, play, and menu keep **independent** hit targets. |
+| **Resize affordance** | Top/bottom 16px hit zones; hover shows subtle handle; floating time preview during drag/resize. |
+
 ### Chips / Tags
 
 - Current shared feature components: `CategoryChip`, `TagQuickPickStrip`, `CategoryBreadcrumb`.

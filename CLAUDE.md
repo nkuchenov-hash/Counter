@@ -82,6 +82,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **Tag model** | `lib/data/models/tag.dart` | `Tag`, `TagCatalogScope` |
 | **Tag UI — manager** | `lib/features/profile/tag_manager_page.dart` | `TagManagerPage` (`pocketTagDomain: 'plan'` or `'list'`) |
 | **Tag UI — display prefs** | `lib/features/profile/tag_settings_view.dart` | `tag_display_mode` on profile |
+| **Tag UI — default durations** | `lib/features/profile/tag_default_duration_settings_view.dart` | per-tag `default_plan_duration_minutes` (Durations tab) |
 | **Tag UI — pickers** | `lib/features/shared/chip_component.dart` | `TagQuickPickStrip`, `TagChip` |
 | **Tag UI in edit sheet** | `lib/features/shared/shared_widgets.dart` | tag strip inside `_PlanningTaskEditSheet` |
 | **PB config** | `lib/data/pb_config.dart` | `kPocketBaseUrl`, `PbCollections`, expand constants |
@@ -232,9 +233,28 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 | F2A compact tabs/header/play/repeat icon | **Accepted** | Functional/acceptable. Remaining pixel-perfect tabs/header/tags polish is deferred to V3 UX_CONTRACT / V7 Design Language. |
 | F2C category default plan time | **Accepted** | `categories.default_plan_time` was manually added in PocketBase; selector/search UI is live and accepted. |
 | F2B plan category filter | **Deferred** | Do not implement unless explicitly requested. |
-| Recurring edit scope | **Remaining F2 item** | Repeat icon/status exists; full edit-scope behavior remains future work. |
+| Recurring edit scope | **Partial shipped** | Virtual occurrence time/metadata edit materializes one-off row + parent `exception_dates`. Full series edit-scope dialog for other mutations remains future work. |
 
 ---
+
+## AI laws (do not reintroduce)
+
+### Record category payload
+
+- `records.category_id` and `records.category_link` both expect **15-char `categories.id`** in POST/PATCH.
+- Business slug (`categories.category_id`) is normalized in the Brain before network I/O; never send slug in record relation fields.
+
+### Tag default duration
+
+- `tags.default_plan_duration_minutes` — optional PB **number**; may return `10.0`; parser accepts `num`/`int`/`double`.
+
+### Time mode
+
+- UTC storage; profile TZ projection for filter/placement/now-line; wall-time create/edit; **5-min** snap/min; micro/compact/medium/large density; now-line above cards; no out-of-range bucket.
+
+### Recurring edit
+
+- Virtual occurrence edit → materialize one-off plan + `exception_dates` on parent series.
 
 ## Architecture rules (from Iron Laws)
 

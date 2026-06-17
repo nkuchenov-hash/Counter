@@ -1,6 +1,6 @@
 # LIFE OS: Architecture (PocketBase)
 
-**Runtime law:** The app’s primary backend is **PocketBase** (`pocketbase` Dart SDK). URL, collection names, auth, and **record → category** relation (`category_link` + expand) are defined in **`POCKETBASE_MANIFEST.md`**. **`lib/DATA_MAP.md`** remains the vocabulary for **field names** and business IDs (`user_id`, `record_id`, `plan_id`, `category_id`, etc.).
+**Runtime law:** The app’s primary backend is **PocketBase** (`pocketbase` Dart SDK). URL, collection names, auth, and **record → category** relations (`category_id`, `category_link` + expand) are defined in **`POCKETBASE_MANIFEST.md`**. **`docs/DATA_MAP.md`** remains the vocabulary for **field names** and business IDs (`user_id`, `record_id`, `plan_id`, `categories.category_id`, etc.).
 
 ---
 
@@ -19,7 +19,7 @@
 ## 2. IDs
 
 - **PocketBase row id:** string primary key on each collection (used in `update` / `delete`).
-- **Business IDs:** `user_id` (UUID string), `record_id`, `plan_id`, `category_id` — carried in row data for filtering and matching.
+- **Business IDs:** `user_id` (UUID string), `record_id`, `plan_id`, `categories.category_id` (business slug) — carried in row data for filtering and matching. **Record REST category payloads** use 15-char `categories.id`, not the business slug.
 - **Timeline PATCH/DELETE:** Prefer PB row id from cache (`_pb_record_id` / `id`); resolve business `record_id` to row id when needed.
 
 ---
@@ -45,7 +45,7 @@
 ## 4. API shape
 
 - **No Noco `fields` wrapper.** Requests use flat JSON maps. Checklist / long JSON fields are stringified where the schema expects strings.
-- **Relations:** e.g. `records.category_link` → categories id; list with `expand` to hydrate timeline category data.
+- **Relations:** `records.category_id` and `records.category_link` → `categories.id` (15-char in POST/PATCH body); list with `expand: category_link` to hydrate timeline category data. Business slug (`categories.category_id`) is **not** valid in record relation fields.
 
 ---
 
@@ -59,8 +59,10 @@
 
 ## 6. Categories & planning
 
+- **Record category API law:** POST/PATCH on `records` must send the **15-char** `categories.id` in **both** `category_id` and `category_link`. The Brain may hold business slugs in cache/UI but normalizes before network I/O (`_normalizeRecordCategoryFieldsForPbApi` / `_mapCategoryIdToLinkForPb`). Sending a business slug (e.g. `"life"`) causes PocketBase **400** `validation_missing_rel_records`.
 - **WORD_MATCH_LAW:** Whole-word matching on `title.split` for auto-category (no substring fuzzy).
 - **Planning tasks:** Loaded from PocketBase `plans` collection with expands as implemented in `database_service.dart` (not a separate Dart `Plan` model — use `PlanningTask` / record maps).
+- **Recurring virtual occurrence edit:** Editing time/metadata on a virtual recurring instance materializes a one-off plan row and appends the instance date to the parent series `exception_dates` (see `plan_service.dart`).
 
 ---
 
@@ -99,6 +101,6 @@ Web vs. Mobile STT: Web (kIsWeb) MUST use strict BCP-47 tags (e.g., ru-RU) bypas
 
 | Document | Role |
 | :--- | :--- |
-| **POCKETBASE_MANIFEST.md** | PB URL, collections, `category_link`, auth. |
+| **POCKETBASE_MANIFEST.md** | PB URL, collections, `category_id` / `category_link`, auth. |
 | **DATA_MAP.md** | Field naming reference (legacy Noco table UIDs are historical only). |
 | **NOCODB_MANIFEST.md** | Legacy Noco contract — do not use for new work. |

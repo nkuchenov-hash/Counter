@@ -96,3 +96,12 @@ This document defines how Life OS behaves when people interact with it. It is th
 - The UI must not wait for PocketBase writes before reflecting a user action.
 - Rollback is reserved for non-retriable failures; ordinary offline/network failures use queues where available.
 - Do not introduce full refetch fan-out after a small mutation unless unavoidable.
+
+## Planning Time Mode
+
+- **Timezone / storage:** Plan and record instants are stored as **UTC ISO**. Time mode projects them into the **profile timezone** for day filter, block placement, labels, and drag/resize math. User-entered wall time at create/edit belongs to the **current profile timezone**.
+- **Current-time line:** Uses profile-projected “now”; renders **above** plan cards (`IgnorePointer`); must not sit behind blocks.
+- **Visible range:** No “outside visible range” / out-of-hours fallback bucket. Scheduled cards outside the selected wall day or visible hour range are **not shown**.
+- **Snap / duration:** Time mode supports **5-minute** minimum duration and **5-minute** snap for move and top/bottom resize (`timelineSnapMinutes`, `kPlanScheduleSnapMinutes`).
+- **Card density:** Short blocks use **micro** / **compact** layouts (essential controls only). **Medium** / **large** blocks show progress separator + category breadcrumb + planned time footer (`PlanTimeTaskCard`).
+- **Interactions:** Checkbox, play, menu, body tap, drag, and resize keep independent hit zones; optimistic schedule updates follow the Iron Laws.

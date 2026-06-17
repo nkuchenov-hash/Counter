@@ -1,6 +1,6 @@
 # PocketBase manifest (project law)
 
-This file is the **single source of truth** for how this app talks to **PocketBase**: URL, collection names, auth, **relation fields**, **expand** paths, and **API rule intent** (what the server should enforce). Semantic field names stay aligned with **`lib/DATA_MAP.md`**.
+This file is the **single source of truth** for how this app talks to **PocketBase**: URL, collection names, auth, **relation fields**, **expand** paths, and **API rule intent** (what the server should enforce). Semantic field names stay aligned with **`docs/DATA_MAP.md`**.
 
 **Code anchors:** `lib/data/pb_config.dart` (`kPocketBaseUrl`, `PbCollections`, `PbAppApiRoutes`, `kPbRecordCategoryExpand`, `kPbPlanTagsExpand`, `kPbRecordTagsExpand`), `lib/data/database_service.dart`, `lib/data/auth_bridge.dart`.
 
@@ -32,7 +32,7 @@ This file is the **single source of truth** for how this app talks to **PocketBa
 | Collection | Relation | Target | Role | App usage |
 | :--- | :--- | :--- | :--- | :--- |
 | **records** | `user_id` | `profiles.id` | **Owner** | Mandatory on create; must equal current auth id for rules. |
-| **records** | `category_id` / `category_link` | `categories.id` | **Category** | Payload uses **15-char** category row id; expand `category_link` for UI. |
+| **records** | `category_id` / `category_link` | `categories.id` | **Category** | Both relation fields; payload uses **15-char** `categories.id` in **each** (never business slug). Expand `category_link` for UI. |
 | **records** | `source_plan_id` | `plans.id` | **Plan vs fact** | Optional. **Many records** may point to **one plan** (iterations). Omit/clear (`null`) for legacy or unlinked rows. |
 | **records** | `tags_link` (optional) | `tags` | Tags | Expand `tags_link` when present; string **`tags`** may still hold CSV. |
 | **plans** | `user_id` | `profiles.id` | **Owner** | Plan rows are tenant-scoped the same way as records. |
@@ -74,7 +74,7 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | **`id`** | **system** | **15-char**; **only** this id may appear in **`records.source_plan_id`** and in REST URLs for plans. |
 | `user_id` | relation | → `profiles.id`. |
 | `plan_id` | text | Business UUID / metadata; **not** a REST path segment. |
-| `title`, `is_done`, `order`, times, `checklist`, `notes_delta`, `notes_plain`, `tags` | — | See **`lib/DATA_MAP.md`**. |
+| `title`, `is_done`, `order`, times, `checklist`, `notes_delta`, `notes_plain`, `tags` | — | See **`docs/DATA_MAP.md`**. |
 | `initial_date_key` | text | Wall day `YYYY-MM-DD` of original plan commitment; **does not change** when the task is postponed to a future day. |
 | `is_postponed` | bool | `true` when the scheduled wall day is after `initial_date_key` (bulk/single move ahead). |
 | `tags_link` | relation(s) | Expand: `kPbPlanTagsExpand`. |
@@ -84,8 +84,8 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | Field | Type | Notes |
 | :--- | :--- | :--- |
 | **`user_id`** | relation | → **`profiles.id`** (**15-char**). **Create/Update rules:** must match `@request.auth.id` for standard tenants. |
-| **`category_id`** | relation | → `categories.id` (15-char in API body). |
-| **`category_link`** | relation | Required for **`expand: category_link`** (see `kPbRecordCategoryExpand`). |
+| **`category_id`** | relation | → `categories.id` (15-char in API body). **Not** the business slug. |
+| **`category_link`** | relation | → `categories.id` (same 15-char id as `category_id`). Required for **`expand: category_link`** (see `kPbRecordCategoryExpand`). |
 | **`source_plan_id`** | relation | Optional → **`plans.id`**. Set only when linking “fact” to an owned plan; **clear** with `null` on unlink. |
 | `status` | select | `running` / `stopped` / `completed` (app contract). |
 | `start_time`, `end_time` | date | ISO strings; timeline buckets use **wall-clock** (see DATA_MAP). |
@@ -98,7 +98,7 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | :--- | :--- | :--- |
 | **`id`** | **system** | 15-char. |
 | `user_id` | relation | → `profiles.id`. |
-| `default_plan_duration_minutes` | number | Optional minutes for auto-scheduled plan blocks when this tag is on the task. |
+| `default_plan_duration_minutes` | number | Optional minutes for auto-scheduled plan blocks when this tag is on the task. PB may return `10.0` (double); client accepts `num` / `int` / `double`. |
 
 ---
 
@@ -138,7 +138,7 @@ PocketBase Admin should enforce **multi-tenant isolation** and **plan integrity*
 
 - **Anti-blink:** A full `fetchRecords()` **fan-out** right after every small create/patch is **discouraged**; prefer atomic cache merge from the response (see `DatabaseService`).
 - **Event-based debugging:** Logs on user actions (Start / Stop / Error); background loops stay quiet (project anti-spam rules).
-- **Relation translation:** Resolve category **slugs** to **15-char `categories.id`** before POST/PATCH to avoid **400**.
+- **Relation translation:** Resolve category **business slugs** (`categories.category_id`) to **15-char `categories.id`** before POST/PATCH on **records** (`category_id` **and** `category_link`) to avoid **400** (`validation_missing_rel_records`).
 
 ---
 
@@ -146,5 +146,5 @@ PocketBase Admin should enforce **multi-tenant isolation** and **plan integrity*
 
 | Document | Role |
 | :--- | :--- |
-| **`lib/DATA_MAP.md`** | Field names, business keys, operational laws. |
+| **`docs/DATA_MAP.md`** | Field names, business keys, operational laws. |
 | **`ARCHITECTURE.md`** | Brain / gate / data flow. |

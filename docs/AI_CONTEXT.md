@@ -43,3 +43,32 @@ Implementation: `scripts/manual/td.ps1` (`flutter analyze --no-fatal-infos --no-
 ## Note on history
 
 A full copy of the May 2026 roadmap previously lived in this file and duplicated `docs/ROADMAP.md`. That duplicate was removed 2026-06-09. Audit source material remains in `docs/reports/AUDIT_NOTES.md`.
+
+---
+
+## Shipped laws (do not regress)
+
+### Record category payload
+
+- `records.category_id` and `records.category_link` are **PocketBase relations** → `categories.id` (15-char).
+- Business category slug (`categories.category_id`, e.g. `"life"`) must be **normalized to `categories.id`** before records POST/PATCH.
+- Never send business slug in `records.category_id` or `records.category_link` (PB **400** `validation_missing_rel_records`).
+- Anchors: `category_service.dart` (`_mapCategoryIdToLinkForPb`, `_normalizeRecordCategoryFieldsForPbApi`), `record_service.dart`.
+
+### Tag default duration
+
+- Field: `tags.default_plan_duration_minutes` (optional **number** in PocketBase).
+- PB may return `10.0` (double); client parser must accept `num` / `int` / `double`.
+- UI: `tag_default_duration_settings_view.dart` (Durations tab in tag settings).
+
+### Time mode
+
+- UTC instant is source of truth; **profile timezone** projection drives day filter, block placement, labels, and now-line.
+- User wall time at create/edit = profile wall time (not device-local default).
+- **5-minute** min duration and snap; micro/compact/medium/large card density by rendered height.
+- Now-line **above** cards; **no** “outside visible range” bucket.
+- Docs: `UX_CONTRACT.md` § Planning Time Mode, `DESIGN_SYSTEM.md` § PlanTimeTaskCard.
+
+### Recurring edit
+
+- Virtual occurrence time/metadata edit **materializes** a one-off plan row and adds parent `exception_dates` entry (`plan_service.dart`).

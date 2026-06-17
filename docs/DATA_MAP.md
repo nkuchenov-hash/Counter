@@ -34,8 +34,8 @@ description: Revisions and corrections for DATA_MAP.md.
 | **title** | String | Data | **YES** | Name of the activity/task. |
 | **start_time** | ISO8601 String | Time | **YES** | Start timestamp (UTC). (PB `date` field). |
 | **end_time** | ISO8601 String | Time | NO | Null if status is `running`. (PB `date` field). |
-| **category_id** | String (UUID/slug) | **Data** | **YES** | Business category identifier (matches `categories.category_id`). **Not** the 15-char PocketBase `categories.id`. |
-| **category_link**| Relation | **Expand** | **YES** | PocketBase relation to `categories.id` (15-char). **REQUIRED** for timeline and native `expand: category_link`. |
+| **category_id** | Relation | **Category** | **YES** | Relation to `categories.id`. API payload must use the **15-char** PocketBase category row id. **Do not** send business slug/UUID here (e.g. `"life"` → PB `400 validation_missing_rel_records`). |
+| **category_link**| Relation | **Category expand / compatibility** | **YES** | Relation to `categories.id`. API payload must use the **same resolved 15-char** `categories.id` as `category_id`. Used for `expand: category_link` and category hydration. |
 | **status** | Select | State | **YES** | Allowed: `running`, `stopped`, `completed`. |
 | **type** | String | Constant | **YES** | Always set to `'record'`. |
 | **created** | ISO8601 String | Metadata | **YES** | System timestamp (PocketBase auto-managed). |
@@ -50,7 +50,7 @@ description: Revisions and corrections for DATA_MAP.md.
 1. **The ID Duality Law**: The Brain MUST distinguish between the **System ID** (`id`) and the **Business UUID** (`record_id`).
    - Use `id` (15-char String) strictly for REST URL segments (PATCH/DELETE).
    - Use `record_id` (UUID) for internal data logic and client-side syncing.
-   - **Category duality:** `category_id` is the **business** key (string; same family as `categories.category_id`). `category_link` is the **system** relation to `categories.id` for PocketBase filters and `expand`. Keep both consistent on PATCH.
+   - **Record category relations:** `records.category_id` and `records.category_link` are both **PocketBase relation fields** → `categories.id` (15-char). The Brain may accept a business category slug/id internally, but it **must normalize** to a 15-char `categories.id` before POST/PATCH. Business category slug lives only in `categories.category_id` and local matching/cache logic. **Never** send a business slug into `records.category_id` or `records.category_link`. Keep both record relation fields **consistent** when creating/patching records.
 2. **REST URL segment**: Use `/api/collections/records/records/{id}` for PATCH/DELETE.
 3. **Sacred Singleton Law**: Before starting a new record, the Brain MUST stop open intervals for **projected today**, then optionally merge **at most one** oldest **pre-today** open row. Fire concurrent standard PATCH requests.
 4. **Clean Slate**: `date_key` and `is_manual` are strictly banned.
@@ -83,7 +83,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **is_archived** | Bool | State | **YES** | Soft delete flag. `true` = hidden from UI, `false` = active. Default: `false`. |
 
 ### 🛠 Operational Rules for `categories`:
-1. **Relationship:** Relations to `records` should use the system `id` on `category_link`; internal app logic maps **`category_id`** (business string) on both `categories` and `records`. **`parent_id`** is a **Relation** to another row’s system `id` in this collection (self-parent).
+1. **Relationship:** `categories.category_id` is the **business slug/key** (e.g. `life`). `records.category_id` and `records.category_link` both store **relation ids** → `categories.id` (15-char). Client code maps business slug → `categories.id` before records POST/PATCH. **`parent_id`** is a **Relation** to another row’s system `id` in this collection (self-parent).
 2. **UI Rendering (The Centering Law):** Prioritize `color_value` and `icon_code_point` for the Flutter UI. Icon and Text MUST be a tight vertical cluster, aligned to the **Absolute Center** of the square. No spacers.
 3. **Data Parsing:** Ensure PocketBase number fields are safely cast to integers in Dart.
 4. **THE REST MANDATE:** **PATCH** = `PATCH /api/collections/categories/records/{id}`. **DELETE** = `DELETE /api/collections/categories/records/{id}`.
@@ -195,4 +195,4 @@ description: Revisions and corrections for DATA_MAP.md.
 | **icon** | String | UI | NO | Material icon string identifier. |
 | **sort_order** | Number | UI | NO | Manual order in Tag Manager; lower = earlier. Planning **Sort by Tags** uses this order. |
 | **domain** | String (Select) | Data | NO | Tag isolation: `plan` (Planning / timeline tag pickers) vs `list` (Lists / backlog tag pickers). Legacy rows with empty domain are treated as **`plan`**. New list tags MUST be created with `list`. |
-| **default_plan_duration_minutes** | Number | Planning | NO | Optional default block length in minutes for auto-scheduled plans carrying this tag. Empty/null = no tag default. Client clamps 1–1440. |
+| **default_plan_duration_minutes** | Number | Planning | NO | Optional default block length in minutes for auto-scheduled plans carrying this tag. Empty/null = no tag default. Client clamps 1–1440. PocketBase may return integer or double (e.g. `10.0`); client parser must accept `num` / `int` / `double`. |

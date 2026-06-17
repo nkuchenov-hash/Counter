@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Governing docs sync (category relations, Time mode, tag duration) [shipped]
+* **Docs-only:** Aligned `DATA_MAP.md`, `POCKETBASE_MANIFEST.md`, `ARCHITECTURE.md`, `UX_CONTRACT.md`, `DESIGN_SYSTEM.md`, `AI_CONTEXT.md`, `CLAUDE.md`, `ROADMAP.md`, `APP_STRUCTURE.md` with shipped fixes.
+* **Record category law (final):** `records.category_id` and `records.category_link` are PB relations → `categories.id` (15-char); business slug only in `categories.category_id` / Brain cache — never in record API payloads.
+* **Supersedes:** Earlier [wip] sync-banner / category-duality doc wording; real fix is relation-id normalization in `category_service.dart` / `record_service.dart` (see 2026-06-14 changelog).
+
 ## [2026-06-15] - Time mode UX: 5-min snap, micro cards, timeline scale, resize handles [shipped]
 * **`planning_day_start_prefs.dart` / `plan_service.dart`:** [shipped] Timeline snap + min duration 5 minutes (`timelineSnapMinutes`, `kPlanScheduleSnapMinutes`).
 * **`plan_time_task_card.dart`:** [shipped] Height-based density tiers (micro/compact/medium/large); `_TimelinePlanCardMicro` + `_TimelinePlanCardCompactTimeline` for short blocks; footer/progress/watermark suppressed on micro/compact timeline; medium hides tags when block &lt;104px.
