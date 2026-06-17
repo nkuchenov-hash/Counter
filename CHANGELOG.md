@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Time mode UX: 5-min snap, micro cards, timeline scale, resize handles [shipped]
+* **`planning_day_start_prefs.dart` / `plan_service.dart`:** [shipped] Timeline snap + min duration 5 minutes (`timelineSnapMinutes`, `kPlanScheduleSnapMinutes`).
+* **`plan_time_task_card.dart`:** [shipped] Height-based density tiers (micro/compact/medium/large); `_TimelinePlanCardMicro` + `_TimelinePlanCardCompactTimeline` for short blocks; footer/progress/watermark suppressed on micro/compact timeline; medium hides tags when block &lt;104px.
+* **`planning_view.dart`:** [shipped] Dynamic `hourHeight` zoom (shortest plan ≥52px desktop / 64px touch, max 720px/h); 16px resize hit zones; hover resize dots + `resizeUpDown`/`grab` cursors; floating time preview preserved.
+
 ## [2026-06-15] - Time mode now-line z-order above cards [shipped]
 * **`planning_view.dart`:** [shipped] Current-time indicator moved after plan cards in timeline Stack + `IgnorePointer` so line renders above cards without blocking taps.
 

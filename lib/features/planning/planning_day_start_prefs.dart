@@ -58,8 +58,8 @@ class PlanningSheetTimelinePrefs {
   }
 
   /// Default vertical drag snap for Planning Time timeline (minutes).
-  static const int timelineSnapMinutes = 15;
+  static const int timelineSnapMinutes = 5;
 
   /// Minimum scheduled block duration when resizing (minutes).
-  static const int timelineMinDurationMinutes = 15;
+  static const int timelineMinDurationMinutes = 5;
 }

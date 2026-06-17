@@ -273,8 +273,9 @@ class _PlanningPageState extends State<PlanningPage>
   final ScrollController _hourGridScrollController = ScrollController();
 
   static const double _kTimelineHourHeightBasePx = 80;
-  static const double _kTimelineHourHeightMaxPx = 360;
-  static const double _kTimelineMinReadableCardPx = 60;
+  static const double _kTimelineHourHeightMaxPx = 720;
+  static const double _kTimelineMinReadableCardPxDesktop = 52;
+  static const double _kTimelineMinReadableCardPxTouch = 64;
   static const double _kTimelineRailWidthPx = 48;
   static const double _kTimelineMinBlockHeightPx = 56;
 
@@ -309,7 +310,7 @@ class _PlanningPageState extends State<PlanningPage>
   PlanningTask? _timelineResizeTask;
   String? _timelineResizeTimeLabel;
 
-  static const double _kTimelineResizeHandlePx = 12;
+  static const double _kTimelineResizeHandlePx = 16;
 
   late final Ticker _hourGridEdgeScrollTicker;
   double _hourGridScrollVelocityPxPerSec = 0;
@@ -2118,13 +2119,22 @@ class _PlanningPageState extends State<PlanningPage>
     return hours.length * _timelineHourHeightPx;
   }
 
+  double _timelineMinReadableCardTargetPx() {
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      return _kTimelineMinReadableCardPxTouch;
+    }
+    return _kTimelineMinReadableCardPxDesktop;
+  }
+
   double _resolveTimelineHourHeightPx(List<PlanningTask> scheduled) {
-    var shortestMin = 30.0;
+    var shortestMin = 5.0;
     for (final t in scheduled) {
       final dur = _timelineBlockDurationMinutes(t).toDouble();
       if (dur > 0 && dur < shortestMin) shortestMin = dur;
     }
-    final needed = _kTimelineMinReadableCardPx * 60 / shortestMin;
+    final needed =
+        _timelineMinReadableCardTargetPx() * 60 / shortestMin;
     return needed.clamp(_kTimelineHourHeightBasePx, _kTimelineHourHeightMaxPx);
   }
 
@@ -3551,7 +3561,10 @@ class _PlanningPageState extends State<PlanningPage>
               canMove: canInteract,
               canResize: canInteract,
               resizeHandlePx: _kTimelineResizeHandlePx,
-              controlsLeftInset: planCardBodyGestureLeftInsetPx(blockDensity),
+              controlsLeftInset: planCardBodyGestureLeftInsetPx(
+                blockDensity,
+                timeline: true,
+              ),
               controlsRightInset: planCardBodyGestureRightInsetPx(),
               onBodyTap: () {
                 if (_planSelectMode) {
@@ -4976,7 +4989,11 @@ class _TimelinePlanInteractionBlockState
       bottom: bottomInset,
       left: widget.controlsLeftInset,
       right: widget.controlsRightInset,
-      child: GestureDetector(
+      child: MouseRegion(
+        cursor: _bodyDragActive
+            ? SystemMouseCursors.grabbing
+            : SystemMouseCursors.grab,
+        child: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: widget.onBodyTap == null
             ? null
@@ -5042,6 +5059,7 @@ class _TimelinePlanInteractionBlockState
               }
             : null,
         child: const SizedBox.expand(),
+      ),
       ),
     );
   }
@@ -5154,6 +5172,7 @@ class _TimelineResizeEdgeHandleState extends State<_TimelineResizeEdgeHandle> {
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
+      cursor: SystemMouseCursors.resizeUpDown,
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onVerticalDragStart: (_) {
@@ -5178,16 +5197,43 @@ class _TimelineResizeEdgeHandleState extends State<_TimelineResizeEdgeHandle> {
         },
         child: SizedBox(
           height: widget.height,
+          width: double.infinity,
           child: showHairline
-              ? Align(
+              ? Stack(
                   alignment: widget.isTop
                       ? Alignment.topCenter
                       : Alignment.bottomCenter,
-                  child: Container(
-                    height: 1,
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    color: scheme.primary.withValues(alpha: 0.38),
-                  ),
+                  children: [
+                    Container(
+                      height: 2,
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.38),
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: widget.isTop ? 4 : 0,
+                        bottom: widget.isTop ? 0 : 4,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          3,
+                          (_) => Container(
+                            width: 4,
+                            height: 4,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            decoration: BoxDecoration(
+                              color: scheme.primary.withValues(alpha: 0.5),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 )
               : null,
         ),

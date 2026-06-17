@@ -1994,7 +1994,7 @@ extension PlanServiceExtension on DatabaseService {
   static const int kDefaultPlanDurationMinutes = 30;
 
   /// Keep in sync with [PlanningSheetTimelinePrefs.timelineSnapMinutes].
-  static const int kPlanScheduleSnapMinutes = 15;
+  static const int kPlanScheduleSnapMinutes = 5;
 
   static const int kPlanDayOverloadTotalMinutes = 12 * 60;
 
