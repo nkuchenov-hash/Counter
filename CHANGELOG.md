@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 final CardPlan geometry + Category reorder [shipped]
+* **`plan_time_task_card.dart`:** [shipped] Figma CardPlan_Medium constants — 95px ref height, pad 12/10, 1px progress bar, fixed tags/progress slots (no data-dependent height); `tagsToProgressGap` ≈56px anchor.
+* **`planning_view.dart`:** [shipped] Category mode per-bucket `ReorderableListView` + `_onCategoryBucketReorder` → `persistPlanningTaskOrder`.
+
 ## [2026-06-15] - Plan reorder persistence (Tags / Custom) [shipped]
 * **`plan_service.dart`:** [shipped] `persistPlanningTaskOrder` applies optimistic cache first; `_persistPlanningTaskOrdersBulkNow` PATCHes `{order}` via `_patchPlanUpdateNetworkPhase` (15-char PB id, plan outbox on retriable failure); baseline diff uses `t.order` not list index; skips `virt-`/`optimistic-`; `PLAN_REORDER_*` logs + rollback on total failure.
 * **`planning_view.dart`:** [shipped] `_commitPlanningReorder` / `_planCanReorderTask`; Tags + Custom drag wired to Brain persist path (no stale `_dragOrder`-only UI).

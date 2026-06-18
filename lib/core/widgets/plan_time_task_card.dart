@@ -383,7 +383,7 @@ abstract final class _PlanCardGeom {
   static const double refWidth = 328;
   static const double padLeft = 12;
   static const double padRight = 12;
-  static const double padTopMediumLarge = 9;
+  static const double padTopMediumLarge = 12;
   static const double padTopSmall = 10;
   static const double controlSize = 32;
   static const double playInlineX = 48;
@@ -398,21 +398,22 @@ abstract final class _PlanCardGeom {
   static const double radius = 12;
   static const double refHeightMicro = 40;
   static const double refHeightSmall = 54;
-  static const double refHeightMedium = 90;
+  static const double refHeightMedium = 95;
   static const double refHeightLarge = 147;
   static const double tagRowHeight = 16;
   static const double tagGap = 5;
   static const double titleToTagsGap = 5;
-  static const double emptyTagsSlotHeight = 4;
+  static const double emptyTagsSlotHeight = 21;
+  static const double tagsToProgressGap = 6;
   static const double actualTimeSlotHeight = 10;
   static const double progressAfterActualGap = 6;
-  static const double progressBarHeight = 2;
-  static const double footerBlockGap = 6;
+  static const double progressBarHeight = 1;
+  static const double footerBlockGap = 8;
   static const double footerTextHeight = 14;
-  static const double footerBottomPad = 8;
+  static const double footerBottomPad = 10;
   static const double titleTopInset = 1;
   static const double titleLineHeight = 16;
-  static const double watermarkMinCardHeight = 96;
+  static const double watermarkMinCardHeight = 95;
 
   static double refHeight(PlanTimeTaskCardDensity d) => switch (d) {
         PlanTimeTaskCardDensity.micro => refHeightMicro,
@@ -462,13 +463,10 @@ final class _PlanCardVerticalSpacing {
   final double footerBlockGap;
 
   double progressSlotHeight({required bool hasTrackedProgress}) =>
-      hasTrackedProgress
-          ? actualTimeSlotHeight + progressAfterActualGap + progressBarHeight
-          : progressAfterActualGap + progressBarHeight;
+      actualTimeSlotHeight + progressAfterActualGap + progressBarHeight;
 
-  double tagsSlotHeight({required bool hasTags}) => hasTags
-      ? titleToTagsGap + _PlanCardGeom.tagRowHeight
-      : emptyTagsSlotHeight;
+  double tagsSlotHeight({required bool hasTags}) =>
+      emptyTagsSlotHeight;
 }
 
 // --- Visual tokens (design/CardPlan *.svg fallback) ---------------------------
@@ -522,24 +520,25 @@ class _PlanCardProgressSlot extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (hasActual)
-            SizedBox(
-              height: spacing.actualTimeSlotHeight,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  _PlanCardProgressRow.formatCompact(planTrackedSeconds),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    height: 1.2,
-                    fontWeight: FontWeight.w500,
-                    color: _PlanCardTokens.timeColor,
-                  ),
-                ),
-              ),
-            ),
+          SizedBox(
+            height: spacing.actualTimeSlotHeight,
+            child: hasActual
+                ? Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      _PlanCardProgressRow.formatCompact(planTrackedSeconds),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        height: 1.2,
+                        fontWeight: FontWeight.w500,
+                        color: _PlanCardTokens.timeColor,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
           SizedBox(height: spacing.progressAfterActualGap),
           _PlanCardProgressRow(
             trackedSeconds: planTrackedSeconds,
@@ -630,6 +629,7 @@ class _PlanCardInvariantBody extends StatelessWidget {
                   : const SizedBox.shrink(),
             ),
           ),
+          SizedBox(height: _PlanCardGeom.tagsToProgressGap),
           progressSlot,
           SizedBox(height: spacing.footerBlockGap),
           _PlanCardFooterRow(
@@ -1705,6 +1705,9 @@ double planTimeCardMeasureHeight({
   PlanTimeTaskCardDensity density = PlanTimeTaskCardDensity.medium,
   int titleLines = 1,
 }) {
+  if (density == PlanTimeTaskCardDensity.medium) {
+    return _PlanCardGeom.refHeightMedium;
+  }
   if (density == PlanTimeTaskCardDensity.micro ||
       density == PlanTimeTaskCardDensity.compact) {
     return planTimeCardListMinHeight(density);

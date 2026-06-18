@@ -3905,8 +3905,31 @@ class _PlanningPageState extends State<PlanningPage>
     final keys = groups.keys.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     final children = <Widget>[];
+    Widget proxyDecorator(
+      Widget child,
+      int index,
+      Animation<double> animation,
+    ) {
+      return AnimatedBuilder(
+        animation: animation,
+        builder: (context, c) {
+          final v = Curves.easeInOut.transform(animation.value);
+          return Material(
+            elevation: lerpDouble(0, 10, v) ?? 0,
+            shadowColor: Colors.black38,
+            borderRadius: BorderRadius.circular(12),
+            clipBehavior: Clip.antiAlias,
+            child: c,
+          );
+        },
+        child: child,
+      );
+    }
+
     var firstCategoryGroup = true;
     for (final k in keys) {
+      final bucket = groups[k];
+      if (bucket == null || bucket.isEmpty) continue;
       if (!firstCategoryGroup) {
         children.add(const SizedBox(height: 32));
       }
@@ -3927,17 +3950,52 @@ class _PlanningPageState extends State<PlanningPage>
           ),
         ),
       );
-      for (final task in groups[k] ?? const <PlanningTask>[]) {
-        final key = _planKey(task);
-        final displayDone = _planDoneOverride[key] ?? task.isDone;
+      if (_planSelectMode) {
+        for (final task in bucket) {
+          final key = _planKey(task);
+          final displayDone = _planDoneOverride[key] ?? task.isDone;
+          children.add(
+            _planCardRow(
+              context: context,
+              task: task,
+              key: key,
+              displayDone: displayDone,
+              isSelected: _selectedPlanKeys.contains(key),
+              planActualByPbId: planActualByPbId,
+            ),
+          );
+        }
+      } else {
         children.add(
-          _planCardRow(
-            context: context,
-            task: task,
-            key: key,
-            displayDone: displayDone,
-            isSelected: _selectedPlanKeys.contains(key),
-            planActualByPbId: planActualByPbId,
+          ReorderableListView.builder(
+            key: ValueKey<String>('category-bucket-$k'),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            proxyDecorator: proxyDecorator,
+            itemCount: bucket.length,
+            onReorder: (oldI, newI) =>
+                _onCategoryBucketReorder(tasks, k, oldI, newI),
+            itemBuilder: (context, index) {
+              final task = bucket[index];
+              final key = _planKey(task);
+              final displayDone = _planDoneOverride[key] ?? task.isDone;
+              final canReorder = !_planSelectMode && _planCanReorderTask(task);
+              return ReorderableDelayedDragStartListener(
+                key: ValueKey<String>(key),
+                index: index,
+                enabled: canReorder,
+                child: _planCardRow(
+                  context: context,
+                  task: task,
+                  key: key,
+                  displayDone: displayDone,
+                  isSelected: _selectedPlanKeys.contains(key),
+                  planActualByPbId: planActualByPbId,
+                  omitLongPressForReorder: canReorder,
+                ),
+              );
+            },
           ),
         );
       }
@@ -4038,6 +4096,45 @@ class _PlanningPageState extends State<PlanningPage>
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       children: children,
+    );
+  }
+
+  void _onCategoryBucketReorder(
+    List<PlanningTask> allDisplayed,
+    String categoryPath,
+    int oldIndex,
+    int newIndex,
+  ) {
+    if (_planSelectMode || _sortMode != _PlanSortMode.category) return;
+    final groups = _groupTasksByCategoryPath(allDisplayed);
+    final keys = groups.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final bucket = List<PlanningTask>.from(groups[categoryPath] ?? []);
+    if (bucket.isEmpty) return;
+    if (oldIndex < 0 || oldIndex >= bucket.length) return;
+    var ni = newIndex;
+    if (ni > oldIndex) ni -= 1;
+    if (ni < 0 || ni > bucket.length) return;
+    final row = bucket[oldIndex];
+    if (!_planCanReorderTask(row)) return;
+    bucket.removeAt(oldIndex);
+    bucket.insert(ni, row);
+    groups[categoryPath] = bucket;
+    final flat = <PlanningTask>[];
+    for (final k in keys) {
+      flat.addAll(groups[k] ?? const <PlanningTask>[]);
+    }
+    if (flat.length != allDisplayed.length) return;
+    final withOrders = <PlanningTask>[
+      for (var i = 0; i < flat.length; i++) flat[i].copyWith(order: i),
+    ];
+    _commitPlanningReorder(
+      mode: 'category',
+      moved: row,
+      fromIndex: oldIndex,
+      toIndex: ni,
+      withOrders: withOrders,
+      baselineBefore: allDisplayed,
     );
   }
 
