@@ -274,13 +274,15 @@ class _PlanningPageState extends State<PlanningPage>
 
   static const double _kTimelineHourHeightBasePx = 80;
   static const double _kTimelineRailWidthPx = 48;
-  static const double _kTimelineMinBlockHeightPx = 56;
-  /// Minimum rendered card height (layout only; stored duration unchanged).
-  static const double _kTimelineMinCardVisualPx = 88;
-
-  /// Fixed hour-grid scale — not driven by shortest visible task.
-  double _timelineHourHeightPx = _kTimelineHourHeightBasePx;
+  static const double _kTimelineHourRowPadPx = 4;
+  static const double _kTimelineCardStackGapPx = 4;
   static const int _kTimelineDefaultBlockMinutes = 30;
+
+  /// Rubber hour-row layout for the active Time-mode canvas build.
+  _TimelineRubberGrid? _activeTimelineRubberGrid;
+
+  /// Local preview height while dragging (intrinsic card height).
+  double _timelineVerticalDragCardHeightPx = 0;
 
   /// Active vertical timeline drag (Time mode); local preview only until drop.
   String? _timelineVerticalDragPlanKey;
@@ -2018,8 +2020,6 @@ class _PlanningPageState extends State<PlanningPage>
     required Map<String, int> planActualByPbId,
     bool timelineBlock = false,
     bool timelineInteracting = false,
-    double timelineBlockHeightPx = _kTimelineMinBlockHeightPx,
-    int timelineDurationMin = _kTimelineDefaultBlockMinutes,
     bool timelineScheduleConflict = false,
   }) {
     final pbId = DatabaseService.pocketRelationIdOrNull(task.pocketRecordId);
@@ -2035,8 +2035,6 @@ class _PlanningPageState extends State<PlanningPage>
       highlightAsRunning: highlightAsRunning,
       timelineBlock: timelineBlock,
       timelineInteracting: timelineInteracting,
-      timelineBlockHeightPx: timelineBlockHeightPx,
-      timelineDurationMin: timelineDurationMin,
       timelineScheduleConflict: timelineScheduleConflict,
       toggleDoneEnabled: !task.planRowIdForBackend.startsWith('optimistic-'),
       onToggleDone: () => _toggleDone(task, displayDone),
@@ -2115,12 +2113,160 @@ class _PlanningPageState extends State<PlanningPage>
     return _kTimelineDefaultBlockMinutes;
   }
 
-  double _timelineCanvasHeightPx(int rangeStart, int rangeEnd) {
-    final hours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
+  double _timelineCanvasHeightPx(_TimelineRubberGrid grid) => grid.totalHeightPx;
+
+  ({
+    _TimelineRubberGrid grid,
+    List<_TimelineBlockLayout> layouts,
+  }) _computeTimelineRubberLayout(
+    List<PlanningTask> scheduled,
+    int rangeStart,
+    int rangeEnd,
+    Map<String, int> planActualByPbId,
+  ) {
+    const gapPx = _kTimelineCardStackGapPx;
+    const hourPad = _kTimelineHourRowPadPx;
+    const baseHour = _kTimelineHourHeightBasePx;
+
+    final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
       rangeStart,
       rangeEnd,
     );
-    return hours.length * _timelineHourHeightPx;
+    final n = visibleHours.length;
+
+    final spans =
+        <({
+          PlanningTask task,
+          double startMin,
+          double endMin,
+        })>[];
+    for (final t in scheduled) {
+      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
+      if (proj == null) continue;
+      final st = proj.wallStart;
+      final startMin = _timelineMinutesFromRangeStart(st, rangeStart, rangeEnd);
+      final durMin =
+          _timelineBlockDurationMinutes(proj.projectedTask).toDouble();
+      spans.add((
+        task: proj.projectedTask,
+        startMin: startMin,
+        endMin: startMin + durMin,
+      ));
+    }
+    spans.sort((a, b) {
+      final c = a.startMin.compareTo(b.startMin);
+      if (c != 0) return c;
+      return a.endMin.compareTo(b.endMin);
+    });
+
+    var hourHeights = List<double>.filled(n, baseHour.toDouble());
+    var layouts = <_TimelineBlockLayout>[];
+
+    for (var pass = 0; pass < 6; pass++) {
+      final hourTops = _TimelineRubberGrid.hourTopsFromHeights(hourHeights);
+      final grid = _TimelineRubberGrid(
+        visibleHours: visibleHours,
+        rangeStart: rangeStart,
+        hourHeights: hourHeights,
+        hourTops: hourTops,
+      );
+
+      layouts = [];
+      var prevVisualBottomPx = 0.0;
+      for (var i = 0; i < spans.length; i++) {
+        final span = spans[i];
+        final pbId = DatabaseService.pocketRelationIdOrNull(
+          span.task.pocketRecordId,
+        );
+        final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
+        final hasTags = span.task.tags.any((tag) => tag.rendersAsChip);
+        final heightPx = planTimeCardMeasureHeight(
+          hasTags: hasTags,
+          hasTrackedProgress: tracked > 0,
+        );
+        final idealTop = grid.yForMinutesFromRangeStart(span.startMin);
+        final timeOverlap =
+            i > 0 && span.startMin < spans[i - 1].endMin - 0.25;
+        final visualOverlap = i > 0 && idealTop < prevVisualBottomPx + gapPx;
+        final hasScheduleConflict = timeOverlap || visualOverlap;
+        final visualTopPx = hasScheduleConflict
+            ? math.max(idealTop, prevVisualBottomPx + gapPx)
+            : idealTop;
+        layouts.add(
+          _TimelineBlockLayout(
+            task: span.task,
+            topPx: visualTopPx,
+            heightPx: heightPx,
+            column: 0,
+            totalColumns: 1,
+            hasScheduleConflict: hasScheduleConflict,
+          ),
+        );
+        prevVisualBottomPx = visualTopPx + heightPx;
+      }
+
+      final nextHeights = List<double>.from(hourHeights);
+      for (var hi = 0; hi < n; hi++) {
+        final hourTop = hourTops[hi];
+        final hourBottom = hourTop + nextHeights[hi];
+        var contentBottom = hourTop + hourPad;
+        for (final layout in layouts) {
+          final layoutBottom = layout.topPx + layout.heightPx;
+          if (layout.topPx < hourBottom && layoutBottom > hourTop) {
+            contentBottom = math.max(contentBottom, layoutBottom + hourPad);
+          }
+        }
+        nextHeights[hi] = math.max(baseHour, contentBottom - hourTop);
+      }
+
+      var stable = true;
+      for (var i = 0; i < n; i++) {
+        if ((nextHeights[i] - hourHeights[i]).abs() > 0.5) {
+          stable = false;
+          break;
+        }
+      }
+      hourHeights = nextHeights;
+      if (stable) break;
+    }
+
+    final finalTops = _TimelineRubberGrid.hourTopsFromHeights(hourHeights);
+    final finalGrid = _TimelineRubberGrid(
+      visibleHours: visibleHours,
+      rangeStart: rangeStart,
+      hourHeights: hourHeights,
+      hourTops: finalTops,
+    );
+    return (grid: finalGrid, layouts: layouts);
+  }
+
+  List<_TimelineBlockLayout> _timelineBlockLayouts(
+    List<PlanningTask> scheduled,
+    int rangeStart,
+    int rangeEnd,
+    Map<String, int> planActualByPbId,
+  ) {
+    final result = _computeTimelineRubberLayout(
+      scheduled,
+      rangeStart,
+      rangeEnd,
+      planActualByPbId,
+    );
+    _activeTimelineRubberGrid = result.grid;
+    for (final layout in result.layouts) {
+      final proj = DatabaseService.instance.projectPlanForTimeMode(layout.task);
+      if (proj != null) {
+        _logTimeModeLayout(
+          task: layout.task,
+          proj: proj,
+          rangeStart: rangeStart,
+          topPx: layout.topPx,
+          heightPx: layout.heightPx,
+          label: proj.plannedTimeLabel,
+        );
+      }
+    }
+    return result.layouts;
   }
 
   String? _lastTimeModeLayoutLogKey;
@@ -2182,80 +2328,6 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
-  List<_TimelineBlockLayout> _timelineBlockLayouts(
-    List<PlanningTask> scheduled,
-    int rangeStart,
-    int rangeEnd,
-  ) {
-    final pxPerMin = _timelinePxPerMinute;
-    const gapPx = 4.0;
-    final spans =
-        <({
-          PlanningTask task,
-          double startMin,
-          double endMin,
-        })>[];
-    for (final t in scheduled) {
-      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
-      if (proj == null) continue;
-      final st = proj.wallStart;
-      final startMin = _timelineMinutesFromRangeStart(st, rangeStart, rangeEnd);
-      final durMin = _timelineBlockDurationMinutes(proj.projectedTask).toDouble();
-      spans.add((
-        task: proj.projectedTask,
-        startMin: startMin,
-        endMin: startMin + durMin,
-      ));
-    }
-    spans.sort((a, b) {
-      final c = a.startMin.compareTo(b.startMin);
-      if (c != 0) return c;
-      return a.endMin.compareTo(b.endMin);
-    });
-
-    final layouts = <_TimelineBlockLayout>[];
-    var prevVisualBottomPx = 0.0;
-    for (var i = 0; i < spans.length; i++) {
-      final span = spans[i];
-      final timeTopPx = span.startMin * pxPerMin;
-      final timeHeightPx = math.max(
-        1.0,
-        (span.endMin - span.startMin) * pxPerMin,
-      );
-      final heightPx = math.max(timeHeightPx, _kTimelineMinCardVisualPx);
-      final timeOverlap =
-          i > 0 && span.startMin < spans[i - 1].endMin - 0.25;
-      final visualOverlap = i > 0 && timeTopPx < prevVisualBottomPx + gapPx;
-      final hasScheduleConflict = timeOverlap || visualOverlap;
-      final visualTopPx = hasScheduleConflict
-          ? math.max(timeTopPx, prevVisualBottomPx + gapPx)
-          : timeTopPx;
-      layouts.add(
-        _TimelineBlockLayout(
-          task: span.task,
-          topPx: visualTopPx,
-          heightPx: heightPx,
-          column: 0,
-          totalColumns: 1,
-          hasScheduleConflict: hasScheduleConflict,
-        ),
-      );
-      final proj = DatabaseService.instance.projectPlanForTimeMode(span.task);
-      if (proj != null) {
-        _logTimeModeLayout(
-          task: span.task,
-          proj: proj,
-          rangeStart: rangeStart,
-          topPx: visualTopPx,
-          heightPx: heightPx,
-          label: proj.plannedTimeLabel,
-        );
-      }
-      prevVisualBottomPx = visualTopPx + heightPx;
-    }
-    return layouts;
-  }
-
   bool _isSelectedPlanningWallDayToday(DateTime planWallDay) {
     final today = _today;
     return planWallDay.year == today.year &&
@@ -2303,6 +2375,7 @@ class _PlanningPageState extends State<PlanningPage>
     DateTime planWallDay,
     int rangeStart,
     int rangeEnd,
+    _TimelineRubberGrid grid,
   ) {
     final selectedDay =
         '${planWallDay.year}-${planWallDay.month.toString().padLeft(2, '0')}-${planWallDay.day.toString().padLeft(2, '0')}';
@@ -2334,7 +2407,7 @@ class _PlanningPageState extends State<PlanningPage>
       );
       return null;
     }
-    final y = min * _timelineHourHeightPx / 60;
+    final y = grid.yForMinutesFromRangeStart(min.toDouble());
     _logPlanTimeNowLine(
       nowUtc: nowUtc,
       wallNow: wallNow,
@@ -2344,8 +2417,6 @@ class _PlanningPageState extends State<PlanningPage>
     );
     return y;
   }
-
-  double get _timelinePxPerMinute => _timelineHourHeightPx / 60;
 
   static const double _kTimelineBlockHorizontalPadPx = 6;
 
@@ -2416,10 +2487,6 @@ class _PlanningPageState extends State<PlanningPage>
         ).length *
         60;
   }
-
-  double _timelineMinDurationPx() =>
-      PlanningSheetTimelinePrefs.timelineMinDurationMinutes *
-      _timelinePxPerMinute;
 
   ({int startMin, int endMin}) _timelineStartEndMinutesFromTask(
     PlanningTask task,
@@ -2516,25 +2583,28 @@ class _PlanningPageState extends State<PlanningPage>
   }) {
     final edge = _timelineResizeEdge;
     if (edge == null) return;
+    final grid = _activeTimelineRubberGrid;
+    if (grid == null) return;
     final minDur = PlanningSheetTimelinePrefs.timelineMinDurationMinutes;
     final maxEndMin = _timelineMaxVisibleMinutes(rangeStart, rangeEnd);
-    final pxPerMin = _timelinePxPerMinute;
-    final minHeightPx = _timelineMinDurationPx();
+    final intrinsicH = _timelineResizeOriginHeightPx;
 
     var previewTop = _timelineResizeOriginTopPx;
-    var previewHeight = _timelineResizeOriginHeightPx;
+    final previewHeight = intrinsicH;
     var startMin = _timelineResizeOriginStartMin;
     var endMin = _timelineResizeOriginEndMin;
 
     if (edge == _TimelineResizeEdge.top) {
-      final fixedEndPx =
-          _timelineResizeOriginTopPx + _timelineResizeOriginHeightPx;
+      final fixedEndMin = _timelineResizeOriginEndMin;
+      final maxTopForDur = grid.yForMinutesFromRangeStart(
+        math.max(0, fixedEndMin - minDur).toDouble(),
+      );
       previewTop = (_timelineResizeOriginTopPx + deltaPx).clamp(
         0.0,
-        fixedEndPx - minHeightPx,
+        maxTopForDur,
       );
-      startMin = _snapTimelineMinutes(previewTop / pxPerMin).round();
-      endMin = _timelineResizeOriginEndMin;
+      startMin = _snapTimelineMinutes(grid.minutesFromY(previewTop)).round();
+      endMin = fixedEndMin;
       if (endMin - startMin < minDur) {
         startMin = endMin - minDur;
       }
@@ -2542,31 +2612,21 @@ class _PlanningPageState extends State<PlanningPage>
         startMin = 0;
         endMin = math.max(endMin, minDur);
       }
-      previewTop = startMin * pxPerMin;
-      previewHeight = math.max(
-        minHeightPx,
-        (endMin - startMin) * pxPerMin,
-      );
+      previewTop = grid.yForMinutesFromRangeStart(startMin.toDouble());
     } else {
       previewTop = _timelineResizeOriginTopPx;
       startMin = _timelineResizeOriginStartMin;
-      final maxHeightPx = math.max(
-        minHeightPx,
-        (maxEndMin - startMin) * pxPerMin,
+      final originBottom = _timelineResizeOriginTopPx + intrinsicH;
+      final minBottom = grid.yForMinutesFromRangeStart(
+        (startMin + minDur).toDouble(),
       );
-      previewHeight = (_timelineResizeOriginHeightPx + deltaPx).clamp(
-        minHeightPx,
-        maxHeightPx,
+      final newBottom = (originBottom + deltaPx).clamp(
+        minBottom,
+        grid.totalHeightPx,
       );
-      endMin = _snapTimelineMinutes(
-        startMin + previewHeight / pxPerMin,
-      ).round();
+      endMin = _snapTimelineMinutes(grid.minutesFromY(newBottom)).round();
       if (endMin > maxEndMin) endMin = maxEndMin;
       if (endMin - startMin < minDur) endMin = startMin + minDur;
-      previewHeight = math.max(
-        minHeightPx,
-        (endMin - startMin) * pxPerMin,
-      );
     }
 
     setState(() {
@@ -2598,12 +2658,18 @@ class _PlanningPageState extends State<PlanningPage>
       _cancelTimelineResize();
       return;
     }
+    final grid = _activeTimelineRubberGrid;
+    if (grid == null) {
+      _cancelTimelineResize();
+      return;
+    }
     final startMin = _snapTimelineMinutes(
-      _timelineResizePreviewTopPx / _timelinePxPerMinute,
+      grid.minutesFromY(_timelineResizePreviewTopPx),
     ).round();
     final endMin = _snapTimelineMinutes(
-      (_timelineResizePreviewTopPx + _timelineResizePreviewHeightPx) /
-          _timelinePxPerMinute,
+      grid.minutesFromY(
+        _timelineResizePreviewTopPx + _timelineResizePreviewHeightPx,
+      ),
     ).round();
     final newStartWall = _wallTimeFromTimelineMinutes(
       startMin.toDouble(),
@@ -2799,7 +2865,8 @@ class _PlanningPageState extends State<PlanningPage>
     int durationMin,
     bool hadEnd,
   ) {
-    final startMin = topPx / _timelinePxPerMinute;
+    final grid = _activeTimelineRubberGrid;
+    final startMin = grid?.minutesFromY(topPx) ?? topPx;
     final startWall = _wallTimeFromTimelineMinutes(
       startMin,
       planWallDay,
@@ -2815,6 +2882,7 @@ class _PlanningPageState extends State<PlanningPage>
     required PlanningTask task,
     required String planKey,
     required double originTopPx,
+    required double originCardHeightPx,
     required int durationMin,
     required bool hadEnd,
     required DateTime planWallDay,
@@ -2825,6 +2893,7 @@ class _PlanningPageState extends State<PlanningPage>
       _timelineVerticalDragPlanKey = planKey;
       _timelineVerticalDragDeltaPx = 0;
       _timelineVerticalDragOriginTopPx = originTopPx;
+      _timelineVerticalDragCardHeightPx = originCardHeightPx;
       _timelineVerticalDragDurationMin = durationMin;
       _timelineVerticalDragTask = task;
       _timelineVerticalDragHadEnd = hadEnd;
@@ -2847,26 +2916,22 @@ class _PlanningPageState extends State<PlanningPage>
     required int rangeEnd,
     required double canvasHeight,
     required List<PlanningTask> scheduledInRange,
+    required Map<String, int> planActualByPbId,
   }) {
+    final grid = _activeTimelineRubberGrid;
+    if (grid == null) return;
     final durMin = _timelineVerticalDragDurationMin.toDouble();
-    final maxTopPx = math.max(
-      0,
-      (PlanningSheetTimelinePrefs.visibleHoursOrdered(rangeStart, rangeEnd)
-                  .length *
-              60 -
-          durMin) *
-          _timelinePxPerMinute,
+    final maxTopPx = grid.yForMinutesFromRangeStart(
+      math.max(0, grid.totalMinutes - durMin),
     );
-    final dragHeightPx = math.max(
-      1.0,
-      durMin * _timelinePxPerMinute,
-    ).toDouble();
+    final dragHeightPx = math.max(1.0, _timelineVerticalDragCardHeightPx);
     final rawTop = _timelineVerticalDragOriginTopPx + deltaPx;
     final dragCenterY = rawTop + dragHeightPx / 2;
     final layouts = _timelineBlockLayouts(
       scheduledInRange,
       rangeStart,
       rangeEnd,
+      planActualByPbId,
     );
     final insertTarget = _timelineLayoutUnderDragCenter(
       layouts: layouts,
@@ -2935,13 +3000,13 @@ class _PlanningPageState extends State<PlanningPage>
       return;
     }
     final durMin = _timelineVerticalDragDurationMin;
-    final maxTopPx = math.max(
-      0,
-      (PlanningSheetTimelinePrefs.visibleHoursOrdered(rangeStart, rangeEnd)
-                  .length *
-              60 -
-          durMin) *
-          _timelinePxPerMinute,
+    final grid = _activeTimelineRubberGrid;
+    if (grid == null) {
+      _cancelTimelineVerticalDrag();
+      return;
+    }
+    final maxTopPx = grid.yForMinutesFromRangeStart(
+      math.max(0, grid.totalMinutes - durMin),
     );
     final newTopPx = (_timelineVerticalDragOriginTopPx +
             _timelineVerticalDragDeltaPx)
@@ -2970,7 +3035,7 @@ class _PlanningPageState extends State<PlanningPage>
         }
       } else {
         newStartWall = _wallTimeFromTimelineMinutes(
-          newTopPx / _timelinePxPerMinute,
+          grid.minutesFromY(newTopPx),
           planWallDay,
           rangeStart,
         );
@@ -2980,7 +3045,7 @@ class _PlanningPageState extends State<PlanningPage>
       }
     } else {
       newStartWall = _wallTimeFromTimelineMinutes(
-        newTopPx / _timelinePxPerMinute,
+        grid.minutesFromY(newTopPx),
         planWallDay,
         rangeStart,
       );
@@ -3065,12 +3130,6 @@ class _PlanningPageState extends State<PlanningPage>
     /// When true with [timelineEmbedded], elevates border during drag/resize preview.
     bool timelineInteracting = false,
 
-    /// Proportional block height in px (Time mode absolute layout).
-    double timelineBlockHeightPx = _kTimelineMinBlockHeightPx,
-
-    /// Scheduled duration in minutes for adaptive timeline card density.
-    int timelineDurationMin = _kTimelineDefaultBlockMinutes,
-
     /// True when stored schedule overlaps a prior task on the same day.
     bool timelineScheduleConflict = false,
 
@@ -3092,8 +3151,6 @@ class _PlanningPageState extends State<PlanningPage>
       planActualByPbId: planActualByPbId,
       timelineBlock: timelineEmbedded,
       timelineInteracting: timelineInteracting,
-      timelineBlockHeightPx: timelineBlockHeightPx,
-      timelineDurationMin: timelineDurationMin,
       timelineScheduleConflict: timelineScheduleConflict,
     );
     final allowLongPressDrag =
@@ -3252,15 +3309,23 @@ class _PlanningPageState extends State<PlanningPage>
     required List<PlanningTask> scheduledInRange,
     required Map<String, int> planActualByPbId,
   }) {
-    _timelineHourHeightPx = _kTimelineHourHeightBasePx;
-    final canvasHeight = _timelineCanvasHeightPx(rangeStart, rangeEnd);
-    final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
-    final layouts = _timelineBlockLayouts(
+    final rubberResult = _computeTimelineRubberLayout(
       scheduledInRange,
       rangeStart,
       rangeEnd,
+      planActualByPbId,
     );
-    final nowTop = _timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd);
+    _activeTimelineRubberGrid = rubberResult.grid;
+    final grid = rubberResult.grid;
+    final layouts = rubberResult.layouts;
+    final canvasHeight = _timelineCanvasHeightPx(grid);
+    final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
+    final nowTop = _timelineNowLineTopPx(
+      planWallDay,
+      rangeStart,
+      rangeEnd,
+      grid,
+    );
     final wallNow = _profileWallNow();
     final nowLabel = nowTop != null
         ? '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')}'
@@ -3281,7 +3346,7 @@ class _PlanningPageState extends State<PlanningPage>
               children: [
                 for (var i = 0; i < visibleHours.length; i++)
                   Positioned(
-                    top: i * _timelineHourHeightPx - 6,
+                    top: grid.hourTops[i] - 6,
                     left: 0,
                     right: 0,
                     child: Text(
@@ -3322,10 +3387,10 @@ class _PlanningPageState extends State<PlanningPage>
                       ),
                       for (var i = 0; i < visibleHours.length; i++)
                         Positioned(
-                          top: i * _timelineHourHeightPx,
+                          top: grid.hourTops[i],
                           left: 0,
                           right: 0,
-                          height: _timelineHourHeightPx,
+                          height: grid.hourHeights[i],
                           child: Stack(
                             children: [
                               Positioned(
@@ -3558,7 +3623,7 @@ class _PlanningPageState extends State<PlanningPage>
     final interactionLabel = isResizing
         ? _timelineResizeTimeLabel
         : _timelineVerticalDragTimeLabel;
-    final blockDensity = planTimeCardDensityForBlock(heightPx, durMin);
+    const blockDensity = PlanTimeTaskCardDensity.medium;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -3647,6 +3712,7 @@ class _PlanningPageState extends State<PlanningPage>
                       task: layout.task,
                       planKey: planKey,
                       originTopPx: layout.topPx,
+                      originCardHeightPx: layout.heightPx,
                       durationMin: durMin,
                       hadEnd: hadEnd,
                       planWallDay: planWallDay,
@@ -3662,6 +3728,7 @@ class _PlanningPageState extends State<PlanningPage>
                       rangeEnd: rangeEnd,
                       canvasHeight: canvasHeight,
                       scheduledInRange: scheduledInRange,
+                      planActualByPbId: planActualByPbId,
                     )
                   : null,
               onVerticalDragEnd: canInteract
@@ -3715,8 +3782,6 @@ class _PlanningPageState extends State<PlanningPage>
                 planActualByPbId: planActualByPbId,
                 timelineEmbedded: true,
                 timelineInteracting: isInteracting,
-                timelineBlockHeightPx: heightPx,
-                timelineDurationMin: durMin,
                 timelineScheduleConflict: layout.hasScheduleConflict,
               ),
             ),
@@ -5330,6 +5395,61 @@ class _TimelineResizeEdgeHandleState extends State<_TimelineResizeEdgeHandle> {
   }
 }
 
+/// Rubber hour-row geometry: each hour grows to fit stacked cards.
+class _TimelineRubberGrid {
+  const _TimelineRubberGrid({
+    required this.visibleHours,
+    required this.rangeStart,
+    required this.hourHeights,
+    required this.hourTops,
+  });
+
+  final List<int> visibleHours;
+  final int rangeStart;
+  final List<double> hourHeights;
+  final List<double> hourTops;
+
+  double get totalHeightPx =>
+      hourTops.isEmpty ? 0 : hourTops.last + hourHeights.last;
+
+  double get totalMinutes => visibleHours.length * 60.0;
+
+  static List<double> hourTopsFromHeights(List<double> heights) {
+    final tops = <double>[];
+    var acc = 0.0;
+    for (final h in heights) {
+      tops.add(acc);
+      acc += h;
+    }
+    return tops;
+  }
+
+  double yForMinutesFromRangeStart(double minutes) {
+    if (visibleHours.isEmpty) return 0;
+    final m = minutes.clamp(0, totalMinutes);
+    final hourIdx = (m / 60).floor().clamp(0, visibleHours.length - 1);
+    final minInHour = m - hourIdx * 60;
+    final hourH = hourHeights[hourIdx];
+    return hourTops[hourIdx] + (minInHour / 60.0) * hourH;
+  }
+
+  double minutesFromY(double y) {
+    if (visibleHours.isEmpty) return 0;
+    y = y.clamp(0, totalHeightPx);
+    for (var i = 0; i < visibleHours.length; i++) {
+      final top = hourTops[i];
+      final bottom = top + hourHeights[i];
+      if (y <= bottom || i == visibleHours.length - 1) {
+        final hourH = hourHeights[i];
+        final frac =
+            hourH <= 0 ? 0.0 : ((y - top) / hourH).clamp(0.0, 1.0);
+        return i * 60 + frac * 60;
+      }
+    }
+    return totalMinutes;
+  }
+}
+
 /// Absolute placement for one task block on the proportional day timeline.
 class _TimelineBlockLayout {
   const _TimelineBlockLayout({
@@ -5367,8 +5487,6 @@ class _PlanningTaskCard extends StatelessWidget {
     required this.onOpenMenu,
     this.timelineBlock = false,
     this.timelineInteracting = false,
-    this.timelineBlockHeightPx = 56,
-    this.timelineDurationMin = 30,
     this.timelineScheduleConflict = false,
   });
 
@@ -5393,8 +5511,6 @@ class _PlanningTaskCard extends StatelessWidget {
   final void Function(BuildContext anchorContext) onOpenMenu;
   final bool timelineBlock;
   final bool timelineInteracting;
-  final double timelineBlockHeightPx;
-  final int timelineDurationMin;
   final bool timelineScheduleConflict;
 
   /// [wall] is profile wall time from [PlanningTask.startTime] / end (not UTC).
@@ -5431,9 +5547,10 @@ class _PlanningTaskCard extends StatelessWidget {
         overlayColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
-    final density = planTimeCardDensityForBlock(
-      timelineBlockHeightPx,
-      timelineDurationMin,
+    final density = planTimeCardDensityForList(
+      task: task,
+      planEstimatedSeconds: planEstimatedSeconds,
+      planTrackedSeconds: planTrackedSeconds,
     );
     return Theme(
       data: suppressChildInk,
@@ -5442,7 +5559,6 @@ class _PlanningTaskCard extends StatelessWidget {
         density: density,
         surface: PlanCardSurface.timeline,
         timeLabel: _timelineTimeRangeLabel(task),
-        heightPx: timelineBlockHeightPx,
         displayIsDone: displayIsDone,
         selectMode: selectMode,
         isSelected: isSelected,
