@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Plan card invariant layout (fixed slots) [shipped]
+* **`plan_time_task_card.dart`:** [shipped] Medium/large Plan cards use `_PlanCardInvariantBody` with fixed slots (title, tags 28px, progress 19px, footer 6px gap); `_PlanCardProgressSlot` always renders neutral track + reserved actual-time row; removed data-driven `showFooterRow` / `showProgressTrack` / `_PlanCardFooterSeparator` branches; medium/large share `_PlanCardRailShell`.
+
 ## [2026-06-15] - P0 Time mode visual rebase: full Plan cards on timeline [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Removed `_TimelinePlanCardMicro` and `_TimelinePlanCardCompactTimeline` one-line strip layouts; timeline uses CardPlan medium/large only; `planTimeCardDensityForBlock` returns medium (&lt;130px / &lt;60min) or large; timeline always shows progress separator + footer; subtler selected border (1.25px); watermark hidden only on short medium blocks (&lt;130px).
 * **`planning_view.dart`:** [shipped] Min visual card height **108px** (matches CardPlan_Medium); 4px cascade gap; fixed 80px/hour scale; sequential stack when min height exceeds time-proportional slot — 5-min snap/duration data unchanged.

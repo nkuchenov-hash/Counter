@@ -88,9 +88,6 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
       widget.surface == PlanCardSurface.list ||
       widget.surface == PlanCardSurface.calendar;
 
-  bool get _showMetrics =>
-      widget.planTrackedSeconds > 0 || (widget.planEstimatedSeconds ?? 0) > 0;
-
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -105,9 +102,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
             loc,
           ).trim()
         : '';
-    final categoryTrail = categoryTrailRaw.isNotEmpty
-        ? categoryTrailRaw
-        : (widget.showFooterBreadcrumb ? t(loc, 'uncategorized') : '');
+    final categoryTrail = categoryTrailRaw;
     final categoryIcon = DatabaseService.instance
         .getCategoryRuleById(widget.task.categoryId)
         ?.iconOrDefault;
@@ -157,27 +152,16 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
                 widget.density == PlanTimeTaskCardDensity.compact)
         ? PlanTimeTaskCardDensity.medium
         : widget.density;
-    final isPlanListCard = _isListLike &&
-        effectiveDensity != PlanTimeTaskCardDensity.compact &&
-        effectiveDensity != PlanTimeTaskCardDensity.micro;
-    final showFooterRow = isTimeline ||
-        isPlanListCard ||
-        pinFooter ||
-        categoryTrail.isNotEmpty ||
-        effectiveTimeLabel.isNotEmpty;
-    final showProgressTrack = switch (effectiveDensity) {
-      PlanTimeTaskCardDensity.compact when _isListLike && !_showMetrics =>
-        false,
-      _ => true,
-    };
-    final footerSeparator = !showProgressTrack || !showFooterRow
-        ? null
-        : _PlanCardFooterSeparator(
+    final useInvariantSlots =
+        effectiveDensity == PlanTimeTaskCardDensity.medium ||
+        effectiveDensity == PlanTimeTaskCardDensity.large;
+    final progressSlot = useInvariantSlots
+        ? _PlanCardProgressSlot(
             planTrackedSeconds: widget.planTrackedSeconds,
             planEstimatedSeconds: widget.planEstimatedSeconds,
             categoryColor: categoryTone,
-            alwaysShowTrack: isTimeline || isPlanListCard || _showMetrics,
-          );
+          )
+        : null;
 
     Widget body;
     switch (effectiveDensity) {
@@ -193,7 +177,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           visibleTags: _visibleTags,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          metricsBlock: footerSeparator,
+          metricsBlock: progressSlot,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
@@ -213,7 +197,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           visibleTags: _visibleTags,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          metricsBlock: footerSeparator,
+          metricsBlock: progressSlot,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
@@ -237,8 +221,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           scheduleConflict: widget.scheduleConflict,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          metricsBlock: footerSeparator,
-          showFooterRow: showFooterRow,
+          metricsBlock: progressSlot,
           pinFooter: pinFooter,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
@@ -247,7 +230,6 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           onBodyTap: widget.onTap,
           onBodyLongPress: widget.onLongPress,
           titleMaxLines: 1,
-          heightPx: widget.heightPx,
         );
       case PlanTimeTaskCardDensity.large:
         body = _TimelinePlanCardLarge(
@@ -265,8 +247,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           scheduleConflict: widget.scheduleConflict,
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
-          metricsBlock: footerSeparator,
-          showFooterRow: showFooterRow,
+          metricsBlock: progressSlot,
           pinFooter: pinFooter,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
@@ -274,7 +255,6 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           onOpenMenu: widget.onOpenMenu,
           onBodyTap: widget.onTap,
           onBodyLongPress: widget.onLongPress,
-          heightPx: widget.heightPx,
         );
     }
 
@@ -374,7 +354,15 @@ abstract final class _PlanCardGeom {
   static const double refHeightSmall = 54;
   static const double refHeightMedium = 108;
   static const double refHeightLarge = 147;
+  static const double tagRowHeight = 16;
+  static const double tagGap = 5;
   static const double titleToTagsGap = 12;
+  static const double tagsSlotHeight = titleToTagsGap + tagRowHeight;
+  static const double actualTimeSlotHeight = 12;
+  static const double progressAfterActualGap = 4;
+  static const double progressBarHeight = 3;
+  static const double progressSlotHeight =
+      actualTimeSlotHeight + progressAfterActualGap + progressBarHeight;
   static const double footerBlockGap = 6;
   static const double footerBlockGapPinned = 5;
   static const double dividerHeight = 1;
@@ -382,8 +370,6 @@ abstract final class _PlanCardGeom {
   static const double footerBottomPadPinned = 8;
   static const double footerBottomPadList = 10;
   static const double padTopPinned = 8;
-  static const double tagRowHeight = 16;
-  static const double tagGap = 5;
 
   static double refHeight(PlanTimeTaskCardDensity d) => switch (d) {
         PlanTimeTaskCardDensity.micro => refHeightMicro,
@@ -423,55 +409,202 @@ abstract final class _PlanCardTokens {
       ];
 }
 
-class _PlanCardFooterSeparator extends StatelessWidget {
-  const _PlanCardFooterSeparator({
+class _PlanCardProgressSlot extends StatelessWidget {
+  const _PlanCardProgressSlot({
     required this.planTrackedSeconds,
     required this.categoryColor,
     this.planEstimatedSeconds,
-    this.alwaysShowTrack = false,
   });
 
   final int planTrackedSeconds;
   final int? planEstimatedSeconds;
   final Color categoryColor;
-  final bool alwaysShowTrack;
 
   @override
   Widget build(BuildContext context) {
     final estimated = planEstimatedSeconds ?? 0;
-    if (!alwaysShowTrack && planTrackedSeconds <= 0 && estimated <= 0) {
-      return const SizedBox.shrink();
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (planTrackedSeconds > 0)
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              _PlanCardProgressRow.formatCompact(planTrackedSeconds),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 10,
-                height: 1.2,
-                fontWeight: FontWeight.w500,
-                color: _PlanCardTokens.timeColor,
-              ),
+    final hasActual = planTrackedSeconds > 0;
+    return SizedBox(
+      height: _PlanCardGeom.progressSlotHeight,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            height: _PlanCardGeom.actualTimeSlotHeight,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: hasActual
+                  ? Text(
+                      _PlanCardProgressRow.formatCompact(planTrackedSeconds),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        height: 1.2,
+                        fontWeight: FontWeight.w500,
+                        color: _PlanCardTokens.timeColor,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ),
-        Padding(
-          padding: EdgeInsets.only(top: planTrackedSeconds > 0 ? 4 : 0),
-          child: _PlanCardProgressRow(
+          SizedBox(height: _PlanCardGeom.progressAfterActualGap),
+          _PlanCardProgressRow(
             trackedSeconds: planTrackedSeconds,
             estimatedSeconds: estimated,
             categoryColor: categoryColor,
             compact: true,
-            alwaysShowTrack: alwaysShowTrack || estimated > 0,
+            alwaysShowTrack: true,
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanCardInvariantBody extends StatelessWidget {
+  const _PlanCardInvariantBody({
+    required this.task,
+    required this.titleMaxLines,
+    required this.visibleTags,
+    required this.displayIsDone,
+    required this.hasRepeat,
+    required this.metaIcons,
+    required this.progressSlot,
+    required this.categoryTrail,
+    required this.timeLabel,
+    required this.scheduleConflict,
+    required this.categoryColor,
+    required this.pinFooter,
+    this.onOpenMenu,
+    this.onBodyTap,
+    this.onBodyLongPress,
+  });
+
+  final PlanningTask task;
+  final int titleMaxLines;
+  final List<Tag> visibleTags;
+  final bool displayIsDone;
+  final bool hasRepeat;
+  final List<Widget> metaIcons;
+  final _PlanCardProgressSlot progressSlot;
+  final String categoryTrail;
+  final String timeLabel;
+  final bool scheduleConflict;
+  final Color categoryColor;
+  final bool pinFooter;
+  final void Function(BuildContext)? onOpenMenu;
+  final VoidCallback? onBodyTap;
+  final VoidCallback? onBodyLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    return _PlanCardBodyTapShell(
+      onTap: onBodyTap,
+      onLongPress: onBodyLongPress,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: _PlanCardTitleRow(
+                    title: task.title,
+                    displayIsDone: displayIsDone,
+                    hasRepeat: hasRepeat,
+                    maxLines: titleMaxLines,
+                    metaIcons: metaIcons,
+                  ),
+                ),
+              ),
+              if (onOpenMenu != null)
+                _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+            ],
+          ),
+          SizedBox(
+            height: _PlanCardGeom.tagsSlotHeight,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: visibleTags.isNotEmpty
+                  ? _PlanCardTagsRow(tags: visibleTags)
+                  : const SizedBox.shrink(),
+            ),
+          ),
+          if (pinFooter) const Spacer(),
+          progressSlot,
+          const SizedBox(height: _PlanCardGeom.footerBlockGap),
+          _PlanCardFooterRow(
+            categoryTrail: categoryTrail,
+            timeLabel: timeLabel,
+            scheduleConflict: scheduleConflict,
+            categoryColor: categoryColor,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanCardRailShell extends StatelessWidget {
+  const _PlanCardRailShell({
+    required this.showPlay,
+    required this.selectMode,
+    required this.isSelected,
+    required this.displayIsDone,
+    required this.toggleDoneEnabled,
+    required this.pinFooter,
+    required this.body,
+    this.onToggleDone,
+    this.onSelectToggle,
+    this.onPlay,
+  });
+
+  final bool showPlay;
+  final bool selectMode;
+  final bool isSelected;
+  final bool displayIsDone;
+  final bool toggleDoneEnabled;
+  final bool pinFooter;
+  final Widget body;
+  final VoidCallback? onToggleDone;
+  final VoidCallback? onSelectToggle;
+  final VoidCallback? onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPad = pinFooter
+        ? _PlanCardGeom.footerBottomPadPinned
+        : _PlanCardGeom.footerBottomPadList;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        _PlanCardGeom.padLeft,
+        pinFooter ? _PlanCardGeom.padTopPinned : _PlanCardGeom.padTopMediumLarge,
+        _PlanCardGeom.padRight,
+        bottomPad,
+      ),
+      child: Row(
+        crossAxisAlignment:
+            pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+        children: [
+          _PlanCardControlRail(
+            showPlay: showPlay,
+            selectMode: selectMode,
+            isSelected: isSelected,
+            displayIsDone: displayIsDone,
+            toggleDoneEnabled: toggleDoneEnabled,
+            onToggleDone: onToggleDone,
+            onSelectToggle: onSelectToggle,
+            onPlay: onPlay,
+            expandSpacer: pinFooter,
+          ),
+          const SizedBox(width: _PlanCardGeom.railToContentGap),
+          Expanded(child: body),
+        ],
+      ),
     );
   }
 }
@@ -590,7 +723,7 @@ class _TimelinePlanCardSmall extends StatelessWidget {
   final List<Tag> visibleTags;
   final bool toggleDoneEnabled;
   final List<Widget> metaIcons;
-  final _PlanCardFooterSeparator? metricsBlock;
+  final _PlanCardProgressSlot? metricsBlock;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
@@ -669,7 +802,7 @@ class _TimelinePlanCardSmall extends StatelessWidget {
   }
 }
 
-// --- CardPlan_Medium ----------------------------------------------------------
+// --- CardPlan_Medium / CardPlan_Large (invariant skeleton) --------------------
 
 class _TimelinePlanCardMedium extends StatelessWidget {
   const _TimelinePlanCardMedium({
@@ -688,9 +821,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
     this.metaIcons = const [],
     this.metricsBlock,
     this.categoryColor = _PlanCardTokens.breadcrumbFallbackColor,
-    this.showFooterRow = true,
     this.pinFooter = false,
-    this.heightPx,
     this.onToggleDone,
     this.onSelectToggle,
     this.onPlay,
@@ -712,11 +843,9 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final bool toggleDoneEnabled;
   final int titleMaxLines;
   final List<Widget> metaIcons;
-  final _PlanCardFooterSeparator? metricsBlock;
+  final _PlanCardProgressSlot? metricsBlock;
   final Color categoryColor;
-  final bool showFooterRow;
   final bool pinFooter;
-  final double? heightPx;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
@@ -724,113 +853,43 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final VoidCallback? onBodyTap;
   final VoidCallback? onBodyLongPress;
 
-  Widget _footerSection() {
-    if (!showFooterRow) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (metricsBlock != null) metricsBlock!,
-        SizedBox(
-          height: pinFooter
-              ? _PlanCardGeom.footerBlockGapPinned
-              : _PlanCardGeom.footerBlockGap,
-        ),
-        _PlanCardFooterRow(
-          categoryTrail: categoryTrail,
-          timeLabel: timeLabel,
-          scheduleConflict: scheduleConflict,
-          categoryColor: categoryColor,
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bottomPad = pinFooter
-        ? _PlanCardGeom.footerBottomPadPinned
-        : _PlanCardGeom.footerBottomPadList;
-    final content = Row(
-      crossAxisAlignment:
-          pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
-      children: [
-        _PlanCardControlRail(
-          showPlay: showPlay,
-          selectMode: selectMode,
-          isSelected: isSelected,
-          displayIsDone: displayIsDone,
-          toggleDoneEnabled: toggleDoneEnabled,
-          onToggleDone: onToggleDone,
-          onSelectToggle: onSelectToggle,
-          onPlay: onPlay,
-        ),
-        const SizedBox(width: _PlanCardGeom.railToContentGap),
-        Expanded(
-          child: _PlanCardBodyTapShell(
-            onTap: onBodyTap,
-            onLongPress: onBodyLongPress,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: _PlanCardTitleRow(
-                              title: task.title,
-                              displayIsDone: displayIsDone,
-                              hasRepeat: hasRepeat,
-                              maxLines: titleMaxLines,
-                              metaIcons: metaIcons,
-                            ),
-                          ),
-                          if (visibleTags.isNotEmpty &&
-                              !(pinFooter &&
-                                  heightPx != null &&
-                                  heightPx! < 104))
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: _PlanCardGeom.titleToTagsGap,
-                              ),
-                              child: _PlanCardTagsRow(tags: visibleTags),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (onOpenMenu != null)
-                      _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
-                  ],
-                ),
-                if (pinFooter) const Spacer(),
-                if (!pinFooter && visibleTags.isNotEmpty)
-                  const SizedBox(height: 6),
-                _footerSection(),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        _PlanCardGeom.padLeft,
-        pinFooter ? _PlanCardGeom.padTopPinned : _PlanCardGeom.padTopMediumLarge,
-        _PlanCardGeom.padRight,
-        bottomPad,
+    final progressSlot = metricsBlock ??
+        _PlanCardProgressSlot(
+          planTrackedSeconds: 0,
+          categoryColor: categoryColor,
+        );
+    return _PlanCardRailShell(
+      showPlay: showPlay,
+      selectMode: selectMode,
+      isSelected: isSelected,
+      displayIsDone: displayIsDone,
+      toggleDoneEnabled: toggleDoneEnabled,
+      pinFooter: pinFooter,
+      onToggleDone: onToggleDone,
+      onSelectToggle: onSelectToggle,
+      onPlay: onPlay,
+      body: _PlanCardInvariantBody(
+        task: task,
+        titleMaxLines: titleMaxLines,
+        visibleTags: visibleTags,
+        displayIsDone: displayIsDone,
+        hasRepeat: hasRepeat,
+        metaIcons: metaIcons,
+        progressSlot: progressSlot,
+        categoryTrail: categoryTrail,
+        timeLabel: timeLabel,
+        scheduleConflict: scheduleConflict,
+        categoryColor: categoryColor,
+        pinFooter: pinFooter,
+        onOpenMenu: onOpenMenu,
+        onBodyTap: onBodyTap,
+        onBodyLongPress: onBodyLongPress,
       ),
-      child: content,
     );
   }
 }
-
-// --- CardPlan_Large -----------------------------------------------------------
 
 class _TimelinePlanCardLarge extends StatelessWidget {
   const _TimelinePlanCardLarge({
@@ -848,9 +907,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
     this.metaIcons = const [],
     this.metricsBlock,
     this.categoryColor = _PlanCardTokens.breadcrumbFallbackColor,
-    this.showFooterRow = true,
     this.pinFooter = false,
-    this.heightPx,
     this.onToggleDone,
     this.onSelectToggle,
     this.onPlay,
@@ -871,11 +928,9 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final bool scheduleConflict;
   final bool toggleDoneEnabled;
   final List<Widget> metaIcons;
-  final _PlanCardFooterSeparator? metricsBlock;
+  final _PlanCardProgressSlot? metricsBlock;
   final Color categoryColor;
-  final bool showFooterRow;
   final bool pinFooter;
-  final double? heightPx;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
@@ -883,106 +938,40 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final VoidCallback? onBodyTap;
   final VoidCallback? onBodyLongPress;
 
-  Widget _footerSection() {
-    if (!showFooterRow) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (metricsBlock != null) metricsBlock!,
-        SizedBox(
-          height: pinFooter
-              ? _PlanCardGeom.footerBlockGapPinned
-              : _PlanCardGeom.footerBlockGap,
-        ),
-        _PlanCardFooterRow(
-          categoryTrail: categoryTrail,
-          timeLabel: timeLabel,
-          scheduleConflict: scheduleConflict,
-          categoryColor: categoryColor,
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final bottomPad = pinFooter
-        ? _PlanCardGeom.footerBottomPadPinned
-        : _PlanCardGeom.footerBottomPadList;
-    final content = Row(
-      crossAxisAlignment:
-          pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
-      children: [
-        _PlanCardControlRail(
-          showPlay: showPlay,
-          selectMode: selectMode,
-          isSelected: isSelected,
-          displayIsDone: displayIsDone,
-          toggleDoneEnabled: toggleDoneEnabled,
-          onToggleDone: onToggleDone,
-          onSelectToggle: onSelectToggle,
-          onPlay: onPlay,
-          expandSpacer: pinFooter,
-        ),
-        const SizedBox(width: _PlanCardGeom.railToContentGap),
-        Expanded(
-          child: _PlanCardBodyTapShell(
-            onTap: onBodyTap,
-            onLongPress: onBodyLongPress,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: _PlanCardTitleRow(
-                              title: task.title,
-                              displayIsDone: displayIsDone,
-                              hasRepeat: hasRepeat,
-                              maxLines: 3,
-                              metaIcons: metaIcons,
-                            ),
-                          ),
-                          if (visibleTags.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                top: _PlanCardGeom.titleToTagsGap,
-                              ),
-                              child: _PlanCardTagsRow(tags: visibleTags),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (onOpenMenu != null)
-                      _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
-                  ],
-                ),
-                if (pinFooter) const Spacer(),
-                if (!pinFooter && visibleTags.isNotEmpty)
-                  const SizedBox(height: 6),
-                _footerSection(),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        _PlanCardGeom.padLeft,
-        pinFooter ? _PlanCardGeom.padTopPinned : _PlanCardGeom.padTopMediumLarge,
-        _PlanCardGeom.padRight,
-        bottomPad,
+    final progressSlot = metricsBlock ??
+        _PlanCardProgressSlot(
+          planTrackedSeconds: 0,
+          categoryColor: categoryColor,
+        );
+    return _PlanCardRailShell(
+      showPlay: showPlay,
+      selectMode: selectMode,
+      isSelected: isSelected,
+      displayIsDone: displayIsDone,
+      toggleDoneEnabled: toggleDoneEnabled,
+      pinFooter: pinFooter,
+      onToggleDone: onToggleDone,
+      onSelectToggle: onSelectToggle,
+      onPlay: onPlay,
+      body: _PlanCardInvariantBody(
+        task: task,
+        titleMaxLines: 3,
+        visibleTags: visibleTags,
+        displayIsDone: displayIsDone,
+        hasRepeat: hasRepeat,
+        metaIcons: metaIcons,
+        progressSlot: progressSlot,
+        categoryTrail: categoryTrail,
+        timeLabel: timeLabel,
+        scheduleConflict: scheduleConflict,
+        categoryColor: categoryColor,
+        pinFooter: pinFooter,
+        onOpenMenu: onOpenMenu,
+        onBodyTap: onBodyTap,
+        onBodyLongPress: onBodyLongPress,
       ),
-      child: content,
     );
   }
 }
@@ -1548,7 +1537,7 @@ String _planCardWallTimeLabel(PlanningTask task) {
       '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
   final end = task.endDateTime;
   if (end != null) {
-    return '$startLabel вЂ“ ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+    return '$startLabel – ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
   }
   return startLabel;
 }
