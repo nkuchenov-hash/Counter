@@ -146,23 +146,26 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
 
     final pinFooter = widget.heightPx != null;
     final isTimeline = widget.surface == PlanCardSurface.timeline;
+    final isPlanListCard = _isListLike &&
+        widget.density != PlanTimeTaskCardDensity.compact &&
+        widget.density != PlanTimeTaskCardDensity.micro;
+    final showFooterRow = isPlanListCard ||
+        pinFooter ||
+        categoryTrail.isNotEmpty ||
+        effectiveTimeLabel.isNotEmpty;
     final showProgressTrack = switch (widget.density) {
       PlanTimeTaskCardDensity.micro => false,
       PlanTimeTaskCardDensity.compact when isTimeline => false,
       _ => true,
     };
-    final footerSeparator = !showProgressTrack
+    final footerSeparator = !showProgressTrack || !showFooterRow
         ? null
-        : (widget.density == PlanTimeTaskCardDensity.compact &&
-                _isListLike &&
-                !_showMetrics)
-            ? null
-            : _PlanCardFooterSeparator(
-                planTrackedSeconds: widget.planTrackedSeconds,
-                planEstimatedSeconds: widget.planEstimatedSeconds,
-                categoryColor: categoryTone,
-                alwaysShowTrack: isTimeline || !_isListLike || _showMetrics,
-              );
+        : _PlanCardFooterSeparator(
+            planTrackedSeconds: widget.planTrackedSeconds,
+            planEstimatedSeconds: widget.planEstimatedSeconds,
+            categoryColor: categoryTone,
+            alwaysShowTrack: isTimeline || isPlanListCard || _showMetrics,
+          );
 
     Widget body;
     switch (widget.density) {
@@ -245,6 +248,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
           metricsBlock: footerSeparator,
+          showFooterRow: showFooterRow,
           pinFooter: pinFooter,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
@@ -272,6 +276,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           toggleDoneEnabled: widget.toggleDoneEnabled,
           metaIcons: widget.metaIcons,
           metricsBlock: footerSeparator,
+          showFooterRow: showFooterRow,
           pinFooter: pinFooter,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
@@ -375,14 +380,15 @@ abstract final class _PlanCardGeom {
   static const double radius = 12;
   static const double refHeightMicro = 40;
   static const double refHeightSmall = 54;
-  static const double refHeightMedium = 95;
+  static const double refHeightMedium = 108;
   static const double refHeightLarge = 147;
   static const double titleToTagsGap = 12;
-  static const double footerBlockGap = 8;
-  static const double footerBlockGapPinned = 4;
+  static const double footerBlockGap = 6;
+  static const double footerBlockGapPinned = 5;
   static const double dividerHeight = 1;
   static const double footerTextHeight = 14;
-  static const double footerBottomPadPinned = 6;
+  static const double footerBottomPadPinned = 8;
+  static const double footerBottomPadList = 10;
   static const double padTopPinned = 8;
   static const double tagRowHeight = 16;
   static const double tagGap = 5;
@@ -980,6 +986,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
     this.metaIcons = const [],
     this.metricsBlock,
     this.categoryColor = _PlanCardTokens.breadcrumbFallbackColor,
+    this.showFooterRow = true,
     this.pinFooter = false,
     this.heightPx,
     this.onToggleDone,
@@ -1005,6 +1012,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final List<Widget> metaIcons;
   final _PlanCardFooterSeparator? metricsBlock;
   final Color categoryColor;
+  final bool showFooterRow;
   final bool pinFooter;
   final double? heightPx;
   final VoidCallback? onToggleDone;
@@ -1014,98 +1022,108 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final VoidCallback? onBodyTap;
   final VoidCallback? onBodyLongPress;
 
+  Widget _footerSection() {
+    if (!showFooterRow) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (metricsBlock != null) metricsBlock!,
+        SizedBox(
+          height: pinFooter
+              ? _PlanCardGeom.footerBlockGapPinned
+              : _PlanCardGeom.footerBlockGap,
+        ),
+        _PlanCardFooterRow(
+          categoryTrail: categoryTrail,
+          timeLabel: timeLabel,
+          scheduleConflict: scheduleConflict,
+          categoryColor: categoryColor,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bottomPad = pinFooter
+        ? _PlanCardGeom.footerBottomPadPinned
+        : _PlanCardGeom.footerBottomPadList;
+    final content = Row(
+      crossAxisAlignment:
+          pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+      children: [
+        _PlanCardControlRail(
+          showPlay: showPlay,
+          selectMode: selectMode,
+          isSelected: isSelected,
+          displayIsDone: displayIsDone,
+          toggleDoneEnabled: toggleDoneEnabled,
+          onToggleDone: onToggleDone,
+          onSelectToggle: onSelectToggle,
+          onPlay: onPlay,
+        ),
+        const SizedBox(width: _PlanCardGeom.railToContentGap),
+        Expanded(
+          child: _PlanCardBodyTapShell(
+            onTap: onBodyTap,
+            onLongPress: onBodyLongPress,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: _PlanCardTitleRow(
+                              title: task.title,
+                              displayIsDone: displayIsDone,
+                              hasRepeat: hasRepeat,
+                              maxLines: titleMaxLines,
+                              metaIcons: metaIcons,
+                            ),
+                          ),
+                          if (visibleTags.isNotEmpty &&
+                              !(pinFooter &&
+                                  heightPx != null &&
+                                  heightPx! < 104))
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: _PlanCardGeom.titleToTagsGap,
+                              ),
+                              child: _PlanCardTagsRow(tags: visibleTags),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (onOpenMenu != null)
+                      _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+                  ],
+                ),
+                if (pinFooter) const Spacer(),
+                if (!pinFooter && visibleTags.isNotEmpty)
+                  const SizedBox(height: 6),
+                _footerSection(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
     return Padding(
       padding: EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
         pinFooter ? _PlanCardGeom.padTopPinned : _PlanCardGeom.padTopMediumLarge,
         _PlanCardGeom.padRight,
-        pinFooter
-            ? _PlanCardGeom.footerBottomPadPinned
-            : _PlanCardGeom.padTopMediumLarge,
+        bottomPad,
       ),
-      child: SizedBox(
-        height: pinFooter
-            ? null
-            : _PlanCardGeom.refHeightMedium -
-                _PlanCardGeom.padTopMediumLarge * 2,
-        child: Row(
-          crossAxisAlignment:
-              pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
-          children: [
-            _PlanCardControlRail(
-              showPlay: showPlay,
-              selectMode: selectMode,
-              isSelected: isSelected,
-              displayIsDone: displayIsDone,
-              toggleDoneEnabled: toggleDoneEnabled,
-              onToggleDone: onToggleDone,
-              onSelectToggle: onSelectToggle,
-              onPlay: onPlay,
-            ),
-            const SizedBox(width: _PlanCardGeom.railToContentGap),
-            Expanded(
-              child: _PlanCardBodyTapShell(
-                onTap: onBodyTap,
-                onLongPress: onBodyLongPress,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: _PlanCardTitleRow(
-                                  title: task.title,
-                                  displayIsDone: displayIsDone,
-                                  hasRepeat: hasRepeat,
-                                  maxLines: titleMaxLines,
-                                  metaIcons: metaIcons,
-                                ),
-                              ),
-                            if (visibleTags.isNotEmpty &&
-                                !(pinFooter &&
-                                    heightPx != null &&
-                                    heightPx! < 104))
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: _PlanCardGeom.titleToTagsGap,
-                                ),
-                                child: _PlanCardTagsRow(tags: visibleTags),
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (onOpenMenu != null)
-                        _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
-                    ],
-                  ),
-                  if (pinFooter) const Spacer() else const SizedBox(height: 8),
-                  if (metricsBlock != null) metricsBlock!,
-                  SizedBox(
-                    height: pinFooter
-                        ? _PlanCardGeom.footerBlockGapPinned
-                        : _PlanCardGeom.footerBlockGap,
-                  ),
-                  _PlanCardFooterRow(
-                    categoryTrail: categoryTrail,
-                    timeLabel: timeLabel,
-                    scheduleConflict: scheduleConflict,
-                    categoryColor: categoryColor,
-                  ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: content,
     );
   }
 }
@@ -1128,6 +1146,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
     this.metaIcons = const [],
     this.metricsBlock,
     this.categoryColor = _PlanCardTokens.breadcrumbFallbackColor,
+    this.showFooterRow = true,
     this.pinFooter = false,
     this.heightPx,
     this.onToggleDone,
@@ -1152,6 +1171,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final List<Widget> metaIcons;
   final _PlanCardFooterSeparator? metricsBlock;
   final Color categoryColor;
+  final bool showFooterRow;
   final bool pinFooter;
   final double? heightPx;
   final VoidCallback? onToggleDone;
@@ -1161,96 +1181,106 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final VoidCallback? onBodyTap;
   final VoidCallback? onBodyLongPress;
 
+  Widget _footerSection() {
+    if (!showFooterRow) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (metricsBlock != null) metricsBlock!,
+        SizedBox(
+          height: pinFooter
+              ? _PlanCardGeom.footerBlockGapPinned
+              : _PlanCardGeom.footerBlockGap,
+        ),
+        _PlanCardFooterRow(
+          categoryTrail: categoryTrail,
+          timeLabel: timeLabel,
+          scheduleConflict: scheduleConflict,
+          categoryColor: categoryColor,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final bottomPad = pinFooter
+        ? _PlanCardGeom.footerBottomPadPinned
+        : _PlanCardGeom.footerBottomPadList;
+    final content = Row(
+      crossAxisAlignment:
+          pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+      children: [
+        _PlanCardControlRail(
+          showPlay: showPlay,
+          selectMode: selectMode,
+          isSelected: isSelected,
+          displayIsDone: displayIsDone,
+          toggleDoneEnabled: toggleDoneEnabled,
+          onToggleDone: onToggleDone,
+          onSelectToggle: onSelectToggle,
+          onPlay: onPlay,
+          expandSpacer: pinFooter,
+        ),
+        const SizedBox(width: _PlanCardGeom.railToContentGap),
+        Expanded(
+          child: _PlanCardBodyTapShell(
+            onTap: onBodyTap,
+            onLongPress: onBodyLongPress,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: _PlanCardTitleRow(
+                              title: task.title,
+                              displayIsDone: displayIsDone,
+                              hasRepeat: hasRepeat,
+                              maxLines: 3,
+                              metaIcons: metaIcons,
+                            ),
+                          ),
+                          if (visibleTags.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: _PlanCardGeom.titleToTagsGap,
+                              ),
+                              child: _PlanCardTagsRow(tags: visibleTags),
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (onOpenMenu != null)
+                      _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+                  ],
+                ),
+                if (pinFooter) const Spacer(),
+                if (!pinFooter && visibleTags.isNotEmpty)
+                  const SizedBox(height: 6),
+                _footerSection(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
     return Padding(
       padding: EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
         pinFooter ? _PlanCardGeom.padTopPinned : _PlanCardGeom.padTopMediumLarge,
         _PlanCardGeom.padRight,
-        pinFooter
-            ? _PlanCardGeom.footerBottomPadPinned
-            : _PlanCardGeom.padTopMediumLarge,
+        bottomPad,
       ),
-      child: SizedBox(
-        height: pinFooter
-            ? null
-            : _PlanCardGeom.refHeightLarge -
-                _PlanCardGeom.padTopMediumLarge * 2,
-        child: Row(
-          crossAxisAlignment:
-              pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
-          children: [
-            _PlanCardControlRail(
-              showPlay: showPlay,
-              selectMode: selectMode,
-              isSelected: isSelected,
-              displayIsDone: displayIsDone,
-              toggleDoneEnabled: toggleDoneEnabled,
-              onToggleDone: onToggleDone,
-              onSelectToggle: onSelectToggle,
-              onPlay: onPlay,
-              expandSpacer: true,
-            ),
-            const SizedBox(width: _PlanCardGeom.railToContentGap),
-            Expanded(
-              child: _PlanCardBodyTapShell(
-                onTap: onBodyTap,
-                onLongPress: onBodyLongPress,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(top: 2),
-                                child: _PlanCardTitleRow(
-                                  title: task.title,
-                                  displayIsDone: displayIsDone,
-                                  hasRepeat: hasRepeat,
-                                  maxLines: 3,
-                                  metaIcons: metaIcons,
-                                ),
-                              ),
-                            if (visibleTags.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  top: _PlanCardGeom.titleToTagsGap,
-                                ),
-                                child: _PlanCardTagsRow(tags: visibleTags),
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (onOpenMenu != null)
-                        _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
-                    ],
-                  ),
-                  if (pinFooter) const Spacer(),
-                  if (metricsBlock != null) metricsBlock!,
-                  SizedBox(
-                    height: pinFooter
-                        ? _PlanCardGeom.footerBlockGapPinned
-                        : _PlanCardGeom.footerBlockGap,
-                  ),
-                  _PlanCardFooterRow(
-                    categoryTrail: categoryTrail,
-                    timeLabel: timeLabel,
-                    scheduleConflict: scheduleConflict,
-                    categoryColor: categoryColor,
-                  ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: content,
     );
   }
 }
@@ -1840,18 +1870,12 @@ String _planCardWallTimeLabel(PlanningTask task) {
   return startLabel;
 }
 
-/// List/calendar row density — compact when minimal, medium when tags/progress/schedule.
+/// List/calendar rows always use medium so footer (breadcrumb + planned time) is consistent.
 PlanTimeTaskCardDensity planTimeCardDensityForList({
   required PlanningTask task,
   int? planEstimatedSeconds,
   int planTrackedSeconds = 0,
 }) {
-  final hasTags = task.tags.any((t) => t.rendersAsChip);
-  final hasProgress =
-      (planEstimatedSeconds ?? 0) > 0 || planTrackedSeconds > 0;
-  if (!hasTags && !hasProgress && task.startTime == null) {
-    return PlanTimeTaskCardDensity.compact;
-  }
   return PlanTimeTaskCardDensity.medium;
 }
 

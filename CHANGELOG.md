@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Plan list card footer consistency + spacing [shipped]
+* **`plan_time_task_card.dart`:** [shipped] List/calendar cards always use medium layout with footer row; removed fixed 71px inner height that clipped breadcrumbs/time; progress separator always shows for plan list cards; footer bottom pad 10px, separator gap 6px; planned time from wall fields when label empty.
+
 ## [2026-06-15] - Time mode: revert shortest-task zoom; micro layout at fixed scale [shipped]
 * **`planning_view.dart`:** [shipped] Removed dynamic `hourHeight` from shortest visible plan (was up to 720px/h); fixed **80px/hour** scale; short blocks use **38px min layout height** + sequential visual push (duration unchanged).
 * **`plan_time_task_card.dart`:** [shipped] Micro one-line row ~38–44px with full time label; desktop wide row adds inline tags/category chip; density thresholds 45/70/110px.
