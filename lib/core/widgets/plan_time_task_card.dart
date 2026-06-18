@@ -71,8 +71,38 @@ class PlanTimeTaskCard extends StatefulWidget {
   State<PlanTimeTaskCard> createState() => _PlanTimeTaskCardState();
 }
 
-class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
+class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
+    with SingleTickerProviderStateMixin {
   bool _hovered = false;
+  late final AnimationController _completionCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _completionCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+    );
+    if (widget.displayIsDone) {
+      _completionCtrl.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PlanTimeTaskCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.displayIsDone && widget.displayIsDone) {
+      _completionCtrl.forward(from: 0);
+    } else if (oldWidget.displayIsDone && !widget.displayIsDone) {
+      _completionCtrl.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _completionCtrl.dispose();
+    super.dispose();
+  }
 
   bool get _hasRepeat =>
       (widget.task.rrule?.trim().isNotEmpty ?? false) ||
@@ -324,6 +354,24 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           : SystemMouseCursors.basic,
       child: card,
     );
+
+    if (widget.displayIsDone || _completionCtrl.isAnimating) {
+      card = AnimatedBuilder(
+        animation: _completionCtrl,
+        builder: (context, child) {
+          final t = Curves.easeOutCubic.transform(_completionCtrl.value);
+          return Opacity(
+            opacity: (1.0 - 0.24 * t).clamp(0.76, 1.0),
+            child: Transform.scale(
+              scale: 1.0 - 0.012 * t,
+              alignment: Alignment.center,
+              child: child,
+            ),
+          );
+        },
+        child: card,
+      );
+    }
 
     return card;
   }
@@ -1122,8 +1170,40 @@ class _PlanCardCheckbox extends StatefulWidget {
   State<_PlanCardCheckbox> createState() => _PlanCardCheckboxState();
 }
 
-class _PlanCardCheckboxState extends State<_PlanCardCheckbox> {
+class _PlanCardCheckboxState extends State<_PlanCardCheckbox>
+    with SingleTickerProviderStateMixin {
   bool _hovered = false;
+  late final AnimationController _checkPulseCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+    if (!widget.selectMode && widget.displayIsDone) {
+      _checkPulseCtrl.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlanCardCheckbox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.selectMode &&
+        !oldWidget.displayIsDone &&
+        widget.displayIsDone) {
+      _checkPulseCtrl.forward(from: 0);
+    } else if (widget.selectMode || !widget.displayIsDone) {
+      _checkPulseCtrl.value = widget.displayIsDone ? 1.0 : 0.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _checkPulseCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1131,9 +1211,14 @@ class _PlanCardCheckboxState extends State<_PlanCardCheckbox> {
     final enabled = widget.selectMode
         ? widget.onSelectToggle != null
         : widget.toggleDoneEnabled && widget.onToggleDone != null;
-    final borderColor = _hovered && enabled
-        ? _PlanCardTokens.playFill.withValues(alpha: 0.55)
-        : _PlanCardTokens.checkboxStroke;
+    final pulse = Curves.easeOut.transform(_checkPulseCtrl.value);
+    final borderColor = Color.lerp(
+      _hovered && enabled
+          ? _PlanCardTokens.playFill.withValues(alpha: 0.55)
+          : _PlanCardTokens.checkboxStroke,
+      const Color(0xFF5FAF6A),
+      checked && !widget.selectMode ? 0.35 * pulse : 0.0,
+    )!;
     return Semantics(
       checked: checked,
       button: true,
@@ -1165,11 +1250,19 @@ class _PlanCardCheckboxState extends State<_PlanCardCheckbox> {
                 ],
               ),
               child: checked
-                  ? const Center(
-                      child: Icon(
-                        Icons.check_rounded,
-                        size: 18,
-                        color: _PlanCardTokens.playFill,
+                  ? Center(
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.72, end: 1.0).animate(
+                          CurvedAnimation(
+                            parent: _checkPulseCtrl,
+                            curve: Curves.easeOutBack,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          size: 18,
+                          color: _PlanCardTokens.playFill,
+                        ),
                       ),
                     )
                   : null,
@@ -1345,19 +1438,23 @@ class _PlanCardTitleRow extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            title,
-            maxLines: maxLines,
-            overflow: TextOverflow.ellipsis,
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
             style: TextStyle(
               fontSize: 16,
               height: 1.1,
               fontWeight: FontWeight.w400,
               decoration:
-                  displayIsDone ? TextDecoration.lineThrough : null,
+                  displayIsDone ? TextDecoration.lineThrough : TextDecoration.none,
               color: displayIsDone
                   ? _PlanCardTokens.titleColor.withValues(alpha: 0.55)
                   : _PlanCardTokens.titleColor,
+            ),
+            child: Text(
+              title,
+              maxLines: maxLines,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),

@@ -262,6 +262,14 @@ class _PlanningPageState extends State<PlanningPage>
   /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
   List<PlanningTask> _latestPlanningDayTasks = const [];
   final Map<String, bool> _planDoneOverride = {};
+  /// Keeps completed cards at their list index until the completion moment finishes.
+  final Set<String> _planCompletionHoldKeys = {};
+  final Map<String, Timer> _planCompletionHoldTimers = {};
+  final Set<String> _planReorderSettleKeys = {};
+  static const Duration _kPlanCompletionHoldDuration =
+      Duration(milliseconds: 250);
+  static const Duration _kPlanReorderSettleDuration =
+      Duration(milliseconds: 280);
   Stream<List<PlanningTask>>? _planningStream;
   List<PlanningTask>? _dragOrder;
   bool _planSelectMode = false;
@@ -1173,6 +1181,7 @@ class _PlanningPageState extends State<PlanningPage>
             oldWidget.selectedDateString != widget.selectedDateString) {
           _optimisticTasks.clear();
           _planDoneOverride.clear();
+          _clearAllPlanCompletionHolds();
           _dragOrder = null;
           _selectedPlanKeys.clear();
           _planSelectMode = false;
@@ -1185,6 +1194,7 @@ class _PlanningPageState extends State<PlanningPage>
 
   @override
   void dispose() {
+    _clearAllPlanCompletionHolds();
     _planningTimeSub?.cancel();
     _tagsCatalogSub?.cancel();
     _settingsSub?.cancel();
@@ -1297,12 +1307,53 @@ class _PlanningPageState extends State<PlanningPage>
         .toList();
     final merged = [...pending, ...server];
     merged.sort((a, b) {
-      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      if (_sortTreatAsDone(a) != _sortTreatAsDone(b)) {
+        return _sortTreatAsDone(a) ? 1 : -1;
+      }
       final o = a.order.compareTo(b.order);
       if (o != 0) return o;
       return a.title.compareTo(b.title);
     });
     return merged;
+  }
+
+  /// Done for display uses override; done for sort can be held during completion moment.
+  bool _sortTreatAsDone(PlanningTask task) {
+    final key = _planKey(task);
+    if (_planCompletionHoldKeys.contains(key)) return false;
+    final override = _planDoneOverride[key];
+    if (override != null) return override;
+    return task.isDone;
+  }
+
+  void _clearAllPlanCompletionHolds() {
+    for (final timer in _planCompletionHoldTimers.values) {
+      timer.cancel();
+    }
+    _planCompletionHoldTimers.clear();
+    _planCompletionHoldKeys.clear();
+    _planReorderSettleKeys.clear();
+  }
+
+  void _cancelPlanCompletionHold(String key) {
+    _planCompletionHoldTimers.remove(key)?.cancel();
+    _planCompletionHoldKeys.remove(key);
+    _planReorderSettleKeys.remove(key);
+  }
+
+  void _beginPlanCompletionHold(String key) {
+    _planCompletionHoldTimers.remove(key)?.cancel();
+    _planCompletionHoldKeys.add(key);
+    _planCompletionHoldTimers[key] = Timer(_kPlanCompletionHoldDuration, () {
+      if (!mounted) return;
+      _planCompletionHoldTimers.remove(key);
+      if (!_planCompletionHoldKeys.remove(key)) return;
+      setState(() => _planReorderSettleKeys.add(key));
+      Timer(_kPlanReorderSettleDuration, () {
+        if (!mounted) return;
+        setState(() => _planReorderSettleKeys.remove(key));
+      });
+    });
   }
 
   List<PlanningTask> _displayTasks(List<PlanningTask> server) {
@@ -1833,7 +1884,14 @@ class _PlanningPageState extends State<PlanningPage>
     if (task.planRowIdForBackend.startsWith('optimistic-')) return;
     final key = _planKey(task);
     final next = !currentDisplayDone;
-    setState(() => _planDoneOverride[key] = next);
+    setState(() {
+      _planDoneOverride[key] = next;
+      if (next) {
+        _beginPlanCompletionHold(key);
+      } else {
+        _cancelPlanCompletionHold(key);
+      }
+    });
     try {
       final ok = await DatabaseService.instance.updatePlanningTask(
         task.planRowIdForBackend,
@@ -1843,7 +1901,10 @@ class _PlanningPageState extends State<PlanningPage>
       );
       if (!mounted) return;
       if (!ok) {
-        setState(() => _planDoneOverride.remove(key));
+        setState(() {
+          _planDoneOverride.remove(key);
+          _cancelPlanCompletionHold(key);
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
         );
@@ -1851,7 +1912,10 @@ class _PlanningPageState extends State<PlanningPage>
     } catch (e) {
       debugPrint('UI ERROR: $e');
       if (mounted) {
-        setState(() => _planDoneOverride.remove(key));
+        setState(() {
+          _planDoneOverride.remove(key);
+          _cancelPlanCompletionHold(key);
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
         );
@@ -1860,7 +1924,9 @@ class _PlanningPageState extends State<PlanningPage>
   }
 
   int _taskSortCmp(PlanningTask a, PlanningTask b) {
-    if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+    if (_sortTreatAsDone(a) != _sortTreatAsDone(b)) {
+      return _sortTreatAsDone(a) ? 1 : -1;
+    }
     final o = a.order.compareTo(b.order);
     if (o != 0) return o;
     return a.title.compareTo(b.title);
@@ -3158,8 +3224,7 @@ class _PlanningPageState extends State<PlanningPage>
         !_planSelectMode &&
         !task.planRowIdForBackend.startsWith('optimistic-');
     if (!allowLongPressDrag) {
-      if (timelineEmbedded) return card;
-      return Padding(padding: const EdgeInsets.only(bottom: 6), child: card);
+      return _wrapPlanCardForDisplay(key, card, timelineEmbedded: timelineEmbedded);
     }
 
     final maxFeedbackW = MediaQuery.sizeOf(context).width * 0.9;
@@ -3210,8 +3275,23 @@ class _PlanningPageState extends State<PlanningPage>
         ),
         child: card,
     );
-    if (timelineEmbedded) return draggable;
-    return Padding(padding: const EdgeInsets.only(bottom: 6), child: draggable);
+    if (timelineEmbedded) {
+      return _wrapPlanCardForDisplay(key, draggable, timelineEmbedded: true);
+    }
+    return _wrapPlanCardForDisplay(key, draggable);
+  }
+
+  Widget _wrapPlanCardForDisplay(
+    String planKey,
+    Widget card, {
+    bool timelineEmbedded = false,
+  }) {
+    final wrapped = _PlanCardReorderSettle(
+      animate: _planReorderSettleKeys.contains(planKey),
+      child: card,
+    );
+    if (timelineEmbedded) return wrapped;
+    return Padding(padding: const EdgeInsets.only(bottom: 6), child: wrapped);
   }
 
   Widget _buildHourGridView(
@@ -5626,5 +5706,64 @@ class _PlanningTaskCard extends StatelessWidget {
         onLongPress: onLongPress,
       ),
     );
+  }
+}
+
+/// One-shot slide settle when a completed card is allowed to reorder.
+class _PlanCardReorderSettle extends StatefulWidget {
+  const _PlanCardReorderSettle({
+    required this.animate,
+    required this.child,
+  });
+
+  final bool animate;
+  final Widget child;
+
+  @override
+  State<_PlanCardReorderSettle> createState() => _PlanCardReorderSettleState();
+}
+
+class _PlanCardReorderSettleState extends State<_PlanCardReorderSettle>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<Offset> _slide;
+  bool _wasAnimating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
+    );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, -0.035),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    if (widget.animate) {
+      _wasAnimating = true;
+      _controller.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _PlanCardReorderSettle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.animate && widget.animate) {
+      _wasAnimating = true;
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_wasAnimating && !widget.animate) return widget.child;
+    return SlideTransition(position: _slide, child: widget.child);
   }
 }

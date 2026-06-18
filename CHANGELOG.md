@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Plan card completion moment before reorder [shipped]
+* **`planning_view.dart`:** [shipped] `_planCompletionHoldKeys` delays sort/reorder **250ms** after check while optimistic `isDone` updates immediately; `_sortTreatAsDone` + `_PlanCardReorderSettle` slide settle on release; rollback cancels hold.
+* **`plan_time_task_card.dart`:** [shipped] Staged completion feel — checkbox pulse/scale, `AnimatedDefaultTextStyle` strike-through, card opacity/scale settle (~260ms).
+
 ## [2026-06-15] - P0 Plan card repair: one shared compact card + rubber Time grid [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Removed `_PlanCardVerticalSpacing.timeline`, `pinFooter`, and `heightPx` visual branches; single `_PlanCardVerticalSpacing.shared` (top 9, title→tags 5, tags empty 4, progress gap 6, bar 2px, footer gap 6, bottom 8); `refHeightMedium` 90; `planTimeCardMeasureHeight()` for layout; Time mode uses same medium CardPlan as list.
 * **`planning_view.dart`:** [shipped] `_TimelineRubberGrid` — per-hour `max(80px, content)` with iterative card stack + cascade; drag/resize/now-line Y↔minutes via rubber map; interaction wrapper unchanged; cards sized by intrinsic measure not duration strips.
