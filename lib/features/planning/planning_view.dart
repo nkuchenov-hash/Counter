@@ -2101,8 +2101,13 @@ class _PlanningPageState extends State<PlanningPage>
   }
 
   int _timelineBlockDurationMinutes(PlanningTask task) {
-    final a = task.startTime;
-    final b = task.endDateTime;
+    final proj = DatabaseService.instance.projectPlanForTimeMode(task);
+    if (proj?.wallEnd != null) {
+      final sec = proj!.wallEnd!.difference(proj.wallStart).inSeconds;
+      if (sec > 0) return (sec / 60).ceil().clamp(5, 24 * 60);
+    }
+    final a = proj?.wallStart ?? task.startTime;
+    final b = proj?.wallEnd ?? task.endDateTime;
     if (a != null && b != null) {
       final sec = b.difference(a).inSeconds;
       if (sec > 0) return (sec / 60).ceil().clamp(5, 24 * 60);
@@ -2116,6 +2121,65 @@ class _PlanningPageState extends State<PlanningPage>
       rangeEnd,
     );
     return hours.length * _timelineHourHeightPx;
+  }
+
+  String? _lastTimeModeLayoutLogKey;
+  DateTime? _lastTimeModeLayoutLogAt;
+  String? _lastTimeModeRailLogKey;
+  DateTime? _lastTimeModeRailLogAt;
+  static const Duration _timeModeLogDebounce = Duration(seconds: 8);
+
+  void _logTimeModeLayout({
+    required PlanningTask task,
+    required TimeModeProjectedPlan proj,
+    required int rangeStart,
+    required double topPx,
+    required double heightPx,
+    required String label,
+  }) {
+    final planId = task.planRowIdForBackend.trim();
+    final hourRow = proj.wallStart.hour;
+    final lineKey =
+        '$planId|${proj.wallStart.hour}:${proj.wallStart.minute}|y=${topPx.toStringAsFixed(1)}';
+    final now = DateTime.now();
+    if (_lastTimeModeLayoutLogKey == lineKey &&
+        _lastTimeModeLayoutLogAt != null &&
+        now.difference(_lastTimeModeLayoutLogAt!) < _timeModeLogDebounce) {
+      return;
+    }
+    _lastTimeModeLayoutLogKey = lineKey;
+    _lastTimeModeLayoutLogAt = now;
+    // ignore: avoid_print
+    print(
+      'TIME_MODE_LAYOUT planId=${planId.isEmpty ? '-' : planId} '
+      'profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
+      'wallStart=${proj.wallStart.hour.toString().padLeft(2, '0')}:${proj.wallStart.minute.toString().padLeft(2, '0')} '
+      'wallEnd=${proj.wallEnd != null ? '${proj.wallEnd!.hour.toString().padLeft(2, '0')}:${proj.wallEnd!.minute.toString().padLeft(2, '0')}' : '-'} '
+      'hourRow=$hourRow y=${topPx.toStringAsFixed(1)} height=${heightPx.toStringAsFixed(1)} '
+      'label=$label',
+    );
+  }
+
+  void _logTimeModeRail({
+    required DateTime selectedDay,
+    required List<int> visibleHours,
+  }) {
+    final dayStr =
+        '${selectedDay.year}-${selectedDay.month.toString().padLeft(2, '0')}-${selectedDay.day.toString().padLeft(2, '0')}';
+    final lineKey = '$dayStr|${visibleHours.join(',')}';
+    final now = DateTime.now();
+    if (_lastTimeModeRailLogKey == lineKey &&
+        _lastTimeModeRailLogAt != null &&
+        now.difference(_lastTimeModeRailLogAt!) < _timeModeLogDebounce) {
+      return;
+    }
+    _lastTimeModeRailLogKey = lineKey;
+    _lastTimeModeRailLogAt = now;
+    // ignore: avoid_print
+    print(
+      'TIME_MODE_RAIL profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
+      'selectedDay=$dayStr visibleHours=${visibleHours.join(',')}',
+    );
   }
 
   List<_TimelineBlockLayout> _timelineBlockLayouts(
@@ -2132,12 +2196,13 @@ class _PlanningPageState extends State<PlanningPage>
           double endMin,
         })>[];
     for (final t in scheduled) {
-      final st = t.startTime;
-      if (st == null) continue;
+      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
+      if (proj == null) continue;
+      final st = proj.wallStart;
       final startMin = _timelineMinutesFromRangeStart(st, rangeStart, rangeEnd);
-      final durMin = _timelineBlockDurationMinutes(t).toDouble();
+      final durMin = _timelineBlockDurationMinutes(proj.projectedTask).toDouble();
       spans.add((
-        task: t,
+        task: proj.projectedTask,
         startMin: startMin,
         endMin: startMin + durMin,
       ));
@@ -2175,6 +2240,17 @@ class _PlanningPageState extends State<PlanningPage>
           hasScheduleConflict: hasScheduleConflict,
         ),
       );
+      final proj = DatabaseService.instance.projectPlanForTimeMode(span.task);
+      if (proj != null) {
+        _logTimeModeLayout(
+          task: span.task,
+          proj: proj,
+          rangeStart: rangeStart,
+          topPx: visualTopPx,
+          heightPx: heightPx,
+          label: proj.plannedTimeLabel,
+        );
+      }
       prevVisualBottomPx = visualTopPx + heightPx;
     }
     return layouts;
@@ -2350,14 +2426,15 @@ class _PlanningPageState extends State<PlanningPage>
     int rangeStart,
     int rangeEnd,
   ) {
-    final st = task.startTime;
+    final proj = DatabaseService.instance.projectPlanForTimeMode(task);
+    final st = proj?.wallStart ?? task.startTime;
     final startMin = _timelineMinutesFromRangeStart(
       st!,
       rangeStart,
       rangeEnd,
     ).round();
     var endMin = startMin + _timelineBlockDurationMinutes(task);
-    final et = task.endDateTime;
+    final et = proj?.wallEnd ?? task.endDateTime;
     if (et != null) {
       endMin = _timelineMinutesFromRangeStart(et, rangeStart, rangeEnd).round();
     }
@@ -3100,13 +3177,14 @@ class _PlanningPageState extends State<PlanningPage>
     final planWallDay = widget.selectedDate ?? _today;
     final inRangeScheduled = <PlanningTask>[];
     for (final t in scheduled) {
-      final st = t.startTime;
-      if (st == null) continue;
-      final wallH = st.hour.clamp(0, 23);
+      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
+      if (proj == null) continue;
+      final wallH = proj.wallStart.hour.clamp(0, 23);
       if (visibleSet.contains(wallH)) {
-        inRangeScheduled.add(t);
+        inRangeScheduled.add(proj.projectedTask);
       }
     }
+    _logTimeModeRail(selectedDay: planWallDay, visibleHours: visibleHours);
 
     final children = <Widget>[];
     if (unscheduled.isNotEmpty) {
@@ -3550,6 +3628,13 @@ class _PlanningPageState extends State<PlanningPage>
                 timeline: true,
               ),
               controlsRightInset: planCardBodyGestureRightInsetPx(),
+              onMovePointerDown: canInteract
+                  ? () {
+                      if (!_timelineScrollLocked) {
+                        setState(() => _timelineScrollLocked = true);
+                      }
+                    }
+                  : null,
               onBodyTap: () {
                 if (_planSelectMode) {
                   _toggleKeySelection(planKey);
@@ -4917,6 +5002,7 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
     this.onVerticalDragUpdate,
     this.onVerticalDragEnd,
     this.onVerticalDragCancel,
+    this.onMovePointerDown,
     this.onResizeStart,
     this.onResizeUpdate,
     this.onResizeEnd,
@@ -4936,6 +5022,7 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
   final void Function(double deltaPx, double globalDy)? onVerticalDragUpdate;
   final VoidCallback? onVerticalDragEnd;
   final VoidCallback? onVerticalDragCancel;
+  final VoidCallback? onMovePointerDown;
   final void Function(_TimelineResizeEdge edge)? onResizeStart;
   final void Function(double deltaPx, double globalDy)? onResizeUpdate;
   final VoidCallback? onResizeEnd;
@@ -4952,6 +5039,7 @@ class _TimelinePlanInteractionBlockState
   bool _resizing = false;
   bool _suppressBodyTap = false;
   bool _bodyDragActive = false;
+  int? _activePointer;
 
   bool get _immediateBodyDrag =>
       kIsWeb ||
@@ -4977,7 +5065,7 @@ class _TimelinePlanInteractionBlockState
   Widget _moveZone() {
     if (!widget.canMove) return const SizedBox.shrink();
     final inset = widget.canResize ? _resizeZoneInset : 0.0;
-    return Positioned(
+    final zone = Positioned(
       top: inset,
       bottom: inset,
       left: widget.controlsLeftInset,
@@ -4986,7 +5074,49 @@ class _TimelinePlanInteractionBlockState
         cursor: _bodyDragActive
             ? SystemMouseCursors.grabbing
             : SystemMouseCursors.grab,
-        child: GestureDetector(
+        child: _immediateBodyDrag
+            ? Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: (e) {
+                  widget.onMovePointerDown?.call();
+                  _suppressBodyTap = true;
+                  _bodyDragActive = true;
+                  _moveAccumulatedDy = 0;
+                  _activePointer = e.pointer;
+                  widget.onVerticalDragStart?.call();
+                },
+                onPointerMove: (e) {
+                  if (!_bodyDragActive || _activePointer != e.pointer) return;
+                  _moveAccumulatedDy += e.delta.dy;
+                  widget.onVerticalDragUpdate?.call(
+                    _moveAccumulatedDy,
+                    e.position.dy,
+                  );
+                },
+                onPointerUp: (e) {
+                  if (!_bodyDragActive || _activePointer != e.pointer) return;
+                  widget.onVerticalDragEnd?.call();
+                  _endBodyDragSession();
+                  _activePointer = null;
+                },
+                onPointerCancel: (e) {
+                  if (!_bodyDragActive || _activePointer != e.pointer) return;
+                  widget.onVerticalDragCancel?.call();
+                  _endBodyDragSession();
+                  _activePointer = null;
+                },
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: widget.onBodyTap == null
+                      ? null
+                      : () {
+                          if (_suppressBodyTap || _bodyDragActive) return;
+                          widget.onBodyTap!();
+                        },
+                  child: const SizedBox.expand(),
+                ),
+              )
+            : GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: widget.onBodyTap == null
             ? null
@@ -4994,67 +5124,32 @@ class _TimelinePlanInteractionBlockState
                 if (_suppressBodyTap || _bodyDragActive) return;
                 widget.onBodyTap!();
               },
-        onLongPressStart: _immediateBodyDrag
-            ? null
-            : (_) {
+        onLongPressStart: (_) {
                 _suppressBodyTap = true;
                 _bodyDragActive = true;
                 _moveAccumulatedDy = 0;
+                widget.onMovePointerDown?.call();
                 widget.onVerticalDragStart?.call();
               },
-        onLongPressMoveUpdate: _immediateBodyDrag
-            ? null
-            : (details) {
+        onLongPressMoveUpdate: (details) {
                 widget.onVerticalDragUpdate?.call(
                   details.offsetFromOrigin.dy,
                   details.globalPosition.dy,
                 );
               },
-        onLongPressEnd: _immediateBodyDrag
-            ? null
-            : (_) {
+        onLongPressEnd: (_) {
                 widget.onVerticalDragEnd?.call();
                 _endBodyDragSession();
               },
-        onLongPressCancel: _immediateBodyDrag
-            ? null
-            : () {
+        onLongPressCancel: () {
                 widget.onVerticalDragCancel?.call();
                 _endBodyDragSession();
               },
-        onVerticalDragStart: _immediateBodyDrag
-            ? (_) {
-                _suppressBodyTap = true;
-                _bodyDragActive = true;
-                _moveAccumulatedDy = 0;
-                widget.onVerticalDragStart?.call();
-              }
-            : null,
-        onVerticalDragUpdate: _immediateBodyDrag
-            ? (details) {
-                _moveAccumulatedDy += details.delta.dy;
-                widget.onVerticalDragUpdate?.call(
-                  _moveAccumulatedDy,
-                  details.globalPosition.dy,
-                );
-              }
-            : null,
-        onVerticalDragEnd: _immediateBodyDrag
-            ? (_) {
-                widget.onVerticalDragEnd?.call();
-                _endBodyDragSession();
-              }
-            : null,
-        onVerticalDragCancel: _immediateBodyDrag
-            ? () {
-                widget.onVerticalDragCancel?.call();
-                _endBodyDragSession();
-              }
-            : null,
         child: const SizedBox.expand(),
       ),
       ),
     );
+    return zone;
   }
 
   Widget _resizeEdge({

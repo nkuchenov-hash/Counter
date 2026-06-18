@@ -75,6 +75,10 @@ extension PlanServiceExtension on DatabaseService {
       'dateKey': t.dateKey,
       'endDateKey': t.endDateKey,
       'order': t.order,
+      if (t.startUtcInstant != null)
+        'start_utc': t.startUtcInstant!.toUtc().toIso8601String(),
+      if (t.endUtcInstant != null)
+        'end_utc': t.endUtcInstant!.toUtc().toIso8601String(),
       if (t.startTime != null)
         'start_wall': <int>[
           t.startTime!.year,
@@ -169,7 +173,15 @@ extension PlanServiceExtension on DatabaseService {
         }
       }
     }
-    return PlanningTask(
+    final startUtcRaw = m['start_utc']?.toString();
+    final endUtcRaw = m['end_utc']?.toString();
+    final startUtc = startUtcRaw != null && startUtcRaw.trim().isNotEmpty
+        ? DateTime.tryParse(startUtcRaw.trim())?.toUtc()
+        : null;
+    final endUtc = endUtcRaw != null && endUtcRaw.trim().isNotEmpty
+        ? DateTime.tryParse(endUtcRaw.trim())?.toUtc()
+        : null;
+    var task = PlanningTask(
       id: int.tryParse((m['id'] ?? '').toString()) ?? 0,
       planRowId: m['plan_row_id']?.toString(),
       pocketRecordId: m['pocketRecordId']?.toString(),
@@ -211,7 +223,13 @@ extension PlanServiceExtension on DatabaseService {
       recurrenceInstanceDateKey: _normPlanRecurrenceInstanceKey(
         m['recurrence_instance_date_key'] ?? m['recurrenceInstanceDateKey'],
       ),
+      startUtcInstant: startUtc,
+      endUtcInstant: endUtc,
     );
+    if (startUtc != null) {
+      task = _reprojectPlanningTaskWallTimes(task);
+    }
+    return task;
   }
 
   static List<String> _parsePlanExceptionDatesForOffline(dynamic raw) {
@@ -1381,12 +1399,13 @@ extension PlanServiceExtension on DatabaseService {
     _lastPlanTimeTzLogAt = now;
     // ignore: avoid_print
     print(
-      'PLAN_TIME_TZ_PROJECT planId=${planId.isEmpty ? '-' : planId} '
+      'TIME_MODE_PROJECT planId=${planId.isEmpty ? '-' : planId} '
+      'profileTz=${_settings.preferredTimeZone.trim().isEmpty ? 'offset:${_settings.timezoneOffsetHours}' : _settings.preferredTimeZone.trim()} '
       'startUtc=${startUtc?.toUtc().toIso8601String() ?? '-'} '
       'endUtc=${endUtc?.toUtc().toIso8601String() ?? '-'} '
-      'profileOffset=${_settings.timezoneOffsetHours} '
-      'wallStart=${wallStart != null ? '${wallStart.hour.toString().padLeft(2, '0')}:${wallStart.minute.toString().padLeft(2, '0')}' : '-'} '
-      'wallEnd=${wallEnd != null ? '${wallEnd.hour.toString().padLeft(2, '0')}:${wallEnd.minute.toString().padLeft(2, '0')}' : '-'} '
+      'wallStart=${wallStart != null ? _planLogWallIso(wallStart) : '-'} '
+      'wallEnd=${wallEnd != null ? _planLogWallIso(wallEnd) : '-'} '
+      'wallDateKey=${wallStart != null ? _dateKeyFromDate(wallStart) : '-'} '
       'selectedDay=$selectedDay visible=$visible',
     );
   }
@@ -1463,23 +1482,27 @@ extension PlanServiceExtension on DatabaseService {
     String? titleForLog,
   }) {
     if (task.startTime == null && task.startUtcInstant == null) return task;
-    final inputWall = task.startTime;
-    // User-entered wall time wins over any stale startUtcInstant on create/edit.
-    final projected = task.startTime != null
-        ? _reprojectPlanningTaskWallTimesFromWallInput(task)
-        : _reprojectPlanningTaskWallTimes(task);
-    if (logCreate && inputWall != null && projected.startTime != null) {
-      final instants = _planUtcInstants(projected);
-      if (instants != null) {
-        _logPlanTimeCreateWallToUtc(
-          title: titleForLog ?? task.title,
-          inputWall: inputWall,
-          storedUtc: instants.startUtc,
-          projectedWall: projected.startTime!,
-        );
-      }
+    // UTC instant from PocketBase/cache is source of truth; wall fields are projected.
+    if (task.startUtcInstant != null) {
+      return _reprojectPlanningTaskWallTimes(task);
     }
-    return projected;
+    if (task.startTime != null) {
+      final inputWall = task.startTime;
+      final projected = _reprojectPlanningTaskWallTimesFromWallInput(task);
+      if (logCreate && inputWall != null && projected.startTime != null) {
+        final instants = _planUtcInstants(projected);
+        if (instants != null) {
+          _logPlanTimeCreateWallToUtc(
+            title: titleForLog ?? task.title,
+            inputWall: inputWall,
+            storedUtc: instants.startUtc,
+            projectedWall: projected.startTime!,
+          );
+        }
+      }
+      return projected;
+    }
+    return task;
   }
 
   /// Derive UTC instants from profile wall fields only (create/edit path).
@@ -5106,5 +5129,84 @@ extension PlanServiceExtension on DatabaseService {
   /// Re-subscribe to `plans` realtime after auth when init ran without a session.
   Future<void> ensurePlansRealtimeBridge() async {
     unawaited(_startPlansRealtimeSubscription());
+  }
+}
+
+/// Profile-timezone projection for Time mode (labels, placement, drag, filter).
+class TimeModeProjectedPlan {
+  const TimeModeProjectedPlan({
+    required this.task,
+    required this.startUtc,
+    required this.wallStart,
+    required this.wallDateKey,
+    required this.plannedTimeLabel,
+    this.endUtc,
+    this.wallEnd,
+  });
+
+  final PlanningTask task;
+  final DateTime startUtc;
+  final DateTime? endUtc;
+  final DateTime wallStart;
+  final DateTime? wallEnd;
+  final String wallDateKey;
+  final String plannedTimeLabel;
+
+  int get startMinuteOfDay => wallStart.hour * 60 + wallStart.minute;
+
+  int? get endMinuteOfDay =>
+      wallEnd != null ? wallEnd!.hour * 60 + wallEnd!.minute : null;
+
+  PlanningTask get projectedTask => task.copyWith(
+        startUtcInstant: startUtc,
+        endUtcInstant: endUtc,
+        startTime: wallStart,
+        endDateTime: wallEnd,
+        dateKey: wallDateKey,
+        endDateKey: wallEnd != null
+            ? '${wallEnd!.year.toString().padLeft(4, '0')}-'
+                '${wallEnd!.month.toString().padLeft(2, '0')}-'
+                '${wallEnd!.day.toString().padLeft(2, '0')}'
+            : wallDateKey,
+        date: DateTime.utc(wallStart.year, wallStart.month, wallStart.day),
+      );
+}
+
+extension PlanTimeModeProjection on DatabaseService {
+  TimeModeProjectedPlan? projectPlanForTimeMode(PlanningTask task) {
+    final instants = _planUtcInstants(task);
+    if (instants == null) return null;
+    final wallStart = _profileWallFromUtc(instants.startUtc);
+    final wallEnd = instants.endUtc != null
+        ? _profileWallFromUtc(instants.endUtc!)
+        : null;
+    final dk =
+        '${wallStart.year.toString().padLeft(4, '0')}-'
+        '${wallStart.month.toString().padLeft(2, '0')}-'
+        '${wallStart.day.toString().padLeft(2, '0')}';
+    final startLabel =
+        '${wallStart.hour.toString().padLeft(2, '0')}:${wallStart.minute.toString().padLeft(2, '0')}';
+    final plannedTimeLabel = wallEnd != null
+        ? '$startLabel – ${wallEnd.hour.toString().padLeft(2, '0')}:${wallEnd.minute.toString().padLeft(2, '0')}'
+        : startLabel;
+    return TimeModeProjectedPlan(
+      task: task,
+      startUtc: instants.startUtc,
+      endUtc: instants.endUtc,
+      wallStart: wallStart,
+      wallEnd: wallEnd,
+      wallDateKey: dk,
+      plannedTimeLabel: plannedTimeLabel,
+    );
+  }
+
+  String profileTimezoneShortLabel() {
+    final label = settings.preferredTimeZone.trim();
+    if (wall_clock.profileLabelUsesNewYorkWallClock(label)) return 'NY';
+    final lower = label.toLowerCase();
+    if (lower.contains('moscow') || lower.contains('msk')) return 'MSK';
+    final off = settings.timezoneOffsetHours;
+    if (off == 0) return 'UTC';
+    return off > 0 ? 'UTC+$off' : 'UTC$off';
   }
 }

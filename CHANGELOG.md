@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Time mode TZ placement + drag restore [shipped]
+* **`plan_service.dart`:** [shipped] `TimeModeProjectedPlan` + `projectPlanForTimeMode()` — UTC→profile wall for labels/placement/filter; `_coalescePlanningTaskWallUtcFields` prefers `startUtcInstant`; offline day cache stores `start_utc`/`end_utc`; `TIME_MODE_PROJECT` logs.
+* **`planning_view.dart`:** [shipped] Layout/filter/drag use projected wall times; `TIME_MODE_LAYOUT`/`TIME_MODE_RAIL` logs; pointer-based move zone + early scroll lock restores web drag.
+* **`global_app_header.dart`:** [shipped] Profile timezone short label (NY/MSK/UTC±N) beside live clock.
+
 ## [2026-06-15] - Time mode card compact vertical rhythm [shipped]
 * **`plan_time_task_card.dart`:** [shipped] `_PlanCardVerticalSpacing.timeline` — top 6 / bottom 8, title→tags 6, tags slot 22, progress slot 16, progress→footer 6; removed timeline `Spacer` that pinned footer to card bottom; content top-aligned in timeline blocks.
 * **`planning_view.dart`:** [shipped] Min timeline visual card height **88px** (was 108).

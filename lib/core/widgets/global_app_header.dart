@@ -5,6 +5,7 @@
 
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_bar_live_clock.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -97,6 +98,7 @@ class GlobalAppHeader extends StatelessWidget {
     );
     final weekday = DateFormat.EEEE(loc).format(selectedDate);
     final dateStr = DateFormat.yMMMd(loc).format(selectedDate);
+    final tzLabel = DatabaseService.instance.profileTimezoneShortLabel();
 
     return Material(
       color: Colors.transparent,
@@ -130,6 +132,8 @@ class GlobalAppHeader extends StatelessWidget {
               ),
               Text(' · ', style: titleStyle),
               AppBarLiveClock(textStyle: clockStyle),
+              Text(' · ', style: clockStyle),
+              Text(tzLabel, style: clockStyle),
             ],
           ),
         ),
