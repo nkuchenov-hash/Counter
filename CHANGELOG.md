@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Time mode card compact vertical rhythm [shipped]
+* **`plan_time_task_card.dart`:** [shipped] `_PlanCardVerticalSpacing.timeline` — top 6 / bottom 8, title→tags 6, tags slot 22, progress slot 16, progress→footer 6; removed timeline `Spacer` that pinned footer to card bottom; content top-aligned in timeline blocks.
+* **`planning_view.dart`:** [shipped] Min timeline visual card height **88px** (was 108).
+
 ## [2026-06-15] - P0 Plan card invariant layout (fixed slots) [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Medium/large Plan cards use `_PlanCardInvariantBody` with fixed slots (title, tags 28px, progress 19px, footer 6px gap); `_PlanCardProgressSlot` always renders neutral track + reserved actual-time row; removed data-driven `showFooterRow` / `showProgressTrack` / `_PlanCardFooterSeparator` branches; medium/large share `_PlanCardRailShell`.
 

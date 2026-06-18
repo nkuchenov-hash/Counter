@@ -160,8 +160,10 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
             planTrackedSeconds: widget.planTrackedSeconds,
             planEstimatedSeconds: widget.planEstimatedSeconds,
             categoryColor: categoryTone,
+            spacing: _PlanCardGeom.spacingFor(timeline: pinFooter),
           )
         : null;
+    final cardSpacing = _PlanCardGeom.spacingFor(timeline: pinFooter);
 
     Widget body;
     switch (effectiveDensity) {
@@ -223,6 +225,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           metaIcons: widget.metaIcons,
           metricsBlock: progressSlot,
           pinFooter: pinFooter,
+          spacing: cardSpacing,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
@@ -249,6 +252,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
           metaIcons: widget.metaIcons,
           metricsBlock: progressSlot,
           pinFooter: pinFooter,
+          spacing: cardSpacing,
           onToggleDone: widget.onToggleDone,
           onSelectToggle: widget.onSelectToggle,
           onPlay: widget.onPlay,
@@ -300,7 +304,10 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard> {
                   SizedBox(
                     height: widget.heightPx,
                     width: double.infinity,
-                    child: body,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: body,
+                    ),
                   )
                 else
                   body,
@@ -371,6 +378,24 @@ abstract final class _PlanCardGeom {
   static const double footerBottomPadList = 10;
   static const double padTopPinned = 8;
 
+  // Time-mode compact rhythm (list/calendar use defaults above).
+  static const double timelinePadTop = 6;
+  static const double timelinePadBottom = 8;
+  static const double timelineTitleTopInset = 0;
+  static const double timelineTitleToTagsGap = 6;
+  static const double timelineTagsSlotHeight =
+      timelineTitleToTagsGap + tagRowHeight;
+  static const double timelineActualTimeSlotHeight = 10;
+  static const double timelineProgressAfterActualGap = 3;
+  static const double timelineProgressSlotHeight = timelineActualTimeSlotHeight +
+      timelineProgressAfterActualGap +
+      progressBarHeight;
+  static const double timelineFooterBlockGap = 6;
+  static const double refHeightTimelineMedium = 88;
+
+  static _PlanCardVerticalSpacing spacingFor({required bool timeline}) =>
+      timeline ? _PlanCardVerticalSpacing.timeline : _PlanCardVerticalSpacing.list;
+
   static double refHeight(PlanTimeTaskCardDensity d) => switch (d) {
         PlanTimeTaskCardDensity.micro => refHeightMicro,
         PlanTimeTaskCardDensity.compact => refHeightSmall,
@@ -380,6 +405,67 @@ abstract final class _PlanCardGeom {
 
   static double contentSpanWidth(double cardWidth) =>
       cardWidth - contentXMediumLarge - padRight;
+}
+
+/// Centralized vertical rhythm — list vs Time-mode timeline blocks.
+final class _PlanCardVerticalSpacing {
+  const _PlanCardVerticalSpacing._({
+    required this.padTop,
+    required this.padBottom,
+    required this.titleTopInset,
+    required this.titleToTagsGap,
+    required this.tagsSlotHeight,
+    required this.actualTimeSlotHeight,
+    required this.progressAfterActualGap,
+    required this.progressSlotHeight,
+    required this.footerBlockGap,
+    required this.packContentTop,
+    required this.railExpandSpacer,
+    required this.railCrossAxisStretch,
+  });
+
+  static const list = _PlanCardVerticalSpacing._(
+    padTop: _PlanCardGeom.padTopMediumLarge,
+    padBottom: _PlanCardGeom.footerBottomPadList,
+    titleTopInset: 2,
+    titleToTagsGap: _PlanCardGeom.titleToTagsGap,
+    tagsSlotHeight: _PlanCardGeom.tagsSlotHeight,
+    actualTimeSlotHeight: _PlanCardGeom.actualTimeSlotHeight,
+    progressAfterActualGap: _PlanCardGeom.progressAfterActualGap,
+    progressSlotHeight: _PlanCardGeom.progressSlotHeight,
+    footerBlockGap: _PlanCardGeom.footerBlockGap,
+    packContentTop: true,
+    railExpandSpacer: false,
+    railCrossAxisStretch: false,
+  );
+
+  static const timeline = _PlanCardVerticalSpacing._(
+    padTop: _PlanCardGeom.timelinePadTop,
+    padBottom: _PlanCardGeom.timelinePadBottom,
+    titleTopInset: _PlanCardGeom.timelineTitleTopInset,
+    titleToTagsGap: _PlanCardGeom.timelineTitleToTagsGap,
+    tagsSlotHeight: _PlanCardGeom.timelineTagsSlotHeight,
+    actualTimeSlotHeight: _PlanCardGeom.timelineActualTimeSlotHeight,
+    progressAfterActualGap: _PlanCardGeom.timelineProgressAfterActualGap,
+    progressSlotHeight: _PlanCardGeom.timelineProgressSlotHeight,
+    footerBlockGap: _PlanCardGeom.timelineFooterBlockGap,
+    packContentTop: true,
+    railExpandSpacer: false,
+    railCrossAxisStretch: false,
+  );
+
+  final double padTop;
+  final double padBottom;
+  final double titleTopInset;
+  final double titleToTagsGap;
+  final double tagsSlotHeight;
+  final double actualTimeSlotHeight;
+  final double progressAfterActualGap;
+  final double progressSlotHeight;
+  final double footerBlockGap;
+  final bool packContentTop;
+  final bool railExpandSpacer;
+  final bool railCrossAxisStretch;
 }
 
 // --- Visual tokens (design/CardPlan *.svg fallback) ---------------------------
@@ -414,23 +500,25 @@ class _PlanCardProgressSlot extends StatelessWidget {
     required this.planTrackedSeconds,
     required this.categoryColor,
     this.planEstimatedSeconds,
+    this.spacing = _PlanCardVerticalSpacing.list,
   });
 
   final int planTrackedSeconds;
   final int? planEstimatedSeconds;
   final Color categoryColor;
+  final _PlanCardVerticalSpacing spacing;
 
   @override
   Widget build(BuildContext context) {
     final estimated = planEstimatedSeconds ?? 0;
     final hasActual = planTrackedSeconds > 0;
     return SizedBox(
-      height: _PlanCardGeom.progressSlotHeight,
+      height: spacing.progressSlotHeight,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            height: _PlanCardGeom.actualTimeSlotHeight,
+            height: spacing.actualTimeSlotHeight,
             child: Align(
               alignment: Alignment.centerRight,
               child: hasActual
@@ -448,7 +536,7 @@ class _PlanCardProgressSlot extends StatelessWidget {
                   : const SizedBox.shrink(),
             ),
           ),
-          SizedBox(height: _PlanCardGeom.progressAfterActualGap),
+          SizedBox(height: spacing.progressAfterActualGap),
           _PlanCardProgressRow(
             trackedSeconds: planTrackedSeconds,
             estimatedSeconds: estimated,
@@ -476,6 +564,7 @@ class _PlanCardInvariantBody extends StatelessWidget {
     required this.scheduleConflict,
     required this.categoryColor,
     required this.pinFooter,
+    required this.spacing,
     this.onOpenMenu,
     this.onBodyTap,
     this.onBodyLongPress,
@@ -493,6 +582,7 @@ class _PlanCardInvariantBody extends StatelessWidget {
   final bool scheduleConflict;
   final Color categoryColor;
   final bool pinFooter;
+  final _PlanCardVerticalSpacing spacing;
   final void Function(BuildContext)? onOpenMenu;
   final VoidCallback? onBodyTap;
   final VoidCallback? onBodyLongPress;
@@ -511,7 +601,7 @@ class _PlanCardInvariantBody extends StatelessWidget {
             children: [
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 2),
+                  padding: EdgeInsets.only(top: spacing.titleTopInset),
                   child: _PlanCardTitleRow(
                     title: task.title,
                     displayIsDone: displayIsDone,
@@ -526,7 +616,7 @@ class _PlanCardInvariantBody extends StatelessWidget {
             ],
           ),
           SizedBox(
-            height: _PlanCardGeom.tagsSlotHeight,
+            height: spacing.tagsSlotHeight,
             child: Align(
               alignment: Alignment.centerLeft,
               child: visibleTags.isNotEmpty
@@ -534,9 +624,8 @@ class _PlanCardInvariantBody extends StatelessWidget {
                   : const SizedBox.shrink(),
             ),
           ),
-          if (pinFooter) const Spacer(),
           progressSlot,
-          const SizedBox(height: _PlanCardGeom.footerBlockGap),
+          SizedBox(height: spacing.footerBlockGap),
           _PlanCardFooterRow(
             categoryTrail: categoryTrail,
             timeLabel: timeLabel,
@@ -557,6 +646,7 @@ class _PlanCardRailShell extends StatelessWidget {
     required this.displayIsDone,
     required this.toggleDoneEnabled,
     required this.pinFooter,
+    required this.spacing,
     required this.body,
     this.onToggleDone,
     this.onSelectToggle,
@@ -569,6 +659,7 @@ class _PlanCardRailShell extends StatelessWidget {
   final bool displayIsDone;
   final bool toggleDoneEnabled;
   final bool pinFooter;
+  final _PlanCardVerticalSpacing spacing;
   final Widget body;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
@@ -576,19 +667,17 @@ class _PlanCardRailShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPad = pinFooter
-        ? _PlanCardGeom.footerBottomPadPinned
-        : _PlanCardGeom.footerBottomPadList;
     return Padding(
       padding: EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
-        pinFooter ? _PlanCardGeom.padTopPinned : _PlanCardGeom.padTopMediumLarge,
+        spacing.padTop,
         _PlanCardGeom.padRight,
-        bottomPad,
+        spacing.padBottom,
       ),
       child: Row(
-        crossAxisAlignment:
-            pinFooter ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+        crossAxisAlignment: spacing.railCrossAxisStretch
+            ? CrossAxisAlignment.stretch
+            : CrossAxisAlignment.start,
         children: [
           _PlanCardControlRail(
             showPlay: showPlay,
@@ -599,7 +688,7 @@ class _PlanCardRailShell extends StatelessWidget {
             onToggleDone: onToggleDone,
             onSelectToggle: onSelectToggle,
             onPlay: onPlay,
-            expandSpacer: pinFooter,
+            expandSpacer: spacing.railExpandSpacer,
           ),
           const SizedBox(width: _PlanCardGeom.railToContentGap),
           Expanded(child: body),
@@ -822,6 +911,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
     this.metricsBlock,
     this.categoryColor = _PlanCardTokens.breadcrumbFallbackColor,
     this.pinFooter = false,
+    this.spacing = _PlanCardVerticalSpacing.list,
     this.onToggleDone,
     this.onSelectToggle,
     this.onPlay,
@@ -846,6 +936,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
   final _PlanCardProgressSlot? metricsBlock;
   final Color categoryColor;
   final bool pinFooter;
+  final _PlanCardVerticalSpacing spacing;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
@@ -859,6 +950,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
         _PlanCardProgressSlot(
           planTrackedSeconds: 0,
           categoryColor: categoryColor,
+          spacing: spacing,
         );
     return _PlanCardRailShell(
       showPlay: showPlay,
@@ -867,6 +959,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
       displayIsDone: displayIsDone,
       toggleDoneEnabled: toggleDoneEnabled,
       pinFooter: pinFooter,
+      spacing: spacing,
       onToggleDone: onToggleDone,
       onSelectToggle: onSelectToggle,
       onPlay: onPlay,
@@ -883,6 +976,7 @@ class _TimelinePlanCardMedium extends StatelessWidget {
         scheduleConflict: scheduleConflict,
         categoryColor: categoryColor,
         pinFooter: pinFooter,
+        spacing: spacing,
         onOpenMenu: onOpenMenu,
         onBodyTap: onBodyTap,
         onBodyLongPress: onBodyLongPress,
@@ -908,6 +1002,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
     this.metricsBlock,
     this.categoryColor = _PlanCardTokens.breadcrumbFallbackColor,
     this.pinFooter = false,
+    this.spacing = _PlanCardVerticalSpacing.list,
     this.onToggleDone,
     this.onSelectToggle,
     this.onPlay,
@@ -931,6 +1026,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
   final _PlanCardProgressSlot? metricsBlock;
   final Color categoryColor;
   final bool pinFooter;
+  final _PlanCardVerticalSpacing spacing;
   final VoidCallback? onToggleDone;
   final VoidCallback? onSelectToggle;
   final VoidCallback? onPlay;
@@ -944,6 +1040,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
         _PlanCardProgressSlot(
           planTrackedSeconds: 0,
           categoryColor: categoryColor,
+          spacing: spacing,
         );
     return _PlanCardRailShell(
       showPlay: showPlay,
@@ -952,6 +1049,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
       displayIsDone: displayIsDone,
       toggleDoneEnabled: toggleDoneEnabled,
       pinFooter: pinFooter,
+      spacing: spacing,
       onToggleDone: onToggleDone,
       onSelectToggle: onSelectToggle,
       onPlay: onPlay,
@@ -968,6 +1066,7 @@ class _TimelinePlanCardLarge extends StatelessWidget {
         scheduleConflict: scheduleConflict,
         categoryColor: categoryColor,
         pinFooter: pinFooter,
+        spacing: spacing,
         onOpenMenu: onOpenMenu,
         onBodyTap: onBodyTap,
         onBodyLongPress: onBodyLongPress,

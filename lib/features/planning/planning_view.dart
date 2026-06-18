@@ -276,7 +276,7 @@ class _PlanningPageState extends State<PlanningPage>
   static const double _kTimelineRailWidthPx = 48;
   static const double _kTimelineMinBlockHeightPx = 56;
   /// Minimum rendered card height (layout only; stored duration unchanged).
-  static const double _kTimelineMinCardVisualPx = 108;
+  static const double _kTimelineMinCardVisualPx = 88;
 
   /// Fixed hour-grid scale — not driven by shortest visible task.
   double _timelineHourHeightPx = _kTimelineHourHeightBasePx;
