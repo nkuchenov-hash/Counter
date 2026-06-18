@@ -472,6 +472,32 @@ class _PlanningPageState extends State<PlanningPage>
     return 'plan-fallback-${t.id}-${t.order}-${t.dateKey}-${t.categoryId}-${t.title}';
   }
 
+  bool _planCanReorderTask(PlanningTask task) {
+    final id = task.planRowIdForBackend;
+    return !id.startsWith('optimistic-') && !id.startsWith('virt-');
+  }
+
+  void _commitPlanningReorder({
+    required String mode,
+    required PlanningTask moved,
+    required int fromIndex,
+    required int toIndex,
+    required List<PlanningTask> withOrders,
+    required List<PlanningTask> baselineBefore,
+  }) {
+    // ignore: avoid_print
+    print(
+      'PLAN_REORDER_REQUEST mode=$mode visibleCount=${withOrders.length} '
+      'movedPlanId=${moved.planRowId ?? moved.planRowIdForBackend} '
+      'from=$fromIndex to=$toIndex',
+    );
+    DatabaseService.instance.persistPlanningTaskOrder(
+      withOrders,
+      baselineBeforeReorder: baselineBefore,
+    );
+    setState(() => _dragOrder = null);
+  }
+
   Stream<List<PlanningTask>> _createPlanningStream() =>
       DatabaseService.instance.planningStream(
         widget.selectedDate ?? _today,
@@ -3989,9 +4015,7 @@ class _PlanningPageState extends State<PlanningPage>
               final task = bucket[index];
               final key = _planKey(task);
               final displayDone = _planDoneOverride[key] ?? task.isDone;
-              final canReorder = !task.planRowIdForBackend.startsWith(
-                'optimistic-',
-              );
+              final canReorder = !_planSelectMode && _planCanReorderTask(task);
               return ReorderableDelayedDragStartListener(
                 key: ValueKey<String>(key),
                 index: index,
@@ -4033,7 +4057,7 @@ class _PlanningPageState extends State<PlanningPage>
     if (ni > oldIndex) ni -= 1;
     if (ni < 0 || ni > bucket.length) return;
     final row = bucket[oldIndex];
-    if (row.planRowIdForBackend.startsWith('optimistic-')) return;
+    if (!_planCanReorderTask(row)) return;
     bucket.removeAt(oldIndex);
     bucket.insert(ni, row);
     groups[groupId] = bucket;
@@ -4046,12 +4070,13 @@ class _PlanningPageState extends State<PlanningPage>
     final withOrders = <PlanningTask>[
       for (var i = 0; i < flat.length; i++) flat[i].copyWith(order: i),
     ];
-    setState(() => _dragOrder = withOrders);
-    unawaited(
-      DatabaseService.instance.persistPlanningTaskOrder(
-        withOrders,
-        baselineBeforeReorder: allDisplayed,
-      ),
+    _commitPlanningReorder(
+      mode: 'tags',
+      moved: row,
+      fromIndex: oldIndex,
+      toIndex: ni,
+      withOrders: withOrders,
+      baselineBefore: allDisplayed,
     );
   }
 
@@ -4066,19 +4091,20 @@ class _PlanningPageState extends State<PlanningPage>
     var ni = newIndex;
     if (ni > oldIndex) ni -= 1;
     final row = current[oldIndex];
-    if (row.planRowIdForBackend.startsWith('optimistic-')) return;
+    if (!_planCanReorderTask(row)) return;
     final next = List<PlanningTask>.from(current);
     next.removeAt(oldIndex);
     next.insert(ni, row);
     final withOrders = <PlanningTask>[
       for (var i = 0; i < next.length; i++) next[i].copyWith(order: i),
     ];
-    setState(() => _dragOrder = withOrders);
-    unawaited(
-      DatabaseService.instance.persistPlanningTaskOrder(
-        withOrders,
-        baselineBeforeReorder: current,
-      ),
+    _commitPlanningReorder(
+      mode: 'custom',
+      moved: row,
+      fromIndex: oldIndex,
+      toIndex: ni,
+      withOrders: withOrders,
+      baselineBefore: current,
     );
   }
 
@@ -4451,8 +4477,7 @@ class _PlanningPageState extends State<PlanningPage>
                   final key = _planKey(task);
                   final displayDone = _planDoneOverride[key] ?? task.isDone;
                   final canReorder =
-                      !_planSelectMode &&
-                      !task.planRowIdForBackend.startsWith('optimistic-');
+                      !_planSelectMode && _planCanReorderTask(task);
                   return ReorderableDelayedDragStartListener(
                     key: ValueKey(key),
                     index: index,

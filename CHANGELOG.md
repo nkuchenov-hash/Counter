@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Plan reorder persistence (Tags / Custom) [shipped]
+* **`plan_service.dart`:** [shipped] `persistPlanningTaskOrder` applies optimistic cache first; `_persistPlanningTaskOrdersBulkNow` PATCHes `{order}` via `_patchPlanUpdateNetworkPhase` (15-char PB id, plan outbox on retriable failure); baseline diff uses `t.order` not list index; skips `virt-`/`optimistic-`; `PLAN_REORDER_*` logs + rollback on total failure.
+* **`planning_view.dart`:** [shipped] `_commitPlanningReorder` / `_planCanReorderTask`; Tags + Custom drag wired to Brain persist path (no stale `_dragOrder`-only UI).
+
 ## [2026-06-15] - Plan card completion moment before reorder [shipped]
 * **`planning_view.dart`:** [shipped] `_planCompletionHoldKeys` delays sort/reorder **250ms** after check while optimistic `isDone` updates immediately; `_sortTreatAsDone` + `_PlanCardReorderSettle` slide settle on release; rollback cancels hold.
 * **`plan_time_task_card.dart`:** [shipped] Staged completion feel — checkbox pulse/scale, `AnimatedDefaultTextStyle` strike-through, card opacity/scale settle (~260ms).

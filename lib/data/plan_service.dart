@@ -3550,44 +3550,124 @@ extension PlanServiceExtension on DatabaseService {
     _planReorderBaselineByPlanId = m;
   }
 
-  Future<void> _persistPlanningTaskOrdersBulkNow(
+  Future<bool> _persistPlanningTaskOrdersBulkNow(
     List<PlanningTask> ordered,
   ) async {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return;
-    if (!_isPlansTableConfigured) return;
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    if (!_isPlansTableConfigured) return false;
+
+    final baseline = _planReorderBaselineByPlanId;
+    var patched = 0;
+    var hardFailed = false;
 
     try {
       await ensurePocketBaseReady();
-      for (var i = 0; i < ordered.length; i++) {
-        final t = ordered[i];
-        if (t.planRowIdForBackend.startsWith('optimistic-')) continue;
-        final id = t.planRowIdForBackend.trim();
-        if (id.isEmpty) continue;
-        final base = _planReorderBaselineByPlanId?[id];
-        if (base != null && base == i) continue;
-        final restId = await _resolvePlanRestId(
-          id,
+      for (final t in ordered) {
+        final input = t.planRowIdForBackend.trim();
+        if (input.isEmpty || input.startsWith('optimistic-')) continue;
+        if (input.startsWith('virt-')) {
+          DatabaseService._log(
+            'PLAN_REORDER_FAIL planId=$input pocketId=- status=virtual '
+            'error=recurring_virtual_not_reorderable payload=order:${t.order}',
+          );
+          hardFailed = true;
+          continue;
+        }
+        final newOrder = t.order;
+        final oldOrder = baseline?[input];
+        if (oldOrder != null && oldOrder == newOrder) continue;
+
+        final businessId = _outboxBusinessPlanId(
+          input,
           planBusinessId: t.planRowId,
         );
-        await _pb
-            .collection(PbCollections.plans)
-            .update(
-              restId,
-              body: <String, dynamic>{'user_id': _pidForPbFilter, 'order': i},
-            );
+        final shadowPb = _tryResolvePlanPbIdFromCacheOnly(
+          input,
+          planBusinessId: t.planRowId,
+        );
+        final String resolved;
+        if (shadowPb != null &&
+            DatabaseService._isLikelyPocketBaseRowId(shadowPb)) {
+          resolved = shadowPb;
+        } else {
+          resolved = await _resolvePlanRestId(
+            input,
+            planBusinessId: t.planRowId,
+          );
+        }
+        if (!DatabaseService._isLikelyPocketBaseRowId(resolved)) {
+          DatabaseService._log(
+            'PLAN_REORDER_FAIL planId=$businessId pocketId=$resolved '
+            'status=resolve error=invalid_pb_id payload=order:$newOrder',
+          );
+          hardFailed = true;
+          continue;
+        }
+
+        DatabaseService._log(
+          'PLAN_REORDER_PATCH planId=$businessId pocketId=$resolved '
+          'oldOrder=${oldOrder ?? '-'} newOrder=$newOrder',
+        );
+
+        final ok = await _patchPlanUpdateNetworkPhase(
+          originalInput: input,
+          resolvedPbId: resolved,
+          businessId: businessId,
+          patchBody: <String, dynamic>{'order': newOrder},
+          suppressAppSnack: true,
+        );
+        if (ok) {
+          patched++;
+        } else {
+          DatabaseService._log(
+            'PLAN_REORDER_FAIL planId=$businessId pocketId=$resolved '
+            'status=patch error=network_phase_returned_false '
+            'payload=order:$newOrder',
+          );
+          hardFailed = true;
+        }
       }
     } catch (e, st) {
-      DatabaseService._log('PLAN_ORDER_SYNC_PB: $e');
+      DatabaseService._log('PLAN_REORDER_FAIL error=$e');
       DatabaseService._log(st.toString());
+      hardFailed = true;
+    }
+
+    if (hardFailed && patched == 0) {
+      _rollbackPlanningOrderBaseline(ordered);
+      DatabaseService._log('PLAN_REORDER_ROLLBACK reason=all_patches_failed');
       try {
-        final msg = t(currentLocale.value, 'plan_save_failed');
+        final msg = t(currentLocale.value, 'plan_reorder_failed');
         if (!_notify.isClosed) _notify.add(msg);
       } catch (_) {}
-      return;
+      return false;
     }
-    DatabaseService._log(
-      'PLAN_ORDER_SYNC: PocketBase PATCH ok (${ordered.length} task(s) checked)',
-    );
+
+    if (patched > 0) {
+      DatabaseService._log('PLAN_REORDER_SUCCESS count=$patched');
+      _planReorderBaselineByPlanId = null;
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    }
+    return !hardFailed || patched > 0;
+  }
+
+  void _rollbackPlanningOrderBaseline(List<PlanningTask> ordered) {
+    final baseline = _planReorderBaselineByPlanId;
+    if (baseline == null || baseline.isEmpty) return;
+    for (final t in ordered) {
+      final id = t.planRowIdForBackend.trim();
+      if (id.isEmpty) continue;
+      final old = baseline[id];
+      if (old == null) continue;
+      final current = _findCachedPlanningTaskForEdit(
+        id,
+        planBusinessId: t.planRowId,
+      );
+      if (current != null && current.order != old) {
+        applyOptimisticPlanningTask(current.copyWith(order: old));
+      }
+    }
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
     _planReorderBaselineByPlanId = null;
   }
 
@@ -4931,7 +5011,7 @@ extension PlanServiceExtension on DatabaseService {
     return allOk;
   }
 
-  /// Debounced bulk PATCH: [order] + [user_id] only (@DATA_MAP.md). One multi-row bulk per chunk (max 10 rows).
+  /// Debounced bulk PATCH: [order] only (@DATA_MAP.md). One PATCH per changed row.
   ///
   /// Pass [baselineBeforeReorder] as the task list **before** the drag (first drag in a session seeds diff
   /// baseline; further drags in the same session may pass the same argument — only the first non-null
@@ -4942,6 +5022,12 @@ extension PlanServiceExtension on DatabaseService {
   }) async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) return;
+
+    for (final task in ordered) {
+      applyOptimisticPlanningTask(task);
+    }
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
+
     if (baselineBeforeReorder != null) {
       _ensurePlanningOrderBaseline(baselineBeforeReorder);
     }
