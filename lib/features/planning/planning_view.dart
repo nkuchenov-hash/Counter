@@ -2510,10 +2510,7 @@ class _PlanningPageState extends State<PlanningPage>
     return y;
   }
 
-  static const double _kTimelineBlockHorizontalPadPx = 6;
-
-  double _timelineBlockWidth(double canvasW) =>
-      math.max(0, canvasW - _kTimelineBlockHorizontalPadPx * 2);
+  static const double _kTimelineBlockHorizontalPadPx = 8;
 
   double _snapTimelineMinutes(double rawMinutes) {
     final snap = PlanningSheetTimelinePrefs.timelineSnapMinutes;
@@ -3472,7 +3469,6 @@ class _PlanningPageState extends State<PlanningPage>
               height: canvasHeight,
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final canvasW = constraints.maxWidth;
                   return Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -3606,7 +3602,6 @@ class _PlanningPageState extends State<PlanningPage>
                             .map(
                               (layout) => _buildTimelinePlanStackLayer(
                                 layout: layout,
-                                canvasW: canvasW,
                                 canvasHeight: canvasHeight,
                                 scheme: scheme,
                                 planWallDay: planWallDay,
@@ -3625,7 +3620,6 @@ class _PlanningPageState extends State<PlanningPage>
                             .map(
                               (layout) => _buildTimelinePlanStackLayer(
                                 layout: layout,
-                                canvasW: canvasW,
                                 canvasHeight: canvasHeight,
                                 scheme: scheme,
                                 planWallDay: planWallDay,
@@ -3695,7 +3689,6 @@ class _PlanningPageState extends State<PlanningPage>
 
   Widget _buildTimelinePlanStackLayer({
     required _TimelineBlockLayout layout,
-    required double canvasW,
     required double canvasHeight,
     required ColorScheme scheme,
     required DateTime planWallDay,
@@ -3716,8 +3709,7 @@ class _PlanningPageState extends State<PlanningPage>
     final heightPx = isResizing
         ? math.max(1.0, _timelineResizePreviewHeightPx)
         : layout.heightPx;
-    final left = _kTimelineBlockHorizontalPadPx;
-    final width = _timelineBlockWidth(canvasW);
+    const horizontalPad = _kTimelineBlockHorizontalPadPx;
     final canInteract = _planIsTimelineVerticallyDraggable(layout.task);
     final durMin = _timelineBlockDurationMinutes(layout.task);
     final hadEnd = layout.task.endDateTime != null;
@@ -3737,15 +3729,20 @@ class _PlanningPageState extends State<PlanningPage>
         if (isInteracting)
           Positioned(
             top: layout.topPx,
-            left: left,
-            width: width,
+            left: 0,
+            right: 0,
             height: layout.heightPx,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: scheme.primaryContainer.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: scheme.outlineVariant.withValues(alpha: 0.45),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: _kTimelineBlockHorizontalPadPx,
+              ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: scheme.outlineVariant.withValues(alpha: 0.45),
+                  ),
                 ),
               ),
             ),
@@ -3753,7 +3750,7 @@ class _PlanningPageState extends State<PlanningPage>
         if (isInteracting && (interactionLabel ?? '').isNotEmpty)
           Positioned(
             top: (topPx - 22).clamp(0, canvasHeight - 20),
-            left: left,
+            left: horizontalPad,
             child: Material(
               elevation: 3,
               borderRadius: BorderRadius.circular(6),
@@ -3774,8 +3771,8 @@ class _PlanningPageState extends State<PlanningPage>
         if (isInteracting)
           Positioned(
             top: topPx + heightPx - 2,
-            left: left,
-            width: width,
+            left: horizontalPad,
+            right: horizontalPad,
             child: Container(
               height: 2,
               decoration: BoxDecoration(
@@ -3786,10 +3783,17 @@ class _PlanningPageState extends State<PlanningPage>
           ),
         Positioned(
           top: topPx,
-          left: left,
-          width: width,
+          left: 0,
+          right: 0,
           height: heightPx,
-          child: _TimelinePlanInteractionBlock(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: _kTimelineBlockHorizontalPadPx,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              clipBehavior: Clip.antiAlias,
+              child: _TimelinePlanInteractionBlock(
               canMove: canInteract,
               canResize: canInteract,
               resizeHandlePx: _kTimelineResizeHandlePx,
@@ -3891,6 +3895,8 @@ class _PlanningPageState extends State<PlanningPage>
                 timelineScheduleConflict: layout.hasScheduleConflict,
               ),
             ),
+            ),
+          ),
         ),
       ],
     );
@@ -5740,6 +5746,7 @@ class _PlanningTaskCard extends StatelessWidget {
   }
 
   Widget _buildTimelineBlockCard(BuildContext context) {
+    final metaIcons = _planningTaskMetaIcons(context, task);
     final suppressChildInk = Theme.of(context).copyWith(
       splashFactory: NoSplash.splashFactory,
       splashColor: Colors.transparent,
@@ -5749,17 +5756,12 @@ class _PlanningTaskCard extends StatelessWidget {
         overlayColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
-    final density = planTimeCardDensityForList(
-      task: task,
-      planEstimatedSeconds: planEstimatedSeconds,
-      planTrackedSeconds: planTrackedSeconds,
-    );
     return Theme(
       data: suppressChildInk,
       child: PlanTimeTaskCard(
         task: task,
-        density: density,
-        surface: PlanCardSurface.timeline,
+        density: PlanTimeTaskCardDensity.medium,
+        surface: PlanCardSurface.list,
         timeLabel: _timelineTimeRangeLabel(task),
         displayIsDone: displayIsDone,
         selectMode: selectMode,
@@ -5770,6 +5772,7 @@ class _PlanningTaskCard extends StatelessWidget {
         planTrackedSeconds: planTrackedSeconds,
         planEstimatedSeconds: planEstimatedSeconds,
         scheduleConflict: timelineScheduleConflict,
+        metaIcons: metaIcons,
         onToggleDone: onToggleDone,
         onSelectToggle: onBodyTap,
         onPlay: onPlay,

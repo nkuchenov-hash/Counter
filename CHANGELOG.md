@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Time mode CardPlan visual parity [shipped]
+* **`plan_time_task_card.dart`:** [shipped] Timeline uses same list CardPlan path (`PlanCardSurface.list`); capsule progress bar (3px, rounded ends); play icon triangle with rounded vertices via stroke-join (no rounded outer button).
+* **`planning_view.dart`:** [shipped] Timeline cards `left:0/right:0` + symmetric 8px inset + `ClipRRect` — identical horizontal alignment, no edge protrusion.
+
 ## [2026-06-15] - P0 final CardPlan geometry + Category reorder [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Figma CardPlan_Medium constants — 95px ref height, pad 12/10, 1px progress bar, fixed tags/progress slots (no data-dependent height); `tagsToProgressGap` ≈56px anchor.
 * **`planning_view.dart`:** [shipped] Category mode per-bucket `ReorderableListView` + `_onCategoryBucketReorder` → `persistPlanningTaskOrder`.

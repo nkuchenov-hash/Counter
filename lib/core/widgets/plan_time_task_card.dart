@@ -116,7 +116,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
 
   bool get _isListLike =>
       widget.surface == PlanCardSurface.list ||
-      widget.surface == PlanCardSurface.calendar;
+      widget.surface == PlanCardSurface.calendar ||
+      widget.surface == PlanCardSurface.timeline;
 
   @override
   Widget build(BuildContext context) {
@@ -174,13 +175,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
       );
     }
 
-    final isTimeline = widget.surface == PlanCardSurface.timeline;
-    // Time mode always uses full CardPlan medium/large — never micro/compact strips.
-    final effectiveDensity = isTimeline &&
-            (widget.density == PlanTimeTaskCardDensity.micro ||
-                widget.density == PlanTimeTaskCardDensity.compact)
-        ? PlanTimeTaskCardDensity.medium
-        : widget.density;
+    final effectiveDensity = widget.density;
     final useInvariantSlots =
         effectiveDensity == PlanTimeTaskCardDensity.medium ||
         effectiveDensity == PlanTimeTaskCardDensity.large;
@@ -407,7 +402,7 @@ abstract final class _PlanCardGeom {
   static const double tagsToProgressGap = 6;
   static const double actualTimeSlotHeight = 10;
   static const double progressAfterActualGap = 6;
-  static const double progressBarHeight = 1;
+  static const double progressBarHeight = 3;
   static const double footerBlockGap = 8;
   static const double footerTextHeight = 14;
   static const double footerBottomPad = 10;
@@ -747,7 +742,7 @@ class _PlanCardProgressRow extends StatelessWidget {
       children: [
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(trackHeight / 2),
             child: LinearProgressIndicator(
               minHeight: trackHeight,
               value: showFill
@@ -1325,18 +1320,31 @@ class _PlanCardPlayIconPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = fill
-      ..style = PaintingStyle.fill;
     final w = size.width;
     final h = size.height;
+    final left = w * 0.14;
+    final tip = w * 0.90;
+    final top = h * 0.10;
+    final bottom = h * 0.90;
+    final mid = h * 0.5;
+
     final path = Path()
-      ..moveTo(w * 0.08, h * 0.05)
-      ..quadraticBezierTo(w * 0.92, h * 0.48, w * 0.92, h * 0.52)
-      ..quadraticBezierTo(w * 0.92, h * 0.56, w * 0.08, h * 0.95)
-      ..quadraticBezierTo(w * 0.02, h * 0.5, w * 0.08, h * 0.05)
+      ..moveTo(left, top)
+      ..lineTo(left, bottom)
+      ..lineTo(tip, mid)
       ..close();
-    canvas.drawPath(path, paint);
+
+    // Rounded triangle vertices via thick stroke + round joins (not a rounded button).
+    final strokeW = math.max(3.2, w * 0.26);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = fill
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeW
+        ..strokeJoin = StrokeJoin.round
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
   @override
