@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time mode visual rebase: full Plan cards on timeline [shipped]
+* **`plan_time_task_card.dart`:** [shipped] Removed `_TimelinePlanCardMicro` and `_TimelinePlanCardCompactTimeline` one-line strip layouts; timeline uses CardPlan medium/large only; `planTimeCardDensityForBlock` returns medium (&lt;130px / &lt;60min) or large; timeline always shows progress separator + footer; subtler selected border (1.25px); watermark hidden only on short medium blocks (&lt;130px).
+* **`planning_view.dart`:** [shipped] Min visual card height **108px** (matches CardPlan_Medium); 4px cascade gap; fixed 80px/hour scale; sequential stack when min height exceeds time-proportional slot — 5-min snap/duration data unchanged.
+
 ## [2026-06-15] - Plan list card footer consistency + spacing [shipped]
 * **`plan_time_task_card.dart`:** [shipped] List/calendar cards always use medium layout with footer row; removed fixed 71px inner height that clipped breadcrumbs/time; progress separator always shows for plan list cards; footer bottom pad 10px, separator gap 6px; planned time from wall fields when label empty.
 

@@ -275,8 +275,8 @@ class _PlanningPageState extends State<PlanningPage>
   static const double _kTimelineHourHeightBasePx = 80;
   static const double _kTimelineRailWidthPx = 48;
   static const double _kTimelineMinBlockHeightPx = 56;
-  /// Minimum rendered card height for short blocks (layout only; does not change stored duration).
-  static const double _kTimelineMicroMinCardPx = 38;
+  /// Minimum rendered card height (layout only; stored duration unchanged).
+  static const double _kTimelineMinCardVisualPx = 108;
 
   /// Fixed hour-grid scale — not driven by shortest visible task.
   double _timelineHourHeightPx = _kTimelineHourHeightBasePx;
@@ -2124,7 +2124,7 @@ class _PlanningPageState extends State<PlanningPage>
     int rangeEnd,
   ) {
     final pxPerMin = _timelinePxPerMinute;
-    const gapPx = 2.0;
+    const gapPx = 4.0;
     final spans =
         <({
           PlanningTask task,
@@ -2157,7 +2157,7 @@ class _PlanningPageState extends State<PlanningPage>
         1.0,
         (span.endMin - span.startMin) * pxPerMin,
       );
-      final heightPx = math.max(timeHeightPx, _kTimelineMicroMinCardPx);
+      final heightPx = math.max(timeHeightPx, _kTimelineMinCardVisualPx);
       final timeOverlap =
           i > 0 && span.startMin < spans[i - 1].endMin - 0.25;
       final visualOverlap = i > 0 && timeTopPx < prevVisualBottomPx + gapPx;
