@@ -13,6 +13,30 @@ class _ProfileFetchFailedException implements Exception {
 /// PocketBase **profiles** auth row id (for PATCH settings); set on profile load.
 String? _profilePbRecordId;
 
+bool _profileHydratedFromPb = false;
+String? _profileHydrationError;
+
+String _maskEmailForLog(String? raw) {
+  final e = raw?.trim() ?? '';
+  if (e.isEmpty) return '-';
+  final at = e.indexOf('@');
+  if (at <= 0) return '***';
+  final local = e.substring(0, at);
+  final domain = e.substring(at);
+  if (local.length <= 1) return '*$domain';
+  return '${local[0]}***$domain';
+}
+
+String? _authRecordEmail() {
+  try {
+    final pb = DatabaseService.instance.pocketBase;
+    final e = pb.authStore.record?.data['email']?.toString().trim();
+    return (e != null && e.isNotEmpty) ? e : null;
+  } catch (_) {
+    return null;
+  }
+}
+
 String _dataRegion = 'global';
 
 UserSettings _settings = UserSettings(userId: '');
@@ -164,6 +188,52 @@ extension ProfileServiceExtension on DatabaseService {
       List.from(_profileTimezoneOptions);
   List<String> get profileTimezoneOptions => validTimezonesForProfile;
   UserSettings get settings => _settings;
+  bool get profileHydratedFromPb => _profileHydratedFromPb;
+  String? get profileHydrationError => _profileHydrationError;
+
+  static String resolveProfileDisplayLabelFor({UserSettings? settings}) {
+    final s = settings ?? _settings;
+    final dn = s.displayName?.trim();
+    if (dn != null && dn.isNotEmpty) return dn;
+    final name = s.accountName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    final email =
+        s.profileEmail?.trim() ?? _authRecordEmail() ?? '';
+    if (email.isNotEmpty) {
+      if (email.contains('@')) {
+        final local = email.split('@').first.trim();
+        if (local.isNotEmpty) return local;
+      }
+      return email;
+    }
+    return '';
+  }
+
+  String get resolvedProfileDisplayLabel =>
+      ProfileServiceExtension.resolveProfileDisplayLabelFor();
+
+  /// Retry PocketBase profile hydration without wiping the auth session.
+  Future<bool> retryProfileHydration() async {
+    if (!_pb.authStore.isValid) {
+      _profileHydrationError = 'Not signed in';
+      return false;
+    }
+    try {
+      await _loadSettingsFromNoco();
+      _profileHydratedFromPb = true;
+      _profileHydrationError = null;
+      return true;
+    } on _ProfileFetchFailedException catch (e) {
+      _profileHydratedFromPb = false;
+      _profileHydrationError =
+          e.message ?? 'Could not load your profile settings.';
+      return false;
+    } catch (e) {
+      _profileHydratedFromPb = false;
+      _profileHydrationError = 'Could not load your profile settings. ($e)';
+      return false;
+    }
+  }
 
   /// Snapshot for tag-group headers (may be empty before first fetch).
   List<Tag> get cachedUserTagsCatalog =>
@@ -187,100 +257,76 @@ extension ProfileServiceExtension on DatabaseService {
 
   String get dataRegion => _dataRegion;
 
-  /// Fetches profile row fresh from PocketBase (never stale authStore-only for hydration).
+  /// Fetches profile row via `profiles.getOne(authStore.record.id)` only.
   Future<Map<String, dynamic>?> getUserProfile(String id) async {
     await ensurePocketBaseReady();
-    final want = id.trim();
-    if (want.isEmpty) return null;
-    _profileDiagLog(
-      'PROFILE_FETCH_REQUEST id=$want',
-      dedupeKey: 'fetch|$want',
+    final authValid = _pb.authStore.isValid;
+    final auth = _pb.authStore.record;
+    final authId = auth?.id.trim() ?? '';
+    final authEmail = _maskEmailForLog(
+      auth?.data['email']?.toString() ?? _authRecordEmail(),
     );
-
-    if (_pb.authStore.isValid) {
-      final auth = _pb.authStore.record;
-      final authId = auth?.id.trim() ?? '';
-      if (authId.isNotEmpty) {
-        try {
-          final rec = await _pb
-              .collection(PbCollections.profiles)
-              .getOne(authId);
-          final data = Map<String, dynamic>.from(rec.data)..['id'] = rec.id;
-          _profilePbRecordId = rec.id;
-          final lang = (data['primary_language'] ?? '-').toString();
-          final tz = (data['preferred_timezone'] ?? '-').toString();
-          final off = data['timezone_offset'];
-          final admin = _profileBool(data['is_admin']);
-          _profileDiagLog(
-            'PROFILE_FETCH_SUCCESS id=$authId lang=$lang tz=$tz offset=$off isAdmin=$admin',
-            dedupeKey: 'ok|$authId|$lang|$tz|$admin',
-          );
-          return data;
-        } on ClientException catch (e) {
-          if (e.statusCode == 401 ||
-              e.statusCode == 403 ||
-              e.statusCode == 404 ||
-              e.statusCode == 422) {
-            throw _ProfileFetchFailedException(
-              e.statusCode,
-              'Session invalid or profile not found',
-            );
-          }
-          _profileDiagLog(
-            'PROFILE_FETCH_FAIL id=$authId status=${e.statusCode} error=$e',
-            dedupeKey: 'fail|$authId|${e.statusCode}',
-          );
-        } catch (e) {
-          _profileDiagLog(
-            'PROFILE_FETCH_FAIL id=$authId error=$e',
-            dedupeKey: 'fail|$authId|err',
-          );
-        }
-      }
+    _profileDiagLog(
+      'PROFILE_BOOT_START authValid=$authValid authId=${authId.isEmpty ? '-' : authId} authEmail=$authEmail',
+      dedupeKey: 'boot|$authValid|$authId',
+    );
+    if (!authValid || authId.isEmpty) {
+      _profileDiagLog(
+        'PROFILE_FETCH_FAIL reason=auth_invalid_or_missing_id',
+        dedupeKey: 'fail|auth',
+      );
+      return null;
     }
-
+    _profileDiagLog(
+      'PROFILE_FETCH_REQUEST collection=${PbCollections.profiles} id=$authId',
+      dedupeKey: 'fetch|$authId',
+    );
     try {
-      final escaped = want.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
-      final rec = await _pb
-          .collection(PbCollections.profiles)
-          .getFirstListItem('user_id = "$escaped"');
-      _profilePbRecordId = rec.id;
+      final rec = await _pb.collection(PbCollections.profiles).getOne(authId);
       final data = Map<String, dynamic>.from(rec.data)..['id'] = rec.id;
+      _profilePbRecordId = rec.id;
       final lang = (data['primary_language'] ?? '-').toString();
       final tz = (data['preferred_timezone'] ?? '-').toString();
       final off = data['timezone_offset'];
       final admin = _profileBool(data['is_admin']);
+      final dn = (data['display_name'] ?? '-').toString();
+      final name = (data['name'] ?? '-').toString();
+      final email = _maskEmailForLog(data['email']?.toString());
       _profileDiagLog(
-        'PROFILE_FETCH_SUCCESS id=${rec.id} lang=$lang tz=$tz offset=$off isAdmin=$admin',
-        dedupeKey: 'list|${rec.id}|$lang|$tz|$admin',
+        'PROFILE_FETCH_SUCCESS id=$authId email=$email name=$name display_name=$dn lang=$lang tz=$tz offset=$off is_admin=$admin',
+        dedupeKey: 'ok|$authId|$lang|$tz|$admin',
       );
       return data;
     } on ClientException catch (e) {
-      if (e.statusCode == 404 || e.statusCode == 403 || e.statusCode == 422) {
-        throw _ProfileFetchFailedException(
-          e.statusCode,
-          'Session invalid or profile not found',
-        );
-      }
-      return null;
-    } catch (_) {
-      return null;
+      _profileDiagLog(
+        'PROFILE_FETCH_FAIL status=${e.statusCode} error=$e response=${e.response}',
+        dedupeKey: 'fail|$authId|${e.statusCode}',
+      );
+      throw _ProfileFetchFailedException(
+        e.statusCode,
+        'Could not load your profile settings.',
+      );
+    } catch (e) {
+      _profileDiagLog(
+        'PROFILE_FETCH_FAIL status=- error=$e response=-',
+        dedupeKey: 'fail|$authId|err',
+      );
+      throw _ProfileFetchFailedException(
+        0,
+        'Could not load your profile settings.',
+      );
     }
   }
 
-  /// Shell: current profile as map (snake_case keys aligned with UI).
-  /// Rethrows _ProfileFetchFailedException so loadInitialData can force logout on 422/404.
   Future<Map<String, dynamic>> getCurrentUserProfileMap() async {
-    try {
-      final id = currentProfileId;
-      if (id == null || id.isEmpty) return {};
-      final m = await getUserProfile(id);
-      return m ?? {};
-    } on _ProfileFetchFailedException {
-      rethrow;
-    } catch (_) {
-      return {};
+    final m = await getUserProfile('');
+    if (m == null || m.isEmpty) {
+      throw _ProfileFetchFailedException(
+        404,
+        'Could not load your profile settings.',
+      );
     }
+    return m;
   }
 
   static String _prefsKeyShowListTagsOnCards(String uid) =>
@@ -305,18 +351,6 @@ extension ProfileServiceExtension on DatabaseService {
       await prefs.setString(_profileTzLabelKey, _settings.preferredTimeZone);
       await prefs.setInt(_profileTzOffsetKey, _settings.timezoneOffsetHours);
     } catch (_) {}
-  }
-
-  String? _themeModeFromPrefsFallback() {
-    try {
-      final prefs = _prefs;
-      if (prefs == null) return null;
-      final cached = prefs.getString(_profileThemeModeKey)?.trim().toLowerCase();
-      if (cached == 'light' || cached == 'dark' || cached == 'system') {
-        return cached;
-      }
-    } catch (_) {}
-    return null;
   }
 
   Map<String, dynamic> _diffProfilePatchFields(
@@ -360,152 +394,134 @@ extension ProfileServiceExtension on DatabaseService {
   }
 
   Future<void> _loadSettingsFromNoco() async {
-    try {
-      final authValid = _pb.authStore.isValid;
-      final authId = _pb.authStore.record?.id.trim() ?? '';
-      _profileDiagLog(
-        'PROFILE_BOOT_START authValid=$authValid authId=${authId.isEmpty ? '-' : authId}',
-        dedupeKey: 'boot|$authValid|$authId',
+    final data = await getCurrentUserProfileMap();
+    if (data.isEmpty) {
+      throw _ProfileFetchFailedException(
+        404,
+        'Could not load your profile settings.',
       );
-      final data = await getCurrentUserProfileMap();
-      if (data.isEmpty) {
-        throw _ProfileFetchFailedException(
-          404,
-          'Profile not found — cannot load timezone or user_id',
-        );
-      }
-      final rowUid = data['user_id']?.toString().trim() ?? '';
-      if (rowUid.isEmpty) {
-        throw _ProfileFetchFailedException(422, 'Profile row missing user_id');
-      }
-      DatabaseService._log('Profile data loaded from PocketBase.');
-      final authUid = _userIdForWhere ?? '';
-      final uid = data['user_id']?.toString().trim();
-      final raw = data['active_languages'];
-      List<String>? activeLanguages;
-      if (raw is List) {
-        activeLanguages = raw
-            .map((e) => e?.toString() ?? '')
-            .where((s) => s.isNotEmpty)
-            .toList();
-        if (activeLanguages.isEmpty) activeLanguages = null;
-      }
-      final region = data['data_region'] as String?;
-      if (region == 'russia' || region == 'global') _dataRegion = region!;
-      final tzLabel = (data['preferred_timezone'] as String? ?? '').trim();
-      final resolvedTzLabel = tzLabel.isEmpty ? 'UTC' : tzLabel;
-      final tzOffsetRaw = data['timezone_offset'];
-      final tzOffset = tzOffsetRaw == null
-          ? _fixedOffsetHoursFromLabel(resolvedTzLabel)
-          : (tzOffsetRaw is int
-                ? tzOffsetRaw
-                : int.tryParse(tzOffsetRaw.toString()) ?? 0);
-      final dc = data['default_category_id'];
-      final rawTheme = (data['theme_mode'] as String?)?.trim().toLowerCase();
-      String themeMode;
-      if (rawTheme == 'light' || rawTheme == 'dark' || rawTheme == 'system') {
-        themeMode = rawTheme!;
-      } else {
-        final cached = _themeModeFromPrefsFallback();
-        if (cached != null) {
-          themeMode = cached;
-          _profileDiagLog(
-            'PROFILE_FALLBACK_USED reason=missing_pb_theme_mode field=theme_mode value=$cached',
-            dedupeKey: 'fb|theme|$cached',
-          );
-        } else {
-          themeMode = 'system';
-          _profileDiagLog(
-            'PROFILE_FALLBACK_USED reason=missing_pb_theme_mode field=theme_mode value=system',
-            dedupeKey: 'fb|theme|system',
-          );
-        }
-      }
-      final primaryLangRaw = data['primary_language']?.toString().trim() ?? '';
-      final primaryLang = primaryLangRaw.isNotEmpty
-          ? resolvedUiLanguageCode(primaryLangRaw)
-          : 'en';
-      if (primaryLangRaw.isEmpty) {
-        _profileDiagLog(
-          'PROFILE_FALLBACK_USED reason=missing_pb_primary_language field=primary_language value=en',
-          dedupeKey: 'fb|lang|en',
-        );
-      }
-      final dn = data['display_name'] as String?;
-      final tagModeRaw = data['tag_display_mode']?.toString().trim();
-      final rawListBeh = data['list_completion_behavior'];
-      final listBehRaw = rawListBeh == null
-          ? ''
-          : rawListBeh.toString().trim().toLowerCase();
-      final listBeh =
-          (listBehRaw == 'stay' ||
-              listBehRaw == 'bottom' ||
-              listBehRaw == 'hide' ||
-              listBehRaw == 'archive')
-          ? listBehRaw
-          : (listBehRaw.isEmpty ? 'stay' : 'hide');
-      final settingsUserId = authUid.isNotEmpty
-          ? authUid
-          : (uid != null && uid.isNotEmpty ? uid : rowUid);
-      final parsedAdmin = _profileBool(data['is_admin']);
-      _settings = UserSettings(
-        userId: settingsUserId,
-        language: primaryLang,
-        preferredTimeZone: resolvedTzLabel,
-        timezoneOffsetHours: tzOffset,
-        activeLanguages: activeLanguages,
-        primaryLanguage: primaryLang,
-        defaultCategoryId: dc == null
-            ? null
-            : CategoryServiceExtension._rowInt(dc),
-        hasSeeded: data['has_seeded'] == true,
-        dataRegion: region,
-        biometricEnabled: data['biometric_enabled'] == true,
-        isAdmin: parsedAdmin,
-        themeMode: themeMode,
-        displayName: dn != null && dn.trim().isNotEmpty ? dn.trim() : null,
-        tagDisplayMode: categoryDisplayModeFromWire(tagModeRaw),
-        tagDisplayModeWireRaw: (tagModeRaw != null && tagModeRaw.isNotEmpty)
-            ? tagModeRaw
-            : null,
-        listCompletionBehavior: listBeh,
-        showListTagsOnCards: true,
-      );
-      try {
-        final prefs = _prefs;
-        final uidKey = settingsUserId.trim();
-        if (prefs != null && uidKey.isNotEmpty) {
-          final showTags = prefs.getBool(_prefsKeyShowListTagsOnCards(uidKey));
-          if (showTags != null) {
-            _settings = _settings.copyWith(showListTagsOnCards: showTags);
-          }
-        }
-      } catch (_) {}
-      await _mirrorProfileSettingsToDeviceCache();
-      _profileHydratedLog(
-        id: (_profilePbRecordId ?? authId).trim().isEmpty
-            ? settingsUserId
-            : (_profilePbRecordId ?? authId),
-        lang: primaryLang,
-        tz: resolvedTzLabel,
-        offset: tzOffset,
-        isAdmin: parsedAdmin,
-      );
-      _settingsController.add(_settings);
-      _syncMaterialAppLocaleFromSettings(_settings);
-    } on _ProfileFetchFailedException {
-      rethrow;
-    } catch (_) {
-      final authUid = _userIdForWhere ?? '';
-      final fallback = currentProfileId?.trim() ?? '';
-      final uidStr = authUid.isNotEmpty ? authUid : fallback;
-      _settings = UserSettings(userId: uidStr);
-      _profileDiagLog(
-        'PROFILE_FALLBACK_USED reason=profile_load_exception field=settings userId=$uidStr',
-        dedupeKey: 'fb|exc|$uidStr',
-      );
-      _settingsController.add(_settings);
     }
+    final rowUid = data['user_id']?.toString().trim() ?? '';
+    if (rowUid.isEmpty) {
+      throw _ProfileFetchFailedException(
+        422,
+        'Profile row missing user_id',
+      );
+    }
+    DatabaseService._log('Profile data loaded from PocketBase.');
+    final authUid = _userIdForWhere ?? '';
+    final uid = data['user_id']?.toString().trim();
+    final raw = data['active_languages'];
+    List<String>? activeLanguages;
+    if (raw is List) {
+      activeLanguages = raw
+          .map((e) => e?.toString() ?? '')
+          .where((s) => s.isNotEmpty)
+          .toList();
+      if (activeLanguages.isEmpty) activeLanguages = null;
+    }
+    final region = data['data_region'] as String?;
+    if (region == 'russia' || region == 'global') _dataRegion = region!;
+    final tzLabel = (data['preferred_timezone'] as String? ?? '').trim();
+    final resolvedTzLabel = tzLabel.isEmpty ? 'UTC' : tzLabel;
+    final tzOffsetRaw = data['timezone_offset'];
+    final tzOffset = tzOffsetRaw == null
+        ? _fixedOffsetHoursFromLabel(resolvedTzLabel)
+        : (tzOffsetRaw is int
+              ? tzOffsetRaw
+              : int.tryParse(tzOffsetRaw.toString()) ?? 0);
+    final dc = data['default_category_id'];
+    final rawTheme = (data['theme_mode'] as String?)?.trim().toLowerCase();
+    final themeMode = (rawTheme == 'light' ||
+            rawTheme == 'dark' ||
+            rawTheme == 'system')
+        ? rawTheme!
+        : 'system';
+    final primaryLangRaw = data['primary_language']?.toString().trim() ?? '';
+    final primaryLang = primaryLangRaw.isNotEmpty
+        ? resolvedUiLanguageCode(primaryLangRaw)
+        : 'en';
+    final dnRaw = data['display_name'] as String?;
+    final nameRaw = data['name'] as String?;
+    final emailRaw = data['email']?.toString().trim();
+    final displayResolved = (dnRaw != null && dnRaw.trim().isNotEmpty)
+        ? dnRaw.trim()
+        : ((nameRaw != null && nameRaw.trim().isNotEmpty)
+              ? nameRaw.trim()
+              : null);
+    final accountName =
+        (nameRaw != null && nameRaw.trim().isNotEmpty) ? nameRaw.trim() : null;
+    final tagModeRaw = data['tag_display_mode']?.toString().trim();
+    final rawListBeh = data['list_completion_behavior'];
+    final listBehRaw = rawListBeh == null
+        ? ''
+        : rawListBeh.toString().trim().toLowerCase();
+    final listBeh =
+        (listBehRaw == 'stay' ||
+            listBehRaw == 'bottom' ||
+            listBehRaw == 'hide' ||
+            listBehRaw == 'archive')
+        ? listBehRaw
+        : (listBehRaw.isEmpty ? 'stay' : 'hide');
+    final settingsUserId = authUid.isNotEmpty
+        ? authUid
+        : (uid != null && uid.isNotEmpty ? uid : rowUid);
+    final parsedAdmin = _profileBool(data['is_admin']);
+    _settings = UserSettings(
+      userId: settingsUserId,
+      language: primaryLang,
+      preferredTimeZone: resolvedTzLabel,
+      timezoneOffsetHours: tzOffset,
+      activeLanguages: activeLanguages,
+      primaryLanguage: primaryLang,
+      defaultCategoryId: dc == null
+          ? null
+          : CategoryServiceExtension._rowInt(dc),
+      hasSeeded: data['has_seeded'] == true,
+      dataRegion: region,
+      biometricEnabled: data['biometric_enabled'] == true,
+      isAdmin: parsedAdmin,
+      themeMode: themeMode,
+      displayName: displayResolved,
+      accountName: accountName,
+      profileEmail: (emailRaw != null && emailRaw.isNotEmpty) ? emailRaw : null,
+      tagDisplayMode: categoryDisplayModeFromWire(tagModeRaw),
+      tagDisplayModeWireRaw: (tagModeRaw != null && tagModeRaw.isNotEmpty)
+          ? tagModeRaw
+          : null,
+      listCompletionBehavior: listBeh,
+      showListTagsOnCards: true,
+    );
+    try {
+      final prefs = _prefs;
+      final uidKey = settingsUserId.trim();
+      if (prefs != null && uidKey.isNotEmpty) {
+        final showTags = prefs.getBool(_prefsKeyShowListTagsOnCards(uidKey));
+        if (showTags != null) {
+          _settings = _settings.copyWith(showListTagsOnCards: showTags);
+        }
+      }
+    } catch (_) {}
+    await _mirrorProfileSettingsToDeviceCache();
+    _profileHydratedFromPb = true;
+    _profileHydrationError = null;
+    _profileHydratedLog(
+      id: (_profilePbRecordId ?? authUid).trim().isEmpty
+          ? settingsUserId
+          : (_profilePbRecordId ?? authUid),
+      lang: primaryLang,
+      tz: resolvedTzLabel,
+      offset: tzOffset,
+      isAdmin: parsedAdmin,
+    );
+    final uiLabel = ProfileServiceExtension.resolveProfileDisplayLabelFor(
+      settings: _settings,
+    );
+    print(
+      'PROFILE_UI_SETTINGS_APPLIED displayName=$uiLabel lang=$primaryLang tz=$resolvedTzLabel isAdmin=$parsedAdmin',
+    );
+    _settingsController.add(_settings);
+    _syncMaterialAppLocaleFromSettings(_settings);
   }
 
   DateTime getProjectedToday() {
@@ -569,7 +585,7 @@ extension ProfileServiceExtension on DatabaseService {
 
     final fieldNames = patchFields.keys.join(',');
     _profileDiagLog(
-      'PROFILE_SAVE_PATCH fields=$fieldNames',
+      'PROFILE_SAVE_PATCH fields=$fieldNames payload=$patchFields',
       dedupeKey: 'patch|$fieldNames',
     );
 

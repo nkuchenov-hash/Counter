@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/app_build_info.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/app_shell.dart';
 import 'package:counter/features/auth/auth_screen.dart';
@@ -70,6 +71,13 @@ void main() async {
     }
   } catch (_) {}
   url_strategy.usePathUrlStrategy();
+  if (kIsWeb) {
+    // ignore: avoid_print
+    print(AppBuildInfo.bootLogLine(route: Uri.base.toString()));
+  } else {
+    // ignore: avoid_print
+    print(AppBuildInfo.bootLogLine());
+  }
   runApp(const DateTimeTrackerApp());
   if (kIsWeb) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -195,12 +203,16 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
   bool _checked = false;
   String? _authMessageKey;
   bool _handlingSessionInvalid = false;
+  bool _profileHydrationFailed = false;
+  String? _profileHydrationMessage;
 
   Future<void> _postAuthBootstrap({String? failureMessageKey}) async {
     if (mounted) {
       setState(() {
         _checked = false;
         _authMessageKey = null;
+        _profileHydrationFailed = false;
+        _profileHydrationMessage = null;
       });
     }
     final id = await AuthBridge.checkSession();
@@ -210,6 +222,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         _profileId = null;
         _checked = true;
         _authMessageKey = failureMessageKey;
+        _profileHydrationFailed = false;
       });
       return;
     }
@@ -219,6 +232,8 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         ? await DatabaseService.instance.loadInitialDataWearLite(id)
         : await DatabaseService.instance.loadInitialData(id);
     if (!mounted) return;
+    final authStillValid =
+        DatabaseService.instance.pocketBase.authStore.isValid;
     if (ok && DatabaseService.instance.isInitialized) {
       final lang = DatabaseService.instance.settings.primaryLanguage;
       if (lang.isNotEmpty) {
@@ -233,6 +248,21 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         _profileId = id;
         _checked = true;
         _authMessageKey = null;
+        _profileHydrationFailed = false;
+      });
+      return;
+    }
+
+    if (authStillValid &&
+        !DatabaseService.instance.profileHydratedFromPb) {
+      setState(() {
+        _profileId = id;
+        _checked = true;
+        _authMessageKey = null;
+        _profileHydrationFailed = true;
+        _profileHydrationMessage =
+            DatabaseService.instance.profileHydrationError ??
+            'Could not load your profile settings.';
       });
       return;
     }
@@ -241,6 +271,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       _profileId = null;
       _checked = true;
       _authMessageKey = failureMessageKey ?? 'auth_session_expired';
+      _profileHydrationFailed = false;
     });
   }
 
@@ -306,6 +337,13 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
   @override
   Widget build(BuildContext context) {
     if (!_checked) return const _LoadingScreen();
+    if (_profileHydrationFailed && _profileId != null && _profileId!.isNotEmpty) {
+      return _ProfileHydrationErrorScreen(
+        message: _profileHydrationMessage,
+        onRetry: () => unawaited(_postAuthBootstrap()),
+        onSignOut: () => unawaited(_handleSessionInvalid()),
+      );
+    }
     if (_profileId != null && _profileId!.isNotEmpty) {
       DatabaseService.instance.currentProfileId = _profileId;
       if (appWearHost) {
@@ -333,6 +371,72 @@ class _LoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(body: AppLoading());
+  }
+}
+
+class _ProfileHydrationErrorScreen extends StatelessWidget {
+  const _ProfileHydrationErrorScreen({
+    required this.onRetry,
+    required this.onSignOut,
+    this.message,
+  });
+
+  final VoidCallback onRetry;
+  final VoidCallback onSignOut;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final theme = Theme.of(context);
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              Icon(
+                Icons.cloud_off_rounded,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                t(loc, 'profile_hydration_error_title'),
+                style: theme.textTheme.titleLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message ?? t(loc, 'profile_hydration_error_body'),
+                style: theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                AppBuildInfo.bootLogLine(route: kIsWeb ? Uri.base.toString() : null),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const Spacer(),
+              FilledButton(
+                onPressed: onRetry,
+                child: Text(t(loc, 'profile_hydration_retry')),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: onSignOut,
+                child: Text(t(loc, 'log_out')),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

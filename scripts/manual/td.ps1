@@ -17,7 +17,11 @@ flutter analyze --no-fatal-infos --no-fatal-warnings
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host '==> flutter build web' -ForegroundColor Cyan
-flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
+$gitCommit = (git rev-parse --short HEAD).Trim()
+$buildTime = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none `
+  --dart-define=GIT_COMMIT=$gitCommit `
+  --dart-define=BUILD_TIME=$buildTime
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $branch = git branch --show-current

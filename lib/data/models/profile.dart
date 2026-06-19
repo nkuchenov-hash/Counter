@@ -189,6 +189,8 @@ class UserSettings {
     this.biometricEnabled = false,
     this.isAdmin = false,
     this.displayName,
+    this.accountName,
+    this.profileEmail,
     this.tagDisplayMode = CategoryDisplayMode.letterChip,
     this.tagDisplayModeWireRaw,
 
@@ -212,6 +214,12 @@ class UserSettings {
 
   /// Shown in Profile / shell; persisted as profiles.display_name (@DATA_MAP.md).
   final String? displayName;
+
+  /// PocketBase auth `name` field (fallback label when [displayName] empty).
+  final String? accountName;
+
+  /// PocketBase auth `email` (hydrated at boot; display fallback only).
+  final String? profileEmail;
 
   /// Local biometric lock on app launch. Stored in profiles; never stored in cloud as biometric data.
   final bool biometricEnabled;
@@ -252,6 +260,10 @@ class UserSettings {
     if (dataRegion != null && dataRegion!.isNotEmpty) 'dataRegion': dataRegion,
     if (displayName != null && displayName!.trim().isNotEmpty)
       'displayName': displayName!.trim(),
+    if (accountName != null && accountName!.trim().isNotEmpty)
+      'accountName': accountName!.trim(),
+    if (profileEmail != null && profileEmail!.trim().isNotEmpty)
+      'profileEmail': profileEmail!.trim(),
     'tagDisplayMode': tagDisplayMode.wireValue,
     'listCompletionBehavior': listCompletionBehavior,
     'showListTagsOnCards': showListTagsOnCards,
@@ -326,6 +338,8 @@ class UserSettings {
       isAdmin: parsedAdmin,
       displayName:
           json['displayName'] as String? ?? json['display_name'] as String?,
+      accountName: json['accountName'] as String? ?? json['name'] as String?,
+      profileEmail: json['profileEmail'] as String? ?? json['email'] as String?,
       tagDisplayMode: categoryDisplayModeFromWire(tagWireStr),
       tagDisplayModeWireRaw: (tagWireStr != null && tagWireStr.isNotEmpty)
           ? tagWireStr
@@ -349,6 +363,8 @@ class UserSettings {
     bool? biometricEnabled,
     bool? isAdmin,
     String? displayName,
+    String? accountName,
+    String? profileEmail,
     CategoryDisplayMode? tagDisplayMode,
     String? tagDisplayModeWireRaw,
     String? listCompletionBehavior,
@@ -368,6 +384,8 @@ class UserSettings {
       biometricEnabled: biometricEnabled ?? this.biometricEnabled,
       isAdmin: isAdmin ?? this.isAdmin,
       displayName: displayName ?? this.displayName,
+      accountName: accountName ?? this.accountName,
+      profileEmail: profileEmail ?? this.profileEmail,
       tagDisplayMode: tagDisplayMode ?? this.tagDisplayMode,
       tagDisplayModeWireRaw: tagDisplayMode != null
           ? null

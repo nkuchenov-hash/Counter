@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 profile hydration diagnostics + hard PB fetch [shipped]
+* **`app_build_info.dart` / `main.dart` / `profile_view.dart`:** [shipped] `APP_BUILD commit=… builtAt=… route=…` console log + Profile footer build stamp via `--dart-define`.
+* **`profile_service.dart`:** [shipped] Auth-only `profiles.getOne(authStore.record.id)`; no silent empty-settings fallback; `PROFILE_FETCH_SUCCESS`/`PROFILE_UI_SETTINGS_APPLIED`/`PROFILE_SAVE_PATCH payload=…`; `accountName`/`profileEmail` hydration; `retryProfileHydration()`.
+* **`db_core.dart`:** [shipped] Profile loads before backoff skip; timeout/sign-out no longer seeds empty `UserSettings`; boot fails loud when PB profile missing.
+* **`main.dart`:** [shipped] `_ProfileHydrationErrorScreen` with retry (keeps session).
+* **`app_shell.dart` / `web/index.html`:** [shipped] Profile hydration retry banner; SW unregister + `--pwa-strategy=none` cache bust.
+* **`profile_view.dart`:** [shipped] Display name from PB (`display_name` → `name` → email), not legacy `AuthService`.
+
 ## [2026-06-15] - P0 profile settings persistence (lang/TZ/admin) [shipped]
 * **`profile_service.dart`:** [shipped] PB-first hydration: always `getOne(auth.id)`; removed device-prefs override of timezone/theme on boot; field-diff PATCH in `saveSettings` (never `is_admin`); `PROFILE_*` diagnostic logs.
 * **`app_shell.dart`:** [shipped] Legacy SettingsPage no longer auto-PATCHes `Local` timezone when stored TZ not in dropdown.

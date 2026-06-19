@@ -530,6 +530,11 @@ const Map<String, Map<String, String>> _l10nCore = {
     'offline_sync_syncing': 'Syncing…',
     'offline_sync_error': 'Sync issue — tap to retry',
     'offline_sync_auth_paused': 'Sign in to sync — tap to retry',
+    'profile_hydration_error_title': 'Could not load your profile settings.',
+    'profile_hydration_error_body':
+        'Your session is valid but PocketBase profile data did not load. Retry or sign out.',
+    'profile_hydration_retry': 'Retry',
+    'profile_build_label': 'Build',
     'diagnostic_uid': 'Diagnostic UID: %s',
     'stats_group_total': '%s (Total: %s)',
     'stats_session_line': '%s — %s (%s) — "%s"',
@@ -1152,6 +1157,11 @@ const Map<String, Map<String, String>> _l10nCore = {
     'offline_sync_error': 'Ошибка синхронизации — нажмите для повтора',
     'offline_sync_auth_paused':
         'Войдите для синхронизации — нажмите для повтора',
+    'profile_hydration_error_title': 'Не удалось загрузить настройки профиля.',
+    'profile_hydration_error_body':
+        'Сессия активна, но данные профиля из PocketBase не загрузились. Повторите или выйдите.',
+    'profile_hydration_retry': 'Повторить',
+    'profile_build_label': 'Сборка',
     'diagnostic_uid': 'UID диагностики: %s',
     'stats_group_total': '%s (Всего: %s)',
     'stats_session_line': '%s — %s (%s) — "%s"',

@@ -34,7 +34,14 @@ jobs:
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none \
+            --dart-define=GIT_COMMIT="$SHORT_SHA" \
+            --dart-define=BUILD_TIME="$BUILD_TIME"
 
       - name: Deploy to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4

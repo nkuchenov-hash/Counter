@@ -233,6 +233,9 @@ extension DbCoreExtension on DatabaseService {
       _tasksCache = [];
       _cachedFlatRecords = [];
       _settings = UserSettings(userId: '');
+      _profileHydratedFromPb = false;
+      _profileHydrationError = null;
+      _profilePbRecordId = null;
       _userTagsCatalogCache = [];
       _lastAggregatedKey = null;
       _lastStatsNodeRoots = null;
@@ -284,6 +287,8 @@ extension DbCoreExtension on DatabaseService {
     await ensurePocketBaseReady();
     _isInitialized = false;
     _loadErrorMessage = null;
+    _profileHydratedFromPb = false;
+    _profileHydrationError = null;
     final trimmed = uid.trim();
     if (trimmed.isEmpty) {
       _loadErrorMessage = 'Invalid profile';
@@ -292,26 +297,40 @@ extension DbCoreExtension on DatabaseService {
     }
     currentProfileId = trimmed;
     try {
-      await _loadInner().timeout(
-        const Duration(seconds: 8),
+      _prefs = await SharedPreferences.getInstance();
+      await _debugPocketBaseHealth();
+      await _loadSettingsFromNoco().timeout(
+        const Duration(seconds: 15),
         onTimeout: () {
-          final aid = _userIdForWhere ?? '';
-          _settings = UserSettings(userId: aid.isNotEmpty ? aid : trimmed);
-          _settingsController.add(_settings);
+          throw _ProfileFetchFailedException(
+            0,
+            'Could not load your profile settings.',
+          );
+        },
+      );
+      await _loadInnerAfterProfile().timeout(
+        const Duration(seconds: 25),
+        onTimeout: () {
+          _loadErrorMessage ??=
+              'Data sync timed out; profile loaded — tap Profile to retry sync.';
         },
       );
       return true;
     } on _ProfileFetchFailedException catch (e) {
-      try {
-        await onSessionInvalid?.call();
-      } catch (_) {}
-      clearLocalStateOnSignOut();
-      _loadErrorMessage = e.message ?? 'Session invalid or profile not found';
-      _isInitialized = true;
+      _profileHydratedFromPb = false;
+      _profileHydrationError =
+          e.message ?? 'Could not load your profile settings.';
+      _loadErrorMessage = _profileHydrationError;
+      _isInitialized = false;
       return false;
     } catch (e, st) {
       // ignore: avoid_print
       print('DatabaseService.loadInitialData failed: $e\n$st');
+      if (!_profileHydratedFromPb) {
+        _profileHydrationError ??= 'Could not load your profile settings.';
+        _isInitialized = false;
+        return false;
+      }
       _isInitialized = true;
       _loadErrorMessage = 'Sync Error: $e';
       _settingsController.add(_settings);
@@ -324,6 +343,8 @@ extension DbCoreExtension on DatabaseService {
     await ensurePocketBaseReady();
     _isInitialized = false;
     _loadErrorMessage = null;
+    _profileHydratedFromPb = false;
+    _profileHydrationError = null;
     final trimmed = uid.trim();
     if (trimmed.isEmpty) {
       _loadErrorMessage = 'Invalid profile';
@@ -332,26 +353,39 @@ extension DbCoreExtension on DatabaseService {
     }
     currentProfileId = trimmed;
     try {
-      await _loadInnerWearLite().timeout(
+      _prefs = await SharedPreferences.getInstance();
+      await _debugPocketBaseHealth();
+      await _loadSettingsFromNoco().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw _ProfileFetchFailedException(
+            0,
+            'Could not load your profile settings.',
+          );
+        },
+      );
+      await _loadInnerWearLiteAfterProfile().timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          final aid = _userIdForWhere ?? '';
-          _settings = UserSettings(userId: aid.isNotEmpty ? aid : trimmed);
-          _settingsController.add(_settings);
+          _loadErrorMessage ??= 'Wear data sync timed out.';
         },
       );
       return true;
     } on _ProfileFetchFailedException catch (e) {
-      try {
-        await onSessionInvalid?.call();
-      } catch (_) {}
-      clearLocalStateOnSignOut();
-      _loadErrorMessage = e.message ?? 'Session invalid or profile not found';
-      _isInitialized = true;
+      _profileHydratedFromPb = false;
+      _profileHydrationError =
+          e.message ?? 'Could not load your profile settings.';
+      _loadErrorMessage = _profileHydrationError;
+      _isInitialized = false;
       return false;
     } catch (e, st) {
       // ignore: avoid_print
       print('DatabaseService.loadInitialDataWearLite failed: $e\n$st');
+      if (!_profileHydratedFromPb) {
+        _profileHydrationError ??= 'Could not load your profile settings.';
+        _isInitialized = false;
+        return false;
+      }
       _isInitialized = true;
       _loadErrorMessage = 'Sync Error: $e';
       _settingsController.add(_settings);
@@ -359,9 +393,7 @@ extension DbCoreExtension on DatabaseService {
     }
   }
 
-  Future<void> _loadInnerWearLite() async {
-    _prefs = await SharedPreferences.getInstance();
-    await _debugPocketBaseHealth();
+  Future<void> _loadInnerWearLiteAfterProfile() async {
     if (_pbHttpBackoffActive) {
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
       _settingsController.add(_settings);
@@ -370,7 +402,6 @@ extension DbCoreExtension on DatabaseService {
       _isInitialized = true;
       return;
     }
-    await _loadSettingsFromNoco();
     await _loadRulesFromNoco();
     try {
       await _fetchRecordsIntoCache(forceNetwork: true);
@@ -386,9 +417,7 @@ extension DbCoreExtension on DatabaseService {
     );
   }
 
-  Future<void> _loadInner() async {
-    _prefs = await SharedPreferences.getInstance();
-    await _debugPocketBaseHealth();
+  Future<void> _loadInnerAfterProfile() async {
     if (_pbHttpBackoffActive) {
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
       _settingsController.add(_settings);
@@ -401,7 +430,6 @@ extension DbCoreExtension on DatabaseService {
       unawaited(flushPendingLocalMutations());
       return;
     }
-    await _loadSettingsFromNoco();
     await _loadRulesFromNoco();
     try {
       await _fetchRecordsIntoCache(forceNetwork: true);

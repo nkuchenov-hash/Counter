@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/app_build_info.dart';
 import 'package:counter/auth_service.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
@@ -255,13 +256,10 @@ class _SecuritySectionState extends State<_SecuritySection> {
   }
 }
 
-/// Account: current user + Logout in one row (auth logic unchanged).
+/// Account: current user + Logout in one row (PocketBase-hydrated identity).
 class _AccountSecuritySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final user = AuthService.instance.currentUser;
-    final email = user?.email;
-    final authDisplayName = user?.displayName;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
@@ -269,12 +267,17 @@ class _AccountSecuritySection extends StatelessWidget {
       stream: DatabaseService.instance.userSettingsStream,
       initialData: DatabaseService.instance.settings,
       builder: (context, snap) {
-        final profileName = snap.data?.displayName;
-        final subtitle = (profileName != null && profileName.trim().isNotEmpty)
-            ? profileName.trim()
-            : (authDisplayName != null && authDisplayName.isNotEmpty
-                  ? authDisplayName
-                  : (email ?? user?.uid ?? '—'));
+        final settings = snap.data ?? DatabaseService.instance.settings;
+        final label =
+            ProfileServiceExtension.resolveProfileDisplayLabelFor(
+              settings: settings,
+            );
+        final hydrated = DatabaseService.instance.profileHydratedFromPb;
+        final subtitle = label.isNotEmpty
+            ? label
+            : (hydrated
+                  ? (AuthBridge.currentAuthEmail ?? '—')
+                  : t(currentLocale.value, 'profile_hydration_error_title'));
         final loc = currentLocale.value;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -735,6 +738,12 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 24),
+          Text(
+            '${t(locale, 'profile_build_label')} ${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
