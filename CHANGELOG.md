@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Larger play triangle + inline recurring glyph [shipped]
+* **`plan_time_task_card.dart`:** [shipped] Play glyph 22×24px filled rounded triangle (4px corners) in 32px slot; `_PlanCardRecurringGlyph` circular dual-arc icon inline after title (5px gap).
+
 ## [2026-06-15] - CardPlan alignment, filled play, progress pill [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Completed cards keep geometry — removed persistent `Transform.scale`, reserved play slot when done; title top aligned with checkbox (`titleTopInset=0`, `TextHeightBehavior`); tighter shared spacing (90px ref); 3px pill progress track+fill; filled rounded-corner play triangle (`PaintingStyle.fill`).
 

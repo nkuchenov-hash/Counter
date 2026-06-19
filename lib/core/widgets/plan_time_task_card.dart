@@ -385,6 +385,11 @@ abstract final class _PlanCardGeom {
   static const double railWidth = 32;
   static const double railToContentGap = 12;
   static const double checkboxPlayGap = 8;
+  static const double playIconWidth = 22;
+  static const double playIconHeight = 24;
+  static const double playIconCornerRadius = 4.0;
+  static const double recurringIconSize = 15;
+  static const double titleToRecurringGap = 5;
   static const double playAfterCheckboxGap = 4;
   static const double menuSize = 33;
   static const double contentSpanMediumLarge = 260;
@@ -1315,11 +1320,15 @@ class _PlanCardPlayButtonState extends State<_PlanCardPlayButton> {
             height: _PlanCardGeom.controlSize,
             child: Center(
               child: CustomPaint(
-                size: const Size(16, 18),
+                size: const Size(
+                  _PlanCardGeom.playIconWidth,
+                  _PlanCardGeom.playIconHeight,
+                ),
                 painter: _PlanCardPlayIconPainter(
                   fill: _hovered
                       ? const Color(0xFF4A4A4A)
                       : _PlanCardTokens.playFill,
+                  cornerRadius: _PlanCardGeom.playIconCornerRadius,
                 ),
               ),
             ),
@@ -1331,17 +1340,24 @@ class _PlanCardPlayButtonState extends State<_PlanCardPlayButton> {
 }
 
 class _PlanCardPlayIconPainter extends CustomPainter {
-  const _PlanCardPlayIconPainter({this.fill = _PlanCardTokens.playFill});
+  const _PlanCardPlayIconPainter({
+    this.fill = _PlanCardTokens.playFill,
+    this.cornerRadius = _PlanCardGeom.playIconCornerRadius,
+  });
 
   final Color fill;
+  final double cornerRadius;
 
-  static Path _roundedPlayTrianglePath(Size size, {double cornerRadius = 2.2}) {
+  static Path _roundedPlayTrianglePath(
+    Size size, {
+    required double cornerRadius,
+  }) {
     final w = size.width;
     final h = size.height;
     final vertices = <Offset>[
-      Offset(w * 0.15, h * 0.10),
-      Offset(w * 0.15, h * 0.90),
-      Offset(w * 0.92, h * 0.50),
+      Offset(w * 0.08, h * 0.06),
+      Offset(w * 0.08, h * 0.94),
+      Offset(w * 0.96, h * 0.50),
     ];
     return _roundedPolygonPath(vertices, cornerRadius);
   }
@@ -1376,7 +1392,7 @@ class _PlanCardPlayIconPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = _roundedPlayTrianglePath(size);
+    final path = _roundedPlayTrianglePath(size, cornerRadius: cornerRadius);
     canvas.drawPath(
       path,
       Paint()
@@ -1387,7 +1403,102 @@ class _PlanCardPlayIconPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PlanCardPlayIconPainter oldDelegate) =>
-      oldDelegate.fill != fill;
+      oldDelegate.fill != fill || oldDelegate.cornerRadius != cornerRadius;
+}
+
+/// Circular loop-arrow glyph for recurring plans (inline after title).
+class _PlanCardRecurringGlyph extends StatelessWidget {
+  const _PlanCardRecurringGlyph({this.displayIsDone = false});
+
+  final bool displayIsDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = displayIsDone
+        ? _PlanCardTokens.breadcrumbFallbackColor.withValues(alpha: 0.45)
+        : _PlanCardTokens.breadcrumbFallbackColor.withValues(alpha: 0.82);
+    return SizedBox(
+      width: _PlanCardGeom.recurringIconSize,
+      height: _PlanCardGeom.recurringIconSize,
+      child: CustomPaint(
+        painter: _PlanCardRecurringIconPainter(color: color),
+      ),
+    );
+  }
+}
+
+class _PlanCardRecurringIconPainter extends CustomPainter {
+  const _PlanCardRecurringIconPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r = math.min(size.width, size.height) / 2 - 2.1;
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.35
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r);
+    const sweep = math.pi * 0.98;
+
+    const startTop = -math.pi * 0.62;
+    canvas.drawArc(rect, startTop, sweep, false, paint);
+    _drawArrowHead(
+      canvas,
+      paint,
+      tip: Offset(
+        cx + r * math.cos(startTop + sweep),
+        cy + r * math.sin(startTop + sweep),
+      ),
+      tangentAngle: startTop + sweep + math.pi / 2,
+      size: 3.0,
+    );
+
+    const startBottom = math.pi * 0.38;
+    canvas.drawArc(rect, startBottom, sweep, false, paint);
+    _drawArrowHead(
+      canvas,
+      paint,
+      tip: Offset(
+        cx + r * math.cos(startBottom + sweep),
+        cy + r * math.sin(startBottom + sweep),
+      ),
+      tangentAngle: startBottom + sweep + math.pi / 2,
+      size: 3.0,
+    );
+  }
+
+  static void _drawArrowHead(
+    Canvas canvas,
+    Paint paint, {
+    required Offset tip,
+    required double tangentAngle,
+    required double size,
+  }) {
+    final wing = tangentAngle + math.pi * 0.78;
+    final path = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(
+        tip.dx + math.cos(wing) * size,
+        tip.dy + math.sin(wing) * size,
+      )
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(
+        tip.dx + math.cos(wing - 1.1) * size,
+        tip.dy + math.sin(wing - 1.1) * size,
+      );
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _PlanCardRecurringIconPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class _PlanCardMenuButton extends StatefulWidget {
@@ -1482,45 +1593,45 @@ class _PlanCardTitleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final titleStyle = TextStyle(
+      fontSize: 16,
+      height: 1.0,
+      fontWeight: FontWeight.w400,
+      leadingDistribution: TextLeadingDistribution.even,
+      decoration:
+          displayIsDone ? TextDecoration.lineThrough : TextDecoration.none,
+      color: displayIsDone
+          ? _PlanCardTokens.titleColor.withValues(alpha: 0.55)
+          : _PlanCardTokens.titleColor,
+    );
     return Row(
       children: [
-        Expanded(
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            style: TextStyle(
-              fontSize: 16,
-              height: 1.0,
-              fontWeight: FontWeight.w400,
-              leadingDistribution: TextLeadingDistribution.even,
-              decoration:
-                  displayIsDone ? TextDecoration.lineThrough : TextDecoration.none,
-              color: displayIsDone
-                  ? _PlanCardTokens.titleColor.withValues(alpha: 0.55)
-                  : _PlanCardTokens.titleColor,
-            ),
-            child: Text(
-              title,
-              maxLines: maxLines,
-              overflow: TextOverflow.ellipsis,
-              textHeightBehavior: const TextHeightBehavior(
-                applyHeightToFirstAscent: false,
-                applyHeightToLastDescent: false,
+        Flexible(
+          child: Row(
+            children: [
+              Flexible(
+                child: AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  style: titleStyle,
+                  child: Text(
+                    title,
+                    maxLines: maxLines,
+                    overflow: TextOverflow.ellipsis,
+                    textHeightBehavior: const TextHeightBehavior(
+                      applyHeightToFirstAscent: false,
+                      applyHeightToLastDescent: false,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              if (hasRepeat) ...[
+                const SizedBox(width: _PlanCardGeom.titleToRecurringGap),
+                _PlanCardRecurringGlyph(displayIsDone: displayIsDone),
+              ],
+            ],
           ),
         ),
-        if (hasRepeat)
-          Padding(
-            padding: const EdgeInsets.only(left: 4),
-            child: Icon(
-              Icons.repeat_rounded,
-              size: 15,
-              color: _PlanCardTokens.breadcrumbFallbackColor.withValues(
-                alpha: 0.85,
-              ),
-            ),
-          ),
         if (metaIcons.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(left: 4),
