@@ -213,11 +213,16 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     final s = DatabaseService.instance.settings;
     _language = resolvedUiLanguageCode(s.language);
-    _timeZone = s.preferredTimeZone;
-    if (_timezoneOptions.isNotEmpty && !_timezoneOptions.contains(_timeZone)) {
-      _timeZone = _timezoneOptions.first;
-      setState(() {});
-      WidgetsBinding.instance.addPostFrameCallback((_) => _save());
+    final validTz = DatabaseService.instance.profileTimezoneOptions;
+    final storedTz = s.preferredTimeZone.trim();
+    if (validTz.contains(storedTz)) {
+      _timeZone = storedTz;
+    } else if (validTz.contains('UTC')) {
+      _timeZone = 'UTC';
+    } else if (validTz.isNotEmpty) {
+      _timeZone = validTz.first;
+    } else {
+      _timeZone = storedTz.isEmpty ? 'UTC' : storedTz;
     }
   }
 

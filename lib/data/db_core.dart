@@ -258,6 +258,8 @@ extension DbCoreExtension on DatabaseService {
       try {
         final prefs = _prefs ?? await SharedPreferences.getInstance();
         await prefs.remove(_profileThemeModeKey);
+        await prefs.remove(_profileTzLabelKey);
+        await prefs.remove(_profileTzOffsetKey);
       } catch (_) {}
     }());
   }

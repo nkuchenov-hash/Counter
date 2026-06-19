@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 profile settings persistence (lang/TZ/admin) [shipped]
+* **`profile_service.dart`:** [shipped] PB-first hydration: always `getOne(auth.id)`; removed device-prefs override of timezone/theme on boot; field-diff PATCH in `saveSettings` (never `is_admin`); `PROFILE_*` diagnostic logs.
+* **`app_shell.dart`:** [shipped] Legacy SettingsPage no longer auto-PATCHes `Local` timezone when stored TZ not in dropdown.
+* **`db_core.dart`:** [shipped] Sign-out clears profile TZ/theme prefs cache keys.
+
 ## [2026-06-15] - P0 default plan times timezone context [shipped]
 * **`categories.default_plan_timezone`:** [shipped] Optional IANA text field documented in `DATA_MAP.md` / `POCKETBASE_MANIFEST.md`; null/`profile` = active profile TZ; backward compatible when missing.
 * **`category_service.dart`:** [shipped] `effectiveDefaultPlanScheduleForCategory`, `wallUtcForCategoryDefaultWall`, `updateCategoryDefaultPlanSchedule`, `formatDefaultPlanTimeWithTimezoneLabel`; PB field-missing error detection.
