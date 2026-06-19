@@ -33,6 +33,22 @@
   <meta name="yandex-oauth-client-id" content="YANDEX_CLIENT_ID">
 </head>
 <body>
+  <!-- Bust stale Flutter service-worker caches on GitHub Pages (P0 profile hydration deploy). -->
+  <script>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        for (var i = 0; i < regs.length; i++) {
+          regs[i].unregister();
+        }
+      });
+      if (window.caches && caches.keys) {
+        caches.keys().then(function (keys) {
+          keys.forEach(function (k) { caches.delete(k); });
+        });
+      }
+    })();
+  </script>
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
