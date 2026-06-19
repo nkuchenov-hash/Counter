@@ -2536,11 +2536,18 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
-  bool _isSelectedPlanningWallDayToday(DateTime planWallDay) {
-    final today = _today;
-    return planWallDay.year == today.year &&
-        planWallDay.month == today.month &&
-        planWallDay.day == today.day;
+  bool _isProfileTodaySelectedForPlanning() {
+    final profileTodayKey =
+        DatabaseService.instance.getProjectedTodayDateKey();
+    final raw = widget.selectedDateString.trim();
+    if (raw.length >= 10) {
+      return raw.substring(0, 10) == profileTodayKey;
+    }
+    final planDay = widget.selectedDate ?? _today;
+    final profileToday = DatabaseService.instance.getProjectedToday();
+    return planDay.year == profileToday.year &&
+        planDay.month == profileToday.month &&
+        planDay.day == profileToday.day;
   }
 
   String? _lastPlanTimeNowLineLogKey;
@@ -2587,7 +2594,7 @@ class _PlanningPageState extends State<PlanningPage>
   ) {
     final selectedDay =
         '${planWallDay.year}-${planWallDay.month.toString().padLeft(2, '0')}-${planWallDay.day.toString().padLeft(2, '0')}';
-    if (!_isSelectedPlanningWallDayToday(planWallDay)) {
+    if (!_isProfileTodaySelectedForPlanning()) {
       _logPlanTimeNowLine(
         nowUtc: DatabaseService.getPlanetaryNow(),
         wallNow: _profileWallNow(),
@@ -2600,11 +2607,7 @@ class _PlanningPageState extends State<PlanningPage>
     final nowUtc = DatabaseService.getPlanetaryNow();
     final wallNow = _profileWallNow();
     final min = _timelineMinutesFromRangeStart(wallNow, rangeStart, rangeEnd);
-    final maxMin = PlanningSheetTimelinePrefs.visibleHoursOrdered(
-          rangeStart,
-          rangeEnd,
-        ).length *
-        60;
+    final maxMin = grid.totalMinutes;
     if (min < 0 || min > maxMin) {
       _logPlanTimeNowLine(
         nowUtc: nowUtc,
@@ -3539,55 +3542,48 @@ class _PlanningPageState extends State<PlanningPage>
     final layouts = rubberResult.layouts;
     final canvasHeight = _timelineCanvasHeightPx(grid);
     final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
-    final nowTop = _timelineNowLineTopPx(
-      planWallDay,
-      rangeStart,
-      rangeEnd,
-      grid,
-    );
-    final wallNow = _profileWallNow();
-    final nowLabel = nowTop != null
-        ? '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')}'
-        : null;
 
     String hourLabel(int hour) =>
         '${hour.clamp(0, 23).toString().padLeft(2, '0')}:00';
 
     return SizedBox(
       height: canvasHeight + 8,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          SizedBox(
-            width: _kTimelineRailWidthPx,
-            height: canvasHeight,
-            child: Stack(
-              children: [
-                for (var i = 0; i < visibleHours.length; i++)
-                  Positioned(
-                    top: grid.hourTops[i] - 6,
-                    left: 0,
-                    right: 0,
-                    child: Text(
-                      hourLabel(visibleHours[i]),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: _kTimelineRailWidthPx,
+                height: canvasHeight,
+                child: Stack(
+                  children: [
+                    for (var i = 0; i < visibleHours.length; i++)
+                      Positioned(
+                        top: grid.hourTops[i] - 6,
+                        left: 0,
+                        right: 0,
+                        child: Text(
+                          hourLabel(visibleHours[i]),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SizedBox(
-              height: canvasHeight,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SizedBox(
+                  height: canvasHeight,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
@@ -3746,55 +3742,35 @@ class _PlanningPageState extends State<PlanningPage>
                               ),
                             ),
                       ],
-                      if (nowTop != null && nowLabel != null)
-                        Positioned(
-                          top: nowTop.clamp(0, canvasHeight - 1),
-                          left: 0,
-                          right: 0,
-                          child: IgnorePointer(
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: scheme.primary.withValues(
-                                      alpha: 0.88,
-                                    ),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    nowLabel,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
-                                          color: scheme.onPrimary,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 10,
-                                        ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Container(
-                                    height: 2,
-                                    color: scheme.primary.withValues(
-                                      alpha: 0.72,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                     ],
                   );
                 },
               ),
             ),
           ),
+        ],
+      ),
+          if (_isProfileTodaySelectedForPlanning())
+            _PlanningTimelineNowLineOverlay(
+              canvasHeight: canvasHeight,
+              railWidth: _kTimelineRailWidthPx,
+              scheme: scheme,
+              resolve: () {
+                final topPx = _timelineNowLineTopPx(
+                  planWallDay,
+                  rangeStart,
+                  rangeEnd,
+                  grid,
+                );
+                if (topPx == null) {
+                  return (topPx: null, label: null);
+                }
+                final wallNow = _profileWallNow();
+                final label =
+                    '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')}';
+                return (topPx: topPx, label: label);
+              },
+            ),
         ],
       ),
     );
@@ -5712,6 +5688,100 @@ class _TimelineResizeEdgeHandleState extends State<_TimelineResizeEdgeHandle> {
                   ],
                 )
               : null,
+        ),
+      ),
+    );
+  }
+}
+
+/// Profile-timezone "now" indicator above timeline cards (non-interactive).
+class _PlanningTimelineNowLineOverlay extends StatefulWidget {
+  const _PlanningTimelineNowLineOverlay({
+    required this.canvasHeight,
+    required this.railWidth,
+    required this.scheme,
+    required this.resolve,
+  });
+
+  final double canvasHeight;
+  final double railWidth;
+  final ColorScheme scheme;
+  final ({double? topPx, String? label}) Function() resolve;
+
+  @override
+  State<_PlanningTimelineNowLineOverlay> createState() =>
+      _PlanningTimelineNowLineOverlayState();
+}
+
+class _PlanningTimelineNowLineOverlayState
+    extends State<_PlanningTimelineNowLineOverlay> {
+  Timer? _minuteTick;
+  StreamSubscription<void>? _timeSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _minuteTick = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
+    _timeSub = DatabaseService.instance.timeUpdates.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _minuteTick?.cancel();
+    _timeSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = widget.resolve();
+    final top = resolved.topPx;
+    final label = resolved.label;
+    if (top == null || label == null || label.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final lineColor = widget.scheme.primary;
+    final topClamped = top.clamp(0.0, widget.canvasHeight - 1);
+
+    return Positioned(
+      top: topClamped,
+      left: widget.railWidth,
+      right: 0,
+      child: IgnorePointer(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: lineColor.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: widget.scheme.onPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                height: 2,
+                margin: const EdgeInsets.only(left: 4),
+                decoration: BoxDecoration(
+                  color: lineColor.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
