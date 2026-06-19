@@ -13,6 +13,7 @@ class Category {
     this.colorValue,
     this.iconCodePoint,
     this.defaultPlanTime,
+    this.defaultPlanTimezone,
     this.isArchived = false,
   });
 
@@ -29,6 +30,7 @@ class Category {
   final int? colorValue;
   final int? iconCodePoint;
   final String? defaultPlanTime;
+  final String? defaultPlanTimezone;
   final bool isArchived;
 
   factory Category.fromJson(Map<String, dynamic> json) {
@@ -65,6 +67,7 @@ class Category {
           ? json['icon_code_point'] as int
           : int.tryParse(json['icon_code_point']?.toString() ?? ''),
       defaultPlanTime: json['default_plan_time']?.toString().trim(),
+      defaultPlanTimezone: json['default_plan_timezone']?.toString().trim(),
       isArchived: isArc,
     );
   }
@@ -83,6 +86,8 @@ class Category {
     if (iconCodePoint != null) 'icon_code_point': iconCodePoint,
     if (defaultPlanTime != null && defaultPlanTime!.isNotEmpty)
       'default_plan_time': defaultPlanTime,
+    if (defaultPlanTimezone != null && defaultPlanTimezone!.isNotEmpty)
+      'default_plan_timezone': defaultPlanTimezone,
     'is_archived': isArchived,
   };
 }
@@ -221,6 +226,7 @@ class CategoryRule {
     this.colorValue,
     this.iconCodePoint,
     this.defaultPlanTime,
+    this.defaultPlanTimezone,
     this.keywords,
     this.localizedNames,
     this.order = 0,
@@ -258,6 +264,7 @@ class CategoryRule {
   int? colorValue;
   int? iconCodePoint;
   String? defaultPlanTime;
+  String? defaultPlanTimezone;
 
   /// @DATA_MAP.md `categories.order` — sibling sort index (integer); persisted via bulk PATCH.
   int order;
@@ -281,6 +288,8 @@ class CategoryRule {
     int? iconCodePoint,
     String? defaultPlanTime,
     bool clearDefaultPlanTime = false,
+    String? defaultPlanTimezone,
+    bool clearDefaultPlanTimezone = false,
     Map<String, List<String>>? keywords,
     Map<String, String>? localizedNames,
     int? order,
@@ -315,6 +324,9 @@ class CategoryRule {
       defaultPlanTime: clearDefaultPlanTime
           ? null
           : (defaultPlanTime ?? this.defaultPlanTime),
+      defaultPlanTimezone: clearDefaultPlanTimezone
+          ? null
+          : (defaultPlanTimezone ?? this.defaultPlanTimezone),
       keywords: copiedKeywords,
       localizedNames: localizedNames ?? this.localizedNames,
       order: order ?? this.order,

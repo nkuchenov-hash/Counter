@@ -335,7 +335,9 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_settings_tooltip': 'Planning display',
     'plan_default_times_title': 'Default plan times',
     'plan_default_times_subtitle':
-        'Apply a category time when new plan text has no time.',
+        'Times are interpreted in the selected timezone when a plan is created.',
+    'plan_default_times_profile_tz_notice':
+        'Default times use your profile timezone: %s',
     'plan_default_time_select_category': 'Select category',
     'plan_default_time_search_category': 'Search category',
     'plan_default_time_own': 'Own default: %s',
@@ -344,6 +346,13 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_default_time_set': 'Set time',
     'plan_default_time_clear': 'Clear own time',
     'plan_default_time_configured_categories': 'Configured categories',
+    'plan_default_time_field_time': 'Time',
+    'plan_default_time_field_timezone': 'Timezone',
+    'plan_default_time_tz_profile': 'Profile timezone (%s)',
+    'plan_default_time_tz_fixed': 'Fixed timezone',
+    'plan_default_time_tz_search': 'Search timezone',
+    'plan_default_timezone_field_missing':
+        'Category default timezone field is not configured. Add categories.default_plan_timezone in PocketBase Admin.',
     'plan_day_start_hour': 'Start of day',
     'plan_day_start_hint':
         'First hour row in the time grid (0–23). End may be before start for overnight.',
@@ -948,7 +957,9 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_settings_tooltip': 'Отображение плана',
     'plan_default_times_title': 'Время планов по умолчанию',
     'plan_default_times_subtitle':
-        'Применять время категории, если в новом плане время не указано.',
+        'Время применяется в выбранном часовом поясе при создании плана.',
+    'plan_default_times_profile_tz_notice':
+        'По умолчанию используется профильный часовой пояс: %s',
     'plan_default_time_select_category': 'Выбрать категорию',
     'plan_default_time_search_category': 'Поиск категории',
     'plan_default_time_own': 'Собственное время: %s',
@@ -957,6 +968,13 @@ const Map<String, Map<String, String>> _l10nCore = {
     'plan_default_time_set': 'Установить время',
     'plan_default_time_clear': 'Очистить своё время',
     'plan_default_time_configured_categories': 'Настроенные категории',
+    'plan_default_time_field_time': 'Время',
+    'plan_default_time_field_timezone': 'Часовой пояс',
+    'plan_default_time_tz_profile': 'Профильный пояс (%s)',
+    'plan_default_time_tz_fixed': 'Фиксированный пояс',
+    'plan_default_time_tz_search': 'Поиск часового пояса',
+    'plan_default_timezone_field_missing':
+        'Поле часового пояса категории не настроено. Добавьте categories.default_plan_timezone в PocketBase Admin.',
     'plan_day_start_hour': 'Начало дня',
     'plan_day_start_hint':
         'Первая строка сетки (0–23). Конец может быть «раньше» начала через полночь.',

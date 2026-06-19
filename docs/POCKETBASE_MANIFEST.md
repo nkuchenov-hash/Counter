@@ -66,6 +66,7 @@ Password reset is app-owned through `POST /api/auth/request-password-reset`; do 
 | `category_id` | text | Business slug / UUID (`life`, …). |
 | `name`, `normalized_id` | text | Display / search. |
 | `default_plan_time` | text | Optional `HH:mm` 24-hour default start time for new scheduled plans in this category; empty = inherit nearest parent / no default. |
+| `default_plan_timezone` | text | Optional IANA id for `default_plan_time` wall clock (`America/New_York`, `Europe/Moscow`, …). Empty/null/`profile` = active profile timezone at plan creation. |
 
 ### 4.3 `plans`
 

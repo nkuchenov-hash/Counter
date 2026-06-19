@@ -103,6 +103,24 @@ DateTime toWallClock(DateTime utc, int offsetHours) {
   );
 }
 
+/// Convert naive wall-clock components in an IANA zone (DST-aware) to UTC storage.
+DateTime wallClockToUtcForIanaId(DateTime wallClock, String ianaId) {
+  final id = ianaId.trim();
+  final loc = tz.getLocation(id);
+  final z = tz.TZDateTime(
+    loc,
+    wallClock.year,
+    wallClock.month,
+    wallClock.day,
+    wallClock.hour,
+    wallClock.minute,
+    wallClock.second,
+    wallClock.millisecond,
+    wallClock.microsecond,
+  );
+  return z.toUtc();
+}
+
 /// Convert a wall-clock time (naive picker value) to a UTC timestamp for storage.
 ///
 /// Uses only calendar components of [wallClock] as the user's profile wall time

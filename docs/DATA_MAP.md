@@ -79,6 +79,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **icon** | String | UI | NO | Optional icon name identifier. |
 | **icon_code_point**| Number | UI | NO | Flutter IconData glyph code (e.g., 63358). |
 | **default_plan_time** | String | Planning | NO | Optional `HH:mm` 24-hour default start time for new scheduled plans in this category when input has no explicit time. Empty/null = no own default; children inherit nearest parent value. |
+| **default_plan_timezone** | String | Planning | NO | Optional IANA timezone for [default_plan_time] (`America/New_York`, `Europe/Moscow`, …). Empty/null/`profile` = use active profile timezone at plan creation. |
 | **order** | Number | UI | NO | Sibling sort index within the same `parent_id` (default `0`). Persisted via concurrent PATCH. |
 | **is_archived** | Bool | State | **YES** | Soft delete flag. `true` = hidden from UI, `false` = active. Default: `false`. |
 

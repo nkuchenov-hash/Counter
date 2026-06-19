@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 default plan times timezone context [shipped]
+* **`categories.default_plan_timezone`:** [shipped] Optional IANA text field documented in `DATA_MAP.md` / `POCKETBASE_MANIFEST.md`; null/`profile` = active profile TZ; backward compatible when missing.
+* **`category_service.dart`:** [shipped] `effectiveDefaultPlanScheduleForCategory`, `wallUtcForCategoryDefaultWall`, `updateCategoryDefaultPlanSchedule`, `formatDefaultPlanTimeWithTimezoneLabel`; PB field-missing error detection.
+* **`plan_service.dart`:** [shipped] `resolveAutoPlanSchedule` returns UTC instants for category-default path; `planningTaskWithAutoSchedule` + `profileDisplayWallsFromAutoSchedule`.
+* **`planning_view.dart`:** [shipped] Default plan times sheet shows profile TZ notice + `09:00 · NY` rows; edit sheet with profile/fixed timezone picker.
+* **`wall_clock.dart` / `timezone_settings.dart`:** [shipped] `wallClockToUtcForIanaId`, `kCategoryDefaultTimezoneOptions`.
+
 ## [2026-06-15] - P0 Time mode TZ placement + sane hour scale + bottom footer [shipped]
 * **`plan_service.dart`:** [shipped] `projectPlanForTimeMode()` requires `startUtcInstant` only (rejects stale `startTime`/`dateKey` wall fallback); offline cache persists/parses `start_time` ISO; `TIME_TZ_PROJECT` adds `startMin`/`endMin`.
 * **`planning_view.dart`:** [shipped] Fixed hour height = `planTimeCardMeasureHeight() * 1.5` clamped 120–160px (removed shortest-task 40px floor + 560px cap); `TIME_DURATION_LAYOUT` logs `profileTz`/`wallStart`/`wallEnd`.

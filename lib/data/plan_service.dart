@@ -2130,7 +2130,15 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   /// Auto start/end for a new plan on a day. Explicit parsed range always wins.
-  ({DateTime startWall, DateTime endWall}) resolveAutoPlanSchedule({
+  /// When [startUtcInstant] is non-null, category default used a fixed/profile TZ
+  /// for wall→UTC; callers should pass UTC to [PlanningTask] and let coalesce
+  /// reproject display walls.
+  ({
+    DateTime startWall,
+    DateTime endWall,
+    DateTime? startUtcInstant,
+    DateTime? endUtcInstant,
+  }) resolveAutoPlanSchedule({
     required DateTime wallDay,
     required int categoryId,
     required List<Tag> tags,
@@ -2144,7 +2152,12 @@ extension PlanServiceExtension on DatabaseService {
     if (hasExplicitTimeRange &&
         explicitStartWall != null &&
         explicitEndWall != null) {
-      return (startWall: explicitStartWall, endWall: explicitEndWall);
+      return (
+        startWall: explicitStartWall,
+        endWall: explicitEndWall,
+        startUtcInstant: null,
+        endUtcInstant: null,
+      );
     }
 
     final durationMin = explicitDurationMinutes != null &&
@@ -2152,6 +2165,8 @@ extension PlanServiceExtension on DatabaseService {
         ? explicitDurationMinutes.clamp(1, 24 * 60)
         : resolvePlanDurationMinutesFromTags(tags);
 
+    String? categoryDefaultTimezoneIana;
+    var usedCategoryDefault = false;
     late final DateTime startWall;
     if (explicitStartWall != null) {
       startWall = explicitStartWall;
@@ -2166,12 +2181,18 @@ extension PlanServiceExtension on DatabaseService {
       if (latestEnd != null) {
         startWall = _snapPlanWallDateTime(latestEnd);
       } else {
-        final catDefault = wallDateTimeForCategoryDefaultPlanTime(
-          categoryId,
-          wallDay,
-        );
-        startWall = _snapPlanWallDateTime(
-          catDefault ??
+        final catSchedule = effectiveDefaultPlanScheduleForCategory(categoryId);
+        if (catSchedule?.hhmm != null) {
+          final h = int.tryParse(catSchedule!.hhmm!.substring(0, 2));
+          final m = int.tryParse(catSchedule.hhmm!.substring(3, 5));
+          if (h != null && m != null) {
+            usedCategoryDefault = true;
+            categoryDefaultTimezoneIana = catSchedule.timezoneIana;
+            startWall = _snapPlanWallDateTime(
+              DateTime(wallDay.year, wallDay.month, wallDay.day, h, m),
+            );
+          } else {
+            startWall = _snapPlanWallDateTime(
               DateTime(
                 wallDay.year,
                 wallDay.month,
@@ -2179,16 +2200,88 @@ extension PlanServiceExtension on DatabaseService {
                 timelineDayStartHour.clamp(0, 23),
                 0,
               ),
-        );
+            );
+          }
+        } else {
+          startWall = _snapPlanWallDateTime(
+            DateTime(
+              wallDay.year,
+              wallDay.month,
+              wallDay.day,
+              timelineDayStartHour.clamp(0, 23),
+              0,
+            ),
+          );
+        }
       }
     }
 
-    if (explicitEndWall != null && explicitEndWall.isAfter(startWall)) {
-      return (startWall: startWall, endWall: explicitEndWall);
+    final endWall = explicitEndWall != null && explicitEndWall.isAfter(startWall)
+        ? explicitEndWall
+        : startWall.add(Duration(minutes: durationMin));
+
+    if (usedCategoryDefault) {
+      final startUtc = wallUtcForCategoryDefaultWall(
+        wallDay: wallDay,
+        hour: startWall.hour,
+        minute: startWall.minute,
+        timezoneIana: categoryDefaultTimezoneIana,
+      );
+      final endUtc = startUtc.add(Duration(minutes: durationMin));
+      return (
+        startWall: startWall,
+        endWall: endWall,
+        startUtcInstant: startUtc,
+        endUtcInstant: endUtc,
+      );
     }
+
     return (
       startWall: startWall,
-      endWall: startWall.add(Duration(minutes: durationMin)),
+      endWall: endWall,
+      startUtcInstant: null,
+      endUtcInstant: null,
+    );
+  }
+
+  ({DateTime startWall, DateTime endWall}) profileDisplayWallsFromAutoSchedule(
+    ({
+      DateTime startWall,
+      DateTime endWall,
+      DateTime? startUtcInstant,
+      DateTime? endUtcInstant,
+    }) schedule,
+  ) {
+    if (schedule.startUtcInstant != null) {
+      final sw = _profileWallFromUtc(schedule.startUtcInstant!);
+      final ew = schedule.endUtcInstant != null
+          ? _profileWallFromUtc(schedule.endUtcInstant!)
+          : schedule.endWall;
+      return (startWall: sw, endWall: ew);
+    }
+    return (startWall: schedule.startWall, endWall: schedule.endWall);
+  }
+
+  PlanningTask planningTaskWithAutoSchedule(
+    PlanningTask task,
+    ({
+      DateTime startWall,
+      DateTime endWall,
+      DateTime? startUtcInstant,
+      DateTime? endUtcInstant,
+    }) schedule,
+  ) {
+    if (schedule.startUtcInstant != null) {
+      return task.copyWith(
+        startUtcInstant: schedule.startUtcInstant,
+        endUtcInstant: schedule.endUtcInstant,
+        startTime: null,
+        endDateTime: null,
+      );
+    }
+    return task.copyWith(
+      startTime: schedule.startWall,
+      endDateTime: schedule.endWall,
     );
   }
 
@@ -3151,19 +3244,20 @@ extension PlanServiceExtension on DatabaseService {
     final clientPlanId = DatabaseService.newClientUuid();
 
     return addPlanningTask(
-      PlanningTask(
-        id: 0,
-        title: title,
-        categoryId: categoryId,
-        isDone: false,
-        dateKey: taskDateKey,
-        order: nextOrder,
-        startTime: schedule.startWall,
-        endDateTime: schedule.endWall,
-        checklist: const [],
-        parentPlanId: null,
-        tags: const [],
-        isSynced: false,
+      planningTaskWithAutoSchedule(
+        PlanningTask(
+          id: 0,
+          title: title,
+          categoryId: categoryId,
+          isDone: false,
+          dateKey: taskDateKey,
+          order: nextOrder,
+          checklist: const [],
+          parentPlanId: null,
+          tags: const [],
+          isSynced: false,
+        ),
+        schedule,
       ),
       clientPlanId: clientPlanId,
     );
@@ -3183,8 +3277,6 @@ extension PlanServiceExtension on DatabaseService {
     }
     unawaited(() async {
       try {
-        DateTime? startWall;
-        DateTime? endWall;
         final d = dateKey.trim();
         if (d.length >= 10) {
           final y = int.tryParse(d.substring(0, 4));
@@ -3200,21 +3292,20 @@ extension PlanServiceExtension on DatabaseService {
               existingDayPlans: existingDay,
               timelineDayStartHour: 0,
             );
-            startWall = schedule.startWall;
-            endWall = schedule.endWall;
+            await addPlanningTask(
+              planningTaskWithAutoSchedule(
+                PlanningTask(
+                  id: 0,
+                  title: title,
+                  categoryId: categoryId,
+                  dateKey: dateKey,
+                  order: 0,
+                ),
+                schedule,
+              ),
+            );
           }
         }
-        await addPlanningTask(
-          PlanningTask(
-            id: 0,
-            title: title,
-            categoryId: categoryId,
-            dateKey: dateKey,
-            order: 0,
-            startTime: startWall,
-            endDateTime: endWall,
-          ),
-        );
       } catch (_) {}
     }());
   }

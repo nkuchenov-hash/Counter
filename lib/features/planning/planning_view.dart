@@ -23,6 +23,7 @@ import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/features/planning/smart_plan_sheet.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
+import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
 import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/category_db_display.dart';
@@ -788,47 +789,175 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
-  Future<void> _setCategoryDefaultPlanTime(
+  Future<void> _editCategoryDefaultPlanSchedule(
     int categoryId,
     void Function(void Function())? modalSetState,
   ) async {
-    final current =
-        DatabaseService.instance
-            .getCategoryRuleById(categoryId)
-            ?.defaultPlanTime ??
-        DatabaseService.instance.effectiveDefaultPlanTimeForCategory(
-          categoryId,
-        );
-    final picked = await showTimePicker(
+    final loc = currentLocale.value;
+    final db = DatabaseService.instance;
+    final rule = db.getCategoryRuleById(categoryId);
+    final currentTime = db.sanitizeDefaultPlanTime(rule?.defaultPlanTime) ??
+        db.effectiveDefaultPlanTimeForCategory(categoryId);
+    var pickedTime = _timeOfDayFromHhmm(currentTime);
+    var useProfileTz = db.usesProfileDefaultPlanTimezone(rule?.defaultPlanTimezone);
+    var fixedIana = db.sanitizeDefaultPlanTimezone(rule?.defaultPlanTimezone) ??
+        tz_settings.kCategoryDefaultTimezoneOptions.first.ianaId;
+
+    final saved = await showModalBottomSheet<bool>(
       context: context,
-      initialTime: _timeOfDayFromHhmm(current),
-      initialEntryMode: appTimePickerEntryMode(),
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final profileTzLabel = db.profileTimezoneShortLabel();
+            final timeLabel = _hhmmFromTimeOfDay(pickedTime);
+            final fixedShort = tz_settings.shortLabelForCategoryDefaultTimezoneIana(
+              fixedIana,
+            );
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + MediaQuery.paddingOf(context).bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      t(loc, 'plan_default_time_set'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(t(loc, 'plan_default_time_field_time')),
+                      subtitle: Text(timeLabel),
+                      trailing: const Icon(Icons.schedule_rounded),
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: pickedTime,
+                          initialEntryMode: appTimePickerEntryMode(),
+                        );
+                        if (picked == null) return;
+                        setSheetState(() => pickedTime = picked);
+                      },
+                    ),
+                    Text(
+                      t(loc, 'plan_default_time_field_timezone'),
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment<bool>(
+                          value: true,
+                          label: Text(
+                            t(loc, 'plan_default_time_tz_profile')
+                                .replaceFirst('%s', profileTzLabel),
+                          ),
+                        ),
+                        ButtonSegment<bool>(
+                          value: false,
+                          label: Text(t(loc, 'plan_default_time_tz_fixed')),
+                        ),
+                      ],
+                      selected: {useProfileTz},
+                      onSelectionChanged: (s) {
+                        setSheetState(() => useProfileTz = s.first);
+                      },
+                    ),
+                    if (!useProfileTz) ...[
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final picked = await showSearch<String?>(
+                            context: context,
+                            delegate: _DefaultPlanTimezoneSearchDelegate(
+                              loc: loc,
+                              options: tz_settings.kCategoryDefaultTimezoneOptions,
+                            ),
+                          );
+                          if (picked == null) return;
+                          setSheetState(() => fixedIana = picked);
+                        },
+                        icon: const Icon(Icons.public_rounded),
+                        label: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                            '$fixedShort (${fixedIana.replaceAll('_', ' ')})',
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    AppButton.primary(
+                      label: t(loc, 'save'),
+                      onPressed: () => Navigator.pop(context, true),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
-    if (picked == null || !mounted) return;
-    final ok = await DatabaseService.instance.updateCategoryDefaultPlanTime(
+    if (saved != true || !mounted) return;
+
+    final result = await db.updateCategoryDefaultPlanSchedule(
       categoryId,
-      _hhmmFromTimeOfDay(picked),
+      _hhmmFromTimeOfDay(pickedTime),
+      useProfileTz ? null : fixedIana,
     );
     if (!mounted) return;
-    if (!ok.ok) {
-      AppSnack.failed();
+    if (!result.ok) {
+      if (result.timezoneFieldMissing) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t(loc, 'plan_default_timezone_field_missing')),
+          ),
+        );
+      } else {
+        AppSnack.failed();
+      }
       return;
     }
     setState(() {});
     modalSetState?.call(() {});
   }
 
+  Future<void> _setCategoryDefaultPlanTime(
+    int categoryId,
+    void Function(void Function())? modalSetState,
+  ) async {
+    await _editCategoryDefaultPlanSchedule(categoryId, modalSetState);
+  }
+
   Future<void> _clearCategoryDefaultPlanTime(
     int categoryId,
     void Function(void Function())? modalSetState,
   ) async {
-    final ok = await DatabaseService.instance.updateCategoryDefaultPlanTime(
+    final result = await DatabaseService.instance.updateCategoryDefaultPlanSchedule(
       categoryId,
+      null,
       null,
     );
     if (!mounted) return;
-    if (!ok.ok) {
-      AppSnack.failed();
+    if (!result.ok) {
+      if (result.timezoneFieldMissing) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t(currentLocale.value, 'plan_default_timezone_field_missing')),
+          ),
+        );
+      } else {
+        AppSnack.failed();
+      }
       return;
     }
     setState(() {});
@@ -868,19 +997,29 @@ class _PlanningPageState extends State<PlanningPage>
             );
             final selectedEffective = selectedCategoryId == null
                 ? null
-                : db.effectiveDefaultPlanTimeForCategory(selectedCategoryId!);
+                : db.effectiveDefaultPlanScheduleForCategory(
+                    selectedCategoryId!,
+                  );
             String statusText({
               required String? own,
-              required String? effective,
+              required String? ownTz,
+              required ({String? hhmm, String? timezoneIana, int? sourceCategoryId})?
+                  effective,
             }) {
               if (own != null) {
-                return t(loc, 'plan_default_time_own').replaceFirst('%s', own);
+                return t(loc, 'plan_default_time_own').replaceFirst(
+                  '%s',
+                  db.formatDefaultPlanTimeWithTimezoneLabel(own, ownTz),
+                );
               }
-              if (effective != null) {
-                return t(
-                  loc,
-                  'plan_default_time_inherited',
-                ).replaceFirst('%s', effective);
+              if (effective?.hhmm != null) {
+                return t(loc, 'plan_default_time_inherited').replaceFirst(
+                  '%s',
+                  db.formatDefaultPlanTimeWithTimezoneLabel(
+                    effective!.hhmm!,
+                    effective.timezoneIana,
+                  ),
+                );
               }
               return t(loc, 'plan_default_time_none');
             }
@@ -910,6 +1049,23 @@ class _PlanningPageState extends State<PlanningPage>
                     Text(
                       t(loc, 'plan_default_times_title'),
                       style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      t(loc, 'plan_default_times_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      t(loc, 'plan_default_times_profile_tz_notice').replaceFirst(
+                        '%s',
+                        db.profileTimezoneShortLabel(),
+                      ),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
@@ -949,6 +1105,7 @@ class _PlanningPageState extends State<PlanningPage>
                                   Text(
                                     statusText(
                                       own: selectedOwn,
+                                      ownTz: selectedRule?.defaultPlanTimezone,
                                       effective: selectedEffective,
                                     ),
                                     style: Theme.of(
@@ -1013,11 +1170,16 @@ class _PlanningPageState extends State<PlanningPage>
                                   const Divider(height: 1),
                               itemBuilder: (context, i) {
                                 final pair = configuredPairs[i];
+                                final rule = db.getCategoryRuleById(pair.id);
                                 final own = db.sanitizeDefaultPlanTime(
-                                  db
-                                      .getCategoryRuleById(pair.id)
-                                      ?.defaultPlanTime,
+                                  rule?.defaultPlanTime,
                                 );
+                                final subtitle = own != null
+                                    ? db.formatDefaultPlanTimeWithTimezoneLabel(
+                                        own,
+                                        rule?.defaultPlanTimezone,
+                                      )
+                                    : '';
                                 return ListTile(
                                   contentPadding: EdgeInsets.zero,
                                   title: Text(
@@ -1025,7 +1187,7 @@ class _PlanningPageState extends State<PlanningPage>
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  subtitle: Text(own ?? ''),
+                                  subtitle: Text(subtitle),
                                   trailing: Wrap(
                                     spacing: 4,
                                     children: [
@@ -1749,19 +1911,20 @@ class _PlanningPageState extends State<PlanningPage>
     unawaited(() async {
       try {
         final ok = await DatabaseService.instance.addPlanningTask(
-          PlanningTask(
-            id: 0,
-            title: title,
-            categoryId: categoryId,
-            isDone: false,
-            dateKey: taskDateKey,
-            order: nextOrder,
-            startTime: schedule.startWall,
-            endDateTime: schedule.endWall,
-            checklist: const [],
-            parentPlanId: null,
-            tags: tagsForCreate,
-            isSynced: false,
+          DatabaseService.instance.planningTaskWithAutoSchedule(
+            PlanningTask(
+              id: 0,
+              title: title,
+              categoryId: categoryId,
+              isDone: false,
+              dateKey: taskDateKey,
+              order: nextOrder,
+              checklist: const [],
+              parentPlanId: null,
+              tags: tagsForCreate,
+              isSynced: false,
+            ),
+            schedule,
           ),
           clientPlanId: clientPlanId,
         );
@@ -1771,6 +1934,10 @@ class _PlanningPageState extends State<PlanningPage>
           setState(() {
             _creationSelectedTags = [];
           });
+          final displayWalls =
+              DatabaseService.instance.profileDisplayWallsFromAutoSchedule(
+            schedule,
+          );
           _maybeShowPlanScheduleOverloadWarning(
             dayPlans: [
               ...existingDay,
@@ -1781,8 +1948,8 @@ class _PlanningPageState extends State<PlanningPage>
                 isDone: false,
                 dateKey: taskDateKey,
                 order: nextOrder,
-                startTime: schedule.startWall,
-                endDateTime: schedule.endWall,
+                startTime: displayWalls.startWall,
+                endDateTime: displayWalls.endWall,
                 tags: tagsForCreate,
               ),
             ],
@@ -1859,19 +2026,20 @@ class _PlanningPageState extends State<PlanningPage>
 
       try {
         final ok = await DatabaseService.instance.addPlanningTask(
-          PlanningTask(
-            id: 0,
-            title: title,
-            categoryId: categoryId,
-            isDone: false,
-            dateKey: taskDateKey,
-            order: order,
-            startTime: schedule.startWall,
-            endDateTime: schedule.endWall,
-            checklist: const [],
-            parentPlanId: null,
-            tags: const [],
-            isSynced: false,
+          DatabaseService.instance.planningTaskWithAutoSchedule(
+            PlanningTask(
+              id: 0,
+              title: title,
+              categoryId: categoryId,
+              isDone: false,
+              dateKey: taskDateKey,
+              order: order,
+              checklist: const [],
+              parentPlanId: null,
+              tags: const [],
+              isSynced: false,
+            ),
+            schedule,
           ),
           clientPlanId: clientPlanId,
         );
@@ -5194,6 +5362,68 @@ class _DefaultPlanCategorySearchDelegate
         return ListTile(
           title: Text(option.path),
           onTap: () => close(context, option),
+        );
+      },
+    );
+  }
+}
+
+class _DefaultPlanTimezoneSearchDelegate extends SearchDelegate<String?> {
+  _DefaultPlanTimezoneSearchDelegate({
+    required this.loc,
+    required this.options,
+  }) : super(searchFieldLabel: t(loc, 'plan_default_time_tz_search'));
+
+  final String loc;
+  final List<tz_settings.CategoryDefaultTimezoneOption> options;
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      if (query.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear_rounded),
+          onPressed: () => query = '',
+        ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back_rounded),
+      onPressed: () => close(context, null),
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) => _buildMatches(context);
+
+  @override
+  Widget buildSuggestions(BuildContext context) => _buildMatches(context);
+
+  Widget _buildMatches(BuildContext context) {
+    final q = query.trim().toLowerCase();
+    final matches = q.isEmpty
+        ? options
+        : options.where((o) {
+            return o.searchLabel.toLowerCase().contains(q) ||
+                o.ianaId.toLowerCase().contains(q) ||
+                o.shortLabel.toLowerCase().contains(q);
+          }).toList();
+    if (matches.isEmpty) {
+      return Center(child: Text(t(loc, 'plan_default_time_tz_search')));
+    }
+    return ListView.separated(
+      itemCount: matches.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final option = matches[index];
+        return ListTile(
+          title: Text(option.searchLabel),
+          subtitle: Text(option.ianaId),
+          trailing: Text(option.shortLabel),
+          onTap: () => close(context, option.ianaId),
         );
       },
     );

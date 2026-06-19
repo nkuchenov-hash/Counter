@@ -19,6 +19,8 @@ import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/features/profile/wall_clock.dart' as wall_clock;
+import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
