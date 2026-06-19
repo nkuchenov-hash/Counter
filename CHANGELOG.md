@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time mode card clipping fix [shipped]
+* **`plan_time_task_card.dart`:** [shipped] `planTimeCardMeasureHeight()` computes full intrinsic height (title row includes 33px menu slot → 106px); `planTimeCardTimelineAllocatedHeight()` +2px border allowance; explicit `titleRowHeight` SizedBox; footer right safe pad 6px.
+* **`planning_view.dart`:** [shipped] Rubber grid + `Positioned` use `planTimeCardTimelineAllocatedHeight`; removed timeline `ClipRRect` anti-alias clip; debounced `TIME_CARD_CONSTRAINTS` / `TIME_HOUR_ROW_METRICS` logs.
+
 ## [2026-06-15] - Footer time safe area + clear recurring icon [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Footer time cluster `mainAxisSize: min`, no ellipsis on time, 4px right safe pad; breadcrumbs ellipsize first. Recurring → `Icons.autorenew_rounded` 15px after title (5px gap).
 

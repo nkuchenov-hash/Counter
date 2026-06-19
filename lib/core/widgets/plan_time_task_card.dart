@@ -396,7 +396,7 @@ abstract final class _PlanCardGeom {
   static const double radius = 12;
   static const double refHeightMicro = 40;
   static const double refHeightSmall = 54;
-  static const double refHeightMedium = 90;
+  static const double refHeightMedium = 106;
   static const double refHeightLarge = 147;
   static const double tagRowHeight = 16;
   static const double tagGap = 5;
@@ -408,11 +408,13 @@ abstract final class _PlanCardGeom {
   static const double progressBarHeight = 3;
   static const double footerBlockGap = 6;
   static const double footerTimeGap = 6;
-  static const double footerTimeRightSafePad = 4;
+  static const double footerTimeRightSafePad = 6;
   static const double footerTextHeight = 14;
   static const double footerBottomPad = 8;
   static const double titleTopInset = 0;
   static const double titleLineHeight = 16;
+  static const double titleRowHeight = 33;
+  static const double timelineBlockAllowancePx = 2;
   static const double watermarkMinCardHeight = 90;
 
   static double refHeight(PlanTimeTaskCardDensity d) => switch (d) {
@@ -598,21 +600,24 @@ class _PlanCardInvariantBody extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _PlanCardTitleRow(
-                  title: task.title,
-                  displayIsDone: displayIsDone,
-                  hasRepeat: hasRepeat,
-                  maxLines: titleMaxLines,
-                  metaIcons: metaIcons,
+          SizedBox(
+            height: _PlanCardGeom.titleRowHeight,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _PlanCardTitleRow(
+                    title: task.title,
+                    displayIsDone: displayIsDone,
+                    hasRepeat: hasRepeat,
+                    maxLines: titleMaxLines,
+                    metaIcons: metaIcons,
+                  ),
                 ),
-              ),
-              if (onOpenMenu != null)
-                _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
-            ],
+                if (onOpenMenu != null)
+                  _PlanCardMenuButton(onOpenMenu: onOpenMenu!),
+              ],
+            ),
           ),
           SizedBox(
             height: spacing.tagsSlotHeight(hasTags: visibleTags.isNotEmpty),
@@ -1800,35 +1805,48 @@ double planTimeCardListMinHeight(PlanTimeTaskCardDensity density) =>
       PlanTimeTaskCardDensity.large => _PlanCardGeom.refHeightLarge,
     };
 
-/// Intrinsic visual height for rubber timeline layout (content grows, never clips).
+/// Intrinsic CardPlan height — single source for list minHeight and Time mode blocks.
 double planTimeCardMeasureHeight({
   required bool hasTags,
   required bool hasTrackedProgress,
   PlanTimeTaskCardDensity density = PlanTimeTaskCardDensity.medium,
   int titleLines = 1,
 }) {
-  if (density == PlanTimeTaskCardDensity.medium) {
-    return _PlanCardGeom.refHeightMedium;
-  }
   if (density == PlanTimeTaskCardDensity.micro ||
       density == PlanTimeTaskCardDensity.compact) {
     return planTimeCardListMinHeight(density);
   }
   const spacing = _PlanCardVerticalSpacing.shared;
-  final titleBlock =
-      spacing.titleTopInset + _PlanCardGeom.titleLineHeight * titleLines;
+  final titleBlock = spacing.titleTopInset +
+      _PlanCardGeom.titleRowHeight * (titleLines > 1 ? titleLines / 1.0 : 1.0);
   final tagsBlock = spacing.tagsSlotHeight(hasTags: hasTags);
   final progressBlock =
       spacing.progressSlotHeight(hasTrackedProgress: hasTrackedProgress);
   final footerBlock =
       spacing.footerBlockGap + _PlanCardGeom.footerTextHeight;
-  final contentColumn = titleBlock + tagsBlock + progressBlock + footerBlock;
+  final contentColumn = titleBlock +
+      tagsBlock +
+      _PlanCardGeom.tagsToProgressGap +
+      progressBlock +
+      footerBlock;
   final contentWithPad = spacing.padTop + contentColumn + spacing.padBottom;
   const railInner = _PlanCardGeom.controlSize +
       _PlanCardGeom.checkboxPlayGap +
       _PlanCardGeom.controlSize;
   final railWithPad = spacing.padTop + railInner + spacing.padBottom;
   return math.max(contentWithPad, railWithPad);
+}
+
+/// Time mode [Positioned] height: preferred visual height + border allowance.
+double planTimeCardTimelineAllocatedHeight({
+  required bool hasTags,
+  required bool hasTrackedProgress,
+}) {
+  return planTimeCardMeasureHeight(
+        hasTags: hasTags,
+        hasTrackedProgress: hasTrackedProgress,
+      ) +
+      _PlanCardGeom.timelineBlockAllowancePx;
 }
 
 /// Left inset for timeline drag/tap body zone — excludes checkbox + play rail.

@@ -2272,7 +2272,7 @@ class _PlanningPageState extends State<PlanningPage>
         );
         final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
         final hasTags = span.task.tags.any((tag) => tag.rendersAsChip);
-        final heightPx = planTimeCardMeasureHeight(
+        final heightPx = planTimeCardTimelineAllocatedHeight(
           hasTags: hasTags,
           hasTrackedProgress: tracked > 0,
         );
@@ -2329,6 +2329,12 @@ class _PlanningPageState extends State<PlanningPage>
       hourHeights: hourHeights,
       hourTops: finalTops,
     );
+    _logTimeHourRowMetrics(
+      visibleHours: visibleHours,
+      hourHeights: hourHeights,
+      hourTops: finalTops,
+      layouts: layouts,
+    );
     return (grid: finalGrid, layouts: layouts);
   }
 
@@ -2345,9 +2351,35 @@ class _PlanningPageState extends State<PlanningPage>
       planActualByPbId,
     );
     _activeTimelineRubberGrid = result.grid;
+    final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
+      rangeStart,
+      rangeEnd,
+    );
     for (final layout in result.layouts) {
       final proj = DatabaseService.instance.projectPlanForTimeMode(layout.task);
       if (proj != null) {
+        final pbId = DatabaseService.pocketRelationIdOrNull(
+          layout.task.pocketRecordId,
+        );
+        final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
+        final hasTags = layout.task.tags.any((tag) => tag.rendersAsChip);
+        final preferredHeight = planTimeCardMeasureHeight(
+          hasTags: hasTags,
+          hasTrackedProgress: tracked > 0,
+        );
+        final hourIdx =
+            visibleHours.indexOf(proj.wallStart.hour.clamp(0, 23));
+        final rowHeight = hourIdx >= 0 && hourIdx < result.grid.hourHeights.length
+            ? result.grid.hourHeights[hourIdx]
+            : 0.0;
+        _logTimeCardConstraints(
+          task: layout.task,
+          allocatedHeight: layout.heightPx,
+          preferredHeight: preferredHeight,
+          visualHeight: preferredHeight,
+          rowHeight: rowHeight,
+          topPx: layout.topPx,
+        );
         _logTimeModeLayout(
           task: layout.task,
           proj: proj,
@@ -2365,7 +2397,91 @@ class _PlanningPageState extends State<PlanningPage>
   DateTime? _lastTimeModeLayoutLogAt;
   String? _lastTimeModeRailLogKey;
   DateTime? _lastTimeModeRailLogAt;
+  String? _lastTimeCardConstraintsLogKey;
+  DateTime? _lastTimeCardConstraintsLogAt;
+  String? _lastTimeHourRowMetricsLogKey;
+  DateTime? _lastTimeHourRowMetricsLogAt;
   static const Duration _timeModeLogDebounce = Duration(seconds: 8);
+
+  void _logTimeCardConstraints({
+    required PlanningTask task,
+    required double allocatedHeight,
+    required double preferredHeight,
+    required double visualHeight,
+    required double rowHeight,
+    required double topPx,
+  }) {
+    final planId = task.planRowIdForBackend.trim();
+    final bottom = topPx + allocatedHeight;
+    final clippedRisk = allocatedHeight + 0.5 < visualHeight;
+    final key =
+        '$planId|alloc=${allocatedHeight.toStringAsFixed(1)}|pref=${preferredHeight.toStringAsFixed(1)}|clip=$clippedRisk';
+    final now = DateTime.now();
+    if (_lastTimeCardConstraintsLogKey == key &&
+        _lastTimeCardConstraintsLogAt != null &&
+        now.difference(_lastTimeCardConstraintsLogAt!) < _timeModeLogDebounce) {
+      return;
+    }
+    _lastTimeCardConstraintsLogKey = key;
+    _lastTimeCardConstraintsLogAt = now;
+    // ignore: avoid_print
+    print(
+      'TIME_CARD_CONSTRAINTS planId=${planId.isEmpty ? '-' : planId} '
+      'allocatedHeight=${allocatedHeight.toStringAsFixed(1)} '
+      'preferredHeight=${preferredHeight.toStringAsFixed(1)} '
+      'visualHeight=${visualHeight.toStringAsFixed(1)} '
+      'rowHeight=${rowHeight.toStringAsFixed(1)} '
+      'top=${topPx.toStringAsFixed(1)} '
+      'bottom=${bottom.toStringAsFixed(1)} '
+      'clippedRisk=$clippedRisk',
+    );
+  }
+
+  void _logTimeHourRowMetrics({
+    required List<int> visibleHours,
+    required List<double> hourHeights,
+    required List<double> hourTops,
+    required List<_TimelineBlockLayout> layouts,
+  }) {
+    const baseHour = _kTimelineHourHeightBasePx;
+    const hourPad = _kTimelineHourRowPadPx;
+    final batchKey = visibleHours.join(',') +
+        hourHeights.map((h) => h.toStringAsFixed(0)).join(',');
+    final now = DateTime.now();
+    if (_lastTimeHourRowMetricsLogKey == batchKey &&
+        _lastTimeHourRowMetricsLogAt != null &&
+        now.difference(_lastTimeHourRowMetricsLogAt!) < _timeModeLogDebounce) {
+      return;
+    }
+    _lastTimeHourRowMetricsLogKey = batchKey;
+    _lastTimeHourRowMetricsLogAt = now;
+    for (var hi = 0; hi < visibleHours.length; hi++) {
+      final hour = visibleHours[hi];
+      final hourTop = hourTops[hi];
+      final hourBottom = hourTop + hourHeights[hi];
+      var contentNeeded = hourPad.toDouble();
+      var cardCount = 0;
+      for (final layout in layouts) {
+        final layoutBottom = layout.topPx + layout.heightPx;
+        if (layout.topPx < hourBottom && layoutBottom > hourTop) {
+          cardCount++;
+          contentNeeded = math.max(
+            contentNeeded,
+            layoutBottom - hourTop + hourPad,
+          );
+        }
+      }
+      final finalHeight = hourHeights[hi];
+      // ignore: avoid_print
+      print(
+        'TIME_HOUR_ROW_METRICS hour=$hour '
+        'baseHeight=$baseHour '
+        'contentNeeded=${contentNeeded.toStringAsFixed(1)} '
+        'finalHeight=${finalHeight.toStringAsFixed(1)} '
+        'cardCount=$cardCount',
+      );
+    }
+  }
 
   void _logTimeModeLayout({
     required PlanningTask task,
@@ -3790,10 +3906,7 @@ class _PlanningPageState extends State<PlanningPage>
             padding: const EdgeInsets.symmetric(
               horizontal: _kTimelineBlockHorizontalPadPx,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              clipBehavior: Clip.antiAlias,
-              child: _TimelinePlanInteractionBlock(
+            child: _TimelinePlanInteractionBlock(
               canMove: canInteract,
               canResize: canInteract,
               resizeHandlePx: _kTimelineResizeHandlePx,
@@ -3882,19 +3995,21 @@ class _PlanningPageState extends State<PlanningPage>
                       : null,
               onResizeCancel: canInteract ? _cancelTimelineResize : null,
               isInteracting: isInteracting,
-              child: _planCardRow(
-                context: context,
-                task: layout.task,
-                key: planKey,
-                displayDone:
-                    _planDoneOverride[planKey] ?? layout.task.isDone,
-                isSelected: _selectedPlanKeys.contains(planKey),
-                planActualByPbId: planActualByPbId,
-                timelineEmbedded: true,
-                timelineInteracting: isInteracting,
-                timelineScheduleConflict: layout.hasScheduleConflict,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: _planCardRow(
+                  context: context,
+                  task: layout.task,
+                  key: planKey,
+                  displayDone:
+                      _planDoneOverride[planKey] ?? layout.task.isDone,
+                  isSelected: _selectedPlanKeys.contains(planKey),
+                  planActualByPbId: planActualByPbId,
+                  timelineEmbedded: true,
+                  timelineInteracting: isInteracting,
+                  timelineScheduleConflict: layout.hasScheduleConflict,
+                ),
               ),
-            ),
             ),
           ),
         ),
