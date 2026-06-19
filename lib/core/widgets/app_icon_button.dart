@@ -82,7 +82,7 @@ class AppIconButton extends StatelessWidget {
       if (states.contains(WidgetState.selected) || selected) {
         return switch (variant) {
           AppIconButtonVariant.danger => scheme.errorContainer,
-          _ => scheme.primaryContainer,
+          _ => scheme.primary,
         };
       }
       return switch (variant) {
@@ -99,7 +99,7 @@ class AppIconButton extends StatelessWidget {
       if (states.contains(WidgetState.selected) || selected) {
         return switch (variant) {
           AppIconButtonVariant.danger => scheme.onErrorContainer,
-          _ => scheme.onPrimaryContainer,
+          _ => scheme.onPrimary,
         };
       }
       return switch (variant) {

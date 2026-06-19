@@ -5,6 +5,7 @@
 
 import 'dart:async';
 
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
@@ -591,14 +592,14 @@ class _MonthDayCell extends StatelessWidget {
     final loc = currentLocale.value;
     final scheduled = tasks.where((t) => t.startTime != null).toList();
     final bg = _selected
-        ? scheme.primaryContainer.withValues(alpha: 0.5)
+        ? scheme.primaryContainer.withValues(alpha: 0.55)
         : _isToday
-            ? scheme.secondaryContainer.withValues(alpha: 0.28)
+            ? AppColors.cardSurface
             : Colors.transparent;
     final side = _selected
         ? BorderSide(color: scheme.primary, width: 1.5)
         : _isToday
-            ? BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.8))
+            ? BorderSide(color: scheme.primary.withValues(alpha: 0.5))
             : BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.35));
 
     return Padding(
@@ -816,13 +817,17 @@ class _WeekCompactStrip extends StatelessWidget {
                     color: selected
                         ? scheme.primaryContainer.withValues(alpha: 0.55)
                         : isToday
-                            ? scheme.secondaryContainer.withValues(alpha: 0.3)
+                            ? AppColors.cardSurface
                             : scheme.surfaceContainerLow.withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                       side: selected
                           ? BorderSide(color: scheme.primary, width: 1.5)
-                          : BorderSide(
+                          : isToday
+                              ? BorderSide(
+                                  color: scheme.primary.withValues(alpha: 0.5),
+                                )
+                              : BorderSide(
                               color: scheme.outlineVariant.withValues(
                                 alpha: 0.45,
                               ),

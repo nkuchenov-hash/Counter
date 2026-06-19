@@ -8,6 +8,11 @@ ButtonStyle appCompactSegmentedButtonStyle(
   double segmentWidth = 84,
 }) {
   return SegmentedButton.styleFrom(
+    selectedBackgroundColor: Theme.of(context).colorScheme.primary,
+    selectedForegroundColor: Theme.of(context).colorScheme.onPrimary,
+    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+    foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+    side: BorderSide(color: Theme.of(context).colorScheme.outline),
     fixedSize: Size(segmentWidth, kAppCompactControlHeight),
     tapTargetSize: MaterialTapTargetSize.padded,
     padding: EdgeInsets.zero,

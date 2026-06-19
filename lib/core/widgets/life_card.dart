@@ -1,3 +1,4 @@
+import 'package:counter/core/app_colors.dart';
 import 'package:flutter/material.dart';
 
 enum LifeCardState { normal, selected, completed, disabled, active }
@@ -42,14 +43,12 @@ class LifeCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final accent = leadingAccentColor ?? scheme.primary;
-    final borderColor = _isSelected
+    final borderColor = _isSelected || _isActive
         ? scheme.primary
-        : (_isActive ? scheme.tertiary : scheme.outlineVariant);
+        : scheme.outlineVariant;
     final background = _isSelected
-        ? scheme.primaryContainer.withValues(alpha: 0.28)
-        : (_isActive
-              ? scheme.tertiaryContainer.withValues(alpha: 0.22)
-              : scheme.surface);
+        ? scheme.primaryContainer.withValues(alpha: 0.45)
+        : AppColors.cardSurface;
     final card = AnimatedContainer(
       duration: const Duration(milliseconds: 160),
       curve: Curves.easeOutCubic,

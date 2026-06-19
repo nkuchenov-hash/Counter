@@ -1351,12 +1351,13 @@ class _PlanCardCheckboxState extends State<_PlanCardCheckbox>
     final enabled = widget.selectMode
         ? widget.onSelectToggle != null
         : widget.toggleDoneEnabled && widget.onToggleDone != null;
+    final scheme = Theme.of(context).colorScheme;
     final pulse = Curves.easeOut.transform(_checkPulseCtrl.value);
     final borderColor = Color.lerp(
       _hovered && enabled
           ? _PlanCardTokens.playFill.withValues(alpha: 0.55)
           : _PlanCardTokens.checkboxStroke,
-      const Color(0xFF5FAF6A),
+      scheme.primary,
       checked && !widget.selectMode ? 0.35 * pulse : 0.0,
     )!;
     return Semantics(

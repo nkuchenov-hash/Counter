@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
@@ -834,16 +835,9 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
       }
     }
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final runningFill = isRunning
-        ? (isDark
-              ? scheme.primary.withValues(alpha: 0.2)
-              : scheme.primaryContainer.withValues(alpha: 0.45))
-        : null;
+    final runningFill = isRunning ? AppColors.cardSurface : null;
     final runningBorder = isRunning ? scheme.primary : Colors.transparent;
-    final runningTextColor = isRunning
-        ? (isDark ? scheme.primary : scheme.onPrimaryContainer)
-        : null;
+    final runningTextColor = isRunning ? scheme.onSurface : null;
 
     final cardTheme = Theme.of(context).cardTheme;
     final suppressInnerInk = Theme.of(context).copyWith(

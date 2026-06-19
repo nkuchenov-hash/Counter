@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - V3/V7 neutral-black design tokens (no green primary) [shipped]
+* **`app_colors.dart` / `theme.dart`:** [shipped] Central tokens (`actionPrimary` #111111, `appBackground` #FAFAF8, `cardSurface` #FFFFFF); explicit `ColorScheme` + M3 component themes (buttons, FAB, nav, segmented tabs, cards, inputs).
+* **Canonical widgets:** [shipped] `AppIconButton` selected = black fill; `LifeCard` white surfaces; `compact_nav_controls` black selected segments; timeline running cards white + black border; calendar today/selected neutral.
+* **Outliers:** [shipped] `AppSnack` success uses `AppColors.success`; planning move snackbar uses `scheme.primary`; checkbox pulse uses `scheme.primary`.
+
 ## [2026-06-15] - P0 profile hydration diagnostics + hard PB fetch [shipped]
 * **`app_build_info.dart` / `main.dart` / `profile_view.dart`:** [shipped] `APP_BUILD commit=… builtAt=… route=…` console log + Profile footer build stamp via `--dart-define`.
 * **`profile_service.dart`:** [shipped] Auth-only `profiles.getOne(authStore.record.id)`; no silent empty-settings fallback; `PROFILE_FETCH_SUCCESS`/`PROFILE_UI_SETTINGS_APPLIED`/`PROFILE_SAVE_PATCH payload=…`; `accountName`/`profileEmail` hydration; `retryProfileHydration()`.

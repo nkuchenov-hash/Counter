@@ -2,6 +2,7 @@
 // Global SnackBar helper — root [ScaffoldMessenger] (@MaterialApp.scaffoldMessengerKey).
 // ---------------------------------------------------------------------------
 
+import 'package:counter/core/app_colors.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -23,8 +24,7 @@ class AppSnack {
       ..showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor:
-              error ? Colors.red.shade800 : Colors.green.shade800,
+          backgroundColor: error ? Colors.red.shade800 : AppColors.success,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
         ),

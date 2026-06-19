@@ -3420,7 +3420,7 @@ class _PlanningPageState extends State<PlanningPage>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: Colors.green.shade700,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           content: Text(
             t(loc, 'plan_task_moved_hour').replaceFirst('%s', label),
             style: const TextStyle(color: Colors.white),
