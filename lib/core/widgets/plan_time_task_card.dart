@@ -350,22 +350,20 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
       child: card,
     );
 
-    if (widget.displayIsDone || _completionCtrl.isAnimating) {
+    if (_completionCtrl.isAnimating) {
       card = AnimatedBuilder(
         animation: _completionCtrl,
         builder: (context, child) {
           final t = Curves.easeOutCubic.transform(_completionCtrl.value);
           return Opacity(
-            opacity: (1.0 - 0.24 * t).clamp(0.76, 1.0),
-            child: Transform.scale(
-              scale: 1.0 - 0.012 * t,
-              alignment: Alignment.center,
-              child: child,
-            ),
+            opacity: (1.0 - 0.12 * t).clamp(0.88, 1.0),
+            child: child,
           );
         },
         child: card,
       );
+    } else if (widget.displayIsDone) {
+      card = Opacity(opacity: 0.88, child: card);
     }
 
     return card;
@@ -378,7 +376,7 @@ abstract final class _PlanCardGeom {
   static const double refWidth = 328;
   static const double padLeft = 12;
   static const double padRight = 12;
-  static const double padTopMediumLarge = 12;
+  static const double padTopMediumLarge = 10;
   static const double padTopSmall = 10;
   static const double controlSize = 32;
   static const double playInlineX = 48;
@@ -393,22 +391,22 @@ abstract final class _PlanCardGeom {
   static const double radius = 12;
   static const double refHeightMicro = 40;
   static const double refHeightSmall = 54;
-  static const double refHeightMedium = 95;
+  static const double refHeightMedium = 90;
   static const double refHeightLarge = 147;
   static const double tagRowHeight = 16;
   static const double tagGap = 5;
-  static const double titleToTagsGap = 5;
-  static const double emptyTagsSlotHeight = 21;
-  static const double tagsToProgressGap = 6;
-  static const double actualTimeSlotHeight = 10;
-  static const double progressAfterActualGap = 6;
+  static const double titleToTagsGap = 2;
+  static const double emptyTagsSlotHeight = 18;
+  static const double tagsToProgressGap = 3;
+  static const double actualTimeSlotHeight = 8;
+  static const double progressAfterActualGap = 3;
   static const double progressBarHeight = 3;
-  static const double footerBlockGap = 8;
+  static const double footerBlockGap = 6;
   static const double footerTextHeight = 14;
-  static const double footerBottomPad = 10;
-  static const double titleTopInset = 1;
+  static const double footerBottomPad = 8;
+  static const double titleTopInset = 0;
   static const double titleLineHeight = 16;
-  static const double watermarkMinCardHeight = 95;
+  static const double watermarkMinCardHeight = 90;
 
   static double refHeight(PlanTimeTaskCardDensity d) => switch (d) {
         PlanTimeTaskCardDensity.micro => refHeightMicro,
@@ -597,15 +595,12 @@ class _PlanCardInvariantBody extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(top: spacing.titleTopInset),
-                  child: _PlanCardTitleRow(
-                    title: task.title,
-                    displayIsDone: displayIsDone,
-                    hasRepeat: hasRepeat,
-                    maxLines: titleMaxLines,
-                    metaIcons: metaIcons,
-                  ),
+                child: _PlanCardTitleRow(
+                  title: task.title,
+                  displayIsDone: displayIsDone,
+                  hasRepeat: hasRepeat,
+                  maxLines: titleMaxLines,
+                  metaIcons: metaIcons,
                 ),
               ),
               if (onOpenMenu != null)
@@ -738,22 +733,40 @@ class _PlanCardProgressRow extends StatelessWidget {
         ? categoryColor
         : _PlanCardTokens.breadcrumbFallbackColor;
     final showFill = estimatedSeconds > 0;
+    final fraction = showFill
+        ? (trackedSeconds <= estimatedSeconds
+            ? trackedSeconds / estimatedSeconds
+            : 1.0)
+        : 0.0;
+    final trackRadius = BorderRadius.circular(trackHeight / 2);
     return Row(
       children: [
         Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(trackHeight / 2),
-            child: LinearProgressIndicator(
-              minHeight: trackHeight,
-              value: showFill
-                  ? (trackedSeconds <= estimatedSeconds
-                      ? trackedSeconds / estimatedSeconds
-                      : 1.0)
-                  : (alwaysShowTrack ? 0.0 : null),
-              backgroundColor: const Color(0x61D9D9D9),
-              color: over
-                  ? Theme.of(context).colorScheme.error
-                  : accent,
+          child: SizedBox(
+            height: trackHeight,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0x61D9D9D9),
+                    borderRadius: trackRadius,
+                  ),
+                ),
+                if (showFill || alwaysShowTrack)
+                  FractionallySizedBox(
+                    widthFactor: showFill ? fraction.clamp(0.0, 1.0) : 0.0,
+                    alignment: Alignment.centerLeft,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: over
+                            ? Theme.of(context).colorScheme.error
+                            : accent,
+                        borderRadius: trackRadius,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -1133,10 +1146,14 @@ class _PlanCardControlRail extends StatelessWidget {
             onToggleDone: onToggleDone,
             onSelectToggle: onSelectToggle,
           ),
-          if (showPlay) ...[
-            const SizedBox(height: _PlanCardGeom.checkboxPlayGap),
-            _PlanCardPlayButton(onPlay: onPlay),
-          ],
+          const SizedBox(height: _PlanCardGeom.checkboxPlayGap),
+          if (showPlay)
+            _PlanCardPlayButton(onPlay: onPlay)
+          else
+            const SizedBox(
+              width: _PlanCardGeom.controlSize,
+              height: _PlanCardGeom.controlSize,
+            ),
           if (expandSpacer) const Spacer(),
         ],
       ),
@@ -1318,37 +1335,59 @@ class _PlanCardPlayIconPainter extends CustomPainter {
 
   final Color fill;
 
-  @override
-  void paint(Canvas canvas, Size size) {
+  static Path _roundedPlayTrianglePath(Size size, {double cornerRadius = 2.2}) {
     final w = size.width;
     final h = size.height;
-    final left = w * 0.14;
-    final tip = w * 0.90;
-    final top = h * 0.10;
-    final bottom = h * 0.90;
-    final mid = h * 0.5;
+    final vertices = <Offset>[
+      Offset(w * 0.15, h * 0.10),
+      Offset(w * 0.15, h * 0.90),
+      Offset(w * 0.92, h * 0.50),
+    ];
+    return _roundedPolygonPath(vertices, cornerRadius);
+  }
 
-    final path = Path()
-      ..moveTo(left, top)
-      ..lineTo(left, bottom)
-      ..lineTo(tip, mid)
-      ..close();
+  static Path _roundedPolygonPath(List<Offset> vertices, double radius) {
+    final path = Path();
+    final n = vertices.length;
+    for (var i = 0; i < n; i++) {
+      final prev = vertices[(i - 1 + n) % n];
+      final curr = vertices[i];
+      final next = vertices[(i + 1) % n];
+      final v1 = curr - prev;
+      final v2 = next - curr;
+      final len1 = v1.distance;
+      final len2 = v2.distance;
+      if (len1 < 0.001 || len2 < 0.001) continue;
+      final r = math.min(radius, math.min(len1, len2) * 0.45);
+      final d1 = Offset(v1.dx / len1 * r, v1.dy / len1 * r);
+      final d2 = Offset(v2.dx / len2 * r, v2.dy / len2 * r);
+      final before = curr - d1;
+      final after = curr + d2;
+      if (i == 0) {
+        path.moveTo(before.dx, before.dy);
+      } else {
+        path.lineTo(before.dx, before.dy);
+      }
+      path.quadraticBezierTo(curr.dx, curr.dy, after.dx, after.dy);
+    }
+    path.close();
+    return path;
+  }
 
-    // Rounded triangle vertices via thick stroke + round joins (not a rounded button).
-    final strokeW = math.max(3.2, w * 0.26);
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = _roundedPlayTrianglePath(size);
     canvas.drawPath(
       path,
       Paint()
         ..color = fill
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeW
-        ..strokeJoin = StrokeJoin.round
-        ..strokeCap = StrokeCap.round,
+        ..style = PaintingStyle.fill,
     );
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _PlanCardPlayIconPainter oldDelegate) =>
+      oldDelegate.fill != fill;
 }
 
 class _PlanCardMenuButton extends StatefulWidget {
@@ -1451,8 +1490,9 @@ class _PlanCardTitleRow extends StatelessWidget {
             curve: Curves.easeOutCubic,
             style: TextStyle(
               fontSize: 16,
-              height: 1.1,
+              height: 1.0,
               fontWeight: FontWeight.w400,
+              leadingDistribution: TextLeadingDistribution.even,
               decoration:
                   displayIsDone ? TextDecoration.lineThrough : TextDecoration.none,
               color: displayIsDone
@@ -1463,6 +1503,10 @@ class _PlanCardTitleRow extends StatelessWidget {
               title,
               maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
+              textHeightBehavior: const TextHeightBehavior(
+                applyHeightToFirstAscent: false,
+                applyHeightToLastDescent: false,
+              ),
             ),
           ),
         ),
