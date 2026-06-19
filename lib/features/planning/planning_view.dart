@@ -280,9 +280,8 @@ class _PlanningPageState extends State<PlanningPage>
   /// Hour-grid day timeline scroll (edge auto-scroll while dragging a plan).
   final ScrollController _hourGridScrollController = ScrollController();
 
-  static const double _kTimelineBaseHourHeightPx = 140;
-  static const double _kTimelineMinFiveMinBlockPx = 40;
-  static const double _kTimelineMaxHourHeightPx = 560;
+  static const double _kTimelineHourHeightMinPx = 120;
+  static const double _kTimelineHourHeightMaxPx = 160;
   static const double _kTimelineRailWidthPx = 48;
   static const int _kTimelineDefaultBlockMinutes = 30;
 
@@ -2204,20 +2203,20 @@ class _PlanningPageState extends State<PlanningPage>
     return _kTimelineDefaultBlockMinutes;
   }
 
+  /// ~1.5× normal CardPlan height; fixed scale (no shortest-task zoom).
+  double _timelineHourHeightPx() {
+    final cardH = planTimeCardMeasureHeight(
+      hasTags: false,
+      hasTrackedProgress: false,
+    );
+    return (cardH * 1.5).clamp(
+      _kTimelineHourHeightMinPx,
+      _kTimelineHourHeightMaxPx,
+    );
+  }
+
   double _computeTimelinePxPerMinute(List<TimeModeProjectedPlan> projections) {
-    var ppm = _kTimelineBaseHourHeightPx / 60.0;
-    var shortest = _kTimelineDefaultBlockMinutes;
-    for (final p in projections) {
-      final d = p.durationMinutes;
-      if (d > 0 && d < shortest) shortest = d;
-    }
-    if (shortest * ppm < _kTimelineMinFiveMinBlockPx) {
-      ppm = _kTimelineMinFiveMinBlockPx / shortest;
-    }
-    if (ppm * 60 > _kTimelineMaxHourHeightPx) {
-      ppm = _kTimelineMaxHourHeightPx / 60.0;
-    }
-    return ppm;
+    return _timelineHourHeightPx() / 60.0;
   }
 
   double _timelineCanvasHeightPx(_TimelineDurationGrid grid) => grid.totalHeightPx;
@@ -2342,6 +2341,10 @@ class _PlanningPageState extends State<PlanningPage>
   DateTime? _lastTimeResizePreviewLogAt;
   static const Duration _timeModeLogDebounce = Duration(seconds: 8);
 
+  String _timelineLogWallIso(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}T'
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
   void _logTimeDurationLayout({
     required TimeModeProjectedPlan proj,
     required int startMinute,
@@ -2365,6 +2368,9 @@ class _PlanningPageState extends State<PlanningPage>
     // ignore: avoid_print
     print(
       'TIME_DURATION_LAYOUT planId=${planId.isEmpty ? '-' : planId} '
+      'profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
+      'wallStart=${_timelineLogWallIso(proj.profileWallStart)} '
+      'wallEnd=${proj.profileWallEnd != null ? _timelineLogWallIso(proj.profileWallEnd!) : '-'} '
       'label=${proj.plannedTimeLabel} '
       'startMinute=$startMinute endMinute=$endMinute durationMin=$durationMin '
       'pxPerMinute=${pxPerMinute.toStringAsFixed(3)} '
@@ -5847,7 +5853,8 @@ class _PlanningTaskCard extends StatelessWidget {
       child: PlanTimeTaskCard(
         task: task,
         density: density,
-        surface: PlanCardSurface.list,
+        surface: PlanCardSurface.timeline,
+        timelineFillHeight: true,
         timeLabel: timelineTimeLabel ?? _timelineTimeRangeLabel(task),
         displayIsDone: displayIsDone,
         selectMode: selectMode,

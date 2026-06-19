@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time mode TZ placement + sane hour scale + bottom footer [shipped]
+* **`plan_service.dart`:** [shipped] `projectPlanForTimeMode()` requires `startUtcInstant` only (rejects stale `startTime`/`dateKey` wall fallback); offline cache persists/parses `start_time` ISO; `TIME_TZ_PROJECT` adds `startMin`/`endMin`.
+* **`planning_view.dart`:** [shipped] Fixed hour height = `planTimeCardMeasureHeight() * 1.5` clamped 120–160px (removed shortest-task 40px floor + 560px cap); `TIME_DURATION_LAYOUT` logs `profileTz`/`wallStart`/`wallEnd`.
+* **`plan_time_task_card.dart`:** [shipped] `timelineFillHeight` + `anchorFooterBottom` pins progress/breadcrumb/time to card bottom in duration blocks; `PlanCardSurface.timeline` for embedded blocks.
+
 ## [2026-06-15] - P0 Time mode duration-true layout + profile TZ projection [shipped]
 * **`plan_service.dart`:** [shipped] `TimeModeProjectedPlan` adds `durationMinutes`, `planId`, profile wall aliases; `TIME_TZ_PROJECT` log; `logTimeTzProjectForTimeMode`.
 * **`planning_view.dart`:** [shipped] Replaced rubber/fixed-height layout with `_TimelineDurationGrid` (linear `pxPerMinute`, height = duration); placement/labels/filter/resize/drag/now-line all use `TimeModeProjectedPlan`; now badge in left rail, line above cards in canvas; auto-scroll to now on profile-today.

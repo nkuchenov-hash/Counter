@@ -75,8 +75,10 @@ extension PlanServiceExtension on DatabaseService {
       'dateKey': t.dateKey,
       'endDateKey': t.endDateKey,
       'order': t.order,
-      if (t.startUtcInstant != null)
+      if (t.startUtcInstant != null) ...<String, dynamic>{
         'start_utc': t.startUtcInstant!.toUtc().toIso8601String(),
+        'start_time': t.startUtcInstant!.toUtc().toIso8601String(),
+      },
       if (t.endUtcInstant != null)
         'end_utc': t.endUtcInstant!.toUtc().toIso8601String(),
       if (t.startTime != null)
@@ -175,9 +177,15 @@ extension PlanServiceExtension on DatabaseService {
     }
     final startUtcRaw = m['start_utc']?.toString();
     final endUtcRaw = m['end_utc']?.toString();
-    final startUtc = startUtcRaw != null && startUtcRaw.trim().isNotEmpty
+    var startUtc = startUtcRaw != null && startUtcRaw.trim().isNotEmpty
         ? DateTime.tryParse(startUtcRaw.trim())?.toUtc()
         : null;
+    if (startUtc == null) {
+      final startTimeIso = m['start_time']?.toString().trim();
+      if (startTimeIso != null && startTimeIso.isNotEmpty) {
+        startUtc = DateTime.tryParse(startTimeIso)?.toUtc();
+      }
+    }
     final endUtc = endUtcRaw != null && endUtcRaw.trim().isNotEmpty
         ? DateTime.tryParse(endUtcRaw.trim())?.toUtc()
         : null;
@@ -1398,6 +1406,11 @@ extension PlanServiceExtension on DatabaseService {
     _lastPlanTimeTzLogKey = lineKey;
     _lastPlanTimeTzLogAt = now;
     // ignore: avoid_print
+    final startMin = wallStart != null
+        ? wallStart.hour * 60 + wallStart.minute
+        : null;
+    final endMin =
+        wallEnd != null ? wallEnd.hour * 60 + wallEnd.minute : null;
     print(
       'TIME_TZ_PROJECT planId=${planId.isEmpty ? '-' : planId} '
       'profileTz=${_settings.preferredTimeZone.trim().isEmpty ? 'offset:${_settings.timezoneOffsetHours}' : _settings.preferredTimeZone.trim()} '
@@ -1405,6 +1418,7 @@ extension PlanServiceExtension on DatabaseService {
       'endUtc=${endUtc?.toUtc().toIso8601String() ?? '-'} '
       'wallStart=${wallStart != null ? _planLogWallIso(wallStart) : '-'} '
       'wallEnd=${wallEnd != null ? _planLogWallIso(wallEnd) : '-'} '
+      'startMin=${startMin ?? '-'} endMin=${endMin ?? '-'} '
       'wallDateKey=${wallStart != null ? _dateKeyFromDate(wallStart) : '-'} '
       'selectedDay=$selectedDay visible=$visible',
     );
@@ -5275,13 +5289,15 @@ class TimeModeProjectedPlan {
 }
 
 extension PlanTimeModeProjection on DatabaseService {
+  /// Profile-wall projection for Time mode — **UTC instant only** (never stale
+  /// [PlanningTask.startTime] / [PlanningTask.dateKey] without [startUtcInstant]).
   TimeModeProjectedPlan? projectPlanForTimeMode(PlanningTask task) {
-    final instants = _planUtcInstants(task);
-    if (instants == null) return null;
-    final wallStart = _profileWallFromUtc(instants.startUtc);
-    final wallEnd = instants.endUtc != null
-        ? _profileWallFromUtc(instants.endUtc!)
-        : null;
+    if (task.startUtcInstant == null) return null;
+    final normalized = _reprojectPlanningTaskWallTimes(task);
+    final startUtc = normalized.startUtcInstant!.toUtc();
+    final endUtc = normalized.endUtcInstant?.toUtc();
+    final wallStart = _profileWallFromUtc(startUtc);
+    final wallEnd = endUtc != null ? _profileWallFromUtc(endUtc) : null;
     final dk =
         '${wallStart.year.toString().padLeft(4, '0')}-'
         '${wallStart.month.toString().padLeft(2, '0')}-'
@@ -5292,9 +5308,9 @@ extension PlanTimeModeProjection on DatabaseService {
         ? '$startLabel – ${wallEnd.hour.toString().padLeft(2, '0')}:${wallEnd.minute.toString().padLeft(2, '0')}'
         : startLabel;
     return TimeModeProjectedPlan(
-      task: task,
-      startUtc: instants.startUtc,
-      endUtc: instants.endUtc,
+      task: normalized,
+      startUtc: startUtc,
+      endUtc: endUtc,
       wallStart: wallStart,
       wallEnd: wallEnd,
       wallDateKey: dk,
