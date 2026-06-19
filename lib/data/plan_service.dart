@@ -1399,7 +1399,7 @@ extension PlanServiceExtension on DatabaseService {
     _lastPlanTimeTzLogAt = now;
     // ignore: avoid_print
     print(
-      'TIME_MODE_PROJECT planId=${planId.isEmpty ? '-' : planId} '
+      'TIME_TZ_PROJECT planId=${planId.isEmpty ? '-' : planId} '
       'profileTz=${_settings.preferredTimeZone.trim().isEmpty ? 'offset:${_settings.timezoneOffsetHours}' : _settings.preferredTimeZone.trim()} '
       'startUtc=${startUtc?.toUtc().toIso8601String() ?? '-'} '
       'endUtc=${endUtc?.toUtc().toIso8601String() ?? '-'} '
@@ -5238,10 +5238,26 @@ class TimeModeProjectedPlan {
   final String wallDateKey;
   final String plannedTimeLabel;
 
+  String get planId => task.planRowIdForBackend.trim();
+
+  DateTime get profileWallStart => wallStart;
+
+  DateTime? get profileWallEnd => wallEnd;
+
+  String get profileWallDateKey => wallDateKey;
+
   int get startMinuteOfDay => wallStart.hour * 60 + wallStart.minute;
 
   int? get endMinuteOfDay =>
       wallEnd != null ? wallEnd!.hour * 60 + wallEnd!.minute : null;
+
+  int get durationMinutes {
+    if (wallEnd != null) {
+      final mins = wallEnd!.difference(wallStart).inMinutes;
+      if (mins > 0) return mins.clamp(5, 24 * 60);
+    }
+    return 30;
+  }
 
   PlanningTask get projectedTask => task.copyWith(
         startUtcInstant: startUtc,
@@ -5283,6 +5299,23 @@ extension PlanTimeModeProjection on DatabaseService {
       wallEnd: wallEnd,
       wallDateKey: dk,
       plannedTimeLabel: plannedTimeLabel,
+    );
+  }
+
+  /// Log profile projection for Time mode placement audit (debounced).
+  void logTimeTzProjectForTimeMode(
+    TimeModeProjectedPlan proj, {
+    required String selectedDay,
+    required bool visible,
+  }) {
+    _logPlanTimeTzProjection(
+      task: proj.task,
+      selectedDay: selectedDay,
+      visible: visible,
+      startUtc: proj.startUtc,
+      endUtc: proj.endUtc,
+      wallStart: proj.wallStart,
+      wallEnd: proj.wallEnd,
     );
   }
 
