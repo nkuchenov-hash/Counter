@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Footer time safe area + clear recurring icon [shipped]
+* **`plan_time_task_card.dart`:** [shipped] Footer time cluster `mainAxisSize: min`, no ellipsis on time, 4px right safe pad; breadcrumbs ellipsize first. Recurring → `Icons.autorenew_rounded` 15px after title (5px gap).
+
 ## [2026-06-15] - Larger play triangle + inline recurring glyph [shipped]
 * **`plan_time_task_card.dart`:** [shipped] Play glyph 22×24px filled rounded triangle (4px corners) in 32px slot; `_PlanCardRecurringGlyph` circular dual-arc icon inline after title (5px gap).
 

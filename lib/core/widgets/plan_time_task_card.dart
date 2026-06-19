@@ -407,6 +407,8 @@ abstract final class _PlanCardGeom {
   static const double progressAfterActualGap = 3;
   static const double progressBarHeight = 3;
   static const double footerBlockGap = 6;
+  static const double footerTimeGap = 6;
+  static const double footerTimeRightSafePad = 4;
   static const double footerTextHeight = 14;
   static const double footerBottomPad = 8;
   static const double titleTopInset = 0;
@@ -1406,7 +1408,7 @@ class _PlanCardPlayIconPainter extends CustomPainter {
       oldDelegate.fill != fill || oldDelegate.cornerRadius != cornerRadius;
 }
 
-/// Circular loop-arrow glyph for recurring plans (inline after title).
+/// Inline recurring marker — circular autorenew arrows after title.
 class _PlanCardRecurringGlyph extends StatelessWidget {
   const _PlanCardRecurringGlyph({this.displayIsDone = false});
 
@@ -1416,89 +1418,13 @@ class _PlanCardRecurringGlyph extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = displayIsDone
         ? _PlanCardTokens.breadcrumbFallbackColor.withValues(alpha: 0.45)
-        : _PlanCardTokens.breadcrumbFallbackColor.withValues(alpha: 0.82);
-    return SizedBox(
-      width: _PlanCardGeom.recurringIconSize,
-      height: _PlanCardGeom.recurringIconSize,
-      child: CustomPaint(
-        painter: _PlanCardRecurringIconPainter(color: color),
-      ),
+        : _PlanCardTokens.breadcrumbFallbackColor.withValues(alpha: 0.88);
+    return Icon(
+      Icons.autorenew_rounded,
+      size: _PlanCardGeom.recurringIconSize,
+      color: color,
     );
   }
-}
-
-class _PlanCardRecurringIconPainter extends CustomPainter {
-  const _PlanCardRecurringIconPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final r = math.min(size.width, size.height) / 2 - 2.1;
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.35
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r);
-    const sweep = math.pi * 0.98;
-
-    const startTop = -math.pi * 0.62;
-    canvas.drawArc(rect, startTop, sweep, false, paint);
-    _drawArrowHead(
-      canvas,
-      paint,
-      tip: Offset(
-        cx + r * math.cos(startTop + sweep),
-        cy + r * math.sin(startTop + sweep),
-      ),
-      tangentAngle: startTop + sweep + math.pi / 2,
-      size: 3.0,
-    );
-
-    const startBottom = math.pi * 0.38;
-    canvas.drawArc(rect, startBottom, sweep, false, paint);
-    _drawArrowHead(
-      canvas,
-      paint,
-      tip: Offset(
-        cx + r * math.cos(startBottom + sweep),
-        cy + r * math.sin(startBottom + sweep),
-      ),
-      tangentAngle: startBottom + sweep + math.pi / 2,
-      size: 3.0,
-    );
-  }
-
-  static void _drawArrowHead(
-    Canvas canvas,
-    Paint paint, {
-    required Offset tip,
-    required double tangentAngle,
-    required double size,
-  }) {
-    final wing = tangentAngle + math.pi * 0.78;
-    final path = Path()
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo(
-        tip.dx + math.cos(wing) * size,
-        tip.dy + math.sin(wing) * size,
-      )
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo(
-        tip.dx + math.cos(wing - 1.1) * size,
-        tip.dy + math.sin(wing - 1.1) * size,
-      );
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _PlanCardRecurringIconPainter oldDelegate) =>
-      oldDelegate.color != color;
 }
 
 class _PlanCardMenuButton extends StatefulWidget {
@@ -1627,7 +1553,10 @@ class _PlanCardTitleRow extends StatelessWidget {
               ),
               if (hasRepeat) ...[
                 const SizedBox(width: _PlanCardGeom.titleToRecurringGap),
-                _PlanCardRecurringGlyph(displayIsDone: displayIsDone),
+                Padding(
+                  padding: const EdgeInsets.only(top: 1),
+                  child: _PlanCardRecurringGlyph(displayIsDone: displayIsDone),
+                ),
               ],
             ],
           ),
@@ -1700,7 +1629,8 @@ class _PlanCardTimeText extends StatelessWidget {
     return Text(
       label,
       maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      softWrap: false,
+      overflow: TextOverflow.visible,
       style: const TextStyle(
         fontSize: 11,
         height: 1.0,
@@ -1750,19 +1680,28 @@ class _PlanCardFooterRow extends StatelessWidget {
               ),
             ),
           ),
-          if (timeLabel.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            _PlanCardTimeText(label: timeLabel),
-            if (scheduleConflict)
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Icon(
-                  Icons.warning_amber_rounded,
-                  size: 12,
-                  color: scheme.error.withValues(alpha: 0.75),
-                ),
+          if (timeLabel.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(
+                left: _PlanCardGeom.footerTimeGap,
+                right: _PlanCardGeom.footerTimeRightSafePad,
               ),
-          ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _PlanCardTimeText(label: timeLabel),
+                  if (scheduleConflict)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Icon(
+                        Icons.warning_amber_rounded,
+                        size: 12,
+                        color: scheme.error.withValues(alpha: 0.75),
+                      ),
+                    ),
+                ],
+              ),
+            ),
         ],
       ),
     );
