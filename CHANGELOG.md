@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 perf bisect: revert LazyIndexedStack + stop hidden tab pager animate [shipped]
+* **Bisect:** [shipped] Lag source = `62020e8` `LazyIndexedStack` + hidden `PlanningSwipeWrapper.animateToPage` on every Timeline date swipe (shared `_selectedDate`); `PlanCard` extraction is render-identical to old `_PlanningTaskCard`.
+* **`perf_flags.dart`:** [shipped] Bisect toggles (`useLazyIndexedStack`, `syncHiddenTabDatePager`, etc.); defaults restore `IndexedStack` + silent off-tab `jumpToPage`.
+* **`app_shell.dart` / swipe wrappers:** [shipped] `shellTabActive`; quiet `_loadTasksForDate` (no loading flash); Timeline `_visiblePageIndex` for swipe frame.
+
 ## [2026-06-15] - P0 rollback: revert 73e87e7 date-swipe perf regression [rollback]
 * **Git:** [rollback] `git revert 73e87e7` — removed `lib/core/date_swipe/`, `shellTabActive`, `DateSwipePerfMonitor`, wrapper `visiblePageIndex`/`allowImplicitScrolling`/per-page `RepaintBoundary` changes that caused ~10× worse swipe jank.
 * **Preserved:** [shipped] `62020e8` LazyIndexedStack, PlanCard, mobile Time rail, tab contrast, profile hydration, `appDebugDiag`.

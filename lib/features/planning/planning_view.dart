@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
+import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/app_diag.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
@@ -74,6 +75,7 @@ class PlanningSwipeWrapper extends StatefulWidget {
     super.key,
     required this.selectedDate,
     required this.onDateChanged,
+    this.shellTabActive = true,
     required this.selectedCategoryId,
     required this.onCategoryChanged,
     required this.onStartRecordFromTask,
@@ -82,6 +84,7 @@ class PlanningSwipeWrapper extends StatefulWidget {
 
   final DateTime selectedDate;
   final void Function(DateTime date) onDateChanged;
+  final bool shellTabActive;
   final int? selectedCategoryId;
   final void Function(int? categoryId) onCategoryChanged;
   final Future<void> Function(
@@ -125,21 +128,39 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   @override
   void didUpdateWidget(covariant PlanningSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedDate != widget.selectedDate) {
-      final daysOffset = _dateOnly(
-        widget.selectedDate,
-      ).difference(_anchorDate).inDays;
-      final page = initialPage + daysOffset;
-      if (page >= 0 && page < totalPageCount) {
-        setState(() => _visiblePageIndex = page);
+    if (oldWidget.selectedDate == widget.selectedDate) return;
+
+    final daysOffset = _dateOnly(
+      widget.selectedDate,
+    ).difference(_anchorDate).inDays;
+    final page = initialPage + daysOffset;
+    if (page < 0 || page >= totalPageCount) return;
+
+    if (!oldWidget.shellTabActive && widget.shellTabActive) {
+      setState(() => _visiblePageIndex = page);
+      if (_controller.hasClients) {
+        _controller.jumpToPage(page);
       }
-      if (_controller.hasClients && page >= 0 && page < totalPageCount) {
-        _controller.animateToPage(
-          page,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-        );
+      return;
+    }
+
+    if (!widget.shellTabActive && !PerfFlags.syncHiddenTabDatePager) {
+      _visiblePageIndex = page;
+      if (_controller.hasClients) {
+        _controller.jumpToPage(page);
       }
+      return;
+    }
+
+    setState(() => _visiblePageIndex = page);
+    if (_controller.hasClients) {
+      final cur = _controller.page;
+      if (cur != null && cur.round() == page) return;
+      _controller.animateToPage(
+        page,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
     }
   }
 
@@ -3207,12 +3228,14 @@ class _PlanningPageState extends State<PlanningPage>
     required String selectedDayKey,
   }) {
     _clearTimelineInteractionState();
-    _dragInsertLayoutsCache = _timelineBlockLayouts(
-      _cachedTimeModeProjections,
-      rangeStart,
-      rangeEnd,
-      selectedDayKey,
-    );
+    if (PerfFlags.enableTimelineProjectionCache) {
+      _dragInsertLayoutsCache = _timelineBlockLayouts(
+        _cachedTimeModeProjections,
+        rangeStart,
+        rangeEnd,
+        selectedDayKey,
+      );
+    }
     setState(() {
       _timelineVerticalDragPlanKey = planKey;
       _timelineVerticalDragDeltaPx = 0;
@@ -3254,7 +3277,8 @@ class _PlanningPageState extends State<PlanningPage>
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
-    final layouts = _dragInsertLayoutsCache.isNotEmpty
+    final layouts = PerfFlags.enableTimelineProjectionCache &&
+            _dragInsertLayoutsCache.isNotEmpty
         ? _dragInsertLayoutsCache
         : _timelineBlockLayouts(
             _cachedTimeModeProjections,
@@ -3710,8 +3734,7 @@ class _PlanningPageState extends State<PlanningPage>
         ? '${hour.clamp(0, 23)}'
         : '${hour.clamp(0, 23).toString().padLeft(2, '0')}:00';
 
-    return RepaintBoundary(
-      child: SizedBox(
+    final canvas = SizedBox(
       height: canvasHeight + 8,
       child: Stack(
         clipBehavior: Clip.none,
@@ -3966,8 +3989,11 @@ class _PlanningPageState extends State<PlanningPage>
       ),
     ],
       ),
-    ),
     );
+    if (PerfFlags.enableTimelineRepaintBoundary) {
+      return RepaintBoundary(child: canvas);
+    }
+    return canvas;
   }
 
   String? _timelineElevatedPlanKey() =>
