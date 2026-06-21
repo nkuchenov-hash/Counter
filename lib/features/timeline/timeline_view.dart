@@ -14,7 +14,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
-import 'package:counter/core/widgets/app_loading.dart';
 // ---------------------------------------------------------------------------
 // TIMELINE FEATURE — UI_ISOLATION (§7). PLANETARY TIME PROTOCOL (§5). ACTIVE_STATUS_LAW (§2).
 // All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] §8).
@@ -349,7 +348,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             widget.onDateChanged(next);
             PerfDiag.instance.dateSwipeSettleEnd(
               section: 'Timeline',
-              shellSetState: true,
+              shellSetState: false,
             );
           },
         itemBuilder: (context, index) {
@@ -614,16 +613,24 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   void initState() {
     super.initState();
-    _initStream();
+    if (widget.isActivePage) {
+      _initStream();
+    }
   }
 
   @override
   void didUpdateWidget(covariant TimelinePage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isActivePage && widget.isActivePage) {
+      _initStream();
+      return;
+    }
+    if (!widget.isActivePage) {
+      return;
+    }
     if (oldWidget.selectedDate.year != widget.selectedDate.year ||
         oldWidget.selectedDate.month != widget.selectedDate.month ||
         oldWidget.selectedDate.day != widget.selectedDate.day) {
-      _lastCoalescedRecords = [];
       _initStream();
       setState(() {});
     }
@@ -636,6 +643,12 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   Widget build(BuildContext context) {
     perfRebuildTick('TimelinePage');
+    if (!widget.isActivePage) {
+      return const ColoredBox(
+        color: Colors.transparent,
+        child: SizedBox.expand(),
+      );
+    }
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -773,19 +786,16 @@ class _TimelinePageState extends State<TimelinePage> {
                         recordSnap,
                       );
                     }
-                    if (recordSnap.connectionState == ConnectionState.waiting) {
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const AppLoading(),
-                            const SizedBox(height: 8),
-                            Text(
-                              t(currentLocale.value, 'waiting_planetary_data'),
-                            ),
-                          ],
-                        ),
-                      );
+                    if (recordSnap.connectionState == ConnectionState.waiting &&
+                        !recordSnap.hasData) {
+                      if (_lastCoalescedRecords.isNotEmpty) {
+                        return _buildTimelineRecordsArea(
+                          context,
+                          List<Map<String, dynamic>>.from(_lastCoalescedRecords),
+                          recordSnap,
+                        );
+                      }
+                      return const SizedBox.shrink();
                     }
                     return _buildTimelineRecordsArea(
                       context,

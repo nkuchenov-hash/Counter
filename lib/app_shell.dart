@@ -407,6 +407,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   final List<Task> _tasks = <Task>[];
   bool _tasksLoading = true;
+  late final ValueNotifier<DateTime> _selectedDateListenable;
+  final ValueNotifier<int> _timelineTasksRevision = ValueNotifier(0);
+  final ValueNotifier<int> _shellPageIndexListenable = ValueNotifier(0);
+  late final Widget _timelineTabHost;
+  late final Widget _planningTabHost;
+  late final Widget _calendarTabHost;
+  late final Widget _listsTabHost;
   late List<CategoryRule> _rules;
   int? _selectedCategoryId;
 
@@ -468,6 +475,31 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
     _selectedDate = DatabaseService.instance.getTimelineDeviceLocalToday();
     _focusedDay = DatabaseService.instance.getTimelineDeviceLocalToday();
+    _selectedDateListenable = ValueNotifier(_selectedDate);
+    _shellPageIndexListenable.value = _shellPageIndex;
+    _timelineTabHost = ListenableBuilder(
+      listenable: Listenable.merge([
+        _selectedDateListenable,
+        _timelineTasksRevision,
+        _shellPageIndexListenable,
+      ]),
+      builder: (context, _) => _buildTimelineSwipeTab(),
+    );
+    _planningTabHost = ListenableBuilder(
+      listenable: Listenable.merge([
+        _selectedDateListenable,
+        _shellPageIndexListenable,
+      ]),
+      builder: (context, _) => _buildPlanningSwipeTab(),
+    );
+    _calendarTabHost = ListenableBuilder(
+      listenable: _selectedDateListenable,
+      builder: (context, _) => _buildCalendarTab(),
+    );
+    _listsTabHost = ListenableBuilder(
+      listenable: _selectedDateListenable,
+      builder: (context, _) => _buildListsTab(),
+    );
     _rules = List.from(DatabaseService.instance.rules);
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     unawaited(_loadTasksAndExtras());
@@ -521,11 +553,35 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         sel.day == oldToday.day;
     if (wasFollowingLiveToday && _shellPageIndex == 0) {
       final today = DatabaseService.instance.getTimelineDeviceLocalToday();
-      setState(() {
-        _selectedDate = today;
-        _focusedDay = today;
-      });
-      unawaited(_loadTasksForDate(today));
+      _applySharedSelectedDate(today, loadTimelineTasks: true);
+    }
+  }
+
+  void _setShellPageIndex(int index) {
+    _shellPageIndex = index;
+    _shellPageIndexListenable.value = index;
+  }
+
+  /// Updates shared calendar day without rebuilding the full shell (date-swipe path).
+  void _applySharedSelectedDate(
+    DateTime day, {
+    bool loadTimelineTasks = false,
+    bool syncFocusedDay = true,
+  }) {
+    final normalized = _dateOnly(day);
+    if (_sameCalendarDay(_selectedDate, normalized)) return;
+    PerfDiag.instance.stateChange(
+      source: 'Shell',
+      field: 'selectedDate',
+      duringSwipe: true,
+    );
+    _selectedDate = normalized;
+    if (syncFocusedDay) {
+      _focusedDay = normalized;
+    }
+    _selectedDateListenable.value = normalized;
+    if (loadTimelineTasks && _shellPageIndex == 0) {
+      unawaited(_loadTasksForDate(normalized));
     }
   }
 
@@ -534,12 +590,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   }
 
   void _selectShellHeaderDate(DateTime date) {
-    final day = _dateOnly(date);
-    setState(() {
-      _selectedDate = day;
-      _focusedDay = day;
-    });
-    unawaited(_loadTasksForDate(day));
+    _applySharedSelectedDate(
+      _dateOnly(date),
+      loadTimelineTasks: _shellPageIndex == 0,
+    );
   }
 
   @override
@@ -553,6 +607,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _titleController.dispose();
     _titleFocus.dispose();
     _shellLayout.dispose();
+    _selectedDateListenable.dispose();
+    _timelineTasksRevision.dispose();
+    _shellPageIndexListenable.dispose();
     super.dispose();
   }
 
@@ -580,18 +637,16 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             field: '_tasksLoading=false',
             duringSwipe: true,
           );
-          setState(() {
-            _tasks
-              ..clear()
-              ..addAll(loaded);
-            _tasksLoading = false;
-          });
+          _tasks
+            ..clear()
+            ..addAll(loaded);
+          _tasksLoading = false;
+          _timelineTasksRevision.value++;
         } catch (_) {
           if (mounted && _sameCalendarDay(_selectedDate, date)) {
-            setState(() {
-              _tasks.clear();
-              _tasksLoading = false;
-            });
+            _tasks.clear();
+            _tasksLoading = false;
+            _timelineTasksRevision.value++;
           }
         }
       },
@@ -1547,11 +1602,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   }
 
   void _jumpToConflictDate(DateTime d) {
-    setState(() {
-      _selectedDate = DateTime(d.year, d.month, d.day);
-      _shellPageIndex = 0;
-    });
-    _loadTasksForDate(_selectedDate);
+    setState(() => _setShellPageIndex(0));
+    _applySharedSelectedDate(
+      DateTime(d.year, d.month, d.day),
+      loadTimelineTasks: true,
+    );
   }
 
   void _onShellTabSelected(int i) {
@@ -1559,16 +1614,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       _openMoreMenu(secondaryOnly: false);
       return;
     }
-    setState(() {
-      _shellPageIndex = i;
-    });
+    setState(() => _setShellPageIndex(i));
     if (i == 0 || i == 1) {
       final target = DatabaseService.instance.getTimelineDeviceLocalToday();
-      setState(() {
-        _selectedDate = target;
-        _focusedDay = target;
-      });
-      unawaited(_loadTasksForDate(target));
+      _applySharedSelectedDate(target, loadTimelineTasks: i == 0);
     }
   }
 
@@ -1579,14 +1628,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       return;
     }
     if (navIndex <= 5) {
-      setState(() => _shellPageIndex = navIndex);
+      setState(() => _setShellPageIndex(navIndex));
       if (navIndex == 0 || navIndex == 1) {
         final target = DatabaseService.instance.getTimelineDeviceLocalToday();
-        setState(() {
-          _selectedDate = target;
-          _focusedDay = target;
-        });
-        unawaited(_loadTasksForDate(target));
+        _applySharedSelectedDate(target, loadTimelineTasks: navIndex == 0);
       }
     }
   }
@@ -1623,7 +1668,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                     title: Text(t(loc, 'more_menu_profile')),
                     onTap: () {
                       Navigator.of(ctx).pop();
-                      setState(() => _shellPageIndex = 5);
+                      setState(() => _setShellPageIndex(5));
                     },
                   ),
                   ListTile(
@@ -1631,7 +1676,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                     title: Text(t(loc, 'more_menu_categories')),
                     onTap: () {
                       Navigator.of(ctx).pop();
-                      setState(() => _shellPageIndex = 4);
+                      setState(() => _setShellPageIndex(4));
                     },
                   ),
                 ],
@@ -1946,78 +1991,79 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     if (mounted) setState(() {});
   }
 
+  Widget _buildTimelineSwipeTab() {
+    return TimelineSwipeWrapper(
+      selectedDate: _selectedDate,
+      shellTabActive: _shellPageIndex == 0,
+      onDateChanged: (d) => _applySharedSelectedDate(
+        _dateOnly(d),
+        loadTimelineTasks: true,
+      ),
+      onJumpToConflict: _jumpToConflictDate,
+      tasks: _tasks,
+      tasksLoading: _tasksLoading,
+      titleController: _titleController,
+      titleFocus: _titleFocus,
+      selectedCategoryId: _selectedCategoryId,
+      onCategoryChanged: (id) => setState(() => _selectedCategoryId = id),
+      onStart: _startTaskFromInput,
+      onPlan: _planTaskFromInput,
+      onNewTaskForPastDate: _openNewTaskForPastDate,
+      onStopRecord: _stopRecordByDocId,
+      onDeleteRecord: _deleteRecordByDocId,
+      rules: _rules,
+      onShowEditRecordSheet: _showEditRecordSheetForTimeline,
+    );
+  }
+
+  Widget _buildPlanningSwipeTab() {
+    return PlanningSwipeWrapper(
+      selectedDate: _selectedDate,
+      shellTabActive: _shellPageIndex == 1,
+      onDateChanged: (d) => _applySharedSelectedDate(_dateOnly(d)),
+      selectedCategoryId: _selectedCategoryId,
+      onCategoryChanged: (id) => setState(() => _selectedCategoryId = id),
+      onStartRecordFromTask: _startRecordFromPlanning,
+      onEditTask: (task) => _openEditDialog(task),
+    );
+  }
+
+  Widget _buildCalendarTab() {
+    return CalendarView(
+      selectedDate: _selectedDate,
+      focusedDay: _focusedDay,
+      onSelectDate: (d, f) async {
+        setState(() {
+          _selectedDate = _dateOnly(d);
+          _focusedDay = _dateOnly(f);
+        });
+        _selectedDateListenable.value = _selectedDate;
+      },
+      onEditTask: _openEditDialog,
+      onStartRecordFromTask: _startRecordFromPlanning,
+    );
+  }
+
+  Widget _buildListsTab() {
+    return ListsPage(
+      selectedDate: _selectedDate,
+      onDateChanged: (d) {
+        final day = _dateOnly(d);
+        setState(() => _selectedDate = day);
+        _selectedDateListenable.value = day;
+      },
+      onEditTask: _openEditDialog,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     perfRebuildTick('AppShell');
     final pages = <Widget>[
-      TimelineSwipeWrapper(
-        selectedDate: _selectedDate,
-        shellTabActive: _shellPageIndex == 0,
-        onDateChanged: (d) {
-          final day = _dateOnly(d);
-          if (_sameCalendarDay(_selectedDate, day)) return;
-          PerfDiag.instance.stateChange(
-            source: 'Shell',
-            field: 'selectedDate',
-            duringSwipe: true,
-          );
-          _selectedDate = day;
-          setState(() {});
-          if (_shellPageIndex == 0) {
-            unawaited(_loadTasksForDate(day));
-          }
-        },
-        onJumpToConflict: _jumpToConflictDate,
-        tasks: _tasks,
-        tasksLoading: _tasksLoading,
-        titleController: _titleController,
-        titleFocus: _titleFocus,
-        selectedCategoryId: _selectedCategoryId,
-        onCategoryChanged: (id) => setState(() => _selectedCategoryId = id),
-        onStart: _startTaskFromInput,
-        onPlan: _planTaskFromInput,
-        onNewTaskForPastDate: _openNewTaskForPastDate,
-        onStopRecord: _stopRecordByDocId,
-        onDeleteRecord: _deleteRecordByDocId,
-        rules: _rules,
-        onShowEditRecordSheet: _showEditRecordSheetForTimeline,
-      ),
-      PlanningSwipeWrapper(
-        selectedDate: _selectedDate,
-        shellTabActive: _shellPageIndex == 1,
-        onDateChanged: (d) {
-          final day = _dateOnly(d);
-          if (_sameCalendarDay(_selectedDate, day)) return;
-          PerfDiag.instance.stateChange(
-            source: 'Shell',
-            field: 'selectedDate',
-            duringSwipe: true,
-          );
-          _selectedDate = day;
-          setState(() {});
-        },
-        selectedCategoryId: _selectedCategoryId,
-        onCategoryChanged: (id) => setState(() => _selectedCategoryId = id),
-        onStartRecordFromTask: _startRecordFromPlanning,
-        onEditTask: (task) => _openEditDialog(task),
-      ),
-      CalendarView(
-        selectedDate: _selectedDate,
-        focusedDay: _focusedDay,
-        onSelectDate: (d, f) async {
-          setState(() {
-            _selectedDate = _dateOnly(d);
-            _focusedDay = _dateOnly(f);
-          });
-        },
-        onEditTask: _openEditDialog,
-        onStartRecordFromTask: _startRecordFromPlanning,
-      ),
-      ListsPage(
-        selectedDate: _selectedDate,
-        onDateChanged: (d) => setState(() => _selectedDate = _dateOnly(d)),
-        onEditTask: _openEditDialog,
-      ),
+      _timelineTabHost,
+      _planningTabHost,
+      _calendarTabHost,
+      _listsTabHost,
       StreamBuilder<List<CategoryRule>>(
         stream: DatabaseService.instance.categoryStream,
         initialData: _rules,
@@ -2042,8 +2088,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       ),
     ];
 
-    final showVoiceFab =
-        _shellPageIndex == 1 || _shellPageIndex == 3 || !_isFutureDate;
     return AnimatedBuilder(
       animation: currentLocale,
       builder: (context, _) {
@@ -2093,10 +2137,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                             Expanded(
                               child: Align(
                                 alignment: AlignmentDirectional.centerEnd,
-                                child: GlobalAppHeader(
-                                  selectedDate: _selectedDate,
-                                  onDateSelected: _selectShellHeaderDate,
-                                  compact: true,
+                                child: ListenableBuilder(
+                                  listenable: _selectedDateListenable,
+                                  builder: (context, _) => GlobalAppHeader(
+                                    selectedDate: _selectedDate,
+                                    onDateSelected: _selectShellHeaderDate,
+                                    compact: true,
+                                  ),
                                 ),
                               ),
                             ),
@@ -2146,35 +2193,42 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 ),
                 floatingActionButtonLocation:
                     FloatingActionButtonLocation.endFloat,
-                floatingActionButton: !showVoiceFab
-                    ? null
-                    : ListenableBuilder(
-                        listenable: _shellLayout,
-                        builder: (context, child) {
-                          final bulkReservePx = _shellLayout.fabBottomReservePx;
-                          return AnimatedPadding(
-                            duration: const Duration(milliseconds: 240),
-                            curve: Curves.easeOutCubic,
-                            padding: EdgeInsets.only(
-                              bottom:
-                                  MediaQuery.paddingOf(context).bottom +
-                                  bulkReservePx,
-                            ),
-                            child: child,
-                          );
-                        },
-                        child: FloatingActionButton(
-                          onPressed: _startVoiceInput,
-                          tooltip: _isVoiceListening
-                              ? t(currentLocale.value, 'listening')
-                              : t(currentLocale.value, 'voice_input'),
-                          child: Icon(
-                            _isVoiceListening
-                                ? Icons.graphic_eq_rounded
-                                : Icons.mic_rounded,
+                floatingActionButton: ListenableBuilder(
+                  listenable: _selectedDateListenable,
+                  builder: (context, _) {
+                    final showFab = _shellPageIndex == 1 ||
+                        _shellPageIndex == 3 ||
+                        !_isFutureDate;
+                    if (!showFab) return const SizedBox.shrink();
+                    return ListenableBuilder(
+                      listenable: _shellLayout,
+                      builder: (context, child) {
+                        final bulkReservePx = _shellLayout.fabBottomReservePx;
+                        return AnimatedPadding(
+                          duration: const Duration(milliseconds: 240),
+                          curve: Curves.easeOutCubic,
+                          padding: EdgeInsets.only(
+                            bottom:
+                                MediaQuery.paddingOf(context).bottom +
+                                bulkReservePx,
                           ),
+                          child: child,
+                        );
+                      },
+                      child: FloatingActionButton(
+                        onPressed: _startVoiceInput,
+                        tooltip: _isVoiceListening
+                            ? t(currentLocale.value, 'listening')
+                            : t(currentLocale.value, 'voice_input'),
+                        child: Icon(
+                          _isVoiceListening
+                              ? Icons.graphic_eq_rounded
+                              : Icons.mic_rounded,
                         ),
                       ),
+                    );
+                  },
+                ),
                 bottomNavigationBar: LayoutBuilder(
                   builder: (context, constraints) {
                     if (shellUsesSideNavigation(constraints.maxWidth)) {

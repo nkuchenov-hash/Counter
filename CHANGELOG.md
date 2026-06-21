@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Fix B: Timeline date-swipe shell isolation + visible-page gate [shipped]
+* **`app_shell.dart`:** [shipped] Fix B — `_selectedDateListenable` + cached `ListenableBuilder` tab hosts; `_applySharedSelectedDate` avoids full-shell `setState` on Timeline swipe; `_loadTasksForDate` bumps `_timelineTasksRevision` instead of shell rebuild; header/FAB listen to date notifier.
+* **`timeline_view.dart`:** [shipped] Inactive `TimelinePage` returns cheap placeholder (no stream/list build); stream `waiting` no longer flashes `AppLoading`; settle log `shellSetState=false`.
+
 ## [2026-06-15] - P0 Fix A: defer hidden date pager until tab activation [shipped]
 * **`planning_view.dart` / `timeline_view.dart`:** [shipped] Fix A — inactive `PlanningSwipeWrapper`/`TimelineSwipeWrapper` store `_pendingExternalPage` (`deferHidden`) instead of `jumpToPage`/`animateToPage`; one `jumpToPage` on `shellTabActive` activation; `isActivePlanningDay`/`isActivePage` gated on `shellTabActive`.
 * **`perf_diag.dart`:** [shipped] P0 swipe diagnostics behind `kPerfDiagnosisEnabled` (false for release); `test/perf_shell_date_settle_test.dart` proves hidden Planning no longer jump/fetch on Timeline swipe.

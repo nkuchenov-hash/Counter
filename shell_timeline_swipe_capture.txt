@@ -1,0 +1,24 @@
+PERF_DIAG_ATTACHED commit=dedad8f
+PERF_BLOCK name=Planning._fetchPlanningTasksForDate ms=222 date=2026-06-15 duringSwipe=false
+DATE_SWIPE_START section=Timeline fromDate=2026-06-15
+DATE_SWIPE_DRAG section=Timeline page=4994 fraction=4994.020 dragLogs=1
+DATE_SWIPE_SETTLE_START section=Timeline fromDate=2026-06-15 toDate=2026-06-16 fromPage=4994 toPage=4995 hiddenPagerSync=false pagerOp=none
+DATE_SWIPE_SETTLE_END section=Timeline durationMs=1 shellSetState=false
+PERF_REBUILD_SUMMARY action=timelineSwipe TimelinePage=1
+PERF_FRAME_SUMMARY action=timelineSwipe phase=settle worstBuildMs=0.0 worstRasterMs=0.0 worstTotalMs=0.0 over16=0 over32=0 over50=0 over100=0 over500=0
+DATE_SWIPE_PAGER section=Planning op=deferHidden targetPage=4995 shellTabActive=false hidden=true
+DATE_SWIPE_DRAG section=Timeline page=4995 fraction=4994.540 dragLogs=2
+DATE_SWIPE_SETTLE_START section=Timeline fromDate=2026-06-16 toDate=2026-06-17 fromPage=4995 toPage=4996 hiddenPagerSync=false pagerOp=none
+DATE_SWIPE_SETTLE_END section=Timeline durationMs=0 shellSetState=false
+PERF_REBUILD_SUMMARY action=timelineSwipe TimelinePage=4 AppShell=1 TimelineSwipeWrapper=1 PlanningSwipeWrapper=1 PlanningPage=1
+PERF_FRAME_SUMMARY action=timelineSwipe phase=settle worstBuildMs=0.0 worstRasterMs=0.0 worstTotalMs=0.0 over16=0 over32=0 over50=0 over100=0 over500=0
+DATE_SWIPE_PAGER section=Planning op=deferHidden targetPage=4996 shellTabActive=false hidden=true
+DATE_SWIPE_DRAG section=Timeline page=4996 fraction=4995.643 dragLogs=3
+DATE_SWIPE_DRAG section=Timeline page=4996 fraction=4995.988 dragLogs=4
+DATE_SWIPE_END section=Timeline totalMs=740 fromDate=2026-06-15 toDate=2026-06-17
+PERF_FRAME_SUMMARY action=timelineSwipe phase=total worstBuildMs=0.0 worstRasterMs=0.0 worstTotalMs=0.0 over16=0 over32=0 over50=0 over100=0 over500=0
+PERF_BLOCK_SUMMARY none
+PB_DURING_SWIPE_SUMMARY count=0
+PERF_STATE_SUMMARY count=2
+PERF_STATE_CHANGE source=ShellHarness field=selectedDate msSinceSwipeStart=85
+PERF_STATE_CHANGE source=ShellHarness field=selectedDate msSinceSwipeStart=414

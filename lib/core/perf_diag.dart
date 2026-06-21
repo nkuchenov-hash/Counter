@@ -3,8 +3,11 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-/// Master switch — set false before release; remove file when diagnosis complete.
-const bool kPerfDiagnosisEnabled = false;
+/// Master switch — off in release; enable locally with `--dart-define=PERF_DIAG=true`.
+const bool kPerfDiagnosisEnabled = bool.fromEnvironment(
+  'PERF_DIAG',
+  defaultValue: false,
+);
 
 /// Runs one automated left/right swipe sequence after boot (diagnosis only).
 const bool kPerfAutoSwipeBenchmark = false;
