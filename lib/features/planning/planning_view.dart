@@ -10,6 +10,8 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:counter/core/app_diag.dart';
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/date_swipe/date_swipe_constants.dart';
+import 'package:counter/core/date_swipe/date_swipe_perf.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_button.dart';
@@ -74,6 +76,7 @@ class PlanningSwipeWrapper extends StatefulWidget {
     super.key,
     required this.selectedDate,
     required this.onDateChanged,
+    this.shellTabActive = true,
     required this.selectedCategoryId,
     required this.onCategoryChanged,
     required this.onStartRecordFromTask,
@@ -82,6 +85,8 @@ class PlanningSwipeWrapper extends StatefulWidget {
 
   final DateTime selectedDate;
   final void Function(DateTime date) onDateChanged;
+  /// When false, skip external date sync (avoids off-tab PageView work during other-tab date changes).
+  final bool shellTabActive;
   final int? selectedCategoryId;
   final void Function(int? categoryId) onCategoryChanged;
   final Future<void> Function(
@@ -98,13 +103,16 @@ class PlanningSwipeWrapper extends StatefulWidget {
 }
 
 class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
-  static const int initialPage = 5000;
-  static const int totalPageCount = 10000;
+  static const int initialPage = DateSwipePager.centerIndex;
+  static const int totalPageCount = DateSwipePager.pageCount;
   late PageController _controller;
   late DateTime _anchorDate;
 
   /// Page index currently shown; only this day’s [PlanningPage] subscribes to [DatabaseService.notifyPlanningRefresh].
   late int _visiblePageIndex;
+
+  /// Locks horizontal date [PageView] while Time-mode card drag/resize is active.
+  bool _dateSwipeLocked = false;
 
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -125,6 +133,19 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   @override
   void didUpdateWidget(covariant PlanningSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!widget.shellTabActive) return;
+    if (!oldWidget.shellTabActive && widget.shellTabActive) {
+      final daysOffset = _dateOnly(
+        widget.selectedDate,
+      ).difference(_anchorDate).inDays;
+      final page = initialPage + daysOffset;
+      if (page >= 0 && page < totalPageCount) {
+        setState(() => _visiblePageIndex = page);
+        if (_controller.hasClients) {
+          _controller.jumpToPage(page);
+        }
+      }
+    }
     if (oldWidget.selectedDate != widget.selectedDate) {
       final daysOffset = _dateOnly(
         widget.selectedDate,
@@ -161,41 +182,75 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     }
   }
 
+  void _onPlanningDateSwipeLockChanged(bool locked) {
+    if (_dateSwipeLocked == locked) return;
+    setState(() => _dateSwipeLocked = locked);
+    DateSwipePerfMonitor.instance.logGestureOwner(
+      locked ? 'cardDrag' : 'dateSwipe',
+    );
+  }
+
+  DateTime _dateForIndex(int index) =>
+      _dateOnly(_anchorDate.add(Duration(days: index - initialPage)));
+
   @override
   Widget build(BuildContext context) {
     try {
       return ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
-        child: PageView.builder(
-          controller: _controller,
-          itemCount: totalPageCount,
-          onPageChanged: (int index) {
-            if (index >= 0 && index < totalPageCount) {
-              setState(() => _visiblePageIndex = index);
-              final date = _anchorDate.add(Duration(days: index - initialPage));
-              widget.onDateChanged(_dateOnly(date));
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (_dateSwipeLocked) return false;
+            if (notification is ScrollStartNotification &&
+                notification.dragDetails != null) {
+              final date = _dateForIndex(_visiblePageIndex);
+              DateSwipePerfMonitor.instance.onSwipeStart(
+                section: 'Planning',
+                dateKey: _dateKeyFromDate(date),
+              );
             }
+            return false;
           },
-          itemBuilder: (context, index) {
-            final date = _anchorDate.add(Duration(days: index - initialPage));
-            final dateKey = _dateKeyFromDate(date);
-            return PlanningPage(
-              key: ValueKey(dateKey),
-              selectedDateString: dateKey,
-              selectedDate: date,
-              isActivePlanningDay: index == _visiblePageIndex,
-              selectedCategoryId: widget.selectedCategoryId,
-              onCategoryChanged: widget.onCategoryChanged,
-              onStartRecordFromTask: widget.onStartRecordFromTask,
-              onEditTask: widget.onEditTask,
-              onDatePicked: _jumpToDate,
-              pageController: _controller,
-              anchorDate: _anchorDate,
-              initialPage: initialPage,
-              totalPageCount: totalPageCount,
-              onDateChanged: widget.onDateChanged,
-            );
-          },
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: totalPageCount,
+            allowImplicitScrolling: true,
+            physics: _dateSwipeLocked
+                ? const NeverScrollableScrollPhysics()
+                : const PageScrollPhysics(),
+            onPageChanged: (int index) {
+              if (index >= 0 && index < totalPageCount) {
+                setState(() => _visiblePageIndex = index);
+                final date = _dateForIndex(index);
+                final dateKey = _dateKeyFromDate(date);
+                DateSwipePerfMonitor.instance.onSwipeEnd(toDateKey: dateKey);
+                widget.onDateChanged(_dateOnly(date));
+              }
+            },
+            itemBuilder: (context, index) {
+              final date = _dateForIndex(index);
+              final dateKey = _dateKeyFromDate(date);
+              return RepaintBoundary(
+                child: PlanningPage(
+                  key: ValueKey(dateKey),
+                  selectedDateString: dateKey,
+                  selectedDate: date,
+                  isActivePlanningDay: index == _visiblePageIndex,
+                  onDateSwipeLockChanged: _onPlanningDateSwipeLockChanged,
+                  selectedCategoryId: widget.selectedCategoryId,
+                  onCategoryChanged: widget.onCategoryChanged,
+                  onStartRecordFromTask: widget.onStartRecordFromTask,
+                  onEditTask: widget.onEditTask,
+                  onDatePicked: _jumpToDate,
+                  pageController: _controller,
+                  anchorDate: _anchorDate,
+                  initialPage: initialPage,
+                  totalPageCount: totalPageCount,
+                  onDateChanged: widget.onDateChanged,
+                ),
+              );
+            },
+          ),
         ),
       );
     } catch (e, st) {
@@ -226,6 +281,7 @@ class PlanningPage extends StatefulWidget {
     this.initialPage,
     this.totalPageCount,
     this.onDateChanged,
+    this.onDateSwipeLockChanged,
   });
 
   final String selectedDateString;
@@ -233,6 +289,8 @@ class PlanningPage extends StatefulWidget {
 
   /// Only the visible PageView day should be `true` so global planning refresh does not N× the same GET.
   final bool isActivePlanningDay;
+  /// Notifies parent [PlanningSwipeWrapper] to lock horizontal date paging during Time drag/resize.
+  final ValueChanged<bool>? onDateSwipeLockChanged;
   final int? selectedCategoryId;
   final void Function(int? categoryId) onCategoryChanged;
   final Future<void> Function(
@@ -2806,6 +2864,13 @@ class _PlanningPageState extends State<PlanningPage>
     return (startMin: span.startMin.round(), endMin: span.endMin.round());
   }
 
+  void _setTimelineScrollLocked(bool locked, {bool scheduleRebuild = true}) {
+    if (_timelineScrollLocked == locked) return;
+    _timelineScrollLocked = locked;
+    widget.onDateSwipeLockChanged?.call(locked);
+    if (scheduleRebuild && mounted) setState(() {});
+  }
+
   void _clearTimelineInteractionState() {
     _timelineVerticalDragPlanKey = null;
     _timelineVerticalDragDeltaPx = 0;
@@ -2818,7 +2883,7 @@ class _PlanningPageState extends State<PlanningPage>
     _timelineResizeEdge = null;
     _timelineResizeTask = null;
     _timelineResizeTimeLabel = null;
-    _timelineScrollLocked = false;
+    _setTimelineScrollLocked(false, scheduleRebuild: false);
   }
 
   void _updateTimelineResizeLabel({
@@ -2862,7 +2927,7 @@ class _PlanningPageState extends State<PlanningPage>
       _timelineResizePreviewTopPx = originTopPx;
       _timelineResizePreviewHeightPx = originHeightPx;
       _timelineResizeTask = task;
-      _timelineScrollLocked = true;
+      _setTimelineScrollLocked(true, scheduleRebuild: false);
       _updateTimelineResizeLabel(
         startMin: originStartMin,
         endMin: originEndMin,
@@ -3221,7 +3286,7 @@ class _PlanningPageState extends State<PlanningPage>
       _timelineVerticalDragDurationMin = durationMin;
       _timelineVerticalDragTask = task;
       _timelineVerticalDragHadEnd = hadEnd;
-      _timelineScrollLocked = true;
+      _setTimelineScrollLocked(true, scheduleRebuild: false);
       _timelineVerticalDragTimeLabel = _timelineDragLabelForTopPx(
         originTopPx,
         planWallDay,
@@ -4088,11 +4153,7 @@ class _PlanningPageState extends State<PlanningPage>
               ),
               controlsRightInset: planCardBodyGestureRightInsetPx(),
               onMovePointerDown: canInteract
-                  ? () {
-                      if (!_timelineScrollLocked) {
-                        setState(() => _timelineScrollLocked = true);
-                      }
-                    }
+                  ? () => _setTimelineScrollLocked(true)
                   : null,
               onBodyTap: () {
                 if (_planSelectMode) {

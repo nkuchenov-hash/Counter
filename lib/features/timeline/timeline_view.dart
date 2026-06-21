@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/date_swipe/date_swipe_constants.dart';
+import 'package:counter/core/date_swipe/date_swipe_perf.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
@@ -89,6 +91,7 @@ class TimelineSwipeWrapper extends StatefulWidget {
     super.key,
     required this.selectedDate,
     required this.onDateChanged,
+    this.shellTabActive = true,
     required this.onJumpToConflict,
     required this.tasks,
     required this.tasksLoading,
@@ -107,6 +110,8 @@ class TimelineSwipeWrapper extends StatefulWidget {
 
   final DateTime selectedDate;
   final void Function(DateTime date) onDateChanged;
+  /// When false, skip external date sync (avoids off-tab PageView work during Timeline swipe).
+  final bool shellTabActive;
   final void Function(DateTime date)? onJumpToConflict;
   final List<Task> tasks;
   final bool tasksLoading;
@@ -130,8 +135,9 @@ class TimelineSwipeWrapper extends StatefulWidget {
 }
 
 class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
-  static const int _centerIndex = 5000;
+  static const int _centerIndex = DateSwipePager.centerIndex;
   late PageController _controller;
+  late int _visiblePageIndex;
 
   /// Shared across all [TimelinePage] indices so calendar/date changes keep List vs Stats.
   bool _showStatsView = false;
@@ -139,18 +145,36 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   DateTime get _anchorToday =>
       _dateOnlyCalendar(DatabaseService.instance.getTimelineDeviceLocalToday());
 
+  DateTime _dateForIndex(int index) {
+    final raw = _anchorToday.add(Duration(days: index - _centerIndex));
+    return _dateOnlyCalendar(raw);
+  }
+
   @override
   void initState() {
     super.initState();
     final daysOffset = _dateOnlyCalendar(
       widget.selectedDate,
     ).difference(_anchorToday).inDays;
-    _controller = PageController(initialPage: _centerIndex + daysOffset);
+    _visiblePageIndex = _centerIndex + daysOffset;
+    _controller = PageController(initialPage: _visiblePageIndex);
   }
 
   @override
   void didUpdateWidget(covariant TimelineSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!widget.shellTabActive) return;
+    if (!oldWidget.shellTabActive && widget.shellTabActive) {
+      final newD = _dateOnlyCalendar(widget.selectedDate);
+      final daysOffset = newD.difference(_anchorToday).inDays;
+      final page = _centerIndex + daysOffset;
+      if (page >= 0 && page < DateSwipePager.pageCount) {
+        setState(() => _visiblePageIndex = page);
+        if (_controller.hasClients) {
+          _controller.jumpToPage(page);
+        }
+      }
+    }
     final oldD = _dateOnlyCalendar(oldWidget.selectedDate);
     final newD = _dateOnlyCalendar(widget.selectedDate);
     if (oldD.year == newD.year &&
@@ -160,6 +184,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     }
     final daysOffset = newD.difference(_anchorToday).inDays;
     final page = _centerIndex + daysOffset;
+    if (page >= 0 && page < DateSwipePager.pageCount) {
+      setState(() => _visiblePageIndex = page);
+    }
     if (_controller.hasClients) {
       final cur = _controller.page;
       if (cur != null && cur.round() == page) return;
@@ -182,56 +209,71 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    final anchor = _anchorToday;
     return ScrollConfiguration(
       behavior: const MouseDragScrollBehavior(),
-      child: PageView.builder(
-        controller: _controller,
-        itemCount: 10000,
-        onPageChanged: (int index) {
-          final raw = anchor.add(Duration(days: index - _centerIndex));
-          final next = _dateOnlyCalendar(raw);
-          final sel = _dateOnlyCalendar(widget.selectedDate);
-          if (next.year == sel.year &&
-              next.month == sel.month &&
-              next.day == sel.day) {
-            return;
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollStartNotification &&
+              notification.dragDetails != null) {
+            final date = _dateForIndex(_visiblePageIndex);
+            DateSwipePerfMonitor.instance.onSwipeStart(
+              section: 'Timeline',
+              dateKey: _dateKey(date),
+            );
           }
-          widget.onDateChanged(next);
+          return false;
         },
-        itemBuilder: (context, index) {
-          final raw = anchor.add(Duration(days: index - _centerIndex));
-          final date = _dateOnlyCalendar(raw);
-          final dateKey = _dateKey(date);
-          final isFuture = date.isAfter(_anchorToday);
-          final isSelectedDate =
-              date.year == widget.selectedDate.year &&
-              date.month == widget.selectedDate.month &&
-              date.day == widget.selectedDate.day;
-          return TimelinePage(
-            selectedDate: date,
-            selectedDateString: dateKey,
-            isFutureDate: isFuture,
-            tasks: isSelectedDate ? widget.tasks : [],
-            tasksLoading: isSelectedDate ? widget.tasksLoading : false,
-            isActivePage: isSelectedDate,
-            titleController: widget.titleController,
-            titleFocus: widget.titleFocus,
-            selectedCategoryId: widget.selectedCategoryId,
-            onCategoryChanged: widget.onCategoryChanged,
-            onStart: widget.onStart,
-            onPlan: widget.onPlan,
-            onNewTaskForPastDate: widget.onNewTaskForPastDate,
-            onStopRecord: widget.onStopRecord,
-            onDeleteRecord: widget.onDeleteRecord,
-            onJumpToConflictDate: widget.onJumpToConflict,
-            rules: widget.rules,
-            onShowEditRecordSheet: widget.onShowEditRecordSheet,
-            onNavigateToDate: widget.onDateChanged,
-            showStatsView: _showStatsView,
-            onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
-          );
-        },
+        child: PageView.builder(
+          controller: _controller,
+          itemCount: DateSwipePager.pageCount,
+          allowImplicitScrolling: true,
+          onPageChanged: (int index) {
+            if (index < 0 || index >= DateSwipePager.pageCount) return;
+            setState(() => _visiblePageIndex = index);
+            final next = _dateForIndex(index);
+            final sel = _dateOnlyCalendar(widget.selectedDate);
+            final dateKey = _dateKey(next);
+            if (next.year == sel.year &&
+                next.month == sel.month &&
+                next.day == sel.day) {
+              DateSwipePerfMonitor.instance.onSwipeEnd(toDateKey: dateKey);
+              return;
+            }
+            DateSwipePerfMonitor.instance.onSwipeEnd(toDateKey: dateKey);
+            widget.onDateChanged(next);
+          },
+          itemBuilder: (context, index) {
+            final date = _dateForIndex(index);
+            final dateKey = _dateKey(date);
+            final isFuture = date.isAfter(_anchorToday);
+            final isVisible = index == _visiblePageIndex;
+            return RepaintBoundary(
+              child: TimelinePage(
+                selectedDate: date,
+                selectedDateString: dateKey,
+                isFutureDate: isFuture,
+                tasks: isVisible ? widget.tasks : const [],
+                tasksLoading: isVisible ? widget.tasksLoading : false,
+                isActivePage: isVisible,
+                titleController: widget.titleController,
+                titleFocus: widget.titleFocus,
+                selectedCategoryId: widget.selectedCategoryId,
+                onCategoryChanged: widget.onCategoryChanged,
+                onStart: widget.onStart,
+                onPlan: widget.onPlan,
+                onNewTaskForPastDate: widget.onNewTaskForPastDate,
+                onStopRecord: widget.onStopRecord,
+                onDeleteRecord: widget.onDeleteRecord,
+                onJumpToConflictDate: widget.onJumpToConflict,
+                rules: widget.rules,
+                onShowEditRecordSheet: widget.onShowEditRecordSheet,
+                onNavigateToDate: widget.onDateChanged,
+                showStatsView: _showStatsView,
+                onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
