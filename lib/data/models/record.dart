@@ -563,3 +563,39 @@ class Task {
   factory Task.fromJson(Map<String, dynamic> json) => Task.fromMap(json);
 }
 
+/// Precomputed Brain-side row for Timeline list (no map parsing in card [build]).
+class TimelineRecordRowVm {
+  const TimelineRecordRowVm({
+    required this.systemRowId,
+    required this.businessRecordId,
+    required this.rawData,
+    required this.title,
+    required this.subtitle,
+    required this.categoryPath,
+    required this.categoryColorArgb,
+    required this.isPlanned,
+    required this.isCanonicalRunning,
+    required this.showNotesIcon,
+    required this.showChecklistIcon,
+    required this.showParentIcon,
+    required this.showLinkedSubsIcon,
+  });
+
+  final String systemRowId;
+  final String businessRecordId;
+  final Map<String, dynamic> rawData;
+  final String title;
+  /// Static subtitle for completed/planned rows; running row updates timer locally.
+  final String subtitle;
+  final String categoryPath;
+  final int categoryColorArgb;
+  final bool isPlanned;
+  final bool isCanonicalRunning;
+  final bool showNotesIcon;
+  final bool showChecklistIcon;
+  final bool showParentIcon;
+  final bool showLinkedSubsIcon;
+
+  Color get categoryColor => Color(categoryColorArgb);
+}
+

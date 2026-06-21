@@ -310,7 +310,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
           },
           child: PageView.builder(
             controller: _controller,
-            physics: const LightDateSwipePhysics(),
+            physics: const FeatherDateSwipePhysics(),
             itemCount: totalPageCount,
             onPageChanged: (int index) {
               if (index >= 0 && index < totalPageCount) {

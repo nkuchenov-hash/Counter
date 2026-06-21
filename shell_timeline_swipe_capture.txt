@@ -1,28 +1,43 @@
 PERF_DIAG_ATTACHED commit=dedad8f
 TIMELINE_CACHE_MISS date=2026-06-15
-TIMELINE_HISTORY_SCAN count=0 ms=0 dayBuckets=0 PB_TIMELINE_BROAD_QUERY used=true reason=flat_index_rebuild
-PERF_BLOCK name=Planning._fetchPlanningTasksForDate ms=118 date=2026-06-15 duringSwipe=false
+TIMELINE_HISTORY_SCAN count=0 ms=1 dayBuckets=0 PB_TIMELINE_BROAD_QUERY used=true reason=flat_index_rebuild
+TIMELINE_CACHE_HIT date=2026-06-15 itemCount=0
+TIMELINE_VIEW_CACHE_REBUILD date=2026-06-15 records=0 ms=0
+PERF_BLOCK name=Planning._fetchPlanningTasksForDate ms=280 date=2026-06-15 duringSwipe=false
+PERF_REBUILD_SUMMARY action=timelineHeavyDay TimelinePage=1
+PERF_FRAME_SUMMARY action=timelineHeavyDay phase=settle worstBuildMs=0.0 worstRasterMs=0.0 worstTotalMs=0.0 over16=0 over32=0 over50=0 over100=0 over500=0
+TIMELINE_VIEW_CACHE_HIT date=2026-06-15 items=0
 DATE_SWIPE_START section=Timeline fromDate=2026-06-15
 DATE_SWIPE_DRAG section=Timeline page=4994 fraction=4994.005 dragLogs=1
+DATE_SWIPE_DRAG section=Timeline page=4994 fraction=4994.465 dragLogs=2
 DATE_SWIPE_SETTLE_START section=Timeline fromDate=2026-06-15 toDate=2026-06-16 fromPage=4994 toPage=4995 hiddenPagerSync=false pagerOp=none
-TIMELINE_PREFETCH_START dates=2026-06-15,2026-06-16,2026-06-17
-TIMELINE_CACHE_HIT date=2026-06-15 itemCount=0
-TIMELINE_PREFETCH_END date=2026-06-15 ms=0 itemCount=0
+TIMELINE_PREFETCH_START dates=2026-06-14,2026-06-15,2026-06-16,2026-06-17
+TIMELINE_CACHE_MISS date=2026-06-14
+TIMELINE_VIEW_CACHE_REBUILD date=2026-06-14 records=0 ms=0
+TIMELINE_PREFETCH_END date=2026-06-14 ms=0 itemCount=0
+TIMELINE_VIEW_CACHE_HIT date=2026-06-15 items=0
+TIMELINE_PREFETCH_END date=2026-06-15 ms=1 itemCount=0
 TIMELINE_CACHE_MISS date=2026-06-16
-TIMELINE_PREFETCH_END date=2026-06-16 ms=0 itemCount=0
+TIMELINE_VIEW_CACHE_REBUILD date=2026-06-16 records=0 ms=0
+TIMELINE_PREFETCH_END date=2026-06-16 ms=1 itemCount=0
 TIMELINE_CACHE_MISS date=2026-06-17
-TIMELINE_PREFETCH_END date=2026-06-17 ms=0 itemCount=0
-DATE_SWIPE_SETTLE_END section=Timeline durationMs=3 shellSetState=false
+TIMELINE_VIEW_CACHE_REBUILD date=2026-06-17 records=0 ms=0
+TIMELINE_PREFETCH_END date=2026-06-17 ms=2 itemCount=0
+DATE_SWIPE_SETTLE_END section=Timeline durationMs=10 shellSetState=false
 PERF_REBUILD_SUMMARY action=timelineSwipe TimelinePage=1
 PERF_FRAME_SUMMARY action=timelineSwipe phase=settle worstBuildMs=0.0 worstRasterMs=0.0 worstTotalMs=0.0 over16=0 over32=0 over50=0 over100=0 over500=0
 TIMELINE_CACHE_HIT date=2026-06-16 itemCount=0
+TIMELINE_VIEW_CACHE_HIT date=2026-06-16 items=0
 DATE_SWIPE_PAGER section=Planning op=deferHidden targetPage=4995 shellTabActive=false hidden=true
-DATE_SWIPE_DRAG section=Timeline page=4995 fraction=4994.525 dragLogs=2
+DATE_SWIPE_DRAG section=Timeline page=4995 fraction=4994.525 dragLogs=1
+PERF_REBUILD_SUMMARY action=timelineHeavyDay TimelinePage=1
+PERF_FRAME_SUMMARY action=timelineHeavyDay phase=settle worstBuildMs=0.0 worstRasterMs=0.0 worstTotalMs=0.0 over16=0 over32=0 over50=0 over100=0 over500=0
+TIMELINE_VIEW_CACHE_HIT date=2026-06-16 items=0
+DATE_SWIPE_DRAG section=Timeline page=4995 fraction=4995.039 dragLogs=2
 DATE_SWIPE_DRAG section=Timeline page=4995 fraction=4995.007 dragLogs=3
 DATE_SWIPE_THRESHOLD section=Timeline dragFraction=0.000 velocity=0.0 accepted=false fromPage=4995 toPage=4995
-DATE_SWIPE_END section=Timeline totalMs=348 fromDate=2026-06-15 toDate=2026-06-16
-PERF_FRAME_SUMMARY action=timelineSwipe phase=total worstBuildMs=0.0 worstRasterMs=0.0 worstTotalMs=0.0 over16=0 over32=0 over50=0 over100=0 over500=0
-PERF_BLOCK_SUMMARY top=Timeline.groupRecords=0ms Timeline.renderModel=0ms
+DATE_SWIPE_END section=Timeline totalMs=791 fromDate=2026-06-15 toDate=2026-06-16
+PERF_FRAME_SUMMARY action=Timeline phase=total worstBuildMs=0.0 worstRasterMs=0.0 worstTotalMs=0.0 over16=0 over32=0 over50=0 over100=0 over500=0
+PERF_BLOCK_SUMMARY none
 PB_DURING_SWIPE_SUMMARY count=0
-PERF_STATE_SUMMARY count=1
-PERF_STATE_CHANGE source=ShellHarness field=selectedDate msSinceSwipeStart=54
+PERF_STATE_SUMMARY count=0

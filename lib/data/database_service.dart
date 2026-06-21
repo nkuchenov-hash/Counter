@@ -503,6 +503,12 @@ class DatabaseService {
   /// Render-ready per-day rows (with display times); invalidated on index rebuild.
   final Map<String, List<Map<String, dynamic>>> _timelineDayViewCache = {};
 
+  /// Precomputed timeline row VMs per calendar day; invalidated with view cache.
+  final Map<String, List<TimelineRecordRowVm>> _timelineDayVmCache = {};
+
+  /// Latest center date for prefetch cancellation (YYYY-MM-DD).
+  String? _timelinePrefetchCenterKey;
+
   /// In-flight neighbor prefetch keys (date YYYY-MM-DD).
   final Set<String> _timelinePrefetchInFlight = {};
 

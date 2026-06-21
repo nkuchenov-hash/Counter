@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Fix D: Timeline VM cache + virtualized rows + card layout [shipped]
+* **`models/record.dart`:** [shipped] `TimelineRecordRowVm` — Brain-built render-ready row (title, subtitle, category, meta flags).
+* **`record_service.dart`:** [shipped] `_timelineDayVmCache`, `peekTimelineRowVmsForDate`; prefetch window prev-2/current/next-1; stale prefetch cancel via center key.
+* **`timeline_view.dart`:** [shipped] `_TimelineLazyRecordList` (`ListView.builder`, cacheExtent 320); post-frame `_deferHeavyList`; removed per-card `IntrinsicHeight`/nested Theme; active stream only when today/running; VM-driven `_TimelineRecordCard`.
+* **`date_swipe_physics.dart`:** [shipped] `FeatherDateSwipePhysics` (20% drag) for Planning; Timeline `LightDateSwipePhysics` at 22%.
+* **`perf_diag.dart`:** [shipped] `TIMELINE_VIEW_CACHE_*`, `TIMELINE_VISIBLE_BUILD`, `timelineHeavyDay` action metrics.
+
 ## [2026-06-15] - P0 Fix C: light date-swipe physics + Timeline day cache/prefetch [shipped]
 * **`date_swipe_physics.dart`:** [shipped] `LightDateSwipePhysics` — ~25% viewport drag commits adjacent day; 12px motion threshold; shared by Timeline + Planning PageViews.
 * **`record_service.dart` / `database_service.dart`:** [shipped] Date-keyed `_timelineRecordsDayIndex` + `_timelineDayViewCache`; `peekTimelineRecordsForDate` / `prefetchTimelineDayNeighbors`; `recordsStream` no longer `await`s broad fetch on subscribe; one O(n) index rebuild vs per-day full-history scan.

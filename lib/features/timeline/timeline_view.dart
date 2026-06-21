@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/date_swipe_physics.dart';
@@ -16,8 +16,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 // ---------------------------------------------------------------------------
-// TIMELINE FEATURE — UI_ISOLATION (§7). PLANETARY TIME PROTOCOL (§5). ACTIVE_STATUS_LAW (§2).
-// All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] §8).
+// TIMELINE FEATURE вЂ” UI_ISOLATION (В§7). PLANETARY TIME PROTOCOL (В§5). ACTIVE_STATUS_LAW (В§2).
+// All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] В§8).
 // ---------------------------------------------------------------------------
 
 // --- Time helpers: device-local calendar for day strip; profile offset for clock labels only ---
@@ -34,7 +34,7 @@ bool _isToday(DateTime date) {
 /// Calendar strip / timeline keys (naive date components from picker / swipe).
 DateTime _dateOnlyCalendar(DateTime d) => DateTime(d.year, d.month, d.day);
 
-/// For record `startTime` (UTC): **profile wall-calendar** Y-M-D (must match [recordsStream] buckets; [DATA_MAP] §8).
+/// For record `startTime` (UTC): **profile wall-calendar** Y-M-D (must match [recordsStream] buckets; [DATA_MAP] В§8).
 String _wallCalendarDayKeyFromUtcInstant(DateTime startUtcOrAny) {
   final wall = DatabaseService.instance.applyUserOffset(startUtcOrAny.toUtc());
   return '${wall.year}-${wall.month.toString().padLeft(2, '0')}-${wall.day.toString().padLeft(2, '0')}';
@@ -69,7 +69,7 @@ String _timelineRowSystemId(Map<String, dynamic> data) {
   return '';
 }
 
-/// Client `record_id` (business UUID) — stable before/after PocketBase row id is assigned.
+/// Client `record_id` (business UUID) вЂ” stable before/after PocketBase row id is assigned.
 String _timelineBusinessRecordId(Map<String, dynamic> data) {
   final biz = (data['record_id'] ?? '').toString().trim();
   if (biz.isNotEmpty) return biz;
@@ -138,7 +138,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   late PageController _controller;
   late int _visiblePageIndex;
 
-  /// External date from shell while this tab is inactive — applied on activation only.
+  /// External date from shell while this tab is inactive вЂ” applied on activation only.
   int? _pendingExternalPage;
 
   /// Shared across all [TimelinePage] indices so calendar/date changes keep List vs Stats.
@@ -481,10 +481,26 @@ class _TimelinePageState extends State<TimelinePage> {
   /// briefly emits `waiting` + empty during background refresh.
   List<Map<String, dynamic>> _lastCoalescedRecords = [];
 
+  /// Defers heavy virtualized list until after page-settle frame (heavy old days).
+  bool _deferHeavyList = true;
+
+  void _scheduleHeavyListMount() {
+    _deferHeavyList = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      PerfDiag.instance.beginTimelineHeavyDayAction();
+      setState(() => _deferHeavyList = false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PerfDiag.instance.endTimelineHeavyDayAction();
+      });
+    });
+  }
+
   void _initStream() {
     _lastCoalescedRecords = List<Map<String, dynamic>>.from(
       DatabaseService.instance.peekTimelineRecordsForDate(widget.selectedDate),
     );
+    DatabaseService.instance.peekTimelineRowVmsForDate(widget.selectedDate);
     _recordsStream = DatabaseService.instance.recordsStream(
       widget.selectedDate,
     );
@@ -502,13 +518,12 @@ class _TimelinePageState extends State<TimelinePage> {
     }
   }
 
-  /// List / stats / active stream subtree after [records] is resolved (no waiting shield here).
-  Widget _buildTimelineRecordsArea(
-    BuildContext context,
-    List<Map<String, dynamic>> records,
-    AsyncSnapshot<List<Map<String, dynamic>>> recordSnap,
-  ) {
+  /// List / stats / virtualized record list (VMs from Brain cache).
+  Widget _buildTimelineRecordsArea(BuildContext context) {
     if (widget.showStatsView) {
+      final records = DatabaseService.instance.peekTimelineRecordsForDate(
+        widget.selectedDate,
+      );
       if (records.isEmpty) {
         return EmptyStatePlaceholder(
           icon: Icons.schedule_rounded,
@@ -527,114 +542,25 @@ class _TimelinePageState extends State<TimelinePage> {
       );
     }
 
-    return StreamBuilder<Map<String, dynamic>?>(
-      stream: DatabaseService.instance.activeRecordStream,
-      builder: (context, activeSnap) {
-        List<Map<String, dynamic>> displayList = List.from(records);
-        final active = activeSnap.data;
-        final selectedDateKey = widget.selectedDateString;
-        String? activeDayStr = active?['calendarDayStr'] as String?;
-        if ((activeDayStr == null || activeDayStr.isEmpty) && active != null) {
-          final st = active['startTime'] as DateTime?;
-          if (st != null) {
-            activeDayStr = _wallCalendarDayKeyFromUtcInstant(st);
-          }
-        }
-        // Only inject the running row into the list for the **local calendar day** of its start.
-        final shouldShowActive =
-            active != null &&
-            activeDayStr != null &&
-            activeDayStr.isNotEmpty &&
-            activeDayStr == selectedDateKey;
-        if (shouldShowActive) {
-          final alreadyInList = displayList.any(
-            (r) => _timelineSameRecordRow(r, active),
-          );
-          if (!alreadyInList) {
-            displayList.insert(0, active);
-          } else {
-            displayList.removeWhere((r) => _timelineSameRecordRow(r, active));
-            displayList.insert(0, active);
-          }
-        }
-        if (displayList.isEmpty) {
-          return EmptyStatePlaceholder(
-            icon: Icons.schedule_rounded,
-            titleL10nKey: 'empty_timeline_title',
-            subtitleL10nKey: 'empty_timeline_subtitle',
-            actionLabelL10nKey: 'empty_action_focus_search',
-            onAction: () => widget.titleFocus.requestFocus(),
-          );
-        }
-        final indexByBizId = <String, int>{};
-        for (var i = 0; i < displayList.length; i++) {
-          final b = _timelineBusinessRecordId(displayList[i]);
-          if (b.isNotEmpty) {
-            indexByBizId[b] = i;
-          }
-        }
-        final activeRecord = activeSnap.data;
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-          physics: const AlwaysScrollableScrollPhysics(),
-          cacheExtent: 1000,
-          addAutomaticKeepAlives: true,
-          addRepaintBoundaries: true,
-          findItemIndexCallback: (Key key) {
-            if (key is! ValueKey<String>) return null;
-            final v = key.value;
-            if (v.startsWith('record-fallback-')) {
-              final idxStr = v.substring('record-fallback-'.length);
-              final i = int.tryParse(idxStr);
-              if (i != null && i >= 0 && i < displayList.length) {
-                return i;
-              }
-              return null;
-            }
-            final i = indexByBizId[v];
-            return i;
-          },
-          itemCount: displayList.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 10),
-          itemBuilder: (context, index) {
-            final data = displayList[index];
-            final systemRowId = _timelineRowSystemId(data);
-            final bizId = _timelineBusinessRecordId(data);
-            final tileKey = ValueKey<String>(
-              bizId.isNotEmpty ? bizId : 'record-fallback-$index',
-            );
-            String? otherDayStr = activeRecord?['calendarDayStr'] as String?;
-            if ((otherDayStr == null || otherDayStr.isEmpty) &&
-                activeRecord != null) {
-              final st = activeRecord['startTime'] as DateTime?;
-              if (st != null) {
-                otherDayStr = _wallCalendarDayKeyFromUtcInstant(st);
-              }
-            }
-            final isActiveFromOtherDay =
-                activeRecord != null &&
-                _timelineSameRecordRow(data, activeRecord) &&
-                otherDayStr != null &&
-                otherDayStr.isNotEmpty &&
-                otherDayStr != widget.selectedDateString;
-            return KeyedSubtree(
-              key: tileKey,
-              child: _TimelineRecordCard(
-                systemRowId: systemRowId,
-                data: data,
-                dateKey: widget.selectedDateString,
-                currentActivityFromDate: isActiveFromOtherDay
-                    ? otherDayStr
-                    : null,
-                onStop: widget.onStopRecord,
-                onDelete: widget.onDeleteRecord,
-                onEdit: () => _showEditRecordSheet(context, data),
-                rules: widget.rules,
-              ),
-            );
-          },
-        );
-      },
+    final rows = DatabaseService.instance.peekTimelineRowVmsForDate(
+      widget.selectedDate,
+    );
+    if (rows.isEmpty) {
+      return EmptyStatePlaceholder(
+        icon: Icons.schedule_rounded,
+        titleL10nKey: 'empty_timeline_title',
+        subtitleL10nKey: 'empty_timeline_subtitle',
+        actionLabelL10nKey: 'empty_action_focus_search',
+        onAction: () => widget.titleFocus.requestFocus(),
+      );
+    }
+    return _TimelineLazyRecordList(
+      rows: rows,
+      selectedDate: widget.selectedDate,
+      selectedDateString: widget.selectedDateString,
+      onStop: widget.onStopRecord,
+      onDelete: widget.onDeleteRecord,
+      onEdit: (data) => _showEditRecordSheet(context, data),
     );
   }
 
@@ -643,6 +569,7 @@ class _TimelinePageState extends State<TimelinePage> {
     super.initState();
     if (widget.isActivePage) {
       _initStream();
+      _scheduleHeavyListMount();
     }
   }
 
@@ -651,6 +578,7 @@ class _TimelinePageState extends State<TimelinePage> {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.isActivePage && widget.isActivePage) {
       _initStream();
+      _scheduleHeavyListMount();
       return;
     }
     if (!widget.isActivePage) {
@@ -660,6 +588,7 @@ class _TimelinePageState extends State<TimelinePage> {
         oldWidget.selectedDate.month != widget.selectedDate.month ||
         oldWidget.selectedDate.day != widget.selectedDate.day) {
       _initStream();
+      _scheduleHeavyListMount();
       setState(() {});
     }
   }
@@ -788,7 +717,9 @@ class _TimelinePageState extends State<TimelinePage> {
             const SizedBox(height: 8),
             const Divider(height: 1),
             Expanded(
-              child: StreamBuilder<List<Map<String, dynamic>>>(
+              child: _deferHeavyList
+                  ? const SizedBox.shrink()
+                  : StreamBuilder<List<Map<String, dynamic>>>(
                 stream: _recordsStream,
                 builder: (context, recordSnap) {
                   try {
@@ -808,28 +739,13 @@ class _TimelinePageState extends State<TimelinePage> {
                         recordSnap.data!,
                       );
                       _rememberCoalescedIfAuthoritative(records, recordSnap);
-                      return _buildTimelineRecordsArea(
-                        context,
-                        records,
-                        recordSnap,
-                      );
-                    }
-                    if (recordSnap.connectionState == ConnectionState.waiting &&
-                        !recordSnap.hasData) {
-                      if (_lastCoalescedRecords.isNotEmpty) {
-                        return _buildTimelineRecordsArea(
-                          context,
-                          List<Map<String, dynamic>>.from(_lastCoalescedRecords),
-                          recordSnap,
-                        );
-                      }
+                    } else if (recordSnap.connectionState ==
+                            ConnectionState.waiting &&
+                        !recordSnap.hasData &&
+                        _lastCoalescedRecords.isEmpty) {
                       return const SizedBox.shrink();
                     }
-                    return _buildTimelineRecordsArea(
-                      context,
-                      List<Map<String, dynamic>>.from(_lastCoalescedRecords),
-                      recordSnap,
-                    );
+                    return _buildTimelineRecordsArea(context);
                   } catch (e, st) {
                     if (kDebugMode) {
                       debugPrint('Timeline records StreamBuilder: $e\n$st');
@@ -854,50 +770,155 @@ class _TimelinePageState extends State<TimelinePage> {
   }
 }
 
-List<Widget> _timelineRecordMetaIcons(BuildContext context, Record r) {
+/// Virtualized timeline record list вЂ” no [StreamBuilder] over full list; active overlay optional.
+class _TimelineLazyRecordList extends StatefulWidget {
+  const _TimelineLazyRecordList({
+    required this.rows,
+    required this.selectedDate,
+    required this.selectedDateString,
+    required this.onStop,
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  final List<TimelineRecordRowVm> rows;
+  final DateTime selectedDate;
+  final String selectedDateString;
+  final Future<void> Function(String systemRowId) onStop;
+  final Future<void> Function(String systemRowId) onDelete;
+  final void Function(Map<String, dynamic> data) onEdit;
+
+  @override
+  State<_TimelineLazyRecordList> createState() => _TimelineLazyRecordListState();
+}
+
+class _TimelineLazyRecordListState extends State<_TimelineLazyRecordList> {
+  StreamSubscription<Map<String, dynamic>?>? _activeSub;
+  Map<String, dynamic>? _active;
+  String? _activeOtherDayStr;
+
+  bool get _needsActiveOverlay =>
+      widget.rows.any((r) => r.isCanonicalRunning) ||
+      _isToday(widget.selectedDate);
+
+  @override
+  void initState() {
+    super.initState();
+    if (_needsActiveOverlay) {
+      _activeSub = DatabaseService.instance.activeRecordStream.listen((active) {
+        if (!mounted) return;
+        String? otherDay;
+        if (active != null) {
+          otherDay = active['calendarDayStr'] as String?;
+          if ((otherDay == null || otherDay.isEmpty)) {
+            final st = active['startTime'] as DateTime?;
+            if (st != null) {
+              otherDay = _wallCalendarDayKeyFromUtcInstant(st);
+            }
+          }
+        }
+        setState(() {
+          _active = active;
+          _activeOtherDayStr = otherDay;
+        });
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _activeSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sw = Stopwatch()..start();
+    final rows = widget.rows;
+    if (kPerfDiagnosisEnabled) {
+      PerfDiag.instance.logTimelineVisibleBuild(
+        itemCount: rows.length,
+        ms: sw.elapsedMilliseconds,
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      physics: const AlwaysScrollableScrollPhysics(),
+      cacheExtent: 320,
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
+      itemCount: rows.length,
+      itemBuilder: (context, index) {
+        PerfDiag.instance.logTimelineRowBuildTick();
+        final vm = rows[index];
+        final tileKey = ValueKey<String>(
+          vm.businessRecordId.isNotEmpty
+              ? vm.businessRecordId
+              : 'record-fallback-$index',
+        );
+        String? otherDayBanner;
+        if (_active != null &&
+            vm.businessRecordId.isNotEmpty &&
+            vm.businessRecordId ==
+                (_active!['record_id'] ?? '').toString().trim() &&
+            _activeOtherDayStr != null &&
+            _activeOtherDayStr!.isNotEmpty &&
+            _activeOtherDayStr != widget.selectedDateString) {
+          otherDayBanner = _activeOtherDayStr;
+        }
+        return Padding(
+          padding: EdgeInsets.only(bottom: index < rows.length - 1 ? 10 : 0),
+          child: KeyedSubtree(
+            key: tileKey,
+            child: _TimelineRecordCard(
+              vm: vm,
+              currentActivityFromDate: otherDayBanner,
+              onStop: widget.onStop,
+              onDelete: widget.onDelete,
+              onEdit: () => widget.onEdit(vm.rawData),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+List<Widget> _timelineRowMetaIconsFromVm(
+  BuildContext context,
+  TimelineRecordRowVm vm,
+) {
   final base = Theme.of(context).iconTheme.color;
   final color = base?.withValues(alpha: 0.48);
   if (color == null) return const [];
-  if (!r.hasNotes &&
-      !r.hasChecklist &&
-      !r.hasParentRecord &&
-      !r.hasLinkedSubRecords) {
-    return const [];
-  }
   final out = <Widget>[];
   void add(IconData icon) {
     if (out.isNotEmpty) out.add(const SizedBox(width: 4));
     out.add(Icon(icon, size: 15, color: color));
   }
 
-  if (r.hasNotes) add(Icons.sticky_note_2_outlined);
-  if (r.hasChecklist) add(Icons.checklist_rounded);
-  if (r.hasParentRecord) add(Icons.account_tree_outlined);
-  if (r.hasLinkedSubRecords) add(Icons.layers_outlined);
+  if (vm.showNotesIcon) add(Icons.sticky_note_2_outlined);
+  if (vm.showChecklistIcon) add(Icons.checklist_rounded);
+  if (vm.showParentIcon) add(Icons.account_tree_outlined);
+  if (vm.showLinkedSubsIcon) add(Icons.layers_outlined);
   return out;
 }
 
-/// Single timeline card: running shows live timer + Stop, completed shows duration, planned shows label.
+/// Single timeline card: running shows live timer + Stop, completed shows duration.
 class _TimelineRecordCard extends StatefulWidget {
   const _TimelineRecordCard({
-    required this.systemRowId,
-    required this.data,
-    this.dateKey,
+    required this.vm,
     this.currentActivityFromDate,
     required this.onStop,
     required this.onDelete,
-    this.onEdit,
-    required this.rules,
+    required this.onEdit,
   });
 
-  final String systemRowId;
-  final Map<String, dynamic> data;
-  final String? dateKey;
+  final TimelineRecordRowVm vm;
   final String? currentActivityFromDate;
   final Future<void> Function(String systemRowId) onStop;
   final Future<void> Function(String systemRowId) onDelete;
-  final VoidCallback? onEdit;
-  final List<CategoryRule> rules;
+  final VoidCallback onEdit;
 
   @override
   State<_TimelineRecordCard> createState() => _TimelineRecordCardState();
@@ -915,8 +936,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
   @override
   void didUpdateWidget(_TimelineRecordCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.data['status'] != widget.data['status'] ||
-        oldWidget.data['endTime'] != widget.data['endTime']) {
+    if (oldWidget.vm.isCanonicalRunning != widget.vm.isCanonicalRunning) {
       _startTimerIfRunning();
     }
   }
@@ -924,7 +944,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
   void _startTimerIfRunning() {
     _timer?.cancel();
     _timer = null;
-    if (CategoryServiceExtension.isRecordMapActuallyRunning(widget.data)) {
+    if (widget.vm.isCanonicalRunning) {
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (mounted) setState(() {});
       });
@@ -957,88 +977,45 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
       ),
     );
     if (confirmed == true && mounted) {
-      await widget.onDelete(widget.systemRowId);
+      await widget.onDelete(widget.vm.systemRowId);
     }
+  }
+
+  String _subtitleForBuild() {
+    if (widget.vm.isPlanned) {
+      return t(currentLocale.value, 'planned_label');
+    }
+    if (widget.vm.isCanonicalRunning) {
+      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(
+        widget.vm.rawData,
+      );
+      if (startTimeUtc != null) {
+        final start = _formatTimeOfDay(_utcToDisplay(startTimeUtc));
+        final duration = DatabaseService.getPlanetaryNow().difference(
+          startTimeUtc,
+        );
+        return '$start вЂ” ... (${_formatDuration(duration)})';
+      }
+      return t(currentLocale.value, 'running_label');
+    }
+    if (widget.vm.subtitle == 'planned' || widget.vm.subtitle == 'running') {
+      return t(currentLocale.value, 'running_label');
+    }
+    return widget.vm.subtitle;
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final title =
-        widget.data['title'] as String? ??
-        (widget.systemRowId.isNotEmpty ? widget.systemRowId : '?');
-    final type = widget.data['type'] as String? ?? 'record';
-    final isPlanned = type == 'planned';
-    final canonicalBiz =
-        DatabaseService.instance.canonicalPrimaryRunningBusinessId;
-    final rowBiz = _timelineBusinessRecordId(widget.data);
-    final isRunning =
-        type == 'record' &&
-        CategoryServiceExtension.isRecordMapActuallyRunning(widget.data) &&
-        canonicalBiz != null &&
-        canonicalBiz.isNotEmpty &&
-        rowBiz == canonicalBiz;
-
-    final categoryPath = DatabaseService.instance
-        .categoryDisplayPathForRecordData(widget.data);
-    final categoryColor = DatabaseService.instance
-        .categoryDisplayColorForRecordData(widget.data);
-
-    Duration? duration;
-    late String subtitle;
-    if (isPlanned) {
-      subtitle = t(currentLocale.value, 'planned_label');
-    } else if (isRunning) {
-      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(
-        widget.data,
-      );
-      if (startTimeUtc != null) {
-        duration = DatabaseService.getPlanetaryNow().difference(startTimeUtc);
-        final start = _formatTimeOfDay(_utcToDisplay(startTimeUtc));
-        final end = '...';
-        subtitle = '$start — $end (${_formatDuration(duration)})';
-      } else {
-        subtitle = t(currentLocale.value, 'running_label');
-      }
-    } else {
-      final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(
-        widget.data,
-      );
-      final endTimeUtc = CategoryServiceExtension.endTimeFromRecord(
-        widget.data,
-      );
-      if (startTimeUtc != null) {
-        final endOrNow = endTimeUtc ?? DatabaseService.getPlanetaryNow();
-        duration = endOrNow.difference(startTimeUtc);
-      }
-      if (startTimeUtc != null) {
-        final start = _formatTimeOfDay(_utcToDisplay(startTimeUtc));
-        final end = endTimeUtc != null
-            ? _formatTimeOfDay(_utcToDisplay(endTimeUtc))
-            : '...';
-        final durationStr = duration != null ? _formatDuration(duration) : '–';
-        subtitle = '$start — $end ($durationStr)';
-      } else if (duration != null) {
-        subtitle = _formatDuration(duration);
-      } else {
-        subtitle = '–';
-      }
-    }
+    final isRunning = widget.vm.isCanonicalRunning;
+    final subtitle = _subtitleForBuild();
+    final metaIcons = _timelineRowMetaIconsFromVm(context, widget.vm);
 
     final runningFill = isRunning ? AppColors.cardSurface : null;
     final runningBorder = isRunning ? scheme.primary : Colors.transparent;
     final runningTextColor = isRunning ? scheme.onSurface : null;
 
-    final cardTheme = Theme.of(context).cardTheme;
-    final suppressInnerInk = Theme.of(context).copyWith(
-      splashFactory: NoSplash.splashFactory,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      hoverColor: Colors.transparent,
-    );
-
-    final recordIndicators = Record.forTimelineCard(widget.data);
-    final metaIcons = _timelineRecordMetaIcons(context, recordIndicators);
+    const cardRadius = 12.0;
 
     final paddedRow = Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 8, 12),
@@ -1068,7 +1045,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
                   children: [
                     Expanded(
                       child: Text(
-                        title,
+                        widget.vm.title,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -1086,12 +1063,9 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                Theme(
-                  data: suppressInnerInk,
-                  child: CategoryBreadcrumb(
-                    breadcrumbPath: categoryPath,
-                    accentColor: categoryColor,
-                  ),
+                CategoryBreadcrumb(
+                  breadcrumbPath: widget.vm.categoryPath,
+                  accentColor: widget.vm.categoryColor,
                 ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -1113,9 +1087,7 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 4),
               child: FilledButton.icon(
-                onPressed: () {
-                  widget.onStop(widget.systemRowId);
-                },
+                onPressed: () => widget.onStop(widget.vm.systemRowId),
                 style: FilledButton.styleFrom(
                   backgroundColor: Colors.red.shade600,
                   foregroundColor: Colors.white,
@@ -1137,59 +1109,36 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
       ),
     );
 
-    const cardRadius = 12.0;
-    final layoutDirection = Directionality.of(context);
-    final stripeCornerRadius = BorderRadiusDirectional.only(
-      topStart: const Radius.circular(cardRadius),
-      bottomStart: const Radius.circular(cardRadius),
-    ).resolve(layoutDirection);
-    final contentInkRadius = BorderRadiusDirectional.only(
-      topEnd: const Radius.circular(cardRadius),
-      bottomEnd: const Radius.circular(cardRadius),
-    ).resolve(layoutDirection);
-    // Non-positioned child sizes the Stack; stripe is Positioned top/bottom to match (no Row stretch).
-    final cardBody = IntrinsicHeight(
-      child: Stack(
-        fit: StackFit.passthrough,
-        clipBehavior: Clip.none,
-        children: [
-          PositionedDirectional(
-            start: 0,
-            top: 0,
-            bottom: 0,
-            child: Container(
-              width: 4,
-              decoration: BoxDecoration(
-                color: categoryColor,
-                borderRadius: stripeCornerRadius,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsetsDirectional.only(start: 4),
-            child: widget.onEdit != null
-                ? InkWell(
-                    onTap: widget.onEdit,
-                    borderRadius: contentInkRadius,
-                    child: Theme(data: suppressInnerInk, child: paddedRow),
-                  )
-                : Theme(data: suppressInnerInk, child: paddedRow),
-          ),
-        ],
-      ),
-    );
-
     return Material(
-      elevation: cardTheme.elevation ?? 1,
-      shadowColor: cardTheme.shadowColor,
-      surfaceTintColor: cardTheme.surfaceTintColor,
-      color: runningFill ?? cardTheme.color,
+      elevation: isRunning ? 1 : 0,
+      color: runningFill ?? Theme.of(context).cardTheme.color,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(cardRadius),
         side: BorderSide(color: runningBorder, width: isRunning ? 2.0 : 0),
       ),
       clipBehavior: Clip.antiAlias,
-      child: cardBody,
+      child: InkWell(
+        onTap: widget.onEdit,
+        borderRadius: BorderRadius.circular(cardRadius),
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 4,
+              decoration: BoxDecoration(
+                color: widget.vm.categoryColor,
+                borderRadius: const BorderRadiusDirectional.only(
+                  topStart: Radius.circular(cardRadius),
+                  bottomStart: Radius.circular(cardRadius),
+                ),
+              ),
+            ),
+            Expanded(child: paddedRow),
+          ],
+        ),
+      ),
     );
   }
 }

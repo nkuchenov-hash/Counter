@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class LightDateSwipePhysics extends PageScrollPhysics {
   const LightDateSwipePhysics({
     super.parent,
-    this.pageAcceptThreshold = 0.25,
+    this.pageAcceptThreshold = 0.22,
     this.motionThreshold = 12.0,
   });
 
@@ -57,7 +57,19 @@ class LightDateSwipePhysics extends PageScrollPhysics {
   }
 }
 
-/// Logs swipe threshold diagnostics when a horizontal drag ends.
+/// Planning: feather-light day pager (~20% drag, lower fling threshold).
+class FeatherDateSwipePhysics extends LightDateSwipePhysics {
+  const FeatherDateSwipePhysics({super.parent})
+    : super(pageAcceptThreshold: 0.20, motionThreshold: 10.0);
+
+  @override
+  double get minFlingVelocity => 45.0;
+
+  @override
+  FeatherDateSwipePhysics applyTo(ScrollPhysics? ancestor) {
+    return FeatherDateSwipePhysics(parent: buildParent(ancestor));
+  }
+}
 void logDateSwipeThresholdOnScrollEnd({
   required String section,
   required PageController controller,

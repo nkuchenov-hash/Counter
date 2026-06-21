@@ -306,6 +306,60 @@ class PerfDiag {
     }
   }
 
+  void logTimelineViewCacheHit({required String date, required int items}) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log('TIMELINE_VIEW_CACHE_HIT date=$date items=$items');
+  }
+
+  void logTimelineViewCacheRebuild({
+    required String date,
+    required int records,
+    required int ms,
+  }) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log(
+      'TIMELINE_VIEW_CACHE_REBUILD date=$date records=$records ms=$ms',
+    );
+  }
+
+  void logTimelineViewCacheInvalidate({
+    required String date,
+    required String reason,
+  }) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log('TIMELINE_VIEW_CACHE_INVALIDATE date=$date reason=$reason');
+  }
+
+  void logTimelineVisibleBuild({required int itemCount, required int ms}) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log('TIMELINE_VISIBLE_BUILD itemCount=$itemCount ms=$ms');
+  }
+
+  void logTimelineRowBuildTick() {
+    if (!kPerfDiagnosisEnabled) return;
+    rebuild('TimelineRow');
+  }
+
+  void logPlanningSwipeSettle({required int ms}) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log('PLANNING_SWIPE_SETTLE ms=$ms');
+  }
+
+  void beginTimelineHeavyDayAction() {
+    if (!kPerfDiagnosisEnabled) return;
+    _activeAction = 'timelineHeavyDay';
+    _resetSwipeMetrics();
+  }
+
+  void endTimelineHeavyDayAction() {
+    if (!kPerfDiagnosisEnabled) return;
+    _printRebuildSummary(action: 'timelineHeavyDay');
+    _printFrameSummary(action: 'timelineHeavyDay', phase: 'settle');
+    if (_activeAction == 'timelineHeavyDay') {
+      _activeAction = null;
+    }
+  }
+
   /// One-shot post-boot swipe sequence for profile/chrome diagnosis runs.
   void scheduleAutoSwipeSequence({
     required String section,

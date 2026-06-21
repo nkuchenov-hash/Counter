@@ -1022,6 +1022,7 @@ extension RecordServiceExtension on DatabaseService {
     _timelineDayIndexDirty = false;
     _timelineDayIndexBuiltAtRecordCount = _cachedFlatRecords.length;
     _timelineDayViewCache.clear();
+    _timelineDayVmCache.clear();
   }
 
   List<Map<String, dynamic>> _timelineDayIndexRowsForKey(String targetDayStr) {
@@ -1077,16 +1078,147 @@ extension RecordServiceExtension on DatabaseService {
     return List<Map<String, dynamic>>.from(rendered);
   }
 
+  String _timelineSubtitleForRecordMap(Map<String, dynamic> data) {
+    final type = (data['type'] as String? ?? 'record');
+    final isPlanned = type == 'planned';
+    if (isPlanned) {
+      return 'planned'; // l10n resolved in UI for planned only
+    }
+    final canonicalBiz = canonicalPrimaryRunningBusinessId;
+    final rowBiz = (data['record_id'] ?? '').toString().trim();
+    final isRunning =
+        type == 'record' &&
+        CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
+        canonicalBiz != null &&
+        canonicalBiz.isNotEmpty &&
+        rowBiz == canonicalBiz;
+    final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(data);
+    final endTimeUtc = CategoryServiceExtension.endTimeFromRecord(data);
+    if (isRunning) {
+      if (startTimeUtc != null) {
+        final start = _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc));
+        final duration = DatabaseService.getPlanetaryNow().difference(startTimeUtc);
+        return '$start — ... (${_timelineFormatDuration(duration)})';
+      }
+      return 'running';
+    }
+    if (startTimeUtc != null) {
+      final start = _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc));
+      final end = endTimeUtc != null
+          ? _timelineFormatTimeOfDay(_profileWallFromUtc(endTimeUtc))
+          : '...';
+      final endOrNow = endTimeUtc ?? DatabaseService.getPlanetaryNow();
+      final duration = endOrNow.difference(startTimeUtc);
+      return '$start — $end (${_timelineFormatDuration(duration)})';
+    }
+    return '–';
+  }
+
+  String _timelineFormatTimeOfDay(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+
+  String _timelineFormatDuration(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    if (h > 0) return '${h}h ${m}m';
+    if (m > 0) return '${m}m';
+    return '${d.inSeconds}s';
+  }
+
+  TimelineRecordRowVm _timelineRowVmFromMap(Map<String, dynamic> data) {
+    final systemRowId = (data['id'] ?? data['backendNumericId'] ?? '')
+        .toString()
+        .trim();
+    final businessRecordId = (data['record_id'] ?? '').toString().trim();
+    final title =
+        data['title'] as String? ??
+        (systemRowId.isNotEmpty ? systemRowId : '?');
+    final type = (data['type'] as String? ?? 'record');
+    final canonicalBiz = canonicalPrimaryRunningBusinessId;
+    final isPlanned = type == 'planned';
+    final isCanonicalRunning =
+        type == 'record' &&
+        CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
+        canonicalBiz != null &&
+        canonicalBiz.isNotEmpty &&
+        businessRecordId == canonicalBiz;
+    final rec = Record.forTimelineCard(data);
+    final color = categoryDisplayColorForRecordData(data);
+    return TimelineRecordRowVm(
+      systemRowId: systemRowId,
+      businessRecordId: businessRecordId,
+      rawData: data,
+      title: title,
+      subtitle: _timelineSubtitleForRecordMap(data),
+      categoryPath: categoryDisplayPathForRecordData(data),
+      categoryColorArgb: color.toARGB32(),
+      isPlanned: isPlanned,
+      isCanonicalRunning: isCanonicalRunning,
+      showNotesIcon: rec.hasNotes,
+      showChecklistIcon: rec.hasChecklist,
+      showParentIcon: rec.hasParentRecord,
+      showLinkedSubsIcon: rec.hasLinkedSubRecords,
+    );
+  }
+
+  List<TimelineRecordRowVm> _buildTimelineRowVmsForDate(
+    String dateKey,
+    DateTime date,
+  ) {
+    final maps = peekTimelineRecordsForDate(date);
+    final sw = Stopwatch()..start();
+    final vms = maps.map(_timelineRowVmFromMap).toList(growable: false);
+    sw.stop();
+    if (kPerfDiagnosisEnabled) {
+      PerfDiag.instance.logTimelineViewCacheRebuild(
+        date: dateKey,
+        records: maps.length,
+        ms: sw.elapsedMilliseconds,
+      );
+    }
+    return vms;
+  }
+
+  /// Render-ready row VMs for a calendar day (cached; no UI-side grouping/formatting).
+  List<TimelineRecordRowVm> peekTimelineRowVmsForDate(DateTime date) {
+    final targetDayStr = _timelineDateKeyFromDate(date);
+    final cached = _timelineDayVmCache[targetDayStr];
+    if (cached != null) {
+      if (kPerfDiagnosisEnabled) {
+        PerfDiag.instance.logTimelineViewCacheHit(
+          date: targetDayStr,
+          items: cached.length,
+        );
+      }
+      return cached;
+    }
+    final built = _buildTimelineRowVmsForDate(targetDayStr, date);
+    _timelineDayVmCache[targetDayStr] = built;
+    return built;
+  }
+
+  void invalidateTimelineDayCachesForDateKey(String dateKey, {String? reason}) {
+    _timelineDayViewCache.remove(dateKey);
+    _timelineDayVmCache.remove(dateKey);
+    if (kPerfDiagnosisEnabled && reason != null) {
+      PerfDiag.instance.logTimelineViewCacheInvalidate(
+        date: dateKey,
+        reason: reason,
+      );
+    }
+  }
+
   /// Warms neighbor day caches after settle — never blocks swipe (fire-and-forget).
   void prefetchTimelineDayNeighbors(DateTime center) {
     final centerKey = _timelineDateKeyFromDate(center);
-    final prev = center.subtract(const Duration(days: 1));
-    final next = center.add(const Duration(days: 1));
-    final keys = <String>[
-      _timelineDateKeyFromDate(prev),
-      centerKey,
-      _timelineDateKeyFromDate(next),
+    _timelinePrefetchCenterKey = centerKey;
+    final dates = <DateTime>[
+      center.subtract(const Duration(days: 2)),
+      center.subtract(const Duration(days: 1)),
+      center,
+      center.add(const Duration(days: 1)),
     ];
+    final keys = dates.map(_timelineDateKeyFromDate).toList();
     final pending = keys.where((k) => !_timelinePrefetchInFlight.contains(k)).toList();
     if (pending.isEmpty) return;
     _timelinePrefetchInFlight.addAll(pending);
@@ -1095,6 +1227,7 @@ extension RecordServiceExtension on DatabaseService {
     }
     unawaited(() async {
       final sw = Stopwatch()..start();
+      final capturedCenter = centerKey;
       try {
         if (_cachedFlatRecords.isEmpty &&
             _isInitialized &&
@@ -1102,6 +1235,7 @@ extension RecordServiceExtension on DatabaseService {
           await _fetchRecordsIntoCache(forceNetwork: false);
         }
         for (final key in pending) {
+          if (_timelinePrefetchCenterKey != capturedCenter) return;
           final parts = key.split('-');
           if (parts.length != 3) continue;
           final y = int.tryParse(parts[0]);
@@ -1109,12 +1243,13 @@ extension RecordServiceExtension on DatabaseService {
           final d = int.tryParse(parts[2]);
           if (y == null || m == null || d == null) continue;
           final day = DateTime(y, m, d);
-          final rows = peekTimelineRecordsForDate(day);
+          peekTimelineRowVmsForDate(day);
           if (kPerfDiagnosisEnabled) {
+            final rows = _timelineDayVmCache[key];
             PerfDiag.instance.logTimelinePrefetchEnd(
               date: key,
               ms: sw.elapsedMilliseconds,
-              itemCount: rows.length,
+              itemCount: rows?.length ?? 0,
             );
           }
         }
