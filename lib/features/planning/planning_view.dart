@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
+import 'package:counter/core/app_diag.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
@@ -35,6 +36,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
+import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 
 enum _PlanSortMode { category, time, tags, custom }
@@ -283,7 +285,21 @@ class _PlanningPageState extends State<PlanningPage>
 
   static const double _kTimelineHourHeightMinPx = 120;
   static const double _kTimelineHourHeightMaxPx = 160;
-  static const double _kTimelineRailWidthPx = 48;
+  static const double _kTimelineRailWidthDesktopPx = 48;
+  static const double _kTimelineRailWidthMobilePx = 28;
+  static const double _kTimelineCompactBreakpoint = 600;
+
+  bool _timelineCompactLayout(BuildContext context) =>
+      MediaQuery.sizeOf(context).width < _kTimelineCompactBreakpoint;
+
+  double _timelineRailWidthPx(BuildContext context) =>
+      _timelineCompactLayout(context)
+          ? _kTimelineRailWidthMobilePx
+          : _kTimelineRailWidthDesktopPx;
+
+  List<TimeModeProjectedPlan> _cachedTimeModeProjections = const [];
+  List<_TimelineBlockLayout> _dragInsertLayoutsCache = const [];
+
   static const int _kTimelineDefaultBlockMinutes = 30;
 
   /// Duration-true timeline scale for the active Time-mode canvas build.
@@ -487,8 +503,7 @@ class _PlanningPageState extends State<PlanningPage>
     required List<PlanningTask> withOrders,
     required List<PlanningTask> baselineBefore,
   }) {
-    // ignore: avoid_print
-    print(
+    appDebugDiag(
       'PLAN_REORDER_REQUEST mode=$mode visibleCount=${withOrders.length} '
       'movedPlanId=${moved.planRowId ?? moved.planRowIdForBackend} '
       'from=$fromIndex to=$toIndex',
@@ -2273,7 +2288,7 @@ class _PlanningPageState extends State<PlanningPage>
     return out;
   }
 
-  _PlanningTaskCard _planningTaskCardForRow(
+  PlanCard _planningTaskCardForRow(
     PlanningTask task,
     String key,
     bool displayDone,
@@ -2290,7 +2305,7 @@ class _PlanningPageState extends State<PlanningPage>
     final pbId = DatabaseService.pocketRelationIdOrNull(task.pocketRecordId);
     final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
     final estimate = PlanServiceExtension.planningWallEstimateSeconds(task);
-    return _PlanningTaskCard(
+    return PlanCard(
       task: task,
       planTrackedSeconds: tracked,
       planEstimatedSeconds: estimate,
@@ -2533,8 +2548,7 @@ class _PlanningPageState extends State<PlanningPage>
     }
     _lastTimeDurationLayoutLogKey = lineKey;
     _lastTimeDurationLayoutLogAt = now;
-    // ignore: avoid_print
-    print(
+    appDebugDiag(
       'TIME_DURATION_LAYOUT planId=${planId.isEmpty ? '-' : planId} '
       'profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
       'wallStart=${_timelineLogWallIso(proj.profileWallStart)} '
@@ -2565,8 +2579,7 @@ class _PlanningPageState extends State<PlanningPage>
     }
     _lastTimeResizePreviewLogKey = lineKey;
     _lastTimeResizePreviewLogAt = now;
-    // ignore: avoid_print
-    print(
+    appDebugDiag(
       'TIME_RESIZE_PREVIEW planId=${planId.isEmpty ? '-' : planId} '
       'edge=$edge pointerY=${pointerY.toStringAsFixed(1)} '
       'minute=$minute snapped=$snapped '
@@ -2591,8 +2604,7 @@ class _PlanningPageState extends State<PlanningPage>
     }
     _lastTimeModeRailLogKey = lineKey;
     _lastTimeModeRailLogAt = now;
-    // ignore: avoid_print
-    print(
+    appDebugDiag(
       'TIME_MODE_RAIL profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
       'selectedDay=$dayStr visibleHours=${visibleHours.join(',')}',
     );
@@ -2635,8 +2647,7 @@ class _PlanningPageState extends State<PlanningPage>
     }
     _lastPlanTimeNowLineLogKey = lineKey;
     _lastPlanTimeNowLineLogAt = now;
-    // ignore: avoid_print
-    print(
+    appDebugDiag(
       'TIME_NOW_LINE visible=$visible '
       'profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
       'nowMinute=${wallNow.hour * 60 + wallNow.minute} '
@@ -3192,8 +3203,16 @@ class _PlanningPageState extends State<PlanningPage>
     required bool hadEnd,
     required DateTime planWallDay,
     required int rangeStart,
+    required int rangeEnd,
+    required String selectedDayKey,
   }) {
     _clearTimelineInteractionState();
+    _dragInsertLayoutsCache = _timelineBlockLayouts(
+      _cachedTimeModeProjections,
+      rangeStart,
+      rangeEnd,
+      selectedDayKey,
+    );
     setState(() {
       _timelineVerticalDragPlanKey = planKey;
       _timelineVerticalDragDeltaPx = 0;
@@ -3235,19 +3254,14 @@ class _PlanningPageState extends State<PlanningPage>
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
-    final projections = <TimeModeProjectedPlan>[];
-    for (final t in scheduledInRange) {
-      final p = DatabaseService.instance.projectPlanForTimeMode(t);
-      if (p != null && p.profileWallDateKey == selectedDayKey) {
-        projections.add(p);
-      }
-    }
-    final layouts = _timelineBlockLayouts(
-      projections,
-      rangeStart,
-      rangeEnd,
-      selectedDayKey,
-    );
+    final layouts = _dragInsertLayoutsCache.isNotEmpty
+        ? _dragInsertLayoutsCache
+        : _timelineBlockLayouts(
+            _cachedTimeModeProjections,
+            rangeStart,
+            rangeEnd,
+            selectedDayKey,
+          );
     final insertTarget = _timelineLayoutUnderDragCenter(
       layouts: layouts,
       dragCenterY: dragCenterY,
@@ -3587,6 +3601,7 @@ class _PlanningPageState extends State<PlanningPage>
       }
       projections.add(proj);
     }
+    _cachedTimeModeProjections = projections;
     final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
       rangeStart,
       rangeEnd,
@@ -3649,7 +3664,10 @@ class _PlanningPageState extends State<PlanningPage>
       physics: _timelineScrollLocked
           ? const NeverScrollableScrollPhysics()
           : null,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: _timelineCompactLayout(context) ? 4 : 8,
+        vertical: 8,
+      ),
       children: children,
     );
   }
@@ -3686,10 +3704,14 @@ class _PlanningPageState extends State<PlanningPage>
       _maybeAutoScrollTimelineToNow(nowTop, canvasHeight);
     }
 
-    String hourLabel(int hour) =>
-        '${hour.clamp(0, 23).toString().padLeft(2, '0')}:00';
+    final compact = _timelineCompactLayout(context);
+    final railWidth = _timelineRailWidthPx(context);
+    String hourLabel(int hour) => compact
+        ? '${hour.clamp(0, 23)}'
+        : '${hour.clamp(0, 23).toString().padLeft(2, '0')}:00';
 
-    return SizedBox(
+    return RepaintBoundary(
+      child: SizedBox(
       height: canvasHeight + 8,
       child: Stack(
         clipBehavior: Clip.none,
@@ -3698,7 +3720,7 @@ class _PlanningPageState extends State<PlanningPage>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
-                width: _kTimelineRailWidthPx,
+                width: railWidth,
                 height: canvasHeight,
                 child: Stack(
                   clipBehavior: Clip.none,
@@ -3894,6 +3916,7 @@ class _PlanningPageState extends State<PlanningPage>
                                 planWallDay: planWallDay,
                                 rangeStart: rangeStart,
                                 rangeEnd: rangeEnd,
+                                selectedDayKey: selectedDayKey,
                                 planActualByPbId: planActualByPbId,
                                 scheduledInRange: scheduledInRange,
                               ),
@@ -3912,6 +3935,7 @@ class _PlanningPageState extends State<PlanningPage>
                                 planWallDay: planWallDay,
                                 rangeStart: rangeStart,
                                 rangeEnd: rangeEnd,
+                                selectedDayKey: selectedDayKey,
                                 planActualByPbId: planActualByPbId,
                                 scheduledInRange: scheduledInRange,
                               ),
@@ -3940,8 +3964,9 @@ class _PlanningPageState extends State<PlanningPage>
           ),
         ],
       ),
-        ],
+    ],
       ),
+    ),
     );
   }
 
@@ -3955,6 +3980,7 @@ class _PlanningPageState extends State<PlanningPage>
     required DateTime planWallDay,
     required int rangeStart,
     required int rangeEnd,
+    required String selectedDayKey,
     required Map<String, int> planActualByPbId,
     required List<PlanningTask> scheduledInRange,
   }) {
@@ -4085,6 +4111,8 @@ class _PlanningPageState extends State<PlanningPage>
                       hadEnd: hadEnd,
                       planWallDay: planWallDay,
                       rangeStart: rangeStart,
+                      rangeEnd: rangeEnd,
+                      selectedDayKey: selectedDayKey,
                     )
                   : null,
               onVerticalDragUpdate: canInteract
@@ -5565,25 +5593,6 @@ class _PlanningTimelineBoundsSheetState
   }
 }
 
-List<Widget> _planningTaskMetaIcons(BuildContext context, PlanningTask task) {
-  final base = Theme.of(context).iconTheme.color;
-  final color = base?.withValues(alpha: 0.48);
-  if (color == null) return const [];
-  if (!task.hasNotes && !task.hasChecklist && !task.hasParentPlan) {
-    return const [];
-  }
-  final out = <Widget>[];
-  void add(IconData icon) {
-    if (out.isNotEmpty) out.add(const SizedBox(width: 4));
-    out.add(Icon(icon, size: 15, color: color));
-  }
-
-  if (task.hasNotes) add(Icons.sticky_note_2_outlined);
-  if (task.hasChecklist) add(Icons.checklist_rounded);
-  if (task.hasParentPlan) add(Icons.account_tree_outlined);
-  return out;
-}
-
 enum _TimelineResizeEdge { top, bottom }
 
 /// Invisible move/resize gesture zones for proportional timeline plan blocks.
@@ -5989,172 +5998,6 @@ class _TimelineBlockLayout {
   final int column;
   final int totalColumns;
   final bool hasScheduleConflict;
-}
-
-/// Single planning task card. Uses Theme.of(context). No hardcoded colors.
-class _PlanningTaskCard extends StatelessWidget {
-  const _PlanningTaskCard({
-    required this.task,
-    required this.planTrackedSeconds,
-    required this.planEstimatedSeconds,
-    required this.displayIsDone,
-    required this.selectMode,
-    required this.isSelected,
-    required this.highlightAsRunning,
-    required this.toggleDoneEnabled,
-    required this.onToggleDone,
-    required this.onBodyTap,
-    this.onLongPress,
-    required this.onPlay,
-    required this.onOpenMenu,
-    this.timelineBlock = false,
-    this.timelineInteracting = false,
-    this.timelineScheduleConflict = false,
-    this.timelineTimeLabel,
-    this.timelineBlockHeightPx,
-  });
-
-  final PlanningTask task;
-
-  /// Sum of record durations this wall day with [source_plan_id] → this plan’s PocketBase id.
-  final int planTrackedSeconds;
-
-  /// Planned span from task start/end wall times; null hides the progress strip.
-  final int? planEstimatedSeconds;
-
-  /// Merged server [PlanningTask.isDone] with optimistic override from parent.
-  final bool displayIsDone;
-  final bool selectMode;
-  final bool isSelected;
-  final bool highlightAsRunning;
-  final bool toggleDoneEnabled;
-  final VoidCallback onToggleDone;
-  final VoidCallback onBodyTap;
-  final VoidCallback? onLongPress;
-  final VoidCallback onPlay;
-  final void Function(BuildContext anchorContext) onOpenMenu;
-  final bool timelineBlock;
-  final bool timelineInteracting;
-  final bool timelineScheduleConflict;
-  final String? timelineTimeLabel;
-  final double? timelineBlockHeightPx;
-
-  /// [wall] is profile wall time from [PlanningTask.startTime] / end (not UTC).
-  static String _formatPlanningWallTime(DateTime wall) {
-    return '${wall.hour.toString().padLeft(2, '0')}:${wall.minute.toString().padLeft(2, '0')}';
-  }
-
-  static String _timelineTimeRangeLabel(PlanningTask task) {
-    final start = task.startTime;
-    if (start == null) return '';
-    final startLabel = _formatPlanningWallTime(start);
-    final end = task.endDateTime;
-    if (end != null) {
-      return '$startLabel – ${_formatPlanningWallTime(end)}';
-    }
-    return startLabel;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (timelineBlock) {
-      return _buildTimelineBlockCard(context);
-    }
-    return _buildListPlanningCard(context);
-  }
-
-  Widget _buildTimelineBlockCard(BuildContext context) {
-    final metaIcons = _planningTaskMetaIcons(context, task);
-    final blockH = timelineBlockHeightPx;
-    final density = blockH != null && blockH < 72
-        ? PlanTimeTaskCardDensity.compact
-        : PlanTimeTaskCardDensity.medium;
-    final suppressChildInk = Theme.of(context).copyWith(
-      splashFactory: NoSplash.splashFactory,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      hoverColor: Colors.transparent,
-      checkboxTheme: CheckboxThemeData(
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-      ),
-    );
-    return Theme(
-      data: suppressChildInk,
-      child: PlanTimeTaskCard(
-        task: task,
-        density: density,
-        surface: PlanCardSurface.timeline,
-        timelineFillHeight: true,
-        timeLabel: timelineTimeLabel ?? _timelineTimeRangeLabel(task),
-        displayIsDone: displayIsDone,
-        selectMode: selectMode,
-        isSelected: isSelected,
-        highlightAsRunning: highlightAsRunning,
-        interacting: timelineInteracting,
-        toggleDoneEnabled: toggleDoneEnabled,
-        planTrackedSeconds: planTrackedSeconds,
-        planEstimatedSeconds: planEstimatedSeconds,
-        scheduleConflict: timelineScheduleConflict,
-        metaIcons: metaIcons,
-        onToggleDone: onToggleDone,
-        onSelectToggle: onBodyTap,
-        onPlay: onPlay,
-        onOpenMenu: onOpenMenu,
-      ),
-    );
-  }
-
-  static String _listTimeLabel(PlanningTask task) {
-    final start = task.startTime;
-    if (start == null) return '';
-    final startLabel = _formatPlanningWallTime(start);
-    final end = task.endDateTime;
-    if (end != null) {
-      return '$startLabel – ${_formatPlanningWallTime(end)}';
-    }
-    return startLabel;
-  }
-
-  Widget _buildListPlanningCard(BuildContext context) {
-    final metaIcons = _planningTaskMetaIcons(context, task);
-    final density = planTimeCardDensityForList(
-      task: task,
-      planEstimatedSeconds: planEstimatedSeconds,
-      planTrackedSeconds: planTrackedSeconds,
-    );
-    final suppressChildInk = Theme.of(context).copyWith(
-      splashFactory: NoSplash.splashFactory,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      hoverColor: Colors.transparent,
-      checkboxTheme: CheckboxThemeData(
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-      ),
-    );
-    return Theme(
-      data: suppressChildInk,
-      child: PlanTimeTaskCard(
-        task: task,
-        density: density,
-        surface: PlanCardSurface.list,
-        timeLabel: _listTimeLabel(task),
-        displayIsDone: displayIsDone,
-        selectMode: selectMode,
-        isSelected: isSelected,
-        highlightAsRunning: highlightAsRunning,
-        toggleDoneEnabled: toggleDoneEnabled,
-        planTrackedSeconds: planTrackedSeconds,
-        planEstimatedSeconds: planEstimatedSeconds,
-        metaIcons: metaIcons,
-        onToggleDone: onToggleDone,
-        onSelectToggle: onBodyTap,
-        onPlay: (!selectMode && !displayIsDone) ? onPlay : null,
-        onOpenMenu: onOpenMenu,
-        onTap: onBodyTap,
-        onLongPress: onLongPress,
-      ),
-    );
-  }
 }
 
 /// One-shot slide settle when a completed card is allowed to reorder.

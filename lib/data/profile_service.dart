@@ -76,6 +76,11 @@ void _profileDiagLog(String line, {String? dedupeKey}) {
   print(line);
 }
 
+void _profileVerboseDiag(String line) {
+  if (!kDebugMode) return;
+  print(line);
+}
+
 void _profileHydratedLog({
   required String id,
   required String lang,
@@ -92,10 +97,10 @@ void _profileHydratedLog({
   }
   _lastProfileHydratedLogKey = key;
   _lastProfileHydratedLogAt = now;
-  print(
+  _profileVerboseDiag(
     'PROFILE_HYDRATED id=$id source=pb lang=$lang tz=$tz offset=$offset isAdmin=$isAdmin',
   );
-  print('PROFILE_ADMIN_STATE isAdmin=$isAdmin source=pb');
+  _profileVerboseDiag('PROFILE_ADMIN_STATE isAdmin=$isAdmin source=pb');
 }
 
 String _normalizeTimezone(String timezone) {
@@ -517,7 +522,7 @@ extension ProfileServiceExtension on DatabaseService {
     final uiLabel = ProfileServiceExtension.resolveProfileDisplayLabelFor(
       settings: _settings,
     );
-    print(
+    _profileVerboseDiag(
       'PROFILE_UI_SETTINGS_APPLIED displayName=$uiLabel lang=$primaryLang tz=$resolvedTzLabel isAdmin=$parsedAdmin',
     );
     _settingsController.add(_settings);
@@ -584,9 +589,8 @@ extension ProfileServiceExtension on DatabaseService {
     if (patchFields.isEmpty) return true;
 
     final fieldNames = patchFields.keys.join(',');
-    _profileDiagLog(
+    _profileVerboseDiag(
       'PROFILE_SAVE_PATCH fields=$fieldNames payload=$patchFields',
-      dedupeKey: 'patch|$fieldNames',
     );
 
     try {
@@ -601,23 +605,20 @@ extension ProfileServiceExtension on DatabaseService {
         _settings = _settings.copyWith(tagDisplayModeWireRaw: patchedTagWire);
         _settingsController.add(_settings);
       }
-      _profileDiagLog(
+      _profileVerboseDiag(
         'PROFILE_SAVE_SUCCESS fields=$fieldNames',
-        dedupeKey: 'ok|$fieldNames',
       );
       await _mirrorProfileSettingsToDeviceCache();
       return true;
     } on ClientException catch (e) {
-      _profileDiagLog(
+      _profileVerboseDiag(
         'PROFILE_SAVE_FAIL status=${e.statusCode} error=$e payload=$patchFields',
-        dedupeKey: 'fail|${e.statusCode}|$fieldNames',
       );
       DatabaseService._log('SAVE_SETTINGS: PocketBase ${e.statusCode} — $e');
       return false;
     } catch (e, st) {
-      _profileDiagLog(
+      _profileVerboseDiag(
         'PROFILE_SAVE_FAIL status=- error=$e payload=$patchFields',
-        dedupeKey: 'fail|err|$fieldNames',
       );
       DatabaseService._log('SAVE_SETTINGS: request failed — $e');
       DatabaseService._log(st);

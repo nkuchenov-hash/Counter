@@ -16,6 +16,7 @@ import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_adaptive.dart';
+import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
@@ -2073,9 +2074,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                           routeTab: _shellTabDiagnosticLabel(_shellPageIndex),
                         ),
                         Expanded(
-                          child: IndexedStack(
+                          child: LazyIndexedStack(
                             index: _shellPageIndex,
-                            sizing: StackFit.expand,
                             children: pages,
                           ),
                         ),

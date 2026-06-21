@@ -16,7 +16,7 @@ ButtonStyle appCompactSegmentedButtonStyle(
     fixedSize: Size(segmentWidth, kAppCompactControlHeight),
     tapTargetSize: MaterialTapTargetSize.padded,
     padding: EdgeInsets.zero,
-    textStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+    textStyle: TextStyle(
       fontSize: kAppCompactControlFontSize,
       fontWeight: FontWeight.w600,
       height: 1.1,
@@ -32,7 +32,8 @@ class AppCompactSegmentLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.labelMedium?.copyWith(
+    final inherited = DefaultTextStyle.of(context).style;
+    final style = inherited.copyWith(
       fontSize: kAppCompactControlFontSize,
       fontWeight: FontWeight.w600,
       height: 1.1,
@@ -67,7 +68,8 @@ class AppCompactTextTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.labelMedium?.copyWith(
+    final inherited = DefaultTextStyle.of(context).style;
+    final style = inherited.copyWith(
       fontSize: kAppCompactControlFontSize,
       fontWeight: FontWeight.w600,
       height: 1.1,

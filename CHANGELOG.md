@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 performance + mobile Time compactness + PlanCard canonical + Design Lab [shipped]
+* **`lazy_indexed_stack.dart` / `app_shell.dart`:** [shipped] `LazyIndexedStack` — lazy tab build, `Offstage` + `TickerMode(false)` off-screen; replaces eager `IndexedStack` for smoother horizontal nav.
+* **`app_diag.dart` / `planning_view.dart`:** [shipped] `appDebugDiag()` gates `TIME_*` logs to debug; drag layout cache (`_dragInsertLayoutsCache`); projection cache; `RepaintBoundary` on timeline canvas.
+* **`planning_view.dart`:** [shipped] Mobile Time rail 28px + compact hour labels (`15` not `15:00`); list padding 4px when width &lt; 600.
+* **`compact_nav_controls.dart`:** [shipped] Segmented selected text inherits `onPrimary` (fixes black-on-black active tabs).
+* **`plan_card.dart` / `planning_view.dart` / `component_lab_cards_demo.dart`:** [shipped] Canonical `PlanCard` shared by Planning + Component Lab; removed fake `AppTaskCard` card demos.
+* **`profile_service.dart`:** [shipped] `PROFILE_SAVE_*` / `PROFILE_HYDRATED` gated to debug; boot `PROFILE_FETCH_*` remains in release.
+
 ## [2026-06-15] - V3/V7 neutral-black design tokens (no green primary) [shipped]
 * **`app_colors.dart` / `theme.dart`:** [shipped] Central tokens (`actionPrimary` #111111, `appBackground` #FAFAF8, `cardSurface` #FFFFFF); explicit `ColorScheme` + M3 component themes (buttons, FAB, nav, segmented tabs, cards, inputs).
 * **Canonical widgets:** [shipped] `AppIconButton` selected = black fill; `LifeCard` white surfaces; `compact_nav_controls` black selected segments; timeline running cards white + black border; calendar today/selected neutral.
