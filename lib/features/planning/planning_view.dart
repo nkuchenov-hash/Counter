@@ -114,6 +114,14 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   /// External date from shell while this tab is inactive — applied on activation only.
   int? _pendingExternalPage;
 
+  /// True while Time-mode card drag/resize is active — blocks horizontal date pager.
+  bool _datePagerLocked = false;
+
+  void _onPlanningDatePagerLockChanged(bool locked) {
+    if (_datePagerLocked == locked) return;
+    setState(() => _datePagerLocked = locked);
+  }
+
   int _pageIndexForDate(DateTime date) {
     final daysOffset = _dateOnly(date).difference(_anchorDate).inDays;
     return initialPage + daysOffset;
@@ -310,7 +318,9 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
           },
           child: PageView.builder(
             controller: _controller,
-            physics: const FeatherDateSwipePhysics(),
+            physics: _datePagerLocked
+                ? const NeverScrollableScrollPhysics()
+                : const FeatherDateSwipePhysics(),
             itemCount: totalPageCount,
             onPageChanged: (int index) {
               if (index >= 0 && index < totalPageCount) {
@@ -357,6 +367,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
               initialPage: initialPage,
               totalPageCount: totalPageCount,
               onDateChanged: widget.onDateChanged,
+              onDatePagerLockChanged: _onPlanningDatePagerLockChanged,
             );
           },
         ),
@@ -390,6 +401,7 @@ class PlanningPage extends StatefulWidget {
     this.initialPage,
     this.totalPageCount,
     this.onDateChanged,
+    this.onDatePagerLockChanged,
   });
 
   final String selectedDateString;
@@ -413,6 +425,7 @@ class PlanningPage extends StatefulWidget {
   final int? initialPage;
   final int? totalPageCount;
   final void Function(DateTime date)? onDateChanged;
+  final void Function(bool locked)? onDatePagerLockChanged;
 
   @override
   State<PlanningPage> createState() => _PlanningPageState();
@@ -2988,7 +3001,14 @@ class _PlanningPageState extends State<PlanningPage>
     _timelineResizeEdge = null;
     _timelineResizeTask = null;
     _timelineResizeTimeLabel = null;
-    _timelineScrollLocked = false;
+    _setTimelineInteractionLock(false);
+  }
+
+  void _setTimelineInteractionLock(bool locked) {
+    if (_timelineScrollLocked != locked) {
+      setState(() => _timelineScrollLocked = locked);
+    }
+    widget.onDatePagerLockChanged?.call(locked);
   }
 
   void _updateTimelineResizeLabel({
@@ -3032,7 +3052,7 @@ class _PlanningPageState extends State<PlanningPage>
       _timelineResizePreviewTopPx = originTopPx;
       _timelineResizePreviewHeightPx = originHeightPx;
       _timelineResizeTask = task;
-      _timelineScrollLocked = true;
+      _setTimelineInteractionLock(true);
       _updateTimelineResizeLabel(
         startMin: originStartMin,
         endMin: originEndMin,
@@ -3393,7 +3413,6 @@ class _PlanningPageState extends State<PlanningPage>
       _timelineVerticalDragDurationMin = durationMin;
       _timelineVerticalDragTask = task;
       _timelineVerticalDragHadEnd = hadEnd;
-      _timelineScrollLocked = true;
       _timelineVerticalDragTimeLabel = _timelineDragLabelForTopPx(
         originTopPx,
         planWallDay,
@@ -3402,6 +3421,7 @@ class _PlanningPageState extends State<PlanningPage>
         hadEnd,
       );
     });
+    _setTimelineInteractionLock(true);
   }
 
   void _updateTimelineVerticalDrag({
@@ -4264,9 +4284,7 @@ class _PlanningPageState extends State<PlanningPage>
               controlsRightInset: planCardBodyGestureRightInsetPx(),
               onMovePointerDown: canInteract
                   ? () {
-                      if (!_timelineScrollLocked) {
-                        setState(() => _timelineScrollLocked = true);
-                      }
+                      _setTimelineInteractionLock(true);
                     }
                   : null,
               onBodyTap: () {

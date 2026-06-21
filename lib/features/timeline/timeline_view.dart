@@ -343,7 +343,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         },
         child: PageView.builder(
           controller: _controller,
-          physics: const LightDateSwipePhysics(),
+          physics: const LightDateSwipePhysics(
+            parent: BouncingScrollPhysics(),
+          ),
           itemCount: 10000,
           onPageChanged: (int index) {
             if (index < 0 || index >= 10000) return;
@@ -475,28 +477,15 @@ class TimelinePage extends StatefulWidget {
 }
 
 class _TimelinePageState extends State<TimelinePage> {
-  late Stream<List<Map<String, dynamic>>> _recordsStream;
+  Stream<List<Map<String, dynamic>>>? _recordsStream;
+  StreamSubscription<List<Map<String, dynamic>>>? _recordsSub;
 
   /// Last non-transient list for this calendar day; keeps ListView stable when stream
   /// briefly emits `waiting` + empty during background refresh.
   List<Map<String, dynamic>> _lastCoalescedRecords = [];
 
-  /// Defers heavy virtualized list until after page-settle frame (heavy old days).
-  bool _deferHeavyList = true;
-
-  void _scheduleHeavyListMount() {
-    _deferHeavyList = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      PerfDiag.instance.beginTimelineHeavyDayAction();
-      setState(() => _deferHeavyList = false);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        PerfDiag.instance.endTimelineHeavyDayAction();
-      });
-    });
-  }
-
   void _initStream() {
+    _recordsSub?.cancel();
     _lastCoalescedRecords = List<Map<String, dynamic>>.from(
       DatabaseService.instance.peekTimelineRecordsForDate(widget.selectedDate),
     );
@@ -504,6 +493,13 @@ class _TimelinePageState extends State<TimelinePage> {
     _recordsStream = DatabaseService.instance.recordsStream(
       widget.selectedDate,
     );
+    _recordsSub = _recordsStream!.listen((records) {
+      if (!mounted) return;
+      if (records.isNotEmpty) {
+        _lastCoalescedRecords = List<Map<String, dynamic>>.from(records);
+      }
+      setState(() {});
+    });
   }
 
   void _rememberCoalescedIfAuthoritative(
@@ -569,8 +565,13 @@ class _TimelinePageState extends State<TimelinePage> {
     super.initState();
     if (widget.isActivePage) {
       _initStream();
-      _scheduleHeavyListMount();
     }
+  }
+
+  @override
+  void dispose() {
+    _recordsSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -578,7 +579,6 @@ class _TimelinePageState extends State<TimelinePage> {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.isActivePage && widget.isActivePage) {
       _initStream();
-      _scheduleHeavyListMount();
       return;
     }
     if (!widget.isActivePage) {
@@ -588,7 +588,6 @@ class _TimelinePageState extends State<TimelinePage> {
         oldWidget.selectedDate.month != widget.selectedDate.month ||
         oldWidget.selectedDate.day != widget.selectedDate.day) {
       _initStream();
-      _scheduleHeavyListMount();
       setState(() {});
     }
   }
@@ -716,53 +715,7 @@ class _TimelinePageState extends State<TimelinePage> {
             ),
             const SizedBox(height: 8),
             const Divider(height: 1),
-            Expanded(
-              child: _deferHeavyList
-                  ? const SizedBox.shrink()
-                  : StreamBuilder<List<Map<String, dynamic>>>(
-                stream: _recordsStream,
-                builder: (context, recordSnap) {
-                  try {
-                    if (recordSnap.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text(
-                            t(currentLocale.value, 'no_data_found'),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
-                    if (recordSnap.hasData) {
-                      final records = List<Map<String, dynamic>>.from(
-                        recordSnap.data!,
-                      );
-                      _rememberCoalescedIfAuthoritative(records, recordSnap);
-                    } else if (recordSnap.connectionState ==
-                            ConnectionState.waiting &&
-                        !recordSnap.hasData &&
-                        _lastCoalescedRecords.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return _buildTimelineRecordsArea(context);
-                  } catch (e, st) {
-                    if (kDebugMode) {
-                      debugPrint('Timeline records StreamBuilder: $e\n$st');
-                    }
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          t(currentLocale.value, 'no_data_found'),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
+            Expanded(child: _buildTimelineRecordsArea(context)),
           ],
         ),
       ),
@@ -1110,11 +1063,16 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
     );
 
     return Material(
-      elevation: isRunning ? 1 : 0,
-      color: runningFill ?? Theme.of(context).cardTheme.color,
+      elevation: isRunning ? 2 : 1,
+      color: runningFill ?? scheme.surface,
+      shadowColor: scheme.shadow.withValues(alpha: 0.12),
+      surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(cardRadius),
-        side: BorderSide(color: runningBorder, width: isRunning ? 2.0 : 0),
+        side: BorderSide(
+          color: isRunning ? runningBorder : scheme.outlineVariant.withValues(alpha: 0.35),
+          width: isRunning ? 2.0 : 1.0,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -1122,21 +1080,13 @@ class _TimelineRecordCardState extends State<_TimelineRecordCard> {
         borderRadius: BorderRadius.circular(cardRadius),
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              width: 4,
-              decoration: BoxDecoration(
-                color: widget.vm.categoryColor,
-                borderRadius: const BorderRadiusDirectional.only(
-                  topStart: Radius.circular(cardRadius),
-                  bottomStart: Radius.circular(cardRadius),
-                ),
-              ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(color: widget.vm.categoryColor, width: 4),
             ),
-            Expanded(child: paddedRow),
-          ],
+          ),
+          child: paddedRow,
         ),
       ),
     );

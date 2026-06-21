@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 hotfix: restore Timeline cards + lock Planning pager during Time drag [shipped]
+* **`timeline_view.dart`:** [shipped] Removed `_deferHeavyList`/blank `StreamBuilder` — list renders immediately from VM cache; restored visible card chrome (elevation, border, category stripe); stream via lightweight subscription.
+* **`planning_view.dart`:** [shipped] `_datePagerLocked` — `NeverScrollableScrollPhysics` on date `PageView` while Time card drag/resize active; fixes gesture fights.
+* **`date_swipe_physics.dart`:** [shipped] `getTargetPixels` `@override` restored; Planning `FeatherDateSwipePhysics` + `BouncingScrollPhysics`.
+
 ## [2026-06-15] - P0 Fix D: Timeline VM cache + virtualized rows + card layout [shipped]
 * **`models/record.dart`:** [shipped] `TimelineRecordRowVm` — Brain-built render-ready row (title, subtitle, category, meta flags).
 * **`record_service.dart`:** [shipped] `_timelineDayVmCache`, `peekTimelineRowVmsForDate`; prefetch window prev-2/current/next-1; stale prefetch cancel via center key.

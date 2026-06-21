@@ -31,6 +31,7 @@ class LightDateSwipePhysics extends PageScrollPhysics {
   @override
   double get minFlingVelocity => 80.0;
 
+  @override
   double getTargetPixels(
     ScrollMetrics position,
     Tolerance tolerance,
@@ -59,11 +60,15 @@ class LightDateSwipePhysics extends PageScrollPhysics {
 
 /// Planning: feather-light day pager (~20% drag, lower fling threshold).
 class FeatherDateSwipePhysics extends LightDateSwipePhysics {
-  const FeatherDateSwipePhysics({super.parent})
-    : super(pageAcceptThreshold: 0.20, motionThreshold: 10.0);
+  const FeatherDateSwipePhysics({ScrollPhysics? parent})
+    : super(
+        parent: parent ?? const BouncingScrollPhysics(),
+        pageAcceptThreshold: 0.20,
+        motionThreshold: 8.0,
+      );
 
   @override
-  double get minFlingVelocity => 45.0;
+  double get minFlingVelocity => 35.0;
 
   @override
   FeatherDateSwipePhysics applyTo(ScrollPhysics? ancestor) {
