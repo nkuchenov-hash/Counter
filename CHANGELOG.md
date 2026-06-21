@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Fix C: light date-swipe physics + Timeline day cache/prefetch [shipped]
+* **`date_swipe_physics.dart`:** [shipped] `LightDateSwipePhysics` — ~25% viewport drag commits adjacent day; 12px motion threshold; shared by Timeline + Planning PageViews.
+* **`record_service.dart` / `database_service.dart`:** [shipped] Date-keyed `_timelineRecordsDayIndex` + `_timelineDayViewCache`; `peekTimelineRecordsForDate` / `prefetchTimelineDayNeighbors`; `recordsStream` no longer `await`s broad fetch on subscribe; one O(n) index rebuild vs per-day full-history scan.
+* **`timeline_view.dart`:** [shipped] Prefetch neighbors on settle; seed coalesced list from cache; `DATE_SWIPE_THRESHOLD` logs.
+* **`perf_diag.dart`:** [shipped] `TIMELINE_CACHE_*`, `TIMELINE_PREFETCH_*`, `PB_TIMELINE_QUERY` diagnostics behind `PERF_DIAG`.
+
 ## [2026-06-15] - P0 Fix B: Timeline date-swipe shell isolation + visible-page gate [shipped]
 * **`app_shell.dart`:** [shipped] Fix B — `_selectedDateListenable` + cached `ListenableBuilder` tab hosts; `_applySharedSelectedDate` avoids full-shell `setState` on Timeline swipe; `_loadTasksForDate` bumps `_timelineTasksRevision` instead of shell rebuild; header/FAB listen to date notifier.
 * **`timeline_view.dart`:** [shipped] Inactive `TimelinePage` returns cheap placeholder (no stream/list build); stream `waiting` no longer flashes `AppLoading`; settle log `shellSetState=false`.

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
@@ -312,6 +313,28 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             );
           }
           if (n is ScrollEndNotification) {
+            logDateSwipeThresholdOnScrollEnd(
+              section: 'Timeline',
+              controller: _controller,
+              notification: n,
+              log: ({
+                required String section,
+                required double dragFraction,
+                required double velocity,
+                required bool accepted,
+                required int fromPage,
+                required int toPage,
+              }) {
+                PerfDiag.instance.dateSwipeThreshold(
+                  section: section,
+                  dragFraction: dragFraction,
+                  velocity: velocity,
+                  accepted: accepted,
+                  fromPage: fromPage,
+                  toPage: toPage,
+                );
+              },
+            );
             SchedulerBinding.instance.addPostFrameCallback((_) {
               PerfDiag.instance.dateSwipeEnd(section: 'Timeline');
             });
@@ -320,6 +343,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         },
         child: PageView.builder(
           controller: _controller,
+          physics: const LightDateSwipePhysics(),
           itemCount: 10000,
           onPageChanged: (int index) {
             if (index < 0 || index >= 10000) return;
@@ -334,6 +358,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             );
             setState(() => _visiblePageIndex = index);
             final next = _dateForIndex(index);
+            DatabaseService.instance.prefetchTimelineDayNeighbors(next);
             final sel = _dateOnlyCalendar(widget.selectedDate);
             final shellWillUpdate = !(next.year == sel.year &&
                 next.month == sel.month &&
@@ -457,6 +482,9 @@ class _TimelinePageState extends State<TimelinePage> {
   List<Map<String, dynamic>> _lastCoalescedRecords = [];
 
   void _initStream() {
+    _lastCoalescedRecords = List<Map<String, dynamic>>.from(
+      DatabaseService.instance.peekTimelineRecordsForDate(widget.selectedDate),
+    );
     _recordsStream = DatabaseService.instance.recordsStream(
       widget.selectedDate,
     );

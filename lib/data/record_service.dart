@@ -419,6 +419,7 @@ extension RecordServiceExtension on DatabaseService {
       }
       final expandRel = '$kPbRecordCategoryExpand,$kPbRecordTagsExpand';
       List<RecordModel> list;
+      final pbSw = Stopwatch()..start();
       try {
         list = await _pb
             .collection(PbCollections.records)
@@ -432,6 +433,17 @@ extension RecordServiceExtension on DatabaseService {
             '[PB] fetchRecords: retry without $kPbRecordTagsExpand (schema?)',
           );
         }
+      }
+      pbSw.stop();
+      if (kPerfDiagnosisEnabled) {
+        PerfDiag.instance.logPbTimelineQuery(
+          date: 'broad',
+          filter: filterClause,
+          returned: list.length,
+          ms: pbSw.elapsedMilliseconds,
+          broad: true,
+          reason: 'getFullList_user_records',
+        );
       }
       await Future<void>.delayed(Duration.zero);
       final kept = <Map<String, dynamic>>[];
@@ -458,6 +470,7 @@ extension RecordServiceExtension on DatabaseService {
         DatabaseService._log(st.toString());
       }
       _cachedFlatRecords = kept;
+      _markTimelineDayIndexDirty();
       _pruneRecord404DeadletterUsingCache();
       _lastSuccessfulRecordsNetworkFetchAt = DateTime.now();
       if (kDebugMode && forceNetwork) {
@@ -932,40 +945,38 @@ extension RecordServiceExtension on DatabaseService {
     }
   }
 
-  List<Map<String, dynamic>> _filterCachedRecordsForDate(DateTime date) {
-    try {
-      // Selected calendar day + record day: profile wall-clock Y-M-D (derived from getTimelineDeviceLocalToday); callers must pass a profile wall-clock date.
-      final targetDayStr = '${date.year}-${_two(date.month)}-${_two(date.day)}';
-      final ownerIds = _recordRowOwnerIdMatchSet();
-      final filtered = <Map<String, dynamic>>[];
-      for (final row in _cachedFlatRecords) {
-        if (_rowHasNonEmptyParent(row['parent_id'])) {
-          continue;
-        }
-        if (_optimisticRowDeletedRaw(row)) {
-          continue;
-        }
-        final rowUid = (row['user_id'] ?? '').toString().trim().toLowerCase();
-        if (ownerIds.isEmpty) {
-          continue;
-        }
-        if (rowUid.isEmpty || !ownerIds.contains(rowUid)) {
-          continue;
-        }
+  String _timelineDateKeyFromDate(DateTime date) =>
+      '${date.year}-${_two(date.month)}-${_two(date.day)}';
 
+  void _markTimelineDayIndexDirty() {
+    _timelineDayIndexDirty = true;
+  }
+
+  void _ensureTimelineDayIndex() {
+    if (!_timelineDayIndexDirty &&
+        _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length) {
+      return;
+    }
+    final sw = Stopwatch()..start();
+    final buckets = <String, List<Map<String, dynamic>>>{};
+    final ownerIds = _recordRowOwnerIdMatchSet();
+  try {
+      for (final row in _cachedFlatRecords) {
+        if (_rowHasNonEmptyParent(row['parent_id'])) continue;
+        if (_optimisticRowDeletedRaw(row)) continue;
+        final rowUid = (row['user_id'] ?? '').toString().trim().toLowerCase();
+        if (ownerIds.isEmpty) continue;
+        if (rowUid.isEmpty || !ownerIds.contains(rowUid)) continue;
         final stUtc = CategoryServiceExtension._parseDateTimeUtc(
           row['start_time'],
         );
-        if (stUtc == null) {
-          continue;
-        }
+        if (stUtc == null) continue;
         final recordDayStr = _timelineDeviceLocalDayKeyFromUtc(stUtc);
-        if (recordDayStr != targetDayStr) {
-          continue;
-        }
-
         try {
-          filtered.add(_mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
+          final map = _mergeOptimisticIntoRecordMap(_rowToRecordMap(row));
+          buckets.putIfAbsent(recordDayStr, () => <Map<String, dynamic>>[]).add(
+            map,
+          );
         } catch (e, st) {
           final rowData =
               '${CategoryServiceExtension.recordsTablePk(row)} ${(row['record_id'] ?? '').toString().trim()} data=$row';
@@ -973,42 +984,151 @@ extension RecordServiceExtension on DatabaseService {
           DatabaseService._log(st.toString());
         }
       }
-      final pend = _optimisticPendingStartRecordMap;
-      if (pend != null) {
-        final pRid = (pend['record_id'] ?? '').toString().trim();
-        final cacheAlreadyHasPendId =
-            pRid.isNotEmpty &&
-            filtered.any(
-              (e) => (e['record_id'] ?? '').toString().trim() == pRid,
+      for (final entry in buckets.entries) {
+        entry.value.sort((a, b) {
+          final as = a['startTime'] as DateTime?;
+          final bs = b['startTime'] as DateTime?;
+          if (as == null && bs == null) return 0;
+          if (as == null) return 1;
+          if (bs == null) return -1;
+          return bs.compareTo(as);
+        });
+        final seenBiz = <String>{};
+        final collapsed = <Map<String, dynamic>>[];
+        for (final e in entry.value) {
+          final biz = (e['record_id'] ?? '').toString().trim();
+          if (biz.isNotEmpty) {
+            if (seenBiz.contains(biz)) continue;
+            seenBiz.add(biz);
+          }
+          collapsed.add(e);
+        }
+        entry.value
+          ..clear()
+          ..addAll(collapsed);
+      }
+    } catch (_) {
+      buckets.clear();
+    }
+    sw.stop();
+    if (kPerfDiagnosisEnabled) {
+      PerfDiag.instance.logTimelineHistoryScan(
+        count: _cachedFlatRecords.length,
+        ms: sw.elapsedMilliseconds,
+        dayBuckets: buckets.length,
+      );
+    }
+    _timelineRecordsDayIndex = buckets;
+    _timelineDayIndexDirty = false;
+    _timelineDayIndexBuiltAtRecordCount = _cachedFlatRecords.length;
+    _timelineDayViewCache.clear();
+  }
+
+  List<Map<String, dynamic>> _timelineDayIndexRowsForKey(String targetDayStr) {
+    _ensureTimelineDayIndex();
+    final base = List<Map<String, dynamic>>.from(
+      _timelineRecordsDayIndex[targetDayStr] ?? const [],
+    );
+    final pend = _optimisticPendingStartRecordMap;
+    if (pend != null) {
+      final pRid = (pend['record_id'] ?? '').toString().trim();
+      final cacheAlreadyHasPendId =
+          pRid.isNotEmpty &&
+          base.any((e) => (e['record_id'] ?? '').toString().trim() == pRid);
+      if (!cacheAlreadyHasPendId) {
+        final pDay = (pend['calendarDayStr'] ?? '').toString().trim();
+        if (pDay == targetDayStr) {
+          base.insert(0, Map<String, dynamic>.from(pend));
+        }
+      }
+    }
+    return base;
+  }
+
+  /// Synchronous per-day timeline rows (filtered, sorted, display times). Used by UI + prefetch.
+  List<Map<String, dynamic>> peekTimelineRecordsForDate(DateTime date) {
+    final targetDayStr = _timelineDateKeyFromDate(date);
+    final cachedView = _timelineDayViewCache[targetDayStr];
+    if (cachedView != null) {
+      if (kPerfDiagnosisEnabled) {
+        PerfDiag.instance.logTimelineCacheHit(
+          date: targetDayStr,
+          itemCount: cachedView.length,
+        );
+      }
+      return List<Map<String, dynamic>>.from(cachedView);
+    }
+    if (kPerfDiagnosisEnabled) {
+      PerfDiag.instance.logTimelineCacheMiss(date: targetDayStr);
+    }
+    final grouped = PerfDiag.instance.perfBlock(
+      'Timeline.groupRecords',
+      () => _timelineDayIndexRowsForKey(targetDayStr),
+      meta: {'date': targetDayStr},
+    );
+    final rendered = PerfDiag.instance.perfBlock(
+      'Timeline.renderModel',
+      () => _withDisplayTimes(grouped),
+      meta: {'date': targetDayStr, 'items': grouped.length},
+    );
+    _timelineDayViewCache[targetDayStr] = List<Map<String, dynamic>>.from(
+      rendered,
+    );
+    return List<Map<String, dynamic>>.from(rendered);
+  }
+
+  /// Warms neighbor day caches after settle — never blocks swipe (fire-and-forget).
+  void prefetchTimelineDayNeighbors(DateTime center) {
+    final centerKey = _timelineDateKeyFromDate(center);
+    final prev = center.subtract(const Duration(days: 1));
+    final next = center.add(const Duration(days: 1));
+    final keys = <String>[
+      _timelineDateKeyFromDate(prev),
+      centerKey,
+      _timelineDateKeyFromDate(next),
+    ];
+    final pending = keys.where((k) => !_timelinePrefetchInFlight.contains(k)).toList();
+    if (pending.isEmpty) return;
+    _timelinePrefetchInFlight.addAll(pending);
+    if (kPerfDiagnosisEnabled) {
+      PerfDiag.instance.logTimelinePrefetchStart(dates: pending);
+    }
+    unawaited(() async {
+      final sw = Stopwatch()..start();
+      try {
+        if (_cachedFlatRecords.isEmpty &&
+            _isInitialized &&
+            (currentProfileId?.isNotEmpty ?? false)) {
+          await _fetchRecordsIntoCache(forceNetwork: false);
+        }
+        for (final key in pending) {
+          final parts = key.split('-');
+          if (parts.length != 3) continue;
+          final y = int.tryParse(parts[0]);
+          final m = int.tryParse(parts[1]);
+          final d = int.tryParse(parts[2]);
+          if (y == null || m == null || d == null) continue;
+          final day = DateTime(y, m, d);
+          final rows = peekTimelineRecordsForDate(day);
+          if (kPerfDiagnosisEnabled) {
+            PerfDiag.instance.logTimelinePrefetchEnd(
+              date: key,
+              ms: sw.elapsedMilliseconds,
+              itemCount: rows.length,
             );
-        if (!cacheAlreadyHasPendId) {
-          final pDay = (pend['calendarDayStr'] ?? '').toString().trim();
-          if (pDay == targetDayStr) {
-            filtered.add(Map<String, dynamic>.from(pend));
           }
         }
+      } catch (_) {
+      } finally {
+        _timelinePrefetchInFlight.removeAll(pending);
       }
-      filtered.sort((a, b) {
-        final as = a['startTime'] as DateTime?;
-        final bs = b['startTime'] as DateTime?;
-        if (as == null && bs == null) return 0;
-        if (as == null) return 1;
-        if (bs == null) return -1;
-        // Newest first within the day (latest start_time at top).
-        return bs.compareTo(as);
-      });
-      // Dedupe by record_id (UUID); first row wins (server snapshot before optimistic overlay).
-      final seenBiz = <String>{};
-      final collapsed = <Map<String, dynamic>>[];
-      for (final e in filtered) {
-        final biz = (e['record_id'] ?? '').toString().trim();
-        if (biz.isNotEmpty) {
-          if (seenBiz.contains(biz)) continue;
-          seenBiz.add(biz);
-        }
-        collapsed.add(e);
-      }
-      return collapsed;
+    }());
+  }
+
+  List<Map<String, dynamic>> _filterCachedRecordsForDate(DateTime date) {
+    try {
+      final targetDayStr = _timelineDateKeyFromDate(date);
+      return _timelineDayIndexRowsForKey(targetDayStr);
     } catch (_) {
       return [];
     }
@@ -1083,16 +1203,13 @@ extension RecordServiceExtension on DatabaseService {
       yield [];
       return;
     }
-    try {
-      if (_cachedFlatRecords.isEmpty) {
-        await _fetchRecordsIntoCache(forceNetwork: true);
-      }
-    } catch (_) {}
+    if (_cachedFlatRecords.isEmpty) {
+      unawaited(_fetchRecordsIntoCache(forceNetwork: true));
+    }
 
     List<Map<String, dynamic>> nextPayload() {
       try {
-        final filtered = _filterCachedRecordsForDate(date);
-        return _withDisplayTimes(filtered);
+        return peekTimelineRecordsForDate(date);
       } catch (e, st) {
         DatabaseService._log('recordsStream nextPayload: $e');
         if (kDebugMode) {

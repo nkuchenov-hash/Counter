@@ -9,6 +9,7 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:counter/core/app_diag.dart';
+import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/app_snackbar.dart';
@@ -279,6 +280,28 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
               );
             }
             if (n is ScrollEndNotification) {
+              logDateSwipeThresholdOnScrollEnd(
+                section: 'Planning',
+                controller: _controller,
+                notification: n,
+                log: ({
+                  required String section,
+                  required double dragFraction,
+                  required double velocity,
+                  required bool accepted,
+                  required int fromPage,
+                  required int toPage,
+                }) {
+                  PerfDiag.instance.dateSwipeThreshold(
+                    section: section,
+                    dragFraction: dragFraction,
+                    velocity: velocity,
+                    accepted: accepted,
+                    fromPage: fromPage,
+                    toPage: toPage,
+                  );
+                },
+              );
               SchedulerBinding.instance.addPostFrameCallback((_) {
                 PerfDiag.instance.dateSwipeEnd(section: 'Planning');
               });
@@ -287,6 +310,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
           },
           child: PageView.builder(
             controller: _controller,
+            physics: const LightDateSwipePhysics(),
             itemCount: totalPageCount,
             onPageChanged: (int index) {
               if (index >= 0 && index < totalPageCount) {
@@ -310,7 +334,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
                 widget.onDateChanged(_dateOnly(date));
                 PerfDiag.instance.dateSwipeSettleEnd(
                   section: 'Planning',
-                  shellSetState: true,
+                  shellSetState: false,
                 );
               }
             },

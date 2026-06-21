@@ -236,6 +236,76 @@ class PerfDiag {
     );
   }
 
+  void dateSwipeThreshold({
+    required String section,
+    required double dragFraction,
+    required double velocity,
+    required bool accepted,
+    required int fromPage,
+    required int toPage,
+  }) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log(
+      'DATE_SWIPE_THRESHOLD section=$section dragFraction=${dragFraction.toStringAsFixed(3)} '
+      'velocity=${velocity.toStringAsFixed(1)} accepted=$accepted '
+      'fromPage=$fromPage toPage=$toPage',
+    );
+  }
+
+  void logTimelineCacheHit({required String date, required int itemCount}) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log('TIMELINE_CACHE_HIT date=$date itemCount=$itemCount');
+  }
+
+  void logTimelineCacheMiss({required String date}) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log('TIMELINE_CACHE_MISS date=$date');
+  }
+
+  void logTimelinePrefetchStart({required List<String> dates}) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log('TIMELINE_PREFETCH_START dates=${dates.join(',')}');
+  }
+
+  void logTimelinePrefetchEnd({
+    required String date,
+    required int ms,
+    required int itemCount,
+  }) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log('TIMELINE_PREFETCH_END date=$date ms=$ms itemCount=$itemCount');
+  }
+
+  void logTimelineHistoryScan({
+    required int count,
+    required int ms,
+    required int dayBuckets,
+  }) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log(
+      'TIMELINE_HISTORY_SCAN count=$count ms=$ms dayBuckets=$dayBuckets '
+      'PB_TIMELINE_BROAD_QUERY used=true reason=flat_index_rebuild',
+    );
+  }
+
+  void logPbTimelineQuery({
+    required String date,
+    required String filter,
+    required int returned,
+    required int ms,
+    bool broad = false,
+    String reason = '',
+  }) {
+    if (!kPerfDiagnosisEnabled) return;
+    _log(
+      'PB_TIMELINE_QUERY date=$date filter=$filter returned=$returned ms=$ms '
+      'broad=$broad reason=$reason',
+    );
+    if (broad) {
+      _log('PB_TIMELINE_BROAD_QUERY used=true reason=$reason');
+    }
+  }
+
   /// One-shot post-boot swipe sequence for profile/chrome diagnosis runs.
   void scheduleAutoSwipeSequence({
     required String section,

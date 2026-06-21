@@ -362,6 +362,7 @@ class DatabaseService {
   int _recordCacheTimelineNotifyBatchDepth = 0;
 
   void _emitTimelineRefreshRaw() {
+    _timelineDayIndexDirty = true;
     _timeUpdateController.add(null);
     _requestPlanAlarmReschedule();
   }
@@ -493,6 +494,17 @@ class DatabaseService {
 
   /// Last successful flat fetch from Noco (same shape as [getRecords]). Timeline filters in-memory only.
   List<Map<String, dynamic>> _cachedFlatRecords = [];
+
+  /// Date-key → filtered timeline rows; rebuilt lazily when flat cache or optimistic layer changes.
+  Map<String, List<Map<String, dynamic>>> _timelineRecordsDayIndex = {};
+  bool _timelineDayIndexDirty = true;
+  int _timelineDayIndexBuiltAtRecordCount = -1;
+
+  /// Render-ready per-day rows (with display times); invalidated on index rebuild.
+  final Map<String, List<Map<String, dynamic>>> _timelineDayViewCache = {};
+
+  /// In-flight neighbor prefetch keys (date YYYY-MM-DD).
+  final Set<String> _timelinePrefetchInFlight = {};
 
   /// PocketBase realtime: unsubscribe function from [RecordService.subscribe] ('*').
   Future<void> Function()? _recordsRealtimeUnsubscribe;
