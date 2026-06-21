@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import 'package:counter/core/widgets/plan_time_task_card.dart';
+import 'package:counter/core/perf_diag.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
 
@@ -92,6 +93,7 @@ class PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    perfRebuildTick('PlanCard');
     if (timelineBlock) {
       return _buildTimelineBlockCard(context);
     }

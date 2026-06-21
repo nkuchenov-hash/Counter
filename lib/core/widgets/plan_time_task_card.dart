@@ -5,6 +5,7 @@
 
 import 'dart:math' as math;
 
+import 'package:counter/core/perf_diag.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/profile/tag_manager_page.dart';
@@ -125,6 +126,7 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
 
   @override
   Widget build(BuildContext context) {
+    perfRebuildTick('PlanTimeTaskCard');
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final categoryTone =

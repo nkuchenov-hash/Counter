@@ -9,12 +9,18 @@ flutter pub get
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host 'Building compact Android APKs split per CPU...' -ForegroundColor Cyan
-flutter build apk --release --split-per-abi
+$gitCommit = (git rev-parse --short HEAD).Trim()
+$buildTime = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+$dartDefines = @(
+  "--dart-define=GIT_COMMIT=$gitCommit",
+  "--dart-define=BUILD_TIME=$buildTime"
+)
+flutter build apk --release --split-per-abi @dartDefines
 if ($LASTEXITCODE -ne 0) {
     Write-Host ''
     Write-Host 'Release APK build failed with icon tree-shaking enabled.' -ForegroundColor Yellow
     Write-Host 'Retrying with --no-tree-shake-icons because this project has non-constant IconData.' -ForegroundColor Yellow
-    flutter build apk --release --split-per-abi --no-tree-shake-icons
+    flutter build apk --release --split-per-abi --no-tree-shake-icons @dartDefines
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 

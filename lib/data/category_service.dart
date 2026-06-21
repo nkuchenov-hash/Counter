@@ -3449,6 +3449,9 @@ extension CategoryServiceExtension on DatabaseService {
   }
 
   Future<List<Task>> loadTasksForDate(DateTime date) async {
+    return PerfDiag.instance.perfBlockAsync(
+      'Category.loadTasksForDate',
+      () async {
     final prefs = _prefs;
     if (prefs == null) return [];
     try {
@@ -3465,6 +3468,12 @@ extension CategoryServiceExtension on DatabaseService {
     } catch (_) {
       return [];
     }
+      },
+      meta: {
+        'date':
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+      },
+    );
   }
 
   Future<void> saveTasks(DateTime date, List<Task> tasks) async {

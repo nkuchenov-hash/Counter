@@ -1974,6 +1974,9 @@ extension PlanServiceExtension on DatabaseService {
   Future<List<PlanningTask>> _fetchPlanningTasksForDate(
     DateTime selectedDate,
   ) async {
+    return PerfDiag.instance.perfBlockAsync(
+      'Planning._fetchPlanningTasksForDate',
+      () async {
     try {
       if (!_isPlansTableConfigured) {
         DatabaseService._log('TABLE_GUARD: plans fetch disabled.');
@@ -1997,6 +2000,12 @@ extension PlanServiceExtension on DatabaseService {
     } catch (_) {
       return [];
     }
+      },
+      meta: {
+        'date':
+            '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}',
+      },
+    );
   }
 
   /// Wall `YYYY-MM-DD` where the plan is currently scheduled (profile TZ projection).
@@ -2341,6 +2350,7 @@ extension PlanServiceExtension on DatabaseService {
     final authId = _userIdForWhere;
     if (authId == null || authId.isEmpty) return [];
     final uid = _escapeForPbFilter(authId);
+  final sw = Stopwatch()..start();
     try {
       final tagCatalog = await _fetchPlanAndListTagCatalog();
       final list = await _pb
@@ -2350,6 +2360,13 @@ extension PlanServiceExtension on DatabaseService {
             filter: 'user_id = "$uid"',
             batch: 200,
           );
+      sw.stop();
+      PerfDiag.instance.pbDuringSwipe(
+        collection: 'plans',
+        method: 'getFullList',
+        durationMs: sw.elapsedMilliseconds,
+        action: 'fetchAllPlansUserCache',
+      );
       final out = [
         for (final r in list)
           _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),

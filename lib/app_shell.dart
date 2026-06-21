@@ -15,6 +15,7 @@ import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/shell_adaptive.dart';
@@ -142,6 +143,7 @@ class _OfflineSyncStatusBarState extends State<_OfflineSyncStatusBar> {
 
   @override
   Widget build(BuildContext context) {
+    perfRebuildTick('OfflineSyncBanner');
     final sync = DatabaseService.instance.offlineSync;
     final brain = DatabaseService.instance;
     return ListenableBuilder(
@@ -566,24 +568,38 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   bool get _isFutureDate => _selectedDate.isAfter(_localToday());
 
   Future<void> _loadTasksForDate(DateTime date) async {
-    try {
-      final loaded = await DatabaseService.instance.loadTasksForDate(date);
-      if (!mounted) return;
-      if (!_sameCalendarDay(_selectedDate, date)) return;
-      setState(() {
-        _tasks
-          ..clear()
-          ..addAll(loaded);
-        _tasksLoading = false;
-      });
-    } catch (_) {
-      if (mounted && _sameCalendarDay(_selectedDate, date)) {
-        setState(() {
-          _tasks.clear();
-          _tasksLoading = false;
-        });
-      }
-    }
+    await PerfDiag.instance.perfBlockAsync(
+      'Shell._loadTasksForDate',
+      () async {
+        try {
+          final loaded = await DatabaseService.instance.loadTasksForDate(date);
+          if (!mounted) return;
+          if (!_sameCalendarDay(_selectedDate, date)) return;
+          PerfDiag.instance.stateChange(
+            source: 'Shell',
+            field: '_tasksLoading=false',
+            duringSwipe: true,
+          );
+          setState(() {
+            _tasks
+              ..clear()
+              ..addAll(loaded);
+            _tasksLoading = false;
+          });
+        } catch (_) {
+          if (mounted && _sameCalendarDay(_selectedDate, date)) {
+            setState(() {
+              _tasks.clear();
+              _tasksLoading = false;
+            });
+          }
+        }
+      },
+      meta: {
+        'date':
+            '${date.year}-${_two(date.month)}-${_two(date.day)}',
+      },
+    );
   }
 
   Future<void> _saveTasks() async {
@@ -1932,6 +1948,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    perfRebuildTick('AppShell');
     final pages = <Widget>[
       TimelineSwipeWrapper(
         selectedDate: _selectedDate,
@@ -1939,6 +1956,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         onDateChanged: (d) {
           final day = _dateOnly(d);
           if (_sameCalendarDay(_selectedDate, day)) return;
+          PerfDiag.instance.stateChange(
+            source: 'Shell',
+            field: 'selectedDate',
+            duringSwipe: true,
+          );
           _selectedDate = day;
           setState(() {});
           if (_shellPageIndex == 0) {
@@ -1966,6 +1988,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         onDateChanged: (d) {
           final day = _dateOnly(d);
           if (_sameCalendarDay(_selectedDate, day)) return;
+          PerfDiag.instance.stateChange(
+            source: 'Shell',
+            field: 'selectedDate',
+            duringSwipe: true,
+          );
           _selectedDate = day;
           setState(() {});
         },

@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Fix A: defer hidden date pager until tab activation [shipped]
+* **`planning_view.dart` / `timeline_view.dart`:** [shipped] Fix A — inactive `PlanningSwipeWrapper`/`TimelineSwipeWrapper` store `_pendingExternalPage` (`deferHidden`) instead of `jumpToPage`/`animateToPage`; one `jumpToPage` on `shellTabActive` activation; `isActivePlanningDay`/`isActivePage` gated on `shellTabActive`.
+* **`perf_diag.dart`:** [shipped] P0 swipe diagnostics behind `kPerfDiagnosisEnabled` (false for release); `test/perf_shell_date_settle_test.dart` proves hidden Planning no longer jump/fetch on Timeline swipe.
+* **`android.ps1`:** [shipped] APK build passes `GIT_COMMIT`/`BUILD_TIME` dart-defines for `APP_BUILD` stamp.
+
 ## [2026-06-15] - P0 perf bisect: revert LazyIndexedStack + stop hidden tab pager animate [shipped]
 * **Bisect:** [shipped] Lag source = `62020e8` `LazyIndexedStack` + hidden `PlanningSwipeWrapper.animateToPage` on every Timeline date swipe (shared `_selectedDate`); `PlanCard` extraction is render-identical to old `_PlanningTaskCard`.
 * **`perf_flags.dart`:** [shipped] Bisect toggles (`useLazyIndexedStack`, `syncHiddenTabDatePager`, etc.); defaults restore `IndexedStack` + silent off-tab `jumpToPage`.

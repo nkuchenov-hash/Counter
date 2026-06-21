@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_build_info.dart';
+import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/app_shell.dart';
 import 'package:counter/features/auth/auth_screen.dart';
@@ -35,6 +36,7 @@ bool _startupNetworkErrorShown = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PerfDiag.instance.attachIfNeeded();
   if (!kIsWeb) {
     unawaited(NotificationService.instance.ensureInitialized());
     try {

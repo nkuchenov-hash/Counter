@@ -8,8 +8,9 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
-import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/app_diag.dart';
+import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
@@ -32,7 +33,7 @@ import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart' show Ticker;
+import 'package:flutter/scheduler.dart' show SchedulerBinding, Ticker;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -109,6 +110,45 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   /// Page index currently shown; only this day’s [PlanningPage] subscribes to [DatabaseService.notifyPlanningRefresh].
   late int _visiblePageIndex;
 
+  /// External date from shell while this tab is inactive — applied on activation only.
+  int? _pendingExternalPage;
+
+  int _pageIndexForDate(DateTime date) {
+    final daysOffset = _dateOnly(date).difference(_anchorDate).inDays;
+    return initialPage + daysOffset;
+  }
+
+  void _syncOnTabActivated() {
+    final page = _pendingExternalPage ?? _pageIndexForDate(widget.selectedDate);
+    _pendingExternalPage = null;
+    if (page < 0 || page >= totalPageCount) return;
+    setState(() => _visiblePageIndex = page);
+    if (!_controller.hasClients) return;
+    final cur = _controller.page?.round();
+    if (cur == page) return;
+    PerfDiag.instance.pagerSync(
+      section: 'Planning',
+      op: 'jumpToPage',
+      targetPage: page,
+      shellTabActive: true,
+      hidden: false,
+    );
+    _controller.jumpToPage(page);
+  }
+
+  void _deferHiddenExternalDate() {
+    final page = _pageIndexForDate(widget.selectedDate);
+    if (page < 0 || page >= totalPageCount) return;
+    _pendingExternalPage = page;
+    PerfDiag.instance.pagerSync(
+      section: 'Planning',
+      op: 'deferHidden',
+      targetPage: page,
+      shellTabActive: false,
+      hidden: true,
+    );
+  }
+
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -123,39 +163,76 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     ).difference(_anchorDate).inDays;
     _visiblePageIndex = initialPage + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
+    _controller.addListener(_onPageControllerTick);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PerfDiag.instance.scheduleAutoSwipeSequence(
+        section: 'Planning',
+        controller: _controller,
+        visiblePageIndex: _visiblePageIndex,
+        shellTabActive: widget.shellTabActive,
+        dateKeyForPage: (i) => _dateKeyShort(
+          _anchorDate.add(Duration(days: i - initialPage)),
+        ),
+        delay: const Duration(seconds: 42),
+      );
+    });
   }
+
+  void _onPageControllerTick() {
+    if (!_controller.hasClients) return;
+    final page = _controller.page;
+    if (page == null) return;
+    PerfDiag.instance.dateSwipeDrag(
+      section: 'Planning',
+      page: page.round(),
+      pageFraction: page,
+    );
+  }
+
+  String _dateKeyShort(DateTime d) => _dateKeyFromDate(d);
 
   @override
   void didUpdateWidget(covariant PlanningSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedDate == widget.selectedDate) return;
-
-    final daysOffset = _dateOnly(
-      widget.selectedDate,
-    ).difference(_anchorDate).inDays;
-    final page = initialPage + daysOffset;
-    if (page < 0 || page >= totalPageCount) return;
 
     if (!oldWidget.shellTabActive && widget.shellTabActive) {
-      setState(() => _visiblePageIndex = page);
-      if (_controller.hasClients) {
-        _controller.jumpToPage(page);
+      _syncOnTabActivated();
+      return;
+    }
+
+    if (!widget.shellTabActive) {
+      final oldD = _dateOnly(oldWidget.selectedDate);
+      final newD = _dateOnly(widget.selectedDate);
+      if (oldD.year != newD.year ||
+          oldD.month != newD.month ||
+          oldD.day != newD.day) {
+        _deferHiddenExternalDate();
       }
       return;
     }
 
-    if (!widget.shellTabActive && !PerfFlags.syncHiddenTabDatePager) {
-      _visiblePageIndex = page;
-      if (_controller.hasClients) {
-        _controller.jumpToPage(page);
-      }
+    final oldD = _dateOnly(oldWidget.selectedDate);
+    final newD = _dateOnly(widget.selectedDate);
+    if (oldD.year == newD.year &&
+        oldD.month == newD.month &&
+        oldD.day == newD.day) {
       return;
     }
+
+    final page = _pageIndexForDate(widget.selectedDate);
+    if (page < 0 || page >= totalPageCount) return;
 
     setState(() => _visiblePageIndex = page);
     if (_controller.hasClients) {
       final cur = _controller.page;
       if (cur != null && cur.round() == page) return;
+      PerfDiag.instance.pagerSync(
+        section: 'Planning',
+        op: 'animateToPage',
+        targetPage: page,
+        shellTabActive: widget.shellTabActive,
+        hidden: false,
+      );
       _controller.animateToPage(
         page,
         duration: const Duration(milliseconds: 200),
@@ -166,6 +243,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
 
   @override
   void dispose() {
+    _controller.removeListener(_onPageControllerTick);
     _controller.dispose();
     super.dispose();
   }
@@ -184,19 +262,58 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    perfRebuildTick('PlanningSwipeWrapper');
     try {
       return ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
-        child: PageView.builder(
-          controller: _controller,
-          itemCount: totalPageCount,
-          onPageChanged: (int index) {
-            if (index >= 0 && index < totalPageCount) {
-              setState(() => _visiblePageIndex = index);
-              final date = _anchorDate.add(Duration(days: index - initialPage));
-              widget.onDateChanged(_dateOnly(date));
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (n) {
+            if (n is ScrollStartNotification && n.dragDetails != null) {
+              PerfDiag.instance.dateSwipeStart(
+                section: 'Planning',
+                fromDate: _dateKeyShort(
+                  _anchorDate.add(
+                    Duration(days: _visiblePageIndex - initialPage),
+                  ),
+                ),
+              );
             }
+            if (n is ScrollEndNotification) {
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                PerfDiag.instance.dateSwipeEnd(section: 'Planning');
+              });
+            }
+            return false;
           },
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: totalPageCount,
+            onPageChanged: (int index) {
+              if (index >= 0 && index < totalPageCount) {
+                final fromDate = _dateKeyShort(
+                  _anchorDate.add(
+                    Duration(days: _visiblePageIndex - initialPage),
+                  ),
+                );
+                final toDate = _dateKeyShort(
+                  _anchorDate.add(Duration(days: index - initialPage)),
+                );
+                PerfDiag.instance.dateSwipeSettleStart(
+                  section: 'Planning',
+                  fromDate: fromDate,
+                  toDate: toDate,
+                  fromPage: _visiblePageIndex,
+                  toPage: index,
+                );
+                setState(() => _visiblePageIndex = index);
+                final date = _anchorDate.add(Duration(days: index - initialPage));
+                widget.onDateChanged(_dateOnly(date));
+                PerfDiag.instance.dateSwipeSettleEnd(
+                  section: 'Planning',
+                  shellSetState: true,
+                );
+              }
+            },
           itemBuilder: (context, index) {
             final date = _anchorDate.add(Duration(days: index - initialPage));
             final dateKey = _dateKeyFromDate(date);
@@ -204,7 +321,8 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
               key: ValueKey(dateKey),
               selectedDateString: dateKey,
               selectedDate: date,
-              isActivePlanningDay: index == _visiblePageIndex,
+              isActivePlanningDay:
+                  widget.shellTabActive && index == _visiblePageIndex,
               selectedCategoryId: widget.selectedCategoryId,
               onCategoryChanged: widget.onCategoryChanged,
               onStartRecordFromTask: widget.onStartRecordFromTask,
@@ -218,7 +336,8 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             );
           },
         ),
-      );
+      ),
+    );
     } catch (e, st) {
       if (kDebugMode) {
         debugPrint('PlanningSwipeWrapper: $e\n$st');
@@ -2457,7 +2576,10 @@ class _PlanningPageState extends State<PlanningPage>
     int rangeEnd,
     String selectedDayKey,
   ) {
-    final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
+    return PerfDiag.instance.perfBlock(
+      'Planning._computeTimelineDurationLayout',
+      () {
+        final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
       rangeStart,
       rangeEnd,
     );
@@ -2519,6 +2641,9 @@ class _PlanningPageState extends State<PlanningPage>
       );
     }
     return (grid: grid, layouts: layouts);
+      },
+      meta: {'projections': projections.length},
+    );
   }
 
   List<_TimelineBlockLayout> _timelineBlockLayouts(
@@ -4578,6 +4703,7 @@ class _PlanningPageState extends State<PlanningPage>
 
   @override
   Widget build(BuildContext context) {
+    perfRebuildTick('PlanningPage');
     final scheme = Theme.of(context).colorScheme;
 
     return StreamBuilder<List<PlanningTask>>(

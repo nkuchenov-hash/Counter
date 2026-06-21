@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_colors.dart';
-import 'package:counter/core/perf_flags.dart';
+import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
@@ -12,6 +12,7 @@ import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 // ---------------------------------------------------------------------------
@@ -137,8 +138,47 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   late PageController _controller;
   late int _visiblePageIndex;
 
+  /// External date from shell while this tab is inactive — applied on activation only.
+  int? _pendingExternalPage;
+
   /// Shared across all [TimelinePage] indices so calendar/date changes keep List vs Stats.
   bool _showStatsView = false;
+
+  int _pageIndexForDate(DateTime date) {
+    final daysOffset = _dateOnlyCalendar(date).difference(_anchorToday).inDays;
+    return _centerIndex + daysOffset;
+  }
+
+  void _syncOnTabActivated() {
+    final page = _pendingExternalPage ?? _pageIndexForDate(widget.selectedDate);
+    _pendingExternalPage = null;
+    if (page < 0 || page >= 10000) return;
+    setState(() => _visiblePageIndex = page);
+    if (!_controller.hasClients) return;
+    final cur = _controller.page?.round();
+    if (cur == page) return;
+    PerfDiag.instance.pagerSync(
+      section: 'Timeline',
+      op: 'jumpToPage',
+      targetPage: page,
+      shellTabActive: true,
+      hidden: false,
+    );
+    _controller.jumpToPage(page);
+  }
+
+  void _deferHiddenExternalDate(DateTime date) {
+    final page = _pageIndexForDate(date);
+    if (page < 0 || page >= 10000) return;
+    _pendingExternalPage = page;
+    PerfDiag.instance.pagerSync(
+      section: 'Timeline',
+      op: 'deferHidden',
+      targetPage: page,
+      shellTabActive: false,
+      hidden: true,
+    );
+  }
 
   DateTime get _anchorToday =>
       _dateOnlyCalendar(DatabaseService.instance.getTimelineDeviceLocalToday());
@@ -149,20 +189,37 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   }
 
   void _syncPagerToDate(DateTime date, {required bool animate}) {
-    final daysOffset = _dateOnlyCalendar(date).difference(_anchorToday).inDays;
-    final page = _centerIndex + daysOffset;
+    if (!widget.shellTabActive) {
+      _deferHiddenExternalDate(date);
+      return;
+    }
+    final page = _pageIndexForDate(date);
     if (page < 0 || page >= 10000) return;
     _visiblePageIndex = page;
     if (!_controller.hasClients) return;
     final cur = _controller.page;
     if (cur != null && cur.round() == page) return;
     if (animate) {
+      PerfDiag.instance.pagerSync(
+        section: 'Timeline',
+        op: 'animateToPage',
+        targetPage: page,
+        shellTabActive: widget.shellTabActive,
+        hidden: false,
+      );
       _controller.animateToPage(
         page,
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
       );
     } else {
+      PerfDiag.instance.pagerSync(
+        section: 'Timeline',
+        op: 'jumpToPage',
+        targetPage: page,
+        shellTabActive: widget.shellTabActive,
+        hidden: false,
+      );
       _controller.jumpToPage(page);
     }
   }
@@ -175,26 +232,56 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     ).difference(_anchorToday).inDays;
     _visiblePageIndex = _centerIndex + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
+    _controller.addListener(_onPageControllerTick);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PerfDiag.instance.scheduleAutoSwipeSequence(
+        section: 'Timeline',
+        controller: _controller,
+        visiblePageIndex: _visiblePageIndex,
+        shellTabActive: widget.shellTabActive,
+        dateKeyForPage: (i) => _dateKeyShort(_dateForIndex(i)),
+      );
+    });
   }
+
+  void _onPageControllerTick() {
+    if (!_controller.hasClients) return;
+    final page = _controller.page;
+    if (page == null) return;
+    PerfDiag.instance.dateSwipeDrag(
+      section: 'Timeline',
+      page: page.round(),
+      pageFraction: page,
+    );
+  }
+
+  String _dateKeyShort(DateTime d) => _dateKey(d);
 
   @override
   void didUpdateWidget(covariant TimelineSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
+
+    if (!oldWidget.shellTabActive && widget.shellTabActive) {
+      _syncOnTabActivated();
+      return;
+    }
+
+    if (!widget.shellTabActive) {
+      final oldD = _dateOnlyCalendar(oldWidget.selectedDate);
+      final newD = _dateOnlyCalendar(widget.selectedDate);
+      if (oldD.year != newD.year ||
+          oldD.month != newD.month ||
+          oldD.day != newD.day) {
+        _deferHiddenExternalDate(widget.selectedDate);
+      }
+      return;
+    }
+
     final oldD = _dateOnlyCalendar(oldWidget.selectedDate);
     final newD = _dateOnlyCalendar(widget.selectedDate);
     if (oldD.year == newD.year &&
         oldD.month == newD.month &&
         oldD.day == newD.day) {
-      return;
-    }
-    if (!oldWidget.shellTabActive && widget.shellTabActive) {
-      setState(() {
-        _syncPagerToDate(widget.selectedDate, animate: false);
-      });
-      return;
-    }
-    if (!widget.shellTabActive && !PerfFlags.syncHiddenTabDatePager) {
-      _syncPagerToDate(widget.selectedDate, animate: false);
       return;
     }
     setState(() {
@@ -204,6 +291,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
 
   @override
   void dispose() {
+    _controller.removeListener(_onPageControllerTick);
     _controller.dispose();
     super.dispose();
   }
@@ -213,28 +301,63 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    perfRebuildTick('TimelineSwipeWrapper');
     return ScrollConfiguration(
       behavior: const MouseDragScrollBehavior(),
-      child: PageView.builder(
-        controller: _controller,
-        itemCount: 10000,
-        onPageChanged: (int index) {
-          if (index < 0 || index >= 10000) return;
-          setState(() => _visiblePageIndex = index);
-          final next = _dateForIndex(index);
-          final sel = _dateOnlyCalendar(widget.selectedDate);
-          if (next.year == sel.year &&
-              next.month == sel.month &&
-              next.day == sel.day) {
-            return;
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n is ScrollStartNotification && n.dragDetails != null) {
+            PerfDiag.instance.dateSwipeStart(
+              section: 'Timeline',
+              fromDate: _dateKeyShort(_dateForIndex(_visiblePageIndex)),
+            );
           }
-          widget.onDateChanged(next);
+          if (n is ScrollEndNotification) {
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              PerfDiag.instance.dateSwipeEnd(section: 'Timeline');
+            });
+          }
+          return false;
         },
+        child: PageView.builder(
+          controller: _controller,
+          itemCount: 10000,
+          onPageChanged: (int index) {
+            if (index < 0 || index >= 10000) return;
+            final fromDate = _dateKeyShort(_dateForIndex(_visiblePageIndex));
+            final toDate = _dateKeyShort(_dateForIndex(index));
+            PerfDiag.instance.dateSwipeSettleStart(
+              section: 'Timeline',
+              fromDate: fromDate,
+              toDate: toDate,
+              fromPage: _visiblePageIndex,
+              toPage: index,
+            );
+            setState(() => _visiblePageIndex = index);
+            final next = _dateForIndex(index);
+            final sel = _dateOnlyCalendar(widget.selectedDate);
+            final shellWillUpdate = !(next.year == sel.year &&
+                next.month == sel.month &&
+                next.day == sel.day);
+            if (!shellWillUpdate) {
+              PerfDiag.instance.dateSwipeSettleEnd(
+                section: 'Timeline',
+                shellSetState: false,
+              );
+              return;
+            }
+            widget.onDateChanged(next);
+            PerfDiag.instance.dateSwipeSettleEnd(
+              section: 'Timeline',
+              shellSetState: true,
+            );
+          },
         itemBuilder: (context, index) {
           final date = _dateForIndex(index);
           final dateKey = _dateKey(date);
           final isFuture = date.isAfter(_anchorToday);
-          final isVisible = index == _visiblePageIndex;
+          final isVisible =
+              widget.shellTabActive && index == _visiblePageIndex;
           return TimelinePage(
             selectedDate: date,
             selectedDateString: dateKey,
@@ -259,6 +382,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
           );
         },
+        ),
       ),
     );
   }
@@ -511,6 +635,7 @@ class _TimelinePageState extends State<TimelinePage> {
 
   @override
   Widget build(BuildContext context) {
+    perfRebuildTick('TimelinePage');
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(

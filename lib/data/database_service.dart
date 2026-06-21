@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/link_scalar.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
