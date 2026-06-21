@@ -55,13 +55,13 @@ lib/
 │   │   ├── auth_view.dart         // Sign In, Register, OAuth, Password Reset.
 │   │   └── auth_screen.dart       // Re-export shim.
 │   ├── timeline/                  // [TIME] Activity Feed & Time Blocks (Records)
-│   │   ├── timeline_view.dart
+│   │   ├── timeline_view.dart     // TimelineSwipeWrapper — horizontal day PageView (date nav)
 │   │   └── timeline_widgets.dart
 │   ├── stats/                     // [ANALYTICS] Productivity stats (was timeline/stats/)
 │   │   ├── stats_view.dart
 │   │   └── plan_vs_fact_tab.dart
 │   ├── planning/                  // [FUTURE] Day Planning & Task List (Time-Bound)
-│   │   ├── planning_view.dart
+│   │   ├── planning_view.dart     // PlanningSwipeWrapper — horizontal day PageView (date nav)
 │   │   ├── bulk_planning_edit_sheet.dart
 │   │   ├── smart_input_parser.dart
 │   │   ├── smart_plan_sheet.dart

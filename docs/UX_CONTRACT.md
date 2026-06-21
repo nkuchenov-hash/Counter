@@ -105,3 +105,12 @@ This document defines how Life OS behaves when people interact with it. It is th
 - **Snap / duration:** Time mode supports **5-minute** minimum duration and **5-minute** snap for move and top/bottom resize (`timelineSnapMinutes`, `kPlanScheduleSnapMinutes`).
 - **Card density:** Short blocks use **micro** / **compact** layouts (essential controls only). **Medium** / **large** blocks show progress separator + category breadcrumb + planned time footer (`PlanTimeTaskCard`).
 - **Interactions:** Checkbox, play, menu, body tap, drag, and resize keep independent hit zones; optimistic schedule updates follow the Iron Laws.
+
+## Gesture Ownership / Date Swipe Law
+
+- **Horizontal swipe inside Timeline and Planning changes the calendar day** (previous/next date). This is **required** product behavior — do not remove it, disable it globally, or replace it with tap-only navigation.
+- **This is not main-tab navigation.** Bottom/side nav switches app sections; horizontal swipe within Timeline/Planning is **date** navigation.
+- **Code:** `TimelineSwipeWrapper` (`lib/features/timeline/timeline_view.dart`), `PlanningSwipeWrapper` (`lib/features/planning/planning_view.dart`) — infinite day `PageView.builder`.
+- **During Planning Time-mode card drag/resize only:** horizontal date paging may be temporarily locked while the card owns the gesture; restore date swipe when the interaction ends.
+- **Vertical scroll** stays vertical; tap opens edit; long press starts drag where supported. Gesture conflicts are P0 bugs.
+- **Performance work** must use DevTools/profile-mode measurement before changing swipe architecture — do not add hidden-tab PageView sync, per-frame diagnostics in release, or unproven wrapper layers.

@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 rollback: revert 73e87e7 date-swipe perf regression [rollback]
+* **Git:** [rollback] `git revert 73e87e7` — removed `lib/core/date_swipe/`, `shellTabActive`, `DateSwipePerfMonitor`, wrapper `visiblePageIndex`/`allowImplicitScrolling`/per-page `RepaintBoundary` changes that caused ~10× worse swipe jank.
+* **Preserved:** [shipped] `62020e8` LazyIndexedStack, PlanCard, mobile Time rail, tab contrast, profile hydration, `appDebugDiag`.
+* **Docs:** [shipped] Date Swipe Law kept in `UX_CONTRACT.md`, `APP_STRUCTURE.md`, `AI_CONTEXT.md` (docs-only; no reintroduce 73e87e7 architecture).
+
 ## [2026-06-15] - P0 performance + mobile Time compactness + PlanCard canonical + Design Lab [shipped]
 * **`lazy_indexed_stack.dart` / `app_shell.dart`:** [shipped] `LazyIndexedStack` — lazy tab build, `Offstage` + `TickerMode(false)` off-screen; replaces eager `IndexedStack` for smoother horizontal nav.
 * **`app_diag.dart` / `planning_view.dart`:** [shipped] `appDebugDiag()` gates `TIME_*` logs to debug; drag layout cache (`_dragInsertLayoutsCache`); projection cache; `RepaintBoundary` on timeline canvas.
