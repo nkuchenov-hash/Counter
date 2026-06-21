@@ -11,13 +11,6 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
-## [2026-06-15] - P0 date-swipe performance + gesture ownership law [shipped]
-* **`date_swipe_perf.dart` / `date_swipe_constants.dart`:** [shipped] Debug `DATE_SWIPE_*` frame diagnostics; shared `DateSwipePager` constants.
-* **`timeline_view.dart`:** [shipped] `TimelineSwipeWrapper` tracks `_visiblePageIndex`; `shellTabActive` skips off-tab sync; `RepaintBoundary` per day; no loading-flag flash on date change.
-* **`planning_view.dart`:** [shipped] Time drag/resize locks day `PageView` via `onDateSwipeLockChanged`; same visible-index + `shellTabActive` pattern.
-* **`app_shell.dart`:** [shipped] `shellTabActive` per tab; deferred timeline task fetch without `_tasksLoading` toggle on swipe.
-* **Docs:** [shipped] `UX_CONTRACT.md` § Gesture Ownership / Date Swipe Law; `APP_STRUCTURE.md` + `AI_CONTEXT.md` date-swipe anchors.
-
 ## [2026-06-15] - P0 performance + mobile Time compactness + PlanCard canonical + Design Lab [shipped]
 * **`lazy_indexed_stack.dart` / `app_shell.dart`:** [shipped] `LazyIndexedStack` — lazy tab build, `Offstage` + `TickerMode(false)` off-screen; replaces eager `IndexedStack` for smoother horizontal nav.
 * **`app_diag.dart` / `planning_view.dart`:** [shipped] `appDebugDiag()` gates `TIME_*` logs to debug; drag layout cache (`_dragInsertLayoutsCache`); projection cache; `RepaintBoundary` on timeline canvas.

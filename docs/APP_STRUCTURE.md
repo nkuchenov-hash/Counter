@@ -48,9 +48,6 @@ lib/
 │       ├── app_state_views.dart               // AppErrorState, AppEmptyState.
 │       ├── app_bar_live_clock.dart            // Live clock widget for app bars.
 │       └── mouse_drag_scroll_behavior.dart    // Mouse-drag scroll for desktop/web.
-│   ├── date_swipe/                // [NAV] Horizontal day paging helpers (not main-tab nav)
-│   │   ├── date_swipe_constants.dart          // DateSwipePager centerIndex / pageCount
-│   │   └── date_swipe_perf.dart               // Debug DATE_SWIPE_* frame diagnostics
 ├── services/                      // OS & DEVICE BRIDGE (non-UI)
 │   └── notification_service.dart  // [ALARMS] flutter_local_notifications + timezone.
 ├── features/                      // THE SHELLS (UI Modules)
@@ -58,13 +55,13 @@ lib/
 │   │   ├── auth_view.dart         // Sign In, Register, OAuth, Password Reset.
 │   │   └── auth_screen.dart       // Re-export shim.
 │   ├── timeline/                  // [TIME] Activity Feed & Time Blocks (Records)
-│   │   ├── timeline_view.dart     // TimelineSwipeWrapper — horizontal date PageView
+│   │   ├── timeline_view.dart
 │   │   └── timeline_widgets.dart
 │   ├── stats/                     // [ANALYTICS] Productivity stats (was timeline/stats/)
 │   │   ├── stats_view.dart
 │   │   └── plan_vs_fact_tab.dart
 │   ├── planning/                  // [FUTURE] Day Planning & Task List (Time-Bound)
-│   │   ├── planning_view.dart     // PlanningSwipeWrapper — horizontal date PageView; Time drag locks swipe
+│   │   ├── planning_view.dart
 │   │   ├── bulk_planning_edit_sheet.dart
 │   │   ├── smart_input_parser.dart
 │   │   ├── smart_plan_sheet.dart

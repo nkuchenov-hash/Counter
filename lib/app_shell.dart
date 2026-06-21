@@ -15,7 +15,6 @@ import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/date_swipe/date_swipe_perf.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/shell_layout_state.dart';
@@ -37,9 +36,6 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 // --- Shell-local time helpers (Planetary: UTC + profile offset). ---
 DateTime _dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
-
-bool _sameCalendarDay(DateTime a, DateTime b) =>
-    a.year == b.year && a.month == b.month && a.day == b.day;
 
 String _two(int n) => n.toString().padLeft(2, '0');
 
@@ -566,13 +562,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   bool get _isFutureDate => _selectedDate.isAfter(_localToday());
 
   Future<void> _loadTasksForDate(DateTime date) async {
-    if (DateSwipePerfMonitor.instance.isSwipeActive) {
-      DateSwipePerfMonitor.instance.logFetchBlocked('deferDuringSwipe');
-    }
+    setState(() => _tasksLoading = true);
     try {
       final loaded = await DatabaseService.instance.loadTasksForDate(date);
       if (!mounted) return;
-      if (!_sameCalendarDay(_selectedDate, date)) return;
       setState(() {
         _tasks
           ..clear()
@@ -580,7 +573,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         _tasksLoading = false;
       });
     } catch (_) {
-      if (mounted && _sameCalendarDay(_selectedDate, date)) {
+      if (mounted) {
         setState(() {
           _tasks.clear();
           _tasksLoading = false;
@@ -1938,15 +1931,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     final pages = <Widget>[
       TimelineSwipeWrapper(
         selectedDate: _selectedDate,
-        shellTabActive: _shellPageIndex == 0,
         onDateChanged: (d) {
           final day = _dateOnly(d);
-          if (_sameCalendarDay(_selectedDate, day)) return;
-          _selectedDate = day;
-          setState(() {});
-          if (_shellPageIndex == 0) {
-            unawaited(_loadTasksForDate(day));
-          }
+          setState(() => _selectedDate = day);
+          _loadTasksForDate(day);
         },
         onJumpToConflict: _jumpToConflictDate,
         tasks: _tasks,
@@ -1965,13 +1953,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       ),
       PlanningSwipeWrapper(
         selectedDate: _selectedDate,
-        shellTabActive: _shellPageIndex == 1,
-        onDateChanged: (d) {
-          final day = _dateOnly(d);
-          if (_sameCalendarDay(_selectedDate, day)) return;
-          _selectedDate = day;
-          setState(() {});
-        },
+        onDateChanged: (d) => setState(() => _selectedDate = d),
         selectedCategoryId: _selectedCategoryId,
         onCategoryChanged: (id) => setState(() => _selectedCategoryId = id),
         onStartRecordFromTask: _startRecordFromPlanning,

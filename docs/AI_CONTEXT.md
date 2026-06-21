@@ -69,14 +69,6 @@ A full copy of the May 2026 roadmap previously lived in this file and duplicated
 - Now-line **above** cards; **no** “outside visible range” bucket.
 - Docs: `UX_CONTRACT.md` § Planning Time Mode, `DESIGN_SYSTEM.md` § PlanTimeTaskCard.
 
-### Date swipe (do not remove)
-
-- **Horizontal swipe in Timeline / Planning changes the calendar day** — it is **not** bottom-nav tab switching.
-- Do **not** remove date swipe, disable it globally, or “optimize” by replacing with tap-only day change.
-- Code: `TimelineSwipeWrapper` (`timeline_view.dart`), `PlanningSwipeWrapper` (`planning_view.dart`), shared `lib/core/date_swipe/`.
-- Time-mode card drag/resize may **temporarily lock** the day `PageView` only while the interaction is active.
-- See `UX_CONTRACT.md` § Gesture Ownership / Date Swipe Law.
-
 ### Recurring edit
 
 - Virtual occurrence time/metadata edit **materializes** a one-off plan row and adds parent `exception_dates` entry (`plan_service.dart`).
