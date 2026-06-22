@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/p0_date_nav_diag.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/link_scalar.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
@@ -505,6 +506,12 @@ class DatabaseService {
 
   /// Precomputed timeline row VMs per calendar day; invalidated with view cache.
   final Map<String, List<TimelineRecordRowVm>> _timelineDayVmCache = {};
+
+  /// Lazy per-row VM cache (dateKey → recordKey → VM); avoids building all rows at once.
+  final Map<String, Map<String, TimelineRecordRowVm>> _timelineLazyRowVmByDay = {};
+
+  /// True while a deferred full day-index rebuild is running off the hot swipe path.
+  bool _timelineDayIndexBuildInFlight = false;
 
   /// Latest center date for prefetch cancellation (YYYY-MM-DD).
   String? _timelinePrefetchCenterKey;

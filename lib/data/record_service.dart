@@ -948,8 +948,11 @@ extension RecordServiceExtension on DatabaseService {
   String _timelineDateKeyFromDate(DateTime date) =>
       '${date.year}-${_two(date.month)}-${_two(date.day)}';
 
+  static const int _kTimelineIndexMaxSyncRecords = 480;
+
   void _markTimelineDayIndexDirty() {
     _timelineDayIndexDirty = true;
+    _timelineLazyRowVmByDay.clear();
   }
 
   void _ensureTimelineDayIndex() {
@@ -957,6 +960,27 @@ extension RecordServiceExtension on DatabaseService {
         _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length) {
       return;
     }
+    if (_cachedFlatRecords.length <= _kTimelineIndexMaxSyncRecords) {
+      _buildTimelineDayIndexImpl();
+      return;
+    }
+    if (_timelineDayIndexBuildInFlight) return;
+    _timelineDayIndexBuildInFlight = true;
+    Future<void>.delayed(Duration.zero, () {
+      try {
+        if (!_timelineDayIndexDirty &&
+            _timelineDayIndexBuiltAtRecordCount ==
+                _cachedFlatRecords.length) {
+          return;
+        }
+        _buildTimelineDayIndexImpl();
+      } finally {
+        _timelineDayIndexBuildInFlight = false;
+      }
+    });
+  }
+
+  void _buildTimelineDayIndexImpl() {
     final sw = Stopwatch()..start();
     final buckets = <String, List<Map<String, dynamic>>>{};
     final ownerIds = _recordRowOwnerIdMatchSet();
@@ -1023,13 +1047,67 @@ extension RecordServiceExtension on DatabaseService {
     _timelineDayIndexBuiltAtRecordCount = _cachedFlatRecords.length;
     _timelineDayViewCache.clear();
     _timelineDayVmCache.clear();
+    _timelineLazyRowVmByDay.clear();
+  }
+
+  List<Map<String, dynamic>> _scanSingleDayFromFlat(String targetDayStr) {
+    final out = <Map<String, dynamic>>[];
+    final ownerIds = _recordRowOwnerIdMatchSet();
+    try {
+      for (final row in _cachedFlatRecords) {
+        if (_rowHasNonEmptyParent(row['parent_id'])) continue;
+        if (_optimisticRowDeletedRaw(row)) continue;
+        final rowUid = (row['user_id'] ?? '').toString().trim().toLowerCase();
+        if (ownerIds.isEmpty) continue;
+        if (rowUid.isEmpty || !ownerIds.contains(rowUid)) continue;
+        final stUtc = CategoryServiceExtension._parseDateTimeUtc(
+          row['start_time'],
+        );
+        if (stUtc == null) continue;
+        final recordDayStr = _timelineDeviceLocalDayKeyFromUtc(stUtc);
+        if (recordDayStr != targetDayStr) continue;
+        try {
+          out.add(_mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
+        } catch (e) {
+          final rid = (row['record_id'] ?? '').toString().trim();
+          P0DateNavDiag.crashGuard(
+            'timeline_scan_skip record_id=$rid day=$targetDayStr $e',
+          );
+        }
+      }
+      out.sort((a, b) {
+        final as = a['startTime'] as DateTime?;
+        final bs = b['startTime'] as DateTime?;
+        if (as == null && bs == null) return 0;
+        if (as == null) return 1;
+        if (bs == null) return -1;
+        return bs.compareTo(as);
+      });
+      final seenBiz = <String>{};
+      final collapsed = <Map<String, dynamic>>[];
+      for (final e in out) {
+        final biz = (e['record_id'] ?? '').toString().trim();
+        if (biz.isNotEmpty) {
+          if (seenBiz.contains(biz)) continue;
+          seenBiz.add(biz);
+        }
+        collapsed.add(e);
+      }
+      return collapsed;
+    } catch (_) {
+      return const [];
+    }
   }
 
   List<Map<String, dynamic>> _timelineDayIndexRowsForKey(String targetDayStr) {
     _ensureTimelineDayIndex();
-    final base = List<Map<String, dynamic>>.from(
-      _timelineRecordsDayIndex[targetDayStr] ?? const [],
-    );
+    final indexReady = !_timelineDayIndexDirty &&
+        _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length;
+    final base = indexReady
+        ? List<Map<String, dynamic>>.from(
+            _timelineRecordsDayIndex[targetDayStr] ?? const [],
+          )
+        : _scanSingleDayFromFlat(targetDayStr);
     final pend = _optimisticPendingStartRecordMap;
     if (pend != null) {
       final pRid = (pend['record_id'] ?? '').toString().trim();
@@ -1125,6 +1203,54 @@ extension RecordServiceExtension on DatabaseService {
     return '${d.inSeconds}s';
   }
 
+  TimelineRecordRowVm? _timelineRowVmFromMapOrNull(Map<String, dynamic> data) {
+    try {
+      return _timelineRowVmFromMap(data);
+    } catch (e) {
+      final rid = (data['record_id'] ?? data['id'] ?? '').toString().trim();
+      P0DateNavDiag.crashGuard('timeline_vm_skip record_id=$rid $e');
+      return null;
+    }
+  }
+
+  TimelineRecordRowVm _timelineFallbackRowVm(Map<String, dynamic> data) {
+    final systemRowId = (data['id'] ?? data['backendNumericId'] ?? '')
+        .toString()
+        .trim();
+    final businessRecordId = (data['record_id'] ?? '').toString().trim();
+    return TimelineRecordRowVm(
+      systemRowId: systemRowId,
+      businessRecordId: businessRecordId,
+      rawData: data,
+      title: data['title']?.toString() ?? '…',
+      subtitle: '–',
+      categoryPath: '',
+      categoryColorArgb: 0xFF9E9E9E,
+      isPlanned: false,
+      isCanonicalRunning: false,
+      showNotesIcon: false,
+      showChecklistIcon: false,
+      showParentIcon: false,
+      showLinkedSubsIcon: false,
+    );
+  }
+
+  /// Lazy row VM for list virtualization — builds one row at a time with per-day cache.
+  TimelineRecordRowVm timelineRowVmForRecordMapOrNull(
+    String dateKey,
+    Map<String, dynamic> data,
+  ) {
+    final biz = (data['record_id'] ?? '').toString().trim();
+    final sys = (data['id'] ?? data['backendNumericId'] ?? '').toString().trim();
+    final cacheKey = biz.isNotEmpty ? biz : (sys.isNotEmpty ? sys : data.hashCode.toString());
+    final dayCache = _timelineLazyRowVmByDay.putIfAbsent(dateKey, () => {});
+    final hit = dayCache[cacheKey];
+    if (hit != null) return hit;
+    final built = _timelineRowVmFromMapOrNull(data) ?? _timelineFallbackRowVm(data);
+    dayCache[cacheKey] = built;
+    return built;
+  }
+
   TimelineRecordRowVm _timelineRowVmFromMap(Map<String, dynamic> data) {
     final systemRowId = (data['id'] ?? data['backendNumericId'] ?? '')
         .toString()
@@ -1167,7 +1293,11 @@ extension RecordServiceExtension on DatabaseService {
   ) {
     final maps = peekTimelineRecordsForDate(date);
     final sw = Stopwatch()..start();
-    final vms = maps.map(_timelineRowVmFromMap).toList(growable: false);
+    final vms = <TimelineRecordRowVm>[];
+    for (final m in maps) {
+      final vm = _timelineRowVmFromMapOrNull(m);
+      if (vm != null) vms.add(vm);
+    }
     sw.stop();
     if (kPerfDiagnosisEnabled) {
       PerfDiag.instance.logTimelineViewCacheRebuild(
@@ -1200,6 +1330,7 @@ extension RecordServiceExtension on DatabaseService {
   void invalidateTimelineDayCachesForDateKey(String dateKey, {String? reason}) {
     _timelineDayViewCache.remove(dateKey);
     _timelineDayVmCache.remove(dateKey);
+    _timelineLazyRowVmByDay.remove(dateKey);
     if (kPerfDiagnosisEnabled && reason != null) {
       PerfDiag.instance.logTimelineViewCacheInvalidate(
         date: dateKey,
@@ -1243,13 +1374,12 @@ extension RecordServiceExtension on DatabaseService {
           final d = int.tryParse(parts[2]);
           if (y == null || m == null || d == null) continue;
           final day = DateTime(y, m, d);
-          peekTimelineRowVmsForDate(day);
+          final rows = peekTimelineRecordsForDate(day);
           if (kPerfDiagnosisEnabled) {
-            final rows = _timelineDayVmCache[key];
             PerfDiag.instance.logTimelinePrefetchEnd(
               date: key,
               ms: sw.elapsedMilliseconds,
-              itemCount: rows?.length ?? 0,
+              itemCount: rows.length,
             );
           }
         }

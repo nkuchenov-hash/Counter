@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0: Timeline Android crash guard + reliable date swipe [shipped]
+* **`record_service.dart` / `database_service.dart`:** [shipped] Lazy per-row `timelineRowVmForRecordMapOrNull` + `_timelineLazyRowVmByDay`; safe skip/fallback for legacy rows (`P0_CRASH_GUARD`); deferred full day-index rebuild when flat cache >480 rows; `_scanSingleDayFromFlat` serves one day while index rebuilds; prefetch warms record maps only (not bulk VMs).
+* **`timeline_view.dart`:** [shipped] `DatePagerSettleGate` — debounced shell date commit, drag blocks external pager sync; standard `PageScrollPhysics`; lazy VM in `ListView.builder`; cancel record stream when page inactive; keep last coalesced list (no blank on refresh).
+* **`planning_view.dart`:** [shipped] Same settle gate + `PageScrollPhysics`; pending external date during drag/Time lock; `StreamBuilder` keeps `_latestPlanningDayTasks` when stream is `waiting`.
+* **`date_pager_settle_gate.dart` / `p0_date_nav_diag.dart`:** [shipped] Shared pager settle coordinator + debounced debug-only `[P0_*]` logs.
+
 ## [2026-06-15] - P0 hotfix: restore Timeline cards + lock Planning pager during Time drag [shipped]
 * **`timeline_view.dart`:** [shipped] Removed `_deferHeavyList`/blank `StreamBuilder` — list renders immediately from VM cache; restored visible card chrome (elevation, border, category stripe); stream via lightweight subscription.
 * **`planning_view.dart`:** [shipped] `_datePagerLocked` — `NeverScrollableScrollPhysics` on date `PageView` while Time card drag/resize active; fixes gesture fights.

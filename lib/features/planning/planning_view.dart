@@ -9,7 +9,9 @@ import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:counter/core/app_diag.dart';
+import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
+import 'package:counter/core/p0_date_nav_diag.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/app_snackbar.dart';
@@ -117,9 +119,28 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   /// True while Time-mode card drag/resize is active — blocks horizontal date pager.
   bool _datePagerLocked = false;
 
+  final DatePagerSettleGate _settleGate = DatePagerSettleGate();
+
   void _onPlanningDatePagerLockChanged(bool locked) {
     if (_datePagerLocked == locked) return;
     setState(() => _datePagerLocked = locked);
+    if (!locked) {
+      _applyPendingExternalPageIfNeeded();
+    }
+  }
+
+  void _applyPendingExternalPageIfNeeded() {
+    if (_datePagerLocked || _settleGate.blocksExternalDateSync) return;
+    final pending = _pendingExternalPage;
+    if (pending == null) return;
+    _pendingExternalPage = null;
+    if (pending < 0 || pending >= totalPageCount) return;
+    if (!_controller.hasClients) return;
+    final cur = _controller.page?.round();
+    if (cur == pending) return;
+    _settleGate.resetCommittedPage(pending);
+    setState(() => _visiblePageIndex = pending);
+    _controller.jumpToPage(pending);
   }
 
   int _pageIndexForDate(DateTime date) {
@@ -231,6 +252,11 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     final page = _pageIndexForDate(widget.selectedDate);
     if (page < 0 || page >= totalPageCount) return;
 
+    if (_settleGate.blocksExternalDateSync || _datePagerLocked) {
+      _pendingExternalPage = page;
+      return;
+    }
+
     setState(() => _visiblePageIndex = page);
     if (_controller.hasClients) {
       final cur = _controller.page;
@@ -242,16 +268,22 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
         shellTabActive: widget.shellTabActive,
         hidden: false,
       );
-      _controller.animateToPage(
-        page,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-      );
+      _settleGate.markProgrammaticAnimStart();
+      _controller
+          .animateToPage(
+            page,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          )
+          .whenComplete(() {
+            if (mounted) _settleGate.markProgrammaticAnimEnd();
+          });
     }
   }
 
   @override
   void dispose() {
+    _settleGate.dispose();
     _controller.removeListener(_onPageControllerTick);
     _controller.dispose();
     super.dispose();
@@ -278,6 +310,10 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
         child: NotificationListener<ScrollNotification>(
           onNotification: (n) {
             if (n is ScrollStartNotification && n.dragDetails != null) {
+              _settleGate.onUserDragStart();
+              P0DateNavDiag.plansSwipe(
+                'drag_start page=$_visiblePageIndex',
+              );
               PerfDiag.instance.dateSwipeStart(
                 section: 'Planning',
                 fromDate: _dateKeyShort(
@@ -288,6 +324,8 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
               );
             }
             if (n is ScrollEndNotification) {
+              _settleGate.onUserDragEnd();
+              _applyPendingExternalPageIfNeeded();
               logDateSwipeThresholdOnScrollEnd(
                 section: 'Planning',
                 controller: _controller,
@@ -320,33 +358,25 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             controller: _controller,
             physics: _datePagerLocked
                 ? const NeverScrollableScrollPhysics()
-                : const FeatherDateSwipePhysics(),
+                : const PageScrollPhysics(),
             itemCount: totalPageCount,
             onPageChanged: (int index) {
-              if (index >= 0 && index < totalPageCount) {
-                final fromDate = _dateKeyShort(
-                  _anchorDate.add(
-                    Duration(days: _visiblePageIndex - initialPage),
-                  ),
-                );
-                final toDate = _dateKeyShort(
-                  _anchorDate.add(Duration(days: index - initialPage)),
-                );
-                PerfDiag.instance.dateSwipeSettleStart(
-                  section: 'Planning',
-                  fromDate: fromDate,
-                  toDate: toDate,
-                  fromPage: _visiblePageIndex,
-                  toPage: index,
-                );
-                setState(() => _visiblePageIndex = index);
-                final date = _anchorDate.add(Duration(days: index - initialPage));
-                widget.onDateChanged(_dateOnly(date));
-                PerfDiag.instance.dateSwipeSettleEnd(
-                  section: 'Planning',
-                  shellSetState: false,
-                );
-              }
+              if (index < 0 || index >= totalPageCount) return;
+              P0DateNavDiag.plansDateNav(
+                'page=$index date=${_dateKeyShort(_anchorDate.add(Duration(days: index - initialPage)))}',
+              );
+              setState(() => _visiblePageIndex = index);
+              _settleGate.onPageSettled(
+                pageIndex: index,
+                onShellCommit: (page) {
+                  if (!mounted) return;
+                  final date = _anchorDate.add(
+                    Duration(days: page - initialPage),
+                  );
+                  P0DateNavDiag.plansDateNav('shell_commit date=${_dateKeyShort(date)}');
+                  widget.onDateChanged(_dateOnly(date));
+                },
+              );
             },
           itemBuilder: (context, index) {
             final date = _anchorDate.add(Duration(days: index - initialPage));
@@ -4755,14 +4785,17 @@ class _PlanningPageState extends State<PlanningPage>
         late final Widget body;
         try {
           if (snapshot.connectionState == ConnectionState.waiting &&
-              !snapshot.hasData) {
+              !snapshot.hasData &&
+              _latestPlanningDayTasks.isEmpty) {
             body = const AppLoading();
-          } else if (snapshot.hasError) {
+          } else if (snapshot.hasError && _latestPlanningDayTasks.isEmpty) {
             body = AppErrorState(
               message: t(currentLocale.value, 'no_data_found'),
             );
           } else {
-            final server = snapshot.data ?? [];
+            final server = snapshot.hasData
+                ? snapshot.data!
+                : _latestPlanningDayTasks;
             _latestPlanningDayTasks = server;
             if (server.isNotEmpty && _optimisticTasks.isNotEmpty) {
               final toDrop = _optimisticTasks

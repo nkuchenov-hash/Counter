@@ -1,7 +1,9 @@
 ﻿import 'dart:async';
 
 import 'package:counter/core/app_colors.dart';
+import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
+import 'package:counter/core/p0_date_nav_diag.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
@@ -11,7 +13,6 @@ import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
@@ -58,31 +59,6 @@ String _formatDuration(Duration d) {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
   return '${s}s';
-}
-
-/// PocketBase `records.id` (or legacy numeric row key). **Not** `record_id` UUID.
-String _timelineRowSystemId(Map<String, dynamic> data) {
-  final rest = (data['backendRestPathId'] ?? '').toString().trim();
-  if (rest.isNotEmpty) return rest;
-  final id = (data['id'] ?? '').toString().trim();
-  if (id.isNotEmpty) return id;
-  return '';
-}
-
-/// Client `record_id` (business UUID) вЂ” stable before/after PocketBase row id is assigned.
-String _timelineBusinessRecordId(Map<String, dynamic> data) {
-  final biz = (data['record_id'] ?? '').toString().trim();
-  if (biz.isNotEmpty) return biz;
-  return '';
-}
-
-bool _timelineSameRecordRow(Map<String, dynamic> a, Map<String, dynamic> b) {
-  final bizA = _timelineBusinessRecordId(a);
-  final bizB = _timelineBusinessRecordId(b);
-  if (bizA.isNotEmpty && bizB.isNotEmpty && bizA == bizB) return true;
-  final sysA = _timelineRowSystemId(a);
-  final sysB = _timelineRowSystemId(b);
-  return sysA.isNotEmpty && sysA == sysB;
 }
 
 /// Wraps Timeline in a PageView for swipe-to-change date. Exported for LifeOSDashboard.
@@ -140,6 +116,30 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
 
   /// External date from shell while this tab is inactive вЂ” applied on activation only.
   int? _pendingExternalPage;
+
+  final DatePagerSettleGate _settleGate = DatePagerSettleGate();
+  Timer? _prefetchDebounce;
+
+  void _schedulePrefetch(DateTime center) {
+    _prefetchDebounce?.cancel();
+    _prefetchDebounce = Timer(const Duration(milliseconds: 140), () {
+      if (!mounted) return;
+      DatabaseService.instance.prefetchTimelineDayNeighbors(center);
+    });
+  }
+
+  void _applyPendingExternalPageIfNeeded() {
+    final pending = _pendingExternalPage;
+    if (pending == null || _settleGate.blocksExternalDateSync) return;
+    _pendingExternalPage = null;
+    if (pending < 0 || pending >= 10000) return;
+    if (!_controller.hasClients) return;
+    final cur = _controller.page?.round();
+    if (cur == pending) return;
+    _settleGate.resetCommittedPage(pending);
+    setState(() => _visiblePageIndex = pending);
+    _controller.jumpToPage(pending);
+  }
 
   /// Shared across all [TimelinePage] indices so calendar/date changes keep List vs Stats.
   bool _showStatsView = false;
@@ -207,11 +207,16 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         shellTabActive: widget.shellTabActive,
         hidden: false,
       );
-      _controller.animateToPage(
-        page,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-      );
+      _settleGate.markProgrammaticAnimStart();
+      _controller
+          .animateToPage(
+            page,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          )
+          .whenComplete(() {
+            if (mounted) _settleGate.markProgrammaticAnimEnd();
+          });
     } else {
       PerfDiag.instance.pagerSync(
         section: 'Timeline',
@@ -284,6 +289,10 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         oldD.day == newD.day) {
       return;
     }
+    if (_settleGate.blocksExternalDateSync) {
+      _pendingExternalPage = _pageIndexForDate(widget.selectedDate);
+      return;
+    }
     setState(() {
       _syncPagerToDate(widget.selectedDate, animate: true);
     });
@@ -291,6 +300,8 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
 
   @override
   void dispose() {
+    _prefetchDebounce?.cancel();
+    _settleGate.dispose();
     _controller.removeListener(_onPageControllerTick);
     _controller.dispose();
     super.dispose();
@@ -307,12 +318,15 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       child: NotificationListener<ScrollNotification>(
         onNotification: (n) {
           if (n is ScrollStartNotification && n.dragDetails != null) {
+            _settleGate.onUserDragStart();
             PerfDiag.instance.dateSwipeStart(
               section: 'Timeline',
               fromDate: _dateKeyShort(_dateForIndex(_visiblePageIndex)),
             );
           }
           if (n is ScrollEndNotification) {
+            _settleGate.onUserDragEnd();
+            _applyPendingExternalPageIfNeeded();
             logDateSwipeThresholdOnScrollEnd(
               section: 'Timeline',
               controller: _controller,
@@ -343,39 +357,28 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         },
         child: PageView.builder(
           controller: _controller,
-          physics: const LightDateSwipePhysics(
-            parent: BouncingScrollPhysics(),
-          ),
+          physics: const PageScrollPhysics(),
           itemCount: 10000,
           onPageChanged: (int index) {
             if (index < 0 || index >= 10000) return;
-            final fromDate = _dateKeyShort(_dateForIndex(_visiblePageIndex));
-            final toDate = _dateKeyShort(_dateForIndex(index));
-            PerfDiag.instance.dateSwipeSettleStart(
-              section: 'Timeline',
-              fromDate: fromDate,
-              toDate: toDate,
-              fromPage: _visiblePageIndex,
-              toPage: index,
+            P0DateNavDiag.timelineDateNav(
+              'page=$index date=${_dateKeyShort(_dateForIndex(index))}',
             );
             setState(() => _visiblePageIndex = index);
-            final next = _dateForIndex(index);
-            DatabaseService.instance.prefetchTimelineDayNeighbors(next);
-            final sel = _dateOnlyCalendar(widget.selectedDate);
-            final shellWillUpdate = !(next.year == sel.year &&
-                next.month == sel.month &&
-                next.day == sel.day);
-            if (!shellWillUpdate) {
-              PerfDiag.instance.dateSwipeSettleEnd(
-                section: 'Timeline',
-                shellSetState: false,
-              );
-              return;
-            }
-            widget.onDateChanged(next);
-            PerfDiag.instance.dateSwipeSettleEnd(
-              section: 'Timeline',
-              shellSetState: false,
+            _settleGate.onPageSettled(
+              pageIndex: index,
+              onShellCommit: (page) {
+                if (!mounted) return;
+                final next = _dateForIndex(page);
+                _schedulePrefetch(next);
+                final sel = _dateOnlyCalendar(widget.selectedDate);
+                final shellWillUpdate = !(next.year == sel.year &&
+                    next.month == sel.month &&
+                    next.day == sel.day);
+                if (!shellWillUpdate) return;
+                P0DateNavDiag.timelineDateNav('shell_commit date=${_dateKeyShort(next)}');
+                widget.onDateChanged(next);
+              },
             );
           },
         itemBuilder: (context, index) {
@@ -489,12 +492,11 @@ class _TimelinePageState extends State<TimelinePage> {
     _lastCoalescedRecords = List<Map<String, dynamic>>.from(
       DatabaseService.instance.peekTimelineRecordsForDate(widget.selectedDate),
     );
-    DatabaseService.instance.peekTimelineRowVmsForDate(widget.selectedDate);
     _recordsStream = DatabaseService.instance.recordsStream(
       widget.selectedDate,
     );
     _recordsSub = _recordsStream!.listen((records) {
-      if (!mounted) return;
+      if (!mounted || !widget.isActivePage) return;
       if (records.isNotEmpty) {
         _lastCoalescedRecords = List<Map<String, dynamic>>.from(records);
       }
@@ -502,19 +504,16 @@ class _TimelinePageState extends State<TimelinePage> {
     });
   }
 
-  void _rememberCoalescedIfAuthoritative(
-    List<Map<String, dynamic>> records,
-    AsyncSnapshot<List<Map<String, dynamic>>> snap,
-  ) {
-    if (records.isNotEmpty) {
-      _lastCoalescedRecords = List<Map<String, dynamic>>.from(records);
-    } else if (snap.connectionState == ConnectionState.active ||
-        snap.connectionState == ConnectionState.done) {
-      _lastCoalescedRecords = [];
+  List<Map<String, dynamic>> _recordsForListArea() {
+    if (_lastCoalescedRecords.isNotEmpty) {
+      return _lastCoalescedRecords;
     }
+    return DatabaseService.instance.peekTimelineRecordsForDate(
+      widget.selectedDate,
+    );
   }
 
-  /// List / stats / virtualized record list (VMs from Brain cache).
+  /// List / stats / virtualized record list (lazy VMs in list builder).
   Widget _buildTimelineRecordsArea(BuildContext context) {
     if (widget.showStatsView) {
       final records = DatabaseService.instance.peekTimelineRecordsForDate(
@@ -538,10 +537,8 @@ class _TimelinePageState extends State<TimelinePage> {
       );
     }
 
-    final rows = DatabaseService.instance.peekTimelineRowVmsForDate(
-      widget.selectedDate,
-    );
-    if (rows.isEmpty) {
+    final recordMaps = _recordsForListArea();
+    if (recordMaps.isEmpty) {
       return EmptyStatePlaceholder(
         icon: Icons.schedule_rounded,
         titleL10nKey: 'empty_timeline_title',
@@ -551,7 +548,8 @@ class _TimelinePageState extends State<TimelinePage> {
       );
     }
     return _TimelineLazyRecordList(
-      rows: rows,
+      recordMaps: recordMaps,
+      dateKey: widget.selectedDateString,
       selectedDate: widget.selectedDate,
       selectedDateString: widget.selectedDateString,
       onStop: widget.onStopRecord,
@@ -582,6 +580,10 @@ class _TimelinePageState extends State<TimelinePage> {
       return;
     }
     if (!widget.isActivePage) {
+      if (oldWidget.isActivePage) {
+        _recordsSub?.cancel();
+        _recordsSub = null;
+      }
       return;
     }
     if (oldWidget.selectedDate.year != widget.selectedDate.year ||
@@ -605,6 +607,9 @@ class _TimelinePageState extends State<TimelinePage> {
         child: SizedBox.expand(),
       );
     }
+    P0DateNavDiag.timelineBuild(
+      'date=${widget.selectedDateString} records=${_lastCoalescedRecords.length}',
+    );
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -726,7 +731,8 @@ class _TimelinePageState extends State<TimelinePage> {
 /// Virtualized timeline record list вЂ” no [StreamBuilder] over full list; active overlay optional.
 class _TimelineLazyRecordList extends StatefulWidget {
   const _TimelineLazyRecordList({
-    required this.rows,
+    required this.recordMaps,
+    required this.dateKey,
     required this.selectedDate,
     required this.selectedDateString,
     required this.onStop,
@@ -734,7 +740,8 @@ class _TimelineLazyRecordList extends StatefulWidget {
     required this.onEdit,
   });
 
-  final List<TimelineRecordRowVm> rows;
+  final List<Map<String, dynamic>> recordMaps;
+  final String dateKey;
   final DateTime selectedDate;
   final String selectedDateString;
   final Future<void> Function(String systemRowId) onStop;
@@ -750,8 +757,14 @@ class _TimelineLazyRecordListState extends State<_TimelineLazyRecordList> {
   Map<String, dynamic>? _active;
   String? _activeOtherDayStr;
 
+  bool _mapLooksRunning(Map<String, dynamic> data) {
+    final type = (data['type'] as String? ?? 'record');
+    if (type != 'record') return false;
+    return CategoryServiceExtension.isRecordMapActuallyRunning(data);
+  }
+
   bool get _needsActiveOverlay =>
-      widget.rows.any((r) => r.isCanonicalRunning) ||
+      widget.recordMaps.any(_mapLooksRunning) ||
       _isToday(widget.selectedDate);
 
   @override
@@ -787,10 +800,10 @@ class _TimelineLazyRecordListState extends State<_TimelineLazyRecordList> {
   @override
   Widget build(BuildContext context) {
     final sw = Stopwatch()..start();
-    final rows = widget.rows;
+    final maps = widget.recordMaps;
     if (kPerfDiagnosisEnabled) {
       PerfDiag.instance.logTimelineVisibleBuild(
-        itemCount: rows.length,
+        itemCount: maps.length,
         ms: sw.elapsedMilliseconds,
       );
     }
@@ -800,35 +813,39 @@ class _TimelineLazyRecordListState extends State<_TimelineLazyRecordList> {
       cacheExtent: 320,
       addAutomaticKeepAlives: false,
       addRepaintBoundaries: true,
-      itemCount: rows.length,
+      itemCount: maps.length,
       itemBuilder: (context, index) {
         PerfDiag.instance.logTimelineRowBuildTick();
-        final vm = rows[index];
+        final data = maps[index];
+        final vm = DatabaseService.instance.timelineRowVmForRecordMapOrNull(
+          widget.dateKey,
+          data,
+        );
+        final biz = (data['record_id'] ?? '').toString().trim();
         final tileKey = ValueKey<String>(
-          vm.businessRecordId.isNotEmpty
-              ? vm.businessRecordId
-              : 'record-fallback-$index',
+          biz.isNotEmpty ? biz : 'record-fallback-$index',
         );
         String? otherDayBanner;
         if (_active != null &&
-            vm.businessRecordId.isNotEmpty &&
-            vm.businessRecordId ==
-                (_active!['record_id'] ?? '').toString().trim() &&
+            biz.isNotEmpty &&
+            biz == (_active!['record_id'] ?? '').toString().trim() &&
             _activeOtherDayStr != null &&
             _activeOtherDayStr!.isNotEmpty &&
             _activeOtherDayStr != widget.selectedDateString) {
           otherDayBanner = _activeOtherDayStr;
         }
         return Padding(
-          padding: EdgeInsets.only(bottom: index < rows.length - 1 ? 10 : 0),
+          padding: EdgeInsets.only(bottom: index < maps.length - 1 ? 10 : 0),
           child: KeyedSubtree(
             key: tileKey,
-            child: _TimelineRecordCard(
-              vm: vm,
-              currentActivityFromDate: otherDayBanner,
-              onStop: widget.onStop,
-              onDelete: widget.onDelete,
-              onEdit: () => widget.onEdit(vm.rawData),
+            child: RepaintBoundary(
+              child: _TimelineRecordCard(
+                vm: vm,
+                currentActivityFromDate: otherDayBanner,
+                onStop: widget.onStop,
+                onDelete: widget.onDelete,
+                onEdit: () => widget.onEdit(data),
+              ),
             ),
           ),
         );
