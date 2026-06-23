@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time View CardPlan responsive visual fix [wip]
+* **`plan_time_task_card.dart`:** [wip] Remove list-row minHeight on explicit Time View density path; `_TimeViewResponsiveShell` / `_TimeViewVerticalShell` anchors (fixed rail + expanding center + menu cluster); `_TimeViewTagsRow` shows all tags; density bodies match CardPlan refs at 38–95px+ without fixed card width.
+* **`plan_card.dart`:** unchanged — still passes parent width + `timelineBlockHeightPx` only.
+
 ## [2026-06-15] - P0U.4D: Timeline first-swipe diagnostics only [wip]
 * **`p0u_timeline_swipe_diag.dart`:** [wip] First-swipe target logging, cache state, step timings, frame jank summary.
 * **`timeline_view.dart`:** [wip] Correct swipe target date; TARGET_* probes on first swipe only.
