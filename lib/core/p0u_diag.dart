@@ -203,4 +203,55 @@ abstract final class P0uDiag {
       '[P0U_PROFILE_SERVER_REFRESH_DONE] changed=$changed ms=$ms',
     );
   }
+
+  static bool _timelineFirstBuildLogged = false;
+
+  static void timelineFirstBuild({
+    required String date,
+    required int records,
+    required int ms,
+  }) {
+    if (_timelineFirstBuildLogged) return;
+    _timelineFirstBuildLogged = true;
+    debugPrint(
+      '[P0U_TIMELINE_FIRST_BUILD] date=$date records=$records ms=$ms',
+    );
+  }
+
+  static bool _timelineFirstListBuildLogged = false;
+
+  static void timelineFirstListBuild({
+    required String date,
+    required int rows,
+    required int ms,
+  }) {
+    if (_timelineFirstListBuildLogged) return;
+    _timelineFirstListBuildLogged = true;
+    debugPrint(
+      '[P0U_TIMELINE_FIRST_LIST_BUILD] date=$date rows=$rows ms=$ms',
+    );
+  }
+
+  static bool _timelineFirstPaintLogged = false;
+
+  static void timelineFirstPaintSource({
+    required String source,
+    required int records,
+    required int ms,
+  }) {
+    if (_timelineFirstPaintLogged) return;
+    _timelineFirstPaintLogged = true;
+    debugPrint(
+      '[P0U_TIMELINE_FIRST_PAINT_SOURCE] source=$source records=$records ms=$ms',
+    );
+  }
+
+  static void timelinePostFramePatch({
+    required int records,
+    required int ms,
+  }) {
+    debugPrint(
+      '[P0U_TIMELINE_POST_FRAME_PATCH] records=$records ms=$ms',
+    );
+  }
 }

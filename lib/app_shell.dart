@@ -15,8 +15,9 @@ import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_startup_diag.dart';
+import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/shell_adaptive.dart';
@@ -503,12 +504,27 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
     _rules = List.from(DatabaseService.instance.rules);
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
-    unawaited(_loadTasksAndExtras());
-    unawaited(() async {
-      await DatabaseService.instance.offlineSync.bootstrapFromOutboxes(
-        pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      P0uStartupDiag.deferred(
+        name: 'timelineTasksLoad',
+        reason: 'notNeededForFirstFrame',
       );
-    }());
+      unawaited(_loadTasksAndExtras());
+      P0uStartupDiag.deferred(
+        name: 'syncBootstrap',
+        reason: 'canRunAfterShell',
+      );
+      unawaited(() async {
+        await DatabaseService.instance.offlineSync.bootstrapFromOutboxes(
+          pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
+        );
+      }());
+      P0uStartupDiag.deferred(
+        name: 'sttInit',
+        reason: 'notNeededForFirstFrame',
+      );
+      unawaited(_ensureSpeechReady());
+    });
 
     _notificationSub = DatabaseService.instance.notifications.listen((msg) {
       if (!mounted || msg == null || msg.isEmpty) return;
@@ -529,13 +545,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         _onDeviceLocalCalendarDayWatchTick();
       },
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      P0uStartupDiag.deferred(
-        name: 'sttInit',
-        reason: 'notNeededForFirstFrame',
-      );
-      unawaited(_ensureSpeechReady());
-    });
   }
 
   void _onDeviceLocalCalendarDayWatchTick() {
@@ -1999,7 +2008,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   }
 
   Widget _buildTimelineSwipeTab() {
-    return TimelineSwipeWrapper(
+    final sw = Stopwatch()..start();
+    final child = TimelineSwipeWrapper(
       selectedDate: _selectedDate,
       shellTabActive: _shellPageIndex == 0,
       onDateChanged: (d) => _applySharedSelectedDate(
@@ -2021,10 +2031,18 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       rules: _rules,
       onShowEditRecordSheet: _showEditRecordSheetForTimeline,
     );
+    sw.stop();
+    P0uStartupDiag.tabBuild(
+      tab: 'Timeline',
+      active: _shellPageIndex == 0,
+      ms: sw.elapsedMilliseconds,
+    );
+    return child;
   }
 
   Widget _buildPlanningSwipeTab() {
-    return PlanningSwipeWrapper(
+    final sw = Stopwatch()..start();
+    final child = PlanningSwipeWrapper(
       selectedDate: _selectedDate,
       shellTabActive: _shellPageIndex == 1,
       onDateChanged: (d) => _applySharedSelectedDate(_dateOnly(d)),
@@ -2033,6 +2051,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       onStartRecordFromTask: _startRecordFromPlanning,
       onEditTask: (task) => _openEditDialog(task),
     );
+    sw.stop();
+    P0uStartupDiag.tabBuild(
+      tab: 'Plans',
+      active: _shellPageIndex == 1,
+      ms: sw.elapsedMilliseconds,
+    );
+    return child;
   }
 
   Widget _buildCalendarTab() {
@@ -2098,10 +2123,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     return AnimatedBuilder(
       animation: currentLocale,
       builder: (context, _) {
+        final shellSw = Stopwatch()..start();
         final scheme = Theme.of(context).colorScheme;
         _shellLayout.applyShellFrame(_shellPageIndex);
         final loc = currentLocale.value;
-        return AnnotatedRegion<SystemUiOverlayStyle>(
+        final builtTabs = kShellDeferHiddenTabsUntilFirstFrame ? 1 : pages.length;
+        final shell = AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: Brightness.light,
@@ -2170,7 +2197,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                           routeTab: _shellTabDiagnosticLabel(_shellPageIndex),
                         ),
                         Expanded(
-                          child: PerfFlags.useLazyIndexedStack
+                          child: kShellDeferHiddenTabsUntilFirstFrame
+                              ? LazyIndexedStack(
+                                  index: _shellPageIndex,
+                                  children: pages,
+                                )
+                              : PerfFlags.useLazyIndexedStack
                               ? LazyIndexedStack(
                                   index: _shellPageIndex,
                                   children: pages,
@@ -2280,6 +2312,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
             ),
           ),
         );
+        shellSw.stop();
+        P0uStartupDiag.shellBuild(
+          activeTab: _shellTabDiagnosticLabel(_shellPageIndex),
+          ms: shellSw.elapsedMilliseconds,
+          builtTabs: builtTabs,
+        );
+        return shell;
       },
     );
   }

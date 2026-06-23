@@ -518,11 +518,27 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   void initState() {
     super.initState();
+    final paintSw = Stopwatch()..start();
     _lastCoalescedRecords = List<Map<String, dynamic>>.from(
       DatabaseService.instance.peekTimelineRecordsForDate(_visibleDate),
     );
+    paintSw.stop();
     if (widget.isActivePage) {
-      _initStream();
+      P0uDiag.timelineFirstPaintSource(
+        source: 'dayIndex',
+        records: _lastCoalescedRecords.length,
+        ms: paintSw.elapsedMilliseconds,
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !widget.isActivePage) return;
+        final patchSw = Stopwatch()..start();
+        _initStream();
+        patchSw.stop();
+        P0uDiag.timelinePostFramePatch(
+          records: _lastCoalescedRecords.length,
+          ms: patchSw.elapsedMilliseconds,
+        );
+      });
     }
     P0PContentDiag.timelineChromeStatic();
   }
@@ -559,10 +575,11 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   Widget build(BuildContext context) {
     perfRebuildTick('TimelinePage');
+    final buildSw = Stopwatch()..start();
     P0DateNavDiag.timelineBuild(
       'date=${_dateKey(_visibleDate)} records=${_lastCoalescedRecords.length}',
     );
-    return Scaffold(
+    final body = Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         top: false,
@@ -750,6 +767,15 @@ class _TimelinePageState extends State<TimelinePage> {
         ),
       ),
     );
+    buildSw.stop();
+    if (widget.isActivePage) {
+      P0uDiag.timelineFirstBuild(
+        date: _dateKey(_visibleDate),
+        records: _lastCoalescedRecords.length,
+        ms: buildSw.elapsedMilliseconds,
+      );
+    }
+    return body;
   }
 }
 
@@ -810,23 +836,15 @@ class _TimelineDayCardListState extends State<_TimelineDayCardList>
   Widget build(BuildContext context) {
     super.build(context);
     final sw = Stopwatch()..start();
-    final entry = DatabaseService.instance.timelineBodyEntryForDate(widget.date);
     final recordMaps = _recordMaps();
     sw.stop();
-    if (MountedDayRegistry.isMounted('Timeline', widget.dateKey)) {
-      P0SMountDiag.timelinePageHit(date: widget.dateKey);
-    } else {
-      P0SMountDiag.timelinePageMiss(
+    if (widget.isActive) {
+      P0uDiag.timelineFirstListBuild(
         date: widget.dateKey,
-        insideWindow: true,
-        reason: 'notMountedYet',
+        rows: recordMaps.length,
+        ms: sw.elapsedMilliseconds,
       );
     }
-    P0SMountDiag.timelineBodyMounted(
-      date: widget.dateKey,
-      records: recordMaps.length,
-      ms: sw.elapsedMilliseconds,
-    );
 
     if (widget.showStatsView) {
       if (recordMaps.isEmpty) {

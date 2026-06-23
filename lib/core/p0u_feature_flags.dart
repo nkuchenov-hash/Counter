@@ -12,3 +12,7 @@ const bool kUseP0tMountedStrip = false;
 /// Verbose plan time-zone projection logs (debug/profile only).
 /// Release web/APK must never flood console with per-row TIME_TZ_PROJECT spam.
 const bool kVerbosePlanTimeTzProjectionLogs = false;
+
+/// Shell: build only the active tab until user visits others (P0U.2).
+/// Uses [LazyIndexedStack] — avoids Planning/Calendar/Lists/Profile first-frame cost.
+const bool kShellDeferHiddenTabsUntilFirstFrame = true;

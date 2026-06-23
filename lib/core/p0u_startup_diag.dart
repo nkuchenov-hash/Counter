@@ -1,14 +1,19 @@
 import 'package:counter/core/p0u_platform.dart';
 import 'package:flutter/foundation.dart';
 
-/// P0U.1 boot stage timings — summary-level only (Performance Kill Switch Law).
+/// P0U.1+ boot / first-frame gap timings — summary-level only.
 abstract final class P0uStartupDiag {
   static final Stopwatch _sw = Stopwatch();
   static bool _started = false;
   static final List<({String name, int ms})> _stageMs = [];
   static int? _firstFrameMs;
+  static int? _firstShellBuildTotalMs;
   static int? _interactiveMs;
   static bool _summaryEmitted = false;
+  static bool _frameGapSummaryEmitted = false;
+
+  static String _slowestWidget = '—';
+  static int _slowestWidgetMs = 0;
 
   static void ensureStarted() {
     if (_started) return;
@@ -16,6 +21,8 @@ abstract final class P0uStartupDiag {
     _sw.start();
     bootStage(name: 'mainStart', ms: 0, blocksFirstFrame: true);
   }
+
+  static int get totalMs => _sw.elapsedMilliseconds;
 
   static void bootStage({
     required String name,
@@ -31,7 +38,8 @@ abstract final class P0uStartupDiag {
     );
     if (name == 'firstFrame') {
       _firstFrameMs = total;
-      _tryEmitSummary();
+      _tryEmitBootSummary();
+      emitFrameGapSummary();
     }
   }
 
@@ -57,8 +65,19 @@ abstract final class P0uStartupDiag {
     debugPrint('[P0U_BOOT_DEFERRED] name=$name reason=$reason');
   }
 
+  static void hiddenTabDeferred({required String tab, required String reason}) {
+    debugPrint('[P0U_HIDDEN_TAB_DEFERRED] tab=$tab reason=$reason');
+  }
+
+  static void hiddenTabActivated({required String tab, required int ms}) {
+    debugPrint('[P0U_HIDDEN_TAB_ACTIVATED] tab=$tab ms=$ms');
+    _trackWidgetBuild('tab:$tab', ms);
+  }
+
   static void markFirstShellBuild() {
+    _firstShellBuildTotalMs = _sw.elapsedMilliseconds;
     bootStage(name: 'firstShellBuild', ms: 0, blocksFirstFrame: true);
+    debugPrint('[P0U_FRAME_GAP_START] totalMs=$_firstShellBuildTotalMs');
   }
 
   static void markFirstFrame() {
@@ -69,10 +88,50 @@ abstract final class P0uStartupDiag {
   static void markInteractive() {
     if (_interactiveMs != null) return;
     _interactiveMs = _sw.elapsedMilliseconds;
-    _tryEmitSummary();
+    _tryEmitBootSummary();
   }
 
-  static void _tryEmitSummary() {
+  static void shellBuild({
+    required String activeTab,
+    required int ms,
+    required int builtTabs,
+  }) {
+    _trackWidgetBuild('shell:$activeTab', ms);
+    debugPrint(
+      '[P0U_SHELL_BUILD] activeTab=$activeTab ms=$ms builtTabs=$builtTabs',
+    );
+  }
+
+  static void tabBuild({
+    required String tab,
+    required bool active,
+    required int ms,
+  }) {
+    final key = 'tabBuild:$tab';
+    _trackWidgetBuild(key, ms);
+    debugPrint('[P0U_TAB_BUILD] tab=$tab active=$active ms=$ms');
+  }
+
+  static void _trackWidgetBuild(String key, int ms) {
+    if (ms <= _slowestWidgetMs) return;
+    _slowestWidgetMs = ms;
+    _slowestWidget = key;
+  }
+
+  static void emitFrameGapSummary() {
+    if (_frameGapSummaryEmitted) return;
+    _frameGapSummaryEmitted = true;
+    final shellMs = _firstShellBuildTotalMs;
+    final frameMs = _firstFrameMs;
+    if (shellMs == null || frameMs == null) return;
+    final gap = frameMs - shellMs;
+    debugPrint(
+      '[P0U_FRAME_GAP_SUMMARY] shellToFrameMs=$gap '
+      'slowestWidget=$_slowestWidget slowestMs=$_slowestWidgetMs',
+    );
+  }
+
+  static void _tryEmitBootSummary() {
     if (_summaryEmitted || _firstFrameMs == null) return;
     _summaryEmitted = true;
     var slowest = 'mainStart';

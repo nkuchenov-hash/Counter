@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.2: shrink firstShellBuild→firstFrame gap [wip]
+* **`p0u_startup_diag.dart`:** [wip] `[P0U_FRAME_GAP_*]` / `[P0U_SHELL_BUILD]` / `[P0U_TAB_BUILD]` / `[P0U_HIDDEN_TAB_*]` diagnostics.
+* **`app_shell.dart`:** [wip] `kShellDeferHiddenTabsUntilFirstFrame` → `LazyIndexedStack` (active tab only on first paint); defer timeline tasks + shell sync bootstrap post-frame.
+* **`lazy_indexed_stack.dart`:** [wip] Boot defer + tab activation logs.
+* **`timeline_view.dart`:** [wip] First paint from `peekTimelineRecordsForDate` only; defer `recordsStream` until post-frame; remove hot-path `timelineBodyEntryForDate`.
+* P0U recovery preserved.
+
 ## [2026-06-15] - P0U.1: startup timing diagnostics + boot hot-path cleanup [wip]
 * **`p0u_startup_diag.dart`:** [wip] `[P0U_BOOT_STAGE]` / `[P0U_BOOT_DEFERRED]` / `[P0U_BOOT_SUMMARY]` stopwatch logger.
 * **`main.dart`:** [wip] Boot stage timings; defer non-current `initializeDateFormatting` locales; first shell/first frame markers.
