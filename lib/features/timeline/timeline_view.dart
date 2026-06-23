@@ -7,7 +7,6 @@ import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_platform.dart';
-import 'package:counter/core/pre_white_swipe_restore.dart';
 import 'package:counter/core/widgets/eager_day_content_strip.dart';
 import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:counter/core/perf_diag.dart';
@@ -313,11 +312,6 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             if (n is ScrollStartNotification && n.dragDetails != null) {
               _settleGate.onUserDragStart();
               _swipeFromDateKey = _dateKeyFromDate(visibleDate);
-              PreWhiteSwipeRestoreDiag.log(
-                screen: 'Timeline',
-                event: 'start',
-                date: _swipeFromDateKey!,
-              );
               PerfDiag.instance.dateSwipeStart(
                 section: 'Timeline',
                 fromDate: _swipeFromDateKey!,
@@ -345,11 +339,6 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
                   if (!mounted) return;
                   final committed = _dateForIndex(page);
                   _schedulePrefetch(committed);
-                  PreWhiteSwipeRestoreDiag.log(
-                    screen: 'Timeline',
-                    event: 'commit',
-                    date: _dateKeyFromDate(committed),
-                  );
                   widget.onDateChanged(_dateOnly(committed));
                 },
               );

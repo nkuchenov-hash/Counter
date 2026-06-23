@@ -2,6 +2,8 @@ import 'dart:async';
 
 /// Coordinates horizontal day pager: blocks external sync during user drag,
 /// debounces shell date commits, and ignores duplicate page targets.
+///
+/// **Runtime behavior:** required by Timeline/Plans [PageView] date swipe — not diagnostic.
 final class DatePagerSettleGate {
   DatePagerSettleGate({this.commitDebounce = const Duration(milliseconds: 36)});
 

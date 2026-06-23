@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-23] - P0 diagnostic cleanup: delete dead lib/core trace/diag files [wip]
+* **Deleted:** `p0_date_nav_diag`, `p0n_perf_diag`, `p0o_warm_diag`, `p0r_prebuild_diag`, `p0s_mount_diag`, `p0t_diag`, `p0p_content_diag`, `pre_white_swipe_restore`, `mounted_day_registry`, `app_diag`, `time_drop_trace` + all call sites.
+* **Kept:** `p0u_feature_flags`, `p0u_diag`, `p0u_startup_diag` (defer queue), `perf_diag`/`perf_flags`, `plan_dup_trace`, `app_build_info`, `date_pager_settle_gate`.
+* **Logging:** boot/frame-gap summary only in debug; release guard + APP_BUILD unchanged.
+
 ## [2026-06-23] - P0 Planning duplicate cards: warmWindow guard + cache/stream scrub [wip]
 * **`p0u_feature_flags.dart`:** [wip] `kPlansWarmWindowEnabled=false` — P0 duplicate safety; no warm cache mutation before Plans opens.
 * **`plan_service.dart`:** [wip] `scrubPlanningTasksForLocalCache` on restore/day cache/merge; idempotent `expandRecurringPlans`; mandatory stream dedupe in `_mergePlanningOptimistic`; virt blocked from `_allPlansUserCache`.

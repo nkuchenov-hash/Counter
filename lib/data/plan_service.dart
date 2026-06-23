@@ -2506,36 +2506,10 @@ extension PlanServiceExtension on DatabaseService {
     );
   }
 
-  void _logPlansWarmMemory() {
-    var taskCount = 0;
-    var approxKb = 0;
-    for (final s in _plansWarm.snapshots) {
-      taskCount += s.tasks.length;
-      approxKb += s.tasks.length * 256 ~/ 1024;
-    }
-    P0OWarmDiag.memory(
-      screen: 'Plans',
-      cachedDays: _plansWarm.cachedDayCount,
-      items: taskCount,
-      approxKb: approxKb,
-    );
-  }
-
   void ensurePlansWarmWindow(DateTime center) {
     // P0 duplicate safety: no Planning warm cache mutation before user opens Plans.
     if (!kPlansWarmWindowEnabled) return;
     _plansWarm.ensureInitialWindow(center, _buildPlansDaySnapshot);
-    P0OWarmDiag.plansWindow(
-      center: '${center.year}-${_two(center.month)}-${_two(center.day)}',
-      from: _plansWarm.windowFrom != null
-          ? '${_plansWarm.windowFrom!.year}-${_two(_plansWarm.windowFrom!.month)}-${_two(_plansWarm.windowFrom!.day)}'
-          : '—',
-      to: _plansWarm.windowTo != null
-          ? '${_plansWarm.windowTo!.year}-${_two(_plansWarm.windowTo!.month)}-${_two(_plansWarm.windowTo!.day)}'
-          : '—',
-      cachedDays: _plansWarm.cachedDayCount,
-    );
-    _logPlansWarmMemory();
   }
 
   /// P0T: critical ±1 sync at boot; full mounted window in background.
@@ -2565,12 +2539,6 @@ extension PlanServiceExtension on DatabaseService {
   void schedulePlansMountedWindowBootBackground(DateTime center) {
     unawaited(Future.microtask(() {
       preparePlansMountedWindowBoot(center);
-      P0tDiag.memory(
-        screen: 'Plans',
-        mountedBodies: MountedDayWindow(center: center).length,
-        renderSnapshots: P0tRenderSnapshotCache.instance.plansCount,
-        approxKb: P0tRenderSnapshotCache.instance.plansCount * 48,
-      );
     }));
   }
 
@@ -2582,21 +2550,9 @@ extension PlanServiceExtension on DatabaseService {
     final key = p0tDateKey(wallDay);
     final snap = P0tRenderSnapshotCache.instance.peekPlans(key);
     if (snap != null && snap.ready) {
-      P0tDiag.readyCheck(
-        screen: 'Plans',
-        date: key,
-        ready: true,
-        cards: snap.cards.length,
-      );
       return true;
     }
     final missing = snap?.missing ?? _plansReadyMissingReason(wallDay);
-    P0tDiag.readyCheck(
-      screen: 'Plans',
-      date: key,
-      ready: false,
-      missing: missing,
-    );
     return false;
   }
 
@@ -2686,10 +2642,6 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   void preparePlansCriticalRenderReady(DateTime center) {
-    P0tDiag.criticalReadyStart(
-      screen: 'Plans',
-      dates: 'yesterday,today,tomorrow',
-    );
     final sw = Stopwatch()..start();
     var ready = 0;
     for (final offset in [-1, 0, 1]) {
@@ -2699,13 +2651,6 @@ extension PlanServiceExtension on DatabaseService {
       if (isPlansDateFullyReady(day)) ready++;
     }
     sw.stop();
-    P0tDiag.criticalReadyDone(
-      screen: 'Plans',
-      ready: ready,
-      total: 3,
-      ms: sw.elapsedMilliseconds,
-    );
-    P0tDiag.plansDoubleLoadRemoved();
   }
 
   int get plansWarmWindowTaskEstimate {
@@ -2718,22 +2663,7 @@ extension PlanServiceExtension on DatabaseService {
 
   void extendPlansWarmWindowIfNeeded(DateTime center) {
     if (!kPlansWarmWindowEnabled) return;
-    final sw = Stopwatch()..start();
-    final direction = _plansWarm.extendIfNeeded(center, _buildPlansDaySnapshot);
-    sw.stop();
-    if (direction != null) {
-      P0OWarmDiag.plansExtend(
-        direction: direction,
-        from: _plansWarm.windowFrom != null
-            ? '${_plansWarm.windowFrom!.year}-${_two(_plansWarm.windowFrom!.month)}-${_two(_plansWarm.windowFrom!.day)}'
-            : '—',
-        to: _plansWarm.windowTo != null
-            ? '${_plansWarm.windowTo!.year}-${_two(_plansWarm.windowTo!.month)}-${_two(_plansWarm.windowTo!.day)}'
-            : '—',
-        ms: sw.elapsedMilliseconds,
-      );
-      _logPlansWarmMemory();
-    }
+    _plansWarm.extendIfNeeded(center, _buildPlansDaySnapshot);
   }
 
   PlansDaySnapshot plansWarmSnapshotForDate(DateTime wallDay) {
@@ -2746,23 +2676,11 @@ extension PlanServiceExtension on DatabaseService {
     final existing = _plansWarm.peek(key);
     if (existing != null && existing.cacheSignature == sig) {
       lookupSw.stop();
-      P0OWarmDiag.plansSnapshot(
-        date: key,
-        state: existing.knownEmpty ? 'empty' : 'hit',
-        count: existing.tasks.length,
-        ms: lookupSw.elapsedMilliseconds,
-      );
       return existing;
     }
     final built = _buildPlansDaySnapshot(wallDay);
     _plansWarm.put(key, built);
     lookupSw.stop();
-    P0OWarmDiag.plansSnapshot(
-      date: key,
-      state: existing == null ? 'miss' : 'refresh',
-      count: built.tasks.length,
-      ms: lookupSw.elapsedMilliseconds,
-    );
     return built;
   }
 
@@ -2802,11 +2720,6 @@ extension PlanServiceExtension on DatabaseService {
     final cache = plansDayBodyCache;
     final existing = cache.peek(key);
     if (existing != null && existing.bodyReady) {
-      P0RPrebuildDiag.bodyCacheHit(
-        screen: 'Plans',
-        date: key,
-        source: existing.source,
-      );
       return existing;
     }
     if (!allowEmergencyBuild) {
@@ -2819,21 +2732,10 @@ extension PlanServiceExtension on DatabaseService {
       );
     }
     final inside = cache.isInsideWarmRange(key);
-    P0RPrebuildDiag.bodyCacheMiss(
-      screen: 'Plans',
-      date: key,
-      insideWarmRange: inside,
-      reason: inside ? 'notPrebuiltYet' : 'outsideWindow',
-    );
     final sw = Stopwatch()..start();
     final built = _buildPlansBodyEntry(wallDay, source: 'emergencySyncBuild');
     sw.stop();
     cache.put(key, built);
-    P0RPrebuildDiag.emergencySyncBuild(
-      screen: 'Plans',
-      date: key,
-      ms: sw.elapsedMilliseconds,
-    );
     return built;
   }
 
@@ -2893,16 +2795,6 @@ extension PlanServiceExtension on DatabaseService {
         count++;
       }
       sw.stop();
-      P0RPrebuildDiag.diskRestore(
-        screen: 'Plans',
-        snapshots: count,
-        ms: sw.elapsedMilliseconds,
-      );
-      P0SMountDiag.diskRestore(
-        screen: 'Plans',
-        snapshots: count,
-        ms: sw.elapsedMilliseconds,
-      );
     } catch (_) {}
   }
 
@@ -2926,16 +2818,6 @@ extension PlanServiceExtension on DatabaseService {
           jsonEncode(out),
         );
         sw.stop();
-        P0RPrebuildDiag.diskSave(
-          screen: 'Plans',
-          snapshots: out.length,
-          ms: sw.elapsedMilliseconds,
-        );
-        P0SMountDiag.diskSave(
-          screen: 'Plans',
-          snapshots: out.length,
-          ms: sw.elapsedMilliseconds,
-        );
       } catch (_) {}
     }());
   }
@@ -2944,36 +2826,15 @@ extension PlanServiceExtension on DatabaseService {
     final cache = plansDayBodyCache;
     final centerKey = '${center.year}-${_two(center.month)}-${_two(center.day)}';
     cache.setCenter(centerKey);
-    P0RPrebuildDiag.criticalStart(
-      screen: 'Plans',
-      dates: 'yesterday,today,tomorrow',
-    );
     final sw = Stopwatch()..start();
     for (final offset in [-1, 0, 1]) {
       final day = DateTime(center.year, center.month, center.day)
           .add(Duration(days: offset));
       final entry = _buildPlansBodyEntry(day, source: 'criticalPrebuild');
       cache.put(entry.dateKey, entry);
-      P0RPrebuildDiag.prebuildBody(
-        screen: 'Plans',
-        date: entry.dateKey,
-        priority: offset,
-        ms: 0,
-      );
     }
     sw.stop();
-    P0RPrebuildDiag.criticalDone(
-      screen: 'Plans',
-      count: 3,
-      totalMs: sw.elapsedMilliseconds,
-    );
     logPlansBootAdjacentReady(center);
-    P0RPrebuildDiag.plansMetadataReady(
-      tags: _userTagsCatalogCache.length,
-      categories: _rules.length,
-      source: 'memory',
-    );
-    P0RPrebuildDiag.plansNoPageLoaders();
   }
 
   void logPlansBootAdjacentReady(DateTime center) {
@@ -2988,14 +2849,6 @@ extension PlanServiceExtension on DatabaseService {
       final key = '${day.year}-${_two(day.month)}-${_two(day.day)}';
       final cache = plansDayBodyCache;
       final snap = _plansWarm.peek(key);
-      P0RPrebuildDiag.bootAdjacentReady(
-        screen: 'Plans',
-        date: label,
-        dataReady: cache.isDataReady(key) ||
-            snap != null ||
-            plansWarmSnapshotForDate(day).knownEmpty,
-        bodyReady: cache.isBodyReady(key),
-      );
     }
   }
 
@@ -3006,11 +2859,6 @@ extension PlanServiceExtension on DatabaseService {
     final centerKey = '${center.year}-${_two(center.month)}-${_two(center.day)}';
     plansDayBodyCache.setCenter(centerKey);
     unawaited(() async {
-      P0RPrebuildDiag.windowStart(
-        screen: 'Plans',
-        center: centerKey,
-        radius: RenderedDayBodyConstants.radius,
-      );
       final sw = Stopwatch()..start();
       final total = RenderedDayBodyConstants.radius * 2 + 1;
       var ready = 0;
@@ -3032,26 +2880,10 @@ extension PlanServiceExtension on DatabaseService {
         cache.put(key, entry);
         bodySw.stop();
         ready++;
-        P0RPrebuildDiag.prebuildBody(
-          screen: 'Plans',
-          date: key,
-          priority: offset,
-          ms: bodySw.elapsedMilliseconds,
-        );
         if (ready % 4 == 0 || ready == total) {
-          P0RPrebuildDiag.windowProgress(
-            screen: 'Plans',
-            ready: ready,
-            total: total,
-          );
         }
       }
       sw.stop();
-      P0RPrebuildDiag.windowDone(
-        screen: 'Plans',
-        ready: ready,
-        totalMs: sw.elapsedMilliseconds,
-      );
       plansDayBodyCache.logMemory(
         snapshotCount: _plansWarm.cachedDayCount,
         itemCount: _allPlansUserCache.length,

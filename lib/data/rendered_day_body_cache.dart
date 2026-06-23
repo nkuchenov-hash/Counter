@@ -1,4 +1,3 @@
-import 'package:counter/core/p0r_prebuild_diag.dart';
 import 'package:counter/data/models.dart';
 
 /// P0R: rendered day body cache constants.
@@ -149,12 +148,5 @@ final class DayBodyCache<TEntry> {
   }
 
   void logMemory({required int snapshotCount, required int itemCount}) {
-    P0RPrebuildDiag.memory(
-      screen: screen,
-      renderedBodies: _entries.length,
-      snapshots: snapshotCount,
-      items: itemCount,
-      approxKb: (_entries.length * 64) + (itemCount * 512 ~/ 1024),
-    );
   }
 }

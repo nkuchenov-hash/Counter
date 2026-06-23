@@ -1,7 +1,10 @@
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:flutter/foundation.dart';
 
-/// P0U stabilization markers — production-safe only (no per-frame/swipe spam).
+/// P0U production-safe markers only (release guard, errors, kill-switch notices).
+///
+/// **Do not re-add** per-frame/swipe/vm-build spam here. Boot timing lives in
+/// [P0uStartupDiag]. Feature kill switches live in [p0u_feature_flags.dart].
 abstract final class P0uDiag {
   static bool _adjVmWarmDisabledLogged = false;
 

@@ -1,9 +1,14 @@
 import 'dart:async';
 
-import 'package:counter/core/p0u_platform.dart';
 import 'package:flutter/foundation.dart';
 
-/// P0U.1+ boot / first-frame gap timings — summary-level only.
+/// Boot timing + post-first-frame deferral queue (P0U.3).
+///
+/// **Runtime behavior:** [scheduleAfterFirstFrame] must not be removed — Brain boot
+/// defers warm-window work until after the first frame.
+///
+/// **Logging:** release prints nothing. Debug/profile prints only [emitFrameGapSummary]
+/// and [_tryEmitBootSummary] (one line each). Per-stage spam removed.
 abstract final class P0uStartupDiag {
   static final Stopwatch _sw = Stopwatch();
   static bool _started = false;
@@ -25,9 +30,6 @@ abstract final class P0uStartupDiag {
     String name,
     Future<void> Function() work,
   ) {
-    if (!_firstFrameMarked) {
-      deferredBeforeFrameGuard(name: name, allowed: false);
-    }
     if (_firstFrameMarked) {
       unawaited(work());
       return;
@@ -35,30 +37,8 @@ abstract final class P0uStartupDiag {
     _afterFirstFrameQueue.add(work);
   }
 
-  static void deferredBeforeFrameGuard({
-    required String name,
-    required bool allowed,
-  }) {
-    if (kReleaseMode) return;
-    debugPrint(
-      '[P0U_DEFERRED_BEFORE_FRAME_GUARD] name=$name allowed=$allowed',
-    );
-  }
-
-  static int? _firstFrameArmedTotalMs;
-
   static void armFirstFrameMarker() {
     ensureStarted();
-    _firstFrameArmedTotalMs = _sw.elapsedMilliseconds;
-    if (kReleaseMode) return;
-    debugPrint(
-      '[P0U_FIRST_FRAME_MARKER_ARMED] totalMs=$_firstFrameArmedTotalMs',
-    );
-  }
-
-  static void deferredConfirmedAfterFrame({required String name}) {
-    if (kReleaseMode) return;
-    debugPrint('[P0U_BOOT_DEFERRED_CONFIRMED_AFTER_FRAME] name=$name');
   }
 
   static void _flushAfterFirstFrameQueue() {
@@ -86,15 +66,8 @@ abstract final class P0uStartupDiag {
   }) {
     ensureStarted();
     _stageMs.add((name: name, ms: ms));
-    final total = _sw.elapsedMilliseconds;
-    if (!kReleaseMode) {
-      debugPrint(
-        '[P0U_BOOT_STAGE] name=$name ms=$ms totalMs=$total '
-        'blocksFirstFrame=$blocksFirstFrame platform=${p0uPlatformLabel()}',
-      );
-    }
     if (name == 'firstFrame') {
-      _firstFrameMs = total;
+      _firstFrameMs = _sw.elapsedMilliseconds;
       _tryEmitBootSummary();
       emitFrameGapSummary();
     }
@@ -118,50 +91,25 @@ abstract final class P0uStartupDiag {
     }
   }
 
-  static void deferred({required String name, required String reason}) {
-    if (kReleaseMode) return;
-    debugPrint('[P0U_BOOT_DEFERRED] name=$name reason=$reason');
-  }
+  static void deferred({required String name, required String reason}) {}
 
-  static void hiddenTabDeferred({required String tab, required String reason}) {
-    if (kReleaseMode) return;
-    debugPrint('[P0U_HIDDEN_TAB_DEFERRED] tab=$tab reason=$reason');
-  }
+  static void deferredConfirmedAfterFrame({required String name}) {}
+
+  static void hiddenTabDeferred({required String tab, required String reason}) {}
 
   static void hiddenTabActivated({required String tab, required int ms}) {
-    if (kReleaseMode) return;
-    debugPrint('[P0U_HIDDEN_TAB_ACTIVATED] tab=$tab ms=$ms');
     _trackWidgetBuild('tab:$tab', ms);
   }
 
   static void markFirstShellBuild() {
     _firstShellBuildTotalMs = _sw.elapsedMilliseconds;
     bootStage(name: 'firstShellBuild', ms: 0, blocksFirstFrame: true);
-    if (kReleaseMode) return;
-    debugPrint('[P0U_FRAME_GAP_START] totalMs=$_firstShellBuildTotalMs');
   }
 
   static void markFirstFrame() {
     if (_firstFrameMs != null) return;
-    final callbackMs = _sw.elapsedMilliseconds;
-    if (!kReleaseMode) {
-      debugPrint('[P0U_FIRST_FRAME_CALLBACK_FIRED] totalMs=$callbackMs');
-    }
     _firstFrameMarked = true;
     bootStage(name: 'firstFrame', ms: 0, blocksFirstFrame: true);
-    final shellMs = _firstShellBuildTotalMs;
-    if (!kReleaseMode && shellMs != null) {
-      final gap = callbackMs - shellMs;
-      var reason = 'unknown';
-      if (gap > 2000) {
-        reason = 'callbackDelay';
-      } else if (_afterFirstFrameQueue.isNotEmpty) {
-        reason = 'deferredWork';
-      }
-      debugPrint(
-        '[P0U_FIRST_FRAME_MARKER_DELAY] shellToFrameMs=$gap reason=$reason',
-      );
-    }
     _flushAfterFirstFrameQueue();
   }
 
@@ -177,10 +125,6 @@ abstract final class P0uStartupDiag {
     required int builtTabs,
   }) {
     _trackWidgetBuild('shell:$activeTab', ms);
-    if (kReleaseMode) return;
-    debugPrint(
-      '[P0U_SHELL_BUILD] activeTab=$activeTab ms=$ms builtTabs=$builtTabs',
-    );
   }
 
   static void tabBuild({
@@ -188,10 +132,7 @@ abstract final class P0uStartupDiag {
     required bool active,
     required int ms,
   }) {
-    final key = 'tabBuild:$tab';
-    _trackWidgetBuild(key, ms);
-    if (kReleaseMode) return;
-    debugPrint('[P0U_TAB_BUILD] tab=$tab active=$active ms=$ms');
+    _trackWidgetBuild('tabBuild:$tab', ms);
   }
 
   static void _trackWidgetBuild(String key, int ms) {

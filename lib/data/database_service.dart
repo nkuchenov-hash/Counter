@@ -4,15 +4,9 @@ import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/plan_dup_trace.dart';
-import 'package:counter/core/p0_date_nav_diag.dart';
-import 'package:counter/core/p0n_perf_diag.dart';
-import 'package:counter/core/p0t_diag.dart';
 import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_startup_diag.dart';
-import 'package:counter/core/p0o_warm_diag.dart';
-import 'package:counter/core/p0s_mount_diag.dart';
-import 'package:counter/core/p0r_prebuild_diag.dart';
 import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/link_scalar.dart';

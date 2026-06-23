@@ -1,8 +1,5 @@
-import 'package:counter/core/mounted_day_registry.dart';
-import 'package:counter/core/p0s_mount_diag.dart';
 import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 
 typedef EagerDayItemBuilder =
     Widget Function(
@@ -293,21 +290,6 @@ class _MountedDaySlot extends StatefulWidget {
 }
 
 class _MountedDaySlotState extends State<_MountedDaySlot> {
-  @override
-  void initState() {
-    super.initState();
-    final key = MountedDayWindow.dateKey(widget.date);
-    MountedDayRegistry.markMounted(widget.screen, key);
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (widget.screen == 'Plans') {
-        P0SMountDiag.plansBodyMounted(date: key, cards: 0, ms: 0);
-      } else if (widget.screen == 'Timeline') {
-        P0SMountDiag.timelineBodyMounted(date: key, records: 0, ms: 0);
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) => widget.child;
 }

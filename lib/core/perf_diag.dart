@@ -3,6 +3,11 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+
+/// Opt-in perf diagnosis (`--dart-define=PERF_DIAG=true`). Default off — no runtime effect.
+///
+/// **Do not enable in release.** [perfRebuildTick] and [PerfDiag.instance] calls are no-ops
+/// unless [kPerfDiagnosisEnabled] is true. Used by shell/header for local bisect only.
 /// Master switch — off in release; enable locally with `--dart-define=PERF_DIAG=true`.
 const bool kPerfDiagnosisEnabled = bool.fromEnvironment(
   'PERF_DIAG',

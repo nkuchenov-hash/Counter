@@ -34,7 +34,6 @@ import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_platform.dart';
 import 'package:counter/core/p0u_startup_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
-import 'package:counter/core/p0t_diag.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 
 /// P0T stabilization: disable biometric gate until phone pass.
@@ -58,11 +57,6 @@ void main() async {
     } else {
       P0uDiag.androidError(exception: details.exception, stackTop: stackTop);
     }
-    P0tDiag.crashTrace(
-      screen: 'Boot',
-      exception: details.exception,
-      topFrame: stackTop,
-    );
     FlutterError.presentError(details);
   };
   PlatformDispatcher.instance.onError = (error, stack) {
@@ -411,7 +405,6 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       final biometricEnabled =
           DatabaseService.instance.settings.biometricEnabled;
       if (kP0tBiometricGateDisabled) {
-        P0tDiag.biometricGate(enabled: false, reason: 'stabilization');
       } else if (biometricEnabled) {
         return const _BiometricGate(child: LifeOSDashboard());
       }

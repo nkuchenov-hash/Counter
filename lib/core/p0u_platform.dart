@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+/// Platform label for boot markers ([P0uStartupDiag], [P0uDiag]).
+///
+/// **Runtime:** string helper only; no side effects.
 String p0uPlatformLabel() {
   if (kIsWeb) return 'web';
   switch (defaultTargetPlatform) {

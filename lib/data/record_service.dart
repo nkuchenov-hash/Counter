@@ -481,16 +481,6 @@ extension RecordServiceExtension on DatabaseService {
         DatabaseService._log(st.toString());
       }
       if (kept.isEmpty && _cachedFlatRecords.isNotEmpty) {
-        P0NPerfDiag.timelineCacheRefreshMerge(
-          before: _cachedFlatRecords.length,
-          after: 0,
-          keptLocal: true,
-        );
-        P0OWarmDiag.timelineRefreshMerge(
-          before: _cachedFlatRecords.length,
-          after: 0,
-          keptLocal: true,
-        );
         return List<Map<String, dynamic>>.from(_cachedFlatRecords);
       }
       final beforeCount = _cachedFlatRecords.length;
@@ -1120,9 +1110,6 @@ extension RecordServiceExtension on DatabaseService {
           out.add(_mergeOptimisticIntoRecordMap(_rowToRecordMap(row)));
         } catch (e) {
           final rid = (row['record_id'] ?? '').toString().trim();
-          P0DateNavDiag.crashGuard(
-            'timeline_scan_skip record_id=$rid day=$targetDayStr $e',
-          );
         }
       }
       out.sort((a, b) {
@@ -1181,11 +1168,6 @@ extension RecordServiceExtension on DatabaseService {
     final sw = Stopwatch()..start();
     await _hydrateRecordsCacheFromPrefsIfEmpty();
     sw.stop();
-    P0NPerfDiag.timelineCacheRestore(
-      flatRecords: _cachedFlatRecords.length,
-      ms: sw.elapsedMilliseconds,
-      source: 'prefs',
-    );
     if (_cachedFlatRecords.isEmpty) return;
     final indexSw = Stopwatch()..start();
     if (_cachedFlatRecords.length <= _kTimelineIndexMaxSyncRecords) {
@@ -1194,30 +1176,10 @@ extension RecordServiceExtension on DatabaseService {
       _markTimelineDayIndexDirty();
     }
     indexSw.stop();
-    P0NPerfDiag.timelineDayIndexReady(
-      days: _timelineRecordsDayIndex.length,
-      records: _cachedFlatRecords.length,
-      ms: indexSw.elapsedMilliseconds,
-    );
-    P0OWarmDiag.timelineIndexReady(
-      days: _timelineRecordsDayIndex.length,
-      records: _cachedFlatRecords.length,
-      ms: indexSw.elapsedMilliseconds,
-    );
     _syncCanonicalRunningBusinessIdCache('bootRestore');
     if (criticalOnly) return;
     ensureTimelineWarmWindow(getTimelineDeviceLocalToday());
     prebuildTimelineCriticalBodiesSync(getTimelineDeviceLocalToday());
-    P0RPrebuildDiag.diskRestore(
-      screen: 'Timeline',
-      snapshots: _timelineWarm.cachedDayCount,
-      ms: sw.elapsedMilliseconds + indexSw.elapsedMilliseconds,
-    );
-    P0OWarmDiag.bootTimelineCache(
-      flatRecords: _cachedFlatRecords.length,
-      days: _timelineWarmWindow?.cachedDayCount ?? 0,
-      ms: sw.elapsedMilliseconds + indexSw.elapsedMilliseconds,
-    );
   }
 
   WarmSnapshotWindow<TimelineDaySnapshot> get _timelineWarm =>
@@ -1235,36 +1197,8 @@ extension RecordServiceExtension on DatabaseService {
     );
   }
 
-  void _logTimelineWarmMemory() {
-    var records = 0;
-    var approxKb = 0;
-    for (final s in _timelineWarm.snapshots) {
-      records += s.records.length;
-      approxKb += s.records.length * 512 ~/ 1024;
-    }
-    P0OWarmDiag.memory(
-      screen: 'Timeline',
-      cachedDays: _timelineWarm.cachedDayCount,
-      items: records,
-      approxKb: approxKb,
-    );
-  }
-
   void ensureTimelineWarmWindow(DateTime center) {
-    final sw = Stopwatch()..start();
     _timelineWarm.ensureInitialWindow(center, _buildTimelineDaySnapshot);
-    sw.stop();
-    P0OWarmDiag.timelineWindow(
-      center: _timelineDateKeyFromDate(center),
-      from: _timelineWarm.windowFrom != null
-          ? _timelineDateKeyFromDate(_timelineWarm.windowFrom!)
-          : '—',
-      to: _timelineWarm.windowTo != null
-          ? _timelineDateKeyFromDate(_timelineWarm.windowTo!)
-          : '—',
-      cachedDays: _timelineWarm.cachedDayCount,
-    );
-    _logTimelineWarmMemory();
   }
 
   /// P0T: critical ±1 sync at boot; full mounted window in background.
@@ -1294,12 +1228,6 @@ extension RecordServiceExtension on DatabaseService {
   void scheduleTimelineMountedWindowBootBackground(DateTime center) {
     unawaited(Future.microtask(() {
       prepareTimelineMountedWindowBoot(center);
-      P0tDiag.memory(
-        screen: 'Timeline',
-        mountedBodies: MountedDayWindow(center: center).length,
-        renderSnapshots: P0tRenderSnapshotCache.instance.timelineCount,
-        approxKb: P0tRenderSnapshotCache.instance.timelineCount * 40,
-      );
     }));
   }
 
@@ -1311,21 +1239,9 @@ extension RecordServiceExtension on DatabaseService {
     final key = p0tDateKey(wallDay);
     final snap = P0tRenderSnapshotCache.instance.peekTimeline(key);
     if (snap != null && snap.ready) {
-      P0tDiag.readyCheck(
-        screen: 'Timeline',
-        date: key,
-        ready: true,
-        cards: snap.cards.length,
-      );
       return true;
     }
     final missing = snap?.missing ?? 'records';
-    P0tDiag.readyCheck(
-      screen: 'Timeline',
-      date: key,
-      ready: false,
-      missing: missing,
-    );
     return false;
   }
 
@@ -1368,10 +1284,6 @@ extension RecordServiceExtension on DatabaseService {
   }
 
   void prepareTimelineCriticalRenderReady(DateTime center) {
-    P0tDiag.criticalReadyStart(
-      screen: 'Timeline',
-      dates: 'yesterday,today,tomorrow',
-    );
     final sw = Stopwatch()..start();
     var ready = 0;
     for (final offset in [-1, 0, 1]) {
@@ -1381,12 +1293,6 @@ extension RecordServiceExtension on DatabaseService {
       if (isTimelineDateFullyReady(day)) ready++;
     }
     sw.stop();
-    P0tDiag.criticalReadyDone(
-      screen: 'Timeline',
-      ready: ready,
-      total: 3,
-      ms: sw.elapsedMilliseconds,
-    );
   }
 
   int get timelineWarmWindowRecordEstimate {
@@ -1444,11 +1350,6 @@ extension RecordServiceExtension on DatabaseService {
         count++;
       }
       sw.stop();
-      P0SMountDiag.diskRestore(
-        screen: 'Timeline',
-        snapshots: count,
-        ms: sw.elapsedMilliseconds,
-      );
     } catch (_) {}
   }
 
@@ -1472,33 +1373,12 @@ extension RecordServiceExtension on DatabaseService {
           jsonEncode(out),
         );
         sw.stop();
-        P0SMountDiag.diskSave(
-          screen: 'Timeline',
-          snapshots: out.length,
-          ms: sw.elapsedMilliseconds,
-        );
       } catch (_) {}
     }());
   }
 
   void extendTimelineWarmWindowIfNeeded(DateTime center) {
-    final sw = Stopwatch()..start();
-    final beforeCount = _timelineWarm.cachedDayCount;
-    final direction = _timelineWarm.extendIfNeeded(center, _buildTimelineDaySnapshot);
-    sw.stop();
-    if (direction != null && _timelineWarm.cachedDayCount >= beforeCount) {
-      P0OWarmDiag.timelineExtend(
-        direction: direction,
-        from: _timelineWarm.windowFrom != null
-            ? _timelineDateKeyFromDate(_timelineWarm.windowFrom!)
-            : '—',
-        to: _timelineWarm.windowTo != null
-            ? _timelineDateKeyFromDate(_timelineWarm.windowTo!)
-            : '—',
-        ms: sw.elapsedMilliseconds,
-      );
-      _logTimelineWarmMemory();
-    }
+    _timelineWarm.extendIfNeeded(center, _buildTimelineDaySnapshot);
   }
 
   /// Sync warm snapshot for one day; builds emergency snapshot if missing.
@@ -1509,23 +1389,11 @@ extension RecordServiceExtension on DatabaseService {
     final existing = _timelineWarm.peek(key);
     if (existing != null && existing.cacheSignature == sig) {
       lookupSw.stop();
-      P0OWarmDiag.timelineSnapshot(
-        date: key,
-        state: existing.knownEmpty ? 'empty' : 'hit',
-        count: existing.records.length,
-        ms: lookupSw.elapsedMilliseconds,
-      );
       return existing;
     }
     final built = _buildTimelineDaySnapshot(date);
     _timelineWarm.put(key, built);
     lookupSw.stop();
-    P0OWarmDiag.timelineSnapshot(
-      date: key,
-      state: existing == null ? 'miss' : 'refresh',
-      count: built.records.length,
-      ms: lookupSw.elapsedMilliseconds,
-    );
     return built;
   }
 
@@ -1567,11 +1435,6 @@ extension RecordServiceExtension on DatabaseService {
     final cache = timelineDayBodyCache;
     final existing = cache.peek(key);
     if (existing != null && existing.bodyReady) {
-      P0RPrebuildDiag.bodyCacheHit(
-        screen: 'Timeline',
-        date: key,
-        source: existing.source,
-      );
       return existing;
     }
     if (!allowEmergencyBuild) {
@@ -1584,21 +1447,10 @@ extension RecordServiceExtension on DatabaseService {
       );
     }
     final inside = cache.isInsideWarmRange(key);
-    P0RPrebuildDiag.bodyCacheMiss(
-      screen: 'Timeline',
-      date: key,
-      insideWarmRange: inside,
-      reason: inside ? 'notPrebuiltYet' : 'outsideWindow',
-    );
     final sw = Stopwatch()..start();
     final built = _buildTimelineBodyEntry(day, source: 'emergencySyncBuild');
     sw.stop();
     cache.put(key, built);
-    P0RPrebuildDiag.emergencySyncBuild(
-      screen: 'Timeline',
-      date: key,
-      ms: sw.elapsedMilliseconds,
-    );
     return built;
   }
 
@@ -1606,29 +1458,14 @@ extension RecordServiceExtension on DatabaseService {
     final cache = timelineDayBodyCache;
     final centerKey = _timelineDateKeyFromDate(center);
     cache.setCenter(centerKey);
-    P0RPrebuildDiag.criticalStart(
-      screen: 'Timeline',
-      dates: 'yesterday,today,tomorrow',
-    );
     final sw = Stopwatch()..start();
     for (final offset in [-1, 0, 1]) {
       final day = DateTime(center.year, center.month, center.day)
           .add(Duration(days: offset));
       final entry = _buildTimelineBodyEntry(day, source: 'criticalPrebuild');
       cache.put(entry.dateKey, entry);
-      P0RPrebuildDiag.prebuildBody(
-        screen: 'Timeline',
-        date: entry.dateKey,
-        priority: offset,
-        ms: 0,
-      );
     }
     sw.stop();
-    P0RPrebuildDiag.criticalDone(
-      screen: 'Timeline',
-      count: 3,
-      totalMs: sw.elapsedMilliseconds,
-    );
     logTimelineBootAdjacentReady(center);
   }
 
@@ -1643,14 +1480,6 @@ extension RecordServiceExtension on DatabaseService {
           .add(Duration(days: offset));
       final key = _timelineDateKeyFromDate(day);
       final cache = timelineDayBodyCache;
-      P0RPrebuildDiag.bootAdjacentReady(
-        screen: 'Timeline',
-        date: label,
-        dataReady: cache.isDataReady(key) ||
-            timelineWarmSnapshotForDate(day).records.isNotEmpty ||
-            timelineWarmSnapshotForDate(day).knownEmpty,
-        bodyReady: cache.isBodyReady(key),
-      );
     }
   }
 
@@ -1661,11 +1490,6 @@ extension RecordServiceExtension on DatabaseService {
     final centerKey = _timelineDateKeyFromDate(center);
     timelineDayBodyCache.setCenter(centerKey);
     unawaited(() async {
-      P0RPrebuildDiag.windowStart(
-        screen: 'Timeline',
-        center: centerKey,
-        radius: RenderedDayBodyConstants.radius,
-      );
       final sw = Stopwatch()..start();
       final total = RenderedDayBodyConstants.radius * 2 + 1;
       var ready = 0;
@@ -1687,26 +1511,10 @@ extension RecordServiceExtension on DatabaseService {
         cache.put(key, entry);
         bodySw.stop();
         ready++;
-        P0RPrebuildDiag.prebuildBody(
-          screen: 'Timeline',
-          date: key,
-          priority: offset,
-          ms: bodySw.elapsedMilliseconds,
-        );
         if (ready % 4 == 0 || ready == total) {
-          P0RPrebuildDiag.windowProgress(
-            screen: 'Timeline',
-            ready: ready,
-            total: total,
-          );
         }
       }
       sw.stop();
-      P0RPrebuildDiag.windowDone(
-        screen: 'Timeline',
-        ready: ready,
-        totalMs: sw.elapsedMilliseconds,
-      );
       timelineDayBodyCache.logMemory(
         snapshotCount: _timelineWarm.cachedDayCount,
         itemCount: _cachedFlatRecords.length,
@@ -1776,12 +1584,6 @@ extension RecordServiceExtension on DatabaseService {
     );
     lookupSw.stop();
     final state = rendered.isEmpty ? 'empty' : 'hit';
-    P0NPerfDiag.timelineDayLookup(
-      date: targetDayStr,
-      state: state,
-      count: rendered.length,
-      ms: lookupSw.elapsedMilliseconds,
-    );
     return List<Map<String, dynamic>>.from(rendered);
   }
 
@@ -1848,7 +1650,6 @@ extension RecordServiceExtension on DatabaseService {
       );
     } catch (e) {
       final rid = (data['record_id'] ?? data['id'] ?? '').toString().trim();
-      P0DateNavDiag.crashGuard('timeline_vm_skip record_id=$rid $e');
       return null;
     }
   }

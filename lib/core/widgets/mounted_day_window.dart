@@ -1,7 +1,8 @@
-import 'package:counter/core/p0s_mount_diag.dart';
-
 /// Finite mounted day window: ±3 initial (P0T), extend by 10, max 41 bodies.
 /// Data warm window stays ±10 via [WarmDayWindowConstants].
+///
+/// Kept for legacy [kUseP0tMountedStrip] path (kill switch false). Active Timeline/Plans
+/// use [PageView.builder]; this window only applies when mounted strip is re-enabled.
 final class MountedDayWindow {
   MountedDayWindow({required DateTime center})
     : _center = dateOnly(center) {
@@ -73,57 +74,21 @@ final class MountedDayWindow {
       final oldFrom = _windowFrom;
       _windowFrom = _windowFrom.subtract(const Duration(days: extendBy));
       scrollShift += extendBy;
-      final sw = Stopwatch()..start();
-      P0SMountDiag.mountExtendStart(
-        screen: screen,
-        direction: 'past',
-        from: dateKey(oldFrom),
-        to: dateKey(_windowFrom),
-      );
       var d = _windowFrom;
       while (d.isBefore(oldFrom)) {
         onNewDate?.call(d);
-        P0SMountDiag.mountExtendBody(
-          screen: screen,
-          date: dateKey(d),
-          ms: 0,
-        );
         d = d.add(const Duration(days: 1));
       }
-      sw.stop();
-      P0SMountDiag.mountExtendDone(
-        screen: screen,
-        mounted: length,
-        ms: sw.elapsedMilliseconds,
-      );
     }
 
     if (distToEnd <= extendThreshold) {
       final oldTo = _windowTo;
       _windowTo = _windowTo.add(const Duration(days: extendBy));
-      final sw = Stopwatch()..start();
-      P0SMountDiag.mountExtendStart(
-        screen: screen,
-        direction: 'future',
-        from: dateKey(oldTo),
-        to: dateKey(_windowTo),
-      );
       var d = oldTo.add(const Duration(days: 1));
       while (!d.isAfter(_windowTo)) {
         onNewDate?.call(d);
-        P0SMountDiag.mountExtendBody(
-          screen: screen,
-          date: dateKey(d),
-          ms: 0,
-        );
         d = d.add(const Duration(days: 1));
       }
-      sw.stop();
-      P0SMountDiag.mountExtendDone(
-        screen: screen,
-        mounted: length,
-        ms: sw.elapsedMilliseconds,
-      );
     }
 
     _evictFarthest(screen: screen, keepAround: sel);
@@ -135,18 +100,8 @@ final class MountedDayWindow {
       final distFromStart = keepAround.difference(_windowFrom).inDays;
       final distToEnd = _windowTo.difference(keepAround).inDays;
       if (distFromStart >= distToEnd) {
-        P0SMountDiag.mountEvict(
-          screen: screen,
-          date: dateKey(_windowTo),
-          reason: 'maxBodies',
-        );
         _windowTo = _windowTo.subtract(const Duration(days: 1));
       } else {
-        P0SMountDiag.mountEvict(
-          screen: screen,
-          date: dateKey(_windowFrom),
-          reason: 'maxBodies',
-        );
         _windowFrom = _windowFrom.add(const Duration(days: 1));
       }
     }

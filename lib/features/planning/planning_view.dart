@@ -8,21 +8,16 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
-import 'package:counter/core/app_diag.dart';
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/core/mounted_day_registry.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_diag.dart';
-import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_platform.dart';
-import 'package:counter/core/pre_white_swipe_restore.dart';
 import 'package:counter/core/widgets/eager_day_content_strip.dart';
 import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/time_drop_trace.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_button.dart';
@@ -665,12 +660,7 @@ class _PlanningPageState extends State<PlanningPage>
     required List<PlanningTask> withOrders,
     required List<PlanningTask> baselineBefore,
   }) {
-    appDebugDiag(
-      'PLAN_REORDER_REQUEST mode=$mode visibleCount=${withOrders.length} '
-      'movedPlanId=${moved.planRowId ?? moved.planRowIdForBackend} '
-      'from=$fromIndex to=$toIndex',
-    );
-    DatabaseService.instance.persistPlanningTaskOrder(
+DatabaseService.instance.persistPlanningTaskOrder(
       withOrders,
       baselineBeforeReorder: baselineBefore,
     );
@@ -2733,17 +2723,7 @@ class _PlanningPageState extends State<PlanningPage>
     }
     _lastTimeDurationLayoutLogKey = lineKey;
     _lastTimeDurationLayoutLogAt = now;
-    appDebugDiag(
-      'TIME_DURATION_LAYOUT planId=${planId.isEmpty ? '-' : planId} '
-      'profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
-      'wallStart=${_timelineLogWallIso(proj.profileWallStart)} '
-      'wallEnd=${proj.profileWallEnd != null ? _timelineLogWallIso(proj.profileWallEnd!) : '-'} '
-      'label=${proj.plannedTimeLabel} '
-      'startMinute=$startMinute endMinute=$endMinute durationMin=$durationMin '
-      'pxPerMinute=${pxPerMinute.toStringAsFixed(3)} '
-      'top=${topPx.toStringAsFixed(1)} height=${heightPx.toStringAsFixed(1)}',
-    );
-  }
+}
 
   void _logTimeResizePreview({
     required String planId,
@@ -2764,15 +2744,7 @@ class _PlanningPageState extends State<PlanningPage>
     }
     _lastTimeResizePreviewLogKey = lineKey;
     _lastTimeResizePreviewLogAt = now;
-    appDebugDiag(
-      'TIME_RESIZE_PREVIEW planId=${planId.isEmpty ? '-' : planId} '
-      'edge=$edge pointerY=${pointerY.toStringAsFixed(1)} '
-      'minute=$minute snapped=$snapped '
-      'newStart=${newStart.hour.toString().padLeft(2, '0')}:${newStart.minute.toString().padLeft(2, '0')} '
-      'newEnd=${newEnd != null ? '${newEnd.hour.toString().padLeft(2, '0')}:${newEnd.minute.toString().padLeft(2, '0')}' : '-'} '
-      'durationMin=$durationMin',
-    );
-  }
+}
 
   void _logTimeModeRail({
     required DateTime selectedDay,
@@ -2789,11 +2761,7 @@ class _PlanningPageState extends State<PlanningPage>
     }
     _lastTimeModeRailLogKey = lineKey;
     _lastTimeModeRailLogAt = now;
-    appDebugDiag(
-      'TIME_MODE_RAIL profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
-      'selectedDay=$dayStr visibleHours=${visibleHours.join(',')}',
-    );
-  }
+}
 
   bool _isProfileTodaySelectedForPlanning() {
     final profileTodayKey =
@@ -2832,15 +2800,7 @@ class _PlanningPageState extends State<PlanningPage>
     }
     _lastPlanTimeNowLineLogKey = lineKey;
     _lastPlanTimeNowLineLogAt = now;
-    appDebugDiag(
-      'TIME_NOW_LINE visible=$visible '
-      'profileTz=${DatabaseService.instance.profileTimezoneShortLabel()} '
-      'nowMinute=${wallNow.hour * 60 + wallNow.minute} '
-      'y=${yPx?.toStringAsFixed(1) ?? '-'} '
-      'pxPerMinute=${pxPerMinute.toStringAsFixed(3)} '
-      'selectedDay=$selectedDay',
-    );
-  }
+}
 
   DateTime _profileWallNow() =>
       DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
@@ -3320,19 +3280,7 @@ class _PlanningPageState extends State<PlanningPage>
       );
     }
 
-    timeDropTrace(
-      'phase=commit source=${commitSource ?? 'unknown'} '
-      'rawYMinutes=${rawYMinutesForTrace?.toStringAsFixed(1) ?? 'n/a'} '
-      'targetStart=${insertionIntent?.targetStartWall.hour}:${insertionIntent?.targetStartWall.minute.toString().padLeft(2, '0') ?? 'n/a'} '
-      'targetEnd=${insertionIntent?.targetEndWall.hour}:${insertionIntent?.targetEndWall.minute.toString().padLeft(2, '0') ?? 'n/a'} '
-      'finalStart=${newStartWall.hour}:${newStartWall.minute.toString().padLeft(2, '0')} '
-      'finalEnd=${newEndWall != null ? '${newEndWall.hour}:${newEndWall.minute.toString().padLeft(2, '0')}' : 'open'}',
-    );
-    timeDropTrace('explicitOrderBefore=$orderBefore');
-    timeDropTrace('explicitOrderAfter=$orderAfter');
-    timeDropTrace('patches=[${patchParts.join('](')}]');
-
-    DatabaseService.instance.notifyPlanningRefresh();
+DatabaseService.instance.notifyPlanningRefresh();
     if (mounted) setState(() {});
   }
 
@@ -3585,13 +3533,7 @@ class _PlanningPageState extends State<PlanningPage>
           dropResult.draggedStartWall,
           dropResult.draggedEndWall,
         );
-        timeDropTrace(
-          'phase=over dragged=${storedIntent.draggedPlanId} '
-          'target=${storedIntent.targetPlanId} '
-          'position=${insertBefore ? 'before' : 'after'} '
-          'pointerY=${dragCenterY.toStringAsFixed(1)}',
-        );
-      } else {
+} else {
         storedIntent = null;
         final snappedMin = _snapTimelineMinutes(
           grid.minutesFromY(rawTop.clamp(0.0, maxTopPx)),
