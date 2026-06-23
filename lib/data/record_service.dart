@@ -1921,6 +1921,70 @@ extension RecordServiceExtension on DatabaseService {
     return built;
   }
 
+  /// P0U.4D — cache snapshot only (no full scan / no peek build).
+  ({
+    String dayIndex,
+    int records,
+    String rowVm,
+    int rows,
+  }) timelineTargetDayCacheSnapshot(DateTime date) {
+    final key = _timelineDateKeyFromDate(date);
+    final indexReady = !_timelineDayIndexDirty &&
+        _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length;
+    final dayIndex = indexReady ? 'hit' : 'miss';
+    final viewCached = _timelineDayViewCache.containsKey(key);
+    final vmCached = _timelineDayVmCache.containsKey(key);
+    final records = viewCached ? _timelineDayViewCache[key]!.length : 0;
+    final rowVm = vmCached ? 'hit' : 'miss';
+    final rows = vmCached ? _timelineDayVmCache[key]!.length : 0;
+    return (
+      dayIndex: dayIndex,
+      records: records,
+      rowVm: rowVm,
+      rows: rows,
+    );
+  }
+
+  /// P0U.4D — timed data probe for first-swipe target day.
+  ({
+    String source,
+    int records,
+    int ms,
+  }) timelineTargetDayDataReadyProbe(DateTime date) {
+    final key = _timelineDateKeyFromDate(date);
+    final hadViewCache =
+        !_timelineDayIndexDirty && _timelineDayViewCache.containsKey(key);
+    final indexReady = !_timelineDayIndexDirty &&
+        _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length;
+    final sw = Stopwatch()..start();
+    final rows = peekTimelineRecordsForDate(date);
+    sw.stop();
+    final source = hadViewCache
+        ? 'cache'
+        : indexReady
+        ? 'dayIndex'
+        : 'miss';
+    return (source: source, records: rows.length, ms: sw.elapsedMilliseconds);
+  }
+
+  /// P0U.4D — timed row-VM probe for first-swipe target day.
+  ({
+    String source,
+    int rows,
+    int ms,
+  }) timelineTargetDayVmReadyProbe(DateTime date) {
+    final key = _timelineDateKeyFromDate(date);
+    final hadVm = _timelineDayVmCache.containsKey(key);
+    final sw = Stopwatch()..start();
+    final vms = peekTimelineRowVmsForDate(date);
+    sw.stop();
+    return (
+      source: hadVm ? 'cache' : 'builtNow',
+      rows: vms.length,
+      ms: sw.elapsedMilliseconds,
+    );
+  }
+
   void invalidateTimelineDayCachesForDateKey(String dateKey, {String? reason}) {
     _timelineDayViewCache.remove(dateKey);
     _timelineDayVmCache.remove(dateKey);

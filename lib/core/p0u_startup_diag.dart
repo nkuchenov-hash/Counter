@@ -21,12 +21,37 @@ abstract final class P0uStartupDiag {
   static bool _firstFrameMarked = false;
 
   /// Queue work that must not run until [markFirstFrame] (P0U.3).
-  static void scheduleAfterFirstFrame(Future<void> Function() work) {
+  static void scheduleAfterFirstFrame(
+    String name,
+    Future<void> Function() work,
+  ) {
+    if (!_firstFrameMarked) {
+      deferredBeforeFrameGuard(name: name, allowed: false);
+    }
     if (_firstFrameMarked) {
       unawaited(work());
       return;
     }
     _afterFirstFrameQueue.add(work);
+  }
+
+  static void deferredBeforeFrameGuard({
+    required String name,
+    required bool allowed,
+  }) {
+    debugPrint(
+      '[P0U_DEFERRED_BEFORE_FRAME_GUARD] name=$name allowed=$allowed',
+    );
+  }
+
+  static int? _firstFrameArmedTotalMs;
+
+  static void armFirstFrameMarker() {
+    ensureStarted();
+    _firstFrameArmedTotalMs = _sw.elapsedMilliseconds;
+    debugPrint(
+      '[P0U_FIRST_FRAME_MARKER_ARMED] totalMs=$_firstFrameArmedTotalMs',
+    );
   }
 
   static void deferredConfirmedAfterFrame({required String name}) {
@@ -109,8 +134,23 @@ abstract final class P0uStartupDiag {
 
   static void markFirstFrame() {
     if (_firstFrameMs != null) return;
+    final callbackMs = _sw.elapsedMilliseconds;
+    debugPrint('[P0U_FIRST_FRAME_CALLBACK_FIRED] totalMs=$callbackMs');
     _firstFrameMarked = true;
     bootStage(name: 'firstFrame', ms: 0, blocksFirstFrame: true);
+    final shellMs = _firstShellBuildTotalMs;
+    if (shellMs != null) {
+      final gap = callbackMs - shellMs;
+      var reason = 'unknown';
+      if (gap > 2000) {
+        reason = 'callbackDelay';
+      } else if (_afterFirstFrameQueue.isNotEmpty) {
+        reason = 'deferredWork';
+      }
+      debugPrint(
+        '[P0U_FIRST_FRAME_MARKER_DELAY] shellToFrameMs=$gap reason=$reason',
+      );
+    }
     _flushAfterFirstFrameQueue();
   }
 

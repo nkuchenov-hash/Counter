@@ -443,7 +443,10 @@ extension DbCoreExtension on DatabaseService {
       _tasksController.add(List.from(_tasksCache));
       _isInitialized = true;
       _registerAppLifecycleObserverOnce();
-      P0uStartupDiag.scheduleAfterFirstFrame(_runDeferredBootWorkAfterFirstShell);
+      P0uStartupDiag.scheduleAfterFirstFrame(
+        'deferredBootWork',
+        _runDeferredBootWorkAfterFirstShell,
+      );
       return;
     }
     await _loadRulesFromNoco();
@@ -456,7 +459,10 @@ extension DbCoreExtension on DatabaseService {
     _tasksController.add(List.from(_tasksCache));
     _isInitialized = true;
     _registerAppLifecycleObserverOnce();
-    P0uStartupDiag.scheduleAfterFirstFrame(_runDeferredBootWorkAfterFirstShell);
+    P0uStartupDiag.scheduleAfterFirstFrame(
+      'deferredBootWork',
+      _runDeferredBootWorkAfterFirstShell,
+    );
   }
 
   /// Non-critical boot work — runs after first rendered frame (P0U.3).

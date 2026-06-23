@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.4D: Timeline first-swipe diagnostics only [wip]
+* **`p0u_timeline_swipe_diag.dart`:** [wip] First-swipe target logging, cache state, step timings, frame jank summary.
+* **`timeline_view.dart`:** [wip] Correct swipe target date; TARGET_* probes on first swipe only.
+* **`record_service.dart`:** [wip] `timelineTargetDayCacheSnapshot` / data+VM probes (no full scans).
+* **`p0u_startup_diag.dart` / `main.dart`:** [wip] First-frame marker armed/fired/delay + deferred-before-frame guard.
+* Diagnostics only — no paging/warmup behavior changes.
+
 ## [2026-06-15] - P0 Time View CardPlan density visual fix [wip]
 * **`plan_time_task_card.dart`:** [wip] Explicit Time View layouts per CardPlan band (VerySmall→Medium); tags always visible; removed `timelineFillHeight` tag suppression.
 * **`plan_card.dart`:** [wip] Pass `timelineVisualDensity` + fixed height; `timelineFillHeight: false` for Time View blocks.

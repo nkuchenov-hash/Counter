@@ -304,6 +304,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
         _profileHydrationFailed = false;
       });
       P0uStartupDiag.markFirstShellBuild();
+      P0uStartupDiag.armFirstFrameMarker();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         P0uStartupDiag.markFirstFrame();
       });
