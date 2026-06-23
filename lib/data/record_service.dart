@@ -819,17 +819,12 @@ extension RecordServiceExtension on DatabaseService {
   String? get canonicalPrimaryRunningBusinessId =>
       resolveCanonicalPrimaryRunningBusinessId();
 
-  void _invalidateCanonicalRunningBusinessIdCache(String reason) {
-    if (_canonicalRunningBusinessIdCacheDirty) return;
-    _canonicalRunningBusinessIdCacheDirty = true;
-    if (!kReleaseMode) {
+  void _resetCanonicalRunningBusinessIdCache({String reason = 'reset'}) {
+    if (!_canonicalRunningBusinessIdCacheDirty && !kReleaseMode) {
       debugPrint(
         '[P0U_RUNNING_BIZ_CACHE] event=invalidate reason=$reason ms=0',
       );
     }
-  }
-
-  void _resetCanonicalRunningBusinessIdCache() {
     _canonicalRunningBusinessIdCacheDirty = true;
     _cachedCanonicalRunningBusinessId = null;
   }
