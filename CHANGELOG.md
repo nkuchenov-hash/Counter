@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time View CardPlan density visual fix [wip]
+* **`plan_time_task_card.dart`:** [wip] Explicit Time View layouts per CardPlan band (VerySmall→Medium); tags always visible; removed `timelineFillHeight` tag suppression.
+* **`plan_card.dart`:** [wip] Pass `timelineVisualDensity` + fixed height; `timelineFillHeight: false` for Time View blocks.
+
 ## [2026-06-15] - P0U.3: emergency rollback of P0U.2 first-frame regression [wip]
 * **`p0u_feature_flags.dart`:** [wip] Kill switch — `kShellDeferHiddenTabsUntilFirstFrame = false` (P0U.2 regressed firstFrameMs 4668 vs P0U.1 1511).
 * **`p0u_startup_diag.dart`:** [wip] `scheduleAfterFirstFrame` + `[P0U_BOOT_DEFERRED_CONFIRMED_AFTER_FRAME]` logs.

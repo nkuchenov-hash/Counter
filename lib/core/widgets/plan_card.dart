@@ -105,7 +105,7 @@ class PlanCard extends StatelessWidget {
     final blockH = timelineBlockHeightPx ?? kPlanTimeCardMinHeightPx;
     final visual = planTimeCardVisualDensityForRenderedHeight(blockH);
     final density = planTimeCardTaskDensityForVisual(visual);
-    final fillHeight = planTimeCardUseTimelineFillHeightForVisual(visual);
+    final fillHeight = false;
     final showBreadcrumb = planTimeCardShowFooterBreadcrumbForVisual(visual);
     final showProgress = planTimeCardShowProgressForVisual(visual);
     final suppressChildInk = Theme.of(context).copyWith(
@@ -123,6 +123,8 @@ class PlanCard extends StatelessWidget {
         task: task,
         density: density,
         surface: PlanCardSurface.timeline,
+        timelineVisualDensity: visual,
+        timelineBlockHeightPx: blockH,
         timelineFillHeight: fillHeight,
         showFooterBreadcrumb: showBreadcrumb,
         showProgressBar: showProgress,
