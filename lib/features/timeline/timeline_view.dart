@@ -171,7 +171,6 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     final data = DatabaseService.instance.timelineTargetDayDataReadyProbe(
       targetDate,
     );
-    final vm = DatabaseService.instance.timelineTargetDayVmReadyProbe(targetDate);
     final pageBuilt = P0uTimelineSwipeDiag.wasPageBuilt(key);
     P0uTimelineSwipeDiag.targetPageStateBeforeDrag(
       targetDate: key,
