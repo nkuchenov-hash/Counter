@@ -379,6 +379,7 @@ class DatabaseService {
   int _recordCacheTimelineNotifyBatchDepth = 0;
 
   void _emitTimelineRefreshRaw() {
+    _syncCanonicalRunningBusinessIdCache('timelineEmit');
     _timelineDayIndexDirty = true;
     _timelineDayViewCache.clear();
     _timeUpdateController.add(null);
@@ -579,6 +580,10 @@ class DatabaseService {
 
   /// Synthetic running row while POST is in flight (primary timer start only).
   Map<String, dynamic>? _optimisticPendingStartRecordMap;
+
+  /// P0U.7 — cached newest primary running business id (O(1) Timeline VM path).
+  bool _canonicalRunningBusinessIdCacheDirty = true;
+  String? _cachedCanonicalRunningBusinessId;
 
   /// Dedupes rapid repeat **stop** taps for the same timeline id (UUID or REST id).
   final Set<String> _stopRecordInFlightKeys = <String>{};

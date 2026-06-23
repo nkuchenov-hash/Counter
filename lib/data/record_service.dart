@@ -406,6 +406,7 @@ extension RecordServiceExtension on DatabaseService {
     final pid = currentProfileId;
     if (pid == null || pid.isEmpty) {
       _cachedFlatRecords = [];
+      _resetCanonicalRunningBusinessIdCache();
       return [];
     }
     final now = DateTime.now();
@@ -424,6 +425,7 @@ extension RecordServiceExtension on DatabaseService {
       final filterClause = _pocketBaseOwnerFilterClauseForRecords();
       if (filterClause == null || filterClause.isEmpty) {
         _cachedFlatRecords = [];
+        _resetCanonicalRunningBusinessIdCache();
         return [];
       }
       final expandRel = '$kPbRecordCategoryExpand,$kPbRecordTagsExpand';
@@ -504,6 +506,7 @@ extension RecordServiceExtension on DatabaseService {
       if (forceNetwork && _isInitialized) {
         _notifyTimelineAfterRecordCacheMutation();
       } else if (_isInitialized) {
+        _syncCanonicalRunningBusinessIdCache('fetchRecords');
         _refreshTimelineWarmSnapshotsAfterCacheMutation();
       }
       final cacheKey = _scopedDataCacheKey(
@@ -806,11 +809,46 @@ extension RecordServiceExtension on DatabaseService {
 
   /// One scan of [_cachedFlatRecords] for the newest primary running row id.
   String? resolveCanonicalPrimaryRunningBusinessId() {
-    return _businessIdFromCanonicalRunningRow(_canonicalPrimaryRunningFlatRow());
+    if (!_canonicalRunningBusinessIdCacheDirty) {
+      return _cachedCanonicalRunningBusinessId;
+    }
+    _syncCanonicalRunningBusinessIdCache('resolve');
+    return _cachedCanonicalRunningBusinessId;
   }
 
   String? get canonicalPrimaryRunningBusinessId =>
       resolveCanonicalPrimaryRunningBusinessId();
+
+  void _invalidateCanonicalRunningBusinessIdCache(String reason) {
+    if (_canonicalRunningBusinessIdCacheDirty) return;
+    _canonicalRunningBusinessIdCacheDirty = true;
+    if (!kReleaseMode) {
+      debugPrint(
+        '[P0U_RUNNING_BIZ_CACHE] event=invalidate reason=$reason ms=0',
+      );
+    }
+  }
+
+  void _resetCanonicalRunningBusinessIdCache() {
+    _canonicalRunningBusinessIdCacheDirty = true;
+    _cachedCanonicalRunningBusinessId = null;
+  }
+
+  /// Recompute running business id once (outside per-row VM loop).
+  void _syncCanonicalRunningBusinessIdCache(String reason) {
+    final sw = Stopwatch()..start();
+    final wasDirty = _canonicalRunningBusinessIdCacheDirty;
+    _cachedCanonicalRunningBusinessId =
+        _businessIdFromCanonicalRunningRow(_canonicalPrimaryRunningFlatRow());
+    _canonicalRunningBusinessIdCacheDirty = false;
+    sw.stop();
+    if (!kReleaseMode && wasDirty) {
+      debugPrint(
+        '[P0U_RUNNING_BIZ_CACHE] event=dirtyRecompute reason=$reason '
+        'ms=${sw.elapsedMilliseconds}',
+      );
+    }
+  }
 
   /// Sacred singleton: if multiple primaries are open, keep newest and stop older rows.
   Future<void> _reconcileDuplicatePrimaryRunningRecords() async {
@@ -1185,6 +1223,7 @@ extension RecordServiceExtension on DatabaseService {
       records: _cachedFlatRecords.length,
       ms: indexSw.elapsedMilliseconds,
     );
+    _syncCanonicalRunningBusinessIdCache('bootRestore');
     if (criticalOnly) return;
     ensureTimelineWarmWindow(getTimelineDeviceLocalToday());
     prebuildTimelineCriticalBodiesSync(getTimelineDeviceLocalToday());

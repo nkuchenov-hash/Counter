@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.7: O(1) canonical running business id for Timeline VM [wip]
+* **`database_service.dart` / `record_service.dart`:** [wip] `_cachedCanonicalRunningBusinessId` + dirty flag; recompute on `timelineEmit`, boot restore, fetch; O(1) read in `_buildTimelineRowVmsForDate`.
+* **`db_core.dart`:** [wip] sync on prefs hydrate; reset on sign-out.
+* **Diagnostics:** [wip] `[P0U_RUNNING_BIZ_CACHE] event=dirtyRecompute|invalidate` (debug only, no per-row spam).
+
 ## [2026-06-15] - P0U.6D: first-drag frame diagnostics + TARGET_STATE source fix [wip]
 * **`p0u_timeline_swipe_diag.dart`:** [wip] `DRAG_FRAME_BEGIN`, `TARGET_PAGE_STATE_BEFORE_DRAG`, `TARGET_PAGE_ATTACH`, `TARGET_CHILD_BUILD`, `TARGET_CHILD_LAYOUT_HINT`, `DRAG_FRAME_DONE` (culprit heuristic); `TARGET_STATE` now includes `source=`.
 * **`timeline_view.dart`:** [wip] wires page/list lifecycle probes; `TARGET_STATE` records from `timelineTargetDayDataReadyProbe` (matches `TARGET_DATA_READY`).

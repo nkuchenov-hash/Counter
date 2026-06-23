@@ -175,6 +175,7 @@ extension DbCoreExtension on DatabaseService {
         for (final e in decoded)
           if (e is Map) Map<String, dynamic>.from(e),
       ];
+      _syncCanonicalRunningBusinessIdCache('prefsHydrate');
     } catch (_) {}
   }
 
@@ -232,6 +233,7 @@ extension DbCoreExtension on DatabaseService {
       _categoryDialogUniverse = [];
       _tasksCache = [];
       _cachedFlatRecords = [];
+      _resetCanonicalRunningBusinessIdCache();
       _timelineWarmWindow?.invalidateAll();
       _plansWarmWindow?.invalidateAll();
       _timelineBodyCache?.invalidateAll();
