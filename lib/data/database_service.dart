@@ -29,6 +29,7 @@ import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/core/time/plan_time_labels.dart';
+import 'package:counter/core/time/plan_time_visible_window.dart';
 import 'package:counter/core/time/wall_clock.dart' as wall_clock;
 import 'package:counter/core/time/category_timezone_options.dart' as tz_cat;
 import 'package:timezone/timezone.dart' as tz;

@@ -144,6 +144,7 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `web_redirect.dart` | Production web OAuth redirect URI helper |
 | `wall_clock.dart` | Wall-clock formatting helpers |
 | `plan_time_labels.dart` | Plan time label formatting |
+| `plan_time_visible_window.dart` | Extended Time View day window math (−3..27 h) |
 | `category_timezone_options.dart` | Per-category timezone option list |
 
 **`core/env/`**

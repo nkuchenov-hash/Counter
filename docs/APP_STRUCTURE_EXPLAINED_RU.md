@@ -112,7 +112,7 @@
 | Задача | Открыть |
 | :--- | :--- |
 | **Карточка плана / списка** | `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_card.dart` |
-| **Time View (режим времени на Plans)** | `lib/features/planning/plan_time_view_layout.dart`, `lib/features/planning/planning_view.dart` |
+| **Time View (режим времени на Plans)** | `lib/features/planning/plan_time_view_layout.dart`, `lib/features/planning/planning_view.dart`, настройка «Длительность дня» — `planning_day_start_prefs.dart` + `lib/core/time/plan_time_visible_window.dart` |
 | **Вкладка Plans** | `lib/features/planning/planning_view.dart` |
 | **Timeline** | `lib/features/timeline/timeline_view.dart` |
 | **Lists** | `lib/features/lists/lists_view.dart` |

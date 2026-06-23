@@ -942,24 +942,76 @@ DatabaseService.instance.persistPlanningTaskOrder(
   }
 
   Future<void> _loadPlanningTimelineBounds() async {
-    final start = await PlanningSheetTimelinePrefs.loadStart();
-    final end = await PlanningSheetTimelinePrefs.loadEnd();
+    final range = await PlanningSheetTimelinePrefs.loadVisibleDayRange();
     if (mounted) {
       setState(() {
-        _timelineHourStart = start;
-        _timelineHourEnd = end;
+        _timelineHourStart = range.start;
+        _timelineHourEnd = range.end;
       });
     }
   }
 
   void _onPlanningTimelineBoundsChanged(int start, int end) {
-    final s = PlanningSheetTimelinePrefs.clampHour(start);
-    final e = PlanningSheetTimelinePrefs.clampHour(end);
+    final range = PlanningSheetTimelinePrefs.normalizeExtendedRange(start, end);
     setState(() {
-      _timelineHourStart = s;
-      _timelineHourEnd = e;
+      _timelineHourStart = range.start;
+      _timelineHourEnd = range.end;
     });
-    unawaited(PlanningSheetTimelinePrefs.saveStartEnd(s, e));
+    unawaited(PlanningSheetTimelinePrefs.saveVisibleDayRange(range.start, range.end));
+  }
+
+  String _formatDayLengthValueSummary(int start, int end) {
+    final loc = currentLocale.value;
+    final hours = PlanningSheetTimelinePrefs.visibleDurationHours(start, end);
+    final startClock = PlanningSheetTimelinePrefs.formatExtendedHourClock(start);
+    final endClock = PlanningSheetTimelinePrefs.formatExtendedHourClock(end);
+    final startSuffix =
+        start < 0 ? ' ${t(loc, 'day_length_prev_day')}' : '';
+    final endSuffix = end > 24 ? ' ${t(loc, 'day_length_next_day')}' : '';
+    if (loc == 'ru') {
+      return '$startClock$startSuffix — $endClock$endSuffix · $hours ч';
+    }
+    return '$startClock$startSuffix — $endClock$endSuffix · ${hours}h';
+  }
+
+  List<PlanningTask> _planningTasksForTimeViewWindow(DateTime planWallDay) {
+    final startExt = _timelineHourStart;
+    final endExt = _timelineHourEnd;
+    final seen = <String>{};
+    final out = <PlanningTask>[];
+
+    void mergeDay(DateTime day) {
+      for (final task
+          in DatabaseService.instance.planningDayTasksSnapshot(day)) {
+        final id = task.planRowIdForBackend;
+        if (seen.add(id)) out.add(task);
+      }
+    }
+
+    mergeDay(planWallDay);
+    if (PlanningSheetTimelinePrefs.needsNextDayTasks(endExt)) {
+      mergeDay(planWallDay.add(const Duration(days: 1)));
+    }
+    if (PlanningSheetTimelinePrefs.needsPreviousDayTasks(startExt)) {
+      mergeDay(planWallDay.subtract(const Duration(days: 1)));
+    }
+    return out;
+  }
+
+  bool _projectedPlanInTimeViewWindow(
+    TimeModeProjectedPlan proj,
+    DateTime planWallDay,
+    int startExt,
+    int endExt,
+  ) {
+    return PlanningSheetTimelinePrefs.projectedPlanOverlapsVisibleWindow(
+      wallStart: proj.profileWallStart,
+      wallEnd: proj.profileWallEnd,
+      durationMinutes: proj.durationMinutes,
+      selectedDay: planWallDay,
+      startExtended: startExt,
+      endExtended: endExt,
+    );
   }
 
   String _hhmmFromTimeOfDay(TimeOfDay t) {
@@ -1449,10 +1501,11 @@ DatabaseService.instance.persistPlanningTaskOrder(
               initialStart: _timelineHourStart,
               initialEnd: _timelineHourEnd,
               onBoundsChanged: _onPlanningTimelineBoundsChanged,
-              startTitle: t(loc, 'plan_day_start_hour'),
-              startHint: t(loc, 'plan_day_start_hint'),
-              endTitle: t(loc, 'plan_day_end_hour'),
-              endHint: t(loc, 'plan_day_end_hint'),
+              title: t(loc, 'day_length_title'),
+              helper: t(loc, 'day_length_helper'),
+              valueSummaryBuilder: _formatDayLengthValueSummary,
+              prevDayMarker: t(loc, 'day_length_prev_day'),
+              nextDayMarker: t(loc, 'day_length_next_day'),
               header: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2335,15 +2388,22 @@ DatabaseService.instance.persistPlanningTaskOrder(
     return a.title.compareTo(b.title);
   }
 
-  /// [t] is profile wall time from [PlanningTask.startTime] (not UTC).
-  int _planningClockOrderMinutes(DateTime t, int dayStartHour) {
-    final slot = (t.hour - dayStartHour + 24) % 24;
-    return slot * 60 + t.minute;
+  int _planningClockOrderMinutes(
+    DateTime t,
+    DateTime planWallDay,
+    int startExtended,
+  ) {
+    return PlanningSheetTimelinePrefs.minutesFromWindowStart(
+      t,
+      planWallDay,
+      startExtended,
+    ).round();
   }
 
   List<PlanningTask> _tasksForTimeMode(
     List<PlanningTask> tasks,
-    int dayStartHour,
+    DateTime planWallDay,
+    int dayStartExtended,
   ) {
     final copy = List<PlanningTask>.from(tasks);
     copy.sort((a, b) {
@@ -2352,8 +2412,16 @@ DatabaseService.instance.persistPlanningTaskOrder(
       if (ap == null && bp == null) return _taskSortCmp(a, b);
       if (ap == null) return 1;
       if (bp == null) return -1;
-      final ca = _planningClockOrderMinutes(ap.profileWallStart, dayStartHour);
-      final cb = _planningClockOrderMinutes(bp.profileWallStart, dayStartHour);
+      final ca = _planningClockOrderMinutes(
+        ap.profileWallStart,
+        planWallDay,
+        dayStartExtended,
+      );
+      final cb = _planningClockOrderMinutes(
+        bp.profileWallStart,
+        planWallDay,
+        dayStartExtended,
+      );
       if (ca != cb) return ca.compareTo(cb);
       return _taskSortCmp(a, b);
     });
@@ -2551,24 +2619,17 @@ DatabaseService.instance.persistPlanningTaskOrder(
     return st.hour;
   }
 
-  /// Wall minutes from [rangeStart] o'clock on the visible day timeline.
+  /// Profile-wall minutes from the visible day window start on [planWallDay].
   double _timelineMinutesFromRangeStart(
     DateTime wall,
-    int rangeStart,
-    int rangeEnd,
+    DateTime planWallDay,
+    int startExtended,
   ) {
-    final h = wall.hour.clamp(0, 23);
-    final m = wall.minute.clamp(0, 59);
-    if (rangeStart <= rangeEnd) {
-      return ((h - rangeStart) * 60 + m).toDouble();
-    }
-    if (h >= rangeStart) {
-      return ((h - rangeStart) * 60 + m).toDouble();
-    }
-    if (h <= rangeEnd) {
-      return ((24 - rangeStart + h) * 60 + m).toDouble();
-    }
-    return 0;
+    return PlanningSheetTimelinePrefs.minutesFromWindowStart(
+      wall,
+      planWallDay,
+      startExtended,
+    );
   }
 
   int _timelineBlockDurationMinutes(PlanningTask task) {
@@ -2592,19 +2653,19 @@ DatabaseService.instance.persistPlanningTaskOrder(
     double endMin,
   }) _timelineSpanMinutesFromProjection(
     TimeModeProjectedPlan proj,
-    int rangeStart,
-    int rangeEnd,
+    DateTime planWallDay,
+    int startExtended,
   ) {
     final startMin = _timelineMinutesFromRangeStart(
       proj.profileWallStart,
-      rangeStart,
-      rangeEnd,
+      planWallDay,
+      startExtended,
     );
     final endMin = proj.profileWallEnd != null
         ? _timelineMinutesFromRangeStart(
             proj.profileWallEnd!,
-            rangeStart,
-            rangeEnd,
+            planWallDay,
+            startExtended,
           )
         : startMin + proj.durationMinutes;
     return (startMin: startMin, endMin: endMin);
@@ -2615,16 +2676,17 @@ DatabaseService.instance.persistPlanningTaskOrder(
     List<PlanTimeViewBlockLayout> layouts,
   }) _computeTimelineDurationLayout(
     List<TimeModeProjectedPlan> projections,
-    int rangeStart,
-    int rangeEnd,
+    DateTime planWallDay,
+    int startExtended,
+    int endExtended,
     String selectedDayKey,
   ) {
     return RebuildMetrics.instance.perfBlock(
       'Planning._computeTimelineDurationLayout',
       () {
-        final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
-          rangeStart,
-          rangeEnd,
+        final visibleHours = PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(
+          startExtended,
+          endExtended,
         );
         if (kVerbosePlanTimeTzProjectionLogs && !kReleaseMode) {
           for (final proj in projections) {
@@ -2638,17 +2700,17 @@ DatabaseService.instance.persistPlanningTaskOrder(
         final result = PlanTimeViewLayoutCalculator.compute(
           projections: projections,
           visibleHours: visibleHours,
-          rangeStart: rangeStart,
+          rangeStart: startExtended,
           baseHourHeightPx: _timelineHourHeightPx(),
           startMinOf: (proj) => _timelineSpanMinutesFromProjection(
             proj,
-            rangeStart,
-            rangeEnd,
+            planWallDay,
+            startExtended,
           ).startMin,
           endMinOf: (proj) => _timelineSpanMinutesFromProjection(
             proj,
-            rangeStart,
-            rangeEnd,
+            planWallDay,
+            startExtended,
           ).endMin,
         );
         for (final layout in result.layouts) {
@@ -2656,8 +2718,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
           if (proj == null) continue;
           final span = _timelineSpanMinutesFromProjection(
             proj,
-            rangeStart,
-            rangeEnd,
+            planWallDay,
+            startExtended,
           );
           final hourIdx = result.grid.hourIndexForMinutesFromRangeStart(
             span.startMin,
@@ -2680,14 +2742,16 @@ DatabaseService.instance.persistPlanningTaskOrder(
 
   List<PlanTimeViewBlockLayout> _timelineBlockLayouts(
     List<TimeModeProjectedPlan> projections,
-    int rangeStart,
-    int rangeEnd,
+    DateTime planWallDay,
+    int startExtended,
+    int endExtended,
     String selectedDayKey,
   ) {
     final result = _computeTimelineDurationLayout(
       projections,
-      rangeStart,
-      rangeEnd,
+      planWallDay,
+      startExtended,
+      endExtended,
       selectedDayKey,
     );
     _activeTimelineDurationGrid = result.grid;
@@ -2829,17 +2893,19 @@ DatabaseService.instance.persistPlanningTaskOrder(
       DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
 
   double? _timelineNowLineTopPx(
-    int rangeStart,
-    int rangeEnd,
+    DateTime planWallDay,
+    int startExtended,
+    int endExtended,
     PlanTimeViewDurationGrid grid,
   ) {
     final selectedDay = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
+    final wallNow = _profileWallNow();
     final minProbe = _timelineMinutesFromRangeStart(
-      _profileWallNow(),
-      rangeStart,
-      rangeEnd,
+      wallNow,
+      planWallDay,
+      startExtended,
     );
     final ppm = grid.pxPerMinuteAtHourIndex(
       grid.hourIndexForMinutesFromRangeStart(minProbe.toDouble()),
@@ -2856,9 +2922,13 @@ DatabaseService.instance.persistPlanningTaskOrder(
       return null;
     }
     final nowUtc = DatabaseService.getPlanetaryNow();
-    final wallNow = _profileWallNow();
-    final min = _timelineMinutesFromRangeStart(wallNow, rangeStart, rangeEnd);
-    if (min < 0 || min > grid.totalMinutes) {
+    final min = _timelineMinutesFromRangeStart(wallNow, planWallDay, startExtended);
+    if (!PlanningSheetTimelinePrefs.wallInstantInsideVisibleWindow(
+      wallNow,
+      planWallDay,
+      startExtended,
+      endExtended,
+    )) {
       _logPlanTimeNowLine(
         nowUtc: nowUtc,
         wallNow: wallNow,
@@ -2922,18 +2992,12 @@ DatabaseService.instance.persistPlanningTaskOrder(
   DateTime _wallTimeFromTimelineMinutes(
     double minutesFromRangeStart,
     DateTime planWallDay,
-    int rangeStart,
+    int startExtended,
   ) {
-    final snapped = _snapTimelineMinutes(minutesFromRangeStart);
-    final total = snapped.round().clamp(0, 24 * 60 - 1);
-    final hour = (rangeStart + (total ~/ 60)) % 24;
-    final minute = total % 60;
-    return DateTime(
-      planWallDay.year,
-      planWallDay.month,
-      planWallDay.day,
-      hour,
-      minute,
+    return PlanningSheetTimelinePrefs.wallFromWindowMinutes(
+      planWallDay,
+      startExtended,
+      _snapTimelineMinutes(minutesFromRangeStart),
     );
   }
 
@@ -2960,24 +3024,28 @@ DatabaseService.instance.persistPlanningTaskOrder(
     return '${h}h ${m}m';
   }
 
-  int _timelineMaxVisibleMinutes(int rangeStart, int rangeEnd) {
-    return PlanningSheetTimelinePrefs.visibleHoursOrdered(
-          rangeStart,
-          rangeEnd,
-        ).length *
+  int _timelineMaxVisibleMinutes(int startExtended, int endExtended) {
+    return PlanningSheetTimelinePrefs.visibleDurationHours(
+          startExtended,
+          endExtended,
+        ) *
         60;
   }
 
   ({int startMin, int endMin}) _timelineStartEndMinutesFromTask(
     PlanningTask task,
-    int rangeStart,
-    int rangeEnd,
+    DateTime planWallDay,
+    int startExtended,
   ) {
     final proj = DatabaseService.instance.projectPlanForTimeMode(task);
     if (proj == null) {
       return (startMin: 0, endMin: _kTimelineDefaultBlockMinutes);
     }
-    final span = _timelineSpanMinutesFromProjection(proj, rangeStart, rangeEnd);
+    final span = _timelineSpanMinutesFromProjection(
+      proj,
+      planWallDay,
+      startExtended,
+    );
     return (startMin: span.startMin.round(), endMin: span.endMin.round());
   }
 
@@ -3405,21 +3473,22 @@ DatabaseService.instance.notifyPlanningRefresh();
   double _timelinePreviewTopPxForStartWall({
     required DateTime startWall,
     required PlanTimeViewDurationGrid grid,
-    required int rangeStart,
-    required int rangeEnd,
+    required DateTime planWallDay,
+    required int startExtended,
     required double maxTopPx,
   }) {
     final startMin = _timelineMinutesFromRangeStart(
       startWall,
-      rangeStart,
-      rangeEnd,
+      planWallDay,
+      startExtended,
     );
     return grid.yForMinutesFromRangeStart(startMin).clamp(0.0, maxTopPx);
   }
 
   List<PlanTimeViewBlockLayout> _timelineDragLayoutsForDay({
-    required int rangeStart,
-    required int rangeEnd,
+    required DateTime planWallDay,
+    required int startExtended,
+    required int endExtended,
     required String selectedDayKey,
   }) {
     if (ShellFlags.enableTimelineProjectionCache &&
@@ -3428,8 +3497,9 @@ DatabaseService.instance.notifyPlanningRefresh();
     }
     return _timelineBlockLayouts(
       _cachedTimeModeProjections,
-      rangeStart,
-      rangeEnd,
+      planWallDay,
+      startExtended,
+      endExtended,
       selectedDayKey,
     );
   }
@@ -3470,6 +3540,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     if (ShellFlags.enableTimelineProjectionCache) {
       _dragInsertLayoutsCache = _timelineBlockLayouts(
         _cachedTimeModeProjections,
+        planWallDay,
         rangeStart,
         rangeEnd,
         selectedDayKey,
@@ -3520,8 +3591,9 @@ DatabaseService.instance.notifyPlanningRefresh();
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
     final layouts = _timelineDragLayoutsForDay(
-      rangeStart: rangeStart,
-      rangeEnd: rangeEnd,
+      planWallDay: planWallDay,
+      startExtended: rangeStart,
+      endExtended: rangeEnd,
       selectedDayKey: selectedDayKey,
     );
     final insert = _timelineResolveDragInsertTarget(
@@ -3573,8 +3645,8 @@ DatabaseService.instance.notifyPlanningRefresh();
         previewTop = _timelinePreviewTopPxForStartWall(
           startWall: dropResult.draggedStartWall,
           grid: grid,
-          rangeStart: rangeStart,
-          rangeEnd: rangeEnd,
+          planWallDay: planWallDay,
+          startExtended: rangeStart,
           maxTopPx: maxTopPx,
         );
         previewLabel = _formatTimelineWallRangeLabel(
@@ -3684,8 +3756,9 @@ DatabaseService.instance.notifyPlanningRefresh();
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
     final layouts = _timelineDragLayoutsForDay(
-      rangeStart: rangeStart,
-      rangeEnd: rangeEnd,
+      planWallDay: planWallDay,
+      startExtended: rangeStart,
+      endExtended: rangeEnd,
       selectedDayKey: selectedDayKey,
     );
 
@@ -3989,21 +4062,20 @@ DatabaseService.instance.notifyPlanningRefresh();
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
     var ordered = _tasksForTimeMode(
-      DatabaseService.instance.planningDayTasksSnapshot(planWallDay),
+      _planningTasksForTimeViewWindow(planWallDay),
+      planWallDay,
       rangeStart,
     );
     final schedulablePre = <PlanningTask>[];
     for (final t in ordered) {
       final proj = DatabaseService.instance.projectPlanForTimeMode(t);
       if (proj == null) continue;
-      if (proj.profileWallDateKey != selectedDayKey) continue;
-      final startMin = _timelineMinutesFromRangeStart(
-        proj.profileWallStart,
+      if (!_projectedPlanInTimeViewWindow(
+        proj,
+        planWallDay,
         rangeStart,
         rangeEnd,
-      );
-      if (startMin < 0 ||
-          startMin > _timelineMaxVisibleMinutes(rangeStart, rangeEnd)) {
+      )) {
         continue;
       }
       schedulablePre.add(t);
@@ -4011,7 +4083,8 @@ DatabaseService.instance.notifyPlanningRefresh();
     if (schedulablePre.isNotEmpty) {
       _maybeNormalizeTimeViewOverlapsOnce(planWallDay, schedulablePre);
       ordered = _tasksForTimeMode(
-        DatabaseService.instance.planningDayTasksSnapshot(planWallDay),
+        _planningTasksForTimeViewWindow(planWallDay),
+        planWallDay,
         rangeStart,
       );
     }
@@ -4020,22 +4093,23 @@ DatabaseService.instance.notifyPlanningRefresh();
     for (final t in ordered) {
       final proj = DatabaseService.instance.projectPlanForTimeMode(t);
       if (proj == null) {
-        unscheduled.add(t);
+        if (t.dateKey == selectedDayKey) {
+          unscheduled.add(t);
+        }
         continue;
       }
-      if (proj.profileWallDateKey != selectedDayKey) continue;
-      final startMin = _timelineMinutesFromRangeStart(
-        proj.profileWallStart,
+      if (!_projectedPlanInTimeViewWindow(
+        proj,
+        planWallDay,
         rangeStart,
         rangeEnd,
-      );
-      if (startMin < 0 || startMin > _timelineMaxVisibleMinutes(rangeStart, rangeEnd)) {
+      )) {
         continue;
       }
       projections.add(proj);
     }
     _cachedTimeModeProjections = projections;
-    final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
+    final visibleHours = PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(
       rangeStart,
       rangeEnd,
     );
@@ -4118,6 +4192,7 @@ DatabaseService.instance.notifyPlanningRefresh();
   }) {
     final durationResult = _computeTimelineDurationLayout(
       projections,
+      planWallDay,
       rangeStart,
       rangeEnd,
       selectedDayKey,
@@ -4127,7 +4202,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     final layouts = durationResult.layouts;
     final canvasHeight = _timelineCanvasHeightPx(grid);
     final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
-    final nowTop = _timelineNowLineTopPx(rangeStart, rangeEnd, grid);
+    final nowTop = _timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd, grid);
     final wallNow = _profileWallNow();
     final nowLabel = nowTop != null
         ? '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')}'
@@ -4138,9 +4213,19 @@ DatabaseService.instance.notifyPlanningRefresh();
 
     final compact = _timelineCompactLayout(context);
     final railWidth = _timelineRailWidthPx(context);
-    String hourLabel(int hour) => compact
-        ? '${hour.clamp(0, 23)}'
-        : '${hour.clamp(0, 23).toString().padLeft(2, '0')}:00';
+    final prevMarker = t(loc, 'day_length_prev_day');
+    final nextMarker = t(loc, 'day_length_next_day');
+    String hourLabel(int extHour) {
+      final clock = PlanningSheetTimelinePrefs.formatExtendedHourClock(extHour);
+      final mod = PlanningSheetTimelinePrefs.displayHourMod24(extHour);
+      if (extHour < 0) {
+        return compact ? '$mod$prevMarker' : '$clock $prevMarker';
+      }
+      if (extHour >= 24) {
+        return compact ? '$mod$nextMarker' : '$clock $nextMarker';
+      }
+      return compact ? '$mod' : clock;
+    }
 
     final canvas = SizedBox(
       height: canvasHeight + 8,
@@ -4441,8 +4526,8 @@ DatabaseService.instance.notifyPlanningRefresh();
     final hadEnd = layout.task.endDateTime != null;
     final times = _timelineStartEndMinutesFromTask(
       layout.task,
+      planWallDay,
       rangeStart,
-      rangeEnd,
     );
     final interactionLabel = isResizing
         ? _timelineResizeTimeLabel
@@ -6162,22 +6247,22 @@ class _PlanningTimelineBoundsSheet extends StatefulWidget {
     required this.initialStart,
     required this.initialEnd,
     required this.onBoundsChanged,
-    required this.startTitle,
-    required this.startHint,
-    required this.endTitle,
-    required this.endHint,
+    required this.title,
+    required this.helper,
+    required this.valueSummaryBuilder,
+    required this.prevDayMarker,
+    required this.nextDayMarker,
     this.header,
   });
 
   final int initialStart;
   final int initialEnd;
   final void Function(int start, int end) onBoundsChanged;
-  final String startTitle;
-  final String startHint;
-  final String endTitle;
-  final String endHint;
-
-  /// Optional row above timeline sliders (e.g. tag manager link).
+  final String title;
+  final String helper;
+  final String Function(int start, int end) valueSummaryBuilder;
+  final String prevDayMarker;
+  final String nextDayMarker;
   final Widget? header;
 
   @override
@@ -6187,29 +6272,40 @@ class _PlanningTimelineBoundsSheet extends StatefulWidget {
 
 class _PlanningTimelineBoundsSheetState
     extends State<_PlanningTimelineBoundsSheet> {
-  late double _startValue;
-  late double _endValue;
+  late RangeValues _range;
 
   @override
   void initState() {
     super.initState();
-    _startValue = PlanningSheetTimelinePrefs.clampHour(
+    final range = PlanningSheetTimelinePrefs.normalizeExtendedRange(
       widget.initialStart,
-    ).toDouble();
-    _endValue = PlanningSheetTimelinePrefs.clampHour(
       widget.initialEnd,
-    ).toDouble();
+    );
+    _range = RangeValues(range.start.toDouble(), range.end.toDouble());
   }
 
-  void _commit() {
-    widget.onBoundsChanged(_startValue.round(), _endValue.round());
+  void _commit(RangeValues values) {
+    var start = values.start.round();
+    var end = values.end.round();
+    final normalized = PlanningSheetTimelinePrefs.normalizeExtendedRange(
+      start,
+      end,
+    );
+    setState(() {
+      _range = RangeValues(
+        normalized.start.toDouble(),
+        normalized.end.toDouble(),
+      );
+    });
+    widget.onBoundsChanged(normalized.start, normalized.end);
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final startLabel = _startValue.round();
-    final endLabel = _endValue.round();
+    final start = _range.start.round();
+    final end = _range.end.round();
+    final summary = widget.valueSummaryBuilder(start, end);
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -6218,72 +6314,35 @@ class _PlanningTimelineBoundsSheetState
           if (widget.header != null) widget.header!,
           if (widget.header != null) const Divider(height: 1),
           Text(
-            widget.startTitle,
+            widget.title,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
           Text(
-            widget.startHint,
+            widget.helper,
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
-          Row(
-            children: [
-              SizedBox(
-                width: 36,
-                child: Text(
-                  '$startLabel',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              Expanded(
-                child: Slider(
-                  value: _startValue.clamp(0, 23),
-                  min: 0,
-                  max: 23,
-                  divisions: 23,
-                  label: '$startLabel',
-                  onChanged: (v) {
-                    setState(() => _startValue = v);
-                    _commit();
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(widget.endTitle, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            widget.endHint,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            summary,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          Row(
-            children: [
-              SizedBox(
-                width: 36,
-                child: Text(
-                  '$endLabel',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              Expanded(
-                child: Slider(
-                  value: _endValue.clamp(0, 23),
-                  min: 0,
-                  max: 23,
-                  divisions: 23,
-                  label: '$endLabel',
-                  onChanged: (v) {
-                    setState(() => _endValue = v);
-                    _commit();
-                  },
-                ),
-              ),
-            ],
+          RangeSlider(
+            values: _range,
+            min: PlanningSheetTimelinePrefs.extendedMin.toDouble(),
+            max: PlanningSheetTimelinePrefs.extendedMax.toDouble(),
+            divisions: PlanningSheetTimelinePrefs.rangeSliderDivisions,
+            labels: RangeLabels(
+              PlanningSheetTimelinePrefs.formatExtendedHourClock(start) +
+                  (start < 0 ? ' ${widget.prevDayMarker}' : ''),
+              PlanningSheetTimelinePrefs.formatExtendedHourClock(end) +
+                  (end > 24 ? ' ${widget.nextDayMarker}' : ''),
+            ),
+            onChanged: _commit,
           ),
         ],
       ),

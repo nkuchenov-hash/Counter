@@ -1,65 +1,162 @@
+import 'package:counter/core/time/plan_time_visible_window.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Local-only start/end clock hours for the Planning time grid (0–23 inclusive).
-/// Not synced to NocoDB.
+/// Local-only visible day window for the Planning Time View (-3..27 extended hours).
+/// Not synced to PocketBase.
 class PlanningSheetTimelinePrefs {
   PlanningSheetTimelinePrefs._();
 
-  static const String _keyStart = 'planning_day_start_hour';
-  static const String _keyEnd = 'planning_day_end_hour';
+  static const String _keyStartExtended = 'visibleDayStartHourExtended';
+  static const String _keyEndExtended = 'visibleDayEndHourExtended';
+  static const String _legacyKeyStart = 'planning_day_start_hour';
+  static const String _legacyKeyEnd = 'planning_day_end_hour';
 
-  static int clampHour(int? v) {
-    if (v == null) return 0;
-    if (v < 0) return 0;
-    if (v > 23) return 23;
-    return v;
-  }
-
-  static Future<int> loadStart() async {
-    final p = await SharedPreferences.getInstance();
-    // Legacy: value may have been stored when range was 0–12; still valid 0–23.
-    return clampHour(p.getInt(_keyStart));
-  }
-
-  /// Defaults to end of day when missing (migration from start-only prefs).
-  static Future<int> loadEnd() async {
-    final p = await SharedPreferences.getInstance();
-    if (!p.containsKey(_keyEnd)) return 23;
-    return clampHour(p.getInt(_keyEnd));
-  }
-
-  static Future<void> saveStart(int hour) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setInt(_keyStart, clampHour(hour));
-  }
-
-  static Future<void> saveEnd(int hour) async {
-    final p = await SharedPreferences.getInstance();
-    await p.setInt(_keyEnd, clampHour(hour));
-  }
-
-  static Future<void> saveStartEnd(int start, int end) async {
-    await saveStart(start);
-    await saveEnd(end);
-  }
-
-  /// Inclusive wall-clock hour rows for the grid. If [start] <= [end], range is
-  /// that contiguous block; if [start] > [end], range spans midnight (overnight).
-  static List<int> visibleHoursOrdered(int start, int end) {
-    final s = clampHour(start);
-    final e = clampHour(end);
-    if (s <= e) {
-      return List<int>.generate(e - s + 1, (i) => s + i);
-    }
-    return <int>[
-      ...List<int>.generate(24 - s, (i) => s + i),
-      ...List<int>.generate(e + 1, (i) => i),
-    ];
-  }
+  static const int extendedMin = PlanTimeVisibleWindow.extendedMin;
+  static const int extendedMax = PlanTimeVisibleWindow.extendedMax;
+  static const int defaultStartExtended = PlanTimeVisibleWindow.defaultStartExtended;
+  static const int defaultEndExtended = PlanTimeVisibleWindow.defaultEndExtended;
+  static const int rangeSliderDivisions = 30;
 
   /// Default vertical drag snap for Planning Time timeline (minutes).
   static const int timelineSnapMinutes = 5;
 
   /// Minimum scheduled block duration when resizing (minutes).
   static const int timelineMinDurationMinutes = 5;
+
+  static int clampStartExtended(int? value) =>
+      PlanTimeVisibleWindow.clampStartExtended(value);
+
+  static int clampEndExtended(int? value, int startExtended) =>
+      PlanTimeVisibleWindow.clampEndExtended(value, startExtended);
+
+  static ({int start, int end}) normalizeExtendedRange(int start, int end) =>
+      PlanTimeVisibleWindow.normalizeExtendedRange(start, end);
+
+  static ({int start, int end}) migrateLegacyRange({
+    int? legacyStart,
+    int? legacyEnd,
+  }) =>
+      PlanTimeVisibleWindow.migrateLegacyRange(
+        legacyStart: legacyStart,
+        legacyEnd: legacyEnd,
+      );
+
+  static Future<({int start, int end})> loadVisibleDayRange() async {
+    final p = await SharedPreferences.getInstance();
+    if (p.containsKey(_keyStartExtended) && p.containsKey(_keyEndExtended)) {
+      return normalizeExtendedRange(
+        p.getInt(_keyStartExtended) ?? defaultStartExtended,
+        p.getInt(_keyEndExtended) ?? defaultEndExtended,
+      );
+    }
+    return migrateLegacyRange(
+      legacyStart: p.getInt(_legacyKeyStart),
+      legacyEnd: p.containsKey(_legacyKeyEnd) ? p.getInt(_legacyKeyEnd) : null,
+    );
+  }
+
+  static Future<void> saveVisibleDayRange(int start, int end) async {
+    final range = normalizeExtendedRange(start, end);
+    final p = await SharedPreferences.getInstance();
+    await p.setInt(_keyStartExtended, range.start);
+    await p.setInt(_keyEndExtended, range.end);
+    await p.setInt(_legacyKeyStart, range.start.clamp(0, 23));
+    await p.setInt(
+      _legacyKeyEnd,
+      range.end > 23 ? range.end - 24 : range.end.clamp(0, 23),
+    );
+  }
+
+  @Deprecated('Use loadVisibleDayRange')
+  static Future<int> loadStart() async {
+    final range = await loadVisibleDayRange();
+    return range.start;
+  }
+
+  @Deprecated('Use loadVisibleDayRange')
+  static Future<int> loadEnd() async {
+    final range = await loadVisibleDayRange();
+    return range.end;
+  }
+
+  @Deprecated('Use saveVisibleDayRange')
+  static Future<void> saveStartEnd(int start, int end) async {
+    await saveVisibleDayRange(start, end);
+  }
+
+  static List<int> visibleExtendedHoursOrdered(int startExtended, int endExtended) =>
+      PlanTimeVisibleWindow.visibleExtendedHoursOrdered(startExtended, endExtended);
+
+  @Deprecated('Use visibleExtendedHoursOrdered')
+  static List<int> visibleHoursOrdered(int start, int end) =>
+      visibleExtendedHoursOrdered(start, end);
+
+  static int visibleDurationHours(int startExtended, int endExtended) =>
+      PlanTimeVisibleWindow.visibleDurationHours(startExtended, endExtended);
+
+  static DateTime windowStartWall(DateTime day, int startExtended) =>
+      PlanTimeVisibleWindow.windowStartWall(day, startExtended);
+
+  static DateTime windowEndWall(DateTime day, int endExtended) =>
+      PlanTimeVisibleWindow.windowEndWall(day, endExtended);
+
+  static int displayHourMod24(int extendedHour) =>
+      PlanTimeVisibleWindow.displayHourMod24(extendedHour);
+
+  static String formatExtendedHourClock(int extendedHour) =>
+      PlanTimeVisibleWindow.formatExtendedHourClock(extendedHour);
+
+  static double minutesFromWindowStart(
+    DateTime wall,
+    DateTime day,
+    int startExtended,
+  ) =>
+      PlanTimeVisibleWindow.minutesFromWindowStart(wall, day, startExtended);
+
+  static DateTime wallFromWindowMinutes(
+    DateTime day,
+    int startExtended,
+    double minutesFromWindowStart,
+  ) =>
+      PlanTimeVisibleWindow.wallFromWindowMinutes(
+        day,
+        startExtended,
+        minutesFromWindowStart,
+      );
+
+  static bool wallInstantInsideVisibleWindow(
+    DateTime wall,
+    DateTime day,
+    int startExtended,
+    int endExtended,
+  ) =>
+      PlanTimeVisibleWindow.wallInstantInsideVisibleWindow(
+        wall,
+        day,
+        startExtended,
+        endExtended,
+      );
+
+  static bool projectedPlanOverlapsVisibleWindow({
+    required DateTime wallStart,
+    required DateTime? wallEnd,
+    required int durationMinutes,
+    required DateTime selectedDay,
+    required int startExtended,
+    required int endExtended,
+  }) =>
+      PlanTimeVisibleWindow.projectedPlanOverlapsVisibleWindow(
+        wallStart: wallStart,
+        wallEnd: wallEnd,
+        durationMinutes: durationMinutes,
+        selectedDay: selectedDay,
+        startExtended: startExtended,
+        endExtended: endExtended,
+      );
+
+  static bool needsNextDayTasks(int endExtended) =>
+      PlanTimeVisibleWindow.needsNextDayTasks(endExtended);
+
+  static bool needsPreviousDayTasks(int startExtended) =>
+      PlanTimeVisibleWindow.needsPreviousDayTasks(startExtended);
 }

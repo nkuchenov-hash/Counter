@@ -3126,23 +3126,17 @@ extension PlanServiceExtension on DatabaseService {
             );
           } else {
             startWall = _snapPlanWallDateTime(
-              DateTime(
-                wallDay.year,
-                wallDay.month,
-                wallDay.day,
-                timelineDayStartHour.clamp(0, 23),
-                0,
+              PlanTimeVisibleWindow.windowStartWall(
+                wallDay,
+                timelineDayStartHour,
               ),
             );
           }
         } else {
           startWall = _snapPlanWallDateTime(
-            DateTime(
-              wallDay.year,
-              wallDay.month,
-              wallDay.day,
-              timelineDayStartHour.clamp(0, 23),
-              0,
+            PlanTimeVisibleWindow.windowStartWall(
+              wallDay,
+              timelineDayStartHour,
             ),
           );
         }
@@ -3270,19 +3264,37 @@ extension PlanServiceExtension on DatabaseService {
 
     var exceedsVisibleDay = false;
     if (latestEnd != null) {
-      final endMin = latestEnd.hour * 60 + latestEnd.minute;
-      final startMin = timelineStartHour.clamp(0, 23) * 60;
-      final endBoundMin = timelineEndHour.clamp(0, 23) * 60 + 59;
-      if (timelineStartHour <= timelineEndHour) {
-        exceedsVisibleDay = endMin > endBoundMin;
-      } else {
-        final inLate = latestEnd.hour >= timelineStartHour;
-        final inEarly = latestEnd.hour <= timelineEndHour;
-        exceedsVisibleDay = !(inLate || inEarly) && endMin > endBoundMin;
+      DateTime? wallDay;
+      for (final p in dayPlans) {
+        final dk = p.dateKey.trim();
+        if (dk.length >= 10) {
+          final parts = dk.split('-');
+          if (parts.length >= 3) {
+            final y = int.tryParse(parts[0]);
+            final m = int.tryParse(parts[1]);
+            final d = int.tryParse(parts[2]);
+            if (y != null && m != null && d != null) {
+              wallDay = DateTime(y, m, d);
+              break;
+            }
+          }
+        }
       }
-      if (endMin < startMin && timelineStartHour <= timelineEndHour) {
-        exceedsVisibleDay = true;
-      }
+      wallDay ??= DateTime(
+        latestEnd.year,
+        latestEnd.month,
+        latestEnd.day,
+      );
+      final windowStart = PlanTimeVisibleWindow.windowStartWall(
+        wallDay,
+        timelineStartHour,
+      );
+      final windowEnd = PlanTimeVisibleWindow.windowEndWall(
+        wallDay,
+        timelineEndHour,
+      );
+      exceedsVisibleDay =
+          latestEnd.isAfter(windowEnd) || latestEnd.isBefore(windowStart);
     }
 
     final exceedsDailyTotal = totalMinutes > kPlanDayOverloadTotalMinutes;

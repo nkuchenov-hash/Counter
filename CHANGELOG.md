@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-23] - Planning Time View: single Day length range slider [wip]
+* **`plan_time_visible_window.dart`:** [wip] extended hour window math (−3..27), overlap filter, wall↔minutes mapping; shared by prefs, Brain, tests.
+* **`planning_day_start_prefs.dart`:** [wip] `visibleDayStartHourExtended` / `visibleDayEndHourExtended` prefs + legacy migration (start=20/end=2 → 20→26).
+* **`planning_view.dart`:** [wip] one `RangeSlider` “Day length / Длительность дня”; adjacent-day task merge for after-midnight window; extended hour rail markers.
+* **`plan_service.dart`:** [wip] overload + auto-schedule use extended window start wall.
+* **`test/plan_time_visible_window_test.dart`:** [wip] migration, overlap, y→time 25:30, now-line window cases.
+* **`lib/l10n/langs/en.dart`**, **`ru.dart`:** [wip] `day_length_*` strings.
+
 ## [2026-06-23] - P0 Time View drag-over-card hard guard [wip]
 * **`plan_time_sequential_cascade.dart`:** [wip] `TimeViewInsertionSource`, `validateTimeViewTargetInsertionIntent`, `refreshTimeViewInsertionIntentFromScheduled`, `isPlanTimelineVerticallyDraggable`, debounced `logTimeDropGuard` — target-card mode forbids raw-Y fallback.
 * **`planning_view.dart`:** [wip] finger vs preview delta split (`_timelineFingerDragDeltaPx`); stored target-card intent preferred on commit; invalid/orphan target intent cancels without PATCH; empty canvas uses finger yToTime only.

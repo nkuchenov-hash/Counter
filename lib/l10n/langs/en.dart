@@ -342,6 +342,11 @@ const Map<String, String> kEnL10n = {
         'First hour row in the time grid (0–23). End may be before start for overnight.',
     'plan_day_end_hour': 'End of day',
     'plan_day_end_hint': 'Last hour row to show (0–23), inclusive.',
+    'day_length_title': 'Day length',
+    'day_length_helper':
+        'Controls the visible day window: up to 3 hours before midnight and 3 hours after midnight.',
+    'day_length_prev_day': '−1',
+    'day_length_next_day': '+1',
     'plan_outside_visible_hours': 'Other times (outside visible hours)',
     'plan_quick_add_hour': 'Add at this hour',
     'plan_task_moved_hour': 'Task moved to %s',

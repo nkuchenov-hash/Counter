@@ -342,6 +342,11 @@ const Map<String, String> kRuL10n = {
         'Первая строка сетки (0–23). Конец может быть «раньше» начала через полночь.',
     'plan_day_end_hour': 'Конец дня',
     'plan_day_end_hint': 'Последняя строка сетки (0–23), включительно.',
+    'day_length_title': 'Длительность дня',
+    'day_length_helper':
+        'Показывает окно дня: до 3 часов до полуночи и до 3 часов после полуночи.',
+    'day_length_prev_day': '−1',
+    'day_length_next_day': '+1',
     'plan_outside_visible_hours': 'Другое время (вне видимого диапазона)',
     'plan_quick_add_hour': 'Добавить в этот час',
     'plan_task_moved_hour': 'Задача перемещена на %s',
