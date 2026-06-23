@@ -11,6 +11,22 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.1: startup timing diagnostics + boot hot-path cleanup [wip]
+* **`p0u_startup_diag.dart`:** [wip] `[P0U_BOOT_STAGE]` / `[P0U_BOOT_DEFERRED]` / `[P0U_BOOT_SUMMARY]` stopwatch logger.
+* **`main.dart`:** [wip] Boot stage timings; defer non-current `initializeDateFormatting` locales; first shell/first frame markers.
+* **`db_core.dart`:** [wip] Critical path only (categories + prefs records + disk warm restore); `_runDeferredBootWorkAfterFirstShell` for network fetch, warm windows, realtime, sync.
+* **`profile_service.dart`:** [wip] Device cache-first profile boot (`cacheThenServer`); background PB refresh; `[P0U_PROFILE_*]` logs.
+* **`record_service.dart`:** [wip] `bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true)` skips warm/prebuild on hot path.
+* **`app_shell.dart`:** [wip] STT init deferred post-first-frame.
+* P0U recovery preserved (`kUseP0tMountedStrip=false`, stable PageView, live optimistic sources).
+
+## [2026-06-15] - P0V: Performance Kill Switch Law — speed/stability as sacred project law [wip]
+* **`docs/ARCHITECTURE.md`:** [wip] New Iron Rule § **PERFORMANCE_KILL_SWITCH_LAW** — hard-stop conditions, emergency response, preload/snapshot/logging/hot-path rules.
+* **`docs/UX_CONTRACT.md`:** [wip] § **Performance & Responsiveness Contract** — ~100ms feedback, no partial cards, performance regression = P0 correctness bug.
+* **`docs/AI_CONTEXT.md` / `CLAUDE.md` / `docs/ROADMAP.md`:** [wip] AI emergency stabilization protocol; performance regressions outrank V3/V7; banned “cache exists” excuses.
+* **`lib/core/perf_flags.dart` / `p0u_feature_flags.dart` / `app_build_info.dart`:** [wip] P0V law comments; experimental paths default-off; `p0vPerfKillSwitchMarker`.
+* **Not shipped** until docs reviewed and team confirms law is in force.
+
 ## [2026-06-15] - P0U: emergency recovery — disable P0S/P0T, restore stable paging [wip]
 * **`p0u_feature_flags.dart` / `p0u_diag.dart` / `p0u_platform.dart`:** [wip] Global kill switch `kUseP0tMountedStrip=false`; `[P0U_*]` diagnostics (pager mode, first swipe, record optimistic, release log guard).
 * **`planning_view.dart` / `timeline_view.dart`:** [wip] Restored stable `PageView.builder` + `DatePagerSettleGate` + `FeatherDateSwipePhysics`; active day uses live planning stream / live optimistic records; P0S/P0T `EagerDayContentStrip` behind flag only.

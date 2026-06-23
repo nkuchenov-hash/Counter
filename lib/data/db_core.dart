@@ -303,21 +303,29 @@ extension DbCoreExtension on DatabaseService {
     try {
       _prefs = await SharedPreferences.getInstance();
       await _debugPocketBaseHealth();
-      await _loadSettingsFromNoco().timeout(
-        const Duration(seconds: 15),
-        onTimeout: () {
-          throw _ProfileFetchFailedException(
-            0,
-            'Could not load your profile settings.',
-          );
-        },
+      await P0uStartupDiag.stageAsync(
+        'profileFetch',
+        () => _loadSettingsFromNoco().timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            throw _ProfileFetchFailedException(
+              0,
+              'Could not load your profile settings.',
+            );
+          },
+        ),
+        blocksFirstFrame: true,
       );
-      await _loadInnerAfterProfile().timeout(
-        const Duration(seconds: 25),
-        onTimeout: () {
-          _loadErrorMessage ??=
-              'Data sync timed out; profile loaded — tap Profile to retry sync.';
-        },
+      await P0uStartupDiag.stageAsync(
+        'localCacheRestore',
+        () => _loadInnerAfterProfile().timeout(
+          const Duration(seconds: 25),
+          onTimeout: () {
+            _loadErrorMessage ??=
+                'Data sync timed out; profile loaded — tap Profile to retry sync.';
+          },
+        ),
+        blocksFirstFrame: true,
       );
       return true;
     } on _ProfileFetchFailedException catch (e) {
@@ -425,46 +433,34 @@ extension DbCoreExtension on DatabaseService {
 
   Future<void> _loadInnerAfterProfile() async {
     if (_pbHttpBackoffActive) {
-      await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
+      await bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true);
       await restorePlansWarmSnapshotsFromDiskAtBoot();
       await restoreTimelineWarmSnapshotsFromDiskAtBoot();
-      final projected = getProjectedToday();
-      final timelineToday = getTimelineDeviceLocalToday();
-      if (kUseP0tMountedStrip) {
-        preparePlansMountedWindowBoot(projected, criticalOnly: true);
-        prepareTimelineMountedWindowBoot(timelineToday, criticalOnly: true);
-        preparePlansCriticalRenderReady(projected);
-        prepareTimelineCriticalRenderReady(timelineToday);
-        P0tDiag.startupStage(name: 'criticalReady', ms: 0);
-        schedulePlansMountedWindowBootBackground(projected);
-        scheduleTimelineMountedWindowBootBackground(timelineToday);
-      } else {
-        ensurePlansWarmWindow(projected);
-        ensureTimelineWarmWindow(timelineToday);
-        P0uDiag.timeProjectStormFixed();
-      }
+      P0uDiag.timeProjectStormFixed();
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
       _settingsController.add(_settings);
       _categoryController.add(List.from(_rules));
       _tasksController.add(List.from(_tasksCache));
       _isInitialized = true;
-      await offlineSync.bootstrapFromOutboxes(
-        pbBackoffActive: _pbHttpBackoffActive,
-      );
-      unawaited(flushPendingLocalMutations());
+      _registerAppLifecycleObserverOnce();
+      unawaited(_runDeferredBootWorkAfterFirstShell());
       return;
     }
     await _loadRulesFromNoco();
-    await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
+    await bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true);
     await restorePlansWarmSnapshotsFromDiskAtBoot();
     await restoreTimelineWarmSnapshotsFromDiskAtBoot();
-    try {
-      await _fetchRecordsIntoCache(forceNetwork: true);
-      await _reconcileDuplicatePrimaryRunningRecords();
-    } catch (_) {}
-    await _loadPlanningTasksForToday();
-    // Safety re-run: finish startup with a final category load.
-    await _loadRulesFromNoco();
+    P0uDiag.timeProjectStormFixed();
+    _settingsController.add(_settings);
+    _categoryController.add(List.from(_rules));
+    _tasksController.add(List.from(_tasksCache));
+    _isInitialized = true;
+    _registerAppLifecycleObserverOnce();
+    unawaited(_runDeferredBootWorkAfterFirstShell());
+  }
+
+  /// Non-critical boot work — runs after shell can paint (P0U.1).
+  Future<void> _runDeferredBootWorkAfterFirstShell() async {
     final projected = getProjectedToday();
     final timelineToday = getTimelineDeviceLocalToday();
     if (kUseP0tMountedStrip) {
@@ -475,18 +471,46 @@ extension DbCoreExtension on DatabaseService {
       schedulePlansMountedWindowBootBackground(projected);
       scheduleTimelineMountedWindowBootBackground(timelineToday);
     } else {
+      P0uStartupDiag.deferred(
+        name: 'plansWarmWindow',
+        reason: 'backgroundOnly',
+      );
+      P0uStartupDiag.deferred(
+        name: 'timelineWarmWindow',
+        reason: 'backgroundOnly',
+      );
+      final warmSw = Stopwatch()..start();
       ensurePlansWarmWindow(projected);
       ensureTimelineWarmWindow(timelineToday);
-      P0uDiag.timeProjectStormFixed();
+      prebuildTimelineCriticalBodiesSync(timelineToday);
+      warmSw.stop();
+      P0uStartupDiag.bootStage(
+        name: 'plansWarmWindow',
+        ms: warmSw.elapsedMilliseconds,
+        blocksFirstFrame: false,
+      );
+      P0uStartupDiag.bootStage(
+        name: 'recordsWarmWindow',
+        ms: warmSw.elapsedMilliseconds,
+        blocksFirstFrame: false,
+      );
     }
-    persistPlansWarmSnapshotsToDisk();
-    persistTimelineWarmSnapshotsToDisk();
-    _settingsController.add(_settings);
-    _categoryController.add(List.from(_rules));
-    _tasksController.add(List.from(_tasksCache));
-    // Shell must not treat Brain as ready until profile settings + categories + tasks are loaded.
-    _isInitialized = true;
-    _registerAppLifecycleObserverOnce();
+    if (!_pbHttpBackoffActive) {
+      try {
+        await _fetchRecordsIntoCache(forceNetwork: true);
+        await _reconcileDuplicatePrimaryRunningRecords();
+      } catch (_) {}
+      try {
+        await _loadPlanningTasksForToday();
+      } catch (_) {}
+      unawaited(_loadRulesFromNoco().catchError((Object _, StackTrace _) {}));
+      persistPlansWarmSnapshotsToDisk();
+      persistTimelineWarmSnapshotsToDisk();
+    }
+    P0uStartupDiag.deferred(
+      name: 'syncBootstrap',
+      reason: 'canRunAfterShell',
+    );
     try {
       await _startRecordsRealtimeSubscription();
     } catch (_) {}
@@ -494,17 +518,29 @@ extension DbCoreExtension on DatabaseService {
       _startPlansRealtimeSubscription().catchError((Object _, StackTrace _) {}),
     );
     unawaited(() async {
-      await _ensureAllPlansUserCacheFresh(force: true);
-      notifyPlanningRefresh(scheduleNetworkRefresh: false, pumpNetworkNow: true);
+      try {
+        await _ensureAllPlansUserCacheFresh(force: true);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false, pumpNetworkNow: true);
+      } catch (_) {}
     }());
     unawaited(
       _runOneShotUntitledGhostRecordCleanDeferred()
           .catchError((Object _, StackTrace _) {}),
     );
-    await offlineSync.bootstrapFromOutboxes(
-      pbBackoffActive: _pbHttpBackoffActive,
+    final syncSw = Stopwatch()..start();
+    try {
+      await offlineSync.bootstrapFromOutboxes(
+        pbBackoffActive: _pbHttpBackoffActive,
+      );
+      await flushPendingLocalMutations();
+    } catch (_) {}
+    syncSw.stop();
+    P0uStartupDiag.bootStage(
+      name: 'syncBootstrap',
+      ms: syncSw.elapsedMilliseconds,
+      blocksFirstFrame: false,
     );
-    await flushPendingLocalMutations();
+    P0uStartupDiag.markInteractive();
   }
 
   /// Foreground/resume refresh: records + today's plans + stream pumps (no user input required).

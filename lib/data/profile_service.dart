@@ -55,6 +55,7 @@ const String _dataRegionKey = 'data_region';
 const String _profileTzLabelKey = 'profile_preferred_timezone';
 const String _profileTzOffsetKey = 'profile_timezone_offset_hours';
 const String _profileThemeModeKey = 'profile_theme_mode';
+const String _profilePrimaryLangKey = 'profile_primary_language';
 
 String? _lastProfileBootLogKey;
 DateTime? _lastProfileBootLogAt;
@@ -348,58 +349,66 @@ extension ProfileServiceExtension on DatabaseService {
     } catch (_) {}
   }
 
-  /// Mirror PB-hydrated settings into device prefs (write-only cache; never overrides PB on boot).
+  /// Mirror PB-hydrated settings into device prefs (boot cache for tz/lang/theme).
   Future<void> _mirrorProfileSettingsToDeviceCache() async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
       await prefs.setString(_profileThemeModeKey, _settings.themeMode);
       await prefs.setString(_profileTzLabelKey, _settings.preferredTimeZone);
       await prefs.setInt(_profileTzOffsetKey, _settings.timezoneOffsetHours);
+      final lang = _settings.primaryLanguage.trim().isNotEmpty
+          ? _settings.primaryLanguage
+          : _settings.language;
+      if (lang.trim().isNotEmpty) {
+        await prefs.setString(_profilePrimaryLangKey, lang);
+      }
     } catch (_) {}
   }
 
-  Map<String, dynamic> _diffProfilePatchFields(
-    UserSettings prev,
-    UserSettings next,
-  ) {
-    final fields = <String, dynamic>{};
-    final nextLang = resolvedUiLanguageCode(
-      next.primaryLanguage.trim().isNotEmpty ? next.primaryLanguage : next.language,
-    );
-    final prevLang = resolvedUiLanguageCode(
-      prev.primaryLanguage.trim().isNotEmpty ? prev.primaryLanguage : prev.language,
-    );
-    if (nextLang != prevLang) {
-      fields['primary_language'] = nextLang;
-      fields['active_languages'] = <String>[nextLang];
+  Future<bool> _hydrateSettingsFromDeviceCacheIfAvailable() async {
+    final uid = (_userIdForWhere ?? currentProfileId ?? '').trim();
+    if (uid.isEmpty) return false;
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final tzLabel = prefs.getString(_profileTzLabelKey);
+      final tzOffset = prefs.getInt(_profileTzOffsetKey);
+      if (tzLabel == null || tzOffset == null) return false;
+      final resolvedTz = tzLabel.trim().isEmpty ? 'UTC' : tzLabel.trim();
+      final theme = prefs.getString(_profileThemeModeKey) ?? 'system';
+      final langRaw = prefs.getString(_profilePrimaryLangKey);
+      final lang = (langRaw != null && langRaw.trim().isNotEmpty)
+          ? resolvedUiLanguageCode(langRaw)
+          : 'en';
+      _settings = UserSettings(
+        userId: uid,
+        language: lang,
+        primaryLanguage: lang,
+        preferredTimeZone: resolvedTz,
+        timezoneOffsetHours: tzOffset,
+        themeMode: theme,
+      );
+      try {
+        final showTags = prefs.getBool(_prefsKeyShowListTagsOnCards(uid));
+        if (showTags != null) {
+          _settings = _settings.copyWith(showListTagsOnCards: showTags);
+        }
+      } catch (_) {}
+      return true;
+    } catch (_) {
+      return false;
     }
-    if (next.preferredTimeZone != prev.preferredTimeZone ||
-        next.timezoneOffsetHours != prev.timezoneOffsetHours) {
-      fields['preferred_timezone'] = next.preferredTimeZone;
-      fields['timezone_offset'] = next.timezoneOffsetHours;
-    }
-    if (next.themeMode != prev.themeMode) {
-      fields['theme_mode'] = next.themeMode;
-    }
-    final nextDn = next.displayName?.trim() ?? '';
-    final prevDn = prev.displayName?.trim() ?? '';
-    if (nextDn != prevDn) {
-      fields['display_name'] = nextDn.isEmpty ? null : nextDn;
-    }
-    if (next.tagDisplayMode != prev.tagDisplayMode ||
-        tagDisplayModeWireForPatch(next) !=
-            tagDisplayModeWireForPatch(prev)) {
-      fields['tag_display_mode'] = tagDisplayModeWireForPatch(next);
-    }
-    if (next.listCompletionBehavior != prev.listCompletionBehavior) {
-      fields['list_completion_behavior'] =
-          listCompletionBehaviorWireForPatch(next);
-    }
-    return fields;
   }
 
-  Future<void> _loadSettingsFromNoco() async {
-    final data = await getCurrentUserProfileMap();
+  bool _profileSettingsVisiblyChanged(UserSettings a, UserSettings b) {
+    return a.primaryLanguage != b.primaryLanguage ||
+        a.preferredTimeZone != b.preferredTimeZone ||
+        a.timezoneOffsetHours != b.timezoneOffsetHours ||
+        a.themeMode != b.themeMode ||
+        a.displayName != b.displayName ||
+        a.isAdmin != b.isAdmin;
+  }
+
+  void _applyProfileFromPbMap(Map<String, dynamic> data) {
     if (data.isEmpty) {
       throw _ProfileFetchFailedException(
         404,
@@ -507,7 +516,6 @@ extension ProfileServiceExtension on DatabaseService {
         }
       }
     } catch (_) {}
-    await _mirrorProfileSettingsToDeviceCache();
     _profileHydratedFromPb = true;
     _profileHydrationError = null;
     _profileHydratedLog(
@@ -527,6 +535,103 @@ extension ProfileServiceExtension on DatabaseService {
     );
     _settingsController.add(_settings);
     _syncMaterialAppLocaleFromSettings(_settings);
+  }
+
+  Future<void> _fetchAndApplyProfileFromServer({
+    required bool afterCacheBoot,
+  }) async {
+    final sw = Stopwatch()..start();
+    final before = _settings;
+    try {
+      final data = await getCurrentUserProfileMap();
+      _applyProfileFromPbMap(data);
+      await _mirrorProfileSettingsToDeviceCache();
+      sw.stop();
+      P0uDiag.profileServerRefreshDone(
+        changed: afterCacheBoot
+            ? _profileSettingsVisiblyChanged(before, _settings)
+            : false,
+        ms: sw.elapsedMilliseconds,
+      );
+      if (!afterCacheBoot) {
+        P0uDiag.profileBootSource(
+          source: 'server',
+          hasTimezone: _settings.preferredTimeZone.isNotEmpty,
+          hasLanguage: _settings.primaryLanguage.isNotEmpty,
+        );
+      }
+    } catch (e) {
+      sw.stop();
+      if (afterCacheBoot) {
+        DatabaseService._log(
+          'Profile server refresh after cache boot failed: $e',
+        );
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _loadSettingsFromNoco() async {
+    final hadCache = await _hydrateSettingsFromDeviceCacheIfAvailable();
+    if (hadCache) {
+      final lang = _settings.primaryLanguage.trim().isNotEmpty
+          ? _settings.primaryLanguage
+          : _settings.language;
+      P0uDiag.profileBootSource(
+        source: 'cacheThenServer',
+        hasTimezone: _settings.preferredTimeZone.isNotEmpty,
+        hasLanguage: lang.isNotEmpty,
+      );
+      _profileHydratedFromPb = true;
+      _profileHydrationError = null;
+      _settingsController.add(_settings);
+      _syncMaterialAppLocaleFromSettings(_settings);
+      unawaited(_fetchAndApplyProfileFromServer(afterCacheBoot: true));
+      return;
+    }
+    await _fetchAndApplyProfileFromServer(afterCacheBoot: false);
+    await _mirrorProfileSettingsToDeviceCache();
+  }
+
+  Map<String, dynamic> _diffProfilePatchFields(
+    UserSettings prev,
+    UserSettings next,
+  ) {
+    final fields = <String, dynamic>{};
+    final nextLang = resolvedUiLanguageCode(
+      next.primaryLanguage.trim().isNotEmpty ? next.primaryLanguage : next.language,
+    );
+    final prevLang = resolvedUiLanguageCode(
+      prev.primaryLanguage.trim().isNotEmpty ? prev.primaryLanguage : prev.language,
+    );
+    if (nextLang != prevLang) {
+      fields['primary_language'] = nextLang;
+      fields['active_languages'] = <String>[nextLang];
+    }
+    if (next.preferredTimeZone != prev.preferredTimeZone ||
+        next.timezoneOffsetHours != prev.timezoneOffsetHours) {
+      fields['preferred_timezone'] = next.preferredTimeZone;
+      fields['timezone_offset'] = next.timezoneOffsetHours;
+    }
+    if (next.themeMode != prev.themeMode) {
+      fields['theme_mode'] = next.themeMode;
+    }
+    final nextDn = next.displayName?.trim() ?? '';
+    final prevDn = prev.displayName?.trim() ?? '';
+    if (nextDn != prevDn) {
+      fields['display_name'] = nextDn.isEmpty ? null : nextDn;
+    }
+    if (next.tagDisplayMode != prev.tagDisplayMode ||
+        tagDisplayModeWireForPatch(next) !=
+            tagDisplayModeWireForPatch(prev)) {
+      fields['tag_display_mode'] = tagDisplayModeWireForPatch(next);
+    }
+    if (next.listCompletionBehavior != prev.listCompletionBehavior) {
+      fields['list_completion_behavior'] =
+          listCompletionBehaviorWireForPatch(next);
+    }
+    return fields;
   }
 
   DateTime getProjectedToday() {

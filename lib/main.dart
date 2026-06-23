@@ -32,6 +32,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_platform.dart';
+import 'package:counter/core/p0u_startup_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0t_diag.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -44,6 +45,7 @@ bool _startupNetworkErrorShown = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  P0uStartupDiag.ensureStarted();
   P0uDiag.releaseLogGuard();
   P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
   final platform = p0uPlatformLabel();
@@ -83,18 +85,28 @@ void main() async {
     appWearHost = false;
   }
   try {
-    await DatabaseService.instance.ensurePocketBaseReady();
+    await P0uStartupDiag.stageAsync(
+      'pocketbaseReady',
+      () => DatabaseService.instance.ensurePocketBaseReady(),
+      blocksFirstFrame: true,
+    );
   } catch (_) {}
+  final bootLocale =
+      materialLocaleForUiLanguage(currentLocale.value).toString();
   try {
-    if (appWearHost) {
-      await initializeDateFormatting(
-        materialLocaleForUiLanguage(currentLocale.value).toString(),
-        null,
+    await initializeDateFormatting(bootLocale, null);
+    if (!appWearHost) {
+      unawaited(
+        Future.microtask(() async {
+          for (final loc in kAppSupportedMaterialLocales) {
+            final tag = loc.toString();
+            if (tag == bootLocale) continue;
+            try {
+              await initializeDateFormatting(tag, null);
+            } catch (_) {}
+          }
+        }),
       );
-    } else {
-      for (final loc in kAppSupportedMaterialLocales) {
-        await initializeDateFormatting(loc.toString(), null);
-      }
     }
   } catch (_) {}
   try {
@@ -102,10 +114,17 @@ void main() async {
   } catch (_) {}
   String? bootProfileId;
   try {
-    bootProfileId = await AuthBridge.checkSession();
-    if (bootProfileId != null && bootProfileId.isNotEmpty) {
-      DatabaseService.instance.currentProfileId = bootProfileId;
-    }
+    bootProfileId = await P0uStartupDiag.stageAsync(
+      'authRestore',
+      () async {
+        final id = await AuthBridge.checkSession();
+        if (id != null && id.isNotEmpty) {
+          DatabaseService.instance.currentProfileId = id;
+        }
+        return id;
+      },
+      blocksFirstFrame: true,
+    );
   } catch (_) {}
   url_strategy.usePathUrlStrategy();
   if (kIsWeb) {
@@ -278,14 +297,15 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       }
       DatabaseService.instance.offlineSync.resumeAfterAuthIfNeeded();
       OfflineSyncController.resetVisibleDiagForNewSession();
-      await DatabaseService.instance.offlineSync.bootstrapFromOutboxes(
-        pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
-      );
       setState(() {
         _profileId = id;
         _checked = true;
         _authMessageKey = null;
         _profileHydrationFailed = false;
+      });
+      P0uStartupDiag.markFirstShellBuild();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        P0uStartupDiag.markFirstFrame();
       });
       return;
     }

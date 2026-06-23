@@ -80,3 +80,39 @@ A full copy of the May 2026 roadmap previously lived in this file and duplicated
 ### Recurring edit
 
 - Virtual occurrence time/metadata edit **materializes** a one-off plan row and adds parent `exception_dates` entry (`plan_service.dart`).
+
+---
+
+## Performance Kill Switch Law (P0V — mandatory for all AI work)
+
+**Read:** `docs/ARCHITECTURE.md` § **PERFORMANCE_KILL_SWITCH_LAW** · `docs/UX_CONTRACT.md` § **Performance & Responsiveness Contract**
+
+Performance, responsiveness, and stability are sacred. The worst possible failure is not imperfect UI — it is damaging speed, stability, instant feedback, or basic usability.
+
+### If the user reports slowness, crash, missing instant update, or “it became impossible to work”
+
+**Stop all new feature / preload / design / V3 / V7 work immediately.** Do not stack more experiments. Do not add another preload/cache/render layer.
+
+**Emergency stabilization sequence:**
+1. Find the regression (recent P0S/P0T/mounted strip/render snapshot/reveal gate/boot projection changes are prime suspects).
+2. **Disable** the latest risky path **by default** (`kUseP0tMountedStrip`, verbose projection flags, experimental `PerfFlags`, etc.).
+3. Restore last known stable behavior (`PageView.builder` + `DatePagerSettleGate`, live optimistic streams on active pages).
+4. Preserve optimistic UI — record/plan create must appear instantly without refresh.
+5. Remove hot-path overload (no full-plan projection, mounted window explosion, per-row log spam on startup/swipe).
+6. Add or verify log guards (`P0U_RELEASE_LOG_GUARD`, gated `TIME_TZ_PROJECT`).
+7. Run **web** test and **Android APK** if mobile is affected.
+8. Report exact root cause; only then continue with smaller scoped fixes.
+
+### Banned reasoning (implementation failed if user feels it)
+
+- “The cache exists” is **not** enough.
+- “Snapshot is ready” is **not** enough.
+- “Body cache exists” is **not** enough.
+- If the user sees lag, loading, freeze, or crash, the implementation **failed** — regardless of theoretical benefits.
+- Do **not** keep broken experimental code active because it is “theoretically better” or “will be faster later.”
+
+### Experimental preload/render paths
+
+- Must be **default-off** until proven stable on **web and Android**.
+- Release defaults choose **stability** over theoretical preload.
+- Anchors: `lib/core/p0u_feature_flags.dart`, `lib/core/perf_flags.dart`.

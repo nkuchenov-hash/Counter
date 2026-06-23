@@ -16,6 +16,8 @@ Build the best time tracker possible. Every UI component lives in one place and 
 
 Two parallel tracks. Always work the **🔴 Correctness track** first when one is open — bugs that hurt users beat everything. Otherwise drop into the **🟢 Velocity track**, ordered by *token-savings-per-iteration*: do the things first that make every future AI session cheaper and faster.
 
+**Performance regressions are correctness bugs (P0V).** Any overload, crash, startup slowdown, broken optimistic UI, swipe freeze, or “app became impossible to work” **outranks** V3/V7/design work and feature work. Apply the **Performance Kill Switch Law** (`docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW): disable the offending experiment by default, restore stable behavior, restore instant local UI, remove hot-path overload — then continue.
+
 The velocity rule exists because Nick is a UX designer working with AI assistants on a split codebase. Every minute the AI wastes hunting through code is a minute Nick pays for and waits for. Tidiness for tidiness' sake is not a goal — tidiness *that compounds* is.
 
 ---
@@ -31,6 +33,21 @@ The velocity rule exists because Nick is a UX designer working with AI assistant
 ---
 
 ## 🔴 Correctness Track
+
+### P0V — Performance Kill Switch Law (permanent)
+
+**Status:** Active project law (documented 2026-06-15). Not a one-off fix.
+
+Performance, responsiveness, and stability are sacred. Preload/cache/render experiments (P0S, P0T, mounted strips, render DTOs, reveal gates) that slow startup, break optimistic UI, flood logs, or crash swipe **must be disabled by default** and treated as **P0 correctness failures** — not deferred polish.
+
+| Trigger | Required response |
+| :--- | :--- |
+| Slower startup, freeze, crash, swipe jank | Stop feature work; disable experiment; restore stable path |
+| Record/plan not instant without refresh | Restore live optimistic source on active page |
+| Console/logcat spam, invisible-plan projection storm | Gate verbose logs; stop hot-path full scans |
+| Memory/mounted-widget explosion | Kill mounted-window default; shrink boot work |
+
+**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `docs/AI_CONTEXT.md` · `CLAUDE.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`
 
 ### ~~O1 — Offline-first core reliability~~ ✅ (shipped 2026-06-09)
 

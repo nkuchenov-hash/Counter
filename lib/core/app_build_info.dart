@@ -1,4 +1,7 @@
 /// Injected at build time via `--dart-define=GIT_COMMIT=...` and `BUILD_TIME=...`.
+///
+/// Boot marker `APP_BUILD` is allowed in release. Verbose P0* diagnostics are not.
+/// Performance Kill Switch Law (P0V): release builds must not flood console/logcat.
 abstract final class AppBuildInfo {
   static const String gitCommit = String.fromEnvironment(
     'GIT_COMMIT',
@@ -30,4 +33,8 @@ abstract final class AppBuildInfo {
 
   /// Phone-test marker: P0S eager mounted content pages ±10.
   static String get p0sMountMarker => 'P0S build: $gitCommit $builtAt';
+
+  /// Marker: Performance Kill Switch Law documented (P0V); experimental preload default-off.
+  static String get p0vPerfKillSwitchMarker =>
+      'P0V_PERF_KILL_SWITCH build: $gitCommit $builtAt';
 }

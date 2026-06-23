@@ -1141,7 +1141,9 @@ extension RecordServiceExtension on DatabaseService {
   }
 
   /// Boot-only: hydrate flat records + day index from prefs before network fetch.
-  Future<void> bootstrapTimelineRecordsCacheFromPrefsAtBoot() async {
+  Future<void> bootstrapTimelineRecordsCacheFromPrefsAtBoot({
+    bool criticalOnly = false,
+  }) async {
     final sw = Stopwatch()..start();
     await _hydrateRecordsCacheFromPrefsIfEmpty();
     sw.stop();
@@ -1168,6 +1170,7 @@ extension RecordServiceExtension on DatabaseService {
       records: _cachedFlatRecords.length,
       ms: indexSw.elapsedMilliseconds,
     );
+    if (criticalOnly) return;
     ensureTimelineWarmWindow(getTimelineDeviceLocalToday());
     prebuildTimelineCriticalBodiesSync(getTimelineDeviceLocalToday());
     P0RPrebuildDiag.diskRestore(

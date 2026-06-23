@@ -97,6 +97,18 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Rollback is reserved for non-retriable failures; ordinary offline/network failures use queues where available.
 - Do not introduce full refetch fan-out after a small mutation unless unavoidable.
 
+## Performance & Responsiveness Contract
+
+Performance, responsiveness, and stability are **P0 correctness**, not polish. See `docs/ARCHITECTURE.md` § **PERFORMANCE_KILL_SWITCH_LAW**.
+
+- Every user action must produce **visible feedback within ~100ms**.
+- Local/optimistic UI must update **before** network I/O for record/plan mutations.
+- Already loaded content must **not** be replaced by blank/loading state for a background refresh.
+- UI must **never** show partial/incomplete card states as an intentional loading phase.
+- If content is not ready, do not reveal broken/partial UI — but readiness gates must **not** break live updates or freeze navigation.
+- Any perceived performance regression (lag, freeze, missing instant update, “impossible to work”) is a **P0 correctness bug** and outranks feature/design/preload work.
+- No feature, design, preload, cache, animation, or architecture idea may remain active if it hurts app speed or stability.
+
 ## Planning Time Mode
 
 - **Timezone / storage:** Plan and record instants are stored as **UTC ISO**. Time mode projects them into the **profile timezone** for day filter, block placement, labels, and drag/resize math. User-entered wall time at create/edit belongs to the **current profile timezone**.
@@ -113,4 +125,4 @@ This document defines how Life OS behaves when people interact with it. It is th
 - **Code:** `TimelineSwipeWrapper` (`lib/features/timeline/timeline_view.dart`), `PlanningSwipeWrapper` (`lib/features/planning/planning_view.dart`) — infinite day `PageView.builder`.
 - **During Planning Time-mode card drag/resize only:** horizontal date paging may be temporarily locked while the card owns the gesture; restore date swipe when the interaction ends.
 - **Vertical scroll** stays vertical; tap opens edit; long press starts drag where supported. Gesture conflicts are P0 bugs.
-- **Performance work** must use DevTools/profile-mode measurement before changing swipe architecture — do not add hidden-tab PageView sync, per-frame diagnostics in release, or unproven wrapper layers.
+- **Performance work** must not stack experiments on a regressing build. If swipe/startup/optimistic UI regresses, **stop** and apply the Performance Kill Switch Law (`ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW) — disable the risky path, restore stable paging, restore live optimistic sources, then re-measure. Profile-mode/DevTools proof is required **before** re-enabling any experimental preload layer; “the cache exists” / “snapshot is ready” / “body cache exists” is **not** sufficient if the user sees lag, loading, or crash.

@@ -13,10 +13,11 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 | `docs/ROADMAP.md` | Current plan — phases, bugs, component work. **Read this first before suggesting any structural changes.** |
 | `docs/reports/AUDIT_NOTES.md` | Full April 2026 audit findings that produced the roadmap. |
 | `docs/APP_STRUCTURE.md` | Physical directory map and module interaction rules. |
-| `docs/ARCHITECTURE.md` | Iron Laws, core contracts, data flow. The authoritative technical reference. |
+| `docs/ARCHITECTURE.md` | Iron Laws (incl. **PERFORMANCE_KILL_SWITCH_LAW**), core contracts, data flow. Authoritative technical reference. |
 | `docs/POCKETBASE_MANIFEST.md` | PocketBase URL, collection names, relation fields. |
 | `docs/DATA_MAP.md` | Field names and business IDs (`user_id`, `record_id`, etc.). |
-| `docs/UX_CONTRACT.md` | User interaction behavior contract: tap/save/edit/delete/loading/offline/optimistic rules. |
+| `docs/UX_CONTRACT.md` | Behavior contract: taps, save/edit/delete, loading/empty/error, offline, optimistic UI, **performance & responsiveness (P0V)**. |
+| `docs/AI_CONTEXT.md` | AI/Cursor pointer: deploy, shipped laws, **Performance Kill Switch emergency protocol**. |
 | `docs/DESIGN_SYSTEM.md` | Figma → Flutter mapping, tokens, canonical component categories, and forbidden local UI rule. |
 
 ---
@@ -279,6 +280,7 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 
 ## Architecture rules (from Iron Laws)
 
+- **Performance Kill Switch Law (P0V):** Speed, stability, and instant feedback are sacred. If any change causes slower startup, freeze/crash, swipe jank, broken optimistic UI, missing instant record/plan create, log spam, invisible-data projection storms, mounted-widget explosion, or network-before-UI — **stop all feature/preload/design work**, disable the offending experiment by default, restore stable behavior + live optimistic sources, remove hot-path overload, then continue. Full law: `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW. AI emergency protocol: `docs/AI_CONTEXT.md` § Performance Kill Switch Law. Flags: `lib/core/p0u_feature_flags.dart`, `lib/core/perf_flags.dart`. **Banned:** “cache exists” / “snapshot ready” as excuses when the user sees lag or crash.
 - **Optimistic UI:** Start/Stop/Update/Delete on records and Planning/Lists CRUD must never block the UI. Apply local shadow first (<100ms), sync to PocketBase async. On **retriable** network failure → enqueue to `lib/data/local_sync/*_mutation_outbox.dart` and keep optimistic state; on **non-retriable** validation errors → roll back and snack.
 - **No `await` before UI update** for user-driven record/plan actions.
 - **Offline drain:** `flushPendingLocalMutations` on login (`loadInitialData`), reconnect (`SyncManager`), app resume, and tap-to-retry (`_OfflineSyncStatusBar`). 401/403 sets `offlineSync.authPaused` until `resumeAfterAuthIfNeeded` + valid session.
@@ -304,4 +306,4 @@ At the end of any session where code was shipped (committed and verified clean b
 ---
 
 ## Doc sync reminder
-Maintain a running list of every governing doc modified during the session. At session end, print the full list and remind the user to re-upload them to the Claude.ai Project. Do not rely on memory of what was last edited. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `CHANGELOG.md`, `CLAUDE.md`.
+Maintain a running list of every governing doc modified during the session. At session end, print the full list and remind the user to re-upload them to the Claude.ai Project. Do not rely on memory of what was last edited. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `docs/AI_CONTEXT.md`, `CHANGELOG.md`, `CLAUDE.md`.

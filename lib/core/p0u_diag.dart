@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 /// P0U emergency recovery diagnostics.
+///
+/// Verbose `[P0U_*]` logs follow Performance Kill Switch Law (P0V): gated in
+/// release where noted; no per-row/per-card spam in production web/APK.
 abstract final class P0uDiag {
   static void p0tDisabled({required String platform, required bool enabled}) {
     if (kReleaseMode) return;
@@ -179,5 +182,25 @@ abstract final class P0uDiag {
 
   static void releaseLogGuard({bool ok = true}) {
     debugPrint('[P0U_RELEASE_LOG_GUARD] ok=$ok');
+  }
+
+  static void profileBootSource({
+    required String source,
+    required bool hasTimezone,
+    required bool hasLanguage,
+  }) {
+    debugPrint(
+      '[P0U_PROFILE_BOOT_SOURCE] source=$source '
+      'hasTimezone=$hasTimezone hasLanguage=$hasLanguage',
+    );
+  }
+
+  static void profileServerRefreshDone({
+    required bool changed,
+    required int ms,
+  }) {
+    debugPrint(
+      '[P0U_PROFILE_SERVER_REFRESH_DONE] changed=$changed ms=$ms',
+    );
   }
 }

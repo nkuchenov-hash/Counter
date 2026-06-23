@@ -1,7 +1,14 @@
-/// P0U emergency recovery — global kill switch for P0S/P0T mounted strip.
+/// P0U emergency recovery — global kill switches for P0S/P0T mounted strip.
 ///
-/// Default **false** on all platforms (web, Android, iOS, desktop).
+/// **Performance Kill Switch Law (P0V):** These flags default **false** on all
+/// platforms (web, Android, iOS, desktop). Do not enable in release. Do not
+/// enable by default config. Any path that regresses startup, swipe, optimistic
+/// UI, or stability must be killed immediately — restore stable `PageView.builder`
+/// + live optimistic sources before continuing feature work.
+///
+/// See `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW.
 const bool kUseP0tMountedStrip = false;
 
 /// Verbose plan time-zone projection logs (debug/profile only).
+/// Release web/APK must never flood console with per-row TIME_TZ_PROJECT spam.
 const bool kVerbosePlanTimeTzProjectionLogs = false;

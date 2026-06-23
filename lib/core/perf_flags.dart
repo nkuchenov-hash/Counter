@@ -1,5 +1,11 @@
 /// Internal perf bisect toggles (remove after culprit is confirmed).
 ///
+/// **Performance Kill Switch Law (P0V):** Experimental performance paths must be
+/// **default-off** until proven stable on **web and Android**. If any flag or
+/// experiment regresses startup, swipe, or optimistic UI, disable it immediately
+/// and restore the last known stable path. Release defaults choose **stability**
+/// over theoretical preload. See `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW.
+///
 /// Bisect result (2026-06-21): lag introduced in `62020e8` + hidden-tab pager sync.
 /// - [useLazyIndexedStack]: `LazyIndexedStack` + per-tab `RepaintBoundary` regressed feel vs `IndexedStack`.
 /// - [syncHiddenTabDatePager]: when false, off-tab day `PageView`s use silent `jumpToPage` only.

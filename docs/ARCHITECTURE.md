@@ -38,6 +38,39 @@
   - **Heavy work off the hot path:** Large JSON parsing, big list scans, and expensive filters should yield or run in a **background isolate** when they would stall frames.
   - **No blocking init on record path:** STT prewarm, ghost cleanup, plan outbox flush, and optional realtime **must not** block start/stop of a record.
   - **Wear:** Phone↔watch `MethodChannel` lives in `lib/features/wear/`; `DatabaseService` only has a **Wear-lite** bootstrap that avoids awaiting non-essential work (e.g. records realtime on watch).
+- **PERFORMANCE_KILL_SWITCH_LAW (Iron Rule — P0V):** Performance, responsiveness, and stability are **sacred**. The app must **never** become slower, crashier, less responsive, or less immediately reactive because of a preload/cache/render/design experiment. **Worst failure ≠ imperfect UI; worst failure = damaged speed, stability, instant feedback, or basic usability.**
+
+  **Hard-stop conditions** — if any change causes any of the following, work **stops immediately** (no feature/design/preload continuation until fixed):
+  - Slower startup
+  - App freeze or crash
+  - Swipe jank regression or broken short swipe
+  - UI action not reflecting immediately (~100ms)
+  - Record/plan create not appearing instantly without refresh
+  - Optimistic UI broken; active stream disconnected from live data
+  - Visible loader replacing already loaded content
+  - Partial card render before full card render
+  - Massive console/log spam
+  - Massive projection/rebuild of invisible data
+  - Mounted widget explosion / OOM risk or significant memory growth
+  - Background work on gesture hot path
+  - Network wait before local UI update
+
+  **Required emergency response:**
+  1. Disable the offending experiment **by default**.
+  2. Restore last known stable behavior.
+  3. Restore instant optimistic/local UI.
+  4. Remove hot-path overload.
+  5. Only then continue with smaller scoped fixes.
+
+  **Preload rule:** Preloading is allowed only if it makes the app **faster** without increasing crash risk or blocking startup. A preload that slows startup, causes memory pressure, breaks optimistic UI, or creates stale screens is **worse than no preload** and must be disabled.
+
+  **Snapshot/cache rule:** Snapshots and render DTOs are helpers only. They must **never** replace active live optimistic sources; **never** suppress active Timeline/Plans updates; **never** force refresh to see newly created data.
+
+  **Logging rule:** Verbose diagnostics must be gated. Release web/APK must **never** flood console/logcat with per-row/per-card/per-plan spam. Batch summary logs are debug/profile only.
+
+  **Hot path rule:** Swipe, startup, text entry, record create/start/stop, plan create/update, and tab switch are hot paths. No full-history scan, full-plan projection, full widget mount window, network wait, or heavy rebuild may run **synchronously** on these paths.
+
+  **Code anchors:** `lib/core/perf_flags.dart`, `lib/core/p0u_feature_flags.dart` (`kUseP0tMountedStrip`, `kVerbosePlanTimeTzProjectionLogs`). Experimental preload/render paths default **off** until proven stable on **web and Android**.
 - **STATE_RECONCILIATION:** 404 → purge ghost rows / revert optimistic state.
 
 ---

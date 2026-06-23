@@ -16,6 +16,7 @@ import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/p0u_startup_diag.dart';
 import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/shell_adaptive.dart';
@@ -528,7 +529,13 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         _onDeviceLocalCalendarDayWatchTick();
       },
     );
-    unawaited(_ensureSpeechReady());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      P0uStartupDiag.deferred(
+        name: 'sttInit',
+        reason: 'notNeededForFirstFrame',
+      );
+      unawaited(_ensureSpeechReady());
+    });
   }
 
   void _onDeviceLocalCalendarDayWatchTick() {
