@@ -35,6 +35,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/p0t_render_snapshot.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
+import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
@@ -3314,6 +3315,75 @@ class _PlanningPageState extends State<PlanningPage>
     return null;
   }
 
+  ({PlanTimeViewBlockLayout layout, bool insertBefore})?
+  _timelineResolveDragInsertTarget({
+    required List<PlanTimeViewBlockLayout> layouts,
+    required double dragCenterY,
+    required String? excludePlanKey,
+  }) {
+    final layout = _timelineLayoutUnderDragCenter(
+      layouts: layouts,
+      dragCenterY: dragCenterY,
+      excludePlanKey: excludePlanKey,
+    );
+    if (layout == null) return null;
+    final mid = layout.topPx + layout.heightPx / 2;
+    return (layout: layout, insertBefore: dragCenterY < mid);
+  }
+
+  TimeViewTargetDropSchedule? _timelineTargetDropScheduleForLayout({
+    required PlanTimeViewBlockLayout layout,
+    required bool insertBefore,
+    required int draggedDurationMin,
+    required bool draggedHadEnd,
+  }) {
+    final proj = layout.projection ??
+        DatabaseService.instance.projectPlanForTimeMode(layout.task);
+    final targetStart = proj?.profileWallStart;
+    if (proj == null || targetStart == null) return null;
+    final targetEnd = proj.profileWallEnd ??
+        targetStart.add(Duration(minutes: proj.durationMinutes));
+    return computeTimeViewTargetDropSchedule(
+      targetStartWall: targetStart,
+      targetEndWall: targetEnd,
+      draggedDurationMinutes: draggedDurationMin,
+      insertBefore: insertBefore,
+      draggedHadEnd: draggedHadEnd,
+    );
+  }
+
+  double _timelinePreviewTopPxForStartWall({
+    required DateTime startWall,
+    required PlanTimeViewDurationGrid grid,
+    required int rangeStart,
+    required int rangeEnd,
+    required double maxTopPx,
+  }) {
+    final startMin = _timelineMinutesFromRangeStart(
+      startWall,
+      rangeStart,
+      rangeEnd,
+    );
+    return grid.yForMinutesFromRangeStart(startMin).clamp(0.0, maxTopPx);
+  }
+
+  List<PlanTimeViewBlockLayout> _timelineDragLayoutsForDay({
+    required int rangeStart,
+    required int rangeEnd,
+    required String selectedDayKey,
+  }) {
+    if (PerfFlags.enableTimelineProjectionCache &&
+        _dragInsertLayoutsCache.isNotEmpty) {
+      return _dragInsertLayoutsCache;
+    }
+    return _timelineBlockLayouts(
+      _cachedTimeModeProjections,
+      rangeStart,
+      rangeEnd,
+      selectedDayKey,
+    );
+  }
+
   String? _timelineDragLabelForTopPx(
     double topPx,
     DateTime planWallDay,
@@ -3396,16 +3466,12 @@ class _PlanningPageState extends State<PlanningPage>
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
-    final layouts = PerfFlags.enableTimelineProjectionCache &&
-            _dragInsertLayoutsCache.isNotEmpty
-        ? _dragInsertLayoutsCache
-        : _timelineBlockLayouts(
-            _cachedTimeModeProjections,
-            rangeStart,
-            rangeEnd,
-            selectedDayKey,
-          );
-    final insertTarget = _timelineLayoutUnderDragCenter(
+    final layouts = _timelineDragLayoutsForDay(
+      rangeStart: rangeStart,
+      rangeEnd: rangeEnd,
+      selectedDayKey: selectedDayKey,
+    );
+    final insert = _timelineResolveDragInsertTarget(
       layouts: layouts,
       dragCenterY: dragCenterY,
       excludePlanKey: _timelineVerticalDragPlanKey,
@@ -3415,27 +3481,62 @@ class _PlanningPageState extends State<PlanningPage>
     String? insertKey;
     var insertBefore = false;
     double? markerTop;
+    String? previewLabel;
 
-    if (insertTarget != null) {
-      final mid = insertTarget.topPx + insertTarget.heightPx / 2;
-      insertBefore = dragCenterY < mid;
-      insertKey = _planKey(insertTarget.task);
-      if (insertBefore) {
-        previewTop = insertTarget.topPx - dragHeightPx;
-        markerTop = insertTarget.topPx.clamp(0.0, canvasHeight);
+    if (insert != null) {
+      insertBefore = insert.insertBefore;
+      insertKey = _planKey(insert.layout.task);
+      final schedule = _timelineTargetDropScheduleForLayout(
+        layout: insert.layout,
+        insertBefore: insertBefore,
+        draggedDurationMin: _timelineVerticalDragDurationMin,
+        draggedHadEnd: _timelineVerticalDragHadEnd,
+      );
+      if (schedule != null) {
+        previewTop = _timelinePreviewTopPxForStartWall(
+          startWall: schedule.startWall,
+          grid: grid,
+          rangeStart: rangeStart,
+          rangeEnd: rangeEnd,
+          maxTopPx: maxTopPx,
+        );
+        previewLabel = _formatTimelineWallRangeLabel(
+          schedule.startWall,
+          schedule.endWall,
+        );
       } else {
-        previewTop = insertTarget.topPx + insertTarget.heightPx;
-        markerTop = (insertTarget.topPx + insertTarget.heightPx).clamp(
+        final snappedMin = _snapTimelineMinutes(
+          grid.minutesFromY(rawTop.clamp(0.0, maxTopPx)),
+        );
+        previewTop = grid.yForMinutesFromRangeStart(snappedMin);
+        previewLabel = _timelineDragLabelForTopPx(
+          previewTop,
+          planWallDay,
+          rangeStart,
+          _timelineVerticalDragDurationMin,
+          _timelineVerticalDragHadEnd,
+        );
+      }
+      if (insertBefore) {
+        markerTop = insert.layout.topPx.clamp(0.0, canvasHeight);
+      } else {
+        markerTop = (insert.layout.topPx + insert.layout.heightPx).clamp(
           0.0,
           canvasHeight,
         );
       }
-      previewTop = previewTop.clamp(0.0, maxTopPx).toDouble();
     } else {
       final snappedMin = _snapTimelineMinutes(
         grid.minutesFromY(rawTop.clamp(0.0, maxTopPx)),
       );
       previewTop = grid.yForMinutesFromRangeStart(snappedMin);
+      previewLabel = _timelineDragLabelForTopPx(
+        previewTop,
+        planWallDay,
+        rangeStart,
+        _timelineVerticalDragDurationMin,
+        _timelineVerticalDragHadEnd,
+      );
     }
 
     setState(() {
@@ -3444,13 +3545,7 @@ class _PlanningPageState extends State<PlanningPage>
       _timelineDragInsertTargetKey = insertKey;
       _timelineDragInsertBefore = insertBefore;
       _timelineDragInsertMarkerTopPx = markerTop;
-      _timelineVerticalDragTimeLabel = _timelineDragLabelForTopPx(
-        previewTop,
-        planWallDay,
-        rangeStart,
-        _timelineVerticalDragDurationMin,
-        _timelineVerticalDragHadEnd,
-      );
+      _timelineVerticalDragTimeLabel = previewLabel;
     });
     _handleHourGridDragUpdateForEdgeScroll(globalDy);
   }
@@ -3480,39 +3575,42 @@ class _PlanningPageState extends State<PlanningPage>
       _cancelTimelineVerticalDrag();
       return;
     }
+    final dragHeightPx = math.max(1.0, _timelineVerticalDragCardHeightPx);
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durMin),
     );
-    final newTopPx = (_timelineVerticalDragOriginTopPx +
-            _timelineVerticalDragDeltaPx)
+    final rawTop = (_timelineVerticalDragOriginTopPx + _timelineVerticalDragDeltaPx)
         .clamp(0.0, maxTopPx);
-    final snappedMin = _snapTimelineMinutes(grid.minutesFromY(newTopPx));
+    final dragCenterY = rawTop + dragHeightPx / 2;
+    final selectedDayKey = widget.selectedDateString.length >= 10
+        ? widget.selectedDateString.substring(0, 10)
+        : DatabaseService.instance.getProjectedTodayDateKey();
+    final layouts = _timelineDragLayoutsForDay(
+      rangeStart: rangeStart,
+      rangeEnd: rangeEnd,
+      selectedDayKey: selectedDayKey,
+    );
+    final insert = _timelineResolveDragInsertTarget(
+      layouts: layouts,
+      dragCenterY: dragCenterY,
+      excludePlanKey: planKey,
+    );
 
-    DateTime newStartWall;
+    late final DateTime newStartWall;
     DateTime? newEndWall;
 
-    final insertKey = _timelineDragInsertTargetKey;
-    if (insertKey != null) {
-      final target = _timelineTaskByPlanKey(scheduledInRange, insertKey);
-      final targetProj = target != null
-          ? DatabaseService.instance.projectPlanForTimeMode(target)
-          : null;
-      final targetStart = targetProj?.profileWallStart;
-      if (target != null && targetStart != null) {
-        if (_timelineDragInsertBefore) {
-          newEndWall = targetStart;
-          newStartWall = newEndWall.subtract(Duration(minutes: durMin));
-        } else {
-          final targetEnd = targetProj?.profileWallEnd ??
-              targetStart.add(
-                Duration(minutes: _timelineBlockDurationMinutes(target)),
-              );
-          newStartWall = targetEnd;
-          newEndWall = _timelineVerticalDragHadEnd
-              ? newStartWall.add(Duration(minutes: durMin))
-              : null;
-        }
+    if (insert != null) {
+      final schedule = _timelineTargetDropScheduleForLayout(
+        layout: insert.layout,
+        insertBefore: insert.insertBefore,
+        draggedDurationMin: durMin,
+        draggedHadEnd: _timelineVerticalDragHadEnd,
+      );
+      if (schedule != null) {
+        newStartWall = schedule.startWall;
+        newEndWall = schedule.endWall;
       } else {
+        final snappedMin = _snapTimelineMinutes(grid.minutesFromY(rawTop));
         newStartWall = _wallTimeFromTimelineMinutes(
           snappedMin,
           planWallDay,
@@ -3523,6 +3621,7 @@ class _PlanningPageState extends State<PlanningPage>
             : null;
       }
     } else {
+      final snappedMin = _snapTimelineMinutes(grid.minutesFromY(rawTop));
       newStartWall = _wallTimeFromTimelineMinutes(
         snappedMin,
         planWallDay,
@@ -3957,14 +4056,16 @@ class _PlanningPageState extends State<PlanningPage>
                           decoration: BoxDecoration(
                             color: Color.alphaBlend(
                               scheme.surfaceContainerHighest.withValues(
-                                alpha: 0.55,
+                                alpha: 0.78,
                               ),
-                              scheme.surfaceContainerLow.withValues(alpha: 0.85),
+                              scheme.surfaceContainerHigh.withValues(
+                                alpha: 0.94,
+                              ),
                             ),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: scheme.outlineVariant.withValues(
-                                alpha: 0.28,
+                                alpha: 0.32,
                               ),
                             ),
                           ),

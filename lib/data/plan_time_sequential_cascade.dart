@@ -137,6 +137,48 @@ List<PlanTimeSequentialCascadePatch> diffSequentialCascadePatches(
   return patches;
 }
 
+/// Target-card insertion schedule for Time View drag/drop (zero scheduled-time gap).
+class TimeViewTargetDropSchedule {
+  const TimeViewTargetDropSchedule({
+    required this.startWall,
+    this.endWall,
+    required this.insertBefore,
+  });
+
+  final DateTime startWall;
+  final DateTime? endWall;
+  final bool insertBefore;
+}
+
+/// Exact adjacent insertion when dropping onto another scheduled card.
+///
+/// After target: `start = targetEnd`, `end = start + duration`.
+/// Before target: `end = targetStart`, `start = end - duration`.
+TimeViewTargetDropSchedule computeTimeViewTargetDropSchedule({
+  required DateTime targetStartWall,
+  required DateTime targetEndWall,
+  required int draggedDurationMinutes,
+  required bool insertBefore,
+  required bool draggedHadEnd,
+}) {
+  final dur = math.max(1, draggedDurationMinutes);
+  if (insertBefore) {
+    final endWall = targetStartWall;
+    final startWall = endWall.subtract(Duration(minutes: dur));
+    return TimeViewTargetDropSchedule(
+      startWall: startWall,
+      endWall: draggedHadEnd ? endWall : null,
+      insertBefore: true,
+    );
+  }
+  final startWall = targetEndWall;
+  return TimeViewTargetDropSchedule(
+    startWall: startWall,
+    endWall: draggedHadEnd ? startWall.add(Duration(minutes: dur)) : null,
+    insertBefore: false,
+  );
+}
+
 bool scheduledPlansHaveWallOverlap(
   List<PlanningTask> tasks, {
   required int Function(List<Tag> tags) resolveDurationMinutes,

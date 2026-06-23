@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time View target drop adjacent insertion + darker canvas [wip]
+* **`plan_time_sequential_cascade.dart`:** [wip] `computeTimeViewTargetDropSchedule` — exact before/after target wall times, zero scheduled gap.
+* **`planning_view.dart`:** [wip] target hit-test at commit; preview Y/label from target wall times not raw `yToTime`; free canvas still uses snap; canvas `surfaceContainerHigh`/`surfaceContainerHighest` blend darkened.
+* **`test/plan_time_target_drop_test.dart`:** [wip] lower/upper half, yToTime ignored, preview=commit, cascade.
+
 ## [2026-06-15] - P0U.4R3: line-level Timeline VM diagnostics (microsecond accounting) [wip]
 * **`p0u_timeline_vm_build_diag.dart`:** [wip] microsecond `Stopwatch` accounting; line-level `stepOrder`; `unmeasuredOtherMs` on DONE; nested subtitle steps; single `[P0U_TIMELINE_VM_SLOWEST_RECORD]` breakdown.
 * **`record_service.dart`:** [wip] `_timelineRowVmFromMap` / `_timelineSubtitleForRecordMap` instrument `mapAccess_*`, `canonicalPrimaryRunningBiz_call`, `categoryDisplayPath_call`, `cachePut`, `loopOverhead`, etc.
