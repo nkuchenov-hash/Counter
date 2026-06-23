@@ -437,6 +437,7 @@ extension DbCoreExtension on DatabaseService {
     if (_pbHttpBackoffActive) {
       await bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true);
       await restorePlansWarmSnapshotsFromDiskAtBoot();
+      await DatabaseService.instance.scrubPersistedPlanningDayCachesOnRestore();
       await restoreTimelineWarmSnapshotsFromDiskAtBoot();
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
       _settingsController.add(_settings);
@@ -486,8 +487,15 @@ extension DbCoreExtension on DatabaseService {
         reason: 'backgroundOnly',
       );
       final warmSw = Stopwatch()..start();
-      ensurePlansWarmWindow(projected);
-      P0uStartupDiag.deferredConfirmedAfterFrame(name: 'plansWarmWindow');
+      if (kPlansWarmWindowEnabled) {
+        ensurePlansWarmWindow(projected);
+        P0uStartupDiag.deferredConfirmedAfterFrame(name: 'plansWarmWindow');
+      } else {
+        P0uStartupDiag.deferred(
+          name: 'plansWarmWindow',
+          reason: 'p0DuplicateSafetyDisabled',
+        );
+      }
       ensureTimelineWarmWindow(timelineToday);
       prebuildTimelineCriticalBodiesSync(timelineToday);
       P0uStartupDiag.deferredConfirmedAfterFrame(name: 'recordsWarmWindow');

@@ -262,7 +262,8 @@ extension PlanServiceExtension on DatabaseService {
   ) async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final payload = plans
+      final scrubbed = scrubPlanningTasksForLocalCache(plans);
+      final payload = scrubbed
           .map(_planningTaskToDayCacheMap)
           .toList(growable: false);
       await prefs.setString(
@@ -288,7 +289,7 @@ extension PlanServiceExtension on DatabaseService {
         if (e is! Map) continue;
         out.add(_planningTaskFromOfflineDayMap(Map<String, dynamic>.from(e)));
       }
-      return out;
+      return scrubPlanningTasksForLocalCache(out);
     } catch (_) {
       return [];
     }
@@ -1316,6 +1317,60 @@ extension PlanServiceExtension on DatabaseService {
 
   void scrubJitVirtualPlansFromUserCache() {
     _scrubJitVirtualRowsFromUserCache();
+    _allPlansUserCache = scrubPlanningTasksForLocalCache(_allPlansUserCache);
+  }
+
+  /// Remove `virt-*` rows and collapse duplicate stable identities (local cache only).
+  List<PlanningTask> scrubPlanningTasksForLocalCache(List<PlanningTask> tasks) {
+    if (tasks.isEmpty) return tasks;
+    final noVirt = [
+      for (final t in tasks)
+        if (!_isJitVirtualPlanningTask(t)) t,
+    ];
+    return dedupePlanningTasksForDisplay(
+      noVirt,
+      traceSource: 'cacheScrub',
+    );
+  }
+
+  Future<void> scrubPersistedPlanningDayCachesOnRestore() async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final prefix =
+          '${_scopedDataCacheKey('cache_plans_day_v1')}_';
+      final keys = prefs.getKeys().where((k) => k.startsWith(prefix)).toList();
+      for (final key in keys) {
+        final dayKey = key.substring(prefix.length);
+        if (dayKey.length < 10) continue;
+        final raw = prefs.getString(key);
+        if (raw == null || raw.trim().isEmpty) continue;
+        final decoded = jsonDecode(raw);
+        if (decoded is! List) continue;
+        final tasks = <PlanningTask>[];
+        for (final e in decoded) {
+          if (e is! Map) continue;
+          try {
+            tasks.add(
+              _planningTaskFromOfflineDayMap(Map<String, dynamic>.from(e)),
+            );
+          } catch (_) {}
+        }
+        final scrubbed = scrubPlanningTasksForLocalCache(tasks);
+        if (scrubbed.length == tasks.length) continue;
+        await prefs.setString(
+          key,
+          jsonEncode(
+            scrubbed.map(_planningTaskToDayCacheMap).toList(growable: false),
+          ),
+        );
+        if (!kReleaseMode) {
+          planDupTrace(
+            'source=dayCacheRestore day=$dayKey '
+            'removed=${tasks.length - scrubbed.length}',
+          );
+        }
+      }
+    } catch (_) {}
   }
 
   /// Defensive de-dupe for Planning list modes (Tags/Category/Custom/Time).
@@ -1889,7 +1944,13 @@ extension PlanServiceExtension on DatabaseService {
         .where((t) => !hiddenOnThisDay.contains(t.planRowIdForBackend))
         .toList();
     final overlay = _planningOptimisticByDateKey[targetDayStr];
-    if (overlay == null || overlay.isEmpty) return filtered;
+    if (overlay == null || overlay.isEmpty) {
+      return dedupePlanningTasksForDisplay(
+        filtered,
+        traceSource: 'stream',
+        dayKey: targetDayStr,
+      );
+    }
     final byId = <String, PlanningTask>{
       for (final t in filtered) t.planRowIdForBackend: t,
     };
@@ -1899,6 +1960,8 @@ extension PlanServiceExtension on DatabaseService {
     }
     final merged = dedupePlanningTasksForDisplay(
       _dedupePlanningTasksByBusinessId(byId.values.toList()),
+      traceSource: 'stream',
+      dayKey: targetDayStr,
     );
     merged.sort((a, b) {
       if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
@@ -2459,6 +2522,8 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   void ensurePlansWarmWindow(DateTime center) {
+    // P0 duplicate safety: no Planning warm cache mutation before user opens Plans.
+    if (!kPlansWarmWindowEnabled) return;
     _plansWarm.ensureInitialWindow(center, _buildPlansDaySnapshot);
     P0OWarmDiag.plansWindow(
       center: '${center.year}-${_two(center.month)}-${_two(center.day)}',
@@ -2652,6 +2717,7 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   void extendPlansWarmWindowIfNeeded(DateTime center) {
+    if (!kPlansWarmWindowEnabled) return;
     final sw = Stopwatch()..start();
     final direction = _plansWarm.extendIfNeeded(center, _buildPlansDaySnapshot);
     sw.stop();
@@ -2671,6 +2737,9 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   PlansDaySnapshot plansWarmSnapshotForDate(DateTime wallDay) {
+    if (!kPlansWarmWindowEnabled) {
+      return _buildPlansDaySnapshot(wallDay);
+    }
     final lookupSw = Stopwatch()..start();
     final key = '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
     final sig = _allPlansUserCache.length;
@@ -2793,6 +2862,13 @@ extension PlanServiceExtension on DatabaseService {
             } catch (_) {}
           }
         }
+        final scrubbed = scrubPlanningTasksForLocalCache(tasks);
+        if (scrubbed.length != tasks.length && !kReleaseMode) {
+          planDupTrace(
+            'source=warmDiskRestore day=$key '
+            'removed=${tasks.length - scrubbed.length}',
+          );
+        }
         final knownEmpty = v['knownEmpty'] == true;
         final sig = v['cacheSignature'] is int ? v['cacheSignature'] as int : 0;
         _plansWarm.put(
@@ -2800,7 +2876,7 @@ extension PlanServiceExtension on DatabaseService {
           PlansDaySnapshot(
             dateKey: key,
             knownEmpty: knownEmpty,
-            tasks: tasks,
+            tasks: scrubbed,
             cacheSignature: sig,
           ),
         );
@@ -2808,7 +2884,7 @@ extension PlanServiceExtension on DatabaseService {
           key,
           PlansDayBodyEntry(
             dateKey: key,
-            tasks: List<PlanningTask>.from(tasks),
+            tasks: List<PlanningTask>.from(scrubbed),
             knownEmpty: knownEmpty,
             bodyReady: true,
             source: 'diskRestore',
@@ -3291,7 +3367,7 @@ extension PlanServiceExtension on DatabaseService {
         for (final r in list)
           _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
       ];
-      _allPlansUserCache = out;
+      _allPlansUserCache = scrubPlanningTasksForLocalCache(out);
       _scrubJitVirtualRowsFromUserCache();
       _allPlansUserCacheFetchedAt = DateTime.now();
       return out;
@@ -3648,6 +3724,23 @@ extension PlanServiceExtension on DatabaseService {
         .toList();
     if (templates.isEmpty) return out;
 
+    final materializedOccurrenceKeys = <String>{};
+    for (final p in allPlans) {
+      if (_isJitVirtualPlanningTask(p)) continue;
+      final inst = p.recurrenceInstanceDateKey?.trim();
+      if (inst == null || inst.length < 10) continue;
+      final parentPb = p.pocketRecordId?.trim();
+      if (parentPb != null &&
+          DatabaseService._isLikelyPocketBaseRowId(parentPb)) {
+        materializedOccurrenceKeys.add('$parentPb|$inst');
+      }
+      final biz = _planBusinessUuidFromTask(p);
+      if (biz != null && biz.isNotEmpty) {
+        materializedOccurrenceKeys.add('biz:$biz|$inst');
+      }
+    }
+    final emittedVirtKeys = <String>{};
+
     DateTime wallOnly(DateTime d) => DateTime(d.year, d.month, d.day);
     final startWall = wallOnly(viewStart);
     final endWall = wallOnly(viewEnd);
@@ -3724,6 +3817,14 @@ extension PlanServiceExtension on DatabaseService {
         }
         final dk = '${wall.year}-${_two(wall.month)}-${_two(wall.day)}';
         if (ex.contains(dk)) continue;
+
+        final virtKey = 'virt-$pr-$dk';
+        if (materializedOccurrenceKeys.contains('$pr|$dk') ||
+            materializedOccurrenceKeys.contains('biz:$pr|$dk') ||
+            emittedVirtKeys.contains(virtKey)) {
+          continue;
+        }
+        emittedVirtKeys.add(virtKey);
 
         final startWallInstance = _profileWallFromUtc(instanceUtc);
         DateTime? endWallInstance;

@@ -12,6 +12,7 @@ import 'package:counter/core/app_diag.dart';
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/core/mounted_day_registry.dart';
+import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_platform.dart';
@@ -198,7 +199,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     _visiblePageIndex = _initialPage + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
-    if (!kUseP0tMountedStrip) {
+    if (kPlansWarmWindowEnabled && !kUseP0tMountedStrip) {
       DatabaseService.instance.ensurePlansWarmWindow(widget.selectedDate);
     }
   }
@@ -699,8 +700,9 @@ class _PlanningPageState extends State<PlanningPage>
     final day = widget.selectedDate ?? _today;
     DatabaseService.instance.scrubJitVirtualPlansFromUserCache();
     _latestPlanningDayTasks = DatabaseService.instance
-        .plansWarmSnapshotForDate(day)
-        .tasks;
+        .dedupePlanningTasksForDisplay(
+          DatabaseService.instance.planningDayTasksSnapshot(day),
+        );
     if (widget.isActivePlanningDay) {
       _planningStream = _createPlanningStream();
     }
@@ -1546,8 +1548,11 @@ class _PlanningPageState extends State<PlanningPage>
           _planningStream = _createPlanningStream();
         }
         _latestPlanningDayTasks = DatabaseService.instance
-            .plansWarmSnapshotForDate(widget.selectedDate ?? _today)
-            .tasks;
+            .dedupePlanningTasksForDisplay(
+              DatabaseService.instance.planningDayTasksSnapshot(
+                widget.selectedDate ?? _today,
+              ),
+            );
         if (oldWidget.selectedDate != widget.selectedDate ||
             oldWidget.selectedDateString != widget.selectedDateString) {
           _optimisticTasks.clear();
@@ -5187,8 +5192,11 @@ class _PlanningPageState extends State<PlanningPage>
               !snapshot.hasData &&
               _latestPlanningDayTasks.isEmpty) {
             _latestPlanningDayTasks = DatabaseService.instance
-                .plansWarmSnapshotForDate(widget.selectedDate ?? _today)
-                .tasks;
+                .dedupePlanningTasksForDisplay(
+                  DatabaseService.instance.planningDayTasksSnapshot(
+                    widget.selectedDate ?? _today,
+                  ),
+                );
           }
           if (snapshot.hasError && _latestPlanningDayTasks.isEmpty) {
             body = AppErrorState(

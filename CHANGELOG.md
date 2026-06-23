@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-23] - P0 Planning duplicate cards: warmWindow guard + cache/stream scrub [wip]
+* **`p0u_feature_flags.dart`:** [wip] `kPlansWarmWindowEnabled=false` — P0 duplicate safety; no warm cache mutation before Plans opens.
+* **`plan_service.dart`:** [wip] `scrubPlanningTasksForLocalCache` on restore/day cache/merge; idempotent `expandRecurringPlans`; mandatory stream dedupe in `_mergePlanningOptimistic`; virt blocked from `_allPlansUserCache`.
+* **`planning_view.dart`:** [wip] initial/waiting tasks from `planningDayTasksSnapshot` + dedupe (not polluted warm disk).
+* **`test/planning_duplicate_plan_guard_test.dart`:** [wip] scrub, expansion idempotency, distinct same-title plans.
+
 ## [2026-06-23] - P0U cleanup: remove temporary Timeline diagnostics after P0U.7 [wip]
 * **Deleted:** `p0u_timeline_swipe_diag.dart`, `p0u_timeline_vm_build_diag.dart` — P0U.4–P0U.6D per-frame/swipe/VM trace helpers.
 * **`p0u_diag.dart`:** [wip] trimmed to production-safe markers only (`releaseLogGuard`, `biometricGate`, `adjVmWarmDisabled`, errors).

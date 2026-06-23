@@ -21,3 +21,7 @@ const bool kShellDeferHiddenTabsUntilFirstFrame = false;
 /// P0U.4 — post-firstFrame adjacent Timeline row-VM warmup (±1 day, local cache only).
 /// **KILL SWITCH:** Set false if startup regresses or post-frame freeze appears.
 const bool kTimelineAdjacentRowVmWarmup = false;
+
+/// P0 duplicate safety: disable Plans warm-window prebuild until list correctness is proven.
+/// When false, Plans still load via [planningStream] when the user opens the Plans tab.
+const bool kPlansWarmWindowEnabled = false;
