@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time View bounded layout regression fix [wip]
+* **`plan_time_view_layout.dart`:** [wip] Separate stable card height (`kPlanTimeStableBaseCardPxPerMinute`) from bounded hour stretch; sequential one-column placement; 480px hour cap.
+* **`plan_time_task_card.dart`:** [wip] `planTimeCardRenderedHeightPxForDuration`, layout constants.
+* **`plan_service.dart`:** [wip] `_avoidPlanWallScheduleCollisions` — sequential auto-schedule when slots collide.
+* **`test/plan_time_view_layout_test.dart`:** [wip] Density, 5/10min, dense-hour, y/time tests.
+
 ## [2026-06-15] - P0U.2: shrink firstShellBuild→firstFrame gap [wip]
 * **`p0u_startup_diag.dart`:** [wip] `[P0U_FRAME_GAP_*]` / `[P0U_SHELL_BUILD]` / `[P0U_TAB_BUILD]` / `[P0U_HIDDEN_TAB_*]` diagnostics.
 * **`app_shell.dart`:** [wip] `kShellDeferHiddenTabsUntilFirstFrame` → `LazyIndexedStack` (active tab only on first paint); defer timeline tasks + shell sync bootstrap post-frame.

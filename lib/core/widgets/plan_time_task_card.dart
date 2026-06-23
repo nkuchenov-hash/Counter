@@ -22,6 +22,25 @@ const double kPlanTimeCardMinHeightPx = 38.0;
 /// Minimum vertical gap between adjacent Time View cards.
 const double kPlanTimeCardGapPx = 2.0;
 
+/// Padding below the last card when computing stretched hour height.
+const double kPlanTimeHourVerticalPaddingPx = 4.0;
+
+/// Hard cap for a single hour band (prevents infinite day growth).
+const double kPlanTimeMaxReasonableHourHeightPx = 480.0;
+
+/// Stable px-per-minute for **card** height only — never stretched-hour ppm.
+/// 10-minute tasks map to 38px (VerySmall); hour stretch does not inflate cards.
+const double kPlanTimeStableBaseCardPxPerMinute = 3.8;
+
+/// Card rendered height from scheduled duration (independent of hour stretch).
+double planTimeCardRenderedHeightPxForDuration(int durationMinutes) {
+  final dur = math.max(5, durationMinutes);
+  return math.max(
+    dur * kPlanTimeStableBaseCardPxPerMinute,
+    kPlanTimeCardMinHeightPx,
+  );
+}
+
 /// Default hour band height before stretch.
 const double kPlanTimeViewBaseHourHeightMinPx = 120.0;
 const double kPlanTimeViewBaseHourHeightMaxPx = 160.0;

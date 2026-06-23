@@ -2134,6 +2134,31 @@ extension PlanServiceExtension on DatabaseService {
     );
   }
 
+  /// Nudge [startWall] forward when it overlaps an existing scheduled task.
+  DateTime _avoidPlanWallScheduleCollisions({
+    required DateTime startWall,
+    required int durationMin,
+    required List<PlanningTask> existingDayPlans,
+  }) {
+    var start = _snapPlanWallDateTime(startWall);
+    for (var pass = 0; pass < existingDayPlans.length + 2; pass++) {
+      final end = start.add(Duration(minutes: durationMin));
+      DateTime? bumpTo;
+      for (final p in existingDayPlans) {
+        final pStart = p.startTime;
+        if (pStart == null) continue;
+        final pEnd = _resolvedPlanWallEnd(p);
+        if (pEnd == null) continue;
+        if (start.isBefore(pEnd) && pStart.isBefore(end)) {
+          if (bumpTo == null || pEnd.isAfter(bumpTo)) bumpTo = pEnd;
+        }
+      }
+      if (bumpTo == null) return start;
+      start = _snapPlanWallDateTime(bumpTo);
+    }
+    return start;
+  }
+
   /// Cache + optimistic overlay for one wall day (no network).
   List<PlanningTask> planningDayTasksSnapshot(DateTime wallDay) {
     final key =
@@ -2812,20 +2837,28 @@ extension PlanServiceExtension on DatabaseService {
       }
     }
 
-    final endWall = explicitEndWall != null && explicitEndWall.isAfter(startWall)
+    final resolvedStart = _avoidPlanWallScheduleCollisions(
+      startWall: startWall,
+      durationMin: durationMin,
+      existingDayPlans: existingDayPlans,
+    );
+
+    final endWall = explicitEndWall != null &&
+            explicitEndWall.isAfter(resolvedStart) &&
+            hasExplicitTimeRange
         ? explicitEndWall
-        : startWall.add(Duration(minutes: durationMin));
+        : resolvedStart.add(Duration(minutes: durationMin));
 
     if (usedCategoryDefault) {
       final startUtc = wallUtcForCategoryDefaultWall(
         wallDay: wallDay,
-        hour: startWall.hour,
-        minute: startWall.minute,
+        hour: resolvedStart.hour,
+        minute: resolvedStart.minute,
         timezoneIana: categoryDefaultTimezoneIana,
       );
       final endUtc = startUtc.add(Duration(minutes: durationMin));
       return (
-        startWall: startWall,
+        startWall: resolvedStart,
         endWall: endWall,
         startUtcInstant: startUtc,
         endUtcInstant: endUtc,
@@ -2833,7 +2866,7 @@ extension PlanServiceExtension on DatabaseService {
     }
 
     return (
-      startWall: startWall,
+      startWall: resolvedStart,
       endWall: endWall,
       startUtcInstant: null,
       endUtcInstant: null,

@@ -6,6 +6,10 @@ import 'package:counter/data/models.dart';
 import 'package:flutter/foundation.dart';
 
 /// Duration-true timeline scale with per-hour stretch (P0S Time View).
+///
+/// **Card height** uses [planTimeCardRenderedHeightPxForDuration] (stable scale).
+/// **Hour height** stretches only to fit stacked cards + gaps — never feeds back
+/// into card height.
 class PlanTimeViewDurationGrid {
   PlanTimeViewDurationGrid({
     required this.visibleHours,
@@ -30,6 +34,7 @@ class PlanTimeViewDurationGrid {
     return hourTopsPx.last + hourHeightsPx.last;
   }
 
+  /// Hour-band ppm for y↔time mapping only — not for card height.
   double pxPerMinuteAtHourIndex(int hourIndex) {
     if (hourIndex < 0 || hourIndex >= hourHeightsPx.length) return 0;
     return hourHeightsPx[hourIndex] / 60.0;
@@ -103,7 +108,7 @@ class _PlanTimeViewCardSlot {
   final int durationMin;
 }
 
-/// Pure Time View geometry: stretchable hours + sequential non-overlapping cards.
+/// Pure Time View geometry: bounded stretchable hours + sequential cards.
 abstract final class PlanTimeViewLayoutCalculator {
   static double baseHourHeightPx() {
     final cardH = planTimeCardMeasureHeight(
@@ -115,6 +120,9 @@ abstract final class PlanTimeViewLayoutCalculator {
       kPlanTimeViewBaseHourHeightMaxPx,
     );
   }
+
+  static double _cardHeightPx(int durationMin) =>
+      planTimeCardRenderedHeightPxForDuration(durationMin);
 
   static ({
     PlanTimeViewDurationGrid grid,
@@ -151,115 +159,68 @@ abstract final class PlanTimeViewLayoutCalculator {
       return a.task.planRowIdForBackend.compareTo(b.task.planRowIdForBackend);
     });
 
-    for (var hourIdx = 0; hourIdx < visibleHours.length; hourIdx++) {
-      final hourStart = hourIdx * 60.0;
-      final hourEnd = hourStart + 60.0;
-      final inHour = slots
-          .where(
-            (s) => s.startMin >= hourStart && s.startMin < hourEnd,
-          )
-          .toList();
-      if (inHour.isEmpty) continue;
-      hourHeights[hourIdx] = _minimumHourHeightForCards(inHour, hourStart, baseH);
+    final byHour = <int, List<_PlanTimeViewCardSlot>>{};
+    for (final slot in slots) {
+      final hourIdx = (slot.startMin / 60.0).floor().clamp(
+        0,
+        visibleHours.length - 1,
+      );
+      byHour.putIfAbsent(hourIdx, () => []).add(slot);
     }
 
-    // Global overlap resolution — bump hour height when adjacent cards collide.
-    for (var pass = 0; pass < 24; pass++) {
-      final grid = _buildGrid(visibleHours, rangeStart, hourHeights);
-      final layouts = _placeCards(slots, grid);
-      final overlapIdx = _firstOverlapIndex(layouts);
-      if (overlapIdx == null) {
-        assertPlanTimeViewLayoutDebug(grid: grid, layouts: layouts);
-        return (grid: grid, layouts: layouts);
-      }
-      final earlierHourIdx = grid.hourIndexForMinutesFromRangeStart(
-        slots[overlapIdx].startMin,
-      );
-      final laterHourIdx = grid.hourIndexForMinutesFromRangeStart(
-        slots[overlapIdx + 1].startMin,
-      );
-      final bumpIdx = laterHourIdx == earlierHourIdx
-          ? laterHourIdx
-          : earlierHourIdx;
-      hourHeights[bumpIdx] = math.max(
-        hourHeights[bumpIdx] + 4.0,
-        hourHeights[bumpIdx] * 1.04,
+    for (final entry in byHour.entries) {
+      final hourIdx = entry.key;
+      final hourStart = hourIdx * 60.0;
+      hourHeights[hourIdx] = _boundedHourHeightPx(
+        cards: entry.value,
+        hourStartMin: hourStart,
+        baseHourHeightPx: baseH,
       );
     }
 
     final grid = _buildGrid(visibleHours, rangeStart, hourHeights);
     final layouts = _placeCards(slots, grid);
-    assertPlanTimeViewLayoutDebug(grid: grid, layouts: layouts);
+    assertPlanTimeViewLayoutDebug(grid: grid, layouts: layouts, slots: slots);
     return (grid: grid, layouts: layouts);
   }
 
-  static double _minimumHourHeightForCards(
-    List<_PlanTimeViewCardSlot> cards,
-    double hourStartMin,
-    double baseHourHeightPx,
-  ) {
-    var lo = baseHourHeightPx;
-    var hi = baseHourHeightPx;
+  /// Sequential one-column placement height for an hour (stable card heights).
+  static double _boundedHourHeightPx({
+    required List<_PlanTimeViewCardSlot> cards,
+    required double hourStartMin,
+    required double baseHourHeightPx,
+  }) {
+    if (cards.isEmpty) return baseHourHeightPx;
+    final sorted = List<_PlanTimeViewCardSlot>.from(cards)
+      ..sort((a, b) => a.startMin.compareTo(b.startMin));
 
-    while (!_hourFits(hi, cards, hourStartMin)) {
-      hi *= 1.35;
-      if (hi > 4000) break;
-    }
-
-    for (var i = 0; i < 18; i++) {
-      final mid = (lo + hi) / 2;
-      if (_hourFits(mid, cards, hourStartMin)) {
-        hi = mid;
-      } else {
-        lo = mid;
+    var hourHeight = baseHourHeightPx;
+    for (var iter = 0; iter < 3; iter++) {
+      double prevBottom = 0;
+      var maxBottom = 0.0;
+      for (final c in sorted) {
+        final relMin = c.startMin - hourStartMin;
+        final idealTop = (relMin / 60.0) * hourHeight;
+        final h = _cardHeightPx(c.durationMin);
+        final top = prevBottom <= 0
+            ? idealTop
+            : math.max(idealTop, prevBottom + kPlanTimeCardGapPx);
+        prevBottom = top + h;
+        maxBottom = math.max(maxBottom, prevBottom);
       }
-    }
-    // Ensure stacked content fits (sequential reflow can exceed time-only height).
-    final stacked = _stackedHourContentHeight(hi, cards, hourStartMin);
-    return math.max(hi, stacked);
-  }
-
-  /// Sequential column height for cards in one hour (min 38px + 2px gaps).
-  static double _stackedHourContentHeight(
-    double hourHeightPx,
-    List<_PlanTimeViewCardSlot> cards,
-    double hourStartMin,
-  ) {
-    if (cards.isEmpty) return hourHeightPx;
-    final ppm = hourHeightPx / 60.0;
-    double prevBottom = 0;
-    for (final c in cards) {
-      final relMin = c.startMin - hourStartMin;
-      final idealTop = (relMin / 60.0) * hourHeightPx;
-      final h = math.max(c.durationMin * ppm, kPlanTimeCardMinHeightPx);
-      final top = prevBottom <= 0
-          ? idealTop
-          : math.max(idealTop, prevBottom + kPlanTimeCardGapPx);
-      prevBottom = top + h;
-    }
-    return prevBottom;
-  }
-
-  static bool _hourFits(
-    double hourHeightPx,
-    List<_PlanTimeViewCardSlot> cards,
-    double hourStartMin,
-  ) {
-    final ppm = hourHeightPx / 60.0;
-    double? prevBottom;
-    for (final c in cards) {
-      final relMin = c.startMin - hourStartMin;
-      final idealTop = (relMin / 60.0) * hourHeightPx;
-      final h = math.max(c.durationMin * ppm, kPlanTimeCardMinHeightPx);
-      final top = prevBottom == null
-          ? idealTop
-          : math.max(idealTop, prevBottom + kPlanTimeCardGapPx);
-      if (prevBottom != null && top < prevBottom + kPlanTimeCardGapPx - 0.01) {
-        return false;
+      final needed = math.min(
+        math.max(
+          baseHourHeightPx,
+          maxBottom + kPlanTimeHourVerticalPaddingPx,
+        ),
+        kPlanTimeMaxReasonableHourHeightPx,
+      );
+      if ((needed - hourHeight).abs() < 0.5) {
+        return needed;
       }
-      prevBottom = top + h;
+      hourHeight = needed;
     }
-    return prevBottom == null || prevBottom <= hourHeightPx + 0.5;
+    return hourHeight;
   }
 
   static PlanTimeViewDurationGrid _buildGrid(
@@ -286,46 +247,29 @@ abstract final class PlanTimeViewLayoutCalculator {
     PlanTimeViewDurationGrid grid,
   ) {
     final layouts = <PlanTimeViewBlockLayout>[];
-    final byHour = <int, List<_PlanTimeViewCardSlot>>{};
-    for (final slot in slots) {
-      final hourIdx = grid.hourIndexForMinutesFromRangeStart(slot.startMin);
-      byHour.putIfAbsent(hourIdx, () => []).add(slot);
-    }
-
+    final prevBottomByHour = <int, double>{};
     double? globalPrevBottom;
+
     for (final slot in slots) {
       final hourIdx = grid.hourIndexForMinutesFromRangeStart(slot.startMin);
       final hourStartMin = hourIdx * 60.0;
       final hourTopPx = grid.hourTopsPx[hourIdx];
       final hourHeightPx = grid.hourHeightsPx[hourIdx];
-      final ppm = hourHeightPx / 60.0;
 
-      // Sequential reflow within hour: time-anchored tops, pushed down when needed.
-      final hourSlots = byHour[hourIdx]!;
-      final indexInHour = hourSlots.indexOf(slot);
-      var topPx = hourTopPx;
-      var heightPx = math.max(
-        slot.durationMin * ppm,
-        kPlanTimeCardMinHeightPx,
-      );
-      double prevBottom = hourTopPx;
-      for (var i = 0; i <= indexInHour; i++) {
-        final s = hourSlots[i];
-        final relMin = s.startMin - hourStartMin;
-        final idealTop = hourTopPx + (relMin / 60.0) * hourHeightPx;
-        final h = math.max(s.durationMin * ppm, kPlanTimeCardMinHeightPx);
-        var t = i == 0
-            ? idealTop
-            : math.max(idealTop, prevBottom + kPlanTimeCardGapPx);
-        if (i == 0 && globalPrevBottom != null) {
-          t = math.max(t, globalPrevBottom + kPlanTimeCardGapPx);
-        }
-        prevBottom = t + h;
-        if (i == indexInHour) {
-          topPx = t;
-          heightPx = h;
-        }
+      final relMin = slot.startMin - hourStartMin;
+      final idealTop = hourTopPx + (relMin / 60.0) * hourHeightPx;
+      final heightPx = _cardHeightPx(slot.durationMin);
+
+      var topPx = idealTop;
+      final hourPrev = prevBottomByHour[hourIdx];
+      if (hourPrev != null) {
+        topPx = math.max(topPx, hourPrev + kPlanTimeCardGapPx);
       }
+      if (globalPrevBottom != null) {
+        topPx = math.max(topPx, globalPrevBottom + kPlanTimeCardGapPx);
+      }
+
+      prevBottomByHour[hourIdx] = topPx + heightPx;
       globalPrevBottom = topPx + heightPx;
 
       final visual = planTimeCardVisualDensityForRenderedHeight(heightPx);
@@ -351,30 +295,36 @@ abstract final class PlanTimeViewLayoutCalculator {
     return layouts;
   }
 
-  static int? _firstOverlapIndex(List<PlanTimeViewBlockLayout> layouts) {
-    for (var i = 0; i < layouts.length - 1; i++) {
-      final a = layouts[i];
-      final b = layouts[i + 1];
-      if (b.topPx < a.topPx + a.heightPx + kPlanTimeCardGapPx - 0.5) {
-        return i;
-      }
-    }
-    return null;
-  }
-
   /// Debug-only layout invariants (Time View acceptance).
   static void assertPlanTimeViewLayoutDebug({
     required PlanTimeViewDurationGrid grid,
     required List<PlanTimeViewBlockLayout> layouts,
+    required List<_PlanTimeViewCardSlot> slots,
   }) {
     if (kReleaseMode) return;
-    for (final l in layouts) {
+    for (var i = 0; i < layouts.length; i++) {
+      final l = layouts[i];
+      final slot = i < slots.length ? slots[i] : null;
       assert(
         l.heightPx >= kPlanTimeCardMinHeightPx - 0.01,
         'card height ${l.heightPx} < min',
       );
       assert(l.topPx >= 0, 'negative top');
       assert(l.heightPx > 0, 'non-positive height');
+      if (slot != null) {
+        final expected = _cardHeightPx(slot.durationMin);
+        assert(
+          (l.heightPx - expected).abs() < 0.51,
+          'card height ${l.heightPx} != stable $expected '
+          '(duration=${slot.durationMin})',
+        );
+        if (slot.durationMin <= 10) {
+          assert(
+            l.heightPx <= kPlanTimeCardMinHeightPx + 0.51,
+            '${slot.durationMin}min card inflated to ${l.heightPx} by hour stretch',
+          );
+        }
+      }
     }
     for (var i = 0; i < layouts.length - 1; i++) {
       final a = layouts[i];
@@ -384,7 +334,12 @@ abstract final class PlanTimeViewLayoutCalculator {
         'overlap ${a.task.title} -> ${b.task.title}',
       );
     }
-    // y/time round-trip sanity on hour midpoints.
+    for (var h = 0; h < grid.visibleHours.length; h++) {
+      assert(
+        grid.hourHeightsPx[h] <= kPlanTimeMaxReasonableHourHeightPx + 0.5,
+        'hour $h height ${grid.hourHeightsPx[h]} exceeds cap',
+      );
+    }
     for (var h = 0; h < grid.visibleHours.length; h++) {
       final min = h * 60.0 + 30.0;
       final y = grid.yForMinutesFromRangeStart(min);
