@@ -457,6 +457,7 @@ class _PlanningPageState extends State<PlanningPage>
 
   /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
   List<PlanningTask> _latestPlanningDayTasks = const [];
+  String? _timeViewCascadeNormalizedDayKey;
   final Map<String, bool> _planDoneOverride = {};
   /// Keeps completed cards at their list index until the completion moment finishes.
   final Set<String> _planCompletionHoldKeys = {};
@@ -730,6 +731,7 @@ class _PlanningPageState extends State<PlanningPage>
         ?.trim()
         .toLowerCase();
     final day = widget.selectedDate ?? _today;
+    DatabaseService.instance.scrubJitVirtualPlansFromUserCache();
     _latestPlanningDayTasks = DatabaseService.instance
         .plansWarmSnapshotForDate(day)
         .tasks;
@@ -1591,6 +1593,7 @@ class _PlanningPageState extends State<PlanningPage>
           _selectedPlanKeys.clear();
           _planSelectMode = false;
           _sortMode = _PlanSortMode.custom;
+          _timeViewCascadeNormalizedDayKey = null;
         }
       });
       _syncPlanningShellFabBulkReserve();
@@ -1762,7 +1765,14 @@ class _PlanningPageState extends State<PlanningPage>
   }
 
   List<PlanningTask> _displayTasks(List<PlanningTask> server) {
-    final merged = _mergeWithOptimistic(server);
+    final dayKey = widget.selectedDateString.length >= 10
+        ? widget.selectedDateString.substring(0, 10)
+        : DatabaseService.instance.getProjectedTodayDateKey();
+    final merged = DatabaseService.instance.dedupePlanningTasksForDisplay(
+      _mergeWithOptimistic(server),
+      traceSource: 'ui',
+      dayKey: dayKey,
+    );
     if (_dragOrder != null && _dragOrder!.length == merged.length) {
       final keys = merged.map(_planKey).toSet();
       final dragKeys = _dragOrder!.map(_planKey).toSet();
@@ -2713,6 +2723,26 @@ class _PlanningPageState extends State<PlanningPage>
   String _timelineLogWallIso(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}T'
       '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  void _maybeNormalizeTimeViewOverlapsOnce(
+    DateTime planWallDay,
+    List<PlanningTask> schedulable,
+  ) {
+    if (_sortMode != _PlanSortMode.time) return;
+    final dayKey = '${planWallDay.year}-'
+        '${planWallDay.month.toString().padLeft(2, '0')}-'
+        '${planWallDay.day.toString().padLeft(2, '0')}';
+    if (_timeViewCascadeNormalizedDayKey == dayKey) return;
+    _timeViewCascadeNormalizedDayKey = dayKey;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _sortMode != _PlanSortMode.time) return;
+      DatabaseService.instance.applySequentialTimeViewCascadeIfNeeded(
+        wallDay: planWallDay,
+        scheduledSubset: schedulable,
+      );
+      if (mounted) setState(() {});
+    });
+  }
 
   void _logTimeDurationLayout({
     required TimeModeProjectedPlan proj,
@@ -3944,10 +3974,7 @@ class _PlanningPageState extends State<PlanningPage>
       schedulablePre.add(t);
     }
     if (schedulablePre.isNotEmpty) {
-      DatabaseService.instance.applySequentialTimeViewCascadeIfNeeded(
-        wallDay: planWallDay,
-        scheduledSubset: schedulablePre,
-      );
+      _maybeNormalizeTimeViewOverlapsOnce(planWallDay, schedulablePre);
       ordered = _tasksForTimeMode(
         DatabaseService.instance.planningDayTasksSnapshot(planWallDay),
         rangeStart,

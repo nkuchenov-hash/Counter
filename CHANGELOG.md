@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-23] - P0 Planning Tags duplicate cards after Time View cascade [wip]
+* **`plan_service.dart`:** [wip] stop upserting `virt-*` rows into `_allPlansUserCache`; scrub on fetch; idempotent `applySequentialTimeViewCascadeIfNeeded`; `dedupePlanningTasksForDisplay` + `[PLAN_DUP_TRACE]`.
+* **`planning_view.dart`:** [wip] remove cascade from Time View `build()` (one-shot post-frame per day); UI de-dupe in `_displayTasks`; scrub virt on page init.
+* **`lib/core/plan_dup_trace.dart`:** [wip] gated duplicate diagnostics.
+* **`test/planning_duplicate_plan_guard_test.dart`:** [wip] dedupe, cascade idempotency, virt+materialized guard.
+
 ## [2026-06-15] - P0U.7: O(1) canonical running business id for Timeline VM [wip]
 * **`database_service.dart` / `record_service.dart`:** [wip] `_cachedCanonicalRunningBusinessId` + dirty flag; recompute on `timelineEmit`, boot restore, fetch; O(1) read in `_buildTimelineRowVmsForDate`.
 * **`db_core.dart`:** [wip] sync on prefs hydrate; reset on sign-out.

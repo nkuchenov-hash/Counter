@@ -1224,6 +1224,176 @@ extension PlanServiceExtension on DatabaseService {
     return [...byBiz.values, ...noBiz];
   }
 
+  bool _isJitVirtualPlanningTask(PlanningTask task) {
+    final row = task.planRowId?.trim() ?? '';
+    if (row.startsWith('virt-')) return true;
+    return task.planRowIdForBackend.startsWith('virt-');
+  }
+
+  /// Stable list identity: PB system id → business plan_id → virt occurrence id.
+  String planningStableIdentityKey(PlanningTask task) {
+    final backend = task.planRowIdForBackend.trim();
+    if (backend.startsWith('virt-')) return backend;
+    if (backend.startsWith('optimistic-')) return backend;
+    final pb = task.pocketRecordId?.trim() ?? '';
+    if (DatabaseService._isLikelyPocketBaseRowId(pb)) return 'pb:$pb';
+    final biz = _planBusinessUuidFromTask(task);
+    if (biz != null && biz.isNotEmpty) return 'plan:$biz';
+    if (backend.isNotEmpty) return 'row:$backend';
+    return 'legacy:${task.id}';
+  }
+
+  String? _virtParentPbFromJitRow(PlanningTask task) {
+    final row = task.planRowId?.trim() ?? '';
+    if (!row.startsWith('virt-')) return null;
+    final m = RegExp(r'^virt-(.+)-(\d{4}-\d{2}-\d{2})$').firstMatch(row);
+    return m?.group(1)?.trim();
+  }
+
+  bool _wallScheduleMatches(PlanningTask a, PlanningTask b) {
+    if (a.startTime != b.startTime) return false;
+    return a.endDateTime == b.endDateTime;
+  }
+
+  void _scrubJitVirtualRowsFromUserCache() {
+    final before = _allPlansUserCache.length;
+    _allPlansUserCache = [
+      for (final t in _allPlansUserCache)
+        if (!_isJitVirtualPlanningTask(t)) t,
+    ];
+    final removed = before - _allPlansUserCache.length;
+    if (removed > 0 && !kReleaseMode) {
+      planDupTrace('source=cache event=scrubVirt removed=$removed');
+    }
+  }
+
+  void _logPlanDupTraceLayer({
+    required String source,
+    required List<PlanningTask> tasks,
+    String? dayKey,
+  }) {
+    if (kReleaseMode) return;
+    final systemIds = tasks.map((t) => t.planRowIdForBackend).toSet();
+    final planIds = <String>{};
+    for (final t in tasks) {
+      final biz = _planBusinessUuidFromTask(t);
+      if (biz != null && biz.isNotEmpty) planIds.add(biz);
+      final pb = t.pocketRecordId?.trim();
+      if (pb != null && pb.isNotEmpty) planIds.add(pb);
+    }
+    final dayPart = dayKey != null ? ' day=$dayKey' : '';
+    planDupTrace(
+      'source=$source$dayPart count=${tasks.length} '
+      'uniqueSystemIds=${systemIds.length} uniquePlanIds=${planIds.length}',
+    );
+    final byKey = <String, List<PlanningTask>>{};
+    for (final t in tasks) {
+      final k = planningStableIdentityKey(t);
+      byKey.putIfAbsent(k, () => []).add(t);
+    }
+    for (final e in byKey.entries) {
+      if (e.value.length < 2) continue;
+      final titles = e.value.map((t) => t.title.trim()).toSet().join('|');
+      final times = e.value
+          .map((t) {
+            final s = t.startTime;
+            final en = t.endDateTime;
+            if (s == null) return 'open';
+            final sh =
+                '${s.hour.toString().padLeft(2, '0')}:${s.minute.toString().padLeft(2, '0')}';
+            final eh = en != null
+                ? '${en.hour.toString().padLeft(2, '0')}:${en.minute.toString().padLeft(2, '0')}'
+                : 'open';
+            return '$sh-$eh';
+          })
+          .join('|');
+      final origins = e.value.map((t) => t.planRowIdForBackend).join('|');
+      planDupTrace(
+        'duplicate key=${e.key} titles=$titles times=$times origins=$origins',
+      );
+    }
+  }
+
+  void scrubJitVirtualPlansFromUserCache() {
+    _scrubJitVirtualRowsFromUserCache();
+  }
+
+  /// Defensive de-dupe for Planning list modes (Tags/Category/Custom/Time).
+  List<PlanningTask> dedupePlanningTasksForDisplay(
+    List<PlanningTask> tasks, {
+    String? traceSource,
+    String? dayKey,
+  }) {
+    if (tasks.length < 2) return tasks;
+
+    final materializedInstanceKeys = <String>{};
+    for (final t in tasks) {
+      if (_isJitVirtualPlanningTask(t)) continue;
+      final inst = t.recurrenceInstanceDateKey?.trim();
+      if (inst == null || inst.length < 10) continue;
+      final parentPb = t.pocketRecordId?.trim();
+      if (parentPb != null && DatabaseService._isLikelyPocketBaseRowId(parentPb)) {
+        materializedInstanceKeys.add('$parentPb|$inst');
+      }
+      final biz = _planBusinessUuidFromTask(t);
+      if (biz != null && biz.isNotEmpty) {
+        materializedInstanceKeys.add('biz:$biz|$inst');
+      }
+    }
+
+    final byKey = <String, PlanningTask>{};
+    var deduped = 0;
+    for (final t in tasks) {
+      if (_isJitVirtualPlanningTask(t)) {
+        final row = t.planRowId?.trim() ?? t.planRowIdForBackend;
+        final m = RegExp(r'^virt-(.+)-(\d{4}-\d{2}-\d{2})$').firstMatch(row);
+        if (m != null) {
+          final parent = m.group(1)?.trim() ?? '';
+          final dk = m.group(2)?.trim() ?? '';
+          if (parent.isNotEmpty &&
+              dk.isNotEmpty &&
+              (materializedInstanceKeys.contains('$parent|$dk') ||
+                  materializedInstanceKeys.contains('biz:$parent|$dk'))) {
+            deduped++;
+            continue;
+          }
+        }
+      }
+      final key = planningStableIdentityKey(t);
+      final existing = byKey[key];
+      if (existing == null) {
+        byKey[key] = t;
+      } else {
+        deduped++;
+        byKey[key] = _preferConfirmedPlanningTask(existing, t);
+      }
+    }
+    final out = _dedupePlanningTasksByBusinessId(byKey.values.toList());
+    out.sort((a, b) {
+      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final o = a.order.compareTo(b.order);
+      if (o != 0) return o;
+      final at = a.startTime;
+      final bt = b.startTime;
+      if (at != bt) {
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        return at.compareTo(bt);
+      }
+      return a.title.compareTo(b.title);
+    });
+    if (deduped > 0 && traceSource != null) {
+      planDupTrace(
+        'source=$traceSource event=dedupe removed=$deduped '
+        'before=${tasks.length} after=${out.length}',
+      );
+    }
+    if (traceSource != null) {
+      _logPlanDupTraceLayer(source: traceSource, tasks: out, dayKey: dayKey);
+    }
+    return out;
+  }
+
   void _purgeOptimisticPlanRowsFromUserCache(String businessPlanId) {
     final biz = businessPlanId.trim();
     if (biz.isEmpty) return;
@@ -1238,6 +1408,14 @@ extension PlanServiceExtension on DatabaseService {
   void _upsertPlanInUserCache(PlanningTask task) {
     final pid = task.planRowIdForBackend.trim();
     if (pid.isEmpty) return;
+    if (_isJitVirtualPlanningTask(task)) {
+      if (!kReleaseMode) {
+        planDupTrace(
+          'source=cache event=skipVirtUpsert key=$pid title=${task.title.trim()}',
+        );
+      }
+      return;
+    }
     final bizId = _planBusinessUuidFromTask(task);
     var i = -1;
     for (var j = 0; j < _allPlansUserCache.length; j++) {
@@ -1633,7 +1811,11 @@ extension PlanServiceExtension on DatabaseService {
       }
       return a.title.compareTo(b.title);
     });
-    return plans;
+    return dedupePlanningTasksForDisplay(
+      plans,
+      traceSource: 'cache',
+      dayKey: targetDayStr,
+    );
   }
 
   Future<void> _ensureAllPlansUserCacheFresh({bool force = false}) async {
@@ -1715,7 +1897,9 @@ extension PlanServiceExtension on DatabaseService {
     for (final e in overlay.entries) {
       byId[e.key] = e.value;
     }
-    final merged = _dedupePlanningTasksByBusinessId(byId.values.toList());
+    final merged = dedupePlanningTasksForDisplay(
+      _dedupePlanningTasksByBusinessId(byId.values.toList()),
+    );
     merged.sort((a, b) {
       if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
       final o = a.order.compareTo(b.order);
@@ -2186,6 +2370,8 @@ extension PlanServiceExtension on DatabaseService {
     required DateTime wallDay,
     List<PlanningTask>? scheduledSubset,
   }) {
+    final dayKey =
+        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
     final dayTasks = scheduledSubset ??
         planningDayTasksSnapshot(wallDay)
             .where((t) => t.startTime != null)
@@ -2194,13 +2380,29 @@ extension PlanServiceExtension on DatabaseService {
     final cascaded = normalizeSequentialPlanTimesForDay(dayTasks);
     final patches = plan_time_seq.diffSequentialCascadePatches(dayTasks, cascaded);
     if (patches.isEmpty) return false;
+    var applied = 0;
+    final appliedPatches = <plan_time_seq.PlanTimeSequentialCascadePatch>[];
     for (final p in patches) {
+      final overlay =
+          _planningOptimisticByDateKey[dayKey]?[p.task.planRowIdForBackend];
+      final cached = _findCachedPlanningTaskForEdit(
+        p.task.planRowIdForBackend,
+        planBusinessId: p.task.planRowId,
+      );
+      final baseline = overlay ?? cached ?? p.task;
+      if (_wallScheduleMatches(baseline, p.task)) continue;
       applyOptimisticPlanningTask(p.task);
+      appliedPatches.add(p);
+      applied++;
     }
+    if (applied == 0) return false;
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
-    for (final p in patches) {
-      unawaited(_persistSequentialCascadePatch(p));
+    for (final p in appliedPatches) {
+      if (!_isJitVirtualPlanningTask(p.task)) {
+        unawaited(_persistSequentialCascadePatch(p));
+      }
     }
+    _scrubJitVirtualRowsFromUserCache();
     return true;
   }
 
@@ -3090,6 +3292,7 @@ extension PlanServiceExtension on DatabaseService {
           _planningTaskFromPocketRecord(r, pocketTagCatalog: tagCatalog),
       ];
       _allPlansUserCache = out;
+      _scrubJitVirtualRowsFromUserCache();
       _allPlansUserCacheFetchedAt = DateTime.now();
       return out;
     } catch (_) {
@@ -4058,6 +4261,17 @@ extension PlanServiceExtension on DatabaseService {
       final targetDayStr =
           '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
 
+      void emitMerged(List<PlanningTask> base) {
+        if (controller.isClosed) return;
+        final merged = _mergePlanningOptimistic(targetDayStr, base);
+        _logPlanDupTraceLayer(
+          source: 'stream',
+          tasks: merged,
+          dayKey: targetDayStr,
+        );
+        controller.add(merged);
+      }
+
       void emitFastFromCache() {
         if (controller.isClosed) return;
         List<PlanningTask> base = [];
@@ -4068,12 +4282,12 @@ extension PlanServiceExtension on DatabaseService {
           unawaited(() async {
             final offline = await _loadPlanningTasksDayCache(targetDayStr);
             if (!controller.isClosed && offline.isNotEmpty) {
-              controller.add(_mergePlanningOptimistic(targetDayStr, offline));
+              emitMerged(offline);
             }
           }());
           return;
         }
-        controller.add(_mergePlanningOptimistic(targetDayStr, base));
+        emitMerged(base);
       }
 
       Future<void> pump({bool network = true}) async {
@@ -4087,7 +4301,7 @@ extension PlanServiceExtension on DatabaseService {
           } catch (_) {
             tasks = <PlanningTask>[];
           }
-          if (!controller.isClosed) controller.add(tasks);
+          if (!controller.isClosed) emitMerged(tasks);
         } finally {
           busy = false;
         }
