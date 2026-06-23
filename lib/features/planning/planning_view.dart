@@ -3238,66 +3238,6 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
-  List<PlanningTask> _resolveTimelineCollisionsAfterMove({
-    required List<PlanningTask> scheduled,
-    required int rangeStart,
-    required int rangeEnd,
-    required DateTime planWallDay,
-  }) {
-    final sorted = [...scheduled]
-      ..sort((a, b) {
-        final ap = DatabaseService.instance.projectPlanForTimeMode(a);
-        final bp = DatabaseService.instance.projectPlanForTimeMode(b);
-        if (ap == null || bp == null) return 0;
-        final aStart = _timelineMinutesFromRangeStart(
-          ap.profileWallStart,
-          rangeStart,
-          rangeEnd,
-        );
-        final bStart = _timelineMinutesFromRangeStart(
-          bp.profileWallStart,
-          rangeStart,
-          rangeEnd,
-        );
-        return aStart.compareTo(bStart);
-      });
-
-    for (var pass = 0; pass < sorted.length; pass++) {
-      var changed = false;
-      for (var i = 0; i < sorted.length - 1; i++) {
-        final a = sorted[i];
-        final b = sorted[i + 1];
-        final ap = DatabaseService.instance.projectPlanForTimeMode(a);
-        final bp = DatabaseService.instance.projectPlanForTimeMode(b);
-        if (ap == null || bp == null) continue;
-        final aSpan = _timelineSpanMinutesFromProjection(ap, rangeStart, rangeEnd);
-        final aEnd = aSpan.endMin;
-        final bStart = _timelineMinutesFromRangeStart(
-          bp.profileWallStart,
-          rangeStart,
-          rangeEnd,
-        );
-        if (bStart >= aEnd - 0.25) continue;
-
-        final bDur = bp.durationMinutes;
-        final aEndWall = ap.profileWallEnd ??
-            ap.profileWallStart.add(Duration(minutes: ap.durationMinutes));
-        final newStartWall = aEndWall;
-        final newEndWall = bp.profileWallEnd != null
-            ? newStartWall.add(Duration(minutes: bDur))
-            : null;
-        sorted[i + 1] = b.copyWith(
-          startTime: newStartWall,
-          endDateTime: newEndWall,
-          clearEnd: newEndWall == null,
-        );
-        changed = true;
-      }
-      if (!changed) break;
-    }
-    return sorted;
-  }
-
   void _persistTimelineDragWithCascade({
     required PlanningTask movedTask,
     required DateTime newStartWall,
@@ -3313,22 +3253,20 @@ class _PlanningPageState extends State<PlanningPage>
       endDateTime: newEndWall,
       clearEnd: newEndWall == null,
     );
-    final others = scheduledInRange
-        .where((t) => _planKey(t) != movedKey)
-        .where(_planIsTimelineVerticallyDraggable)
-        .toList();
-    final resolved = _resolveTimelineCollisionsAfterMove(
-      scheduled: [...others, movedUpdated],
-      rangeStart: rangeStart,
-      rangeEnd: rangeEnd,
-      planWallDay: planWallDay,
+    final merged = scheduledInRange
+        .map(
+          (t) => _planKey(t) == movedKey ? movedUpdated : t,
+        )
+        .toList(growable: false);
+    final resolved = DatabaseService.instance.normalizeSequentialPlanTimesForDay(
+      merged,
     );
 
     for (final task in resolved) {
       final key = _planKey(task);
       final before = key == movedKey
           ? movedTask
-          : _timelineTaskByPlanKey(others, key);
+          : _timelineTaskByPlanKey(scheduledInRange, key);
       if (before == null) continue;
       if (before.startTime == task.startTime &&
           before.endDateTime == task.endDateTime) {
@@ -3783,10 +3721,40 @@ class _PlanningPageState extends State<PlanningPage>
     final loc = currentLocale.value;
     final rangeStart = _timelineHourStart;
     final rangeEnd = _timelineHourEnd;
-    final ordered = _tasksForTimeMode(tasks, rangeStart);
+    final planWallDay = widget.selectedDate ?? _today;
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
+    var ordered = _tasksForTimeMode(
+      DatabaseService.instance.planningDayTasksSnapshot(planWallDay),
+      rangeStart,
+    );
+    final schedulablePre = <PlanningTask>[];
+    for (final t in ordered) {
+      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
+      if (proj == null) continue;
+      if (proj.profileWallDateKey != selectedDayKey) continue;
+      final startMin = _timelineMinutesFromRangeStart(
+        proj.profileWallStart,
+        rangeStart,
+        rangeEnd,
+      );
+      if (startMin < 0 ||
+          startMin > _timelineMaxVisibleMinutes(rangeStart, rangeEnd)) {
+        continue;
+      }
+      schedulablePre.add(t);
+    }
+    if (schedulablePre.isNotEmpty) {
+      DatabaseService.instance.applySequentialTimeViewCascadeIfNeeded(
+        wallDay: planWallDay,
+        scheduledSubset: schedulablePre,
+      );
+      ordered = _tasksForTimeMode(
+        DatabaseService.instance.planningDayTasksSnapshot(planWallDay),
+        rangeStart,
+      );
+    }
     final unscheduled = <PlanningTask>[];
     final projections = <TimeModeProjectedPlan>[];
     for (final t in ordered) {
@@ -3812,7 +3780,6 @@ class _PlanningPageState extends State<PlanningPage>
       rangeEnd,
     );
 
-    final planWallDay = widget.selectedDate ?? _today;
     final inRangeScheduled = projections.map((p) => p.projectedTask).toList();
     _logTimeModeRail(selectedDay: planWallDay, visibleHours: visibleHours);
 
@@ -4391,7 +4358,7 @@ class _PlanningPageState extends State<PlanningPage>
                     planActualByPbId: planActualByPbId,
                     timelineEmbedded: true,
                     timelineInteracting: isInteracting,
-                    timelineScheduleConflict: layout.hasScheduleConflict,
+                    timelineScheduleConflict: false,
                     timelineTimeLabel: layout.projection?.plannedTimeLabel,
                     timelineBlockHeightPx: resizeHeightPx,
                   ),

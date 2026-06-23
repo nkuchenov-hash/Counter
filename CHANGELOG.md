@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time View sequential cascade (no conflict layout) [wip]
+* **`plan_time_sequential_cascade.dart`:** [wip] pure `cascadeScheduledPlansForTimeViewDay` / `diffSequentialCascadePatches` — overlap → shift down, preserve duration, cascade chain.
+* **`plan_service.dart`:** [wip] `applySequentialTimeViewCascadeIfNeeded` optimistic + background PATCH; `resolveAutoPlanSchedule` probe cascade; `addPlanningTask` day normalize after create.
+* **`planning_view.dart`:** [wip] day-load normalize before projections; drag cascade all scheduled rows; `timelineScheduleConflict: false`.
+* **`plan_time_view_layout.dart`:** [wip] removed `hasScheduleConflict` detection loop.
+* **`test/plan_time_sequential_cascade_test.dart`:** [wip] overlap, drag-after, chain, duration, quick-add, virt recurring.
+
 ## [2026-06-15] - P0U.4R: disable adjacent VM warmup + VM builder step diagnostics [wip]
 * **`p0u_feature_flags.dart`:** [wip] `kTimelineAdjacentRowVmWarmup = false` (P0U.4 rollback).
 * **`p0u_timeline_vm_build_diag.dart`:** [wip] `[P0U_TIMELINE_VM_BUILD_*]` step timings; `[P0U_TIMELINE_ADJ_VM_WARM_DISABLED]`.

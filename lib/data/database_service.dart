@@ -26,6 +26,7 @@ import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
 import 'package:counter/data/local_sync/record_mutation_outbox.dart';
 import 'package:counter/data/local_sync/sync_manager.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/plan_time_sequential_cascade.dart' as plan_time_seq;
 import 'package:counter/data/pb_config.dart';
 import 'package:counter/services/notification_service.dart';
 import 'package:http/http.dart' as http;

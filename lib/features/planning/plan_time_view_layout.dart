@@ -273,13 +273,6 @@ abstract final class PlanTimeViewLayoutCalculator {
       globalPrevBottom = topPx + heightPx;
 
       final visual = planTimeCardVisualDensityForRenderedHeight(heightPx);
-      var conflict = false;
-      for (final prev in layouts) {
-        if (topPx < prev.topPx + prev.heightPx - 0.5) {
-          conflict = true;
-          break;
-        }
-      }
       layouts.add(
         PlanTimeViewBlockLayout(
           task: slot.task,
@@ -288,7 +281,6 @@ abstract final class PlanTimeViewLayoutCalculator {
           heightPx: heightPx,
           density: planTimeCardTaskDensityForVisual(visual),
           visualDensity: visual,
-          hasScheduleConflict: conflict,
         ),
       );
     }

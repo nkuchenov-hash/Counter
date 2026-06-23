@@ -1,0 +1,157 @@
+import 'dart:math' as math;
+
+import 'package:counter/data/models.dart';
+
+/// One plan whose wall schedule changed after sequential cascade.
+class PlanTimeSequentialCascadePatch {
+  const PlanTimeSequentialCascadePatch({
+    required this.task,
+    required this.beforeStart,
+    required this.beforeEnd,
+    required this.afterStart,
+    required this.afterEnd,
+  });
+
+  final PlanningTask task;
+  final DateTime beforeStart;
+  final DateTime? beforeEnd;
+  final DateTime afterStart;
+  final DateTime afterEnd;
+}
+
+/// Wall-clock duration in minutes for cascade (preserved when shifting).
+int planWallDurationMinutesForCascade(
+  PlanningTask task, {
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+}) {
+  final start = task.startTime;
+  if (start == null) return 30;
+  final end = task.endDateTime;
+  if (end != null && !end.isBefore(start)) {
+    return math.max(5, end.difference(start).inMinutes);
+  }
+  return math.max(5, resolveDurationMinutes(task.tags));
+}
+
+int _planCascadeSortCompare(PlanningTask a, PlanningTask b) {
+  final aStart = a.startTime;
+  final bStart = b.startTime;
+  if (aStart == null && bStart == null) {
+    return a.planRowIdForBackend.compareTo(b.planRowIdForBackend);
+  }
+  if (aStart == null) return 1;
+  if (bStart == null) return -1;
+  final byStart = aStart.compareTo(bStart);
+  if (byStart != 0) return byStart;
+  final byOrder = a.order.compareTo(b.order);
+  if (byOrder != 0) return byOrder;
+  return a.planRowIdForBackend.compareTo(b.planRowIdForBackend);
+}
+
+bool _wallScheduleEqual(PlanningTask a, PlanningTask b) {
+  final aStart = a.startTime;
+  final bStart = b.startTime;
+  if (aStart == null || bStart == null) return aStart == bStart;
+  if (aStart != bStart) return false;
+  return a.endDateTime == b.endDateTime;
+}
+
+/// Sequential Time View day planner: shift overlapping tasks down, preserve duration.
+///
+/// Sort: start time → [order] → plan id. For each task after the first, if
+/// `start < previous.end` then `start = previous.end` and `end = start + duration`.
+List<PlanningTask> cascadeScheduledPlansForTimeViewDay(
+  List<PlanningTask> tasks, {
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+}) {
+  if (tasks.isEmpty) return const [];
+
+  final scheduled = tasks.where((t) => t.startTime != null).toList()
+    ..sort(_planCascadeSortCompare);
+
+  if (scheduled.isEmpty) return List<PlanningTask>.from(tasks);
+
+  final cascadedById = <String, PlanningTask>{};
+  DateTime? prevEnd;
+
+  for (final task in scheduled) {
+    final origStart = task.startTime!;
+    final durMin = planWallDurationMinutesForCascade(
+      task,
+      resolveDurationMinutes: resolveDurationMinutes,
+    );
+    var newStart = origStart;
+    if (prevEnd != null && newStart.isBefore(prevEnd)) {
+      newStart = DateTime(
+        origStart.year,
+        origStart.month,
+        origStart.day,
+        prevEnd.hour,
+        prevEnd.minute,
+        prevEnd.second,
+        prevEnd.millisecond,
+        prevEnd.microsecond,
+      );
+    }
+    final newEnd = newStart.add(Duration(minutes: durMin));
+    final updated = task.copyWith(
+      startTime: newStart,
+      endDateTime: newEnd,
+      clearEnd: false,
+    );
+    cascadedById[task.planRowIdForBackend] = updated;
+    prevEnd = newEnd;
+  }
+
+  return tasks
+      .map(
+        (t) => cascadedById[t.planRowIdForBackend] ?? t,
+      )
+      .toList(growable: false);
+}
+
+/// Patches where cascade changed wall start/end.
+List<PlanTimeSequentialCascadePatch> diffSequentialCascadePatches(
+  List<PlanningTask> before,
+  List<PlanningTask> after,
+) {
+  final afterById = {for (final t in after) t.planRowIdForBackend: t};
+  final patches = <PlanTimeSequentialCascadePatch>[];
+  for (final orig in before) {
+    final next = afterById[orig.planRowIdForBackend];
+    if (next == null) continue;
+    if (_wallScheduleEqual(orig, next)) continue;
+    final beforeStart = orig.startTime;
+    final afterStart = next.startTime;
+    if (beforeStart == null || afterStart == null) continue;
+    patches.add(
+      PlanTimeSequentialCascadePatch(
+        task: next,
+        beforeStart: beforeStart,
+        beforeEnd: orig.endDateTime,
+        afterStart: afterStart,
+        afterEnd: next.endDateTime ?? afterStart,
+      ),
+    );
+  }
+  return patches;
+}
+
+bool scheduledPlansHaveWallOverlap(
+  List<PlanningTask> tasks, {
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+}) {
+  final scheduled = tasks.where((t) => t.startTime != null).toList()
+    ..sort(_planCascadeSortCompare);
+  DateTime? prevEnd;
+  for (final task in scheduled) {
+    final start = task.startTime!;
+    if (prevEnd != null && start.isBefore(prevEnd)) return true;
+    final durMin = planWallDurationMinutesForCascade(
+      task,
+      resolveDurationMinutes: resolveDurationMinutes,
+    );
+    prevEnd = start.add(Duration(minutes: durMin));
+  }
+  return false;
+}

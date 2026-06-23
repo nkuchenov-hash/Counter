@@ -2159,6 +2159,53 @@ extension PlanServiceExtension on DatabaseService {
     return start;
   }
 
+  /// Pure sequential Time View cascade (wall times, duration preserved).
+  List<PlanningTask> normalizeSequentialPlanTimesForDay(
+    List<PlanningTask> tasks,
+  ) {
+    return plan_time_seq.cascadeScheduledPlansForTimeViewDay(
+      tasks,
+      resolveDurationMinutes: resolvePlanDurationMinutesFromTags,
+    );
+  }
+
+  /// Optimistic + background PATCH for any overlap on a day's scheduled plans.
+  bool applySequentialTimeViewCascadeIfNeeded({
+    required DateTime wallDay,
+    List<PlanningTask>? scheduledSubset,
+  }) {
+    final dayTasks = scheduledSubset ??
+        planningDayTasksSnapshot(wallDay)
+            .where((t) => t.startTime != null)
+            .toList();
+    if (dayTasks.isEmpty) return false;
+    final cascaded = normalizeSequentialPlanTimesForDay(dayTasks);
+    final patches = plan_time_seq.diffSequentialCascadePatches(dayTasks, cascaded);
+    if (patches.isEmpty) return false;
+    for (final p in patches) {
+      applyOptimisticPlanningTask(p.task);
+    }
+    notifyPlanningRefresh(scheduleNetworkRefresh: false);
+    for (final p in patches) {
+      unawaited(_persistSequentialCascadePatch(p));
+    }
+    return true;
+  }
+
+  Future<void> _persistSequentialCascadePatch(
+    plan_time_seq.PlanTimeSequentialCascadePatch patch,
+  ) async {
+    await updatePlanningTask(
+      patch.task.planRowIdForBackend,
+      planBusinessId: patch.task.planRowId,
+      startTimeDisplay: patch.afterStart,
+      endDateTimeDisplay: patch.afterEnd,
+      clearEnd: false,
+      suppressAppSnack: true,
+      recurrenceInstanceDateKey: patch.task.recurrenceInstanceDateKey,
+    );
+  }
+
   /// Cache + optimistic overlay for one wall day (no network).
   List<PlanningTask> planningDayTasksSnapshot(DateTime wallDay) {
     final key =
@@ -2773,9 +2820,27 @@ extension PlanServiceExtension on DatabaseService {
     if (hasExplicitTimeRange &&
         explicitStartWall != null &&
         explicitEndWall != null) {
+      const probePlanId = '__auto_schedule_probe__';
+      final dayKey =
+          '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+      final probe = PlanningTask(
+        id: 0,
+        title: '',
+        categoryId: categoryId,
+        isDone: false,
+        dateKey: dayKey,
+        order: 999999,
+        startTime: explicitStartWall,
+        endDateTime: explicitEndWall,
+        tags: tags,
+        planRowId: probePlanId,
+      );
+      final cascadedProbe = normalizeSequentialPlanTimesForDay(
+        [...existingDayPlans, probe],
+      ).firstWhere((t) => t.planRowId == probePlanId);
       return (
-        startWall: explicitStartWall,
-        endWall: explicitEndWall,
+        startWall: cascadedProbe.startTime ?? explicitStartWall,
+        endWall: cascadedProbe.endDateTime ?? explicitEndWall,
         startUtcInstant: null,
         endUtcInstant: null,
       );
@@ -2837,17 +2902,38 @@ extension PlanServiceExtension on DatabaseService {
       }
     }
 
-    final resolvedStart = _avoidPlanWallScheduleCollisions(
+    var resolvedStart = _avoidPlanWallScheduleCollisions(
       startWall: startWall,
       durationMin: durationMin,
       existingDayPlans: existingDayPlans,
     );
 
-    final endWall = explicitEndWall != null &&
+    var endWall = explicitEndWall != null &&
             explicitEndWall.isAfter(resolvedStart) &&
             hasExplicitTimeRange
         ? explicitEndWall
         : resolvedStart.add(Duration(minutes: durationMin));
+
+    final dayKey =
+        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+    const probePlanId = '__auto_schedule_probe__';
+    final probe = PlanningTask(
+      id: 0,
+      title: '',
+      categoryId: categoryId,
+      isDone: false,
+      dateKey: dayKey,
+      order: 999999,
+      startTime: resolvedStart,
+      endDateTime: endWall,
+      tags: tags,
+      planRowId: probePlanId,
+    );
+    final cascadedProbe = normalizeSequentialPlanTimesForDay(
+      [...existingDayPlans, probe],
+    ).firstWhere((t) => t.planRowId == probePlanId);
+    resolvedStart = cascadedProbe.startTime ?? resolvedStart;
+    endWall = cascadedProbe.endDateTime ?? endWall;
 
     if (usedCategoryDefault) {
       final startUtc = wallUtcForCategoryDefaultWall(
@@ -4132,6 +4218,22 @@ extension PlanServiceExtension on DatabaseService {
         isSynced: false,
       ),
     );
+    if (task.startTime != null) {
+      final dk = task.dateKey.trim();
+      if (dk.length >= 10) {
+        final ymd = dk.substring(0, 10).split('-');
+        if (ymd.length == 3) {
+          final y = int.tryParse(ymd[0]);
+          final m = int.tryParse(ymd[1]);
+          final d = int.tryParse(ymd[2]);
+          if (y != null && m != null && d != null) {
+            applySequentialTimeViewCascadeIfNeeded(
+              wallDay: DateTime(y, m, d),
+            );
+          }
+        }
+      }
+    }
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
     late final Map<String, dynamic> body;
     try {
