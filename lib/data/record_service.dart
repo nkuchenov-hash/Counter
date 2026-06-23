@@ -820,29 +820,15 @@ extension RecordServiceExtension on DatabaseService {
       resolveCanonicalPrimaryRunningBusinessId();
 
   void _resetCanonicalRunningBusinessIdCache({String reason = 'reset'}) {
-    if (!_canonicalRunningBusinessIdCacheDirty && !kReleaseMode) {
-      debugPrint(
-        '[P0U_RUNNING_BIZ_CACHE] event=invalidate reason=$reason ms=0',
-      );
-    }
     _canonicalRunningBusinessIdCacheDirty = true;
     _cachedCanonicalRunningBusinessId = null;
   }
 
   /// Recompute running business id once (outside per-row VM loop).
   void _syncCanonicalRunningBusinessIdCache(String reason) {
-    final sw = Stopwatch()..start();
-    final wasDirty = _canonicalRunningBusinessIdCacheDirty;
     _cachedCanonicalRunningBusinessId =
         _businessIdFromCanonicalRunningRow(_canonicalPrimaryRunningFlatRow());
     _canonicalRunningBusinessIdCacheDirty = false;
-    sw.stop();
-    if (!kReleaseMode && wasDirty) {
-      debugPrint(
-        '[P0U_RUNNING_BIZ_CACHE] event=dirtyRecompute reason=$reason '
-        'ms=${sw.elapsedMilliseconds}',
-      );
-    }
   }
 
   /// Sacred singleton: if multiple primaries are open, keep newest and stop older rows.
@@ -1801,72 +1787,40 @@ extension RecordServiceExtension on DatabaseService {
 
   String _timelineSubtitleForRecordMap(
     Map<String, dynamic> data, {
-    P0uTimelineVmRecordBuildSession? nestedDiag,
     String? canonicalRunningBiz,
   }) {
-    T nest<T>(String name, T Function() fn) {
-      if (nestedDiag == null) return fn();
-      return nestedDiag.timeNestedStep(name, fn);
-    }
-
-    final type = nest('mapAccess_type', () => data['type'] as String? ?? 'record');
+    final type = data['type'] as String? ?? 'record';
     if (type == 'planned') {
       return 'planned';
     }
-    final rowBiz = nest(
-      'mapAccess_recordId',
-      () => (data['record_id'] ?? '').toString().trim(),
-    );
-    final canonicalBiz = canonicalRunningBiz ??
-        nest(
-          'canonicalPrimaryRunningBiz_call',
-          () => resolveCanonicalPrimaryRunningBusinessId(),
-        );
-    final isRunning = nest('runningState_call', () {
-      return type == 'record' &&
-          CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
-          canonicalBiz != null &&
-          canonicalBiz.isNotEmpty &&
-          rowBiz == canonicalBiz;
-    });
-    final startTimeUtc = nest(
-      'startEndParse_call',
-      () => CategoryServiceExtension.startTimeFromRecord(data),
-    );
-    final endTimeUtc = nest(
-      'startEndParse_call',
-      () => CategoryServiceExtension.endTimeFromRecord(data),
-    );
+    final rowBiz = (data['record_id'] ?? '').toString().trim();
+    final canonicalBiz =
+        canonicalRunningBiz ?? resolveCanonicalPrimaryRunningBusinessId();
+    final isRunning = type == 'record' &&
+        CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
+        canonicalBiz != null &&
+        canonicalBiz.isNotEmpty &&
+        rowBiz == canonicalBiz;
+    final startTimeUtc = CategoryServiceExtension.startTimeFromRecord(data);
+    final endTimeUtc = CategoryServiceExtension.endTimeFromRecord(data);
     if (isRunning) {
       if (startTimeUtc != null) {
-        final start = nest(
-          'profileWallFromUtc_start_call',
-          () => _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc)),
-        );
-        final duration = nest(
-          'subtitle_durationPart',
-          () => DatabaseService.getPlanetaryNow().difference(startTimeUtc),
-        );
+        final start =
+            _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc));
+        final duration =
+            DatabaseService.getPlanetaryNow().difference(startTimeUtc);
         return '$start — ... (${_timelineFormatDuration(duration)})';
       }
       return 'running';
     }
     if (startTimeUtc != null) {
-      final start = nest(
-        'profileWallFromUtc_start_call',
-        () => _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc)),
-      );
+      final start =
+          _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc));
       final end = endTimeUtc != null
-          ? nest(
-              'profileWallFromUtc_end_call',
-              () => _timelineFormatTimeOfDay(_profileWallFromUtc(endTimeUtc!)),
-            )
+          ? _timelineFormatTimeOfDay(_profileWallFromUtc(endTimeUtc))
           : '...';
       final endOrNow = endTimeUtc ?? DatabaseService.getPlanetaryNow();
-      final duration = nest(
-        'subtitle_durationPart',
-        () => endOrNow.difference(startTimeUtc),
-      );
+      final duration = endOrNow.difference(startTimeUtc);
       return '$start — $end (${_timelineFormatDuration(duration)})';
     }
     return '–';
@@ -1885,13 +1839,11 @@ extension RecordServiceExtension on DatabaseService {
 
   TimelineRecordRowVm? _timelineRowVmFromMapOrNull(
     Map<String, dynamic> data, {
-    P0uTimelineVmRecordBuildSession? recordDiag,
     String? canonicalRunningBiz,
   }) {
     try {
       return _timelineRowVmFromMap(
         data,
-        recordDiag: recordDiag,
         canonicalRunningBiz: canonicalRunningBiz,
       );
     } catch (e) {
@@ -1941,81 +1893,49 @@ extension RecordServiceExtension on DatabaseService {
 
   TimelineRecordRowVm _timelineRowVmFromMap(
     Map<String, dynamic> data, {
-    P0uTimelineVmRecordBuildSession? recordDiag,
     String? canonicalRunningBiz,
   }) {
-    T step<T>(String name, T Function() fn) {
-      if (recordDiag == null) return fn();
-      return recordDiag.timeStep(name, fn);
-    }
-
-    final systemRowId = step(
-      'mapAccess_id',
-      () => (data['id'] ?? data['backendNumericId'] ?? '').toString().trim(),
-    );
-    final businessRecordId = step(
-      'mapAccess_recordId',
-      () => (data['record_id'] ?? '').toString().trim(),
-    );
-    final title = step(
-      'mapAccess_title',
-      () =>
-          data['title'] as String? ??
-          (systemRowId.isNotEmpty ? systemRowId : '?'),
-    );
-    final type = step('mapAccess_type', () => data['type'] as String? ?? 'record');
-    final canonicalBiz = canonicalRunningBiz ??
-        resolveCanonicalPrimaryRunningBusinessId();
+    final systemRowId =
+        (data['id'] ?? data['backendNumericId'] ?? '').toString().trim();
+    final businessRecordId = (data['record_id'] ?? '').toString().trim();
+    final title =
+        data['title'] as String? ??
+        (systemRowId.isNotEmpty ? systemRowId : '?');
+    final type = data['type'] as String? ?? 'record';
+    final canonicalBiz =
+        canonicalRunningBiz ?? resolveCanonicalPrimaryRunningBusinessId();
     final isPlanned = type == 'planned';
-    final isCanonicalRunning = step('runningState_call', () {
-      return type == 'record' &&
-          CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
-          canonicalBiz != null &&
-          canonicalBiz.isNotEmpty &&
-          businessRecordId == canonicalBiz;
-    });
-    final rec = step(
-      'recordForTimelineCard_call',
-      () => Record.forTimelineCard(data),
-    );
-    final color = step(
-      'categoryDisplayColor_call',
-      () => categoryDisplayColorForRecordData(data),
-    );
-    final categoryPath = step(
-      'categoryDisplayPath_call',
-      () => categoryDisplayPathForRecordData(data),
-    );
+    final isCanonicalRunning = type == 'record' &&
+        CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
+        canonicalBiz != null &&
+        canonicalBiz.isNotEmpty &&
+        businessRecordId == canonicalBiz;
+    final rec = Record.forTimelineCard(data);
+    final color = categoryDisplayColorForRecordData(data);
+    final categoryPath = categoryDisplayPathForRecordData(data);
     final subtitle = _timelineSubtitleForRecordMap(
       data,
-      nestedDiag: recordDiag,
       canonicalRunningBiz: canonicalBiz,
     );
-    final showNotes = step('subtitle_notesPart', () => rec.hasNotes);
-    final showChecklist = step('subtitle_checklistPart', () => rec.hasChecklist);
-    final showParent = step('subtitle_parentPart', () => rec.hasParentRecord);
-    final showLinkedSubs = step(
-      'subtitle_parentPart',
-      () => rec.hasLinkedSubRecords,
-    );
-    final colorArgb = step('color_toARGB32_call', () => color.toARGB32());
-    return step(
-      'timelineRowVm_constructor',
-      () => TimelineRecordRowVm(
-        systemRowId: systemRowId,
-        businessRecordId: businessRecordId,
-        rawData: data,
-        title: title,
-        subtitle: subtitle,
-        categoryPath: categoryPath,
-        categoryColorArgb: colorArgb,
-        isPlanned: isPlanned,
-        isCanonicalRunning: isCanonicalRunning,
-        showNotesIcon: showNotes,
-        showChecklistIcon: showChecklist,
-        showParentIcon: showParent,
-        showLinkedSubsIcon: showLinkedSubs,
-      ),
+    final showNotes = rec.hasNotes;
+    final showChecklist = rec.hasChecklist;
+    final showParent = rec.hasParentRecord;
+    final showLinkedSubs = rec.hasLinkedSubRecords;
+    final colorArgb = color.toARGB32();
+    return TimelineRecordRowVm(
+      systemRowId: systemRowId,
+      businessRecordId: businessRecordId,
+      rawData: data,
+      title: title,
+      subtitle: subtitle,
+      categoryPath: categoryPath,
+      categoryColorArgb: colorArgb,
+      isPlanned: isPlanned,
+      isCanonicalRunning: isCanonicalRunning,
+      showNotesIcon: showNotes,
+      showChecklistIcon: showChecklist,
+      showParentIcon: showParent,
+      showLinkedSubsIcon: showLinkedSubs,
     );
   }
 
@@ -2037,68 +1957,21 @@ extension RecordServiceExtension on DatabaseService {
     String dateKey,
     DateTime date,
   ) {
-    final lookupSw = Stopwatch()..start();
-    final maps = peekTimelineRecordsForDate(date);
-    lookupSw.stop();
-    final session = P0uTimelineVmBuildDiag.beginDay(
-      dateKey: dateKey,
-      records: maps.length,
-    );
-    session?.addStepUs('recordMapRead', lookupSw.elapsedMicroseconds);
-    final canonSw = Stopwatch()..start();
-    final canonicalRunningBiz = resolveCanonicalPrimaryRunningBusinessId();
-    canonSw.stop();
-    session?.addStepUs(
-      'canonicalPrimaryRunningBiz_once',
-      canonSw.elapsedMicroseconds,
-    );
     final sw = Stopwatch()..start();
+    final maps = peekTimelineRecordsForDate(date);
+    final canonicalRunningBiz = resolveCanonicalPrimaryRunningBusinessId();
     final vms = <TimelineRecordRowVm>[];
-    Stopwatch? loopGapSw;
     for (final m in maps) {
-      if (session != null && loopGapSw != null) {
-        loopGapSw.stop();
-        session.addStepUs('loopOverhead', loopGapSw.elapsedMicroseconds);
-      }
-      TimelineRecordRowVm? vm;
-      if (session != null) {
-        loopGapSw = Stopwatch()..start();
-        final recordDiag = P0uTimelineVmRecordBuildSession();
-        vm = _timelineRowVmFromMapOrNull(
-          m,
-          recordDiag: recordDiag,
-          canonicalRunningBiz: canonicalRunningBiz,
-        );
-        recordDiag.finish();
-        final rid = (m['record_id'] ?? m['id'] ?? '').toString().trim();
-        session.mergeRecord(recordDiag, rid.isNotEmpty ? rid : '?');
-      } else {
-        vm = _timelineRowVmFromMapOrNull(
-          m,
-          canonicalRunningBiz: canonicalRunningBiz,
-        );
-      }
+      final vm = _timelineRowVmFromMapOrNull(
+        m,
+        canonicalRunningBiz: canonicalRunningBiz,
+      );
       if (vm != null) {
         vms.add(vm);
-        if (session != null) {
-          final pinSw = Stopwatch()..start();
-          _pinTimelineRowVmInLazyCache(dateKey, m, vm);
-          pinSw.stop();
-          session.addStepUs('cachePut', pinSw.elapsedMicroseconds);
-        } else {
-          _pinTimelineRowVmInLazyCache(dateKey, m, vm);
-        }
-        if (session != null) {
-          loopGapSw = Stopwatch()..start();
-        }
+        _pinTimelineRowVmInLazyCache(dateKey, m, vm);
       }
     }
-    if (session != null && loopGapSw != null) {
-      loopGapSw.stop();
-      session.addStepUs('loopOverhead', loopGapSw.elapsedMicroseconds);
-    }
     sw.stop();
-    session?.finish(rows: vms.length);
     if (kPerfDiagnosisEnabled) {
       PerfDiag.instance.logTimelineViewCacheRebuild(
         date: dateKey,
@@ -2109,19 +1982,13 @@ extension RecordServiceExtension on DatabaseService {
     return vms;
   }
 
-  void _logTimelineAdjVmWarmSkip(String date, String reason) {
-    debugPrint('[P0U_TIMELINE_ADJ_VM_WARM_SKIP] date=$date reason=$reason');
-  }
-
   /// P0U.4 — queue ±1 day row-VM warmup after first rendered frame.
   void scheduleTimelineAdjacentRowVmWarmup(
     DateTime center, {
     required bool Function() timelineTabActive,
     required bool Function() centerDateUnchanged,
   }) {
-    P0uTimelineVmBuildDiag.logWarmDisabledIfNeeded(
-      warmupEnabled: kTimelineAdjacentRowVmWarmup,
-    );
+    P0uDiag.logAdjVmWarmDisabledIfNeeded();
     if (!kTimelineAdjacentRowVmWarmup || kUseP0tMountedStrip) return;
     final captured = DateTime(center.year, center.month, center.day);
     final gen = ++_timelineAdjVmWarmGeneration;
@@ -2141,9 +2008,7 @@ extension RecordServiceExtension on DatabaseService {
     required bool Function() timelineTabActive,
     required bool Function() centerDateUnchanged,
   }) {
-    P0uTimelineVmBuildDiag.logWarmDisabledIfNeeded(
-      warmupEnabled: kTimelineAdjacentRowVmWarmup,
-    );
+    P0uDiag.logAdjVmWarmDisabledIfNeeded();
     if (!kTimelineAdjacentRowVmWarmup || kUseP0tMountedStrip) return;
     final captured = DateTime(center.year, center.month, center.day);
     final gen = ++_timelineAdjVmWarmGeneration;
@@ -2165,7 +2030,6 @@ extension RecordServiceExtension on DatabaseService {
     required bool Function() centerDateUnchanged,
   }) async {
     if (maps.length > _kTimelineAdjVmWarmMaxRecords) {
-      _logTimelineAdjVmWarmSkip(dateKey, 'tooLarge');
       return const [];
     }
     final canonicalRunningBiz = resolveCanonicalPrimaryRunningBusinessId();
@@ -2188,7 +2052,6 @@ extension RecordServiceExtension on DatabaseService {
         }
       }
       if (i < maps.length) {
-        debugPrint('[P0U_TIMELINE_ADJ_VM_WARM_YIELD] afterDate=$dateKey');
         await Future<void>.delayed(Duration.zero);
       }
     }
@@ -2202,46 +2065,26 @@ extension RecordServiceExtension on DatabaseService {
     required bool Function() centerDateUnchanged,
   }) async {
     if (!timelineTabActive()) {
-      _logTimelineAdjVmWarmSkip(
-        _timelineDateKeyFromDate(center),
-        'inactiveTab',
-      );
       return;
     }
     if (!centerDateUnchanged()) {
-      _logTimelineAdjVmWarmSkip(
-        _timelineDateKeyFromDate(center),
-        'dateChanged',
-      );
       return;
     }
-    final centerKey = _timelineDateKeyFromDate(center);
     final prev = center.subtract(const Duration(days: 1));
     final next = center.add(const Duration(days: 1));
-    final prevKey = _timelineDateKeyFromDate(prev);
-    final nextKey = _timelineDateKeyFromDate(next);
-    debugPrint(
-      '[P0U_TIMELINE_ADJ_VM_WARM_START] center=$centerKey prev=$prevKey next=$nextKey',
-    );
-    final totalSw = Stopwatch()..start();
-    var warmedDays = 0;
     for (final day in [prev, next]) {
       if (generation != _timelineAdjVmWarmGeneration) return;
       if (!timelineTabActive()) {
-        _logTimelineAdjVmWarmSkip(_timelineDateKeyFromDate(day), 'inactiveTab');
         return;
       }
       if (!centerDateUnchanged()) {
-        _logTimelineAdjVmWarmSkip(_timelineDateKeyFromDate(day), 'dateChanged');
         return;
       }
       final key = _timelineDateKeyFromDate(day);
       if (_timelineDayVmCache.containsKey(key)) {
-        _logTimelineAdjVmWarmSkip(key, 'cacheHit');
         continue;
       }
       final maps = peekTimelineRecordsForDate(day);
-      final daySw = Stopwatch()..start();
       final built = await _buildTimelineRowVmsChunked(
         generation: generation,
         dateKey: key,
@@ -2251,20 +2094,8 @@ extension RecordServiceExtension on DatabaseService {
       );
       if (built == null) return;
       _timelineDayVmCache[key] = built;
-      daySw.stop();
-      warmedDays++;
-      debugPrint(
-        '[P0U_TIMELINE_ADJ_VM_WARM_DAY] date=$key records=${maps.length} '
-        'rows=${built.length} source=dayIndex ms=${daySw.elapsedMilliseconds}',
-      );
-      debugPrint('[P0U_TIMELINE_ADJ_VM_WARM_YIELD] afterDate=$key');
       await Future<void>.delayed(Duration.zero);
     }
-    totalSw.stop();
-    debugPrint(
-      '[P0U_TIMELINE_ADJ_VM_WARM_DONE] center=$centerKey '
-      'totalMs=${totalSw.elapsedMilliseconds} days=$warmedDays',
-    );
   }
 
   /// Render-ready row VMs for a calendar day (cached; no UI-side grouping/formatting).
@@ -2283,72 +2114,6 @@ extension RecordServiceExtension on DatabaseService {
     final built = _buildTimelineRowVmsForDate(targetDayStr, date);
     _timelineDayVmCache[targetDayStr] = built;
     return built;
-  }
-
-  /// P0U.4D — cache snapshot only (no full scan / no peek build).
-  ({
-    String dayIndex,
-    int records,
-    String rowVm,
-    int rows,
-    bool dayWidgetCached,
-  }) timelineTargetDayCacheSnapshot(DateTime date) {
-    final key = _timelineDateKeyFromDate(date);
-    final indexReady = !_timelineDayIndexDirty &&
-        _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length;
-    final dayIndex = indexReady ? 'hit' : 'miss';
-    final viewCached = _timelineDayViewCache.containsKey(key);
-    final vmCached = _timelineDayVmCache.containsKey(key);
-    final records = viewCached ? _timelineDayViewCache[key]!.length : 0;
-    final rowVm = vmCached ? 'hit' : 'miss';
-    final rows = vmCached ? _timelineDayVmCache[key]!.length : 0;
-    return (
-      dayIndex: dayIndex,
-      records: records,
-      rowVm: rowVm,
-      rows: rows,
-      dayWidgetCached: viewCached,
-    );
-  }
-
-  /// P0U.4D — timed data probe for first-swipe target day.
-  ({
-    String source,
-    int records,
-    int ms,
-  }) timelineTargetDayDataReadyProbe(DateTime date) {
-    final key = _timelineDateKeyFromDate(date);
-    final hadViewCache =
-        !_timelineDayIndexDirty && _timelineDayViewCache.containsKey(key);
-    final indexReady = !_timelineDayIndexDirty &&
-        _timelineDayIndexBuiltAtRecordCount == _cachedFlatRecords.length;
-    final sw = Stopwatch()..start();
-    final rows = peekTimelineRecordsForDate(date);
-    sw.stop();
-    final source = hadViewCache
-        ? 'cache'
-        : indexReady
-        ? 'dayIndex'
-        : 'miss';
-    return (source: source, records: rows.length, ms: sw.elapsedMilliseconds);
-  }
-
-  /// P0U.4D — timed row-VM probe for first-swipe target day.
-  ({
-    String source,
-    int rows,
-    int ms,
-  }) timelineTargetDayVmReadyProbe(DateTime date) {
-    final key = _timelineDateKeyFromDate(date);
-    final hadVm = _timelineDayVmCache.containsKey(key);
-    final sw = Stopwatch()..start();
-    final vms = peekTimelineRowVmsForDate(date);
-    sw.stop();
-    return (
-      source: hadVm ? 'cache' : 'builtNow',
-      rows: vms.length,
-      ms: sw.elapsedMilliseconds,
-    );
   }
 
   void invalidateTimelineDayCachesForDateKey(String dateKey, {String? reason}) {
@@ -3840,7 +3605,6 @@ extension RecordServiceExtension on DatabaseService {
       if (status == 'running') {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
-        P0uDiag.recordCreateStart(title: parsed.title, date: dateKey);
         if (isPrimary) {
           runningRecordBizId = DatabaseService._newClientRecordUuid();
           final runningFields = _nocoFieldsForPatch(<String, dynamic>{
@@ -3891,17 +3655,6 @@ extension RecordServiceExtension on DatabaseService {
                 );
                 _printAtomicCheckRunningCount();
                 msApply = tApply.elapsedMilliseconds;
-                P0uDiag.recordOptimisticApplied(
-                  recordId: runningRecordBizId,
-                  date: dateKey,
-                );
-                final patched = peekTimelineRecordsForDate(
-                  DatabaseService.instance.getTimelineDeviceLocalToday(),
-                );
-                P0uDiag.timelineActiveDayPatched(
-                  date: dateKey,
-                  count: patched.length,
-                );
               });
             } finally {
               if (kDebugMode) {

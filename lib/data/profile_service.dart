@@ -541,25 +541,11 @@ extension ProfileServiceExtension on DatabaseService {
     required bool afterCacheBoot,
   }) async {
     final sw = Stopwatch()..start();
-    final before = _settings;
     try {
       final data = await getCurrentUserProfileMap();
       _applyProfileFromPbMap(data);
       await _mirrorProfileSettingsToDeviceCache();
       sw.stop();
-      P0uDiag.profileServerRefreshDone(
-        changed: afterCacheBoot
-            ? _profileSettingsVisiblyChanged(before, _settings)
-            : false,
-        ms: sw.elapsedMilliseconds,
-      );
-      if (!afterCacheBoot) {
-        P0uDiag.profileBootSource(
-          source: 'server',
-          hasTimezone: _settings.preferredTimeZone.isNotEmpty,
-          hasLanguage: _settings.primaryLanguage.isNotEmpty,
-        );
-      }
     } catch (e) {
       sw.stop();
       if (afterCacheBoot) {
@@ -575,14 +561,6 @@ extension ProfileServiceExtension on DatabaseService {
   Future<void> _loadSettingsFromNoco() async {
     final hadCache = await _hydrateSettingsFromDeviceCacheIfAvailable();
     if (hadCache) {
-      final lang = _settings.primaryLanguage.trim().isNotEmpty
-          ? _settings.primaryLanguage
-          : _settings.language;
-      P0uDiag.profileBootSource(
-        source: 'cacheThenServer',
-        hasTimezone: _settings.preferredTimeZone.isNotEmpty,
-        hasLanguage: lang.isNotEmpty,
-      );
       _profileHydratedFromPb = true;
       _profileHydrationError = null;
       _settingsController.add(_settings);

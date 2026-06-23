@@ -48,6 +48,7 @@ void main() async {
   P0uStartupDiag.ensureStarted();
   P0uDiag.releaseLogGuard();
   P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
+  P0uDiag.logAdjVmWarmDisabledIfNeeded();
   final platform = p0uPlatformLabel();
   P0uDiag.p0tDisabled(platform: platform, enabled: kUseP0tMountedStrip);
   FlutterError.onError = (details) {

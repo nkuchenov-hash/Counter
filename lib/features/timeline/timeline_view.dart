@@ -4,24 +4,17 @@ import 'dart:math' as math;
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/core/p0_date_nav_diag.dart';
-import 'package:counter/core/p0p_content_diag.dart';
 import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_platform.dart';
-import 'package:counter/core/p0u_timeline_swipe_diag.dart';
-import 'package:counter/core/p0u_timeline_vm_build_diag.dart';
-import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/pre_white_swipe_restore.dart';
-import 'package:counter/core/mounted_day_registry.dart';
-import 'package:counter/core/p0s_mount_diag.dart';
 import 'package:counter/core/widgets/eager_day_content_strip.dart';
 import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
-import 'package:counter/data/p0t_render_snapshot.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
@@ -135,95 +128,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   int? _pendingExternalPage;
   final DatePagerSettleGate _settleGate = DatePagerSettleGate();
   bool _showStatsView = false;
-  int? _swipeAnchorPage;
   String? _swipeFromDateKey;
-  bool _swipeBeginLogged = false;
-
-  void _logSwipeTargetState(DateTime targetDate, {required bool active}) {
-    if (!P0uTimelineSwipeDiag.sessionActive) return;
-    final key = _dateKeyFromDate(targetDate);
-    final snap = DatabaseService.instance.timelineTargetDayCacheSnapshot(
-      targetDate,
-    );
-    final data = DatabaseService.instance.timelineTargetDayDataReadyProbe(
-      targetDate,
-    );
-    final vm = DatabaseService.instance.timelineTargetDayVmReadyProbe(targetDate);
-    final pageBuilt = P0uTimelineSwipeDiag.wasPageBuilt(key);
-    P0uTimelineSwipeDiag.targetState(
-      targetDate: key,
-      source: data.source,
-      dayIndex: snap.dayIndex,
-      records: data.records,
-      rowVm: snap.rowVm,
-      rows: vm.rows,
-      pageBuilt: pageBuilt,
-      active: active,
-    );
-  }
-
-  void _logSwipeTargetPageStateBeforeDrag(DateTime targetDate) {
-    if (!P0uTimelineSwipeDiag.sessionActive) return;
-    final key = _dateKeyFromDate(targetDate);
-    final snap = DatabaseService.instance.timelineTargetDayCacheSnapshot(
-      targetDate,
-    );
-    final data = DatabaseService.instance.timelineTargetDayDataReadyProbe(
-      targetDate,
-    );
-    final pageBuilt = P0uTimelineSwipeDiag.wasPageBuilt(key);
-    P0uTimelineSwipeDiag.targetPageStateBeforeDrag(
-      targetDate: key,
-      pageBuilt: pageBuilt,
-      elementMounted: pageBuilt,
-      dayWidgetCached: snap.dayWidgetCached,
-      rowVm: snap.rowVm,
-      rows: data.records,
-    );
-  }
-
-  void _probeSwipeTargetDataVm(DateTime targetDate) {
-    if (!P0uTimelineSwipeDiag.isTargetDate(_dateKeyFromDate(targetDate))) {
-      return;
-    }
-    final key = _dateKeyFromDate(targetDate);
-    final data = DatabaseService.instance.timelineTargetDayDataReadyProbe(
-      targetDate,
-    );
-    P0uTimelineSwipeDiag.targetDataReady(
-      targetDate: key,
-      source: data.source,
-      records: data.records,
-      ms: data.ms,
-    );
-    final vm = DatabaseService.instance.timelineTargetDayVmReadyProbe(targetDate);
-    P0uTimelineSwipeDiag.targetVmReady(
-      targetDate: key,
-      source: vm.source,
-      rows: vm.rows,
-      ms: vm.ms,
-    );
-  }
-
-  void _maybeBeginSwipeTowardPage(int targetPage) {
-    if (!P0uTimelineSwipeDiag.isFirstSwipePending || _swipeBeginLogged) return;
-    if (targetPage < 0 || targetPage >= _totalPageCount) return;
-    final anchor = _swipeAnchorPage ?? _visiblePageIndex;
-    if (targetPage == anchor) return;
-    final fromKey =
-        _swipeFromDateKey ?? _dateKeyFromDate(_dateForIndex(anchor));
-    final targetDate = _dateForIndex(targetPage);
-    final targetKey = _dateKeyFromDate(targetDate);
-    P0uTimelineSwipeDiag.begin(
-      fromDate: fromKey,
-      targetDate: targetKey,
-      page: anchor,
-      targetPage: targetPage,
-    );
-    _logSwipeTargetPageStateBeforeDrag(targetDate);
-    _logSwipeTargetState(targetDate, active: false);
-    _swipeBeginLogged = true;
-  }
 
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -317,15 +222,8 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     super.initState();
     final platform = p0uPlatformLabel();
     P0uDiag.p0tDisabled(platform: platform, enabled: kUseP0tMountedStrip);
-    P0uDiag.pagerMode(
-      screen: 'Timeline',
-      platform: platform,
-      mode: kUseP0tMountedStrip ? 'mountedStrip' : 'stablePageView',
-    );
+    P0uDiag.logAdjVmWarmDisabledIfNeeded();
     P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
-    P0uTimelineVmBuildDiag.logWarmDisabledIfNeeded(
-      warmupEnabled: kTimelineAdjacentRowVmWarmup,
-    );
     _anchorDate = DateUtils.dateOnly(DateTime.now());
     final daysOffset =
         _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;
@@ -414,9 +312,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
           onNotification: (n) {
             if (n is ScrollStartNotification && n.dragDetails != null) {
               _settleGate.onUserDragStart();
-              _swipeAnchorPage = _visiblePageIndex;
               _swipeFromDateKey = _dateKeyFromDate(visibleDate);
-              _swipeBeginLogged = false;
               PreWhiteSwipeRestoreDiag.log(
                 screen: 'Timeline',
                 event: 'start',
@@ -426,21 +322,6 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
                 section: 'Timeline',
                 fromDate: _swipeFromDateKey!,
               );
-            }
-            if (n is ScrollUpdateNotification && n.dragDetails != null) {
-              final page = _controller.page;
-              if (page != null && _swipeAnchorPage != null) {
-                final anchor = _swipeAnchorPage!;
-                int? targetPage;
-                if (page > anchor + 0.02) {
-                  targetPage = anchor + 1;
-                } else if (page < anchor - 0.02) {
-                  targetPage = anchor - 1;
-                }
-                if (targetPage != null) {
-                  _maybeBeginSwipeTowardPage(targetPage);
-                }
-              }
             }
             if (n is ScrollEndNotification) {
               _settleGate.onUserDragEnd();
@@ -457,36 +338,6 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             itemCount: _totalPageCount,
             onPageChanged: (int index) {
               if (index < 0 || index >= _totalPageCount) return;
-              final date = _dateForIndex(index);
-              final key = _dateKeyFromDate(date);
-              if (P0uTimelineSwipeDiag.isFirstSwipePending) {
-                try {
-                  if (!_swipeBeginLogged) {
-                    _maybeBeginSwipeTowardPage(index);
-                  }
-                  final fromKey = _swipeFromDateKey ??
-                      _dateKeyFromDate(
-                        _dateForIndex(_swipeAnchorPage ?? _visiblePageIndex),
-                      );
-                  P0uTimelineSwipeDiag.commit(
-                    fromDate: fromKey,
-                    targetDate: key,
-                    source: _swipeBeginLogged ? 'drag' : 'fling',
-                  );
-                  _probeSwipeTargetDataVm(date);
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    P0uTimelineSwipeDiag.done(targetDate: key, ok: true);
-                  });
-                } catch (e) {
-                  P0uDiag.firstSwipeFail(
-                    screen: 'Timeline',
-                    target: key,
-                    exception: e,
-                  );
-                  P0uTimelineSwipeDiag.done(targetDate: key, ok: false);
-                }
-              }
               setState(() => _visiblePageIndex = index);
               _settleGate.onPageSettled(
                 pageIndex: index,
@@ -536,11 +387,6 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
         ),
       );
     } catch (e, st) {
-      P0uDiag.firstSwipeFail(
-        screen: 'Timeline',
-        target: _dateKeyFromDate(widget.selectedDate),
-        exception: e,
-      );
       if (kDebugMode) debugPrint('TimelineSwipeWrapper: $e\n$st');
       return Scaffold(
         body: AppErrorState(message: t(currentLocale.value, 'no_data_found')),
@@ -641,19 +487,10 @@ class _TimelinePageState extends State<TimelinePage> {
     _lastCoalescedRecords = List<Map<String, dynamic>>.from(
       DatabaseService.instance.peekTimelineRecordsForDate(_visibleDate),
     );
-    P0uDiag.activeSource(
-      screen: 'Timeline',
-      date: _dateKey(_visibleDate),
-      source: 'liveOptimistic',
-    );
     _recordsStream = DatabaseService.instance.recordsStream(_visibleDate);
     _recordsSub = _recordsStream!.listen((records) {
       if (!mounted || !widget.isActivePage) return;
       _lastCoalescedRecords = List<Map<String, dynamic>>.from(records);
-      P0uDiag.timelineActiveDayPatched(
-        date: _dateKey(_visibleDate),
-        count: records.length,
-      );
       setState(() {});
     });
   }
@@ -672,29 +509,15 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   void initState() {
     super.initState();
-    final paintSw = Stopwatch()..start();
     _lastCoalescedRecords = List<Map<String, dynamic>>.from(
       DatabaseService.instance.peekTimelineRecordsForDate(_visibleDate),
     );
-    paintSw.stop();
     if (widget.isActivePage) {
-      P0uDiag.timelineFirstPaintSource(
-        source: 'dayIndex',
-        records: _lastCoalescedRecords.length,
-        ms: paintSw.elapsedMilliseconds,
-      );
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !widget.isActivePage) return;
-        final patchSw = Stopwatch()..start();
         _initStream();
-        patchSw.stop();
-        P0uDiag.timelinePostFramePatch(
-          records: _lastCoalescedRecords.length,
-          ms: patchSw.elapsedMilliseconds,
-        );
       });
     }
-    P0PContentDiag.timelineChromeStatic();
   }
 
   @override
@@ -708,27 +531,6 @@ class _TimelinePageState extends State<TimelinePage> {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.isActivePage && widget.isActivePage) {
       _initStream();
-      final dk = _dateKey(_visibleDate);
-      if (P0uTimelineSwipeDiag.isTargetDate(dk)) {
-        final data = DatabaseService.instance.timelineTargetDayDataReadyProbe(
-          _visibleDate,
-        );
-        P0uTimelineSwipeDiag.targetDataReady(
-          targetDate: dk,
-          source: data.source,
-          records: data.records,
-          ms: data.ms,
-        );
-        final vm = DatabaseService.instance.timelineTargetDayVmReadyProbe(
-          _visibleDate,
-        );
-        P0uTimelineSwipeDiag.targetVmReady(
-          targetDate: dk,
-          source: vm.source,
-          rows: vm.rows,
-          ms: vm.ms,
-        );
-      }
     } else if (oldWidget.isActivePage && !widget.isActivePage) {
       _recordsSub?.cancel();
       _recordsSub = null;
@@ -750,11 +552,7 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   Widget build(BuildContext context) {
     perfRebuildTick('TimelinePage');
-    final buildSw = Stopwatch()..start();
-    P0DateNavDiag.timelineBuild(
-      'date=${_dateKey(_visibleDate)} records=${_lastCoalescedRecords.length}',
-    );
-    final body = Scaffold(
+    return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         top: false,
@@ -942,33 +740,6 @@ class _TimelinePageState extends State<TimelinePage> {
         ),
       ),
     );
-    buildSw.stop();
-    final dateKey = _dateKey(_visibleDate);
-    P0uTimelineSwipeDiag.markPageBuilt(dateKey);
-    if (P0uTimelineSwipeDiag.isTargetDate(dateKey)) {
-      P0uTimelineSwipeDiag.targetPageAttach(
-        targetDate: dateKey,
-        ms: buildSw.elapsedMilliseconds,
-      );
-      P0uTimelineSwipeDiag.targetPageBuild(
-        targetDate: dateKey,
-        ms: buildSw.elapsedMilliseconds,
-      );
-      if (!widget.isActivePage) {
-        P0uTimelineSwipeDiag.targetChildLayoutHint(
-          targetDate: dateKey,
-          visibleRows: 0,
-          rows: _lastCoalescedRecords.length,
-        );
-      }
-    } else if (widget.isActivePage) {
-      P0uDiag.timelineFirstBuild(
-        date: dateKey,
-        records: _lastCoalescedRecords.length,
-        ms: buildSw.elapsedMilliseconds,
-      );
-    }
-    return body;
   }
 }
 
@@ -1028,32 +799,7 @@ class _TimelineDayCardListState extends State<_TimelineDayCardList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final sw = Stopwatch()..start();
     final recordMaps = _recordMaps();
-    sw.stop();
-    if (P0uTimelineSwipeDiag.isTargetDate(widget.dateKey)) {
-      P0uTimelineSwipeDiag.targetChildBuild(
-        targetDate: widget.dateKey,
-        ms: sw.elapsedMilliseconds,
-      );
-      P0uTimelineSwipeDiag.targetListBuild(
-        targetDate: widget.dateKey,
-        rows: recordMaps.length,
-        ms: sw.elapsedMilliseconds,
-      );
-      P0uTimelineSwipeDiag.targetChildLayoutHint(
-        targetDate: widget.dateKey,
-        visibleRows: recordMaps.length,
-        rows: recordMaps.length,
-      );
-    } else if (widget.isActive) {
-      P0uDiag.timelineFirstListBuild(
-        date: widget.dateKey,
-        rows: recordMaps.length,
-        ms: sw.elapsedMilliseconds,
-      );
-    }
-
     if (widget.showStatsView) {
       if (recordMaps.isEmpty) {
         return EmptyStatePlaceholder(

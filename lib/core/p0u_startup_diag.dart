@@ -39,6 +39,7 @@ abstract final class P0uStartupDiag {
     required String name,
     required bool allowed,
   }) {
+    if (kReleaseMode) return;
     debugPrint(
       '[P0U_DEFERRED_BEFORE_FRAME_GUARD] name=$name allowed=$allowed',
     );
@@ -49,12 +50,14 @@ abstract final class P0uStartupDiag {
   static void armFirstFrameMarker() {
     ensureStarted();
     _firstFrameArmedTotalMs = _sw.elapsedMilliseconds;
+    if (kReleaseMode) return;
     debugPrint(
       '[P0U_FIRST_FRAME_MARKER_ARMED] totalMs=$_firstFrameArmedTotalMs',
     );
   }
 
   static void deferredConfirmedAfterFrame({required String name}) {
+    if (kReleaseMode) return;
     debugPrint('[P0U_BOOT_DEFERRED_CONFIRMED_AFTER_FRAME] name=$name');
   }
 
@@ -84,10 +87,12 @@ abstract final class P0uStartupDiag {
     ensureStarted();
     _stageMs.add((name: name, ms: ms));
     final total = _sw.elapsedMilliseconds;
-    debugPrint(
-      '[P0U_BOOT_STAGE] name=$name ms=$ms totalMs=$total '
-      'blocksFirstFrame=$blocksFirstFrame platform=${p0uPlatformLabel()}',
-    );
+    if (!kReleaseMode) {
+      debugPrint(
+        '[P0U_BOOT_STAGE] name=$name ms=$ms totalMs=$total '
+        'blocksFirstFrame=$blocksFirstFrame platform=${p0uPlatformLabel()}',
+      );
+    }
     if (name == 'firstFrame') {
       _firstFrameMs = total;
       _tryEmitBootSummary();
@@ -114,14 +119,17 @@ abstract final class P0uStartupDiag {
   }
 
   static void deferred({required String name, required String reason}) {
+    if (kReleaseMode) return;
     debugPrint('[P0U_BOOT_DEFERRED] name=$name reason=$reason');
   }
 
   static void hiddenTabDeferred({required String tab, required String reason}) {
+    if (kReleaseMode) return;
     debugPrint('[P0U_HIDDEN_TAB_DEFERRED] tab=$tab reason=$reason');
   }
 
   static void hiddenTabActivated({required String tab, required int ms}) {
+    if (kReleaseMode) return;
     debugPrint('[P0U_HIDDEN_TAB_ACTIVATED] tab=$tab ms=$ms');
     _trackWidgetBuild('tab:$tab', ms);
   }
@@ -129,17 +137,20 @@ abstract final class P0uStartupDiag {
   static void markFirstShellBuild() {
     _firstShellBuildTotalMs = _sw.elapsedMilliseconds;
     bootStage(name: 'firstShellBuild', ms: 0, blocksFirstFrame: true);
+    if (kReleaseMode) return;
     debugPrint('[P0U_FRAME_GAP_START] totalMs=$_firstShellBuildTotalMs');
   }
 
   static void markFirstFrame() {
     if (_firstFrameMs != null) return;
     final callbackMs = _sw.elapsedMilliseconds;
-    debugPrint('[P0U_FIRST_FRAME_CALLBACK_FIRED] totalMs=$callbackMs');
+    if (!kReleaseMode) {
+      debugPrint('[P0U_FIRST_FRAME_CALLBACK_FIRED] totalMs=$callbackMs');
+    }
     _firstFrameMarked = true;
     bootStage(name: 'firstFrame', ms: 0, blocksFirstFrame: true);
     final shellMs = _firstShellBuildTotalMs;
-    if (shellMs != null) {
+    if (!kReleaseMode && shellMs != null) {
       final gap = callbackMs - shellMs;
       var reason = 'unknown';
       if (gap > 2000) {
@@ -166,6 +177,7 @@ abstract final class P0uStartupDiag {
     required int builtTabs,
   }) {
     _trackWidgetBuild('shell:$activeTab', ms);
+    if (kReleaseMode) return;
     debugPrint(
       '[P0U_SHELL_BUILD] activeTab=$activeTab ms=$ms builtTabs=$builtTabs',
     );
@@ -178,6 +190,7 @@ abstract final class P0uStartupDiag {
   }) {
     final key = 'tabBuild:$tab';
     _trackWidgetBuild(key, ms);
+    if (kReleaseMode) return;
     debugPrint('[P0U_TAB_BUILD] tab=$tab active=$active ms=$ms');
   }
 
@@ -188,7 +201,7 @@ abstract final class P0uStartupDiag {
   }
 
   static void emitFrameGapSummary() {
-    if (_frameGapSummaryEmitted) return;
+    if (_frameGapSummaryEmitted || kReleaseMode) return;
     _frameGapSummaryEmitted = true;
     final shellMs = _firstShellBuildTotalMs;
     final frameMs = _firstFrameMs;
@@ -203,6 +216,7 @@ abstract final class P0uStartupDiag {
   static void _tryEmitBootSummary() {
     if (_summaryEmitted || _firstFrameMs == null) return;
     _summaryEmitted = true;
+    if (kReleaseMode) return;
     var slowest = 'mainStart';
     var slowestMs = 0;
     for (final s in _stageMs) {

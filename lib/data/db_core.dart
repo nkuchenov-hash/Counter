@@ -438,7 +438,6 @@ extension DbCoreExtension on DatabaseService {
       await bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true);
       await restorePlansWarmSnapshotsFromDiskAtBoot();
       await restoreTimelineWarmSnapshotsFromDiskAtBoot();
-      P0uDiag.timeProjectStormFixed();
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
       _settingsController.add(_settings);
       _categoryController.add(List.from(_rules));
@@ -455,7 +454,6 @@ extension DbCoreExtension on DatabaseService {
     await bootstrapTimelineRecordsCacheFromPrefsAtBoot(criticalOnly: true);
     await restorePlansWarmSnapshotsFromDiskAtBoot();
     await restoreTimelineWarmSnapshotsFromDiskAtBoot();
-    P0uDiag.timeProjectStormFixed();
     _settingsController.add(_settings);
     _categoryController.add(List.from(_rules));
     _tasksController.add(List.from(_tasksCache));

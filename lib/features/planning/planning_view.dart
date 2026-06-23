@@ -11,14 +11,10 @@ import 'dart:ui' show lerpDouble;
 import 'package:counter/core/app_diag.dart';
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/core/p0_date_nav_diag.dart';
-import 'package:counter/core/p0n_perf_diag.dart';
-import 'package:counter/core/p0p_content_diag.dart';
 import 'package:counter/core/mounted_day_registry.dart';
 import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_platform.dart';
-import 'package:counter/core/p0s_mount_diag.dart';
 import 'package:counter/core/pre_white_swipe_restore.dart';
 import 'package:counter/core/widgets/eager_day_content_strip.dart';
 import 'package:counter/core/widgets/mounted_day_window.dart';
@@ -129,7 +125,6 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   int? _pendingExternalPage;
   bool _datePagerLocked = false;
   final DatePagerSettleGate _settleGate = DatePagerSettleGate();
-  bool _loggedFirstSwipe = false;
 
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -196,11 +191,6 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     super.initState();
     final platform = p0uPlatformLabel();
     P0uDiag.p0tDisabled(platform: platform, enabled: kUseP0tMountedStrip);
-    P0uDiag.pagerMode(
-      screen: 'Plans',
-      platform: platform,
-      mode: kUseP0tMountedStrip ? 'mountedStrip' : 'stablePageView',
-    );
     P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
     _anchorDate = DateUtils.dateOnly(DateTime.now());
     final daysOffset =
@@ -296,11 +286,6 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             if (n is ScrollStartNotification && n.dragDetails != null) {
               _settleGate.onUserDragStart();
               final from = _dateKeyFromDate(_dateForIndex(_visiblePageIndex));
-              P0uDiag.firstSwipeStart(
-                screen: 'Plans',
-                current: from,
-                target: from,
-              );
               PerfDiag.instance.dateSwipeStart(
                 section: 'Planning',
                 fromDate: from,
@@ -323,20 +308,6 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             itemCount: _totalPageCount,
             onPageChanged: (int index) {
               if (index < 0 || index >= _totalPageCount) return;
-              final date = _dateForIndex(index);
-              final key = _dateKeyFromDate(date);
-              if (!_loggedFirstSwipe) {
-                try {
-                  P0uDiag.firstSwipeDone(screen: 'Plans', target: key);
-                  _loggedFirstSwipe = true;
-                } catch (e) {
-                  P0uDiag.firstSwipeFail(
-                    screen: 'Plans',
-                    target: key,
-                    exception: e,
-                  );
-                }
-              }
               setState(() => _visiblePageIndex = index);
               _settleGate.onPageSettled(
                 pageIndex: index,
@@ -372,11 +343,6 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
         ),
       );
     } catch (e, st) {
-      P0uDiag.firstSwipeFail(
-        screen: 'Plans',
-        target: _dateKeyFromDate(widget.selectedDate),
-        exception: e,
-      );
       if (kDebugMode) debugPrint('PlanningSwipeWrapper: $e\n$st');
       return Scaffold(
         body: AppErrorState(message: t(currentLocale.value, 'no_data_found')),
@@ -768,8 +734,6 @@ class _PlanningPageState extends State<PlanningPage>
     });
     unawaited(_loadPlanningTimelineBounds());
     unawaited(_reloadQuickAddTags());
-    P0PContentDiag.plansChromeStatic();
-    P0PContentDiag.plansNoTagLoaderInPage();
     _hourGridEdgeScrollTicker = createTicker(_onHourGridEdgeScrollTick);
   }
 
@@ -5047,11 +5011,6 @@ class _PlanningPageState extends State<PlanningPage>
         child: SizedBox.expand(),
       );
     }
-    P0uDiag.activeSource(
-      screen: 'Plans',
-      date: widget.selectedDateString,
-      source: 'livePlanningStream',
-    );
     final wallDay = widget.selectedDate ?? _today;
     final planActualByPbId = DatabaseService.instance
         .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
@@ -5123,9 +5082,7 @@ class _PlanningPageState extends State<PlanningPage>
     int index,
     List<PlanningTask> visibleDayTasks,
   ) {
-    final sw = Stopwatch()..start();
     final wallDay = _dateForPageIndex(index);
-    final dateKey = _dateKeyForPageIndex(index);
     final isActive = widget.shellTabActive &&
         widget.selectedDate != null &&
         (widget.mountedWindow == null ||
@@ -5133,21 +5090,6 @@ class _PlanningPageState extends State<PlanningPage>
                 MountedDayWindow.dateOnly(widget.selectedDate!));
     final bodyEntry = DatabaseService.instance.plansBodyEntryForDate(wallDay);
     final tasks = isActive ? visibleDayTasks : bodyEntry.tasks;
-    sw.stop();
-    if (MountedDayRegistry.isMounted('Plans', dateKey)) {
-      P0SMountDiag.plansPageHit(date: dateKey);
-    } else if (widget.mountedWindow?.contains(wallDay) == true) {
-      P0SMountDiag.plansPageMiss(
-        date: dateKey,
-        insideWindow: true,
-        reason: 'notMountedYet',
-      );
-    }
-    P0SMountDiag.plansBodyMounted(
-      date: dateKey,
-      cards: tasks.length,
-      ms: sw.elapsedMilliseconds,
-    );
     if (!isActive) {
       final planActualByPbId = DatabaseService.instance
           .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
