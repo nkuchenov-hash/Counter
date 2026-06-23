@@ -20,4 +20,4 @@ const bool kShellDeferHiddenTabsUntilFirstFrame = false;
 
 /// P0U.4 — post-firstFrame adjacent Timeline row-VM warmup (±1 day, local cache only).
 /// **KILL SWITCH:** Set false if startup regresses or post-frame freeze appears.
-const bool kTimelineAdjacentRowVmWarmup = true;
+const bool kTimelineAdjacentRowVmWarmup = false;

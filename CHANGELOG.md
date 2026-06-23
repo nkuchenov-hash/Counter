@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.4R: disable adjacent VM warmup + VM builder step diagnostics [wip]
+* **`p0u_feature_flags.dart`:** [wip] `kTimelineAdjacentRowVmWarmup = false` (P0U.4 rollback).
+* **`p0u_timeline_vm_build_diag.dart`:** [wip] `[P0U_TIMELINE_VM_BUILD_*]` step timings; `[P0U_TIMELINE_ADJ_VM_WARM_DISABLED]`.
+* **`record_service.dart`:** [wip] Instrument `_timelineRowVmFromMap` / `_buildTimelineRowVmsForDate` per-step (no per-record spam).
+* P0U.4D swipe diagnostics preserved; no VM optimization yet.
+
 ## [2026-06-15] - P0 Time View VerySmall/Small reference element sizes [wip]
 * **`plan_time_task_card.dart`:** [wip] Remove scaled-down VerySmall path (26px controls, 7px micro tags, 28px menu); restore 32px checkbox/play, 33px menu, CardPlan title typography, vertical tag stack with standard compact pills; 38px density threshold unchanged.
 

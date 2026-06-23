@@ -10,6 +10,7 @@ import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_platform.dart';
 import 'package:counter/core/p0u_timeline_swipe_diag.dart';
+import 'package:counter/core/p0u_timeline_vm_build_diag.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/pre_white_swipe_restore.dart';
 import 'package:counter/core/mounted_day_registry.dart';
@@ -295,6 +296,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       mode: kUseP0tMountedStrip ? 'mountedStrip' : 'stablePageView',
     );
     P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
+    P0uTimelineVmBuildDiag.logWarmDisabledIfNeeded(
+      warmupEnabled: kTimelineAdjacentRowVmWarmup,
+    );
     _anchorDate = DateUtils.dateOnly(DateTime.now());
     final daysOffset =
         _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;

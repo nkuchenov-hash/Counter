@@ -9,6 +9,8 @@ import 'package:counter/core/p0t_diag.dart';
 import 'package:counter/core/p0u_diag.dart';
 import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0u_startup_diag.dart';
+import 'package:counter/core/p0u_timeline_swipe_diag.dart';
+import 'package:counter/core/p0u_timeline_vm_build_diag.dart';
 import 'package:counter/core/p0o_warm_diag.dart';
 import 'package:counter/core/p0s_mount_diag.dart';
 import 'package:counter/core/p0r_prebuild_diag.dart';
