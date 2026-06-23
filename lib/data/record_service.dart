@@ -796,15 +796,21 @@ extension RecordServiceExtension on DatabaseService {
     return winner;
   }
 
-  String? get canonicalPrimaryRunningBusinessId {
-    final row = _canonicalPrimaryRunningFlatRow();
+  String? _businessIdFromCanonicalRunningRow(Map<String, dynamic>? row) {
     if (row == null) return null;
     final biz = (row['record_id'] ?? '').toString().trim();
     if (biz.isNotEmpty) return biz;
-    return (row['id'] ?? '').toString().trim().isEmpty
-        ? null
-        : (row['id'] ?? '').toString().trim();
+    final sys = (row['id'] ?? '').toString().trim();
+    return sys.isEmpty ? null : sys;
   }
+
+  /// One scan of [_cachedFlatRecords] for the newest primary running row id.
+  String? resolveCanonicalPrimaryRunningBusinessId() {
+    return _businessIdFromCanonicalRunningRow(_canonicalPrimaryRunningFlatRow());
+  }
+
+  String? get canonicalPrimaryRunningBusinessId =>
+      resolveCanonicalPrimaryRunningBusinessId();
 
   /// Sacred singleton: if multiple primaries are open, keep newest and stop older rows.
   Future<void> _reconcileDuplicatePrimaryRunningRecords() async {
@@ -1780,7 +1786,7 @@ extension RecordServiceExtension on DatabaseService {
     final canonicalBiz = canonicalRunningBiz ??
         nest(
           'canonicalPrimaryRunningBiz_call',
-          () => canonicalPrimaryRunningBusinessId,
+          () => resolveCanonicalPrimaryRunningBusinessId(),
         );
     final isRunning = nest('runningState_call', () {
       return type == 'record' &&
@@ -1846,9 +1852,14 @@ extension RecordServiceExtension on DatabaseService {
   TimelineRecordRowVm? _timelineRowVmFromMapOrNull(
     Map<String, dynamic> data, {
     P0uTimelineVmRecordBuildSession? recordDiag,
+    String? canonicalRunningBiz,
   }) {
     try {
-      return _timelineRowVmFromMap(data, recordDiag: recordDiag);
+      return _timelineRowVmFromMap(
+        data,
+        recordDiag: recordDiag,
+        canonicalRunningBiz: canonicalRunningBiz,
+      );
     } catch (e) {
       final rid = (data['record_id'] ?? data['id'] ?? '').toString().trim();
       P0DateNavDiag.crashGuard('timeline_vm_skip record_id=$rid $e');
@@ -1897,6 +1908,7 @@ extension RecordServiceExtension on DatabaseService {
   TimelineRecordRowVm _timelineRowVmFromMap(
     Map<String, dynamic> data, {
     P0uTimelineVmRecordBuildSession? recordDiag,
+    String? canonicalRunningBiz,
   }) {
     T step<T>(String name, T Function() fn) {
       if (recordDiag == null) return fn();
@@ -1918,10 +1930,8 @@ extension RecordServiceExtension on DatabaseService {
           (systemRowId.isNotEmpty ? systemRowId : '?'),
     );
     final type = step('mapAccess_type', () => data['type'] as String? ?? 'record');
-    final canonicalBiz = step(
-      'canonicalPrimaryRunningBiz_call',
-      () => canonicalPrimaryRunningBusinessId,
-    );
+    final canonicalBiz = canonicalRunningBiz ??
+        resolveCanonicalPrimaryRunningBusinessId();
     final isPlanned = type == 'planned';
     final isCanonicalRunning = step('runningState_call', () {
       return type == 'record' &&
@@ -2001,6 +2011,13 @@ extension RecordServiceExtension on DatabaseService {
       records: maps.length,
     );
     session?.addStepUs('recordMapRead', lookupSw.elapsedMicroseconds);
+    final canonSw = Stopwatch()..start();
+    final canonicalRunningBiz = resolveCanonicalPrimaryRunningBusinessId();
+    canonSw.stop();
+    session?.addStepUs(
+      'canonicalPrimaryRunningBiz_once',
+      canonSw.elapsedMicroseconds,
+    );
     final sw = Stopwatch()..start();
     final vms = <TimelineRecordRowVm>[];
     Stopwatch? loopGapSw;
@@ -2013,12 +2030,19 @@ extension RecordServiceExtension on DatabaseService {
       if (session != null) {
         loopGapSw = Stopwatch()..start();
         final recordDiag = P0uTimelineVmRecordBuildSession();
-        vm = _timelineRowVmFromMapOrNull(m, recordDiag: recordDiag);
+        vm = _timelineRowVmFromMapOrNull(
+          m,
+          recordDiag: recordDiag,
+          canonicalRunningBiz: canonicalRunningBiz,
+        );
         recordDiag.finish();
         final rid = (m['record_id'] ?? m['id'] ?? '').toString().trim();
         session.mergeRecord(recordDiag, rid.isNotEmpty ? rid : '?');
       } else {
-        vm = _timelineRowVmFromMapOrNull(m);
+        vm = _timelineRowVmFromMapOrNull(
+          m,
+          canonicalRunningBiz: canonicalRunningBiz,
+        );
       }
       if (vm != null) {
         vms.add(vm);
@@ -2110,6 +2134,7 @@ extension RecordServiceExtension on DatabaseService {
       _logTimelineAdjVmWarmSkip(dateKey, 'tooLarge');
       return const [];
     }
+    final canonicalRunningBiz = resolveCanonicalPrimaryRunningBusinessId();
     final vms = <TimelineRecordRowVm>[];
     var i = 0;
     while (i < maps.length) {
@@ -2119,7 +2144,10 @@ extension RecordServiceExtension on DatabaseService {
       final end = min(i + _kTimelineAdjVmWarmChunkSize, maps.length);
       for (; i < end; i++) {
         final m = maps[i];
-        final vm = _timelineRowVmFromMapOrNull(m);
+        final vm = _timelineRowVmFromMapOrNull(
+          m,
+          canonicalRunningBiz: canonicalRunningBiz,
+        );
         if (vm != null) {
           vms.add(vm);
           _pinTimelineRowVmInLazyCache(dateKey, m, vm);

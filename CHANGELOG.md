@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.5: canonical running id once per Timeline day VM build [wip]
+* **`record_service.dart`:** [wip] `resolveCanonicalPrimaryRunningBusinessId()` computed once in `_buildTimelineRowVmsForDate`; passed into `_timelineRowVmFromMap` / subtitle — removes 11× `_cachedFlatRecords` scan.
+* **`p0u_timeline_vm_build_diag.dart`:** [wip] `canonicalPrimaryRunningBiz_once` step; per-row `canonicalPrimaryRunningBiz_call` no longer on hot path.
+
 ## [2026-06-15] - P0 Time View target drop adjacent insertion + darker canvas [wip]
 * **`plan_time_sequential_cascade.dart`:** [wip] `computeTimeViewTargetDropSchedule` — exact before/after target wall times, zero scheduled gap.
 * **`planning_view.dart`:** [wip] target hit-test at commit; preview Y/label from target wall times not raw `yToTime`; free canvas still uses snap; canvas `surfaceContainerHigh`/`surfaceContainerHighest` blend darkened.

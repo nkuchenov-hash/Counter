@@ -33,6 +33,7 @@ abstract final class P0uTimelineVmBuildDiag {
   /// Preferred log order; unknown steps still print after these.
   static const List<String> stepOrder = [
     'recordMapRead',
+    'canonicalPrimaryRunningBiz_once',
     'mapAccess_id',
     'mapAccess_recordId',
     'mapAccess_title',
