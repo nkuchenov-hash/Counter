@@ -236,6 +236,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     final cur = _controller.page?.round();
     if (cur == page) return;
     _controller.jumpToPage(page);
+    _scheduleAdjacentRowVmWarmup(widget.selectedDate);
   }
 
   void _deferHiddenExternalDate() {
@@ -250,8 +251,37 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       Future.microtask(() {
         if (!mounted) return;
         DatabaseService.instance.extendTimelineWarmWindowIfNeeded(center);
+        _ensureAdjacentRowVmWarmup(center);
       }),
     );
+  }
+
+  void _scheduleAdjacentRowVmWarmup(DateTime center) {
+    if (kUseP0tMountedStrip || !kTimelineAdjacentRowVmWarmup) return;
+    final centerKey = _dateKeyFromDate(center);
+    DatabaseService.instance.scheduleTimelineAdjacentRowVmWarmup(
+      center,
+      timelineTabActive: () => mounted && widget.shellTabActive,
+      centerDateUnchanged: () =>
+          mounted && _adjVmWarmCenterStillCurrent(centerKey),
+    );
+  }
+
+  void _ensureAdjacentRowVmWarmup(DateTime center) {
+    if (kUseP0tMountedStrip || !kTimelineAdjacentRowVmWarmup) return;
+    final centerKey = _dateKeyFromDate(center);
+    DatabaseService.instance.ensureTimelineAdjacentRowVmWarmup(
+      center,
+      timelineTabActive: () => mounted && widget.shellTabActive,
+      centerDateUnchanged: () =>
+          mounted && _adjVmWarmCenterStillCurrent(centerKey),
+    );
+  }
+
+  bool _adjVmWarmCenterStillCurrent(String centerKey) {
+    final visibleKey = _dateKeyFromDate(_dateForIndex(_visiblePageIndex));
+    if (visibleKey == centerKey) return true;
+    return _dateKeyFromDate(widget.selectedDate) == centerKey;
   }
 
   @override
@@ -273,6 +303,9 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     _controller.addListener(_onPageControllerTick);
     if (!kUseP0tMountedStrip) {
       DatabaseService.instance.ensureTimelineWarmWindow(widget.selectedDate);
+      if (widget.shellTabActive) {
+        _scheduleAdjacentRowVmWarmup(widget.selectedDate);
+      }
     }
   }
 

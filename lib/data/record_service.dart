@@ -6,6 +6,15 @@ part of 'database_service.dart';
 
 bool _recordMutationOutboxFlushInFlight = false;
 
+/// P0U.4 — generation token; bump to cancel in-flight adjacent VM warmup.
+int _timelineAdjVmWarmGeneration = 0;
+
+/// Records per yield chunk during adjacent row-VM warmup.
+const int _kTimelineAdjVmWarmChunkSize = 4;
+
+/// Skip warmup when a single adjacent day exceeds this (safety cap).
+const int _kTimelineAdjVmWarmMaxRecords = 120;
+
 bool _recordMutationRetriableHttpCode(int code) {
   if (code == 401 || code == 403 || code == 404) return false;
   if (code == 400 || code == 422) return false;
@@ -1881,6 +1890,20 @@ extension RecordServiceExtension on DatabaseService {
     );
   }
 
+  void _pinTimelineRowVmInLazyCache(
+    String dateKey,
+    Map<String, dynamic> data,
+    TimelineRecordRowVm vm,
+  ) {
+    final biz = (data['record_id'] ?? '').toString().trim();
+    final sys = (data['id'] ?? data['backendNumericId'] ?? '').toString().trim();
+    final cacheKey = biz.isNotEmpty
+        ? biz
+        : (sys.isNotEmpty ? sys : data.hashCode.toString());
+    final dayCache = _timelineLazyRowVmByDay.putIfAbsent(dateKey, () => {});
+    dayCache[cacheKey] = vm;
+  }
+
   List<TimelineRecordRowVm> _buildTimelineRowVmsForDate(
     String dateKey,
     DateTime date,
@@ -1890,7 +1913,10 @@ extension RecordServiceExtension on DatabaseService {
     final vms = <TimelineRecordRowVm>[];
     for (final m in maps) {
       final vm = _timelineRowVmFromMapOrNull(m);
-      if (vm != null) vms.add(vm);
+      if (vm != null) {
+        vms.add(vm);
+        _pinTimelineRowVmInLazyCache(dateKey, m, vm);
+      }
     }
     sw.stop();
     if (kPerfDiagnosisEnabled) {
@@ -1901,6 +1927,154 @@ extension RecordServiceExtension on DatabaseService {
       );
     }
     return vms;
+  }
+
+  void _logTimelineAdjVmWarmSkip(String date, String reason) {
+    debugPrint('[P0U_TIMELINE_ADJ_VM_WARM_SKIP] date=$date reason=$reason');
+  }
+
+  /// P0U.4 — queue ±1 day row-VM warmup after first rendered frame.
+  void scheduleTimelineAdjacentRowVmWarmup(
+    DateTime center, {
+    required bool Function() timelineTabActive,
+    required bool Function() centerDateUnchanged,
+  }) {
+    if (!kTimelineAdjacentRowVmWarmup || kUseP0tMountedStrip) return;
+    final captured = DateTime(center.year, center.month, center.day);
+    final gen = ++_timelineAdjVmWarmGeneration;
+    P0uStartupDiag.scheduleAfterFirstFrame('timelineAdjVmWarm', () async {
+      await _warmTimelineAdjacentRowVms(
+        generation: gen,
+        center: captured,
+        timelineTabActive: timelineTabActive,
+        centerDateUnchanged: centerDateUnchanged,
+      );
+    });
+  }
+
+  /// P0U.4 — re-warm ±1 after page settle (post-firstFrame).
+  void ensureTimelineAdjacentRowVmWarmup(
+    DateTime center, {
+    required bool Function() timelineTabActive,
+    required bool Function() centerDateUnchanged,
+  }) {
+    if (!kTimelineAdjacentRowVmWarmup || kUseP0tMountedStrip) return;
+    final captured = DateTime(center.year, center.month, center.day);
+    final gen = ++_timelineAdjVmWarmGeneration;
+    unawaited(
+      _warmTimelineAdjacentRowVms(
+        generation: gen,
+        center: captured,
+        timelineTabActive: timelineTabActive,
+        centerDateUnchanged: centerDateUnchanged,
+      ),
+    );
+  }
+
+  Future<List<TimelineRecordRowVm>?> _buildTimelineRowVmsChunked({
+    required int generation,
+    required String dateKey,
+    required List<Map<String, dynamic>> maps,
+    required bool Function() timelineTabActive,
+    required bool Function() centerDateUnchanged,
+  }) async {
+    if (maps.length > _kTimelineAdjVmWarmMaxRecords) {
+      _logTimelineAdjVmWarmSkip(dateKey, 'tooLarge');
+      return const [];
+    }
+    final vms = <TimelineRecordRowVm>[];
+    var i = 0;
+    while (i < maps.length) {
+      if (generation != _timelineAdjVmWarmGeneration) return null;
+      if (!timelineTabActive()) return null;
+      if (!centerDateUnchanged()) return null;
+      final end = min(i + _kTimelineAdjVmWarmChunkSize, maps.length);
+      for (; i < end; i++) {
+        final m = maps[i];
+        final vm = _timelineRowVmFromMapOrNull(m);
+        if (vm != null) {
+          vms.add(vm);
+          _pinTimelineRowVmInLazyCache(dateKey, m, vm);
+        }
+      }
+      if (i < maps.length) {
+        debugPrint('[P0U_TIMELINE_ADJ_VM_WARM_YIELD] afterDate=$dateKey');
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+    return vms;
+  }
+
+  Future<void> _warmTimelineAdjacentRowVms({
+    required int generation,
+    required DateTime center,
+    required bool Function() timelineTabActive,
+    required bool Function() centerDateUnchanged,
+  }) async {
+    if (!timelineTabActive()) {
+      _logTimelineAdjVmWarmSkip(
+        _timelineDateKeyFromDate(center),
+        'inactiveTab',
+      );
+      return;
+    }
+    if (!centerDateUnchanged()) {
+      _logTimelineAdjVmWarmSkip(
+        _timelineDateKeyFromDate(center),
+        'dateChanged',
+      );
+      return;
+    }
+    final centerKey = _timelineDateKeyFromDate(center);
+    final prev = center.subtract(const Duration(days: 1));
+    final next = center.add(const Duration(days: 1));
+    final prevKey = _timelineDateKeyFromDate(prev);
+    final nextKey = _timelineDateKeyFromDate(next);
+    debugPrint(
+      '[P0U_TIMELINE_ADJ_VM_WARM_START] center=$centerKey prev=$prevKey next=$nextKey',
+    );
+    final totalSw = Stopwatch()..start();
+    var warmedDays = 0;
+    for (final day in [prev, next]) {
+      if (generation != _timelineAdjVmWarmGeneration) return;
+      if (!timelineTabActive()) {
+        _logTimelineAdjVmWarmSkip(_timelineDateKeyFromDate(day), 'inactiveTab');
+        return;
+      }
+      if (!centerDateUnchanged()) {
+        _logTimelineAdjVmWarmSkip(_timelineDateKeyFromDate(day), 'dateChanged');
+        return;
+      }
+      final key = _timelineDateKeyFromDate(day);
+      if (_timelineDayVmCache.containsKey(key)) {
+        _logTimelineAdjVmWarmSkip(key, 'cacheHit');
+        continue;
+      }
+      final maps = peekTimelineRecordsForDate(day);
+      final daySw = Stopwatch()..start();
+      final built = await _buildTimelineRowVmsChunked(
+        generation: generation,
+        dateKey: key,
+        maps: maps,
+        timelineTabActive: timelineTabActive,
+        centerDateUnchanged: centerDateUnchanged,
+      );
+      if (built == null) return;
+      _timelineDayVmCache[key] = built;
+      daySw.stop();
+      warmedDays++;
+      debugPrint(
+        '[P0U_TIMELINE_ADJ_VM_WARM_DAY] date=$key records=${maps.length} '
+        'rows=${built.length} source=dayIndex ms=${daySw.elapsedMilliseconds}',
+      );
+      debugPrint('[P0U_TIMELINE_ADJ_VM_WARM_YIELD] afterDate=$key');
+      await Future<void>.delayed(Duration.zero);
+    }
+    totalSw.stop();
+    debugPrint(
+      '[P0U_TIMELINE_ADJ_VM_WARM_DONE] center=$centerKey '
+      'totalMs=${totalSw.elapsedMilliseconds} days=$warmedDays',
+    );
   }
 
   /// Render-ready row VMs for a calendar day (cached; no UI-side grouping/formatting).

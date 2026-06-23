@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.4: Timeline adjacent row-VM warmup [wip]
+* **`record_service.dart`:** [wip] Post-firstFrame chunked warmup for ±1 day row VMs (`_timelineDayVmCache` + lazy per-row cache); kill switch `kTimelineAdjacentRowVmWarmup`.
+* **`timeline_view.dart`:** [wip] Schedule warmup when Timeline tab visible; re-warm after page settle.
+* **`p0u_feature_flags.dart`:** [wip] `kTimelineAdjacentRowVmWarmup` flag.
+* P0U.4D swipe diagnostics preserved.
+
 ## [2026-06-15] - P0 Time View CardPlan responsive visual fix [wip]
 * **`plan_time_task_card.dart`:** [wip] Remove list-row minHeight on explicit Time View density path; `_TimeViewResponsiveShell` / `_TimeViewVerticalShell` anchors (fixed rail + expanding center + menu cluster); `_TimeViewTagsRow` shows all tags; density bodies match CardPlan refs at 38–95px+ without fixed card width.
 * **`plan_card.dart`:** unchanged — still passes parent width + `timelineBlockHeightPx` only.
