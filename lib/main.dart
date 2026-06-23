@@ -42,7 +42,23 @@ const bool kP0tBiometricGateDisabled = true;
 String? _startupNetworkErrorMessage;
 bool _startupNetworkErrorShown = false;
 
-void main() async {
+void main() {
+  runZonedGuarded(
+    () {
+      unawaited(_mainAsync());
+    },
+    (error, stack) {
+      final stackTop = stack.toString().split('\n').first;
+      if (kIsWeb) {
+        P0uDiag.webError(exception: error, stackTop: stackTop);
+      } else {
+        P0uDiag.androidError(exception: error, stackTop: stackTop);
+      }
+    },
+  );
+}
+
+Future<void> _mainAsync() async {
   WidgetsFlutterBinding.ensureInitialized();
   P0uStartupDiag.ensureStarted();
   P0uDiag.releaseLogGuard();

@@ -430,6 +430,7 @@ class _PlanningPageState extends State<PlanningPage>
   static const Duration _kPlanReorderSettleDuration =
       Duration(milliseconds: 280);
   Stream<List<PlanningTask>>? _planningStream;
+  String? _planningStreamKey;
   List<PlanningTask>? _dragOrder;
   bool _planSelectMode = false;
   _PlanSortMode _sortMode = _PlanSortMode.custom;
@@ -667,12 +668,21 @@ DatabaseService.instance.persistPlanningTaskOrder(
     setState(() => _dragOrder = null);
   }
 
-  Stream<List<PlanningTask>> _createPlanningStream() =>
-      DatabaseService.instance.planningStream(
-        widget.selectedDate ?? _today,
-        listenToGlobalPlanningRefresh:
-            widget.isActivePlanningDay && widget.shellTabActive,
-      );
+  Stream<List<PlanningTask>> _planningStreamForCurrentDay() {
+    final day = widget.selectedDate ?? _today;
+    final listen = widget.isActivePlanningDay && widget.shellTabActive;
+    final key =
+        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}|$listen';
+    if (_planningStreamKey == key && _planningStream != null) {
+      return _planningStream!;
+    }
+    _planningStreamKey = key;
+    _planningStream = DatabaseService.instance.planningStream(
+      day,
+      listenToGlobalPlanningRefresh: listen,
+    );
+    return _planningStream!;
+  }
 
   @override
   void initState() {
@@ -694,7 +704,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
           DatabaseService.instance.planningDayTasksSnapshot(day),
         );
     if (widget.isActivePlanningDay) {
-      _planningStream = _createPlanningStream();
+      _planningStream = _planningStreamForCurrentDay();
     }
     _planningTimeSub = DatabaseService.instance.timeUpdates.listen((_) {
       if (!mounted) return;
@@ -719,9 +729,10 @@ DatabaseService.instance.persistPlanningTaskOrder(
         lastTzLabel = s.preferredTimeZone;
         DatabaseService.instance.reprojectAllPlansForProfileTimezone();
         _timeModeDidAutoScrollToNow = false;
-        setState(() {
-          _planningStream = _createPlanningStream();
-        });
+        DatabaseService.instance.notifyPlanningRefresh(
+          scheduleNetworkRefresh: false,
+        );
+        setState(() {});
       }
     });
     unawaited(_loadPlanningTimelineBounds());
@@ -1532,10 +1543,14 @@ DatabaseService.instance.persistPlanningTaskOrder(
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedDate != widget.selectedDate ||
         oldWidget.selectedDateString != widget.selectedDateString ||
-        oldWidget.isActivePlanningDay != widget.isActivePlanningDay) {
+        oldWidget.isActivePlanningDay != widget.isActivePlanningDay ||
+        oldWidget.shellTabActive != widget.shellTabActive) {
       setState(() {
         if (widget.isActivePlanningDay) {
-          _planningStream = _createPlanningStream();
+          _planningStream = _planningStreamForCurrentDay();
+        } else {
+          _planningStream = null;
+          _planningStreamKey = null;
         }
         _latestPlanningDayTasks = DatabaseService.instance
             .dedupePlanningTasksForDisplay(
@@ -3711,9 +3726,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     final loc = currentLocale.value;
     final label = '${h.toString().padLeft(2, '0')}:00';
     if (ok) {
-      setState(() {
-        _planningStream = _createPlanningStream();
-      });
+      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Theme.of(context).colorScheme.primary,

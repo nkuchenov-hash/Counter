@@ -28,7 +28,54 @@ extension DbCoreExtension on DatabaseService {
       }
     }
     await _maybeVerifyPocketBaseReachable();
+    _attachPocketBaseRealtimeGuards();
     SyncManager.instance.attachIfNeeded();
+  }
+
+  void _attachPocketBaseRealtimeGuards() {
+    if (_pocketBaseRealtimeGuardsAttached || _pocketBase == null) return;
+    _pocketBaseRealtimeGuardsAttached = true;
+    _pocketBase!.realtime.onDisconnect = (_) {
+      if (isPbRealtimeUnavailable) return;
+      _scheduleRecordsRealtimeReconnectAfterFailure();
+      _schedulePlansRealtimeReconnectAfterFailure();
+    };
+  }
+
+  bool _isRealtimeEndpointUnavailableError(Object e) {
+    if (e is ClientException && e.statusCode == 404) return true;
+    final s = e.toString().toLowerCase();
+    return s.contains('/api/realtime') && s.contains('404') ||
+        s.contains('failed to establish sse');
+  }
+
+  void _markRealtimeEndpointUnavailable(Object e, {String source = 'realtime'}) {
+    if (!_isRealtimeEndpointUnavailableError(e) &&
+        !(e is ClientException && e.statusCode == 404)) {
+      return;
+    }
+    _realtimeEndpointUnavailableUntil =
+        DateTime.now().add(const Duration(minutes: 30));
+    planStreamLifecycleLog(
+      'realtimeSubscribe status=error code=404 source=$source '
+      'fallback=fetchUntil=${_realtimeEndpointUnavailableUntil!.toIso8601String()}',
+    );
+    unawaited(_cancelRecordsRealtimeSubscription());
+    unawaited(_cancelPlansRealtimeSubscription());
+    offlineSync.reconcileStuckSyncingBanner(
+      syncFlushInFlight: isSyncFlushInFlight,
+    );
+  }
+
+  void _handleRealtimeSubscribeFailure(Object e, {required String source}) {
+    if (_isRealtimeEndpointUnavailableError(e) ||
+        (e is ClientException && e.statusCode == 404)) {
+      _markRealtimeEndpointUnavailable(e, source: source);
+      return;
+    }
+    planStreamLifecycleLog(
+      'realtimeSubscribe status=error source=$source exception=$e',
+    );
   }
 
   Future<void> _maybeVerifyPocketBaseReachable() async {
@@ -120,6 +167,7 @@ extension DbCoreExtension on DatabaseService {
 
   /// Re-subscribe to `records` + `plans` realtime after auth when init ran without a session.
   Future<void> ensureRecordsRealtimeBridge() async {
+    if (isPbRealtimeUnavailable) return;
     _recordsRealtimeReconnectTimer?.cancel();
     _recordsRealtimeReconnectTimer = null;
     _recordsRealtimeFailureStreak = 0;
@@ -148,6 +196,7 @@ extension DbCoreExtension on DatabaseService {
 
   void _scheduleRecordsRealtimeReconnectAfterFailure() {
     if (!_hasAuthenticatedUserId) return;
+    if (isPbRealtimeUnavailable) return;
     _recordsRealtimeReconnectTimer?.cancel();
     final delay = _recordsRealtimeDelayForCurrentFailureStreak();
     if (_recordsRealtimeFailureStreak < DatabaseService._kRealtimeBackoffSeconds.length) {
@@ -531,7 +580,9 @@ extension DbCoreExtension on DatabaseService {
       await _startRecordsRealtimeSubscription();
     } catch (_) {}
     unawaited(
-      _startPlansRealtimeSubscription().catchError((Object _, StackTrace _) {}),
+      _startPlansRealtimeSubscription().catchError((Object e, StackTrace _) {
+        _handleRealtimeSubscribeFailure(e, source: 'plans-boot');
+      }),
     );
     unawaited(() async {
       try {
@@ -596,6 +647,9 @@ extension DbCoreExtension on DatabaseService {
     await flushPendingRecordMutations();
     await flushPendingPlanMutations();
     await offlineSync.refreshPendingCount();
+    offlineSync.reconcileStuckSyncingBanner(
+      syncFlushInFlight: isSyncFlushInFlight,
+    );
     offlineSync.reconcileAfterDrain();
   }
 }

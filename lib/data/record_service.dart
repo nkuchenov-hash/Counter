@@ -352,6 +352,10 @@ extension RecordServiceExtension on DatabaseService {
   Future<void> _startRecordsRealtimeSubscriptionBody() async {
     await _cancelRecordsRealtimeSubscription();
     if (!_hasAuthenticatedUserId) return;
+    if (isPbRealtimeUnavailable) {
+      _logRecordsRealtimeSubscribeQuiet('realtime_endpoint_unavailable');
+      return;
+    }
     try {
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) {
@@ -391,6 +395,7 @@ extension RecordServiceExtension on DatabaseService {
       _recordsRealtimeReconnectTimer = null;
     } catch (e) {
       _logRecordsRealtimeSubscribeQuiet(e);
+      _handleRealtimeSubscribeFailure(e, source: 'records');
       _scheduleRecordsRealtimeReconnectAfterFailure();
     }
   }

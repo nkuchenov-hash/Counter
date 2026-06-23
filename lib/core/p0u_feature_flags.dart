@@ -25,3 +25,6 @@ const bool kTimelineAdjacentRowVmWarmup = false;
 /// P0 duplicate safety: disable Plans warm-window prebuild until list correctness is proven.
 /// When false, Plans still load via [planningStream] when the user opens the Plans tab.
 const bool kPlansWarmWindowEnabled = false;
+
+/// Planning stream / realtime lifecycle diagnostics (works in release when true).
+const bool kPlanStreamLifecycleDiag = true;

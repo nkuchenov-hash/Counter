@@ -1,3 +1,4 @@
+import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:flutter/foundation.dart';
 
 /// Debug-only planning duplicate tracing ([wip] P0 dedupe guards).
@@ -7,4 +8,11 @@ import 'package:flutter/foundation.dart';
 void planDupTrace(String message) {
   if (kReleaseMode) return;
   debugPrint('[PLAN_DUP_TRACE] $message');
+}
+
+/// Throttled planning stream / realtime lifecycle log ([kPlanStreamLifecycleDiag]).
+void planStreamLifecycleLog(String message) {
+  if (!kPlanStreamLifecycleDiag) return;
+  // ignore: avoid_print
+  print('[PLAN_STREAM_LIFECYCLE] $message');
 }

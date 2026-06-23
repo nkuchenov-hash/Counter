@@ -37,6 +37,131 @@ bool _planningRefreshWantsNetworkPump = false;
 Future<void>? _plansRealtimeSubscribeFuture;
 Future<void> Function()? _plansRealtimeUnsubscribe;
 
+int _planningStreamIdSeq = 0;
+final Map<String, _PlanningDayStreamHub> _planningStreamHubs = {};
+
+/// Shared planning day stream — one hub per (day, global-listen) key; ref-counted listeners.
+final class _PlanningDayStreamHub {
+  _PlanningDayStreamHub({
+    required this.streamId,
+    required this.dayKey,
+    required this.wallDay,
+    required this.listenGlobal,
+  });
+
+  final String streamId;
+  final String dayKey;
+  final DateTime wallDay;
+  final bool listenGlobal;
+  int refCount = 0;
+  final StreamController<List<PlanningTask>> controller =
+      StreamController<List<PlanningTask>>.broadcast();
+  StreamSubscription<void>? _pokeSub;
+  bool _pumpBusy = false;
+  bool _disposed = false;
+
+  void acquire(DatabaseService db) {
+    refCount++;
+    planStreamLifecycleLog(
+      'create streamId=$streamId user=${db.currentProfileId ?? '-'} '
+      'date=$dayKey mode=listenGlobal=$listenGlobal '
+      'activeForDay=${_planningStreamHubs.length}',
+    );
+    if (refCount == 1) {
+      _bind(db);
+    }
+  }
+
+  void release() {
+    refCount--;
+    if (refCount <= 0) {
+      planStreamLifecycleLog('dispose streamId=$streamId');
+      _disposeHub();
+    }
+  }
+
+  void _bind(DatabaseService db) {
+    _emitFromCache(db);
+    unawaited(_pump(db, network: true));
+    if (!listenGlobal) return;
+    _pokeSub = _planningRefreshController.stream.listen((_) {
+      final wantsNetwork = _planningRefreshWantsNetworkPump;
+      if (wantsNetwork) {
+        _planningRefreshWantsNetworkPump = false;
+      }
+      final stale =
+          wantsNetwork ||
+          _allPlansUserCache.isEmpty ||
+          _allPlansUserCacheFetchedAt == null ||
+          DateTime.now().difference(_allPlansUserCacheFetchedAt!) >
+              _allPlansUserCacheFreshTtl;
+      unawaited(_pump(db, network: stale));
+    });
+  }
+
+  void _emitFromCache(DatabaseService db) {
+    if (_disposed || controller.isClosed) return;
+    List<PlanningTask> base = [];
+    if (_allPlansUserCache.isNotEmpty) {
+      base = db._filterPlansForWallDay(_allPlansUserCache, wallDay);
+    }
+    final merged = db._mergePlanningOptimistic(dayKey, base);
+    db._logPlanDupTraceLayer(
+      source: 'stream',
+      tasks: merged,
+      dayKey: dayKey,
+    );
+    _logPlanningStreamEmit(merged);
+    controller.add(merged);
+  }
+
+  Future<void> _pump(DatabaseService db, {required bool network}) async {
+    _emitFromCache(db);
+    if (!network || _pumpBusy || _disposed || controller.isClosed) return;
+    _pumpBusy = true;
+    try {
+      List<PlanningTask> tasks;
+      try {
+        tasks = await db._fetchPlanningTasksForDate(wallDay);
+      } catch (_) {
+        tasks = <PlanningTask>[];
+      }
+      if (!_disposed && !controller.isClosed) {
+        final merged = db._mergePlanningOptimistic(dayKey, tasks);
+        db._logPlanDupTraceLayer(
+          source: 'stream',
+          tasks: merged,
+          dayKey: dayKey,
+        );
+        _logPlanningStreamEmit(merged);
+        controller.add(merged);
+      }
+    } finally {
+      _pumpBusy = false;
+    }
+  }
+
+  void _logPlanningStreamEmit(List<PlanningTask> merged) {
+    final ids = merged.map((t) => t.planRowIdForBackend).toList();
+    final unique = ids.toSet().length;
+    planStreamLifecycleLog(
+      'emit streamId=$streamId total=${merged.length} uniqueIds=$unique '
+      'duplicateIds=${merged.length - unique}',
+    );
+  }
+
+  void _disposeHub() {
+    if (_disposed) return;
+    _disposed = true;
+    _pokeSub?.cancel();
+    _pokeSub = null;
+    _planningStreamHubs.remove('$dayKey|$listenGlobal');
+    if (!controller.isClosed) {
+      unawaited(controller.close());
+    }
+  }
+}
+
 List<PlanningTask> _tasksCache = [];
 
 /// Planning reorder: debounced bulk PATCH of [order] only (@DATA_MAP `plans.order`, `user_id`).
@@ -4184,81 +4309,42 @@ extension PlanServiceExtension on DatabaseService {
   /// Planning list stream. **No periodic polling** (PageView keeps many days alive).
   /// [listenToGlobalPlanningRefresh]: only the **visible** planning day should be `true` so [notifyPlanningRefresh]
   /// does not fan out identical GETs to every off-screen [PlanningPage].
+  ///
+  /// One shared hub per (wall-day, global-listen) — ref-counted; replaces snapshot on emit (never append).
   Stream<List<PlanningTask>> planningStream(
     DateTime selectedDate, {
     bool listenToGlobalPlanningRefresh = true,
   }) {
+    final targetDayStr =
+        '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
+    final hubKey = '$targetDayStr|$listenToGlobalPlanningRefresh';
+    final hub = _planningStreamHubs.putIfAbsent(
+      hubKey,
+      () => _PlanningDayStreamHub(
+        streamId: 'ps-${++_planningStreamIdSeq}',
+        dayKey: targetDayStr,
+        wallDay: selectedDate,
+        listenGlobal: listenToGlobalPlanningRefresh,
+      ),
+    );
     return Stream.multi((controller) {
-      StreamSubscription<void>? pokeSub;
-      var busy = false;
-      final targetDayStr =
-          '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
-
-      void emitMerged(List<PlanningTask> base) {
-        if (controller.isClosed) return;
-        final merged = _mergePlanningOptimistic(targetDayStr, base);
-        _logPlanDupTraceLayer(
-          source: 'stream',
-          tasks: merged,
-          dayKey: targetDayStr,
-        );
-        controller.add(merged);
-      }
-
-      void emitFastFromCache() {
-        if (controller.isClosed) return;
-        List<PlanningTask> base = [];
-        if (_allPlansUserCache.isNotEmpty) {
-          base = _filterPlansForWallDay(_allPlansUserCache, selectedDate);
-        }
-        if (base.isEmpty) {
-          unawaited(() async {
-            final offline = await _loadPlanningTasksDayCache(targetDayStr);
-            if (!controller.isClosed && offline.isNotEmpty) {
-              emitMerged(offline);
-            }
-          }());
-          return;
-        }
-        emitMerged(base);
-      }
-
-      Future<void> pump({bool network = true}) async {
-        emitFastFromCache();
-        if (!network || busy || controller.isClosed) return;
-        busy = true;
-        try {
-          List<PlanningTask> tasks;
-          try {
-            tasks = await _fetchPlanningTasksForDate(selectedDate);
-          } catch (_) {
-            tasks = <PlanningTask>[];
+      hub.acquire(this);
+      final sub = hub.controller.stream.listen(
+        controller.add,
+        onError: controller.addError,
+      );
+      if (_allPlansUserCache.isEmpty) {
+        unawaited(() async {
+          final offline = await _loadPlanningTasksDayCache(targetDayStr);
+          if (!hub.controller.isClosed && offline.isNotEmpty) {
+            final merged = _mergePlanningOptimistic(targetDayStr, offline);
+            hub.controller.add(merged);
           }
-          if (!controller.isClosed) emitMerged(tasks);
-        } finally {
-          busy = false;
-        }
-      }
-
-      emitFastFromCache();
-      unawaited(pump());
-      if (listenToGlobalPlanningRefresh) {
-        pokeSub = _planningRefreshController.stream.listen((_) {
-          final wantsNetwork = _planningRefreshWantsNetworkPump;
-          if (wantsNetwork) {
-            _planningRefreshWantsNetworkPump = false;
-          }
-          final stale =
-              wantsNetwork ||
-              _allPlansUserCache.isEmpty ||
-              _allPlansUserCacheFetchedAt == null ||
-              DateTime.now().difference(_allPlansUserCacheFetchedAt!) >
-                  _allPlansUserCacheFreshTtl;
-          unawaited(pump(network: stale));
-        });
+        }());
       }
       controller.onCancel = () {
-        pokeSub?.cancel();
+        sub.cancel();
+        hub.release();
       };
     });
   }
@@ -6127,36 +6213,38 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   void _onPbPlansSubscriptionEvent(RecordSubscriptionEvent e) {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return;
-    final action = e.action.toLowerCase().trim();
-    if (action == 'delete') {
-      final id = e.record?.id.trim() ?? '';
-      if (id.isNotEmpty) {
-        _removePlanFromUserCache(id);
-        clearOptimisticPlanningForPlanRow(id);
-        notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      }
-      return;
-    }
-    final rec = e.record;
-    if (rec == null) return;
-    unawaited(() async {
-      try {
-        final tagCatalog = await _fetchPlanAndListTagCatalog();
-        final task = _planningTaskFromPocketRecord(
-          rec,
-          pocketTagCatalog: tagCatalog,
-        );
-        _upsertPlanInUserCache(task);
-        _allPlansUserCacheFetchedAt = DateTime.now();
-        final biz = _planBusinessUuidFromTask(task);
-        if (biz != null && biz.isNotEmpty) {
-          clearOptimisticPlanningForPlanRow('optimistic-$biz');
+    try {
+      if (!_isInitialized || !_hasAuthenticatedUserId) return;
+      final action = e.action.toLowerCase().trim();
+      if (action == 'delete') {
+        final id = e.record?.id.trim() ?? '';
+        if (id.isNotEmpty) {
+          _removePlanFromUserCache(id);
+          clearOptimisticPlanningForPlanRow(id);
+          notifyPlanningRefresh(scheduleNetworkRefresh: false);
         }
-        clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
-        notifyPlanningRefresh(scheduleNetworkRefresh: false);
-      } catch (_) {}
-    }());
+        return;
+      }
+      final rec = e.record;
+      if (rec == null) return;
+      unawaited(() async {
+        try {
+          final tagCatalog = await _fetchPlanAndListTagCatalog();
+          final task = _planningTaskFromPocketRecord(
+            rec,
+            pocketTagCatalog: tagCatalog,
+          );
+          _upsertPlanInUserCache(task);
+          _allPlansUserCacheFetchedAt = DateTime.now();
+          final biz = _planBusinessUuidFromTask(task);
+          if (biz != null && biz.isNotEmpty) {
+            clearOptimisticPlanningForPlanRow('optimistic-$biz');
+          }
+          clearOptimisticPlanningForPlanRow(task.planRowIdForBackend);
+          notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        } catch (_) {}
+      }());
+    } catch (_) {}
   }
 
   Future<void> _cancelPlansRealtimeSubscription() async {
@@ -6175,6 +6263,11 @@ extension PlanServiceExtension on DatabaseService {
   Future<void> _startPlansRealtimeSubscriptionBody() async {
     await _cancelPlansRealtimeSubscription();
     if (!_hasAuthenticatedUserId) return;
+    if (isPbRealtimeUnavailable) {
+      _logPlansRealtimeSubscribeQuiet('realtime_endpoint_unavailable');
+      return;
+    }
+    planStreamLifecycleLog('realtimeSubscribe status=start collection=plans');
     try {
       await ensurePocketBaseReady();
       if (_pbHttpBackoffActive) return;
@@ -6196,11 +6289,58 @@ extension PlanServiceExtension on DatabaseService {
             .subscribe('*', _onPbPlansSubscriptionEvent, filter: filter);
       }
       _plansRealtimeUnsubscribe = unsub;
+      _plansRealtimeFailureStreak = 0;
+      _plansRealtimeReconnectTimer?.cancel();
+      _plansRealtimeReconnectTimer = null;
+      planStreamLifecycleLog('realtimeSubscribe status=success collection=plans');
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('plans realtime subscribe failed: $e');
-      }
+      _logPlansRealtimeSubscribeQuiet(e);
+      _handleRealtimeSubscribeFailure(e, source: 'plans');
+      _schedulePlansRealtimeReconnectAfterFailure();
     }
+  }
+
+  void _logPlansRealtimeSubscribeQuiet(Object e) {
+    final now = DateTime.now();
+    if (_lastPlansRealtimeSubscribeErrorLogAt != null &&
+        now.difference(_lastPlansRealtimeSubscribeErrorLogAt!) <
+            const Duration(seconds: 5)) {
+      return;
+    }
+    _lastPlansRealtimeSubscribeErrorLogAt = now;
+    if (kDebugMode) {
+      debugPrint(
+        'plans realtime subscribe failed (next backoff '
+        '${_plansRealtimeDelayForCurrentFailureStreak().inSeconds}s): $e',
+      );
+    }
+  }
+
+  Duration _plansRealtimeDelayForCurrentFailureStreak() {
+    final idx = _plansRealtimeFailureStreak.clamp(
+      0,
+      DatabaseService._kRealtimeBackoffSeconds.length - 1,
+    );
+    return Duration(seconds: DatabaseService._kRealtimeBackoffSeconds[idx]);
+  }
+
+  void _schedulePlansRealtimeReconnectAfterFailure() {
+    if (!_hasAuthenticatedUserId) return;
+    if (isPbRealtimeUnavailable) return;
+    _plansRealtimeReconnectTimer?.cancel();
+    final delay = _plansRealtimeDelayForCurrentFailureStreak();
+    if (_plansRealtimeFailureStreak <
+        DatabaseService._kRealtimeBackoffSeconds.length) {
+      _plansRealtimeFailureStreak++;
+    }
+    _plansRealtimeReconnectTimer = Timer(delay, () {
+      _plansRealtimeReconnectTimer = null;
+      unawaited(
+        _startPlansRealtimeSubscription().catchError((Object e, StackTrace _) {
+          _handleRealtimeSubscribeFailure(e, source: 'plans-reconnect');
+        }),
+      );
+    });
   }
 
   Future<void> _startPlansRealtimeSubscription() async {
@@ -6217,7 +6357,15 @@ extension PlanServiceExtension on DatabaseService {
 
   /// Re-subscribe to `plans` realtime after auth when init ran without a session.
   Future<void> ensurePlansRealtimeBridge() async {
-    unawaited(_startPlansRealtimeSubscription());
+    if (isPbRealtimeUnavailable) return;
+    _plansRealtimeReconnectTimer?.cancel();
+    _plansRealtimeReconnectTimer = null;
+    _plansRealtimeFailureStreak = 0;
+    unawaited(
+      _startPlansRealtimeSubscription().catchError((Object e, StackTrace _) {
+        _handleRealtimeSubscribeFailure(e, source: 'plans-bridge');
+      }),
+    );
   }
 }
 

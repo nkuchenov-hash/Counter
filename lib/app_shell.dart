@@ -151,7 +151,9 @@ class _OfflineSyncStatusBarState extends State<_OfflineSyncStatusBar> {
     return ListenableBuilder(
       listenable: sync,
       builder: (context, _) {
-        sync.ensureBannerInvariant();
+        sync.ensureBannerInvariant(
+          syncFlushInFlight: brain.isSyncFlushInFlight,
+        );
         final showing = sync.shouldShowBanner;
         if (showing && !_wasShowing) {
           _wasShowing = true;

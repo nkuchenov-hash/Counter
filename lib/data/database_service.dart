@@ -557,6 +557,24 @@ class DatabaseService {
   Future<void>? _recordsRealtimeSubscribeFuture;
   DateTime? _lastRealtimeSubscribeErrorLogAt;
 
+  /// Plans realtime backoff (mirrors records).
+  int _plansRealtimeFailureStreak = 0;
+  Timer? _plansRealtimeReconnectTimer;
+  DateTime? _lastPlansRealtimeSubscribeErrorLogAt;
+
+  /// When set, `/api/realtime` is unavailable (404/proxy) — skip subscribe until elapsed.
+  DateTime? _realtimeEndpointUnavailableUntil;
+  bool _pocketBaseRealtimeGuardsAttached = false;
+
+  /// True while record/plan outbox flush holds [OfflineSyncController.isSyncing].
+  bool get isSyncFlushInFlight =>
+      _planMutationOutboxFlushInFlight || _recordMutationOutboxFlushInFlight;
+
+  bool get isPbRealtimeUnavailable {
+    final until = _realtimeEndpointUnavailableUntil;
+    return until != null && DateTime.now().isBefore(until);
+  }
+
   /// Timeline row keys (REST id / business UUID) that returned **definitive** 404 after full retry — no repeat PATCH/DELETE until row reappears in GET.
   final Set<String> _recordRestDefinitive404Keys = <String>{};
 

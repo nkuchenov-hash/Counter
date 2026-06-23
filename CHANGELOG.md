@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-23] - P0 Plans realtime 404: stream hub + sync banner stuck fix [wip]
+* **`plan_service.dart`:** [wip] ref-counted `_PlanningDayStreamHub` (one hub per day/listen); plans realtime backoff + 404 session disable; safe subscribe catchError.
+* **`db_core.dart`:** [wip] `_markRealtimeEndpointUnavailable` on `/api/realtime` 404; PB realtime onDisconnect guards.
+* **`offline_sync_state.dart`:** [wip] `reconcileStuckSyncingBanner` when pending=0.
+* **`planning_view.dart`:** [wip] stable `_planningStreamForCurrentDay`; no stream recreate on tz/move.
+* **`main.dart`:** [wip] `runZonedGuarded` for uncaught async errors.
+* **`test/planning_realtime_stream_lifecycle_test.dart`:** [wip] sync banner + lifecycle contract.
+
 ## [2026-06-23] - P0 diagnostic cleanup: delete dead lib/core trace/diag files [wip]
 * **Deleted:** `p0_date_nav_diag`, `p0n_perf_diag`, `p0o_warm_diag`, `p0r_prebuild_diag`, `p0s_mount_diag`, `p0t_diag`, `p0p_content_diag`, `pre_white_swipe_restore`, `mounted_day_registry`, `app_diag`, `time_drop_trace` + all call sites.
 * **Kept:** `p0u_feature_flags`, `p0u_diag`, `p0u_startup_diag` (defer queue), `perf_diag`/`perf_flags`, `plan_dup_trace`, `app_build_info`, `date_pager_settle_gate`.

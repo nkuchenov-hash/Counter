@@ -111,13 +111,26 @@ class OfflineSyncController extends ChangeNotifier {
   }
 
   /// UI safety guard — call before reading [shouldShowBanner].
-  void ensureBannerInvariant() {
+  void ensureBannerInvariant({bool syncFlushInFlight = false}) {
     suppressStaleErrorIfEmptyOutbox();
+    reconcileStuckSyncingBanner(syncFlushInFlight: syncFlushInFlight);
+  }
+
+  /// Clears [isSyncing] when queues are empty and no flush is in flight.
+  void reconcileStuckSyncingBanner({bool syncFlushInFlight = false}) {
+    if (pendingCount == 0 &&
+        recordsOutboxCount == 0 &&
+        plansOutboxCount == 0 &&
+        isSyncing &&
+        !syncFlushInFlight) {
+      setSyncing(false);
+    }
   }
 
   /// When outboxes are empty and auth is valid: drop stale in-memory error/offline flags.
   void reconcileAfterDrain() {
-    if (authPaused || isSyncing) return;
+    if (authPaused) return;
+    reconcileStuckSyncingBanner();
     suppressStaleErrorIfEmptyOutbox();
   }
 
