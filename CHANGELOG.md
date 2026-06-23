@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-23] - Time View rubber minute scale + empty slot layout [wip]
+* **`plan_time_view_layout.dart`:** [wip] rubber `pxPerMinute` per hour from `cardMinHeight/duration`; card height = `duration * rubber`; hour stretches only for adjacent packed chains (+4px gap); overlap-aware hour buckets; empty slot preserved for partial-hour cards (e.g. 12:00–12:45 leaves 12:45–13:00 visible).
+* **`plan_time_task_card.dart`:** [wip] `kPlanTimeCardGapPx` 2→4 for adjacent card packing gap.
+* **`test/plan_time_view_layout_test.dart`:** [wip] rubber scale tests A–G (45-min slot, adjacent 4px gap, real schedule gap, dense chain).
+* **`test/plan_time_target_drop_test.dart`:** [wip] empty-slot drop test J (finger in 12:45–13:00 → emptyCanvas).
+
 ## [2026-06-23] - P0 Time View card-on-card drop finger resolver [wip]
 * **`plan_time_sequential_cascade.dart`:** [wip] `TimeViewCardLayout`, `TimeViewDropIntent`, `resolveTimeViewDropIntent`, `buildTimeViewInsertionIntentFromDropIntent`, `assertTimeViewTargetCardNoRawY` — finger-position hit-test with absolute target-card priority; empty canvas only when finger outside all card rects.
 * **`planning_view.dart`:** [wip] `_timelineFingerGrabOffsetCanvasPx` + pointer-down offset capture; preview and commit both call central resolver (no stored-intent / card-center / raw-Y fallback on card-on-card).

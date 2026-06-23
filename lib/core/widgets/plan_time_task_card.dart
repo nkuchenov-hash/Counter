@@ -20,7 +20,7 @@ enum PlanTimeTaskCardDensity { micro, compact, medium, large }
 const double kPlanTimeCardMinHeightPx = 38.0;
 
 /// Minimum vertical gap between adjacent Time View cards.
-const double kPlanTimeCardGapPx = 2.0;
+const double kPlanTimeCardGapPx = 4.0;
 
 /// Padding below the last card when computing stretched hour height.
 const double kPlanTimeHourVerticalPaddingPx = 4.0;

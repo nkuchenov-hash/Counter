@@ -1,3 +1,5 @@
+import 'dart:ui' show Offset;
+
 import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -941,6 +943,38 @@ void main() {
       );
       expect(preview.draggedStartWall, commit.draggedStartWall);
       expect(preview.orderAfter, commit.orderAfter);
+    });
+
+    test('J: empty slot drop after 45-minute card uses emptyCanvas not target', () {
+      final rubber = 3.8;
+      final cardHeight = 45 * rubber;
+      final hourHeight = 60 * rubber;
+      final emptySlotTop = cardHeight;
+      final fingerY = emptySlotTop + 10;
+      final layouts = [
+        TimeViewCardLayout(
+          planId: 'a',
+          topPx: 0,
+          heightPx: cardHeight,
+          targetStartWall: _wall(12, 0),
+          targetEndWall: _wall(12, 45),
+        ),
+      ];
+      var yToTimeCalled = false;
+      final intent = resolveTimeViewDropIntent(
+        fingerLocalPosition: Offset(0, fingerY),
+        scheduledCardLayouts: layouts,
+        draggedPlanId: 'dragged',
+        wallDate: DateTime(2026, 6, 15),
+        canvasYToMinutes: (y) {
+          yToTimeCalled = true;
+          return (y / hourHeight) * 60;
+        },
+      );
+      expect(intent.kind, TimeViewDropIntentKind.emptyCanvas);
+      expect(intent.isTargetCard, isFalse);
+      expect(yToTimeCalled, isTrue);
+      expect(intent.wallStartMinute, greaterThan(44));
     });
   });
 }
