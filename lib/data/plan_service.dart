@@ -2169,6 +2169,18 @@ extension PlanServiceExtension on DatabaseService {
     );
   }
 
+  /// Explicit-order target drop cascade (no start-time sort).
+  plan_time_seq.TimeViewTargetInsertionResult applyTimeViewTargetInsertion(
+    List<PlanningTask> scheduled,
+    plan_time_seq.TimeViewInsertionIntent intent,
+  ) {
+    return plan_time_seq.applyTimeViewTargetInsertion(
+      scheduled: scheduled,
+      intent: intent,
+      resolveDurationMinutes: resolvePlanDurationMinutesFromTags,
+    );
+  }
+
   /// Optimistic + background PATCH for any overlap on a day's scheduled plans.
   bool applySequentialTimeViewCascadeIfNeeded({
     required DateTime wallDay,

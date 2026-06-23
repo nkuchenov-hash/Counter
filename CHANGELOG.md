@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time View target drop v2: stored intent + explicit-order cascade [wip]
+* **`plan_time_sequential_cascade.dart`:** [wip] `TimeViewInsertionIntent`, `buildExplicitOrderForTargetInsert`, `cascadeScheduledPlansForExplicitTimeViewOrder`, `applyTimeViewTargetInsertion` — target drop no longer sorts by start time.
+* **`planning_view.dart`:** [wip] drag-over stores insertion intent; commit prefers stored intent over release hit-test; preview/commit share `applyTimeViewTargetInsertion`; empty canvas still uses yToTime.
+* **`plan_service.dart`:** [wip] `applyTimeViewTargetInsertion` Brain wrapper.
+* **`lib/core/time_drop_trace.dart`:** [wip] gated `[TIME_DROP_TRACE]` debug logs (debug builds only).
+* **`test/plan_time_target_drop_test.dart`:** [wip] explicit order beats old start/raw Y, stored intent fallback, before-target, preview=commit.
+
 ## [2026-06-15] - P0U.5: canonical running id once per Timeline day VM build [wip]
 * **`record_service.dart`:** [wip] `resolveCanonicalPrimaryRunningBusinessId()` computed once in `_buildTimelineRowVmsForDate`; passed into `_timelineRowVmFromMap` / subtitle — removes 11× `_cachedFlatRecords` scan.
 * **`p0u_timeline_vm_build_diag.dart`:** [wip] `canonicalPrimaryRunningBiz_once` step; per-row `canonicalPrimaryRunningBiz_call` no longer on hot path.

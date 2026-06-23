@@ -179,6 +179,174 @@ TimeViewTargetDropSchedule computeTimeViewTargetDropSchedule({
   );
 }
 
+/// Stable target insertion captured during drag-over (not at pointer-up).
+enum TimeViewInsertPosition { before, after }
+
+class TimeViewInsertionIntent {
+  const TimeViewInsertionIntent({
+    required this.draggedPlanId,
+    required this.targetPlanId,
+    required this.insertPosition,
+    required this.targetStartWall,
+    required this.targetEndWall,
+    required this.draggedDurationMinutes,
+    required this.draggedHadEnd,
+  });
+
+  final String draggedPlanId;
+  final String targetPlanId;
+  final TimeViewInsertPosition insertPosition;
+  final DateTime targetStartWall;
+  final DateTime targetEndWall;
+  final int draggedDurationMinutes;
+  final bool draggedHadEnd;
+
+  bool get insertBefore => insertPosition == TimeViewInsertPosition.before;
+}
+
+/// Reorder scheduled tasks for explicit target insert (no start-time sort).
+List<PlanningTask> buildExplicitOrderForTargetInsert({
+  required List<PlanningTask> scheduled,
+  required String draggedPlanId,
+  required String targetPlanId,
+  required bool insertBefore,
+}) {
+  if (scheduled.isEmpty) return const [];
+
+  PlanningTask? dragged;
+  final rest = <PlanningTask>[];
+  for (final t in scheduled) {
+    if (t.planRowIdForBackend == draggedPlanId) {
+      dragged = t;
+    } else {
+      rest.add(t);
+    }
+  }
+  if (dragged == null) return List<PlanningTask>.from(scheduled);
+
+  var targetIdx = -1;
+  for (var i = 0; i < rest.length; i++) {
+    if (rest[i].planRowIdForBackend == targetPlanId) {
+      targetIdx = i;
+      break;
+    }
+  }
+  if (targetIdx < 0) return List<PlanningTask>.from(scheduled);
+
+  final insertAt = insertBefore ? targetIdx : targetIdx + 1;
+  rest.insert(insertAt, dragged);
+  return rest;
+}
+
+/// Cascade in explicit list order (drag target insertion). Does not sort by start time.
+List<PlanningTask> cascadeScheduledPlansForExplicitTimeViewOrder(
+  List<PlanningTask> explicitOrder, {
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+  TimeViewInsertionIntent? targetIntent,
+}) {
+  if (explicitOrder.isEmpty) return const [];
+
+  final scheduled = explicitOrder.where((t) => t.startTime != null).toList();
+  if (scheduled.isEmpty) return List<PlanningTask>.from(explicitOrder);
+
+  final cascadedById = <String, PlanningTask>{};
+  DateTime? prevEnd;
+
+  for (final task in scheduled) {
+    final id = task.planRowIdForBackend;
+    final durMin = planWallDurationMinutesForCascade(
+      task,
+      resolveDurationMinutes: resolveDurationMinutes,
+    );
+    var newStart = task.startTime!;
+    DateTime? newEnd =
+        task.endDateTime ?? newStart.add(Duration(minutes: durMin));
+
+    if (targetIntent != null && id == targetIntent.draggedPlanId) {
+      final sched = computeTimeViewTargetDropSchedule(
+        targetStartWall: targetIntent.targetStartWall,
+        targetEndWall: targetIntent.targetEndWall,
+        draggedDurationMinutes: targetIntent.draggedDurationMinutes,
+        insertBefore: targetIntent.insertBefore,
+        draggedHadEnd: targetIntent.draggedHadEnd,
+      );
+      newStart = sched.startWall;
+      newEnd = sched.endWall ?? newStart.add(Duration(minutes: durMin));
+    } else if (prevEnd != null && newStart.isBefore(prevEnd)) {
+      newStart = DateTime(
+        newStart.year,
+        newStart.month,
+        newStart.day,
+        prevEnd.hour,
+        prevEnd.minute,
+        prevEnd.second,
+        prevEnd.millisecond,
+        prevEnd.microsecond,
+      );
+      newEnd = newStart.add(Duration(minutes: durMin));
+    }
+
+    final updated = task.copyWith(
+      startTime: newStart,
+      endDateTime: newEnd,
+      clearEnd: false,
+    );
+    cascadedById[id] = updated;
+    prevEnd = newEnd;
+  }
+
+  return explicitOrder
+      .map((t) => cascadedById[t.planRowIdForBackend] ?? t)
+      .toList(growable: false);
+}
+
+class TimeViewTargetInsertionResult {
+  const TimeViewTargetInsertionResult({
+    required this.cascaded,
+    required this.draggedStartWall,
+    required this.draggedEndWall,
+    required this.orderBefore,
+    required this.orderAfter,
+  });
+
+  final List<PlanningTask> cascaded;
+  final DateTime draggedStartWall;
+  final DateTime? draggedEndWall;
+  final List<String> orderBefore;
+  final List<String> orderAfter;
+}
+
+/// Preview/commit path for stored target insertion intent.
+TimeViewTargetInsertionResult applyTimeViewTargetInsertion({
+  required List<PlanningTask> scheduled,
+  required TimeViewInsertionIntent intent,
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+}) {
+  final orderBefore = scheduled.map((t) => t.planRowIdForBackend).toList();
+  final ordered = buildExplicitOrderForTargetInsert(
+    scheduled: scheduled,
+    draggedPlanId: intent.draggedPlanId,
+    targetPlanId: intent.targetPlanId,
+    insertBefore: intent.insertBefore,
+  );
+  final orderAfter = ordered.map((t) => t.planRowIdForBackend).toList();
+  final cascaded = cascadeScheduledPlansForExplicitTimeViewOrder(
+    ordered,
+    resolveDurationMinutes: resolveDurationMinutes,
+    targetIntent: intent,
+  );
+  final dragged = cascaded.firstWhere(
+    (t) => t.planRowIdForBackend == intent.draggedPlanId,
+  );
+  return TimeViewTargetInsertionResult(
+    cascaded: cascaded,
+    draggedStartWall: dragged.startTime ?? intent.targetEndWall,
+    draggedEndWall: dragged.endDateTime,
+    orderBefore: orderBefore,
+    orderAfter: orderAfter,
+  );
+}
+
 bool scheduledPlansHaveWallOverlap(
   List<PlanningTask> tasks, {
   required int Function(List<Tag> tags) resolveDurationMinutes,

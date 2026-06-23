@@ -25,6 +25,7 @@ import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/perf_flags.dart';
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/time_drop_trace.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_button.dart';
@@ -516,6 +517,7 @@ class _PlanningPageState extends State<PlanningPage>
   String? _timelineDragInsertTargetKey;
   bool _timelineDragInsertBefore = false;
   double? _timelineDragInsertMarkerTopPx;
+  TimeViewInsertionIntent? _timelineStoredInsertionIntent;
 
   /// Top/bottom edge resize (Time mode); local preview until release.
   String? _timelineResizePlanKey;
@@ -3005,6 +3007,7 @@ class _PlanningPageState extends State<PlanningPage>
     _timelineDragInsertTargetKey = null;
     _timelineDragInsertBefore = false;
     _timelineDragInsertMarkerTopPx = null;
+    _timelineStoredInsertionIntent = null;
     _timelineResizePlanKey = null;
     _timelineResizeEdge = null;
     _timelineResizeTask = null;
@@ -3247,22 +3250,44 @@ class _PlanningPageState extends State<PlanningPage>
     required int rangeStart,
     required int rangeEnd,
     required DateTime planWallDay,
+    TimeViewInsertionIntent? insertionIntent,
+    String? commitSource,
+    double? rawYMinutesForTrace,
   }) {
     final movedKey = _planKey(movedTask);
-    final movedUpdated = movedTask.copyWith(
-      startTime: newStartWall,
-      endDateTime: newEndWall,
-      clearEnd: newEndWall == null,
-    );
-    final merged = scheduledInRange
-        .map(
-          (t) => _planKey(t) == movedKey ? movedUpdated : t,
-        )
-        .toList(growable: false);
-    final resolved = DatabaseService.instance.normalizeSequentialPlanTimesForDay(
-      merged,
-    );
+    final List<PlanningTask> resolved;
+    final List<String> orderBefore;
+    final List<String> orderAfter;
 
+    if (insertionIntent != null) {
+      final result = DatabaseService.instance.applyTimeViewTargetInsertion(
+        scheduledInRange,
+        insertionIntent,
+      );
+      resolved = result.cascaded;
+      orderBefore = result.orderBefore;
+      orderAfter = result.orderAfter;
+      newStartWall = result.draggedStartWall;
+      newEndWall = result.draggedEndWall;
+    } else {
+      orderBefore = scheduledInRange.map(_planKey).toList();
+      final movedUpdated = movedTask.copyWith(
+        startTime: newStartWall,
+        endDateTime: newEndWall,
+        clearEnd: newEndWall == null,
+      );
+      final merged = scheduledInRange
+          .map(
+            (t) => _planKey(t) == movedKey ? movedUpdated : t,
+          )
+          .toList(growable: false);
+      resolved = DatabaseService.instance.normalizeSequentialPlanTimesForDay(
+        merged,
+      );
+      orderAfter = resolved.map(_planKey).toList();
+    }
+
+    final patchParts = <String>[];
     for (final task in resolved) {
       final key = _planKey(task);
       final before = key == movedKey
@@ -3272,6 +3297,15 @@ class _PlanningPageState extends State<PlanningPage>
       if (before.startTime == task.startTime &&
           before.endDateTime == task.endDateTime) {
         continue;
+      }
+      final s = task.startTime;
+      final e = task.endDateTime;
+      if (s != null) {
+        patchParts.add(
+          '${task.planRowIdForBackend}:'
+          '${s.hour.toString().padLeft(2, '0')}:${s.minute.toString().padLeft(2, '0')}-'
+          '${e != null ? '${e.hour.toString().padLeft(2, '0')}:${e.minute.toString().padLeft(2, '0')}' : 'open'}',
+        );
       }
       DatabaseService.instance.applyOptimisticPlanningTask(task);
       unawaited(
@@ -3286,6 +3320,19 @@ class _PlanningPageState extends State<PlanningPage>
         ),
       );
     }
+
+    timeDropTrace(
+      'phase=commit source=${commitSource ?? 'unknown'} '
+      'rawYMinutes=${rawYMinutesForTrace?.toStringAsFixed(1) ?? 'n/a'} '
+      'targetStart=${insertionIntent?.targetStartWall.hour}:${insertionIntent?.targetStartWall.minute.toString().padLeft(2, '0') ?? 'n/a'} '
+      'targetEnd=${insertionIntent?.targetEndWall.hour}:${insertionIntent?.targetEndWall.minute.toString().padLeft(2, '0') ?? 'n/a'} '
+      'finalStart=${newStartWall.hour}:${newStartWall.minute.toString().padLeft(2, '0')} '
+      'finalEnd=${newEndWall != null ? '${newEndWall.hour}:${newEndWall.minute.toString().padLeft(2, '0')}' : 'open'}',
+    );
+    timeDropTrace('explicitOrderBefore=$orderBefore');
+    timeDropTrace('explicitOrderAfter=$orderAfter');
+    timeDropTrace('patches=[${patchParts.join('](')}]');
+
     DatabaseService.instance.notifyPlanningRefresh();
     if (mounted) setState(() {});
   }
@@ -3329,6 +3376,32 @@ class _PlanningPageState extends State<PlanningPage>
     if (layout == null) return null;
     final mid = layout.topPx + layout.heightPx / 2;
     return (layout: layout, insertBefore: dragCenterY < mid);
+  }
+
+  TimeViewInsertionIntent? _timelineInsertionIntentFromLayout({
+    required PlanTimeViewBlockLayout layout,
+    required bool insertBefore,
+    required String draggedPlanId,
+    required int draggedDurationMin,
+    required bool draggedHadEnd,
+  }) {
+    final proj = layout.projection ??
+        DatabaseService.instance.projectPlanForTimeMode(layout.task);
+    final targetStart = proj?.profileWallStart;
+    if (proj == null || targetStart == null) return null;
+    final targetEnd = proj.profileWallEnd ??
+        targetStart.add(Duration(minutes: proj.durationMinutes));
+    return TimeViewInsertionIntent(
+      draggedPlanId: draggedPlanId,
+      targetPlanId: layout.task.planRowIdForBackend,
+      insertPosition: insertBefore
+          ? TimeViewInsertPosition.before
+          : TimeViewInsertPosition.after,
+      targetStartWall: targetStart,
+      targetEndWall: targetEnd,
+      draggedDurationMinutes: draggedDurationMin,
+      draggedHadEnd: draggedHadEnd,
+    );
   }
 
   TimeViewTargetDropSchedule? _timelineTargetDropScheduleForLayout({
@@ -3482,29 +3555,45 @@ class _PlanningPageState extends State<PlanningPage>
     var insertBefore = false;
     double? markerTop;
     String? previewLabel;
+    TimeViewInsertionIntent? storedIntent;
 
     if (insert != null) {
       insertBefore = insert.insertBefore;
       insertKey = _planKey(insert.layout.task);
-      final schedule = _timelineTargetDropScheduleForLayout(
+      final dragPlanId = _timelineVerticalDragTask?.planRowIdForBackend ??
+          _timelineVerticalDragPlanKey ??
+          '';
+      storedIntent = _timelineInsertionIntentFromLayout(
         layout: insert.layout,
         insertBefore: insertBefore,
+        draggedPlanId: dragPlanId,
         draggedDurationMin: _timelineVerticalDragDurationMin,
         draggedHadEnd: _timelineVerticalDragHadEnd,
       );
-      if (schedule != null) {
+      if (storedIntent != null) {
+        final dropResult = DatabaseService.instance.applyTimeViewTargetInsertion(
+          scheduledInRange,
+          storedIntent,
+        );
         previewTop = _timelinePreviewTopPxForStartWall(
-          startWall: schedule.startWall,
+          startWall: dropResult.draggedStartWall,
           grid: grid,
           rangeStart: rangeStart,
           rangeEnd: rangeEnd,
           maxTopPx: maxTopPx,
         );
         previewLabel = _formatTimelineWallRangeLabel(
-          schedule.startWall,
-          schedule.endWall,
+          dropResult.draggedStartWall,
+          dropResult.draggedEndWall,
+        );
+        timeDropTrace(
+          'phase=over dragged=${storedIntent.draggedPlanId} '
+          'target=${storedIntent.targetPlanId} '
+          'position=${insertBefore ? 'before' : 'after'} '
+          'pointerY=${dragCenterY.toStringAsFixed(1)}',
         );
       } else {
+        storedIntent = null;
         final snappedMin = _snapTimelineMinutes(
           grid.minutesFromY(rawTop.clamp(0.0, maxTopPx)),
         );
@@ -3545,6 +3634,7 @@ class _PlanningPageState extends State<PlanningPage>
       _timelineDragInsertTargetKey = insertKey;
       _timelineDragInsertBefore = insertBefore;
       _timelineDragInsertMarkerTopPx = markerTop;
+      _timelineStoredInsertionIntent = storedIntent;
       _timelineVerticalDragTimeLabel = previewLabel;
     });
     _handleHourGridDragUpdateForEdgeScroll(globalDy);
@@ -3581,6 +3671,7 @@ class _PlanningPageState extends State<PlanningPage>
     );
     final rawTop = (_timelineVerticalDragOriginTopPx + _timelineVerticalDragDeltaPx)
         .clamp(0.0, maxTopPx);
+    final rawYMinutes = grid.minutesFromY(rawTop);
     final dragCenterY = rawTop + dragHeightPx / 2;
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
@@ -3590,38 +3681,43 @@ class _PlanningPageState extends State<PlanningPage>
       rangeEnd: rangeEnd,
       selectedDayKey: selectedDayKey,
     );
-    final insert = _timelineResolveDragInsertTarget(
-      layouts: layouts,
-      dragCenterY: dragCenterY,
-      excludePlanKey: planKey,
-    );
+
+    TimeViewInsertionIntent? insertionIntent = _timelineStoredInsertionIntent;
+    String commitSource;
+    if (insertionIntent != null) {
+      commitSource = 'storedIntent';
+    } else {
+      final insert = _timelineResolveDragInsertTarget(
+        layouts: layouts,
+        dragCenterY: dragCenterY,
+        excludePlanKey: planKey,
+      );
+      if (insert != null) {
+        commitSource = 'releaseHitTest';
+        insertionIntent = _timelineInsertionIntentFromLayout(
+          layout: insert.layout,
+          insertBefore: insert.insertBefore,
+          draggedPlanId: task.planRowIdForBackend,
+          draggedDurationMin: durMin,
+          draggedHadEnd: _timelineVerticalDragHadEnd,
+        );
+      } else {
+        commitSource = 'emptyCanvas';
+      }
+    }
 
     late final DateTime newStartWall;
     DateTime? newEndWall;
 
-    if (insert != null) {
-      final schedule = _timelineTargetDropScheduleForLayout(
-        layout: insert.layout,
-        insertBefore: insert.insertBefore,
-        draggedDurationMin: durMin,
-        draggedHadEnd: _timelineVerticalDragHadEnd,
+    if (insertionIntent != null) {
+      final dropResult = DatabaseService.instance.applyTimeViewTargetInsertion(
+        scheduledInRange,
+        insertionIntent,
       );
-      if (schedule != null) {
-        newStartWall = schedule.startWall;
-        newEndWall = schedule.endWall;
-      } else {
-        final snappedMin = _snapTimelineMinutes(grid.minutesFromY(rawTop));
-        newStartWall = _wallTimeFromTimelineMinutes(
-          snappedMin,
-          planWallDay,
-          rangeStart,
-        );
-        newEndWall = _timelineVerticalDragHadEnd
-            ? newStartWall.add(Duration(minutes: durMin))
-            : null;
-      }
+      newStartWall = dropResult.draggedStartWall;
+      newEndWall = dropResult.draggedEndWall;
     } else {
-      final snappedMin = _snapTimelineMinutes(grid.minutesFromY(rawTop));
+      final snappedMin = _snapTimelineMinutes(rawYMinutes);
       newStartWall = _wallTimeFromTimelineMinutes(
         snappedMin,
         planWallDay,
@@ -3641,6 +3737,9 @@ class _PlanningPageState extends State<PlanningPage>
       rangeStart: rangeStart,
       rangeEnd: rangeEnd,
       planWallDay: planWallDay,
+      insertionIntent: insertionIntent,
+      commitSource: commitSource,
+      rawYMinutesForTrace: rawYMinutes,
     );
   }
 
