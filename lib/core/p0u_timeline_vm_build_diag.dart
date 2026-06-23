@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// P0U.4R — summary diagnostics for Timeline row-VM construction (no per-row spam).
+/// P0U.4R2 — per-day + slowest-record Timeline row-VM build diagnostics (no per-row spam).
 abstract final class P0uTimelineVmBuildDiag {
   static bool _warmDisabledLogged = false;
   static final Set<String> _tracedDayKeys = {};
@@ -31,17 +31,58 @@ abstract final class P0uTimelineVmBuildDiag {
   }
 
   static const List<String> stepOrder = [
-    'sort',
+    'recordMapRead',
+    'recordForTimelineCard',
     'timeProjection',
-    'timezone',
-    'recurrence',
+    'timezoneFormat',
     'categoryLookup',
-    'tags',
-    'checklist',
-    'progress',
-    'textFormatting',
-    'other',
+    'breadcrumbPath',
+    'checklistNotesFlags',
+    'progressDuration',
+    'subtitleBuild',
+    'colorConversion',
+    'objectCreate',
+    'unmeasuredOther',
   ];
+}
+
+/// Per-record step timings (merged into day summary; one slowest breakdown only).
+final class P0uTimelineVmRecordBuildSession {
+  P0uTimelineVmRecordBuildSession() : _total = Stopwatch()..start();
+
+  final Stopwatch _total;
+  final Map<String, int> _stepMs = {};
+  bool _finished = false;
+
+  Map<String, int> get steps => Map.unmodifiable(_stepMs);
+
+  int get totalMs => _total.elapsedMilliseconds;
+
+  T timeStep<T>(String step, T Function() fn) {
+    final sw = Stopwatch()..start();
+    try {
+      return fn();
+    } finally {
+      sw.stop();
+      _addStep(step, sw.elapsedMilliseconds);
+    }
+  }
+
+  void _addStep(String step, int ms) {
+    if (ms <= 0) return;
+    _stepMs[step] = (_stepMs[step] ?? 0) + ms;
+  }
+
+  void finish() {
+    if (_finished) return;
+    _finished = true;
+    _total.stop();
+    final measured = _stepMs.values.fold<int>(0, (a, b) => a + b);
+    final gap = _total.elapsedMilliseconds - measured;
+    if (gap > 0) {
+      _addStep('unmeasuredOther', gap);
+    }
+  }
 }
 
 /// Accumulates per-step ms for one day VM build (summary only).
@@ -57,38 +98,36 @@ final class P0uTimelineVmBuildSession {
   final Map<String, int> _stepMs = {};
   int _slowestRecordMs = 0;
   String? _slowestRecordId;
+  Map<String, int> _slowestRecordSteps = {};
 
   void addStep(String step, int ms) {
     if (ms <= 0) return;
     _stepMs[step] = (_stepMs[step] ?? 0) + ms;
   }
 
-  T timeStep<T>(String step, T Function() fn) {
-    final sw = Stopwatch()..start();
-    try {
-      return fn();
-    } finally {
-      sw.stop();
-      addStep(step, sw.elapsedMilliseconds);
+  void mergeRecord(P0uTimelineVmRecordBuildSession record, String recordId) {
+    for (final e in record.steps.entries) {
+      addStep(e.key, e.value);
     }
-  }
-
-  void noteRecord(String recordId, int ms) {
-    if (ms <= _slowestRecordMs) return;
-    _slowestRecordMs = ms;
+    if (record.totalMs <= _slowestRecordMs) return;
+    _slowestRecordMs = record.totalMs;
     _slowestRecordId = recordId;
+    _slowestRecordSteps = Map<String, int>.from(record.steps);
   }
 
   void finish({required int rows}) {
     _total.stop();
+    final totalMs = _total.elapsedMilliseconds;
     for (final step in P0uTimelineVmBuildDiag.stepOrder) {
       final ms = _stepMs[step] ?? 0;
       if (ms <= 0) continue;
       debugPrint(
-        '[P0U_TIMELINE_VM_BUILD_STEP] date=$dateKey step=$step ms=$ms',
+        '[P0U_TIMELINE_VM_BUILD_STEP_TOTAL] date=$dateKey step=$step ms=$ms',
       );
     }
-    var slowestStep = 'other';
+    final explainedMs = _stepMs.values.fold<int>(0, (a, b) => a + b);
+    final unexplainedMs = totalMs > explainedMs ? totalMs - explainedMs : 0;
+    var slowestStep = 'unmeasuredOther';
     var slowestMs = 0;
     for (final e in _stepMs.entries) {
       if (e.value > slowestMs) {
@@ -98,9 +137,27 @@ final class P0uTimelineVmBuildSession {
     }
     debugPrint(
       '[P0U_TIMELINE_VM_BUILD_DONE] date=$dateKey records=$records rows=$rows '
-      'totalMs=${_total.elapsedMilliseconds} slowestStep=$slowestStep '
-      'slowestMs=$slowestMs'
-      '${_slowestRecordId != null && _slowestRecordMs > 50 ? ' slowestRecord=$_slowestRecordId slowestRecordMs=$_slowestRecordMs' : ''}',
+      'totalMs=$totalMs explainedMs=$explainedMs unexplainedMs=$unexplainedMs '
+      'slowestStep=$slowestStep slowestMs=$slowestMs'
+      '${_slowestRecordId != null ? ' slowestRecord=$_slowestRecordId slowestRecordMs=$_slowestRecordMs' : ''}',
     );
+    if (_slowestRecordId != null && _slowestRecordMs > 0) {
+      _logSlowestRecord();
+    }
+  }
+
+  void _logSlowestRecord() {
+    final id = _slowestRecordId ?? '?';
+    final parts = <String>[
+      'date=$dateKey',
+      'id=$id',
+      'totalMs=$_slowestRecordMs',
+    ];
+    for (final step in P0uTimelineVmBuildDiag.stepOrder) {
+      final ms = _slowestRecordSteps[step] ?? 0;
+      if (ms <= 0) continue;
+      parts.add('$step=$ms');
+    }
+    debugPrint('[P0U_TIMELINE_VM_SLOWEST_RECORD] ${parts.join(' ')}');
   }
 }

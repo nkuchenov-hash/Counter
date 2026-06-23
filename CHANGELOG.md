@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.4R2: deep per-record Timeline VM build diagnostics [wip]
+* **`p0u_timeline_vm_build_diag.dart`:** [wip] `P0uTimelineVmRecordBuildSession` per-record steps; day `STEP_TOTAL` with `explainedMs`/`unexplainedMs`; single `[P0U_TIMELINE_VM_SLOWEST_RECORD]` breakdown.
+* **`record_service.dart`:** [wip] `_timelineRowVmFromMap` / `_timelineSubtitleForRecordMap` instrument `recordForTimelineCard`, `timeProjection`, `timezoneFormat`, `categoryLookup`, `breadcrumbPath`, `checklistNotesFlags`, `progressDuration`, `subtitleBuild`, `colorConversion`, `objectCreate`, `unmeasuredOther`.
+
 ## [2026-06-15] - P0 Time View sequential cascade (no conflict layout) [wip]
 * **`plan_time_sequential_cascade.dart`:** [wip] pure `cascadeScheduledPlansForTimeViewDay` / `diffSequentialCascadePatches` — overlap → shift down, preserve duration, cascade chain.
 * **`plan_service.dart`:** [wip] `applySequentialTimeViewCascadeIfNeeded` optimistic + background PATCH; `resolveAutoPlanSchedule` probe cascade; `addPlanningTask` day normalize after create.
