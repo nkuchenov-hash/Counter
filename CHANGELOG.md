@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.3: emergency rollback of P0U.2 first-frame regression [wip]
+* **`p0u_feature_flags.dart`:** [wip] Kill switch — `kShellDeferHiddenTabsUntilFirstFrame = false` (P0U.2 regressed firstFrameMs 4668 vs P0U.1 1511).
+* **`p0u_startup_diag.dart`:** [wip] `scheduleAfterFirstFrame` + `[P0U_BOOT_DEFERRED_CONFIRMED_AFTER_FRAME]` logs.
+* **`db_core.dart`:** [wip] Deferred boot (warm windows, sync, realtime) queued until after first rendered frame.
+* P0U.1 profile cache, diagnostics, liveOptimistic, stable PageView preserved.
+
 ## [2026-06-15] - P0 Time View bounded layout regression fix [wip]
 * **`plan_time_view_layout.dart`:** [wip] Separate stable card height (`kPlanTimeStableBaseCardPxPerMinute`) from bounded hour stretch; sequential one-column placement; 480px hour cap.
 * **`plan_time_task_card.dart`:** [wip] `planTimeCardRenderedHeightPxForDuration`, layout constants.

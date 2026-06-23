@@ -180,7 +180,7 @@ abstract final class PlanTimeViewLayoutCalculator {
 
     final grid = _buildGrid(visibleHours, rangeStart, hourHeights);
     final layouts = _placeCards(slots, grid);
-    assertPlanTimeViewLayoutDebug(grid: grid, layouts: layouts, slots: slots);
+    assertPlanTimeViewLayoutDebug(grid: grid, layouts: layouts);
     return (grid: grid, layouts: layouts);
   }
 
@@ -295,35 +295,42 @@ abstract final class PlanTimeViewLayoutCalculator {
     return layouts;
   }
 
+  static int _durationMinutesFromLayout(PlanTimeViewBlockLayout layout) {
+    final proj = layout.projection;
+    if (proj != null) return math.max(5, proj.durationMinutes);
+    final st = layout.task.startTime;
+    final en = layout.task.endDateTime;
+    if (st != null && en != null) {
+      return math.max(5, en.difference(st).inMinutes);
+    }
+    return 5;
+  }
+
   /// Debug-only layout invariants (Time View acceptance).
   static void assertPlanTimeViewLayoutDebug({
     required PlanTimeViewDurationGrid grid,
     required List<PlanTimeViewBlockLayout> layouts,
-    required List<_PlanTimeViewCardSlot> slots,
   }) {
     if (kReleaseMode) return;
-    for (var i = 0; i < layouts.length; i++) {
-      final l = layouts[i];
-      final slot = i < slots.length ? slots[i] : null;
+    for (final l in layouts) {
+      final durationMin = _durationMinutesFromLayout(l);
       assert(
         l.heightPx >= kPlanTimeCardMinHeightPx - 0.01,
         'card height ${l.heightPx} < min',
       );
       assert(l.topPx >= 0, 'negative top');
       assert(l.heightPx > 0, 'non-positive height');
-      if (slot != null) {
-        final expected = _cardHeightPx(slot.durationMin);
+      final expected = _cardHeightPx(durationMin);
+      assert(
+        (l.heightPx - expected).abs() < 0.51,
+        'card height ${l.heightPx} != stable $expected '
+        '(duration=$durationMin)',
+      );
+      if (durationMin <= 10) {
         assert(
-          (l.heightPx - expected).abs() < 0.51,
-          'card height ${l.heightPx} != stable $expected '
-          '(duration=${slot.durationMin})',
+          l.heightPx <= kPlanTimeCardMinHeightPx + 0.51,
+          '$durationMin min card inflated to ${l.heightPx} by hour stretch',
         );
-        if (slot.durationMin <= 10) {
-          assert(
-            l.heightPx <= kPlanTimeCardMinHeightPx + 0.51,
-            '${slot.durationMin}min card inflated to ${l.heightPx} by hour stretch',
-          );
-        }
       }
     }
     for (var i = 0; i < layouts.length - 1; i++) {

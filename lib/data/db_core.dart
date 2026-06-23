@@ -443,7 +443,7 @@ extension DbCoreExtension on DatabaseService {
       _tasksController.add(List.from(_tasksCache));
       _isInitialized = true;
       _registerAppLifecycleObserverOnce();
-      unawaited(_runDeferredBootWorkAfterFirstShell());
+      P0uStartupDiag.scheduleAfterFirstFrame(_runDeferredBootWorkAfterFirstShell);
       return;
     }
     await _loadRulesFromNoco();
@@ -456,10 +456,10 @@ extension DbCoreExtension on DatabaseService {
     _tasksController.add(List.from(_tasksCache));
     _isInitialized = true;
     _registerAppLifecycleObserverOnce();
-    unawaited(_runDeferredBootWorkAfterFirstShell());
+    P0uStartupDiag.scheduleAfterFirstFrame(_runDeferredBootWorkAfterFirstShell);
   }
 
-  /// Non-critical boot work — runs after shell can paint (P0U.1).
+  /// Non-critical boot work — runs after first rendered frame (P0U.3).
   Future<void> _runDeferredBootWorkAfterFirstShell() async {
     final projected = getProjectedToday();
     final timelineToday = getTimelineDeviceLocalToday();
@@ -481,8 +481,10 @@ extension DbCoreExtension on DatabaseService {
       );
       final warmSw = Stopwatch()..start();
       ensurePlansWarmWindow(projected);
+      P0uStartupDiag.deferredConfirmedAfterFrame(name: 'plansWarmWindow');
       ensureTimelineWarmWindow(timelineToday);
       prebuildTimelineCriticalBodiesSync(timelineToday);
+      P0uStartupDiag.deferredConfirmedAfterFrame(name: 'recordsWarmWindow');
       warmSw.stop();
       P0uStartupDiag.bootStage(
         name: 'plansWarmWindow',

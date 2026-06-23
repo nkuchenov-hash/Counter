@@ -14,5 +14,6 @@ const bool kUseP0tMountedStrip = false;
 const bool kVerbosePlanTimeTzProjectionLogs = false;
 
 /// Shell: build only the active tab until user visits others (P0U.2).
-/// Uses [LazyIndexedStack] — avoids Planning/Calendar/Lists/Profile first-frame cost.
-const bool kShellDeferHiddenTabsUntilFirstFrame = true;
+/// **KILL SWITCH (P0U.3):** Disabled — regressed firstFrameMs (4668 vs P0U.1 1511).
+/// Uses [LazyIndexedStack] when true.
+const bool kShellDeferHiddenTabsUntilFirstFrame = false;

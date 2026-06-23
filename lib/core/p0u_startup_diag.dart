@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:counter/core/p0u_platform.dart';
 import 'package:flutter/foundation.dart';
 
@@ -14,6 +16,31 @@ abstract final class P0uStartupDiag {
 
   static String _slowestWidget = '—';
   static int _slowestWidgetMs = 0;
+
+  static final List<Future<void> Function()> _afterFirstFrameQueue = [];
+  static bool _firstFrameMarked = false;
+
+  /// Queue work that must not run until [markFirstFrame] (P0U.3).
+  static void scheduleAfterFirstFrame(Future<void> Function() work) {
+    if (_firstFrameMarked) {
+      unawaited(work());
+      return;
+    }
+    _afterFirstFrameQueue.add(work);
+  }
+
+  static void deferredConfirmedAfterFrame({required String name}) {
+    debugPrint('[P0U_BOOT_DEFERRED_CONFIRMED_AFTER_FRAME] name=$name');
+  }
+
+  static void _flushAfterFirstFrameQueue() {
+    if (_afterFirstFrameQueue.isEmpty) return;
+    final queue = List<Future<void> Function()>.from(_afterFirstFrameQueue);
+    _afterFirstFrameQueue.clear();
+    for (final work in queue) {
+      unawaited(work());
+    }
+  }
 
   static void ensureStarted() {
     if (_started) return;
@@ -82,7 +109,9 @@ abstract final class P0uStartupDiag {
 
   static void markFirstFrame() {
     if (_firstFrameMs != null) return;
+    _firstFrameMarked = true;
     bootStage(name: 'firstFrame', ms: 0, blocksFirstFrame: true);
+    _flushAfterFirstFrameQueue();
   }
 
   static void markInteractive() {
