@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.4R3: line-level Timeline VM diagnostics (microsecond accounting) [wip]
+* **`p0u_timeline_vm_build_diag.dart`:** [wip] microsecond `Stopwatch` accounting; line-level `stepOrder`; `unmeasuredOtherMs` on DONE; nested subtitle steps; single `[P0U_TIMELINE_VM_SLOWEST_RECORD]` breakdown.
+* **`record_service.dart`:** [wip] `_timelineRowVmFromMap` / `_timelineSubtitleForRecordMap` instrument `mapAccess_*`, `canonicalPrimaryRunningBiz_call`, `categoryDisplayPath_call`, `cachePut`, `loopOverhead`, etc.
+
 ## [2026-06-15] - P0U.4R2: deep per-record Timeline VM build diagnostics [wip]
 * **`p0u_timeline_vm_build_diag.dart`:** [wip] `P0uTimelineVmRecordBuildSession` per-record steps; day `STEP_TOTAL` with `explainedMs`/`unexplainedMs`; single `[P0U_TIMELINE_VM_SLOWEST_RECORD]` breakdown.
 * **`record_service.dart`:** [wip] `_timelineRowVmFromMap` / `_timelineSubtitleForRecordMap` instrument `recordForTimelineCard`, `timeProjection`, `timezoneFormat`, `categoryLookup`, `breadcrumbPath`, `checklistNotesFlags`, `progressDuration`, `subtitleBuild`, `colorConversion`, `objectCreate`, `unmeasuredOther`.

@@ -1761,73 +1761,75 @@ extension RecordServiceExtension on DatabaseService {
 
   String _timelineSubtitleForRecordMap(
     Map<String, dynamic> data, {
-    P0uTimelineVmRecordBuildSession? recordDiag,
+    P0uTimelineVmRecordBuildSession? nestedDiag,
+    String? canonicalRunningBiz,
   }) {
-    T step<T>(String name, T Function() fn) {
-      if (recordDiag == null) return fn();
-      return recordDiag.timeStep(name, fn);
+    T nest<T>(String name, T Function() fn) {
+      if (nestedDiag == null) return fn();
+      return nestedDiag.timeNestedStep(name, fn);
     }
 
-    final type = (data['type'] as String? ?? 'record');
+    final type = nest('mapAccess_type', () => data['type'] as String? ?? 'record');
     if (type == 'planned') {
-      return step('subtitleBuild', () => 'planned');
+      return 'planned';
     }
-    final canonicalBiz = canonicalPrimaryRunningBusinessId;
-    final rowBiz = (data['record_id'] ?? '').toString().trim();
-    final isRunning = step('timeProjection', () {
+    final rowBiz = nest(
+      'mapAccess_recordId',
+      () => (data['record_id'] ?? '').toString().trim(),
+    );
+    final canonicalBiz = canonicalRunningBiz ??
+        nest(
+          'canonicalPrimaryRunningBiz_call',
+          () => canonicalPrimaryRunningBusinessId,
+        );
+    final isRunning = nest('runningState_call', () {
       return type == 'record' &&
           CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
           canonicalBiz != null &&
           canonicalBiz.isNotEmpty &&
           rowBiz == canonicalBiz;
     });
-    final startTimeUtc = step(
-      'timeProjection',
+    final startTimeUtc = nest(
+      'startEndParse_call',
       () => CategoryServiceExtension.startTimeFromRecord(data),
     );
-    final endTimeUtc = step(
-      'timeProjection',
+    final endTimeUtc = nest(
+      'startEndParse_call',
       () => CategoryServiceExtension.endTimeFromRecord(data),
     );
     if (isRunning) {
       if (startTimeUtc != null) {
-        final start = step(
-          'timezoneFormat',
+        final start = nest(
+          'profileWallFromUtc_start_call',
           () => _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc)),
         );
-        final duration = step(
-          'progressDuration',
+        final duration = nest(
+          'subtitle_durationPart',
           () => DatabaseService.getPlanetaryNow().difference(startTimeUtc),
         );
-        return step(
-          'subtitleBuild',
-          () => '$start — ... (${_timelineFormatDuration(duration)})',
-        );
+        return '$start — ... (${_timelineFormatDuration(duration)})';
       }
-      return step('subtitleBuild', () => 'running');
+      return 'running';
     }
     if (startTimeUtc != null) {
-      final start = step(
-        'timezoneFormat',
+      final start = nest(
+        'profileWallFromUtc_start_call',
         () => _timelineFormatTimeOfDay(_profileWallFromUtc(startTimeUtc)),
       );
       final end = endTimeUtc != null
-          ? step(
-              'timezoneFormat',
+          ? nest(
+              'profileWallFromUtc_end_call',
               () => _timelineFormatTimeOfDay(_profileWallFromUtc(endTimeUtc!)),
             )
           : '...';
       final endOrNow = endTimeUtc ?? DatabaseService.getPlanetaryNow();
-      final duration = step(
-        'progressDuration',
+      final duration = nest(
+        'subtitle_durationPart',
         () => endOrNow.difference(startTimeUtc),
       );
-      return step(
-        'subtitleBuild',
-        () => '$start — $end (${_timelineFormatDuration(duration)})',
-      );
+      return '$start — $end (${_timelineFormatDuration(duration)})';
     }
-    return step('subtitleBuild', () => '–');
+    return '–';
   }
 
   String _timelineFormatTimeOfDay(DateTime dt) =>
@@ -1901,17 +1903,27 @@ extension RecordServiceExtension on DatabaseService {
       return recordDiag.timeStep(name, fn);
     }
 
-    final systemRowId = (data['id'] ?? data['backendNumericId'] ?? '')
-        .toString()
-        .trim();
-    final businessRecordId = (data['record_id'] ?? '').toString().trim();
-    final title =
-        data['title'] as String? ??
-        (systemRowId.isNotEmpty ? systemRowId : '?');
-    final type = (data['type'] as String? ?? 'record');
-    final canonicalBiz = canonicalPrimaryRunningBusinessId;
+    final systemRowId = step(
+      'mapAccess_id',
+      () => (data['id'] ?? data['backendNumericId'] ?? '').toString().trim(),
+    );
+    final businessRecordId = step(
+      'mapAccess_recordId',
+      () => (data['record_id'] ?? '').toString().trim(),
+    );
+    final title = step(
+      'mapAccess_title',
+      () =>
+          data['title'] as String? ??
+          (systemRowId.isNotEmpty ? systemRowId : '?'),
+    );
+    final type = step('mapAccess_type', () => data['type'] as String? ?? 'record');
+    final canonicalBiz = step(
+      'canonicalPrimaryRunningBiz_call',
+      () => canonicalPrimaryRunningBusinessId,
+    );
     final isPlanned = type == 'planned';
-    final isCanonicalRunning = step('timeProjection', () {
+    final isCanonicalRunning = step('runningState_call', () {
       return type == 'record' &&
           CategoryServiceExtension.isRecordMapActuallyRunning(data) &&
           canonicalBiz != null &&
@@ -1919,32 +1931,32 @@ extension RecordServiceExtension on DatabaseService {
           businessRecordId == canonicalBiz;
     });
     final rec = step(
-      'recordForTimelineCard',
+      'recordForTimelineCard_call',
       () => Record.forTimelineCard(data),
     );
     final color = step(
-      'categoryLookup',
+      'categoryDisplayColor_call',
       () => categoryDisplayColorForRecordData(data),
     );
     final categoryPath = step(
-      'breadcrumbPath',
+      'categoryDisplayPath_call',
       () => categoryDisplayPathForRecordData(data),
     );
     final subtitle = _timelineSubtitleForRecordMap(
       data,
-      recordDiag: recordDiag,
+      nestedDiag: recordDiag,
+      canonicalRunningBiz: canonicalBiz,
     );
-    final showFlags = step('checklistNotesFlags', () {
-      return (
-        rec.hasNotes,
-        rec.hasChecklist,
-        rec.hasParentRecord,
-        rec.hasLinkedSubRecords,
-      );
-    });
-    final colorArgb = step('colorConversion', () => color.toARGB32());
+    final showNotes = step('subtitle_notesPart', () => rec.hasNotes);
+    final showChecklist = step('subtitle_checklistPart', () => rec.hasChecklist);
+    final showParent = step('subtitle_parentPart', () => rec.hasParentRecord);
+    final showLinkedSubs = step(
+      'subtitle_parentPart',
+      () => rec.hasLinkedSubRecords,
+    );
+    final colorArgb = step('color_toARGB32_call', () => color.toARGB32());
     return step(
-      'objectCreate',
+      'timelineRowVm_constructor',
       () => TimelineRecordRowVm(
         systemRowId: systemRowId,
         businessRecordId: businessRecordId,
@@ -1955,10 +1967,10 @@ extension RecordServiceExtension on DatabaseService {
         categoryColorArgb: colorArgb,
         isPlanned: isPlanned,
         isCanonicalRunning: isCanonicalRunning,
-        showNotesIcon: showFlags.$1,
-        showChecklistIcon: showFlags.$2,
-        showParentIcon: showFlags.$3,
-        showLinkedSubsIcon: showFlags.$4,
+        showNotesIcon: showNotes,
+        showChecklistIcon: showChecklist,
+        showParentIcon: showParent,
+        showLinkedSubsIcon: showLinkedSubs,
       ),
     );
   }
@@ -1988,12 +2000,18 @@ extension RecordServiceExtension on DatabaseService {
       dateKey: dateKey,
       records: maps.length,
     );
-    session?.addStep('recordMapRead', lookupSw.elapsedMilliseconds);
+    session?.addStepUs('recordMapRead', lookupSw.elapsedMicroseconds);
     final sw = Stopwatch()..start();
     final vms = <TimelineRecordRowVm>[];
+    Stopwatch? loopGapSw;
     for (final m in maps) {
+      if (session != null && loopGapSw != null) {
+        loopGapSw.stop();
+        session.addStepUs('loopOverhead', loopGapSw.elapsedMicroseconds);
+      }
       TimelineRecordRowVm? vm;
       if (session != null) {
+        loopGapSw = Stopwatch()..start();
         final recordDiag = P0uTimelineVmRecordBuildSession();
         vm = _timelineRowVmFromMapOrNull(m, recordDiag: recordDiag);
         recordDiag.finish();
@@ -2004,8 +2022,22 @@ extension RecordServiceExtension on DatabaseService {
       }
       if (vm != null) {
         vms.add(vm);
-        _pinTimelineRowVmInLazyCache(dateKey, m, vm);
+        if (session != null) {
+          final pinSw = Stopwatch()..start();
+          _pinTimelineRowVmInLazyCache(dateKey, m, vm);
+          pinSw.stop();
+          session.addStepUs('cachePut', pinSw.elapsedMicroseconds);
+        } else {
+          _pinTimelineRowVmInLazyCache(dateKey, m, vm);
+        }
+        if (session != null) {
+          loopGapSw = Stopwatch()..start();
+        }
       }
+    }
+    if (session != null && loopGapSw != null) {
+      loopGapSw.stop();
+      session.addStepUs('loopOverhead', loopGapSw.elapsedMicroseconds);
     }
     sw.stop();
     session?.finish(rows: vms.length);
