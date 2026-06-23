@@ -11,6 +11,9 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time View VerySmall/Small reference element sizes [wip]
+* **`plan_time_task_card.dart`:** [wip] Remove scaled-down VerySmall path (26px controls, 7px micro tags, 28px menu); restore 32px checkbox/play, 33px menu, CardPlan title typography, vertical tag stack with standard compact pills; 38px density threshold unchanged.
+
 ## [2026-06-15] - P0U.4: Timeline adjacent row-VM warmup [wip]
 * **`record_service.dart`:** [wip] Post-firstFrame chunked warmup for ±1 day row VMs (`_timelineDayVmCache` + lazy per-row cache); kill switch `kTimelineAdjacentRowVmWarmup`.
 * **`timeline_view.dart`:** [wip] Schedule warmup when Timeline tab visible; re-warm after page settle.

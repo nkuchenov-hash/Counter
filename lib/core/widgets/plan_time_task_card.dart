@@ -539,9 +539,7 @@ abstract final class _PlanCardGeom {
   static const double titleToRecurringGap = 5;
   static const double playAfterCheckboxGap = 4;
   static const double menuSize = 33;
-  static const double timeViewCompactControlSize = 26;
   static const double timeViewRailToContentGap = 6;
-  static const double timeViewMicroTagHeight = 14;
   static const double contentSpanMediumLarge = 260;
   static const double radius = 12;
   static const double refHeightMicro = 38;
@@ -1168,17 +1166,13 @@ class _TimeViewLeftControls extends StatelessWidget {
   const _TimeViewLeftControls({
     required this.common,
     this.inlinePlay = true,
-    this.compact = false,
   });
 
   final _TimeViewCardCommon common;
   final bool inlinePlay;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
-    final controlSize =
-        compact ? _PlanCardGeom.timeViewCompactControlSize : _PlanCardGeom.controlSize;
     if (inlinePlay) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -1190,17 +1184,10 @@ class _TimeViewLeftControls extends StatelessWidget {
             toggleDoneEnabled: common.toggleDoneEnabled,
             onToggleDone: common.onToggleDone,
             onSelectToggle: common.onSelectToggle,
-            size: controlSize,
           ),
           if (common.showPlay) ...[
-            SizedBox(
-              width: compact ? 2 : _PlanCardGeom.playAfterCheckboxGap,
-            ),
-            _PlanCardPlayButton(
-              onPlay: common.onPlay,
-              size: controlSize,
-              compact: compact,
-            ),
+            const SizedBox(width: _PlanCardGeom.playAfterCheckboxGap),
+            _PlanCardPlayButton(onPlay: common.onPlay),
           ],
         ],
       );
@@ -1214,7 +1201,6 @@ class _TimeViewLeftControls extends StatelessWidget {
       onToggleDone: common.onToggleDone,
       onSelectToggle: common.onSelectToggle,
       onPlay: common.onPlay,
-      controlSize: controlSize,
     );
   }
 }
@@ -1308,22 +1294,18 @@ class _TimeViewVerticalShell extends StatelessWidget {
 class _TimeViewTagsRow extends StatelessWidget {
   const _TimeViewTagsRow({
     required this.tags,
-    this.micro = false,
     this.trailing,
   });
 
   final List<Tag> tags;
-  final bool micro;
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     if (tags.isEmpty && trailing == null) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
-    final rowHeight =
-        micro ? _PlanCardGeom.timeViewMicroTagHeight : _PlanCardGeom.tagRowHeight;
     return SizedBox(
-      height: rowHeight,
+      height: _PlanCardGeom.tagRowHeight,
       child: Row(
         children: [
           if (tags.isNotEmpty)
@@ -1332,14 +1314,10 @@ class _TimeViewTagsRow extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               physics: const ClampingScrollPhysics(),
               itemCount: tags.length,
-              separatorBuilder: (_, _) => SizedBox(
-                width: micro ? 3 : _PlanCardGeom.tagGap,
-              ),
+              separatorBuilder: (_, _) =>
+                  const SizedBox(width: _PlanCardGeom.tagGap),
               itemBuilder: (context, index) {
                 final tag = tags[index];
-                if (micro) {
-                  return _TimeViewMicroTagPill(tag: tag, scheme: scheme);
-                }
                 return CategoryChip(
                   mode: CategoryDisplayMode.letterChip,
                   label: tag.name.trim().isNotEmpty
@@ -1365,7 +1343,79 @@ class _TimeViewTagsRow extends StatelessWidget {
   }
 }
 
-/// VerySmall 38px — single compact row (CardPlan ref).
+/// VerySmall tag column — compact CardPlan pills stacked vertically (ref).
+class _TimeViewTagStack extends StatelessWidget {
+  const _TimeViewTagStack({required this.tags});
+
+  final List<Tag> tags;
+
+  @override
+  Widget build(BuildContext context) {
+    if (tags.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 80),
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < tags.length; i++) ...[
+              if (i > 0) const SizedBox(height: 1),
+              _TimeViewCompactTagPill(tag: tags[i], scheme: scheme),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact CardPlan tag pill for minimum-density Time View (16px, readable).
+class _TimeViewCompactTagPill extends StatelessWidget {
+  const _TimeViewCompactTagPill({
+    required this.tag,
+    required this.scheme,
+  });
+
+  final Tag tag;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = parseTagHexColor(tag.color) ?? scheme.primary;
+    final plate = tagLetterChipPlate(color, scheme.surface);
+    final fg = tagVibrantForeground(color);
+    final label = tag.name.trim().isNotEmpty
+        ? tag.name.trim()
+        : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}';
+    return Container(
+      height: _PlanCardGeom.tagRowHeight,
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: plate,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: tagLetterChipBorder(color, scheme.surface)),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 10,
+          height: 1.0,
+          fontWeight: FontWeight.w600,
+          color: fg,
+        ),
+      ),
+    );
+  }
+}
+
+/// VerySmall 38px — single row, reference-sized controls (CardPlan ref).
 class _TimeViewVerySmallLayout extends StatelessWidget {
   const _TimeViewVerySmallLayout({
     required this.common,
@@ -1379,65 +1429,34 @@ class _TimeViewVerySmallLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return _TimeViewResponsiveShell(
       heightPx: heightPx,
-      padVertical: 3,
-      leftControls: _TimeViewLeftControls(common: common, compact: true),
+      padVertical: 0,
+      horizontalPadRight: 8,
+      leftControls: _TimeViewLeftControls(common: common),
       menu: common.onOpenMenu != null
-          ? _PlanCardMenuButton(
-              onOpenMenu: common.onOpenMenu!,
-              size: 28,
-            )
+          ? _PlanCardMenuButton(onOpenMenu: common.onOpenMenu!)
           : null,
       center: _PlanCardBodyTapShell(
         onTap: common.onBodyTap,
         onLongPress: common.onBodyLongPress,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Expanded(
-              child: Text(
-                common.task.title,
+              child: _PlanCardTitleRow(
+                title: common.task.title,
+                displayIsDone: common.displayIsDone,
+                hasRepeat: common.hasRepeat,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  height: 1.1,
-                  fontWeight: FontWeight.w500,
-                  color: common.displayIsDone
-                      ? _PlanCardTokens.titleColor.withValues(alpha: 0.55)
-                      : _PlanCardTokens.titleColor,
-                  decoration: common.displayIsDone
-                      ? TextDecoration.lineThrough
-                      : null,
-                ),
+                metaIcons: common.metaIcons,
               ),
             ),
             if (common.visibleTags.isNotEmpty) ...[
               const SizedBox(width: 4),
-              Flexible(
-                flex: 0,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 72),
-                  child: _TimeViewTagsRow(
-                    tags: common.visibleTags,
-                    micro: true,
-                  ),
-                ),
-              ),
+              _TimeViewTagStack(tags: common.visibleTags),
             ],
             if (common.timeLabel.isNotEmpty) ...[
-              const SizedBox(width: 4),
-              Flexible(
-                flex: 0,
-                child: Text(
-                  common.timeLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    height: 1.0,
-                    color: _PlanCardTokens.timeColor,
-                  ),
-                ),
-              ),
+              const SizedBox(width: 6),
+              _PlanCardTimeText(label: common.timeLabel),
             ],
           ],
         ),
@@ -1461,7 +1480,7 @@ class _TimeViewSmallLayout extends StatelessWidget {
     return _TimeViewTwoRowCenterLayout(
       common: common,
       heightPx: heightPx,
-      padVertical: 5,
+      padVertical: 6,
     );
   }
 }
@@ -1675,49 +1694,6 @@ class _TimeViewMediumLayout extends StatelessWidget {
               categoryColor: common.categoryColor,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TimeViewMicroTagPill extends StatelessWidget {
-  const _TimeViewMicroTagPill({
-    required this.tag,
-    required this.scheme,
-  });
-
-  final Tag tag;
-  final ColorScheme scheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = parseTagHexColor(tag.color) ?? scheme.primary;
-    final plate = tagLetterChipPlate(color, scheme.surface);
-    final fg = tagVibrantForeground(color);
-    final label = tag.name.trim().isNotEmpty
-        ? tag.name.trim()
-        : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}';
-    return Container(
-      height: _PlanCardGeom.timeViewMicroTagHeight,
-      constraints: const BoxConstraints(maxWidth: 54),
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: plate,
-        borderRadius: BorderRadius.circular(100),
-        border: Border.all(color: tagLetterChipBorder(color, scheme.surface)),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 7,
-          height: 1.0,
-          fontWeight: FontWeight.w600,
-          color: fg,
         ),
       ),
     );
@@ -2264,12 +2240,10 @@ class _PlanCardPlayButton extends StatefulWidget {
   const _PlanCardPlayButton({
     this.onPlay,
     this.size = _PlanCardGeom.controlSize,
-    this.compact = false,
   });
 
   final VoidCallback? onPlay;
   final double size;
-  final bool compact;
 
   @override
   State<_PlanCardPlayButton> createState() => _PlanCardPlayButtonState();
@@ -2291,15 +2265,13 @@ class _PlanCardPlayButtonState extends State<_PlanCardPlayButton> {
           onTap: widget.onPlay,
           behavior: HitTestBehavior.opaque,
           child: SizedBox(
-            width: widget.compact ? widget.size * 0.75 : widget.size,
+            width: widget.size,
             height: widget.size,
             child: Center(
               child: CustomPaint(
-                size: Size(
-                  _PlanCardGeom.playIconWidth *
-                      (widget.compact ? 0.85 : 1.0),
-                  _PlanCardGeom.playIconHeight *
-                      (widget.compact ? 0.85 : 1.0),
+                size: const Size(
+                  _PlanCardGeom.playIconWidth,
+                  _PlanCardGeom.playIconHeight,
                 ),
                 painter: _PlanCardPlayIconPainter(
                   fill: _hovered
