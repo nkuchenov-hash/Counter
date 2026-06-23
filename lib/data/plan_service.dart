@@ -1408,6 +1408,7 @@ extension PlanServiceExtension on DatabaseService {
     }
     _lastPlanTimeTzLogKey = lineKey;
     _lastPlanTimeTzLogAt = now;
+    if (!kVerbosePlanTimeTzProjectionLogs || kReleaseMode) return;
     // ignore: avoid_print
     final startMin = wallStart != null
         ? wallStart.hour * 60 + wallStart.minute
@@ -2186,14 +2187,174 @@ extension PlanServiceExtension on DatabaseService {
     _logPlansWarmMemory();
   }
 
-  /// P0S: hydrate data snapshots for mounted window ±10 before eager mount.
-  void preparePlansMountedWindowBoot(DateTime center) {
+  /// P0T: critical ±1 sync at boot; full mounted window in background.
+  void preparePlansMountedWindowBoot(
+    DateTime center, {
+    bool criticalOnly = false,
+  }) {
     ensurePlansWarmWindow(center);
+    if (criticalOnly) {
+      for (final offset in [-1, 0, 1]) {
+        final d = DateTime(center.year, center.month, center.day)
+            .add(Duration(days: offset));
+        plansWarmSnapshotForDate(d);
+        plansBodyEntryForDate(d, allowEmergencyBuild: true);
+        buildPlansDayRenderSnapshot(d);
+      }
+      return;
+    }
     final window = MountedDayWindow(center: center);
     for (final d in window.dates) {
       plansWarmSnapshotForDate(d);
       plansBodyEntryForDate(d, allowEmergencyBuild: true);
+      buildPlansDayRenderSnapshot(d);
     }
+  }
+
+  void schedulePlansMountedWindowBootBackground(DateTime center) {
+    unawaited(Future.microtask(() {
+      preparePlansMountedWindowBoot(center);
+      P0tDiag.memory(
+        screen: 'Plans',
+        mountedBodies: MountedDayWindow(center: center).length,
+        renderSnapshots: P0tRenderSnapshotCache.instance.plansCount,
+        approxKb: P0tRenderSnapshotCache.instance.plansCount * 48,
+      );
+    }));
+  }
+
+  PlansDayRenderSnapshot? plansRenderSnapshotForDate(DateTime wallDay) {
+    return P0tRenderSnapshotCache.instance.peekPlans(p0tDateKey(wallDay));
+  }
+
+  bool isPlansDateFullyReady(DateTime wallDay) {
+    final key = p0tDateKey(wallDay);
+    final snap = P0tRenderSnapshotCache.instance.peekPlans(key);
+    if (snap != null && snap.ready) {
+      P0tDiag.readyCheck(
+        screen: 'Plans',
+        date: key,
+        ready: true,
+        cards: snap.cards.length,
+      );
+      return true;
+    }
+    final missing = snap?.missing ?? _plansReadyMissingReason(wallDay);
+    P0tDiag.readyCheck(
+      screen: 'Plans',
+      date: key,
+      ready: false,
+      missing: missing,
+    );
+    return false;
+  }
+
+  String _plansReadyMissingReason(DateTime wallDay) {
+    final key = p0tDateKey(wallDay);
+    final body = plansDayBodyCache.peek(key);
+    if (body == null || !body.bodyReady) return 'tasks';
+    if (_rules.isEmpty && body.tasks.any((t) => t.categoryId != 0)) {
+      return 'category';
+    }
+    return 'metadata';
+  }
+
+  PlansDayRenderSnapshot buildPlansDayRenderSnapshot(
+    DateTime wallDay, {
+    String? activeRecordingTitleNorm,
+  }) {
+    final key = p0tDateKey(wallDay);
+    final body = plansBodyEntryForDate(wallDay);
+    final planActual = aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+    final cards = <PlanCardRenderDto>[];
+    var missing = 'none';
+
+    for (final task in body.tasks) {
+      final hydrated = _hydratePlanTaskForRender(task);
+      final pbId = DatabaseService.pocketRelationIdOrNull(hydrated.pocketRecordId);
+      final tracked = pbId != null ? (planActual[pbId] ?? 0) : 0;
+      final estimate = PlanServiceExtension.planningWallEstimateSeconds(hydrated);
+      final titleNorm = hydrated.title.trim().toLowerCase();
+      final highlight = activeRecordingTitleNorm != null &&
+          activeRecordingTitleNorm == titleNorm;
+      final categoryReady =
+          hydrated.categoryId == 0 ||
+          getCategoryRuleById(hydrated.categoryId) != null;
+      final tagsReady = _planTaskTagsRenderReady(hydrated);
+      if (!categoryReady) missing = 'category';
+      if (!tagsReady && missing == 'none') missing = 'tags';
+
+      final showPlay = !hydrated.isDone;
+      cards.add(
+        PlanCardRenderDto(
+          task: hydrated,
+          planTrackedSeconds: tracked,
+          planEstimatedSeconds: estimate,
+          displayIsDone: hydrated.isDone,
+          showPlay: showPlay,
+          highlightAsRunning: highlight,
+          timeLabel: PlanCard.timelineTimeRangeLabel(hydrated),
+          tagsReady: tagsReady,
+          categoryReady: categoryReady,
+        ),
+      );
+    }
+
+    final ready = missing == 'none' && body.bodyReady;
+    final snap = PlansDayRenderSnapshot(
+      dateKey: key,
+      knownEmpty: body.knownEmpty,
+      cards: cards,
+      cacheSignature: body.tasks.length,
+      ready: ready,
+      missing: ready ? 'none' : missing,
+    );
+    P0tRenderSnapshotCache.instance.putPlans(snap);
+    return snap;
+  }
+
+  PlanningTask _hydratePlanTaskForRender(PlanningTask task) {
+    final catalog = cachedUserTagsCatalog;
+    if (task.tags.isEmpty || catalog.isEmpty) return task;
+    final byPb = <String, Tag>{
+      for (final t in catalog)
+        if ((t.pbRecordId ?? '').trim().isNotEmpty) t.pbRecordId!: t,
+    };
+    if (byPb.isEmpty) return task;
+    final tags = [
+      for (final tag in task.tags) byPb[tag.pbRecordId ?? ''] ?? tag,
+    ];
+    return task.copyWith(tags: tags);
+  }
+
+  bool _planTaskTagsRenderReady(PlanningTask task) {
+    if (task.tags.isEmpty) return true;
+    return task.tags.every(
+      (t) => t.name.trim().isNotEmpty && t.rendersAsChip,
+    );
+  }
+
+  void preparePlansCriticalRenderReady(DateTime center) {
+    P0tDiag.criticalReadyStart(
+      screen: 'Plans',
+      dates: 'yesterday,today,tomorrow',
+    );
+    final sw = Stopwatch()..start();
+    var ready = 0;
+    for (final offset in [-1, 0, 1]) {
+      final day = DateTime(center.year, center.month, center.day)
+          .add(Duration(days: offset));
+      buildPlansDayRenderSnapshot(day);
+      if (isPlansDateFullyReady(day)) ready++;
+    }
+    sw.stop();
+    P0tDiag.criticalReadyDone(
+      screen: 'Plans',
+      ready: ready,
+      total: 3,
+      ms: sw.elapsedMilliseconds,
+    );
+    P0tDiag.plansDoubleLoadRemoved();
   }
 
   int get plansWarmWindowTaskEstimate {

@@ -96,6 +96,8 @@ class EagerDayContentStrip extends StatefulWidget {
     this.onUserDragStart,
     this.onUserDragEnd,
     this.onScrollTick,
+    this.canRevealDate,
+    this.onRevealBlocked,
   });
 
   final String screen;
@@ -110,6 +112,9 @@ class EagerDayContentStrip extends StatefulWidget {
   final VoidCallback? onUserDragStart;
   final VoidCallback? onUserDragEnd;
   final void Function(double pageFraction)? onScrollTick;
+  /// P0T: block settling on dates that are not FULL_READY.
+  final bool Function(DateTime date)? canRevealDate;
+  final void Function(DateTime date)? onRevealBlocked;
 
   @override
   State<EagerDayContentStrip> createState() => _EagerDayContentStripState();
@@ -119,6 +124,8 @@ class _EagerDayContentStripState extends State<EagerDayContentStrip> {
   late ScrollController _scrollController;
   bool _didInitialJump = false;
   int? _lastSettledIndex;
+  double _viewportWidth = 0;
+  double _lastAttachedWidth = 0;
 
   @override
   void initState() {
@@ -164,7 +171,14 @@ class _EagerDayContentStripState extends State<EagerDayContentStrip> {
     super.dispose();
   }
 
-  double _viewportWidth = 0;
+  void _attachControllerIfNeeded(double width) {
+    if (width <= 0) return;
+    _viewportWidth = width;
+    if ((width - _lastAttachedWidth).abs() > 0.5) {
+      _lastAttachedWidth = width;
+      widget.controller?._attach(_scrollController, width);
+    }
+  }
 
   void _onScrollTick() {
     if (!_scrollController.hasClients || _viewportWidth <= 0) return;
@@ -174,8 +188,7 @@ class _EagerDayContentStripState extends State<EagerDayContentStrip> {
   void _maybeInitialJump(double width) {
     if (_didInitialJump || width <= 0) return;
     _didInitialJump = true;
-    _viewportWidth = width;
-    widget.controller?._attach(_scrollController, width);
+    _attachControllerIfNeeded(width);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       widget.controller?.jumpToIndex(widget.initialIndex);
@@ -199,10 +212,22 @@ class _EagerDayContentStripState extends State<EagerDayContentStrip> {
     }
     if (n is ScrollEndNotification) {
       widget.onUserDragEnd?.call();
+      if (widget.dates.isEmpty) return false;
       final idx = _settledIndexFromOffset();
+      if (idx < 0 || idx >= widget.dates.length) return false;
+      final date = widget.dates[idx];
+      final canReveal = widget.canRevealDate?.call(date) ?? true;
+      if (!canReveal) {
+        final revert = _lastSettledIndex ?? widget.activeIndex;
+        widget.onRevealBlocked?.call(date);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          widget.controller?.animateToIndex(revert);
+        });
+        return false;
+      }
       if (_lastSettledIndex != idx) {
         _lastSettledIndex = idx;
-        final date = widget.dates[idx];
         widget.onIndexChanged(idx, date);
       }
     }
@@ -216,10 +241,7 @@ class _EagerDayContentStripState extends State<EagerDayContentStrip> {
         final width = constraints.maxWidth;
         final height = constraints.maxHeight;
         _maybeInitialJump(width);
-        if (width > 0) {
-          _viewportWidth = width;
-          widget.controller?._attach(_scrollController, width);
-        }
+        _attachControllerIfNeeded(width);
         return NotificationListener<ScrollNotification>(
           onNotification: _handleScrollNotification,
           child: SingleChildScrollView(

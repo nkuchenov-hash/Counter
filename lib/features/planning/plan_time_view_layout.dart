@@ -172,8 +172,6 @@ abstract final class PlanTimeViewLayoutCalculator {
         assertPlanTimeViewLayoutDebug(grid: grid, layouts: layouts);
         return (grid: grid, layouts: layouts);
       }
-      final earlier = layouts[overlapIdx];
-      final later = layouts[overlapIdx + 1];
       final earlierHourIdx = grid.hourIndexForMinutesFromRangeStart(
         slots[overlapIdx].startMin,
       );

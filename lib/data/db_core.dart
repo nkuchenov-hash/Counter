@@ -428,8 +428,21 @@ extension DbCoreExtension on DatabaseService {
       await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
       await restorePlansWarmSnapshotsFromDiskAtBoot();
       await restoreTimelineWarmSnapshotsFromDiskAtBoot();
-      preparePlansMountedWindowBoot(getProjectedToday());
-      prepareTimelineMountedWindowBoot(getTimelineDeviceLocalToday());
+      final projected = getProjectedToday();
+      final timelineToday = getTimelineDeviceLocalToday();
+      if (kUseP0tMountedStrip) {
+        preparePlansMountedWindowBoot(projected, criticalOnly: true);
+        prepareTimelineMountedWindowBoot(timelineToday, criticalOnly: true);
+        preparePlansCriticalRenderReady(projected);
+        prepareTimelineCriticalRenderReady(timelineToday);
+        P0tDiag.startupStage(name: 'criticalReady', ms: 0);
+        schedulePlansMountedWindowBootBackground(projected);
+        scheduleTimelineMountedWindowBootBackground(timelineToday);
+      } else {
+        ensurePlansWarmWindow(projected);
+        ensureTimelineWarmWindow(timelineToday);
+        P0uDiag.timeProjectStormFixed();
+      }
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
       _settingsController.add(_settings);
       _categoryController.add(List.from(_rules));
@@ -453,8 +466,19 @@ extension DbCoreExtension on DatabaseService {
     // Safety re-run: finish startup with a final category load.
     await _loadRulesFromNoco();
     final projected = getProjectedToday();
-    preparePlansMountedWindowBoot(projected);
-    prepareTimelineMountedWindowBoot(getTimelineDeviceLocalToday());
+    final timelineToday = getTimelineDeviceLocalToday();
+    if (kUseP0tMountedStrip) {
+      preparePlansMountedWindowBoot(projected, criticalOnly: true);
+      prepareTimelineMountedWindowBoot(timelineToday, criticalOnly: true);
+      preparePlansCriticalRenderReady(projected);
+      prepareTimelineCriticalRenderReady(timelineToday);
+      schedulePlansMountedWindowBootBackground(projected);
+      scheduleTimelineMountedWindowBootBackground(timelineToday);
+    } else {
+      ensurePlansWarmWindow(projected);
+      ensureTimelineWarmWindow(timelineToday);
+      P0uDiag.timeProjectStormFixed();
+    }
     persistPlansWarmSnapshotsToDisk();
     persistTimelineWarmSnapshotsToDisk();
     _settingsController.add(_settings);

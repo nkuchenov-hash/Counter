@@ -1229,14 +1229,126 @@ extension RecordServiceExtension on DatabaseService {
     _logTimelineWarmMemory();
   }
 
-  /// P0S: hydrate timeline snapshots for mounted window ±10 before eager mount.
-  void prepareTimelineMountedWindowBoot(DateTime center) {
+  /// P0T: critical ±1 sync at boot; full mounted window in background.
+  void prepareTimelineMountedWindowBoot(
+    DateTime center, {
+    bool criticalOnly = false,
+  }) {
     ensureTimelineWarmWindow(center);
+    if (criticalOnly) {
+      for (final offset in [-1, 0, 1]) {
+        final d = DateTime(center.year, center.month, center.day)
+            .add(Duration(days: offset));
+        timelineWarmSnapshotForDate(d);
+        timelineBodyEntryForDate(d, allowEmergencyBuild: true);
+        buildTimelineDayRenderSnapshot(d);
+      }
+      return;
+    }
     final window = MountedDayWindow(center: center);
     for (final d in window.dates) {
       timelineWarmSnapshotForDate(d);
       timelineBodyEntryForDate(d, allowEmergencyBuild: true);
+      buildTimelineDayRenderSnapshot(d);
     }
+  }
+
+  void scheduleTimelineMountedWindowBootBackground(DateTime center) {
+    unawaited(Future.microtask(() {
+      prepareTimelineMountedWindowBoot(center);
+      P0tDiag.memory(
+        screen: 'Timeline',
+        mountedBodies: MountedDayWindow(center: center).length,
+        renderSnapshots: P0tRenderSnapshotCache.instance.timelineCount,
+        approxKb: P0tRenderSnapshotCache.instance.timelineCount * 40,
+      );
+    }));
+  }
+
+  TimelineDayRenderSnapshot? timelineRenderSnapshotForDate(DateTime wallDay) {
+    return P0tRenderSnapshotCache.instance.peekTimeline(p0tDateKey(wallDay));
+  }
+
+  bool isTimelineDateFullyReady(DateTime wallDay) {
+    final key = p0tDateKey(wallDay);
+    final snap = P0tRenderSnapshotCache.instance.peekTimeline(key);
+    if (snap != null && snap.ready) {
+      P0tDiag.readyCheck(
+        screen: 'Timeline',
+        date: key,
+        ready: true,
+        cards: snap.cards.length,
+      );
+      return true;
+    }
+    final missing = snap?.missing ?? 'records';
+    P0tDiag.readyCheck(
+      screen: 'Timeline',
+      date: key,
+      ready: false,
+      missing: missing,
+    );
+    return false;
+  }
+
+  TimelineDayRenderSnapshot buildTimelineDayRenderSnapshot(DateTime wallDay) {
+    final key = p0tDateKey(wallDay);
+    final body = timelineBodyEntryForDate(wallDay);
+    final cards = <TimelineCardRenderDto>[];
+    var missing = 'none';
+
+    for (final rec in body.records) {
+      final title = (rec['title'] as String?)?.trim() ?? '';
+      final catRaw = rec['category_id'];
+      final catId = catRaw is int
+          ? catRaw
+          : int.tryParse(catRaw?.toString() ?? '') ?? 0;
+      final categoryReady =
+          catId == 0 || getCategoryRuleById(catId) != null;
+      if (!categoryReady) missing = 'category';
+      cards.add(
+        TimelineCardRenderDto(
+          recordMap: rec,
+          title: title,
+          categoryReady: categoryReady,
+          tagsReady: true,
+        ),
+      );
+    }
+
+    final ready = missing == 'none' && body.bodyReady;
+    final snap = TimelineDayRenderSnapshot(
+      dateKey: key,
+      knownEmpty: body.knownEmpty,
+      cards: cards,
+      cacheSignature: body.records.length,
+      ready: ready,
+      missing: ready ? 'none' : missing,
+    );
+    P0tRenderSnapshotCache.instance.putTimeline(snap);
+    return snap;
+  }
+
+  void prepareTimelineCriticalRenderReady(DateTime center) {
+    P0tDiag.criticalReadyStart(
+      screen: 'Timeline',
+      dates: 'yesterday,today,tomorrow',
+    );
+    final sw = Stopwatch()..start();
+    var ready = 0;
+    for (final offset in [-1, 0, 1]) {
+      final day = DateTime(center.year, center.month, center.day)
+          .add(Duration(days: offset));
+      buildTimelineDayRenderSnapshot(day);
+      if (isTimelineDateFullyReady(day)) ready++;
+    }
+    sw.stop();
+    P0tDiag.criticalReadyDone(
+      screen: 'Timeline',
+      ready: ready,
+      total: 3,
+      ms: sw.elapsedMilliseconds,
+    );
   }
 
   int get timelineWarmWindowRecordEstimate {
@@ -1596,15 +1708,17 @@ extension RecordServiceExtension on DatabaseService {
   List<Map<String, dynamic>> peekTimelineRecordsForDate(DateTime date) {
     final lookupSw = Stopwatch()..start();
     final targetDayStr = _timelineDateKeyFromDate(date);
-    final cachedView = _timelineDayViewCache[targetDayStr];
-    if (cachedView != null) {
-      if (kPerfDiagnosisEnabled) {
-        PerfDiag.instance.logTimelineCacheHit(
-          date: targetDayStr,
-          itemCount: cachedView.length,
-        );
+    if (!_timelineDayIndexDirty) {
+      final cachedView = _timelineDayViewCache[targetDayStr];
+      if (cachedView != null) {
+        if (kPerfDiagnosisEnabled) {
+          PerfDiag.instance.logTimelineCacheHit(
+            date: targetDayStr,
+            itemCount: cachedView.length,
+          );
+        }
+        return List<Map<String, dynamic>>.from(cachedView);
       }
-      return List<Map<String, dynamic>>.from(cachedView);
     }
     if (kPerfDiagnosisEnabled) {
       PerfDiag.instance.logTimelineCacheMiss(date: targetDayStr);
@@ -3293,6 +3407,7 @@ extension RecordServiceExtension on DatabaseService {
       if (status == 'running') {
         final isPrimary = !hasParent;
         late final String runningRecordBizId;
+        P0uDiag.recordCreateStart(title: parsed.title, date: dateKey);
         if (isPrimary) {
           runningRecordBizId = DatabaseService._newClientRecordUuid();
           final runningFields = _nocoFieldsForPatch(<String, dynamic>{
@@ -3343,6 +3458,17 @@ extension RecordServiceExtension on DatabaseService {
                 );
                 _printAtomicCheckRunningCount();
                 msApply = tApply.elapsedMilliseconds;
+                P0uDiag.recordOptimisticApplied(
+                  recordId: runningRecordBizId,
+                  date: dateKey,
+                );
+                final patched = peekTimelineRecordsForDate(
+                  DatabaseService.instance.getTimelineDeviceLocalToday(),
+                );
+                P0uDiag.timelineActiveDayPatched(
+                  date: dateKey,
+                  count: patched.length,
+                );
               });
             } finally {
               if (kDebugMode) {

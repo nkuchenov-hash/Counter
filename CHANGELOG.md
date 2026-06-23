@@ -11,13 +11,38 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U: emergency recovery — disable P0S/P0T, restore stable paging [wip]
+* **`p0u_feature_flags.dart` / `p0u_diag.dart` / `p0u_platform.dart`:** [wip] Global kill switch `kUseP0tMountedStrip=false`; `[P0U_*]` diagnostics (pager mode, first swipe, record optimistic, release log guard).
+* **`planning_view.dart` / `timeline_view.dart`:** [wip] Restored stable `PageView.builder` + `DatePagerSettleGate` + `FeatherDateSwipePhysics`; active day uses live planning stream / live optimistic records; P0S/P0T `EagerDayContentStrip` behind flag only.
+* **`database_service.dart` / `record_service.dart`:** [wip] `_emitTimelineRefreshRaw` clears `_timelineDayViewCache`; `peekTimelineRecordsForDate` skips stale view cache when day index dirty; record create optimistic `[P0U_RECORD_*]` logs.
+* **`plan_service.dart`:** [wip] `TIME_TZ_PROJECT` per-row logs gated behind `kVerbosePlanTimeTzProjectionLogs` + `!kReleaseMode`.
+* **`db_core.dart`:** [wip] Boot skips P0T mounted/render window when flag false; light `ensurePlansWarmWindow` / `ensureTimelineWarmWindow` only.
+* **`main.dart`:** [wip] Biometric gate stays off; `FlutterError.onError` + `PlatformDispatcher.onError` → `[P0U_WEB_ERROR]` / `[P0U_ANDROID_ERROR]`.
+* **P0S / P0T:** marked failed/superseded as production default — not shipped until user confirms web + APK.
+
 ## [2026-06-22] - Stage A cleanup + A.1 compile baseline + Stage C doc sync [shipped]
 * **Stage A [shipped]:** Deleted proven orphans/non-code — `p0b_logcat.txt`, `lib/notes` (archived to `docs/archive/lib_notes_scratch.txt`), `lib/deploy.ps1`, `lib/data/html_stub.dart`, `lib/features/more/more_view.dart`, `lib/features/timeline/timeline_widgets.dart`. No P0/perf/warm files touched; More menu stays inline in `app_shell.dart` `_openMoreMenu`; Timeline header stays inline in `timeline_view.dart`.
 * **Stage A.1 [shipped]:** `planning_view.dart` — added `p0n_perf_diag.dart` import; restored `_PlanningDayCardListKeepAlive` keep-alive wrapper for offscreen PageView day bodies. `flutter analyze --no-fatal-infos --no-fatal-warnings` green.
 * **Stage C [shipped]:** Doc sync — `docs/APP_STRUCTURE.md`, `CLAUDE.md`, `docs/ROADMAP.md`, `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md` (cleanup note only).
 * **Tests:** `flutter test` loads/runs; 3 runtime failures remain in perf/widget harness — not compile blockers, unrelated to Stage A deletes.
 
-## [2026-06-15] - P0S: eager mounted content pages ±10 [wip]
+## [2026-06-15] - P0T: emergency stabilize + atomic fully-rendered date pages [wip]
+* **`p0t_render_snapshot.dart` / `p0t_diag.dart`:** [wip] `PlanCardRenderDto` / `PlansDayRenderSnapshot` + `TimelineDayRenderSnapshot`; FULL_READY checks; `[P0T_*]` diagnostics.
+* **`plan_service.dart` / `record_service.dart` / `db_core.dart`:** [wip] Critical ±1 boot only; background full window warm; render snapshots built at body prep; startup no longer blocks on 21-body mount.
+* **`mounted_day_window.dart`:** [wip] Mount radius ±3 (7 bodies) — P0S ±10 superseded for widget mount.
+* **`eager_day_content_strip.dart`:** [wip] P0T reveal gate blocks not-ready dates; scroll index guards; controller attach fix.
+* **`planning_view.dart`:** [wip] Atomic frozen cards (play/tags/category from render DTO); inactive Time mode uses same hour grid; reveal gate wired.
+* **`timeline_view.dart`:** [wip] `FeatherDateSwipePhysics` (20% threshold); reveal gate; critical render ready at open.
+* **`main.dart`:** [wip] Biometric gate disabled (`kP0tBiometricGateDisabled`); `FlutterError.onError` → `[P0T_CRASH_TRACE]`.
+* **P0S:** marked failed/superseded — not shipped.
+
+## [2026-06-15] - Time View: CardPlan density + stretchable hour scale [wip]
+* **`plan_time_view_layout.dart`:** [wip] Pure layout calculator — per-hour variable height, sequential card reflow (min 38px + 2px gap), `PlanTimeViewDurationGrid` y↔time mapping shared by render/drag/resize/now line.
+* **`plan_time_task_card.dart`:** [wip] `PlanTimeCardVisualDensity` bands (VerySmall 38 / Small 39–54 / MoreCompact 55–77 / Compact 78–94 / Medium 95+); progress/breadcrumb gates per band.
+* **`planning_view.dart` / `plan_card.dart`:** [wip] Wire stretchable grid; darker Time View canvas (`surfaceContainerHighest` blend); density from final rendered height.
+* **`test/plan_time_view_layout_test.dart`:** [wip] Layout invariants — 11×5min dense hour, density bands, mixed dense/normal hour.
+
+## [2026-06-15] - P0S: eager mounted content pages ±10 [failed — superseded by P0T]
 * **`eager_day_content_strip.dart` / `mounted_day_window.dart` / `p0s_mount_diag.dart`:** [wip] Row-based horizontal strip mounts all ±10 day bodies eagerly (not lazy `PageView.builder`); extend/evict at 41 max; `[P0S_*]` diagnostics.
 * **`planning_view.dart` / `timeline_view.dart`:** [wip] Replaced date `PageView.builder` with `EagerDayContentStrip`; static chrome unchanged outside strip.
 * **`plan_service.dart` / `record_service.dart`:** [wip] `preparePlansMountedWindowBoot` / `prepareTimelineMountedWindowBoot`; Timeline warm snapshots disk persist (`warm_timeline_snapshots_v1`).

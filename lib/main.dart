@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:counter/core/app_build_info.dart';
 import 'package:counter/core/perf_diag.dart';
@@ -29,13 +30,47 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:counter/core/p0u_diag.dart';
+import 'package:counter/core/p0u_platform.dart';
+import 'package:counter/core/p0u_feature_flags.dart';
+import 'package:counter/core/p0t_diag.dart';
 import 'package:counter/core/widgets/app_loading.dart';
+
+/// P0T stabilization: disable biometric gate until phone pass.
+const bool kP0tBiometricGateDisabled = true;
 
 String? _startupNetworkErrorMessage;
 bool _startupNetworkErrorShown = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  P0uDiag.releaseLogGuard();
+  P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
+  final platform = p0uPlatformLabel();
+  P0uDiag.p0tDisabled(platform: platform, enabled: kUseP0tMountedStrip);
+  FlutterError.onError = (details) {
+    final stackTop = details.stack?.toString().split('\n').first;
+    if (kIsWeb) {
+      P0uDiag.webError(exception: details.exception, stackTop: stackTop);
+    } else {
+      P0uDiag.androidError(exception: details.exception, stackTop: stackTop);
+    }
+    P0tDiag.crashTrace(
+      screen: 'Boot',
+      exception: details.exception,
+      topFrame: stackTop,
+    );
+    FlutterError.presentError(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    final stackTop = stack.toString().split('\n').first;
+    if (kIsWeb) {
+      P0uDiag.webError(exception: error, stackTop: stackTop);
+    } else {
+      P0uDiag.androidError(exception: error, stackTop: stackTop);
+    }
+    return false;
+  };
   PerfDiag.instance.attachIfNeeded();
   if (!kIsWeb) {
     unawaited(NotificationService.instance.ensureInitialized());
@@ -353,7 +388,9 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       }
       final biometricEnabled =
           DatabaseService.instance.settings.biometricEnabled;
-      if (biometricEnabled) {
+      if (kP0tBiometricGateDisabled) {
+        P0tDiag.biometricGate(enabled: false, reason: 'stabilization');
+      } else if (biometricEnabled) {
         return const _BiometricGate(child: LifeOSDashboard());
       }
       return const LifeOSDashboard();

@@ -15,6 +15,9 @@ import 'package:counter/core/p0_date_nav_diag.dart';
 import 'package:counter/core/p0n_perf_diag.dart';
 import 'package:counter/core/p0p_content_diag.dart';
 import 'package:counter/core/mounted_day_registry.dart';
+import 'package:counter/core/p0u_diag.dart';
+import 'package:counter/core/p0u_feature_flags.dart';
+import 'package:counter/core/p0u_platform.dart';
 import 'package:counter/core/p0s_mount_diag.dart';
 import 'package:counter/core/pre_white_swipe_restore.dart';
 import 'package:counter/core/widgets/eager_day_content_strip.dart';
@@ -29,6 +32,7 @@ import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
+import 'package:counter/data/p0t_render_snapshot.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
@@ -115,331 +119,289 @@ class PlanningSwipeWrapper extends StatefulWidget {
 }
 
 class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
-  late MountedDayWindow _mountedWindow;
-  late DateTime _visibleDate;
-  final EagerDayContentStripController _stripController =
-      EagerDayContentStripController();
-  DateTime? _pendingExternalDate;
+  static const int _initialPage = 5000;
+  static const int _totalPageCount = 10000;
+  late PageController _controller;
+  late DateTime _anchorDate;
+  late int _visiblePageIndex;
+  int? _pendingExternalPage;
   bool _datePagerLocked = false;
   final DatePagerSettleGate _settleGate = DatePagerSettleGate();
   bool _loggedFirstSwipe = false;
-  bool _userDragActive = false;
-  int _fromWindowIndex = 0;
 
-  String _dateKeyFromDate(DateTime d) => MountedDayWindow.dateKey(d);
+  String _dateKeyFromDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-  DateTime _dateOnly(DateTime d) => MountedDayWindow.dateOnly(d);
-
-  void _scheduleWarmWindowExtend(DateTime center) {
-    unawaited(
-      Future.microtask(() {
-        if (!mounted) return;
-        DatabaseService.instance.extendPlansWarmWindowIfNeeded(center);
-        final shift = _mountedWindow.extendIfNeeded(
-          screen: 'Plans',
-          selected: center,
-          onNewDate: (d) {
-            DatabaseService.instance.plansWarmSnapshotForDate(d);
-          },
-        );
-        if (shift > 0) {
-          _stripController.shiftByPages(shift);
-        }
-        setState(() {});
-        P0SMountDiag.memory(
-          screen: 'Plans',
-          mountedBodies: _mountedWindow.length,
-          items: DatabaseService.instance.plansWarmWindowTaskEstimate,
-          approxKb: _mountedWindow.length * 96,
-        );
-      }),
-    );
-  }
+  DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   void _onPlanningDatePagerLockChanged(bool locked) {
     if (_datePagerLocked == locked) return;
     setState(() => _datePagerLocked = locked);
-    if (!locked) {
-      _applyPendingExternalDateIfNeeded();
-    }
+    if (!locked) _applyPendingExternalPageIfNeeded();
   }
 
-  void _applyPendingExternalDateIfNeeded() {
+  void _applyPendingExternalPageIfNeeded() {
     if (_datePagerLocked || _settleGate.blocksExternalDateSync) return;
-    final pending = _pendingExternalDate;
+    final pending = _pendingExternalPage;
     if (pending == null) return;
-    _pendingExternalDate = null;
-    _syncStripToDate(pending, animate: false);
+    _pendingExternalPage = null;
+    if (pending < 0 || pending >= _totalPageCount) return;
+    if (!_controller.hasClients) return;
+    final cur = _controller.page?.round();
+    if (cur == pending) return;
+    _settleGate.resetCommittedPage(pending);
+    setState(() => _visiblePageIndex = pending);
+    _controller.jumpToPage(pending);
   }
 
-  void _syncStripToDate(DateTime date, {required bool animate}) {
-    final d = _dateOnly(date);
-    if (!_mountedWindow.contains(d)) {
-      setState(() {
-        _mountedWindow.recenter(d);
-        _visibleDate = d;
-        MountedDayRegistry.beginWindow('Plans');
-        DatabaseService.instance.preparePlansMountedWindowBoot(d);
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _stripController.jumpToDate(d, _mountedWindow);
-      });
-      return;
-    }
-    final idx = _mountedWindow.indexOf(d);
-    _settleGate.resetCommittedPage(idx);
-    setState(() => _visibleDate = d);
-    if (animate) {
-      _settleGate.markProgrammaticAnimStart();
-      _stripController
-          .animateToDate(d, _mountedWindow)
-          .whenComplete(() {
-            if (mounted) _settleGate.markProgrammaticAnimEnd();
-          });
-    } else {
-      _stripController.jumpToDate(d, _mountedWindow);
-    }
+  int _pageIndexForDate(DateTime date) {
+    final daysOffset = _dateOnly(date).difference(_anchorDate).inDays;
+    return _initialPage + daysOffset;
   }
+
+  DateTime _dateForIndex(int index) =>
+      _dateOnly(_anchorDate.add(Duration(days: index - _initialPage)));
 
   void _syncOnTabActivated() {
-    final date = _pendingExternalDate ?? widget.selectedDate;
-    _pendingExternalDate = null;
-    _syncStripToDate(date, animate: false);
+    final page = _pendingExternalPage ?? _pageIndexForDate(widget.selectedDate);
+    _pendingExternalPage = null;
+    if (page < 0 || page >= _totalPageCount) return;
+    setState(() => _visiblePageIndex = page);
+    if (!_controller.hasClients) return;
+    final cur = _controller.page?.round();
+    if (cur == page) return;
+    _controller.jumpToPage(page);
   }
 
   void _deferHiddenExternalDate() {
-    _pendingExternalDate = _dateOnly(widget.selectedDate);
-    PerfDiag.instance.pagerSync(
-      section: 'Planning',
-      op: 'deferHidden',
-      targetPage: _mountedWindow.indexOf(_pendingExternalDate!),
-      shellTabActive: false,
-      hidden: true,
-    );
+    final page = _pageIndexForDate(widget.selectedDate);
+    if (page < 0 || page >= _totalPageCount) return;
+    _pendingExternalPage = page;
   }
 
-  void _logBootMountReady() {
-    final center = _visibleDate;
-    for (final label in ['yesterday', 'today', 'tomorrow']) {
-      final offset = label == 'yesterday'
-          ? -1
-          : label == 'tomorrow'
-          ? 1
-          : 0;
-      final d = _dateOnly(center.add(Duration(days: offset)));
-      P0SMountDiag.mountReady(
-        screen: 'Plans',
-        date: label,
-        mounted: MountedDayRegistry.isMounted('Plans', _dateKeyFromDate(d)),
-      );
-    }
-    final mounted = MountedDayRegistry.mountedCountIn(
-      'Plans',
-      _mountedWindow.dateKeys,
+  void _schedulePrefetch(DateTime center) {
+    if (kUseP0tMountedStrip) return;
+    unawaited(
+      Future.microtask(() {
+        if (!mounted) return;
+        DatabaseService.instance.extendPlansWarmWindowIfNeeded(center);
+      }),
     );
-    P0SMountDiag.plansBootMountDone(mounted: mounted, totalMs: 0);
   }
 
   @override
   void initState() {
     super.initState();
-    P0NPerfDiag.plansSwipePhysics(
-      using: 'FeatherDateSwipePhysics',
-      oldThreshold: 'PageScrollPhysics~0.50',
-      newThreshold: '0.20',
+    final platform = p0uPlatformLabel();
+    P0uDiag.p0tDisabled(platform: platform, enabled: kUseP0tMountedStrip);
+    P0uDiag.pagerMode(
+      screen: 'Plans',
+      platform: platform,
+      mode: kUseP0tMountedStrip ? 'mountedStrip' : 'stablePageView',
     );
-    _visibleDate = _dateOnly(widget.selectedDate);
-    _mountedWindow = MountedDayWindow(center: _visibleDate);
-    MountedDayRegistry.beginWindow('Plans');
-    P0SMountDiag.plansBootMountStart(
-      center: _dateKeyFromDate(_visibleDate),
-      from: _dateKeyFromDate(_mountedWindow.windowFrom),
-      to: _dateKeyFromDate(_mountedWindow.windowTo),
-      count: _mountedWindow.length,
+    P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
+    _anchorDate = DateUtils.dateOnly(DateTime.now());
+    final daysOffset =
+        _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;
+    _visiblePageIndex = _initialPage + daysOffset;
+    _controller = PageController(initialPage: _visiblePageIndex);
+    _controller.addListener(_onPageControllerTick);
+    if (!kUseP0tMountedStrip) {
+      DatabaseService.instance.ensurePlansWarmWindow(widget.selectedDate);
+    }
+  }
+
+  void _onPageControllerTick() {
+    if (!_controller.hasClients) return;
+    final page = _controller.page;
+    if (page == null) return;
+    PerfDiag.instance.dateSwipeDrag(
+      section: 'Planning',
+      page: page.round(),
+      pageFraction: page,
     );
-    DatabaseService.instance.preparePlansMountedWindowBoot(_visibleDate);
-    _fromWindowIndex = _mountedWindow.indexOf(_visibleDate);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _logBootMountReady();
-    });
   }
 
   @override
   void didUpdateWidget(covariant PlanningSwipeWrapper oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     if (!oldWidget.shellTabActive && widget.shellTabActive) {
       _syncOnTabActivated();
       return;
     }
-
     if (!widget.shellTabActive) {
       final oldD = _dateOnly(oldWidget.selectedDate);
       final newD = _dateOnly(widget.selectedDate);
-      if (oldD.year != newD.year ||
-          oldD.month != newD.month ||
-          oldD.day != newD.day) {
-        _deferHiddenExternalDate();
-      }
+      if (oldD != newD) _deferHiddenExternalDate();
       return;
     }
-
     final oldD = _dateOnly(oldWidget.selectedDate);
     final newD = _dateOnly(widget.selectedDate);
-    if (oldD.year == newD.year &&
-        oldD.month == newD.month &&
-        oldD.day == newD.day) {
-      return;
-    }
-
+    if (oldD == newD) return;
+    final page = _pageIndexForDate(widget.selectedDate);
+    if (page < 0 || page >= _totalPageCount) return;
     if (_settleGate.blocksExternalDateSync || _datePagerLocked) {
-      _pendingExternalDate = newD;
+      _pendingExternalPage = page;
       return;
     }
-
-    _syncStripToDate(newD, animate: true);
+    setState(() => _visiblePageIndex = page);
+    if (_controller.hasClients) {
+      final cur = _controller.page;
+      if (cur != null && cur.round() == page) return;
+      _settleGate.markProgrammaticAnimStart();
+      _controller
+          .animateToPage(
+            page,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          )
+          .whenComplete(() {
+            if (mounted) _settleGate.markProgrammaticAnimEnd();
+          });
+    }
   }
 
   @override
   void dispose() {
     _settleGate.dispose();
+    _controller.removeListener(_onPageControllerTick);
+    _controller.dispose();
     super.dispose();
   }
 
   void _jumpToDate(DateTime date) {
     final dateOnly = _dateOnly(date);
-    _syncStripToDate(dateOnly, animate: false);
-    widget.onDateChanged(dateOnly);
-  }
-
-  void _onVisibleDateChanged(int index, DateTime date) {
-    final fromDate = _visibleDate;
-    P0DateNavDiag.plansDateNav(
-      'windowIndex=$index date=${_dateKeyFromDate(date)}',
-    );
-    final key = _dateKeyFromDate(date);
-    if (!_loggedFirstSwipe && _userDragActive) {
-      final mountedBefore = MountedDayRegistry.isMounted('Plans', key);
-      P0SMountDiag.firstSwipe(
-        screen: 'Plans',
-        targetDate: key,
-        mountedBeforeSwipe: mountedBefore,
-        builtDuringSwipe: false,
-      );
-      if (mountedBefore) {
-        P0SMountDiag.plansPageHit(date: key);
-      } else {
-        P0SMountDiag.plansPageMiss(
-          date: key,
-          insideWindow: _mountedWindow.contains(date),
-          reason: 'notMounted',
-        );
-      }
-      _loggedFirstSwipe = true;
+    final targetIndex = _pageIndexForDate(dateOnly);
+    if (targetIndex >= 0 &&
+        targetIndex < _totalPageCount &&
+        _controller.hasClients) {
+      _controller.jumpToPage(targetIndex);
+      widget.onDateChanged(dateOnly);
     }
-    setState(() => _visibleDate = _dateOnly(date));
-    _settleGate.onPageSettled(
-      pageIndex: index,
-      onShellCommit: (page) {
-        if (!mounted) return;
-        final committed = _mountedWindow.dateAt(page);
-        P0DateNavDiag.plansDateNav(
-          'shell_commit date=${_dateKeyFromDate(committed)}',
-        );
-        PreWhiteSwipeRestoreDiag.log(
-          screen: 'Plans',
-          event: 'commit',
-          date: _dateKeyFromDate(committed),
-        );
-        P0NPerfDiag.plansSwipeCommit(
-          direction: committed.isBefore(fromDate) ? 'prev' : 'next',
-          date: _dateKeyFromDate(committed),
-        );
-        _scheduleWarmWindowExtend(committed);
-        widget.onDateChanged(_dateOnly(committed));
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     perfRebuildTick('PlanningSwipeWrapper');
+    if (kUseP0tMountedStrip) {
+      return _buildMountedStripFallback(context);
+    }
     try {
       return ScrollConfiguration(
         behavior: const MouseDragScrollBehavior(),
-        child: PlanningPage(
-          selectedDateString: _dateKeyFromDate(_visibleDate),
-          selectedDate: _visibleDate,
-          shellTabActive: widget.shellTabActive,
-          mountedWindow: _mountedWindow,
-          stripController: _stripController,
-          datePagerLocked: _datePagerLocked,
-          onVisibleDateChanged: _onVisibleDateChanged,
-          onUserDragStart: () {
-            _userDragActive = true;
-            _fromWindowIndex = _mountedWindow.indexOf(_visibleDate);
-            _settleGate.onUserDragStart();
-            PreWhiteSwipeRestoreDiag.log(
-              screen: 'Plans',
-              event: 'start',
-              date: _dateKeyFromDate(_visibleDate),
-            );
-            P0DateNavDiag.plansSwipe(
-              'drag_start date=${_dateKeyFromDate(_visibleDate)}',
-            );
-            PerfDiag.instance.dateSwipeStart(
-              section: 'Planning',
-              fromDate: _dateKeyFromDate(_visibleDate),
-            );
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (n) {
+            if (n is ScrollStartNotification && n.dragDetails != null) {
+              _settleGate.onUserDragStart();
+              final from = _dateKeyFromDate(_dateForIndex(_visiblePageIndex));
+              P0uDiag.firstSwipeStart(
+                screen: 'Plans',
+                current: from,
+                target: from,
+              );
+              PerfDiag.instance.dateSwipeStart(
+                section: 'Planning',
+                fromDate: from,
+              );
+            }
+            if (n is ScrollEndNotification) {
+              _settleGate.onUserDragEnd();
+              _applyPendingExternalPageIfNeeded();
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                PerfDiag.instance.dateSwipeEnd(section: 'Planning');
+              });
+            }
+            return false;
           },
-          onUserDragEnd: () {
-            _settleGate.onUserDragEnd();
-            _userDragActive = false;
-            _applyPendingExternalDateIfNeeded();
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              PerfDiag.instance.dateSwipeEnd(section: 'Planning');
-            });
-          },
-          onScrollTick: (fraction) {
-            PerfDiag.instance.dateSwipeDrag(
-              section: 'Planning',
-              page: fraction.round(),
-              pageFraction: fraction,
-            );
-          },
-          selectedCategoryId: widget.selectedCategoryId,
-          onCategoryChanged: widget.onCategoryChanged,
-          onStartRecordFromTask: widget.onStartRecordFromTask,
-          onEditTask: widget.onEditTask,
-          onDatePicked: _jumpToDate,
-          onDateChanged: widget.onDateChanged,
-          onDatePagerLockChanged: _onPlanningDatePagerLockChanged,
+          child: PageView.builder(
+            controller: _controller,
+            physics: _datePagerLocked
+                ? const NeverScrollableScrollPhysics()
+                : const FeatherDateSwipePhysics(),
+            itemCount: _totalPageCount,
+            onPageChanged: (int index) {
+              if (index < 0 || index >= _totalPageCount) return;
+              final date = _dateForIndex(index);
+              final key = _dateKeyFromDate(date);
+              if (!_loggedFirstSwipe) {
+                try {
+                  P0uDiag.firstSwipeDone(screen: 'Plans', target: key);
+                  _loggedFirstSwipe = true;
+                } catch (e) {
+                  P0uDiag.firstSwipeFail(
+                    screen: 'Plans',
+                    target: key,
+                    exception: e,
+                  );
+                }
+              }
+              setState(() => _visiblePageIndex = index);
+              _settleGate.onPageSettled(
+                pageIndex: index,
+                onShellCommit: (page) {
+                  if (!mounted) return;
+                  final committed = _dateForIndex(page);
+                  _schedulePrefetch(committed);
+                  widget.onDateChanged(_dateOnly(committed));
+                },
+              );
+            },
+            itemBuilder: (context, index) {
+              final date = _dateForIndex(index);
+              final dateKey = _dateKeyFromDate(date);
+              final isActive =
+                  widget.shellTabActive && index == _visiblePageIndex;
+              return PlanningPage(
+                key: ValueKey<String>('plan-page-$dateKey'),
+                selectedDateString: dateKey,
+                selectedDate: date,
+                isActivePlanningDay: isActive,
+                shellTabActive: widget.shellTabActive,
+                selectedCategoryId: widget.selectedCategoryId,
+                onCategoryChanged: widget.onCategoryChanged,
+                onStartRecordFromTask: widget.onStartRecordFromTask,
+                onEditTask: widget.onEditTask,
+                onDatePicked: _jumpToDate,
+                onDateChanged: widget.onDateChanged,
+                onDatePagerLockChanged: _onPlanningDatePagerLockChanged,
+              );
+            },
+          ),
         ),
       );
     } catch (e, st) {
-      if (kDebugMode) {
-        debugPrint('PlanningSwipeWrapper: $e\n$st');
-      }
+      P0uDiag.firstSwipeFail(
+        screen: 'Plans',
+        target: _dateKeyFromDate(widget.selectedDate),
+        exception: e,
+      );
+      if (kDebugMode) debugPrint('PlanningSwipeWrapper: $e\n$st');
       return Scaffold(
         body: AppErrorState(message: t(currentLocale.value, 'no_data_found')),
       );
     }
   }
+
+  /// Legacy P0S/P0T path — disabled when [kUseP0tMountedStrip] is false.
+  Widget _buildMountedStripFallback(BuildContext context) {
+    return AppErrorState(
+      message: t(currentLocale.value, 'no_data_found'),
+    );
+  }
 }
 
-/// Single planning screen: static chrome once; eager mounted day strip (P0S).
+/// Single-day planning: task list, add task, date picker.
 class PlanningPage extends StatefulWidget {
   const PlanningPage({
     super.key,
     required this.selectedDateString,
     this.selectedDate,
+    this.isActivePlanningDay = false,
     this.shellTabActive = true,
-    required this.mountedWindow,
-    required this.stripController,
+    this.mountedWindow,
+    this.stripController,
     this.datePagerLocked = false,
-    required this.onVisibleDateChanged,
+    this.onVisibleDateChanged,
     this.onUserDragStart,
     this.onUserDragEnd,
     this.onScrollTick,
@@ -454,11 +416,14 @@ class PlanningPage extends StatefulWidget {
 
   final String selectedDateString;
   final DateTime? selectedDate;
+
+  /// Only the visible PageView day should be true (live planning stream).
+  final bool isActivePlanningDay;
   final bool shellTabActive;
-  final MountedDayWindow mountedWindow;
-  final EagerDayContentStripController stripController;
+  final MountedDayWindow? mountedWindow;
+  final EagerDayContentStripController? stripController;
   final bool datePagerLocked;
-  final void Function(int windowIndex, DateTime date) onVisibleDateChanged;
+  final void Function(int windowIndex, DateTime date)? onVisibleDateChanged;
   final VoidCallback? onUserDragStart;
   final VoidCallback? onUserDragEnd;
   final void Function(double pageFraction)? onScrollTick;
@@ -744,7 +709,8 @@ class _PlanningPageState extends State<PlanningPage>
   Stream<List<PlanningTask>> _createPlanningStream() =>
       DatabaseService.instance.planningStream(
         widget.selectedDate ?? _today,
-        listenToGlobalPlanningRefresh: widget.shellTabActive,
+        listenToGlobalPlanningRefresh:
+            widget.isActivePlanningDay && widget.shellTabActive,
       );
 
   @override
@@ -764,7 +730,9 @@ class _PlanningPageState extends State<PlanningPage>
     _latestPlanningDayTasks = DatabaseService.instance
         .plansWarmSnapshotForDate(day)
         .tasks;
-    _planningStream = _createPlanningStream();
+    if (widget.isActivePlanningDay) {
+      _planningStream = _createPlanningStream();
+    }
     _planningTimeSub = DatabaseService.instance.timeUpdates.listen((_) {
       if (!mounted) return;
       final t = DatabaseService.instance.cachedPrimaryRunningTitle
@@ -1602,9 +1570,12 @@ class _PlanningPageState extends State<PlanningPage>
   void didUpdateWidget(covariant PlanningPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.selectedDate != widget.selectedDate ||
-        oldWidget.selectedDateString != widget.selectedDateString) {
+        oldWidget.selectedDateString != widget.selectedDateString ||
+        oldWidget.isActivePlanningDay != widget.isActivePlanningDay) {
       setState(() {
-        _planningStream = _createPlanningStream();
+        if (widget.isActivePlanningDay) {
+          _planningStream = _createPlanningStream();
+        }
         _latestPlanningDayTasks = DatabaseService.instance
             .plansWarmSnapshotForDate(widget.selectedDate ?? _today)
             .tasks;
@@ -2660,12 +2631,14 @@ class _PlanningPageState extends State<PlanningPage>
           rangeStart,
           rangeEnd,
         );
-        for (final proj in projections) {
-          DatabaseService.instance.logTimeTzProjectForTimeMode(
-            proj,
-            selectedDay: selectedDayKey,
-            visible: true,
-          );
+        if (kVerbosePlanTimeTzProjectionLogs && !kReleaseMode) {
+          for (final proj in projections) {
+            DatabaseService.instance.logTimeTzProjectForTimeMode(
+              proj,
+              selectedDay: selectedDayKey,
+              visible: true,
+            );
+          }
         }
         final result = PlanTimeViewLayoutCalculator.compute(
           projections: projections,
@@ -4789,7 +4762,17 @@ class _PlanningPageState extends State<PlanningPage>
   Widget _buildFrozenPlanCardList(
     List<PlanningTask> tasks,
     ColorScheme scheme,
+    DateTime wallDay,
   ) {
+    DatabaseService.instance.buildPlansDayRenderSnapshot(
+      wallDay,
+      activeRecordingTitleNorm: _activeRecordingTitleNorm,
+    );
+    final renderSnap =
+        DatabaseService.instance.plansRenderSnapshotForDate(wallDay);
+    final planActual = DatabaseService.instance
+        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+
     if (tasks.isEmpty) {
       return ColoredBox(
         color: scheme.surface,
@@ -4800,27 +4783,50 @@ class _PlanningPageState extends State<PlanningPage>
         ),
       );
     }
+
+    final cards = renderSnap?.ready == true
+        ? renderSnap!.cards
+        : tasks.map((task) {
+            final pbId = DatabaseService.pocketRelationIdOrNull(
+              task.pocketRecordId,
+            );
+            return PlanCardRenderDto(
+              task: task,
+              planTrackedSeconds: pbId != null ? (planActual[pbId] ?? 0) : 0,
+              planEstimatedSeconds:
+                  PlanServiceExtension.planningWallEstimateSeconds(task),
+              displayIsDone: task.isDone,
+              showPlay: !task.isDone,
+              highlightAsRunning: false,
+              timeLabel: PlanCard.timelineTimeRangeLabel(task),
+              tagsReady: true,
+              categoryReady: true,
+            );
+          }).toList();
+
     return ColoredBox(
       color: scheme.surface,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         physics: const ClampingScrollPhysics(),
-        itemCount: tasks.length,
+        itemCount: cards.length,
         itemBuilder: (context, index) {
-          final task = tasks[index];
+          final dto = cards[index];
           return PlanCard(
-            key: ValueKey<String>('plan-day-${task.planRowIdForBackend}'),
-            task: task,
-            planTrackedSeconds: 0,
-            planEstimatedSeconds:
-                PlanServiceExtension.planningWallEstimateSeconds(task),
-            displayIsDone: task.isDone,
+            key: ValueKey<String>(
+              'plan-day-${dto.task.planRowIdForBackend}',
+            ),
+            task: dto.task,
+            planTrackedSeconds: dto.planTrackedSeconds,
+            planEstimatedSeconds: dto.planEstimatedSeconds,
+            displayIsDone: dto.displayIsDone,
             selectMode: false,
             isSelected: false,
-            highlightAsRunning: false,
+            highlightAsRunning: dto.highlightAsRunning,
             toggleDoneEnabled: false,
             onToggleDone: () {},
             onBodyTap: () {},
+            onPlay: dto.showPlay ? () {} : null,
             onOpenMenu: (_) {},
           );
         },
@@ -4828,10 +4834,94 @@ class _PlanningPageState extends State<PlanningPage>
     );
   }
 
-  DateTime _dateForPageIndex(int index) => widget.mountedWindow.dateAt(index);
+  DateTime _dateForPageIndex(int index) =>
+      widget.mountedWindow?.dateAt(index) ??
+      (widget.selectedDate ?? _today);
 
   String _dateKeyForPageIndex(int index) =>
       MountedDayWindow.dateKey(_dateForPageIndex(index));
+
+  /// Stable PageView path — live planning stream for this page's day.
+  Widget _buildActiveDayBody(
+    BuildContext context,
+    ColorScheme scheme,
+    List<PlanningTask> tasks,
+  ) {
+    if (!widget.isActivePlanningDay) {
+      return const ColoredBox(
+        color: Colors.transparent,
+        child: SizedBox.expand(),
+      );
+    }
+    P0uDiag.activeSource(
+      screen: 'Plans',
+      date: widget.selectedDateString,
+      source: 'livePlanningStream',
+    );
+    final wallDay = widget.selectedDate ?? _today;
+    final planActualByPbId = DatabaseService.instance
+        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+    if (tasks.isEmpty) {
+      return EmptyStatePlaceholder(
+        icon: Icons.track_changes_rounded,
+        titleL10nKey: 'empty_planning_title',
+        subtitleL10nKey: 'empty_planning_subtitle',
+        actionLabelL10nKey: 'empty_action_focus_planning_field',
+        onAction: () => FocusScope.of(context).requestFocus(_quickAddFocus),
+      );
+    }
+    if (_sortMode == _PlanSortMode.time) {
+      return _buildHourGridView(tasks, planActualByPbId);
+    }
+    if (_sortMode == _PlanSortMode.category) {
+      return _buildCategoryGroupedView(tasks, planActualByPbId);
+    }
+    if (_sortMode == _PlanSortMode.tags) {
+      return _buildTagGroupedListView(tasks, planActualByPbId);
+    }
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      buildDefaultDragHandles: false,
+      proxyDecorator: (Widget child, int index, Animation<double> anim) {
+        return AnimatedBuilder(
+          animation: anim,
+          builder: (context, c) {
+            final v = Curves.easeInOut.transform(anim.value);
+            return Material(
+              elevation: lerpDouble(0, 10, v) ?? 0,
+              shadowColor: Colors.black38,
+              borderRadius: BorderRadius.circular(12),
+              clipBehavior: Clip.antiAlias,
+              child: c,
+            );
+          },
+          child: child,
+        );
+      },
+      itemCount: tasks.length,
+      onReorder: (oldI, newI) => _onReorder(tasks, oldI, newI),
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        final key = _planKey(task);
+        final displayDone = _planDoneOverride[key] ?? task.isDone;
+        final canReorder = !_planSelectMode && _planCanReorderTask(task);
+        return ReorderableDelayedDragStartListener(
+          key: ValueKey(key),
+          index: index,
+          enabled: canReorder,
+          child: _planCardRow(
+            context: context,
+            task: task,
+            key: key,
+            displayDone: displayDone,
+            isSelected: _selectedPlanKeys.contains(key),
+            planActualByPbId: planActualByPbId,
+            omitLongPressForReorder: canReorder,
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildDayContentForPageIndex(
     BuildContext context,
@@ -4844,14 +4934,15 @@ class _PlanningPageState extends State<PlanningPage>
     final dateKey = _dateKeyForPageIndex(index);
     final isActive = widget.shellTabActive &&
         widget.selectedDate != null &&
-        MountedDayWindow.dateOnly(wallDay) ==
-            MountedDayWindow.dateOnly(widget.selectedDate!);
+        (widget.mountedWindow == null ||
+            MountedDayWindow.dateOnly(wallDay) ==
+                MountedDayWindow.dateOnly(widget.selectedDate!));
     final bodyEntry = DatabaseService.instance.plansBodyEntryForDate(wallDay);
     final tasks = isActive ? visibleDayTasks : bodyEntry.tasks;
     sw.stop();
     if (MountedDayRegistry.isMounted('Plans', dateKey)) {
       P0SMountDiag.plansPageHit(date: dateKey);
-    } else if (widget.mountedWindow.contains(wallDay)) {
+    } else if (widget.mountedWindow?.contains(wallDay) == true) {
       P0SMountDiag.plansPageMiss(
         date: dateKey,
         insideWindow: true,
@@ -4864,9 +4955,20 @@ class _PlanningPageState extends State<PlanningPage>
       ms: sw.elapsedMilliseconds,
     );
     if (!isActive) {
+      final planActualByPbId = DatabaseService.instance
+          .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+      if (_sortMode == _PlanSortMode.time) {
+        return RepaintBoundary(
+          child: _PlanningDayCardListKeepAlive(
+            child: AbsorbPointer(
+              child: _buildHourGridView(tasks, planActualByPbId),
+            ),
+          ),
+        );
+      }
       return RepaintBoundary(
         child: _PlanningDayCardListKeepAlive(
-          child: _buildFrozenPlanCardList(tasks, scheme),
+          child: _buildFrozenPlanCardList(tasks, scheme, wallDay),
         ),
       );
     }
@@ -5210,41 +5312,51 @@ class _PlanningPageState extends State<PlanningPage>
           ),
         ),
         Expanded(
-          child: StreamBuilder<void>(
-            stream: DatabaseService.instance.timeUpdates,
-            builder: (context, _) {
-              final window = widget.mountedWindow;
-              final visibleDate = widget.selectedDate ?? _today;
-              final activeIndex = window.indexOf(visibleDate);
-              return EagerDayContentStrip(
-                screen: 'Plans',
-                dates: window.dates,
-                initialIndex: activeIndex,
-                activeIndex: activeIndex,
-                controller: widget.stripController,
-                physics: widget.datePagerLocked
-                    ? const NeverScrollableScrollPhysics()
-                    : const FeatherDateSwipePhysics(),
-                scrollLocked: widget.datePagerLocked,
-                onUserDragStart: widget.onUserDragStart,
-                onUserDragEnd: widget.onUserDragEnd,
-                onScrollTick: widget.onScrollTick,
-                onIndexChanged: (index, date) {
-                  widget.onVisibleDateChanged(index, date);
-                },
-                itemBuilder: (context, date, index, isActive) {
-                  return RepaintBoundary(
-                    child: _buildDayContentForPageIndex(
-                      context,
-                      scheme,
-                      index,
-                      tasks,
-                    ),
-                  );
-                },
-              );
-            },
-          ),
+          child: kUseP0tMountedStrip &&
+                  widget.mountedWindow != null &&
+                  widget.stripController != null &&
+                  widget.onVisibleDateChanged != null
+              ? StreamBuilder<void>(
+                  stream: DatabaseService.instance.timeUpdates,
+                  builder: (context, _) {
+                    final window = widget.mountedWindow!;
+                    final visibleDate = widget.selectedDate ?? _today;
+                    final rawIdx = window.contains(visibleDate)
+                        ? window.indexOf(visibleDate)
+                        : window.indexOf(_today);
+                    final activeIndex = rawIdx
+                        .clamp(0, math.max(0, window.length - 1))
+                        .toInt();
+                    return EagerDayContentStrip(
+                      screen: 'Plans',
+                      dates: window.dates,
+                      initialIndex: activeIndex,
+                      activeIndex: activeIndex,
+                      controller: widget.stripController,
+                      physics: widget.datePagerLocked
+                          ? const NeverScrollableScrollPhysics()
+                          : const FeatherDateSwipePhysics(),
+                      scrollLocked: widget.datePagerLocked,
+                      onUserDragStart: widget.onUserDragStart,
+                      onUserDragEnd: widget.onUserDragEnd,
+                      onScrollTick: widget.onScrollTick,
+                      onIndexChanged: widget.onVisibleDateChanged!,
+                      itemBuilder: (context, date, index, isActive) {
+                        return RepaintBoundary(
+                          child: _buildDayContentForPageIndex(
+                            context,
+                            scheme,
+                            index,
+                            tasks,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                )
+              : RepaintBoundary(
+                  child: _buildActiveDayBody(context, scheme, tasks),
+                ),
         ),
       ],
     );

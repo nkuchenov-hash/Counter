@@ -1,6 +1,7 @@
 import 'package:counter/core/p0s_mount_diag.dart';
 
-/// Finite mounted day window: ±10 initial, extend by 10, max 41 bodies (P0S).
+/// Finite mounted day window: ±3 initial (P0T), extend by 10, max 41 bodies.
+/// Data warm window stays ±10 via [WarmDayWindowConstants].
 final class MountedDayWindow {
   MountedDayWindow({required DateTime center})
     : _center = dateOnly(center) {
@@ -8,7 +9,8 @@ final class MountedDayWindow {
     _windowTo = _center.add(const Duration(days: radius));
   }
 
-  static const int radius = 10;
+  /// P0T: fewer eagerly mounted bodies (7) — was ±10 (21) under P0S.
+  static const int radius = 3;
   static const int extendThreshold = 3;
   static const int extendBy = 10;
   static const int maxBodies = 41;

@@ -5,6 +5,9 @@ import 'dart:math';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/p0_date_nav_diag.dart';
 import 'package:counter/core/p0n_perf_diag.dart';
+import 'package:counter/core/p0t_diag.dart';
+import 'package:counter/core/p0u_diag.dart';
+import 'package:counter/core/p0u_feature_flags.dart';
 import 'package:counter/core/p0o_warm_diag.dart';
 import 'package:counter/core/p0s_mount_diag.dart';
 import 'package:counter/core/p0r_prebuild_diag.dart';
@@ -12,6 +15,7 @@ import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/link_scalar.dart';
 import 'package:counter/data/warm_day_window.dart';
+import 'package:counter/data/p0t_render_snapshot.dart';
 import 'package:counter/data/rendered_day_body_cache.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
@@ -26,6 +30,7 @@ import 'package:pocketbase/pocketbase.dart';
 import 'package:rrule/rrule.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/features/planning/smart_input_parser.dart';
 import 'package:counter/features/profile/wall_clock.dart' as wall_clock;
 import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
@@ -371,6 +376,7 @@ class DatabaseService {
 
   void _emitTimelineRefreshRaw() {
     _timelineDayIndexDirty = true;
+    _timelineDayViewCache.clear();
     _timeUpdateController.add(null);
     _requestPlanAlarmReschedule();
   }
