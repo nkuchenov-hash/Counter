@@ -692,3 +692,5 @@ global_app_header.dart, plan_card.dart, plan_time_task_card.dart ── perf_dia
 ---
 
 *End of audit report. Stage A/A.1 applied to production files; Stage C updated this report only.*
+
+**Follow-up:** Full-repo structure lockdown — `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md` (2026-06-23).

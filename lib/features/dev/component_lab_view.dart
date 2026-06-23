@@ -6,7 +6,7 @@ import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/shared/chip_component.dart';
+import 'package:counter/core/widgets/chip_component.dart';
 import 'package:flutter/material.dart';
 
 part 'component_lab_cards_demo.dart';

@@ -2,14 +2,14 @@ import 'dart:async';
 import 'dart:ui' show PlatformDispatcher;
 
 import 'package:counter/core/app_build_info.dart';
-import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/app_shell.dart';
 import 'package:counter/features/auth/auth_screen.dart';
-import 'package:counter/auth_service.dart';
+import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
-import 'package:counter/database_service.dart';
+import 'package:counter/data/database_service.dart';
 import 'package:counter/services/notification_service.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -30,10 +30,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
-import 'package:counter/core/p0u_diag.dart';
-import 'package:counter/core/p0u_platform.dart';
-import 'package:counter/core/p0u_startup_diag.dart';
-import 'package:counter/core/p0u_feature_flags.dart';
+import 'package:counter/core/diagnostics/runtime_log.dart';
+import 'package:counter/core/diagnostics/platform_log.dart';
+import 'package:counter/core/diagnostics/startup_log.dart';
+import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/core/plan_category_lookup.dart';
+import 'package:counter/core/time/app_clock.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 
 /// P0T stabilization: disable biometric gate until phone pass.
@@ -41,6 +43,23 @@ const bool kP0tBiometricGateDisabled = true;
 
 String? _startupNetworkErrorMessage;
 bool _startupNetworkErrorShown = false;
+
+void _wireAppClock() {
+  final db = DatabaseService.instance;
+  AppClock.wallNow =
+      () => db.applyUserOffset(DatabaseService.getPlanetaryNow());
+  AppClock.timeTicks = db.timeUpdates;
+  AppClock.timezoneShortLabel = db.profileTimezoneShortLabel;
+}
+
+void _wirePlanCategoryLookup() {
+  final db = DatabaseService.instance;
+  PlanCategoryLookup.resolve = (categoryId) => PlanCategoryPresentation(
+        color: db.getCategoryColor(categoryId),
+        icon: db.getCategoryRuleById(categoryId)?.iconOrDefault,
+        breadcrumbPath: db.getCategoryPath(categoryId),
+      );
+}
 
 void main() {
   runZonedGuarded(
@@ -50,9 +69,9 @@ void main() {
     (error, stack) {
       final stackTop = stack.toString().split('\n').first;
       if (kIsWeb) {
-        P0uDiag.webError(exception: error, stackTop: stackTop);
+        RuntimeLog.webError(exception: error, stackTop: stackTop);
       } else {
-        P0uDiag.androidError(exception: error, stackTop: stackTop);
+        RuntimeLog.androidError(exception: error, stackTop: stackTop);
       }
     },
   );
@@ -60,31 +79,31 @@ void main() {
 
 Future<void> _mainAsync() async {
   WidgetsFlutterBinding.ensureInitialized();
-  P0uStartupDiag.ensureStarted();
-  P0uDiag.releaseLogGuard();
-  P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
-  P0uDiag.logAdjVmWarmDisabledIfNeeded();
+  StartupLog.ensureStarted();
+  RuntimeLog.releaseLogGuard();
+  RuntimeLog.biometricGate(enabled: false, reason: 'stabilization');
+  RuntimeLog.logAdjVmWarmDisabledIfNeeded();
   final platform = p0uPlatformLabel();
-  P0uDiag.p0tDisabled(platform: platform, enabled: kUseP0tMountedStrip);
+  RuntimeLog.p0tDisabled(platform: platform, enabled: kUseMountedDayStrip);
   FlutterError.onError = (details) {
     final stackTop = details.stack?.toString().split('\n').first;
     if (kIsWeb) {
-      P0uDiag.webError(exception: details.exception, stackTop: stackTop);
+      RuntimeLog.webError(exception: details.exception, stackTop: stackTop);
     } else {
-      P0uDiag.androidError(exception: details.exception, stackTop: stackTop);
+      RuntimeLog.androidError(exception: details.exception, stackTop: stackTop);
     }
     FlutterError.presentError(details);
   };
   PlatformDispatcher.instance.onError = (error, stack) {
     final stackTop = stack.toString().split('\n').first;
     if (kIsWeb) {
-      P0uDiag.webError(exception: error, stackTop: stackTop);
+      RuntimeLog.webError(exception: error, stackTop: stackTop);
     } else {
-      P0uDiag.androidError(exception: error, stackTop: stackTop);
+      RuntimeLog.androidError(exception: error, stackTop: stackTop);
     }
     return false;
   };
-  PerfDiag.instance.attachIfNeeded();
+  RebuildMetrics.instance.attachIfNeeded();
   if (!kIsWeb) {
     unawaited(NotificationService.instance.ensureInitialized());
     try {
@@ -96,7 +115,7 @@ Future<void> _mainAsync() async {
     appWearHost = false;
   }
   try {
-    await P0uStartupDiag.stageAsync(
+    await StartupLog.stageAsync(
       'pocketbaseReady',
       () => DatabaseService.instance.ensurePocketBaseReady(),
       blocksFirstFrame: true,
@@ -125,7 +144,7 @@ Future<void> _mainAsync() async {
   } catch (_) {}
   String? bootProfileId;
   try {
-    bootProfileId = await P0uStartupDiag.stageAsync(
+    bootProfileId = await StartupLog.stageAsync(
       'authRestore',
       () async {
         final id = await AuthBridge.checkSession();
@@ -308,16 +327,18 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       }
       DatabaseService.instance.offlineSync.resumeAfterAuthIfNeeded();
       OfflineSyncController.resetVisibleDiagForNewSession();
+      _wireAppClock();
+      _wirePlanCategoryLookup();
       setState(() {
         _profileId = id;
         _checked = true;
         _authMessageKey = null;
         _profileHydrationFailed = false;
       });
-      P0uStartupDiag.markFirstShellBuild();
-      P0uStartupDiag.armFirstFrameMarker();
+      StartupLog.markFirstShellBuild();
+      StartupLog.armFirstFrameMarker();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        P0uStartupDiag.markFirstFrame();
+        StartupLog.markFirstFrame();
       });
       return;
     }
@@ -622,7 +643,7 @@ class _BiometricGateState extends State<_BiometricGate>
       DatabaseService.instance.clearLocalStateOnSignOut();
     } catch (_) {}
     try {
-      await AuthService.instance.signOut();
+      await OAuthSession.instance.signOut();
     } catch (_) {}
     if (!mounted) return;
     final root = context.findAncestorStateOfType<_RootAuthWrapperState>();

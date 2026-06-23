@@ -303,4 +303,64 @@ void main() {
       expect(virtOut.recurrenceInstanceDateKey, _dayKey);
     });
   });
+
+  group('target-card drag guard helpers', () {
+    test('recurring/virtual plans are not vertically draggable', () {
+      final normal = _task(
+        id: 'ok',
+        order: 0,
+        startH: 9,
+        startM: 0,
+        endH: 9,
+        endM: 30,
+      );
+      final recurring = normal.copyWith(
+        planRowId: 'rec',
+        rrule: 'FREQ=DAILY',
+      );
+      final virt = normal.copyWith(
+        planRowId: 'virt-inst',
+        recurrenceInstanceDateKey: _dayKey,
+      );
+      expect(isPlanTimelineVerticallyDraggable(normal), isTrue);
+      expect(isPlanTimelineVerticallyDraggable(recurring), isFalse);
+      expect(isPlanTimelineVerticallyDraggable(virt), isFalse);
+    });
+
+    test('validate rejects non-draggable dragged plan', () {
+      final target = _task(
+        id: 'target',
+        order: 0,
+        startH: 10,
+        startM: 0,
+        endH: 10,
+        endM: 30,
+      );
+      final recurring = target.copyWith(
+        planRowId: 'drag',
+        order: 1,
+        startTime: DateTime(2026, 6, 15, 12, 0),
+        endDateTime: DateTime(2026, 6, 15, 12, 30),
+        rrule: 'FREQ=DAILY',
+      );
+      final intent = TimeViewInsertionIntent(
+        draggedPlanId: 'drag',
+        targetPlanId: target.planRowIdForBackend,
+        insertPosition: TimeViewInsertPosition.after,
+        targetStartWall: target.startTime!,
+        targetEndWall: target.endDateTime!,
+        draggedDurationMinutes: 30,
+        draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
+      );
+      final recurringDrag = recurring.copyWith(pocketRecordId: 'drag');
+      expect(
+        validateTimeViewTargetInsertionIntent(
+          intent: intent,
+          scheduled: [target, recurringDrag],
+        ),
+        'draggedNotDraggable',
+      );
+    });
+  });
 }

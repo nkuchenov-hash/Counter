@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_view.dart';
@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Captures [PerfDiag] print output during programmatic date swipes.
+/// Captures [RebuildMetrics] print output during programmatic date swipes.
 final List<String> _perfLogs = [];
 
 void _capturePrint(String line) {
@@ -28,7 +28,7 @@ void main() {
 
   setUp(() {
     _perfLogs.clear();
-    PerfDiag.instance.attachIfNeeded();
+    RebuildMetrics.instance.attachIfNeeded();
   });
 
   testWidgets('TimelineSwipeWrapper — one-day drag emits perf logs', (

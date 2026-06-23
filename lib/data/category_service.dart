@@ -2013,7 +2013,7 @@ extension CategoryServiceExtension on DatabaseService {
   String? sanitizeDefaultPlanTimezone(dynamic raw) {
     final s = raw?.toString().trim() ?? '';
     if (s.isEmpty || s.toLowerCase() == 'profile') return null;
-    if (tz_settings.categoryDefaultTimezoneOptionForIana(s) != null) {
+    if (tz_cat.categoryDefaultTimezoneOptionForIana(s) != null) {
       return s;
     }
     try {
@@ -2031,7 +2031,7 @@ extension CategoryServiceExtension on DatabaseService {
     if (usesProfileDefaultPlanTimezone(storedIana)) {
       return profileTimezoneShortLabel();
     }
-    return tz_settings.shortLabelForCategoryDefaultTimezoneIana(storedIana);
+    return tz_cat.shortLabelForCategoryDefaultTimezoneIana(storedIana);
   }
 
   String formatDefaultPlanTimeWithTimezoneLabel(
@@ -3449,7 +3449,7 @@ extension CategoryServiceExtension on DatabaseService {
   }
 
   Future<List<Task>> loadTasksForDate(DateTime date) async {
-    return PerfDiag.instance.perfBlockAsync(
+    return RebuildMetrics.instance.perfBlockAsync(
       'Category.loadTasksForDate',
       () async {
     final prefs = _prefs;

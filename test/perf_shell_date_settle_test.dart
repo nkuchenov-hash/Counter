@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_view.dart';
@@ -51,7 +51,7 @@ class _ShellDateHarnessState extends State<_ShellDateHarness> {
         day.day == _selectedDate.day) {
       return;
     }
-    PerfDiag.instance.stateChange(
+    RebuildMetrics.instance.stateChange(
       source: 'ShellHarness',
       field: 'selectedDate',
       duringSwipe: true,
@@ -61,7 +61,7 @@ class _ShellDateHarnessState extends State<_ShellDateHarness> {
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('AppShell');
+    rebuildMetricsTick('AppShell');
     _shellLayout.applyShellFrame(widget.activeTab);
     final pages = <Widget>[
       TimelineSwipeWrapper(
@@ -109,7 +109,7 @@ void main() {
     await runZoned(
       () async {
         _perfLogs.clear();
-        PerfDiag.instance.attachIfNeeded();
+        RebuildMetrics.instance.attachIfNeeded();
         await tester.pumpWidget(
           const MaterialApp(home: _ShellDateHarness(activeTab: 0)),
         );

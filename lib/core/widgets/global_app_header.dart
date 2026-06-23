@@ -5,8 +5,8 @@
 
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_bar_live_clock.dart';
-import 'package:counter/core/perf_diag.dart';
-import 'package:counter/data/database_service.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/core/time/app_clock.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -76,7 +76,7 @@ class GlobalAppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('GlobalAppHeader');
+    rebuildMetricsTick('GlobalAppHeader');
     final loc = currentLocale.value;
     final titleStyle = compact
         ? Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -100,7 +100,7 @@ class GlobalAppHeader extends StatelessWidget {
     );
     final weekday = DateFormat.EEEE(loc).format(selectedDate);
     final dateStr = DateFormat.yMMMd(loc).format(selectedDate);
-    final tzLabel = DatabaseService.instance.profileTimezoneShortLabel();
+    final tzLabel = AppClock.timezoneShortLabel?.call() ?? '';
 
     return Material(
       color: Colors.transparent,

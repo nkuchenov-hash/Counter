@@ -2350,7 +2350,7 @@ extension PlanServiceExtension on DatabaseService {
   Future<List<PlanningTask>> _fetchPlanningTasksForDate(
     DateTime selectedDate,
   ) async {
-    return PerfDiag.instance.perfBlockAsync(
+    return RebuildMetrics.instance.perfBlockAsync(
       'Planning._fetchPlanningTasksForDate',
       () async {
     try {
@@ -2653,7 +2653,7 @@ extension PlanServiceExtension on DatabaseService {
       }
       return;
     }
-    final window = MountedDayWindow(center: center);
+    final window = DayWindow(center: center);
     for (final d in window.dates) {
       plansWarmSnapshotForDate(d);
       plansBodyEntryForDate(d, allowEmergencyBuild: true);
@@ -2725,7 +2725,7 @@ extension PlanServiceExtension on DatabaseService {
           displayIsDone: hydrated.isDone,
           showPlay: showPlay,
           highlightAsRunning: highlight,
-          timeLabel: PlanCard.timelineTimeRangeLabel(hydrated),
+          timeLabel: timelineTimeRangeLabel(hydrated),
           tagsReady: tagsReady,
           categoryReady: categoryReady,
         ),
@@ -3314,7 +3314,7 @@ extension PlanServiceExtension on DatabaseService {
             batch: 200,
           );
       sw.stop();
-      PerfDiag.instance.pbDuringSwipe(
+      RebuildMetrics.instance.pbDuringSwipe(
         collection: 'plans',
         method: 'getFullList',
         durationMs: sw.elapsedMilliseconds,

@@ -10,13 +10,13 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/core/p0u_feature_flags.dart';
-import 'package:counter/core/p0u_diag.dart';
-import 'package:counter/core/p0u_platform.dart';
-import 'package:counter/core/widgets/eager_day_content_strip.dart';
-import 'package:counter/core/widgets/mounted_day_window.dart';
-import 'package:counter/core/perf_diag.dart';
-import 'package:counter/core/perf_flags.dart';
+import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/core/diagnostics/runtime_log.dart';
+import 'package:counter/core/diagnostics/platform_log.dart';
+import 'package:counter/core/widgets/day_content_strip.dart';
+import 'package:counter/core/widgets/day_window.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/core/performance/shell_flags.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/picker_entry_modes.dart';
@@ -25,18 +25,18 @@ import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
-import 'package:counter/data/p0t_render_snapshot.dart';
+import 'package:counter/data/cache/render_snapshot.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
-import 'package:counter/features/planning/smart_input_parser.dart';
+import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/planning/smart_plan_sheet.dart';
-import 'package:counter/features/profile/tag_manager_page.dart';
+import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
-import 'package:counter/features/shared/chip_component.dart';
+import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -47,6 +47,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
+import 'package:counter/core/time/plan_time_labels.dart';
 import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 
@@ -173,7 +174,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   }
 
   void _schedulePrefetch(DateTime center) {
-    if (kUseP0tMountedStrip) return;
+    if (kUseMountedDayStrip) return;
     unawaited(
       Future.microtask(() {
         if (!mounted) return;
@@ -186,15 +187,15 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
   void initState() {
     super.initState();
     final platform = p0uPlatformLabel();
-    P0uDiag.p0tDisabled(platform: platform, enabled: kUseP0tMountedStrip);
-    P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
+    RuntimeLog.p0tDisabled(platform: platform, enabled: kUseMountedDayStrip);
+    RuntimeLog.biometricGate(enabled: false, reason: 'stabilization');
     _anchorDate = DateUtils.dateOnly(DateTime.now());
     final daysOffset =
         _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;
     _visiblePageIndex = _initialPage + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
-    if (kPlansWarmWindowEnabled && !kUseP0tMountedStrip) {
+    if (kPlansWarmWindowEnabled && !kUseMountedDayStrip) {
       DatabaseService.instance.ensurePlansWarmWindow(widget.selectedDate);
     }
   }
@@ -203,7 +204,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     if (!_controller.hasClients) return;
     final page = _controller.page;
     if (page == null) return;
-    PerfDiag.instance.dateSwipeDrag(
+    RebuildMetrics.instance.dateSwipeDrag(
       section: 'Planning',
       page: page.round(),
       pageFraction: page,
@@ -270,8 +271,8 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('PlanningSwipeWrapper');
-    if (kUseP0tMountedStrip) {
+    rebuildMetricsTick('PlanningSwipeWrapper');
+    if (kUseMountedDayStrip) {
       return _buildMountedStripFallback(context);
     }
     try {
@@ -282,7 +283,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
             if (n is ScrollStartNotification && n.dragDetails != null) {
               _settleGate.onUserDragStart();
               final from = _dateKeyFromDate(_dateForIndex(_visiblePageIndex));
-              PerfDiag.instance.dateSwipeStart(
+              RebuildMetrics.instance.dateSwipeStart(
                 section: 'Planning',
                 fromDate: from,
               );
@@ -291,7 +292,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
               _settleGate.onUserDragEnd();
               _applyPendingExternalPageIfNeeded();
               SchedulerBinding.instance.addPostFrameCallback((_) {
-                PerfDiag.instance.dateSwipeEnd(section: 'Planning');
+                RebuildMetrics.instance.dateSwipeEnd(section: 'Planning');
               });
             }
             return false;
@@ -346,7 +347,7 @@ class _PlanningSwipeWrapperState extends State<PlanningSwipeWrapper> {
     }
   }
 
-  /// Legacy P0S/P0T path — disabled when [kUseP0tMountedStrip] is false.
+  /// Legacy P0S/P0T path — disabled when [kUseMountedDayStrip] is false.
   Widget _buildMountedStripFallback(BuildContext context) {
     return AppErrorState(
       message: t(currentLocale.value, 'no_data_found'),
@@ -384,7 +385,7 @@ class PlanningPage extends StatefulWidget {
   /// Only the visible PageView day should be true (live planning stream).
   final bool isActivePlanningDay;
   final bool shellTabActive;
-  final MountedDayWindow? mountedWindow;
+  final DayWindow? mountedWindow;
   final EagerDayContentStripController? stripController;
   final bool datePagerLocked;
   final void Function(int windowIndex, DateTime date)? onVisibleDateChanged;
@@ -482,6 +483,13 @@ class _PlanningPageState extends State<PlanningPage>
   bool _timelineDragInsertBefore = false;
   double? _timelineDragInsertMarkerTopPx;
   TimeViewInsertionIntent? _timelineStoredInsertionIntent;
+
+  /// Finger delta (never overwritten by preview snap); used for hit-test on release.
+  double _timelineFingerDragDeltaPx = 0;
+
+  /// Monotonic id per vertical drag gesture (stamped on target-card intents).
+  static int _timelineNextDragSequenceId = 0;
+  int _timelineVerticalDragSequenceId = 0;
 
   /// Top/bottom edge resize (Time mode); local preview until release.
   String? _timelineResizePlanKey;
@@ -2611,7 +2619,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
     int rangeEnd,
     String selectedDayKey,
   ) {
-    return PerfDiag.instance.perfBlock(
+    return RebuildMetrics.instance.perfBlock(
       'Planning._computeTimelineDurationLayout',
       () {
         final visibleHours = PlanningSheetTimelinePrefs.visibleHoursOrdered(
@@ -2976,6 +2984,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
   void _clearTimelineInteractionState() {
     _timelineVerticalDragPlanKey = null;
     _timelineVerticalDragDeltaPx = 0;
+    _timelineFingerDragDeltaPx = 0;
     _timelineVerticalDragTask = null;
     _timelineVerticalDragTimeLabel = null;
     _timelineDragInsertTargetKey = null;
@@ -3346,6 +3355,8 @@ DatabaseService.instance.notifyPlanningRefresh();
     required String draggedPlanId,
     required int draggedDurationMin,
     required bool draggedHadEnd,
+    required TimeViewInsertionSource source,
+    int? dragSequenceId,
   }) {
     final proj = layout.projection ??
         DatabaseService.instance.projectPlanForTimeMode(layout.task);
@@ -3363,8 +3374,12 @@ DatabaseService.instance.notifyPlanningRefresh();
       targetEndWall: targetEnd,
       draggedDurationMinutes: draggedDurationMin,
       draggedHadEnd: draggedHadEnd,
+      source: source,
+      dragSequenceId: dragSequenceId,
     );
   }
+
+  void _logTimeDropGuard(String message) => logTimeDropGuard(message);
 
   TimeViewTargetDropSchedule? _timelineTargetDropScheduleForLayout({
     required PlanTimeViewBlockLayout layout,
@@ -3407,7 +3422,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     required int rangeEnd,
     required String selectedDayKey,
   }) {
-    if (PerfFlags.enableTimelineProjectionCache &&
+    if (ShellFlags.enableTimelineProjectionCache &&
         _dragInsertLayoutsCache.isNotEmpty) {
       return _dragInsertLayoutsCache;
     }
@@ -3452,7 +3467,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     required String selectedDayKey,
   }) {
     _clearTimelineInteractionState();
-    if (PerfFlags.enableTimelineProjectionCache) {
+    if (ShellFlags.enableTimelineProjectionCache) {
       _dragInsertLayoutsCache = _timelineBlockLayouts(
         _cachedTimeModeProjections,
         rangeStart,
@@ -3463,6 +3478,8 @@ DatabaseService.instance.notifyPlanningRefresh();
     setState(() {
       _timelineVerticalDragPlanKey = planKey;
       _timelineVerticalDragDeltaPx = 0;
+      _timelineFingerDragDeltaPx = 0;
+      _timelineVerticalDragSequenceId = ++_timelineNextDragSequenceId;
       _timelineVerticalDragOriginTopPx = originTopPx;
       _timelineVerticalDragCardHeightPx = originCardHeightPx;
       _timelineVerticalDragDurationMin = durationMin;
@@ -3491,13 +3508,14 @@ DatabaseService.instance.notifyPlanningRefresh();
   }) {
     final grid = _activeTimelineDurationGrid;
     if (grid == null) return;
+    _timelineFingerDragDeltaPx = deltaPx;
     final durMin = _timelineVerticalDragDurationMin.toDouble();
     final dragHeightPx = math.max(1.0, _timelineVerticalDragCardHeightPx);
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durMin),
     );
-    final rawTop = _timelineVerticalDragOriginTopPx + deltaPx;
-    final dragCenterY = rawTop + dragHeightPx / 2;
+    final fingerTop = _timelineVerticalDragOriginTopPx + deltaPx;
+    final dragCenterY = fingerTop + dragHeightPx / 2;
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
@@ -3518,20 +3536,35 @@ DatabaseService.instance.notifyPlanningRefresh();
     double? markerTop;
     String? previewLabel;
     TimeViewInsertionIntent? storedIntent;
+    final dragPlanId = _timelineVerticalDragTask?.planRowIdForBackend ??
+        _timelineVerticalDragPlanKey ??
+        '';
 
     if (insert != null) {
       insertBefore = insert.insertBefore;
       insertKey = _planKey(insert.layout.task);
-      final dragPlanId = _timelineVerticalDragTask?.planRowIdForBackend ??
-          _timelineVerticalDragPlanKey ??
-          '';
-      storedIntent = _timelineInsertionIntentFromLayout(
+      final freshIntent = _timelineInsertionIntentFromLayout(
         layout: insert.layout,
         insertBefore: insertBefore,
         draggedPlanId: dragPlanId,
         draggedDurationMin: _timelineVerticalDragDurationMin,
         draggedHadEnd: _timelineVerticalDragHadEnd,
+        source: TimeViewInsertionSource.targetCard,
+        dragSequenceId: _timelineVerticalDragSequenceId,
       );
+      if (freshIntent != null) {
+        storedIntent = freshIntent;
+      } else {
+        final sticky = _timelineStoredInsertionIntent;
+        if (sticky?.isTargetCardMode == true &&
+            sticky?.targetPlanId == insert.layout.task.planRowIdForBackend) {
+          storedIntent = sticky;
+        } else {
+          storedIntent = null;
+          insertKey = null;
+        }
+      }
+
       if (storedIntent != null) {
         final dropResult = DatabaseService.instance.applyTimeViewTargetInsertion(
           scheduledInRange,
@@ -3548,10 +3581,21 @@ DatabaseService.instance.notifyPlanningRefresh();
           dropResult.draggedStartWall,
           dropResult.draggedEndWall,
         );
-} else {
-        storedIntent = null;
+        _logTimeDropGuard(
+          'phase=dragOver dragged=$dragPlanId target=${storedIntent.targetPlanId} '
+          'position=${insertBefore ? 'before' : 'after'} source=targetCard',
+        );
+        if (insertBefore) {
+          markerTop = insert.layout.topPx.clamp(0.0, canvasHeight);
+        } else {
+          markerTop = (insert.layout.topPx + insert.layout.heightPx).clamp(
+            0.0,
+            canvasHeight,
+          );
+        }
+      } else {
         final snappedMin = _snapTimelineMinutes(
-          grid.minutesFromY(rawTop.clamp(0.0, maxTopPx)),
+          grid.minutesFromY(fingerTop.clamp(0.0, maxTopPx)),
         );
         previewTop = grid.yForMinutesFromRangeStart(snappedMin);
         previewLabel = _timelineDragLabelForTopPx(
@@ -3562,17 +3606,24 @@ DatabaseService.instance.notifyPlanningRefresh();
           _timelineVerticalDragHadEnd,
         );
       }
-      if (insertBefore) {
-        markerTop = insert.layout.topPx.clamp(0.0, canvasHeight);
-      } else {
-        markerTop = (insert.layout.topPx + insert.layout.heightPx).clamp(
-          0.0,
-          canvasHeight,
-        );
-      }
-    } else {
+    } else if (_timelineStoredInsertionIntent?.isTargetCardMode == true) {
+      // Finger left target card — exit target-card mode; empty-canvas preview only.
+      storedIntent = null;
       final snappedMin = _snapTimelineMinutes(
-        grid.minutesFromY(rawTop.clamp(0.0, maxTopPx)),
+        grid.minutesFromY(fingerTop.clamp(0.0, maxTopPx)),
+      );
+      previewTop = grid.yForMinutesFromRangeStart(snappedMin);
+      previewLabel = _timelineDragLabelForTopPx(
+        previewTop,
+        planWallDay,
+        rangeStart,
+        _timelineVerticalDragDurationMin,
+        _timelineVerticalDragHadEnd,
+      );
+    } else {
+      storedIntent = null;
+      final snappedMin = _snapTimelineMinutes(
+        grid.minutesFromY(fingerTop.clamp(0.0, maxTopPx)),
       );
       previewTop = grid.yForMinutesFromRangeStart(snappedMin);
       previewLabel = _timelineDragLabelForTopPx(
@@ -3625,10 +3676,10 @@ DatabaseService.instance.notifyPlanningRefresh();
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durMin),
     );
-    final rawTop = (_timelineVerticalDragOriginTopPx + _timelineVerticalDragDeltaPx)
+    final fingerTop = (_timelineVerticalDragOriginTopPx + _timelineFingerDragDeltaPx)
         .clamp(0.0, maxTopPx);
-    final rawYMinutes = grid.minutesFromY(rawTop);
-    final dragCenterY = rawTop + dragHeightPx / 2;
+    final fingerCenterY = fingerTop + dragHeightPx / 2;
+    final fingerYMinutes = grid.minutesFromY(fingerTop);
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
@@ -3640,12 +3691,41 @@ DatabaseService.instance.notifyPlanningRefresh();
 
     TimeViewInsertionIntent? insertionIntent = _timelineStoredInsertionIntent;
     String commitSource;
-    if (insertionIntent != null) {
+
+    if (insertionIntent?.isTargetCardMode == true) {
       commitSource = 'storedIntent';
+      insertionIntent = refreshTimeViewInsertionIntentFromScheduled(
+        intent: insertionIntent!,
+        scheduled: scheduledInRange,
+        resolveDurationMinutes:
+            DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+      );
+      final cancelReason = insertionIntent == null
+          ? 'targetRefreshFailed'
+          : validateTimeViewTargetInsertionIntent(
+              intent: insertionIntent,
+              scheduled: scheduledInRange,
+              expectedDayKey: selectedDayKey,
+            );
+      if (cancelReason != null) {
+        _logTimeDropGuard('phase=cancel reason=$cancelReason');
+        _cancelTimelineVerticalDrag();
+        return;
+      }
+      _logTimeDropGuard(
+        'phase=commit dragged=${insertionIntent!.draggedPlanId} '
+        'target=${insertionIntent.targetPlanId} '
+        'position=${insertionIntent.insertBefore ? 'before' : 'after'} '
+        'mode=targetCard',
+      );
+    } else if (_timelineDragInsertTargetKey != null) {
+      _logTimeDropGuard('phase=cancel reason=orphanTargetMarker');
+      _cancelTimelineVerticalDrag();
+      return;
     } else {
       final insert = _timelineResolveDragInsertTarget(
         layouts: layouts,
-        dragCenterY: dragCenterY,
+        dragCenterY: fingerCenterY,
         excludePlanKey: planKey,
       );
       if (insert != null) {
@@ -3656,9 +3736,40 @@ DatabaseService.instance.notifyPlanningRefresh();
           draggedPlanId: task.planRowIdForBackend,
           draggedDurationMin: durMin,
           draggedHadEnd: _timelineVerticalDragHadEnd,
+          source: TimeViewInsertionSource.targetCard,
+          dragSequenceId: _timelineVerticalDragSequenceId,
+        );
+        insertionIntent = insertionIntent == null
+            ? null
+            : refreshTimeViewInsertionIntentFromScheduled(
+                intent: insertionIntent,
+                scheduled: scheduledInRange,
+                resolveDurationMinutes: DatabaseService
+                    .instance
+                    .resolvePlanDurationMinutesFromTags,
+              );
+        final cancelReason = insertionIntent == null
+            ? 'releaseTargetProjectionFailed'
+            : validateTimeViewTargetInsertionIntent(
+                intent: insertionIntent,
+                scheduled: scheduledInRange,
+                expectedDayKey: selectedDayKey,
+              );
+        if (cancelReason != null) {
+          _logTimeDropGuard('phase=cancel reason=$cancelReason');
+          _cancelTimelineVerticalDrag();
+          return;
+        }
+        _logTimeDropGuard(
+          'phase=commit dragged=${insertionIntent!.draggedPlanId} '
+          'target=${insertionIntent.targetPlanId} '
+          'position=${insertionIntent.insertBefore ? 'before' : 'after'} '
+          'mode=targetCard',
         );
       } else {
         commitSource = 'emptyCanvas';
+        insertionIntent = null;
+        _logTimeDropGuard('phase=commit mode=emptyCanvas');
       }
     }
 
@@ -3673,7 +3784,7 @@ DatabaseService.instance.notifyPlanningRefresh();
       newStartWall = dropResult.draggedStartWall;
       newEndWall = dropResult.draggedEndWall;
     } else {
-      final snappedMin = _snapTimelineMinutes(rawYMinutes);
+      final snappedMin = _snapTimelineMinutes(fingerYMinutes);
       newStartWall = _wallTimeFromTimelineMinutes(
         snappedMin,
         planWallDay,
@@ -3695,7 +3806,7 @@ DatabaseService.instance.notifyPlanningRefresh();
       planWallDay: planWallDay,
       insertionIntent: insertionIntent,
       commitSource: commitSource,
-      rawYMinutesForTrace: rawYMinutes,
+      rawYMinutesForTrace: fingerYMinutes,
     );
   }
 
@@ -4292,7 +4403,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     ],
       ),
     );
-    if (PerfFlags.enableTimelineRepaintBoundary) {
+    if (ShellFlags.enableTimelineRepaintBoundary) {
       return RepaintBoundary(child: canvas);
     }
     return canvas;
@@ -4916,7 +5027,7 @@ DatabaseService.instance.notifyPlanningRefresh();
               displayIsDone: task.isDone,
               showPlay: !task.isDone,
               highlightAsRunning: false,
-              timeLabel: PlanCard.timelineTimeRangeLabel(task),
+              timeLabel: timelineTimeRangeLabel(task),
               tagsReady: true,
               categoryReady: true,
             );
@@ -4957,7 +5068,7 @@ DatabaseService.instance.notifyPlanningRefresh();
       (widget.selectedDate ?? _today);
 
   String _dateKeyForPageIndex(int index) =>
-      MountedDayWindow.dateKey(_dateForPageIndex(index));
+      DayWindow.dateKey(_dateForPageIndex(index));
 
   /// Stable PageView path — live planning stream for this page's day.
   Widget _buildActiveDayBody(
@@ -5046,8 +5157,8 @@ DatabaseService.instance.notifyPlanningRefresh();
     final isActive = widget.shellTabActive &&
         widget.selectedDate != null &&
         (widget.mountedWindow == null ||
-            MountedDayWindow.dateOnly(wallDay) ==
-                MountedDayWindow.dateOnly(widget.selectedDate!));
+            DayWindow.dateOnly(wallDay) ==
+                DayWindow.dateOnly(widget.selectedDate!));
     final bodyEntry = DatabaseService.instance.plansBodyEntryForDate(wallDay);
     final tasks = isActive ? visibleDayTasks : bodyEntry.tasks;
     if (!isActive) {
@@ -5134,7 +5245,7 @@ DatabaseService.instance.notifyPlanningRefresh();
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('PlanningPage');
+    rebuildMetricsTick('PlanningPage');
     final scheme = Theme.of(context).colorScheme;
 
     return StreamBuilder<List<PlanningTask>>(
@@ -5411,7 +5522,7 @@ DatabaseService.instance.notifyPlanningRefresh();
           ),
         ),
         Expanded(
-          child: kUseP0tMountedStrip &&
+          child: kUseMountedDayStrip &&
                   widget.mountedWindow != null &&
                   widget.stripController != null &&
                   widget.onVisibleDateChanged != null

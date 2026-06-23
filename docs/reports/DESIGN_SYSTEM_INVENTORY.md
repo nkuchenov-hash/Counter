@@ -395,3 +395,7 @@ Do not mass-replace these findings opportunistically. Migrate one component fami
 
 - **`life_card.dart`:** Remains the canonical V7H card foundation (`LifeCard` / `AppTaskCard`). Still **zero production imports** — Component Lab only. Not deleted in Stage A; migration deferred.
 - **`confirm_dialog.dart`:** Remains canonical `showConfirmDialog()` surface. Still **zero production call sites** — dead-component candidate, not deleted in Stage A. Wire or migrate in a focused V7 pass.
+
+## Structure lockdown note (2026-06-23)
+
+See `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md` and `scripts/audit/architecture_guard.ps1`. Both canonical unwired components remain **KEEP** until V7 migration pass.

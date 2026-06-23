@@ -451,8 +451,8 @@ extension RecordServiceExtension on DatabaseService {
         }
       }
       pbSw.stop();
-      if (kPerfDiagnosisEnabled) {
-        PerfDiag.instance.logPbTimelineQuery(
+      if (kRebuildMetricsEnabled) {
+        RebuildMetrics.instance.logPbTimelineQuery(
           date: 'broad',
           filter: filterClause,
           returned: list.length,
@@ -1080,8 +1080,8 @@ extension RecordServiceExtension on DatabaseService {
       buckets.clear();
     }
     sw.stop();
-    if (kPerfDiagnosisEnabled) {
-      PerfDiag.instance.logTimelineHistoryScan(
+    if (kRebuildMetricsEnabled) {
+      RebuildMetrics.instance.logTimelineHistoryScan(
         count: _cachedFlatRecords.length,
         ms: sw.elapsedMilliseconds,
         dayBuckets: buckets.length,
@@ -1222,7 +1222,7 @@ extension RecordServiceExtension on DatabaseService {
       }
       return;
     }
-    final window = MountedDayWindow(center: center);
+    final window = DayWindow(center: center);
     for (final d in window.dates) {
       timelineWarmSnapshotForDate(d);
       timelineBodyEntryForDate(d, allowEmergencyBuild: true);
@@ -1562,8 +1562,8 @@ extension RecordServiceExtension on DatabaseService {
     if (!_timelineDayIndexDirty) {
       final cachedView = _timelineDayViewCache[targetDayStr];
       if (cachedView != null) {
-        if (kPerfDiagnosisEnabled) {
-          PerfDiag.instance.logTimelineCacheHit(
+        if (kRebuildMetricsEnabled) {
+          RebuildMetrics.instance.logTimelineCacheHit(
             date: targetDayStr,
             itemCount: cachedView.length,
           );
@@ -1571,15 +1571,15 @@ extension RecordServiceExtension on DatabaseService {
         return List<Map<String, dynamic>>.from(cachedView);
       }
     }
-    if (kPerfDiagnosisEnabled) {
-      PerfDiag.instance.logTimelineCacheMiss(date: targetDayStr);
+    if (kRebuildMetricsEnabled) {
+      RebuildMetrics.instance.logTimelineCacheMiss(date: targetDayStr);
     }
-    final grouped = PerfDiag.instance.perfBlock(
+    final grouped = RebuildMetrics.instance.perfBlock(
       'Timeline.groupRecords',
       () => _timelineDayIndexRowsForKey(targetDayStr),
       meta: {'date': targetDayStr},
     );
-    final rendered = PerfDiag.instance.perfBlock(
+    final rendered = RebuildMetrics.instance.perfBlock(
       'Timeline.renderModel',
       () => _withDisplayTimes(grouped),
       meta: {'date': targetDayStr, 'items': grouped.length},
@@ -1778,8 +1778,8 @@ extension RecordServiceExtension on DatabaseService {
       }
     }
     sw.stop();
-    if (kPerfDiagnosisEnabled) {
-      PerfDiag.instance.logTimelineViewCacheRebuild(
+    if (kRebuildMetricsEnabled) {
+      RebuildMetrics.instance.logTimelineViewCacheRebuild(
         date: dateKey,
         records: maps.length,
         ms: sw.elapsedMilliseconds,
@@ -1794,11 +1794,11 @@ extension RecordServiceExtension on DatabaseService {
     required bool Function() timelineTabActive,
     required bool Function() centerDateUnchanged,
   }) {
-    P0uDiag.logAdjVmWarmDisabledIfNeeded();
-    if (!kTimelineAdjacentRowVmWarmup || kUseP0tMountedStrip) return;
+    RuntimeLog.logAdjVmWarmDisabledIfNeeded();
+    if (!kTimelineAdjacentRowVmWarmup || kUseMountedDayStrip) return;
     final captured = DateTime(center.year, center.month, center.day);
     final gen = ++_timelineAdjVmWarmGeneration;
-    P0uStartupDiag.scheduleAfterFirstFrame('timelineAdjVmWarm', () async {
+    StartupLog.scheduleAfterFirstFrame('timelineAdjVmWarm', () async {
       await _warmTimelineAdjacentRowVms(
         generation: gen,
         center: captured,
@@ -1814,8 +1814,8 @@ extension RecordServiceExtension on DatabaseService {
     required bool Function() timelineTabActive,
     required bool Function() centerDateUnchanged,
   }) {
-    P0uDiag.logAdjVmWarmDisabledIfNeeded();
-    if (!kTimelineAdjacentRowVmWarmup || kUseP0tMountedStrip) return;
+    RuntimeLog.logAdjVmWarmDisabledIfNeeded();
+    if (!kTimelineAdjacentRowVmWarmup || kUseMountedDayStrip) return;
     final captured = DateTime(center.year, center.month, center.day);
     final gen = ++_timelineAdjVmWarmGeneration;
     unawaited(
@@ -1909,8 +1909,8 @@ extension RecordServiceExtension on DatabaseService {
     final targetDayStr = _timelineDateKeyFromDate(date);
     final cached = _timelineDayVmCache[targetDayStr];
     if (cached != null) {
-      if (kPerfDiagnosisEnabled) {
-        PerfDiag.instance.logTimelineViewCacheHit(
+      if (kRebuildMetricsEnabled) {
+        RebuildMetrics.instance.logTimelineViewCacheHit(
           date: targetDayStr,
           items: cached.length,
         );
@@ -1926,8 +1926,8 @@ extension RecordServiceExtension on DatabaseService {
     _timelineDayViewCache.remove(dateKey);
     _timelineDayVmCache.remove(dateKey);
     _timelineLazyRowVmByDay.remove(dateKey);
-    if (kPerfDiagnosisEnabled && reason != null) {
-      PerfDiag.instance.logTimelineViewCacheInvalidate(
+    if (kRebuildMetricsEnabled && reason != null) {
+      RebuildMetrics.instance.logTimelineViewCacheInvalidate(
         date: dateKey,
         reason: reason,
       );
@@ -1948,8 +1948,8 @@ extension RecordServiceExtension on DatabaseService {
     final pending = keys.where((k) => !_timelinePrefetchInFlight.contains(k)).toList();
     if (pending.isEmpty) return;
     _timelinePrefetchInFlight.addAll(pending);
-    if (kPerfDiagnosisEnabled) {
-      PerfDiag.instance.logTimelinePrefetchStart(dates: pending);
+    if (kRebuildMetricsEnabled) {
+      RebuildMetrics.instance.logTimelinePrefetchStart(dates: pending);
     }
     unawaited(() async {
       final sw = Stopwatch()..start();
@@ -1970,8 +1970,8 @@ extension RecordServiceExtension on DatabaseService {
           if (y == null || m == null || d == null) continue;
           final day = DateTime(y, m, d);
           final rows = peekTimelineRecordsForDate(day);
-          if (kPerfDiagnosisEnabled) {
-            PerfDiag.instance.logTimelinePrefetchEnd(
+          if (kRebuildMetricsEnabled) {
+            RebuildMetrics.instance.logTimelinePrefetchEnd(
               date: key,
               ms: sw.elapsedMilliseconds,
               itemCount: rows.length,

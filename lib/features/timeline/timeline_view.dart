@@ -1,21 +1,21 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
-import 'package:counter/core/p0u_diag.dart';
-import 'package:counter/core/p0u_feature_flags.dart';
-import 'package:counter/core/p0u_platform.dart';
-import 'package:counter/core/widgets/eager_day_content_strip.dart';
-import 'package:counter/core/widgets/mounted_day_window.dart';
-import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/diagnostics/runtime_log.dart';
+import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/core/diagnostics/platform_log.dart';
+import 'package:counter/core/widgets/day_content_strip.dart';
+import 'package:counter/core/widgets/day_window.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/shared/chip_component.dart';
+import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -178,7 +178,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   }
 
   void _schedulePrefetch(DateTime center) {
-    if (kUseP0tMountedStrip) return;
+    if (kUseMountedDayStrip) return;
     unawaited(
       Future.microtask(() {
         if (!mounted) return;
@@ -189,7 +189,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   }
 
   void _scheduleAdjacentRowVmWarmup(DateTime center) {
-    if (kUseP0tMountedStrip || !kTimelineAdjacentRowVmWarmup) return;
+    if (kUseMountedDayStrip || !kTimelineAdjacentRowVmWarmup) return;
     final centerKey = _dateKeyFromDate(center);
     DatabaseService.instance.scheduleTimelineAdjacentRowVmWarmup(
       center,
@@ -200,7 +200,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   }
 
   void _ensureAdjacentRowVmWarmup(DateTime center) {
-    if (kUseP0tMountedStrip || !kTimelineAdjacentRowVmWarmup) return;
+    if (kUseMountedDayStrip || !kTimelineAdjacentRowVmWarmup) return;
     final centerKey = _dateKeyFromDate(center);
     DatabaseService.instance.ensureTimelineAdjacentRowVmWarmup(
       center,
@@ -220,16 +220,16 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
   void initState() {
     super.initState();
     final platform = p0uPlatformLabel();
-    P0uDiag.p0tDisabled(platform: platform, enabled: kUseP0tMountedStrip);
-    P0uDiag.logAdjVmWarmDisabledIfNeeded();
-    P0uDiag.biometricGate(enabled: false, reason: 'stabilization');
+    RuntimeLog.p0tDisabled(platform: platform, enabled: kUseMountedDayStrip);
+    RuntimeLog.logAdjVmWarmDisabledIfNeeded();
+    RuntimeLog.biometricGate(enabled: false, reason: 'stabilization');
     _anchorDate = DateUtils.dateOnly(DateTime.now());
     final daysOffset =
         _dateOnly(widget.selectedDate).difference(_anchorDate).inDays;
     _visiblePageIndex = _initialPage + daysOffset;
     _controller = PageController(initialPage: _visiblePageIndex);
     _controller.addListener(_onPageControllerTick);
-    if (!kUseP0tMountedStrip) {
+    if (!kUseMountedDayStrip) {
       DatabaseService.instance.ensureTimelineWarmWindow(widget.selectedDate);
       if (widget.shellTabActive) {
         _scheduleAdjacentRowVmWarmup(widget.selectedDate);
@@ -241,7 +241,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     if (!_controller.hasClients) return;
     final page = _controller.page;
     if (page == null) return;
-    PerfDiag.instance.dateSwipeDrag(
+    RebuildMetrics.instance.dateSwipeDrag(
       section: 'Timeline',
       page: page.round(),
       pageFraction: page,
@@ -297,8 +297,8 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('TimelineSwipeWrapper');
-    if (kUseP0tMountedStrip) {
+    rebuildMetricsTick('TimelineSwipeWrapper');
+    if (kUseMountedDayStrip) {
       return AppErrorState(
         message: t(currentLocale.value, 'no_data_found'),
       );
@@ -312,7 +312,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
             if (n is ScrollStartNotification && n.dragDetails != null) {
               _settleGate.onUserDragStart();
               _swipeFromDateKey = _dateKeyFromDate(visibleDate);
-              PerfDiag.instance.dateSwipeStart(
+              RebuildMetrics.instance.dateSwipeStart(
                 section: 'Timeline',
                 fromDate: _swipeFromDateKey!,
               );
@@ -321,7 +321,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
               _settleGate.onUserDragEnd();
               _applyPendingExternalPageIfNeeded();
               SchedulerBinding.instance.addPostFrameCallback((_) {
-                PerfDiag.instance.dateSwipeEnd(section: 'Timeline');
+                RebuildMetrics.instance.dateSwipeEnd(section: 'Timeline');
               });
             }
             return false;
@@ -421,7 +421,7 @@ class TimelinePage extends StatefulWidget {
   final DateTime anchorToday;
   final bool isActivePage;
   final bool shellTabActive;
-  final MountedDayWindow? mountedWindow;
+  final DayWindow? mountedWindow;
   final EagerDayContentStripController? stripController;
   final void Function(int windowIndex, DateTime date)? onVisibleDateChanged;
   final VoidCallback? onUserDragStart;
@@ -466,7 +466,7 @@ class _TimelinePageState extends State<TimelinePage> {
 
   DateTime get _visibleDate => widget.visibleDate;
 
-  String _dateKey(DateTime d) => MountedDayWindow.dateKey(d);
+  String _dateKey(DateTime d) => DayWindow.dateKey(d);
 
   bool get _visibleIsFuture => _visibleDate.isAfter(widget.anchorToday);
 
@@ -540,7 +540,7 @@ class _TimelinePageState extends State<TimelinePage> {
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('TimelinePage');
+    rebuildMetricsTick('TimelinePage');
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: SafeArea(
@@ -649,7 +649,7 @@ class _TimelinePageState extends State<TimelinePage> {
             const SizedBox(height: 8),
             const Divider(height: 1),
             Expanded(
-              child: kUseP0tMountedStrip &&
+              child: kUseMountedDayStrip &&
                       widget.mountedWindow != null &&
                       widget.stripController != null &&
                       widget.onVisibleDateChanged != null
@@ -902,8 +902,8 @@ class _TimelineLazyRecordListState extends State<_TimelineLazyRecordList> {
   Widget build(BuildContext context) {
     final sw = Stopwatch()..start();
     final maps = widget.recordMaps;
-    if (kPerfDiagnosisEnabled) {
-      PerfDiag.instance.logTimelineVisibleBuild(
+    if (kRebuildMetricsEnabled) {
+      RebuildMetrics.instance.logTimelineVisibleBuild(
         itemCount: maps.length,
         ms: sw.elapsedMilliseconds,
       );
@@ -916,7 +916,7 @@ class _TimelineLazyRecordListState extends State<_TimelineLazyRecordList> {
       addRepaintBoundaries: true,
       itemCount: maps.length,
       itemBuilder: (context, index) {
-        PerfDiag.instance.logTimelineRowBuildTick();
+        RebuildMetrics.instance.logTimelineRowBuildTick();
         final data = maps[index];
         final vm = DatabaseService.instance.timelineRowVmForRecordMapOrNull(
           widget.dateKey,

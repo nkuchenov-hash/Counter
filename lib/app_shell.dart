@@ -5,8 +5,8 @@
 
 import 'dart:async';
 
-import 'package:counter/database_service.dart';
-import 'package:counter/models.dart';
+import 'package:counter/data/database_service.dart';
+import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_list_view.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
 import 'package:counter/features/calendar/calendar_view.dart';
@@ -15,11 +15,12 @@ import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/p0u_feature_flags.dart';
-import 'package:counter/core/p0u_startup_diag.dart';
-import 'package:counter/core/perf_diag.dart';
-import 'package:counter/core/perf_flags.dart';
+import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/core/diagnostics/startup_log.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/core/performance/shell_flags.dart';
 import 'package:counter/core/widgets/lazy_indexed_stack.dart';
+import 'package:counter/core/widgets/tag_display_mode_scope.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
@@ -145,7 +146,7 @@ class _OfflineSyncStatusBarState extends State<_OfflineSyncStatusBar> {
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('OfflineSyncBanner');
+    rebuildMetricsTick('OfflineSyncBanner');
     final sync = DatabaseService.instance.offlineSync;
     final brain = DatabaseService.instance;
     return ListenableBuilder(
@@ -507,12 +508,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _rules = List.from(DatabaseService.instance.rules);
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      P0uStartupDiag.deferred(
+      StartupLog.deferred(
         name: 'timelineTasksLoad',
         reason: 'notNeededForFirstFrame',
       );
       unawaited(_loadTasksAndExtras());
-      P0uStartupDiag.deferred(
+      StartupLog.deferred(
         name: 'syncBootstrap',
         reason: 'canRunAfterShell',
       );
@@ -521,7 +522,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           pbBackoffActive: DatabaseService.instance.pbHttpBackoffActive,
         );
       }());
-      P0uStartupDiag.deferred(
+      StartupLog.deferred(
         name: 'sttInit',
         reason: 'notNeededForFirstFrame',
       );
@@ -588,7 +589,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   }) {
     final normalized = _dateOnly(day);
     if (_sameCalendarDay(_selectedDate, normalized)) return;
-    PerfDiag.instance.stateChange(
+    RebuildMetrics.instance.stateChange(
       source: 'Shell',
       field: 'selectedDate',
       duringSwipe: true,
@@ -643,14 +644,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   bool get _isFutureDate => _selectedDate.isAfter(_localToday());
 
   Future<void> _loadTasksForDate(DateTime date) async {
-    await PerfDiag.instance.perfBlockAsync(
+    await RebuildMetrics.instance.perfBlockAsync(
       'Shell._loadTasksForDate',
       () async {
         try {
           final loaded = await DatabaseService.instance.loadTasksForDate(date);
           if (!mounted) return;
           if (!_sameCalendarDay(_selectedDate, date)) return;
-          PerfDiag.instance.stateChange(
+          RebuildMetrics.instance.stateChange(
             source: 'Shell',
             field: '_tasksLoading=false',
             duringSwipe: true,
@@ -2034,7 +2035,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       onShowEditRecordSheet: _showEditRecordSheetForTimeline,
     );
     sw.stop();
-    P0uStartupDiag.tabBuild(
+    StartupLog.tabBuild(
       tab: 'Timeline',
       active: _shellPageIndex == 0,
       ms: sw.elapsedMilliseconds,
@@ -2054,7 +2055,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       onEditTask: (task) => _openEditDialog(task),
     );
     sw.stop();
-    P0uStartupDiag.tabBuild(
+    StartupLog.tabBuild(
       tab: 'Plans',
       active: _shellPageIndex == 1,
       ms: sw.elapsedMilliseconds,
@@ -2092,7 +2093,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('AppShell');
+    rebuildMetricsTick('AppShell');
     final pages = <Widget>[
       _timelineTabHost,
       _planningTabHost,
@@ -2130,7 +2131,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         _shellLayout.applyShellFrame(_shellPageIndex);
         final loc = currentLocale.value;
         final builtTabs = kShellDeferHiddenTabsUntilFirstFrame ? 1 : pages.length;
-        final shell = AnnotatedRegion<SystemUiOverlayStyle>(
+        final shell = StreamBuilder<UserSettings>(
+          stream: DatabaseService.instance.userSettingsStream,
+          initialData: DatabaseService.instance.settings,
+          builder: (context, settingsSnap) {
+            final tagMode = settingsSnap.data?.tagDisplayMode ??
+                CategoryDisplayMode.letterChip;
+            return TagDisplayModeScope(
+              mode: tagMode,
+              child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: Brightness.light,
@@ -2204,7 +2213,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                                   index: _shellPageIndex,
                                   children: pages,
                                 )
-                              : PerfFlags.useLazyIndexedStack
+                              : ShellFlags.useLazyIndexedStack
                               ? LazyIndexedStack(
                                   index: _shellPageIndex,
                                   children: pages,
@@ -2313,9 +2322,12 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
               ),
             ),
           ),
+        ),
+            );
+          },
         );
         shellSw.stop();
-        P0uStartupDiag.shellBuild(
+        StartupLog.shellBuild(
           activeTab: _shellTabDiagnosticLabel(_shellPageIndex),
           ms: shellSw.elapsedMilliseconds,
           builtTabs: builtTabs,

@@ -11,6 +11,20 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-23] - P0 Time View drag-over-card hard guard [wip]
+* **`plan_time_sequential_cascade.dart`:** [wip] `TimeViewInsertionSource`, `validateTimeViewTargetInsertionIntent`, `refreshTimeViewInsertionIntentFromScheduled`, `isPlanTimelineVerticallyDraggable`, debounced `logTimeDropGuard` — target-card mode forbids raw-Y fallback.
+* **`planning_view.dart`:** [wip] finger vs preview delta split (`_timelineFingerDragDeltaPx`); stored target-card intent preferred on commit; invalid/orphan target intent cancels without PATCH; empty canvas uses finger yToTime only.
+* **`test/plan_time_target_drop_test.dart`**, **`test/plan_time_sequential_cascade_test.dart`:** [wip] before/after upper-lower card, raw-Y ignore, validation cancel, refresh-before-commit.
+
+## [2026-06-23] - Final release repository structure cleanup [shipped]
+* **`docs/APP_STRUCTURE.md`:** [shipped] Release-only manifest — no debt/quarantine language; all 126 `lib/` Dart files + layer import rules + folder-level platform/test/docs rules.
+* **`docs/APP_STRUCTURE_EXPLAINED_RU.md`:** [shipped] Practical Russian “where to edit” guide for Nick.
+* **`scripts/audit/architecture_guard.ps1`:** [shipped] `-Strict` enforces manifest, boundaries, no experiment filenames, no root barrels, no tracked build artifacts.
+* **Deleted:** `Archive/` (30 files), `lib/data/base_database.dart`, `lib/core/subscription/app_tier.dart`, root barrels `lib/database_service.dart`, `lib/models.dart`, `lib/auth_screen.dart`, `lib/auth_service.dart`.
+* **Renamed/migrated:** P0/perf files → `core/diagnostics/*`, `core/performance/rebuild_metrics.dart`, `core/performance/runtime_flags.dart`, `data/cache/*`; `smart_input_parser.dart` → `data/`; `wall_clock.dart` → `core/time/`; `chip_component.dart` + `tag_contrast.dart` → `core/`; `oauth_session.dart` in `features/auth/`.
+* **Boundaries:** `AppClock`, `PlanCategoryLookup`, `TagDisplayModeScope`, `web_redirect.dart` shell injection; Brain no longer imports `features/`; core widgets no longer import `database_service.dart`.
+* **`lib/l10n/`:** [shipped] Single EN/RU source — `langs/en.dart` + `langs/ru.dart`; `dictionary.dart` assembler only.
+
 ## [2026-06-23] - P0 Plans realtime 404: stream hub + sync banner stuck fix [wip]
 * **`plan_service.dart`:** [wip] ref-counted `_PlanningDayStreamHub` (one hub per day/listen); plans realtime backoff + 404 session disable; safe subscribe catchError.
 * **`db_core.dart`:** [wip] `_markRealtimeEndpointUnavailable` on `/api/realtime` 404; PB realtime onDisconnect guards.
@@ -165,6 +179,13 @@
 * **`db_core.dart`:** [wip] Boot skips P0T mounted/render window when flag false; light `ensurePlansWarmWindow` / `ensureTimelineWarmWindow` only.
 * **`main.dart`:** [wip] Biometric gate stays off; `FlutterError.onError` + `PlatformDispatcher.onError` → `[P0U_WEB_ERROR]` / `[P0U_ANDROID_ERROR]`.
 * **P0S / P0T:** marked failed/superseded as production default — not shipped until user confirms web + APK.
+
+## [2026-06-23] - Repo structure lockdown: full manifest + architecture guard [shipped]
+* **`docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md`:** [shipped] Full-repo inventory (351 paths); safe cleanup actions; quarantine notes for `Archive/`.
+* **`docs/APP_STRUCTURE.md`:** [shipped] Expanded to full file contract (§4–14): lib/test/scripts/docs/platform/pb_hooks manifests; P0U perf debt documented.
+* **`scripts/audit/architecture_guard.ps1`:** [shipped] Warning-mode guard: forbidden imports, undocumented lib files, deleted-file regression, large-file warnings.
+* **Cleanup:** [shipped] Archived `build_error.txt`, `perf_chrome_log.txt` → `docs/archive/structure_cleanup_2026-06-23/`; `git rm android/build/reports/problems/problems-report.html`; `.gitignore` perf capture + `android/build/`.
+* **Verify:** analyze green; test 57 pass / 3 runtime fail (known); web build green. `update.ps1` not run (docs/non-runtime only).
 
 ## [2026-06-22] - Stage A cleanup + A.1 compile baseline + Stage C doc sync [shipped]
 * **Stage A [shipped]:** Deleted proven orphans/non-code — `p0b_logcat.txt`, `lib/notes` (archived to `docs/archive/lib_notes_scratch.txt`), `lib/deploy.ps1`, `lib/data/html_stub.dart`, `lib/features/more/more_view.dart`, `lib/features/timeline/timeline_widgets.dart`. No P0/perf/warm files touched; More menu stays inline in `app_shell.dart` `_openMoreMenu`; Timeline header stays inline in `timeline_view.dart`.

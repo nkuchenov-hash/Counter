@@ -1,16 +1,15 @@
-﻿// ---------------------------------------------------------------------------
-// PlanTimeTaskCard вЂ” CardPlan_Small / CardPlan_Medium / CardPlan_Large
+// ---------------------------------------------------------------------------
+// PlanTimeTaskCard ? CardPlan_Small / CardPlan_Medium / CardPlan_Large
 // Geometry source: Figma MCP metadata (328px ref). Visual tokens: design/*.svg
 // ---------------------------------------------------------------------------
 
 import 'dart:math' as math;
 
-import 'package:counter/core/perf_diag.dart';
-import 'package:counter/data/database_service.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/core/plan_category_lookup.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/profile/tag_manager_page.dart';
-import 'package:counter/features/shared/chip_component.dart';
-import 'package:counter/features/shared/tag_contrast.dart';
+import 'package:counter/core/widgets/chip_component.dart';
+import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +28,7 @@ const double kPlanTimeHourVerticalPaddingPx = 4.0;
 /// Hard cap for a single hour band (prevents infinite day growth).
 const double kPlanTimeMaxReasonableHourHeightPx = 480.0;
 
-/// Stable px-per-minute for **card** height only — never stretched-hour ppm.
+/// Stable px-per-minute for **card** height only ? never stretched-hour ppm.
 /// 10-minute tasks map to 38px (VerySmall); hour stretch does not inflate cards.
 const double kPlanTimeStableBaseCardPxPerMinute = 3.8;
 
@@ -101,7 +100,7 @@ bool planTimeCardUseTimelineFillHeightForVisual(
   return density != PlanTimeCardVisualDensity.small;
 }
 
-/// Where the card is rendered вЂ” drives height/interaction assumptions.
+/// Where the card is rendered ? drives height/interaction assumptions.
 enum PlanCardSurface { list, timeline, calendar }
 
 /// CardPlan-style unified plan task card (list, timeline, calendar).
@@ -220,23 +219,21 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('PlanTimeTaskCard');
+    rebuildMetricsTick('PlanTimeTaskCard');
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
-    final categoryTone =
-        DatabaseService.instance.getCategoryColor(widget.task.categoryId);
+    final lookup = PlanCategoryLookup.resolve;
+    final categoryPresentation = lookup?.call(widget.task.categoryId);
+    final categoryTone = categoryPresentation?.color ??
+        Theme.of(context).colorScheme.primary;
     final categoryTrailRaw = widget.showFooterBreadcrumb
         ? localizeCategoryBreadcrumbPath(
-            DatabaseService.instance
-                .getCategoryPath(widget.task.categoryId)
-                .trim(),
+            (categoryPresentation?.breadcrumbPath ?? '').trim(),
             loc,
           ).trim()
         : '';
     final categoryTrail = categoryTrailRaw;
-    final categoryIcon = DatabaseService.instance
-        .getCategoryRuleById(widget.task.categoryId)
-        ?.iconOrDefault;
+    final categoryIcon = categoryPresentation?.icon;
     final effectiveTimeLabel = widget.timeLabel.trim().isNotEmpty
         ? widget.timeLabel.trim()
         : _planCardWallTimeLabel(widget.task);
@@ -1290,7 +1287,7 @@ class _TimeViewVerticalShell extends StatelessWidget {
   }
 }
 
-/// Time View tag row — every tag visible (horizontal scroll, never +N).
+/// Time View tag row ? every tag visible (horizontal scroll, never +N).
 class _TimeViewTagsRow extends StatelessWidget {
   const _TimeViewTagsRow({
     required this.tags,
@@ -1343,7 +1340,7 @@ class _TimeViewTagsRow extends StatelessWidget {
   }
 }
 
-/// VerySmall tag column — compact CardPlan pills stacked vertically (ref).
+/// VerySmall tag column ? compact CardPlan pills stacked vertically (ref).
 class _TimeViewTagStack extends StatelessWidget {
   const _TimeViewTagStack({required this.tags});
 
@@ -1415,7 +1412,7 @@ class _TimeViewCompactTagPill extends StatelessWidget {
   }
 }
 
-/// VerySmall 38px — single row, reference-sized controls (CardPlan ref).
+/// VerySmall 38px ? single row, reference-sized controls (CardPlan ref).
 class _TimeViewVerySmallLayout extends StatelessWidget {
   const _TimeViewVerySmallLayout({
     required this.common,
@@ -1465,7 +1462,7 @@ class _TimeViewVerySmallLayout extends StatelessWidget {
   }
 }
 
-/// Small 39–54px — title row + tags/time metadata row (CardPlan ref).
+/// Small 39?54px ? title row + tags/time metadata row (CardPlan ref).
 class _TimeViewSmallLayout extends StatelessWidget {
   const _TimeViewSmallLayout({
     required this.common,
@@ -1485,7 +1482,7 @@ class _TimeViewSmallLayout extends StatelessWidget {
   }
 }
 
-/// MoreCompact 55–77px — same rhythm as Small with slightly more breathing room.
+/// MoreCompact 55?77px ? same rhythm as Small with slightly more breathing room.
 class _TimeViewMoreCompactLayout extends StatelessWidget {
   const _TimeViewMoreCompactLayout({
     required this.common,
@@ -1554,7 +1551,7 @@ class _TimeViewTwoRowCenterLayout extends StatelessWidget {
   }
 }
 
-/// Compact 78–94px — vertical rail, title/tags, optional footer (CardPlan ref).
+/// Compact 78?94px ? vertical rail, title/tags, optional footer (CardPlan ref).
 class _TimeViewCompactLayout extends StatelessWidget {
   const _TimeViewCompactLayout({
     required this.common,
@@ -1621,7 +1618,7 @@ class _TimeViewCompactLayout extends StatelessWidget {
   }
 }
 
-/// Medium 95px+ — full CardPlan hierarchy (CardPlan ref).
+/// Medium 95px+ ? full CardPlan hierarchy (CardPlan ref).
 class _TimeViewMediumLayout extends StatelessWidget {
   const _TimeViewMediumLayout({
     required this.common,
@@ -2355,7 +2352,7 @@ class _PlanCardPlayIconPainter extends CustomPainter {
       oldDelegate.fill != fill || oldDelegate.cornerRadius != cornerRadius;
 }
 
-/// Inline recurring marker — circular autorenew arrows after title.
+/// Inline recurring marker ? circular autorenew arrows after title.
 class _PlanCardRecurringGlyph extends StatelessWidget {
   const _PlanCardRecurringGlyph({this.displayIsDone = false});
 
@@ -2730,7 +2727,7 @@ String _planCardWallTimeLabel(PlanningTask task) {
       '${start.hour.toString().padLeft(2, '0')}:${start.minute.toString().padLeft(2, '0')}';
   final end = task.endDateTime;
   if (end != null) {
-    return '$startLabel – ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
+    return '$startLabel ? ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}';
   }
   return startLabel;
 }
@@ -2753,7 +2750,7 @@ double planTimeCardListMinHeight(PlanTimeTaskCardDensity density) =>
       PlanTimeTaskCardDensity.large => _PlanCardGeom.refHeightLarge,
     };
 
-/// Intrinsic CardPlan height — single source for list minHeight and Time mode blocks.
+/// Intrinsic CardPlan height ? single source for list minHeight and Time mode blocks.
 double planTimeCardMeasureHeight({
   required bool hasTags,
   required bool hasTrackedProgress,
@@ -2797,7 +2794,7 @@ double planTimeCardTimelineAllocatedHeight({
       _PlanCardGeom.timelineBlockAllowancePx;
 }
 
-/// Left inset for timeline drag/tap body zone — excludes checkbox + play rail.
+/// Left inset for timeline drag/tap body zone ? excludes checkbox + play rail.
 double planCardBodyGestureLeftInsetPx(
   PlanTimeTaskCardDensity density, {
   bool timeline = false,
@@ -2813,6 +2810,6 @@ double planCardBodyGestureLeftInsetPx(
             _PlanCardGeom.railToContentGap,
     };
 
-/// Right inset for timeline drag/tap body zone вЂ” excludes menu button column.
+/// Right inset for timeline drag/tap body zone ? excludes menu button column.
 double planCardBodyGestureRightInsetPx({bool hasMenu = true}) =>
     hasMenu ? _PlanCardGeom.menuSize + _PlanCardGeom.padRight : 0;

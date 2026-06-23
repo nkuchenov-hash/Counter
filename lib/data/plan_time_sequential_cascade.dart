@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:counter/data/models.dart';
+import 'package:flutter/foundation.dart';
 
 /// One plan whose wall schedule changed after sequential cascade.
 class PlanTimeSequentialCascadePatch {
@@ -182,6 +183,9 @@ TimeViewTargetDropSchedule computeTimeViewTargetDropSchedule({
 /// Stable target insertion captured during drag-over (not at pointer-up).
 enum TimeViewInsertPosition { before, after }
 
+/// How the insertion intent was produced (target card vs empty canvas).
+enum TimeViewInsertionSource { targetCard, emptyCanvas }
+
 class TimeViewInsertionIntent {
   const TimeViewInsertionIntent({
     required this.draggedPlanId,
@@ -191,6 +195,8 @@ class TimeViewInsertionIntent {
     required this.targetEndWall,
     required this.draggedDurationMinutes,
     required this.draggedHadEnd,
+    this.source = TimeViewInsertionSource.targetCard,
+    this.dragSequenceId,
   });
 
   final String draggedPlanId;
@@ -200,8 +206,116 @@ class TimeViewInsertionIntent {
   final DateTime targetEndWall;
   final int draggedDurationMinutes;
   final bool draggedHadEnd;
+  final TimeViewInsertionSource source;
+  final int? dragSequenceId;
 
   bool get insertBefore => insertPosition == TimeViewInsertPosition.before;
+
+  bool get isTargetCardMode => source == TimeViewInsertionSource.targetCard;
+}
+
+/// Whether a plan may be vertically dragged on the Time View canvas.
+bool isPlanTimelineVerticallyDraggable(PlanningTask task) {
+  if (task.startTime == null) return false;
+  if (task.planRowIdForBackend.startsWith('optimistic-')) return false;
+  final rrule = task.rrule?.trim() ?? '';
+  if (rrule.isNotEmpty) return false;
+  final inst = task.recurrenceInstanceDateKey?.trim() ?? '';
+  if (inst.isNotEmpty) return false;
+  return true;
+}
+
+/// Refresh target wall times from the live scheduled list before commit.
+TimeViewInsertionIntent? refreshTimeViewInsertionIntentFromScheduled({
+  required TimeViewInsertionIntent intent,
+  required List<PlanningTask> scheduled,
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+}) {
+  if (!intent.isTargetCardMode) return intent;
+
+  PlanningTask? target;
+  for (final t in scheduled) {
+    if (t.planRowIdForBackend == intent.targetPlanId) {
+      target = t;
+      break;
+    }
+  }
+  final targetStart = target?.startTime;
+  if (target == null || targetStart == null) return null;
+
+  final targetDurMin = planWallDurationMinutesForCascade(
+    target,
+    resolveDurationMinutes: resolveDurationMinutes,
+  );
+  final targetEnd =
+      target.endDateTime ?? targetStart.add(Duration(minutes: targetDurMin));
+
+  return TimeViewInsertionIntent(
+    draggedPlanId: intent.draggedPlanId,
+    targetPlanId: intent.targetPlanId,
+    insertPosition: intent.insertPosition,
+    targetStartWall: targetStart,
+    targetEndWall: targetEnd,
+    draggedDurationMinutes: intent.draggedDurationMinutes,
+    draggedHadEnd: intent.draggedHadEnd,
+    source: intent.source,
+    dragSequenceId: intent.dragSequenceId,
+  );
+}
+
+/// Returns a cancel reason string, or null when the target-card intent is valid.
+String? validateTimeViewTargetInsertionIntent({
+  required TimeViewInsertionIntent intent,
+  required List<PlanningTask> scheduled,
+  String? expectedDayKey,
+}) {
+  if (!intent.isTargetCardMode) return null;
+  if (intent.draggedPlanId == intent.targetPlanId) {
+    return 'draggedEqualsTarget';
+  }
+
+  PlanningTask? dragged;
+  PlanningTask? target;
+  for (final t in scheduled) {
+    final id = t.planRowIdForBackend;
+    if (id == intent.draggedPlanId) dragged = t;
+    if (id == intent.targetPlanId) target = t;
+  }
+
+  if (target == null) return 'targetMissing';
+  if (dragged == null) return 'draggedMissing';
+  if (target.startTime == null) return 'targetUnscheduled';
+  if (dragged.startTime == null) return 'draggedUnscheduled';
+  if (!isPlanTimelineVerticallyDraggable(dragged)) {
+    return 'draggedNotDraggable';
+  }
+
+  if (expectedDayKey != null && expectedDayKey.isNotEmpty) {
+    final dayKey = target.dateKey.trim();
+    if (dayKey.isNotEmpty && dayKey != expectedDayKey) {
+      return 'targetDateMismatch';
+    }
+  }
+
+  return null;
+}
+
+String? _lastTimeDropGuardLogKey;
+DateTime? _lastTimeDropGuardLogAt;
+
+/// Single-line debug diagnostic for Time View target-card drop guard.
+void logTimeDropGuard(String message) {
+  if (!kDebugMode) return;
+  final now = DateTime.now();
+  if (_lastTimeDropGuardLogKey == message &&
+      _lastTimeDropGuardLogAt != null &&
+      now.difference(_lastTimeDropGuardLogAt!) <
+          const Duration(milliseconds: 120)) {
+    return;
+  }
+  _lastTimeDropGuardLogKey = message;
+  _lastTimeDropGuardLogAt = now;
+  debugPrint('[TIME_DROP_GUARD] $message');
 }
 
 /// Reorder scheduled tasks for explicit target insert (no start-time sort).

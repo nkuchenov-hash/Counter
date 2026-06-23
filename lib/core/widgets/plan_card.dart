@@ -4,7 +4,8 @@
 // ---------------------------------------------------------------------------
 
 import 'package:counter/core/widgets/plan_time_task_card.dart';
-import 'package:counter/core/perf_diag.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/core/time/plan_time_labels.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/material.dart';
 
@@ -73,27 +74,12 @@ class PlanCard extends StatelessWidget {
   final String? timelineTimeLabel;
   final double? timelineBlockHeightPx;
 
-  static String formatPlanningWallTime(DateTime wall) {
-    return '${wall.hour.toString().padLeft(2, '0')}:${wall.minute.toString().padLeft(2, '0')}';
-  }
-
-  static String timelineTimeRangeLabel(PlanningTask task) {
-    final start = task.startTime;
-    if (start == null) return '';
-    final startLabel = formatPlanningWallTime(start);
-    final end = task.endDateTime;
-    if (end != null) {
-      return '$startLabel – ${formatPlanningWallTime(end)}';
-    }
-    return startLabel;
-  }
-
   static String listTimeLabel(PlanningTask task) =>
       timelineTimeRangeLabel(task);
 
   @override
   Widget build(BuildContext context) {
-    perfRebuildTick('PlanCard');
+    rebuildMetricsTick('PlanCard');
     if (timelineBlock) {
       return _buildTimelineBlockCard(context);
     }

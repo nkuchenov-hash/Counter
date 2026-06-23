@@ -41,6 +41,7 @@ TimeViewInsertionIntent _afterAIntent({
     targetEndWall: _wall(20, 25),
     draggedDurationMinutes: draggedDuration,
     draggedHadEnd: true,
+    source: TimeViewInsertionSource.targetCard,
   );
 }
 
@@ -223,6 +224,7 @@ void main() {
         targetEndWall: _wall(20, 30),
         draggedDurationMinutes: 15,
         draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
       );
       final result = applyTimeViewTargetInsertion(
         scheduled: [target, dragged],
@@ -258,6 +260,7 @@ void main() {
         targetEndWall: _wall(10, 30),
         draggedDurationMinutes: 30,
         draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
       );
       final preview = applyTimeViewTargetInsertion(
         scheduled: [a, b],
@@ -306,6 +309,7 @@ void main() {
         targetEndWall: a.endDateTime!,
         draggedDurationMinutes: 45,
         draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
       );
       final result = applyTimeViewTargetInsertion(
         scheduled: [a, dragged, follower],
@@ -349,6 +353,207 @@ void main() {
       // Day-load keeps chronological order when no overlap — explicit forces adjacency.
       expect(explicit.orderAfter, ['a', 'b']);
       expect(dayLoadB.startTime, _wall(20, 25));
+    });
+  });
+
+  group('target-card hard guard', () {
+    test('lower card onto upper card upper half: before target, not raw Y', () {
+      final upper = _task(
+        id: 'upper',
+        startH: 10,
+        startM: 0,
+        endH: 10,
+        endM: 30,
+      );
+      final lower = _task(
+        id: 'lower',
+        startH: 14,
+        startM: 0,
+        endH: 14,
+        endM: 30,
+        order: 1,
+      );
+      final intent = TimeViewInsertionIntent(
+        draggedPlanId: 'lower',
+        targetPlanId: 'upper',
+        insertPosition: TimeViewInsertPosition.before,
+        targetStartWall: _wall(10, 0),
+        targetEndWall: _wall(10, 30),
+        draggedDurationMinutes: 30,
+        draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
+      );
+      expect(intent.isTargetCardMode, isTrue);
+      final result = applyTimeViewTargetInsertion(
+        scheduled: [upper, lower],
+        intent: intent,
+        resolveDurationMinutes: _resolveDuration,
+      );
+      expect(result.draggedStartWall, _wall(9, 30));
+      expect(result.draggedEndWall, _wall(10, 0));
+      expect(result.draggedStartWall, isNot(_wall(14, 0)));
+      expect(result.orderAfter, ['lower', 'upper']);
+    });
+
+    test('lower card onto upper card lower half: after target, not raw Y', () {
+      final upper = _task(
+        id: 'upper',
+        startH: 10,
+        startM: 0,
+        endH: 10,
+        endM: 30,
+      );
+      final lower = _task(
+        id: 'lower',
+        startH: 14,
+        startM: 0,
+        endH: 14,
+        endM: 30,
+        order: 1,
+      );
+      final intent = TimeViewInsertionIntent(
+        draggedPlanId: 'lower',
+        targetPlanId: 'upper',
+        insertPosition: TimeViewInsertPosition.after,
+        targetStartWall: _wall(10, 0),
+        targetEndWall: _wall(10, 30),
+        draggedDurationMinutes: 30,
+        draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
+      );
+      final result = applyTimeViewTargetInsertion(
+        scheduled: [upper, lower],
+        intent: intent,
+        resolveDurationMinutes: _resolveDuration,
+      );
+      expect(result.draggedStartWall, _wall(10, 30));
+      expect(result.draggedEndWall, _wall(11, 0));
+      expect(result.draggedStartWall, isNot(_wall(14, 0)));
+      expect(result.orderAfter, ['upper', 'lower']);
+    });
+
+    test('commit ignores far-below raw Y when targetCard intent is stored', () {
+      final a = _task(
+        id: 'a',
+        startH: 10,
+        startM: 0,
+        endH: 10,
+        endM: 30,
+      );
+      final b = _task(
+        id: 'b',
+        startH: 14,
+        startM: 0,
+        endH: 14,
+        endM: 30,
+        order: 1,
+      );
+      final intent = TimeViewInsertionIntent(
+        draggedPlanId: 'b',
+        targetPlanId: 'a',
+        insertPosition: TimeViewInsertPosition.after,
+        targetStartWall: _wall(10, 0),
+        targetEndWall: _wall(10, 30),
+        draggedDurationMinutes: 30,
+        draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
+      );
+      final result = applyTimeViewTargetInsertion(
+        scheduled: [a, b],
+        intent: intent,
+        resolveDurationMinutes: _resolveDuration,
+      );
+      expect(result.draggedStartWall, _wall(10, 30));
+      expect(result.draggedStartWall, isNot(_wall(14, 0)));
+      expect(result.draggedStartWall, isNot(_wall(20, 55)));
+    });
+
+    test('invalid targetCard intent is rejected by validator', () {
+      final a = _task(
+        id: 'a',
+        startH: 10,
+        startM: 0,
+        endH: 10,
+        endM: 30,
+      );
+      final intent = TimeViewInsertionIntent(
+        draggedPlanId: 'a',
+        targetPlanId: 'a',
+        insertPosition: TimeViewInsertPosition.before,
+        targetStartWall: _wall(10, 0),
+        targetEndWall: _wall(10, 30),
+        draggedDurationMinutes: 30,
+        draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
+      );
+      expect(
+        validateTimeViewTargetInsertionIntent(
+          intent: intent,
+          scheduled: [a],
+        ),
+        'draggedEqualsTarget',
+      );
+      expect(
+        validateTimeViewTargetInsertionIntent(
+          intent: TimeViewInsertionIntent(
+            draggedPlanId: 'missing',
+            targetPlanId: 'a',
+            insertPosition: TimeViewInsertPosition.after,
+            targetStartWall: _wall(10, 0),
+            targetEndWall: _wall(10, 30),
+            draggedDurationMinutes: 30,
+            draggedHadEnd: true,
+            source: TimeViewInsertionSource.targetCard,
+          ),
+          scheduled: [a],
+        ),
+        'draggedMissing',
+      );
+    });
+
+    test('refresh intent picks live target wall times before commit', () {
+      final a = _task(
+        id: 'a',
+        startH: 10,
+        startM: 0,
+        endH: 10,
+        endM: 30,
+      );
+      final b = _task(
+        id: 'b',
+        startH: 14,
+        startM: 0,
+        endH: 14,
+        endM: 30,
+        order: 1,
+      );
+      final staleIntent = TimeViewInsertionIntent(
+        draggedPlanId: 'b',
+        targetPlanId: 'a',
+        insertPosition: TimeViewInsertPosition.after,
+        targetStartWall: _wall(9, 0),
+        targetEndWall: _wall(9, 30),
+        draggedDurationMinutes: 30,
+        draggedHadEnd: true,
+        source: TimeViewInsertionSource.targetCard,
+      );
+      final shiftedA = a.copyWith(
+        startTime: _wall(11, 0),
+        endDateTime: _wall(11, 30),
+      );
+      final refreshed = refreshTimeViewInsertionIntentFromScheduled(
+        intent: staleIntent,
+        scheduled: [shiftedA, b],
+        resolveDurationMinutes: _resolveDuration,
+      );
+      expect(refreshed?.targetStartWall, _wall(11, 0));
+      expect(refreshed?.targetEndWall, _wall(11, 30));
+      final result = applyTimeViewTargetInsertion(
+        scheduled: [shiftedA, b],
+        intent: refreshed!,
+        resolveDurationMinutes: _resolveDuration,
+      );
+      expect(result.draggedStartWall, _wall(11, 30));
     });
   });
 

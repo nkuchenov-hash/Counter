@@ -1,4 +1,4 @@
-import 'package:counter/core/p0u_startup_diag.dart';
+import 'package:counter/core/diagnostics/startup_log.dart';
 import 'package:flutter/material.dart';
 /// [IndexedStack] that lazily builds children on first visit and pauses
 /// off-screen tabs (no paint, no tickers) for smoother shell navigation.
@@ -38,7 +38,7 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
       _bootDeferLogged = true;
       for (var i = 0; i < _tabNames.length && i < widget.children.length; i++) {
         if (i != widget.index) {
-          P0uStartupDiag.hiddenTabDeferred(
+          StartupLog.hiddenTabDeferred(
             tab: _tabNames[i],
             reason: 'firstFramePriority',
           );
@@ -68,7 +68,7 @@ class _LazyIndexedStackState extends State<LazyIndexedStack> {
       final sw = Stopwatch()..start();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         sw.stop();
-        P0uStartupDiag.hiddenTabActivated(
+        StartupLog.hiddenTabActivated(
           tab: _tabNames[idx],
           ms: sw.elapsedMilliseconds,
         );

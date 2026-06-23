@@ -354,7 +354,7 @@ extension DbCoreExtension on DatabaseService {
     try {
       _prefs = await SharedPreferences.getInstance();
       await _debugPocketBaseHealth();
-      await P0uStartupDiag.stageAsync(
+      await StartupLog.stageAsync(
         'profileFetch',
         () => _loadSettingsFromNoco().timeout(
           const Duration(seconds: 15),
@@ -367,7 +367,7 @@ extension DbCoreExtension on DatabaseService {
         ),
         blocksFirstFrame: true,
       );
-      await P0uStartupDiag.stageAsync(
+      await StartupLog.stageAsync(
         'localCacheRestore',
         () => _loadInnerAfterProfile().timeout(
           const Duration(seconds: 25),
@@ -494,7 +494,7 @@ extension DbCoreExtension on DatabaseService {
       _tasksController.add(List.from(_tasksCache));
       _isInitialized = true;
       _registerAppLifecycleObserverOnce();
-      P0uStartupDiag.scheduleAfterFirstFrame(
+      StartupLog.scheduleAfterFirstFrame(
         'deferredBootWork',
         _runDeferredBootWorkAfterFirstShell,
       );
@@ -509,7 +509,7 @@ extension DbCoreExtension on DatabaseService {
     _tasksController.add(List.from(_tasksCache));
     _isInitialized = true;
     _registerAppLifecycleObserverOnce();
-    P0uStartupDiag.scheduleAfterFirstFrame(
+    StartupLog.scheduleAfterFirstFrame(
       'deferredBootWork',
       _runDeferredBootWorkAfterFirstShell,
     );
@@ -519,7 +519,7 @@ extension DbCoreExtension on DatabaseService {
   Future<void> _runDeferredBootWorkAfterFirstShell() async {
     final projected = getProjectedToday();
     final timelineToday = getTimelineDeviceLocalToday();
-    if (kUseP0tMountedStrip) {
+    if (kUseMountedDayStrip) {
       preparePlansMountedWindowBoot(projected, criticalOnly: true);
       prepareTimelineMountedWindowBoot(timelineToday, criticalOnly: true);
       preparePlansCriticalRenderReady(projected);
@@ -527,34 +527,34 @@ extension DbCoreExtension on DatabaseService {
       schedulePlansMountedWindowBootBackground(projected);
       scheduleTimelineMountedWindowBootBackground(timelineToday);
     } else {
-      P0uStartupDiag.deferred(
+      StartupLog.deferred(
         name: 'plansWarmWindow',
         reason: 'backgroundOnly',
       );
-      P0uStartupDiag.deferred(
+      StartupLog.deferred(
         name: 'timelineWarmWindow',
         reason: 'backgroundOnly',
       );
       final warmSw = Stopwatch()..start();
       if (kPlansWarmWindowEnabled) {
         ensurePlansWarmWindow(projected);
-        P0uStartupDiag.deferredConfirmedAfterFrame(name: 'plansWarmWindow');
+        StartupLog.deferredConfirmedAfterFrame(name: 'plansWarmWindow');
       } else {
-        P0uStartupDiag.deferred(
+        StartupLog.deferred(
           name: 'plansWarmWindow',
           reason: 'p0DuplicateSafetyDisabled',
         );
       }
       ensureTimelineWarmWindow(timelineToday);
       prebuildTimelineCriticalBodiesSync(timelineToday);
-      P0uStartupDiag.deferredConfirmedAfterFrame(name: 'recordsWarmWindow');
+      StartupLog.deferredConfirmedAfterFrame(name: 'recordsWarmWindow');
       warmSw.stop();
-      P0uStartupDiag.bootStage(
+      StartupLog.bootStage(
         name: 'plansWarmWindow',
         ms: warmSw.elapsedMilliseconds,
         blocksFirstFrame: false,
       );
-      P0uStartupDiag.bootStage(
+      StartupLog.bootStage(
         name: 'recordsWarmWindow',
         ms: warmSw.elapsedMilliseconds,
         blocksFirstFrame: false,
@@ -572,7 +572,7 @@ extension DbCoreExtension on DatabaseService {
       persistPlansWarmSnapshotsToDisk();
       persistTimelineWarmSnapshotsToDisk();
     }
-    P0uStartupDiag.deferred(
+    StartupLog.deferred(
       name: 'syncBootstrap',
       reason: 'canRunAfterShell',
     );
@@ -602,12 +602,12 @@ extension DbCoreExtension on DatabaseService {
       await flushPendingLocalMutations();
     } catch (_) {}
     syncSw.stop();
-    P0uStartupDiag.bootStage(
+    StartupLog.bootStage(
       name: 'syncBootstrap',
       ms: syncSw.elapsedMilliseconds,
       blocksFirstFrame: false,
     );
-    P0uStartupDiag.markInteractive();
+    StartupLog.markInteractive();
   }
 
   /// Foreground/resume refresh: records + today's plans + stream pumps (no user input required).

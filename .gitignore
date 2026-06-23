@@ -26,6 +26,22 @@ migrate_working_dir/
 # Local optional secrets (copy from lib/core/env/env.dart.example)
 lib/core/env/env.dart
 
+# Local audit exports/reports (never commit user data)
+tools/exports/
+tools/reports/
+
+# Perf test capture outputs (written by test/perf_*.dart at repo root)
+*_perf_capture.txt
+shell_timeline_swipe_capture.txt
+timeline_perf_capture.txt
+
+# Ad-hoc local build/run logs (archive to docs/archive/ if worth keeping)
+build_error.txt
+perf_chrome_log.txt
+
+# Android Gradle build outputs (must not be tracked)
+android/build/
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id

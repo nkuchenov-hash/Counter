@@ -3,7 +3,7 @@
 // This file used to be a 2566-line monolith. Per ROADMAP Tier 4.2 (April 2026)
 // it was split into part files under `data/models/` to lower edit-token cost.
 // All public types are still imported via `package:counter/data/models.dart`
-// or the top-level barrel `package:counter/models.dart` — call sites unchanged.
+// or the top-level barrel `package:counter/data/models.dart` — call sites unchanged.
 //
 // Contents map (search by section):
 //   _shared.dart    enums + private json/iso/id helpers

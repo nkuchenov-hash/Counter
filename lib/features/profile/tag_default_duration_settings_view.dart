@@ -8,8 +8,8 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/profile/tag_manager_page.dart';
-import 'package:counter/features/shared/chip_component.dart';
+import 'package:counter/core/tag_contrast.dart';
+import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 

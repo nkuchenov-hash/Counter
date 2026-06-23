@@ -147,22 +147,24 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 
 ## 🟢 Velocity Track
 
-### Codebase cleanup (2026-06-22)
+### Codebase cleanup (2026-06-22 — 2026-06-23)
 
-**Status:** Stage A + A.1 + C complete. Architecture splits and boundary fixes deferred.
+**Status:** Stage A + A.1 + C complete. **Final release structure cleanup (2026-06-23)** complete. Architecture splits deferred.
 
 | Stage | Scope | Status |
 | :--- | :--- | :--- |
-| **A** | Safe deletes — orphan Dart files + non-code in `lib/` | ✅ |
-| **A.1** | Compile baseline — `p0n_perf_diag` import + `_PlanningDayCardListKeepAlive` in `planning_view.dart` | ✅ |
-| **C** | Doc sync — `APP_STRUCTURE`, `CLAUDE.md`, audit report, roadmap, changelog | ✅ |
-| **D** | Architecture guard script (warning mode first) | ⏸ next |
-| **B** | Safe renames/moves (root barrels, duplicate l10n) | ⏸ after D |
-| **E** | Justified large-file splits | ⏸ deferred — **never by line count alone**; mixed-responsibility only |
+| **A** | Safe deletes — orphan Dart + non-code in `lib/` | ✅ |
+| **A.1** | Compile baseline repair | ✅ |
+| **C** | Doc sync (APP_STRUCTURE, CLAUDE, audit) | ✅ |
+| **Lockdown** | Full-repo manifest + APP_STRUCTURE contract + `architecture_guard.ps1` | ✅ 2026-06-23 |
+| **Release structure** | Delete/migrate non-release files; strict guard; `APP_STRUCTURE_EXPLAINED_RU.md`; l10n SSOT | ✅ 2026-06-23 |
+| **D** | Architecture guard **-Strict** in CI | ⏸ next |
+| **B** | Safe renames/moves (root barrels, Archive/, duplicate l10n) | ⏸ after D |
+| **E** | Justified large-file splits | ⏸ — **never by line count alone** |
 
-**Remaining:** 3 runtime test failures in perf/widget harness (`perf_shell_date_settle_test`, `widget_test` smoke) — not Stage A blockers. Large files (`planning_view.dart`, `plan_service.dart`, `record_service.dart`, etc.) stay intact until Stage E with explicit split plan.
+**Remaining:** 3 runtime test failures (`perf_shell_date_settle_test`, `widget_test` smoke, related perf harness). Not compile blockers.
 
-Audit: `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`.
+Reports: `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`, `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md`.
 
 ---
 

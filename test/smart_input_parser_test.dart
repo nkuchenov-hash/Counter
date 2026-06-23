@@ -1,4 +1,4 @@
-import 'package:counter/features/planning/smart_input_parser.dart';
+import 'package:counter/data/smart_input_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

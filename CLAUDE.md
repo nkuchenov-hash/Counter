@@ -30,8 +30,8 @@ Verified 2026-06-10. **Core layout matches** the documented map: `lib/data/` (Br
 
 | Item | Actual | Doc says |
 | :--- | :--- | :--- |
-| Brain import path | `package:counter/data/database_service.dart` | same; plus legacy barrel `lib/database_service.dart` → re-exports `data/` |
-| Models import path | `package:counter/data/models.dart` | same; plus legacy barrel `lib/models.dart` |
+| Brain import path | `package:counter/data/database_service.dart` | canonical — no root barrel |
+| Models import path | `package:counter/data/models.dart` | canonical — no root barrel |
 | Planning widget name | `PlanningPage` / `PlanningSwipeWrapper` in `planning_view.dart` | file name only (no `PlanningView` class) |
 | Lists widget name | `ListsPage` in `lists_view.dart` | file name only |
 | Extra at `lib/` root | `auth_service.dart`, `auth_screen.dart` (OAuth legacy) | only `features/auth/` listed |
@@ -172,21 +172,28 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 
 ## P0 / performance layer (active architecture debt)
 
-**Not random garbage — active diagnostics + warm-cache for Timeline/Planning date paging.** Consolidate later; do not delete while P0 swipe/prebuild work is open. See `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`.
+**Not random garbage — active diagnostics + warm-cache for Timeline/Planning date paging (P0U track).** Consolidate later; do not delete while paging work is open. Full file list: `docs/APP_STRUCTURE.md` §5.3–5.4. Lockdown report: `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md`.
 
 | Concept | File | Notes |
 | :--- | :--- | :--- |
-| Master perf probe | `lib/core/perf_diag.dart` | `--dart-define=PERF_DIAG=true`; frame/rebuild/swipe probes |
-| Bisect toggles | `lib/core/perf_flags.dart` | `LazyIndexedStack`, hidden-tab pager sync, repaint boundary |
-| Date-nav logs | `lib/core/p0_date_nav_diag.dart` | `[P0_*]` debounced date pager logs |
-| Swipe/cache perf logs | `lib/core/p0n_perf_diag.dart` | `[TIMELINE_*]` / `[PLANS_*]` |
-| Warm-window logs | `lib/core/p0o_warm_diag.dart` | `[WARM_*]` |
-| Content paging logs | `lib/core/p0p_content_diag.dart` | `[P0P_*]` |
-| Prebuild logs | `lib/core/p0r_prebuild_diag.dart` | `[P0R_*]` |
-| Swipe restore logs | `lib/core/pre_white_swipe_restore.dart` | `[PRE_WHITE_SWIPE_RESTORE]` |
-| Thin debug helper | `lib/core/app_diag.dart` | `appDebugDiag()` |
-| Warm snapshot data | `lib/data/warm_day_window.dart` | `WarmSnapshotWindow`, P0O constants |
-| Rendered body cache | `lib/data/rendered_day_body_cache.dart` | P0P/P0R day-body warm entries |
+| Master perf probe | `lib/core/perf_diag.dart` | `--dart-define=PERF_DIAG=true` |
+| Bisect toggles | `lib/core/perf_flags.dart` | LazyIndexedStack, pager sync |
+| Runtime diagnostics | `lib/core/diagnostics/runtime_log.dart` | Release-safe runtime markers |
+| Runtime flags | `lib/core/performance/runtime_flags.dart` | Kill switches (default off) |
+| Startup log | `lib/core/diagnostics/startup_log.dart` | Boot timing |
+| Rebuild metrics | `lib/core/performance/rebuild_metrics.dart` | `--dart-define=PERF_DIAG=true` only |
+| Shell flags | `lib/core/performance/shell_flags.dart` | Shell bisect toggles |
+| Day cache | `lib/data/cache/day_snapshot_window.dart` | Warm day snapshot window |
+| Render cache | `lib/data/cache/render_snapshot.dart`, `rendered_day_body_cache.dart` | Rendered day-body cache |
+| Structure guard | `scripts/audit/architecture_guard.ps1` | `-Strict` enforces `docs/APP_STRUCTURE.md` |
+| Structure guide (RU) | `docs/APP_STRUCTURE_EXPLAINED_RU.md` | Nick-facing “where to edit” |
+| Plan dup trace | `lib/core/plan_dup_trace.dart` | Duplicate plan trace |
+| Warm snapshot data | `lib/data/warm_day_window.dart` | WarmSnapshotWindow |
+| Rendered body cache | `lib/data/rendered_day_body_cache.dart` | Day-body LRU |
+| Render snapshot | `lib/data/p0t_render_snapshot.dart` | Snapshot helpers |
+| Eager day strip | `lib/core/widgets/eager_day_content_strip.dart` | P0U widget |
+| Mounted day window | `lib/core/widgets/mounted_day_window.dart` | P0U widget |
+| Structure guard | `scripts/audit/architecture_guard.ps1` | Warning-mode audit |
 
 ---
 
@@ -280,7 +287,7 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 
 ## Architecture rules (from Iron Laws)
 
-- **Performance Kill Switch Law (P0V):** Speed, stability, and instant feedback are sacred. If any change causes slower startup, freeze/crash, swipe jank, broken optimistic UI, missing instant record/plan create, log spam, invisible-data projection storms, mounted-widget explosion, or network-before-UI — **stop all feature/preload/design work**, disable the offending experiment by default, restore stable behavior + live optimistic sources, remove hot-path overload, then continue. Full law: `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW. AI emergency protocol: `docs/AI_CONTEXT.md` § Performance Kill Switch Law. Flags: `lib/core/p0u_feature_flags.dart`, `lib/core/perf_flags.dart`. **Banned:** “cache exists” / “snapshot ready” as excuses when the user sees lag or crash.
+- **Performance Kill Switch Law (P0V):** Speed, stability, and instant feedback are sacred. If any change causes slower startup, freeze/crash, swipe jank, broken optimistic UI, missing instant record/plan create, log spam, invisible-data projection storms, mounted-widget explosion, or network-before-UI — **stop all feature/preload/design work**, disable the offending experiment by default, restore stable behavior + live optimistic sources, remove hot-path overload, then continue. Full law: `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW. Flags: `lib/core/performance/runtime_flags.dart`, `lib/core/performance/shell_flags.dart`. **Banned:** “cache exists” / “snapshot ready” as excuses when the user sees lag or crash.
 - **Optimistic UI:** Start/Stop/Update/Delete on records and Planning/Lists CRUD must never block the UI. Apply local shadow first (<100ms), sync to PocketBase async. On **retriable** network failure → enqueue to `lib/data/local_sync/*_mutation_outbox.dart` and keep optimistic state; on **non-retriable** validation errors → roll back and snack.
 - **No `await` before UI update** for user-driven record/plan actions.
 - **Offline drain:** `flushPendingLocalMutations` on login (`loadInitialData`), reconnect (`SyncManager`), app resume, and tap-to-retry (`_OfflineSyncStatusBar`). 401/403 sets `offlineSync.authPaused` until `resumeAfterAuthIfNeeded` + valid session.

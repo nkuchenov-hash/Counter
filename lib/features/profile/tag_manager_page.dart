@@ -8,7 +8,7 @@ import 'dart:async';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/shared/tag_contrast.dart';
+import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:counter/core/widgets/app_loading.dart';
@@ -27,55 +27,6 @@ const List<String> kTagManagerPalette = [
   '#6D4C41',
   '#EC407A',
 ];
-
-/// Ten Material icon keys (`tags.icon`).
-const List<String> kTagManagerIconKeys = [
-  'label',
-  'star',
-  'bookmark',
-  'flag',
-  'home',
-  'work',
-  'favorite',
-  'event',
-  'local_offer',
-  'sell',
-];
-
-IconData iconForTagKey(String? key) {
-  switch (key) {
-    case 'star':
-      return Icons.star_rounded;
-    case 'bookmark':
-      return Icons.bookmark_rounded;
-    case 'flag':
-      return Icons.flag_rounded;
-    case 'home':
-      return Icons.home_rounded;
-    case 'work':
-      return Icons.work_rounded;
-    case 'favorite':
-      return Icons.favorite_rounded;
-    case 'event':
-      return Icons.event_rounded;
-    case 'local_offer':
-      return Icons.local_offer_rounded;
-    case 'sell':
-      return Icons.sell_rounded;
-    case 'label':
-    default:
-      return Icons.label_rounded;
-  }
-}
-
-Color? parseTagHexColor(String? hex) {
-  if (hex == null || hex.length < 7) return null;
-  final h = hex.replaceFirst('#', '');
-  if (h.length != 6) return null;
-  final v = int.tryParse(h, radix: 16);
-  if (v == null) return null;
-  return Color(0xFF000000 | v);
-}
 
 class TagManagerPage extends StatefulWidget {
   const TagManagerPage({

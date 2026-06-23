@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/app_build_info.dart';
-import 'package:counter/auth_service.dart';
+import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/auth_bridge.dart';
@@ -333,7 +333,7 @@ class _AccountSecuritySection extends StatelessWidget {
     });
     try {
       await AuthBridge.signOut();
-      await AuthService.instance.signOut();
+      await OAuthSession.instance.signOut();
     } catch (_) {
       showSlowSnackBar = false;
       if (context.mounted) {

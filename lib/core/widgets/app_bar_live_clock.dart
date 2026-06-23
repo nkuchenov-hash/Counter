@@ -1,14 +1,13 @@
 import 'dart:async';
 
-import 'package:counter/data/database_service.dart';
+import 'package:counter/core/time/app_clock.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-DateTime _displayNow() =>
-    DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
+DateTime _displayNow() => AppClock.wallNow?.call() ?? DateTime.now();
 
-/// Live clock for app bars (profile timezone via [DatabaseService.timeUpdates]).
+/// Live clock for app bars (profile timezone via [AppClock.timeTicks]).
 class AppBarLiveClock extends StatefulWidget {
   const AppBarLiveClock({super.key, this.textStyle});
 
@@ -24,9 +23,12 @@ class _AppBarLiveClockState extends State<AppBarLiveClock> {
   @override
   void initState() {
     super.initState();
-    _timeUpdateSub = DatabaseService.instance.timeUpdates.listen((_) {
-      if (mounted) setState(() {});
-    });
+    final ticks = AppClock.timeTicks;
+    if (ticks != null) {
+      _timeUpdateSub = ticks.listen((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   @override
@@ -38,7 +40,7 @@ class _AppBarLiveClockState extends State<AppBarLiveClock> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<void>(
-      stream: DatabaseService.instance.timeUpdates,
+      stream: AppClock.timeTicks,
       builder: (context, _) {
         return Text(
           DateFormat.Hm(currentLocale.value).format(_displayNow()),
