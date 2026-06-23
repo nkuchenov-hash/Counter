@@ -16,6 +16,71 @@ import 'package:flutter/material.dart';
 
 enum PlanTimeTaskCardDensity { micro, compact, medium, large }
 
+/// Minimum rendered CardPlan height in Time View (VerySmall).
+const double kPlanTimeCardMinHeightPx = 38.0;
+
+/// Minimum vertical gap between adjacent Time View cards.
+const double kPlanTimeCardGapPx = 2.0;
+
+/// Default hour band height before stretch.
+const double kPlanTimeViewBaseHourHeightMinPx = 120.0;
+const double kPlanTimeViewBaseHourHeightMaxPx = 160.0;
+
+/// Visual density bands from CardPlan reference screenshots (Time View).
+enum PlanTimeCardVisualDensity {
+  verySmall,
+  small,
+  moreCompact,
+  compact,
+  medium,
+}
+
+/// Maps final rendered block height to CardPlan visual density.
+PlanTimeCardVisualDensity planTimeCardVisualDensityForRenderedHeight(
+  double renderedHeightPx,
+) {
+  final h = math.max(renderedHeightPx, kPlanTimeCardMinHeightPx);
+  if (h <= 38) return PlanTimeCardVisualDensity.verySmall;
+  if (h <= 54) return PlanTimeCardVisualDensity.small;
+  if (h <= 77) return PlanTimeCardVisualDensity.moreCompact;
+  if (h <= 94) return PlanTimeCardVisualDensity.compact;
+  return PlanTimeCardVisualDensity.medium;
+}
+
+PlanTimeTaskCardDensity planTimeCardTaskDensityForVisual(
+  PlanTimeCardVisualDensity visual,
+) {
+  switch (visual) {
+    case PlanTimeCardVisualDensity.verySmall:
+      return PlanTimeTaskCardDensity.compact;
+    case PlanTimeCardVisualDensity.small:
+      return PlanTimeTaskCardDensity.micro;
+    case PlanTimeCardVisualDensity.moreCompact:
+    case PlanTimeCardVisualDensity.compact:
+      return PlanTimeTaskCardDensity.compact;
+    case PlanTimeCardVisualDensity.medium:
+      return PlanTimeTaskCardDensity.medium;
+  }
+}
+
+bool planTimeCardShowProgressForVisual(PlanTimeCardVisualDensity density) {
+  return density == PlanTimeCardVisualDensity.compact ||
+      density == PlanTimeCardVisualDensity.medium;
+}
+
+bool planTimeCardShowFooterBreadcrumbForVisual(
+  PlanTimeCardVisualDensity density,
+) {
+  return density == PlanTimeCardVisualDensity.compact ||
+      density == PlanTimeCardVisualDensity.medium;
+}
+
+bool planTimeCardUseTimelineFillHeightForVisual(
+  PlanTimeCardVisualDensity density,
+) {
+  return density != PlanTimeCardVisualDensity.small;
+}
+
 /// Where the card is rendered вЂ” drives height/interaction assumptions.
 enum PlanCardSurface { list, timeline, calendar }
 
@@ -38,6 +103,7 @@ class PlanTimeTaskCard extends StatefulWidget {
     this.scheduleConflict = false,
     this.metaIcons = const [],
     this.showFooterBreadcrumb = true,
+    this.showProgressBar = true,
     this.timelineFillHeight = false,
     this.onToggleDone,
     this.onSelectToggle,
@@ -62,6 +128,7 @@ class PlanTimeTaskCard extends StatefulWidget {
   final bool scheduleConflict;
   final List<Widget> metaIcons;
   final bool showFooterBreadcrumb;
+  final bool showProgressBar;
   /// When true (Time mode duration blocks), card fills parent height and pins
   /// progress + footer to the bottom edge.
   final bool timelineFillHeight;
@@ -183,8 +250,9 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
 
     final effectiveDensity = widget.density;
     final useInvariantSlots =
-        effectiveDensity == PlanTimeTaskCardDensity.medium ||
-        effectiveDensity == PlanTimeTaskCardDensity.large;
+        (effectiveDensity == PlanTimeTaskCardDensity.medium ||
+            effectiveDensity == PlanTimeTaskCardDensity.large) &&
+        widget.showProgressBar;
     const cardSpacing = _PlanCardVerticalSpacing.shared;
     final progressSlot = useInvariantSlots
         ? _PlanCardProgressSlot(
@@ -410,7 +478,7 @@ abstract final class _PlanCardGeom {
   static const double menuSize = 33;
   static const double contentSpanMediumLarge = 260;
   static const double radius = 12;
-  static const double refHeightMicro = 40;
+  static const double refHeightMicro = 38;
   static const double refHeightSmall = 54;
   static const double refHeightMedium = 106;
   static const double refHeightLarge = 147;
@@ -1886,12 +1954,14 @@ class _PlanCardWatermark extends StatelessWidget {
   }
 }
 
-/// Time mode uses the same medium CardPlan skeleton as list/calendar.
+/// Time mode block density from rendered height (CardPlan reference bands).
 PlanTimeTaskCardDensity planTimeCardDensityForBlock(
   double heightPx,
   int durationMin,
 ) {
-  return PlanTimeTaskCardDensity.medium;
+  return planTimeCardTaskDensityForVisual(
+    planTimeCardVisualDensityForRenderedHeight(heightPx),
+  );
 }
 
 String _planCardWallTimeLabel(PlanningTask task) {

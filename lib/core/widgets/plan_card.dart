@@ -102,10 +102,12 @@ class PlanCard extends StatelessWidget {
 
   Widget _buildTimelineBlockCard(BuildContext context) {
     final metaIcons = planningTaskMetaIcons(context, task);
-    final blockH = timelineBlockHeightPx;
-    final density = blockH != null && blockH < 72
-        ? PlanTimeTaskCardDensity.compact
-        : PlanTimeTaskCardDensity.medium;
+    final blockH = timelineBlockHeightPx ?? kPlanTimeCardMinHeightPx;
+    final visual = planTimeCardVisualDensityForRenderedHeight(blockH);
+    final density = planTimeCardTaskDensityForVisual(visual);
+    final fillHeight = planTimeCardUseTimelineFillHeightForVisual(visual);
+    final showBreadcrumb = planTimeCardShowFooterBreadcrumbForVisual(visual);
+    final showProgress = planTimeCardShowProgressForVisual(visual);
     final suppressChildInk = Theme.of(context).copyWith(
       splashFactory: NoSplash.splashFactory,
       splashColor: Colors.transparent,
@@ -121,7 +123,9 @@ class PlanCard extends StatelessWidget {
         task: task,
         density: density,
         surface: PlanCardSurface.timeline,
-        timelineFillHeight: true,
+        timelineFillHeight: fillHeight,
+        showFooterBreadcrumb: showBreadcrumb,
+        showProgressBar: showProgress,
         timeLabel: timelineTimeLabel ?? timelineTimeRangeLabel(task),
         displayIsDone: displayIsDone,
         selectMode: selectMode,

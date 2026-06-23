@@ -4,6 +4,12 @@ import 'package:counter/core/app_colors.dart';
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/core/p0_date_nav_diag.dart';
+import 'package:counter/core/p0p_content_diag.dart';
+import 'package:counter/core/pre_white_swipe_restore.dart';
+import 'package:counter/core/mounted_day_registry.dart';
+import 'package:counter/core/p0s_mount_diag.dart';
+import 'package:counter/core/widgets/eager_day_content_strip.dart';
+import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
@@ -13,6 +19,7 @@ import 'package:counter/features/shared/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
@@ -62,6 +69,8 @@ String _formatDuration(Duration d) {
 }
 
 /// Wraps Timeline in a PageView for swipe-to-change date. Exported for LifeOSDashboard.
+///
+/// SWIPE GUARD: Do not replace restored [PageView] date paging with custom slot pager. Failed P0H–P0L.
 class TimelineSwipeWrapper extends StatefulWidget {
   const TimelineSwipeWrapper({
     super.key,
@@ -110,157 +119,143 @@ class TimelineSwipeWrapper extends StatefulWidget {
 }
 
 class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
-  static const int _centerIndex = 5000;
-  late PageController _controller;
-  late int _visiblePageIndex;
-
-  /// External date from shell while this tab is inactive вЂ” applied on activation only.
-  int? _pendingExternalPage;
-
+  late MountedDayWindow _mountedWindow;
+  late DateTime _visibleDate;
+  final EagerDayContentStripController _stripController =
+      EagerDayContentStripController();
+  DateTime? _pendingExternalDate;
   final DatePagerSettleGate _settleGate = DatePagerSettleGate();
-  Timer? _prefetchDebounce;
-
-  void _schedulePrefetch(DateTime center) {
-    _prefetchDebounce?.cancel();
-    _prefetchDebounce = Timer(const Duration(milliseconds: 140), () {
-      if (!mounted) return;
-      DatabaseService.instance.prefetchTimelineDayNeighbors(center);
-    });
-  }
-
-  void _applyPendingExternalPageIfNeeded() {
-    final pending = _pendingExternalPage;
-    if (pending == null || _settleGate.blocksExternalDateSync) return;
-    _pendingExternalPage = null;
-    if (pending < 0 || pending >= 10000) return;
-    if (!_controller.hasClients) return;
-    final cur = _controller.page?.round();
-    if (cur == pending) return;
-    _settleGate.resetCommittedPage(pending);
-    setState(() => _visiblePageIndex = pending);
-    _controller.jumpToPage(pending);
-  }
-
-  /// Shared across all [TimelinePage] indices so calendar/date changes keep List vs Stats.
   bool _showStatsView = false;
+  bool _loggedFirstSwipe = false;
+  bool _userDragActive = false;
 
-  int _pageIndexForDate(DateTime date) {
-    final daysOffset = _dateOnlyCalendar(date).difference(_anchorToday).inDays;
-    return _centerIndex + daysOffset;
+  DateTime get _anchorToday =>
+      _dateOnlyCalendar(DatabaseService.instance.getTimelineDeviceLocalToday());
+
+  String _dateKey(DateTime d) => MountedDayWindow.dateKey(d);
+
+  void _scheduleWarmWindowExtend(DateTime center) {
+    unawaited(
+      Future.microtask(() {
+        if (!mounted) return;
+        DatabaseService.instance.extendTimelineWarmWindowIfNeeded(center);
+        final shift = _mountedWindow.extendIfNeeded(
+          screen: 'Timeline',
+          selected: center,
+          onNewDate: (d) {
+            DatabaseService.instance.timelineWarmSnapshotForDate(d);
+          },
+        );
+        if (shift > 0) {
+          _stripController.shiftByPages(shift);
+        }
+        setState(() {});
+        P0SMountDiag.memory(
+          screen: 'Timeline',
+          mountedBodies: _mountedWindow.length,
+          items: DatabaseService.instance.timelineWarmWindowRecordEstimate,
+          approxKb: _mountedWindow.length * 128,
+        );
+      }),
+    );
+  }
+
+  void _applyPendingExternalDateIfNeeded() {
+    final pending = _pendingExternalDate;
+    if (pending == null || _settleGate.blocksExternalDateSync) return;
+    _pendingExternalDate = null;
+    _syncStripToDate(pending, animate: false);
+  }
+
+  void _syncStripToDate(DateTime date, {required bool animate}) {
+    final d = _dateOnlyCalendar(date);
+    if (!_mountedWindow.contains(d)) {
+      setState(() {
+        _mountedWindow.recenter(d);
+        _visibleDate = d;
+        MountedDayRegistry.beginWindow('Timeline');
+        DatabaseService.instance.prepareTimelineMountedWindowBoot(d);
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _stripController.jumpToDate(d, _mountedWindow);
+      });
+      return;
+    }
+    final idx = _mountedWindow.indexOf(d);
+    _settleGate.resetCommittedPage(idx);
+    setState(() => _visibleDate = d);
+    if (animate) {
+      _settleGate.markProgrammaticAnimStart();
+      _stripController
+          .animateToDate(d, _mountedWindow)
+          .whenComplete(() {
+            if (mounted) _settleGate.markProgrammaticAnimEnd();
+          });
+    } else {
+      _stripController.jumpToDate(d, _mountedWindow);
+    }
   }
 
   void _syncOnTabActivated() {
-    final page = _pendingExternalPage ?? _pageIndexForDate(widget.selectedDate);
-    _pendingExternalPage = null;
-    if (page < 0 || page >= 10000) return;
-    setState(() => _visiblePageIndex = page);
-    if (!_controller.hasClients) return;
-    final cur = _controller.page?.round();
-    if (cur == page) return;
-    PerfDiag.instance.pagerSync(
-      section: 'Timeline',
-      op: 'jumpToPage',
-      targetPage: page,
-      shellTabActive: true,
-      hidden: false,
-    );
-    _controller.jumpToPage(page);
+    final date = _pendingExternalDate ?? widget.selectedDate;
+    _pendingExternalDate = null;
+    _syncStripToDate(date, animate: false);
   }
 
   void _deferHiddenExternalDate(DateTime date) {
-    final page = _pageIndexForDate(date);
-    if (page < 0 || page >= 10000) return;
-    _pendingExternalPage = page;
+    _pendingExternalDate = _dateOnlyCalendar(date);
     PerfDiag.instance.pagerSync(
       section: 'Timeline',
       op: 'deferHidden',
-      targetPage: page,
+      targetPage: _mountedWindow.indexOf(_pendingExternalDate!),
       shellTabActive: false,
       hidden: true,
     );
   }
 
-  DateTime get _anchorToday =>
-      _dateOnlyCalendar(DatabaseService.instance.getTimelineDeviceLocalToday());
-
-  DateTime _dateForIndex(int index) {
-    final raw = _anchorToday.add(Duration(days: index - _centerIndex));
-    return _dateOnlyCalendar(raw);
-  }
-
-  void _syncPagerToDate(DateTime date, {required bool animate}) {
-    if (!widget.shellTabActive) {
-      _deferHiddenExternalDate(date);
-      return;
-    }
-    final page = _pageIndexForDate(date);
-    if (page < 0 || page >= 10000) return;
-    _visiblePageIndex = page;
-    if (!_controller.hasClients) return;
-    final cur = _controller.page;
-    if (cur != null && cur.round() == page) return;
-    if (animate) {
-      PerfDiag.instance.pagerSync(
-        section: 'Timeline',
-        op: 'animateToPage',
-        targetPage: page,
-        shellTabActive: widget.shellTabActive,
-        hidden: false,
+  void _logBootMountReady() {
+    final center = _visibleDate;
+    for (final label in ['yesterday', 'today', 'tomorrow']) {
+      final offset = label == 'yesterday'
+          ? -1
+          : label == 'tomorrow'
+          ? 1
+          : 0;
+      final d = _dateOnlyCalendar(center.add(Duration(days: offset)));
+      P0SMountDiag.mountReady(
+        screen: 'Timeline',
+        date: label,
+        mounted: MountedDayRegistry.isMounted('Timeline', _dateKey(d)),
       );
-      _settleGate.markProgrammaticAnimStart();
-      _controller
-          .animateToPage(
-            page,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-          )
-          .whenComplete(() {
-            if (mounted) _settleGate.markProgrammaticAnimEnd();
-          });
-    } else {
-      PerfDiag.instance.pagerSync(
-        section: 'Timeline',
-        op: 'jumpToPage',
-        targetPage: page,
-        shellTabActive: widget.shellTabActive,
-        hidden: false,
-      );
-      _controller.jumpToPage(page);
     }
+    P0SMountDiag.timelineBootMountDone(
+      mounted: MountedDayRegistry.mountedCountIn(
+        'Timeline',
+        _mountedWindow.dateKeys,
+      ),
+      totalMs: 0,
+    );
   }
 
   @override
   void initState() {
     super.initState();
-    final daysOffset = _dateOnlyCalendar(
-      widget.selectedDate,
-    ).difference(_anchorToday).inDays;
-    _visiblePageIndex = _centerIndex + daysOffset;
-    _controller = PageController(initialPage: _visiblePageIndex);
-    _controller.addListener(_onPageControllerTick);
+    _visibleDate = _dateOnlyCalendar(widget.selectedDate);
+    _mountedWindow = MountedDayWindow(center: _visibleDate);
+    MountedDayRegistry.beginWindow('Timeline');
+    P0SMountDiag.timelineBootMountStart(
+      center: _dateKey(_visibleDate),
+      from: _dateKey(_mountedWindow.windowFrom),
+      to: _dateKey(_mountedWindow.windowTo),
+      count: _mountedWindow.length,
+    );
+    DatabaseService.instance.prepareTimelineMountedWindowBoot(_visibleDate);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      PerfDiag.instance.scheduleAutoSwipeSequence(
-        section: 'Timeline',
-        controller: _controller,
-        visiblePageIndex: _visiblePageIndex,
-        shellTabActive: widget.shellTabActive,
-        dateKeyForPage: (i) => _dateKeyShort(_dateForIndex(i)),
-      );
+      if (!mounted) return;
+      _logBootMountReady();
     });
   }
-
-  void _onPageControllerTick() {
-    if (!_controller.hasClients) return;
-    final page = _controller.page;
-    if (page == null) return;
-    PerfDiag.instance.dateSwipeDrag(
-      section: 'Timeline',
-      page: page.round(),
-      pageFraction: page,
-    );
-  }
-
-  String _dateKeyShort(DateTime d) => _dateKey(d);
 
   @override
   void didUpdateWidget(covariant TimelineSwipeWrapper oldWidget) {
@@ -290,143 +285,142 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       return;
     }
     if (_settleGate.blocksExternalDateSync) {
-      _pendingExternalPage = _pageIndexForDate(widget.selectedDate);
+      _pendingExternalDate = newD;
       return;
     }
-    setState(() {
-      _syncPagerToDate(widget.selectedDate, animate: true);
-    });
+    _syncStripToDate(newD, animate: true);
   }
 
   @override
   void dispose() {
-    _prefetchDebounce?.cancel();
     _settleGate.dispose();
-    _controller.removeListener(_onPageControllerTick);
-    _controller.dispose();
     super.dispose();
   }
 
-  String _dateKey(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  void _onVisibleDateChanged(int index, DateTime date) {
+    P0DateNavDiag.timelineDateNav(
+      'windowIndex=$index date=${_dateKey(date)}',
+    );
+    final key = _dateKey(date);
+    if (!_loggedFirstSwipe && _userDragActive) {
+      final mountedBefore = MountedDayRegistry.isMounted('Timeline', key);
+      P0SMountDiag.firstSwipe(
+        screen: 'Timeline',
+        targetDate: key,
+        mountedBeforeSwipe: mountedBefore,
+        builtDuringSwipe: false,
+      );
+      if (mountedBefore) {
+        P0SMountDiag.timelinePageHit(date: key);
+      } else {
+        P0SMountDiag.timelinePageMiss(
+          date: key,
+          insideWindow: _mountedWindow.contains(date),
+          reason: 'notMounted',
+        );
+      }
+      _loggedFirstSwipe = true;
+    }
+    setState(() => _visibleDate = _dateOnlyCalendar(date));
+    _settleGate.onPageSettled(
+      pageIndex: index,
+      onShellCommit: (page) {
+        if (!mounted) return;
+        final next = _mountedWindow.dateAt(page);
+        _scheduleWarmWindowExtend(next);
+        final sel = _dateOnlyCalendar(widget.selectedDate);
+        final shellWillUpdate = !(next.year == sel.year &&
+            next.month == sel.month &&
+            next.day == sel.day);
+        if (!shellWillUpdate) return;
+        P0DateNavDiag.timelineDateNav(
+          'shell_commit date=${_dateKey(next)}',
+        );
+        PreWhiteSwipeRestoreDiag.log(
+          screen: 'Timeline',
+          event: 'commit',
+          date: _dateKey(next),
+        );
+        widget.onDateChanged(next);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     perfRebuildTick('TimelineSwipeWrapper');
     return ScrollConfiguration(
       behavior: const MouseDragScrollBehavior(),
-      child: NotificationListener<ScrollNotification>(
-        onNotification: (n) {
-          if (n is ScrollStartNotification && n.dragDetails != null) {
-            _settleGate.onUserDragStart();
-            PerfDiag.instance.dateSwipeStart(
-              section: 'Timeline',
-              fromDate: _dateKeyShort(_dateForIndex(_visiblePageIndex)),
-            );
-          }
-          if (n is ScrollEndNotification) {
-            _settleGate.onUserDragEnd();
-            _applyPendingExternalPageIfNeeded();
-            logDateSwipeThresholdOnScrollEnd(
-              section: 'Timeline',
-              controller: _controller,
-              notification: n,
-              log: ({
-                required String section,
-                required double dragFraction,
-                required double velocity,
-                required bool accepted,
-                required int fromPage,
-                required int toPage,
-              }) {
-                PerfDiag.instance.dateSwipeThreshold(
-                  section: section,
-                  dragFraction: dragFraction,
-                  velocity: velocity,
-                  accepted: accepted,
-                  fromPage: fromPage,
-                  toPage: toPage,
-                );
-              },
-            );
-            SchedulerBinding.instance.addPostFrameCallback((_) {
-              PerfDiag.instance.dateSwipeEnd(section: 'Timeline');
-            });
-          }
-          return false;
-        },
-        child: PageView.builder(
-          controller: _controller,
-          physics: const PageScrollPhysics(),
-          itemCount: 10000,
-          onPageChanged: (int index) {
-            if (index < 0 || index >= 10000) return;
-            P0DateNavDiag.timelineDateNav(
-              'page=$index date=${_dateKeyShort(_dateForIndex(index))}',
-            );
-            setState(() => _visiblePageIndex = index);
-            _settleGate.onPageSettled(
-              pageIndex: index,
-              onShellCommit: (page) {
-                if (!mounted) return;
-                final next = _dateForIndex(page);
-                _schedulePrefetch(next);
-                final sel = _dateOnlyCalendar(widget.selectedDate);
-                final shellWillUpdate = !(next.year == sel.year &&
-                    next.month == sel.month &&
-                    next.day == sel.day);
-                if (!shellWillUpdate) return;
-                P0DateNavDiag.timelineDateNav('shell_commit date=${_dateKeyShort(next)}');
-                widget.onDateChanged(next);
-              },
-            );
-          },
-        itemBuilder: (context, index) {
-          final date = _dateForIndex(index);
-          final dateKey = _dateKey(date);
-          final isFuture = date.isAfter(_anchorToday);
-          final isVisible =
-              widget.shellTabActive && index == _visiblePageIndex;
-          return TimelinePage(
-            selectedDate: date,
-            selectedDateString: dateKey,
-            isFutureDate: isFuture,
-            tasks: isVisible ? widget.tasks : const [],
-            tasksLoading: isVisible ? widget.tasksLoading : false,
-            isActivePage: isVisible,
-            titleController: widget.titleController,
-            titleFocus: widget.titleFocus,
-            selectedCategoryId: widget.selectedCategoryId,
-            onCategoryChanged: widget.onCategoryChanged,
-            onStart: widget.onStart,
-            onPlan: widget.onPlan,
-            onNewTaskForPastDate: widget.onNewTaskForPastDate,
-            onStopRecord: widget.onStopRecord,
-            onDeleteRecord: widget.onDeleteRecord,
-            onJumpToConflictDate: widget.onJumpToConflict,
-            rules: widget.rules,
-            onShowEditRecordSheet: widget.onShowEditRecordSheet,
-            onNavigateToDate: widget.onDateChanged,
-            showStatsView: _showStatsView,
-            onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
+      child: TimelinePage(
+        mountedWindow: _mountedWindow,
+        stripController: _stripController,
+        visibleDate: _visibleDate,
+        anchorToday: _anchorToday,
+        shellTabActive: widget.shellTabActive,
+        onVisibleDateChanged: _onVisibleDateChanged,
+        onUserDragStart: () {
+          _userDragActive = true;
+          _settleGate.onUserDragStart();
+          PreWhiteSwipeRestoreDiag.log(
+            screen: 'Timeline',
+            event: 'start',
+            date: _dateKey(_visibleDate),
+          );
+          PerfDiag.instance.dateSwipeStart(
+            section: 'Timeline',
+            fromDate: _dateKey(_visibleDate),
           );
         },
-        ),
+        onUserDragEnd: () {
+          _settleGate.onUserDragEnd();
+          _userDragActive = false;
+          _applyPendingExternalDateIfNeeded();
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            PerfDiag.instance.dateSwipeEnd(section: 'Timeline');
+          });
+        },
+        onScrollTick: (fraction) {
+          PerfDiag.instance.dateSwipeDrag(
+            section: 'Timeline',
+            page: fraction.round(),
+            pageFraction: fraction,
+          );
+        },
+        selectedDate: widget.selectedDate,
+        titleController: widget.titleController,
+        titleFocus: widget.titleFocus,
+        selectedCategoryId: widget.selectedCategoryId,
+        onCategoryChanged: widget.onCategoryChanged,
+        onStart: widget.onStart,
+        onPlan: widget.onPlan,
+        onNewTaskForPastDate: widget.onNewTaskForPastDate,
+        onStopRecord: widget.onStopRecord,
+        onDeleteRecord: widget.onDeleteRecord,
+        onJumpToConflictDate: widget.onJumpToConflict,
+        rules: widget.rules,
+        onShowEditRecordSheet: widget.onShowEditRecordSheet,
+        onNavigateToDate: widget.onDateChanged,
+        showStatsView: _showStatsView,
+        onShowStatsViewChanged: (v) => setState(() => _showStatsView = v),
       ),
     );
   }
 }
 
-/// Single timeline tab page: list/stats toggle (above input), task input row, record list or StatsView.
+/// Timeline tab: static chrome once; eager mounted day strip (P0S).
 class TimelinePage extends StatefulWidget {
   const TimelinePage({
     super.key,
+    required this.mountedWindow,
+    required this.stripController,
+    required this.visibleDate,
+    required this.anchorToday,
+    required this.shellTabActive,
+    required this.onVisibleDateChanged,
+    this.onUserDragStart,
+    this.onUserDragEnd,
+    this.onScrollTick,
     required this.selectedDate,
-    required this.selectedDateString,
-    required this.isFutureDate,
-    required this.tasks,
-    required this.tasksLoading,
-    required this.isActivePage,
     required this.titleController,
     required this.titleFocus,
     required this.selectedCategoryId,
@@ -444,19 +438,23 @@ class TimelinePage extends StatefulWidget {
     required this.onShowStatsViewChanged,
   });
 
-  /// Picks a calendar day (AppBar / Stats PageView); drives parent [TimelineSwipeWrapper] PageController.
+  final MountedDayWindow mountedWindow;
+  final EagerDayContentStripController stripController;
+  final DateTime visibleDate;
+  final DateTime anchorToday;
+  final bool shellTabActive;
+  final void Function(int windowIndex, DateTime date) onVisibleDateChanged;
+  final VoidCallback? onUserDragStart;
+  final VoidCallback? onUserDragEnd;
+  final void Function(double pageFraction)? onScrollTick;
+
+  /// Picks a calendar day (AppBar / Stats PageView); drives parent strip.
   final void Function(DateTime date)? onNavigateToDate;
 
-  /// List vs Stats segment; owned by [TimelineSwipeWrapper] so date jumps preserve mode.
   final bool showStatsView;
   final ValueChanged<bool> onShowStatsViewChanged;
 
   final DateTime selectedDate;
-  final String selectedDateString;
-  final bool isFutureDate;
-  final List<Task> tasks;
-  final bool tasksLoading;
-  final bool isActivePage;
   final TextEditingController titleController;
   final FocusNode titleFocus;
   final int? selectedCategoryId;
@@ -483,20 +481,24 @@ class _TimelinePageState extends State<TimelinePage> {
   Stream<List<Map<String, dynamic>>>? _recordsStream;
   StreamSubscription<List<Map<String, dynamic>>>? _recordsSub;
 
-  /// Last non-transient list for this calendar day; keeps ListView stable when stream
+  /// Last non-transient list for visible calendar day; keeps ListView stable when stream
   /// briefly emits `waiting` + empty during background refresh.
   List<Map<String, dynamic>> _lastCoalescedRecords = [];
+
+  DateTime get _visibleDate => widget.visibleDate;
+
+  String _dateKey(DateTime d) => MountedDayWindow.dateKey(d);
+
+  bool get _visibleIsFuture => _visibleDate.isAfter(widget.anchorToday);
 
   void _initStream() {
     _recordsSub?.cancel();
     _lastCoalescedRecords = List<Map<String, dynamic>>.from(
-      DatabaseService.instance.peekTimelineRecordsForDate(widget.selectedDate),
+      DatabaseService.instance.timelineWarmSnapshotForDate(_visibleDate).records,
     );
-    _recordsStream = DatabaseService.instance.recordsStream(
-      widget.selectedDate,
-    );
+    _recordsStream = DatabaseService.instance.recordsStream(_visibleDate);
     _recordsSub = _recordsStream!.listen((records) {
-      if (!mounted || !widget.isActivePage) return;
+      if (!mounted || !widget.shellTabActive) return;
       if (records.isNotEmpty) {
         _lastCoalescedRecords = List<Map<String, dynamic>>.from(records);
       }
@@ -504,66 +506,27 @@ class _TimelinePageState extends State<TimelinePage> {
     });
   }
 
-  List<Map<String, dynamic>> _recordsForListArea() {
+  List<Map<String, dynamic>>? _liveRecordsForVisibleDay() {
+    if (!widget.shellTabActive) return null;
     if (_lastCoalescedRecords.isNotEmpty) {
       return _lastCoalescedRecords;
     }
-    return DatabaseService.instance.peekTimelineRecordsForDate(
-      widget.selectedDate,
+    final snap = DatabaseService.instance.timelineWarmSnapshotForDate(
+      _visibleDate,
     );
-  }
-
-  /// List / stats / virtualized record list (lazy VMs in list builder).
-  Widget _buildTimelineRecordsArea(BuildContext context) {
-    if (widget.showStatsView) {
-      final records = DatabaseService.instance.peekTimelineRecordsForDate(
-        widget.selectedDate,
-      );
-      if (records.isEmpty) {
-        return EmptyStatePlaceholder(
-          icon: Icons.schedule_rounded,
-          titleL10nKey: 'empty_timeline_title',
-          subtitleL10nKey: 'empty_timeline_subtitle',
-          actionLabelL10nKey: 'empty_action_focus_search',
-          onAction: () => widget.titleFocus.requestFocus(),
-        );
-      }
-      return StatsView(
-        records: records,
-        rules: widget.rules,
-        isFutureDate: widget.isFutureDate,
-        selectedDate: widget.selectedDate,
-        onDayChanged: widget.onNavigateToDate,
-      );
-    }
-
-    final recordMaps = _recordsForListArea();
-    if (recordMaps.isEmpty) {
-      return EmptyStatePlaceholder(
-        icon: Icons.schedule_rounded,
-        titleL10nKey: 'empty_timeline_title',
-        subtitleL10nKey: 'empty_timeline_subtitle',
-        actionLabelL10nKey: 'empty_action_focus_search',
-        onAction: () => widget.titleFocus.requestFocus(),
-      );
-    }
-    return _TimelineLazyRecordList(
-      recordMaps: recordMaps,
-      dateKey: widget.selectedDateString,
-      selectedDate: widget.selectedDate,
-      selectedDateString: widget.selectedDateString,
-      onStop: widget.onStopRecord,
-      onDelete: widget.onDeleteRecord,
-      onEdit: (data) => _showEditRecordSheet(context, data),
-    );
+    return snap.records.isEmpty ? null : snap.records;
   }
 
   @override
   void initState() {
     super.initState();
-    if (widget.isActivePage) {
+    _lastCoalescedRecords = List<Map<String, dynamic>>.from(
+      DatabaseService.instance.timelineWarmSnapshotForDate(_visibleDate).records,
+    );
+    if (widget.shellTabActive) {
       _initStream();
     }
+    P0PContentDiag.timelineChromeStatic();
   }
 
   @override
@@ -575,22 +538,20 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   void didUpdateWidget(covariant TimelinePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.isActivePage && widget.isActivePage) {
+    if (!oldWidget.shellTabActive && widget.shellTabActive) {
       _initStream();
-      return;
+    } else if (oldWidget.shellTabActive && !widget.shellTabActive) {
+      _recordsSub?.cancel();
+      _recordsSub = null;
     }
-    if (!widget.isActivePage) {
-      if (oldWidget.isActivePage) {
-        _recordsSub?.cancel();
-        _recordsSub = null;
-      }
-      return;
-    }
-    if (oldWidget.selectedDate.year != widget.selectedDate.year ||
-        oldWidget.selectedDate.month != widget.selectedDate.month ||
-        oldWidget.selectedDate.day != widget.selectedDate.day) {
+    if (widget.shellTabActive &&
+        oldWidget.visibleDate != widget.visibleDate) {
+      _lastCoalescedRecords = List<Map<String, dynamic>>.from(
+        DatabaseService.instance
+            .timelineWarmSnapshotForDate(_visibleDate)
+            .records,
+      );
       _initStream();
-      setState(() {});
     }
   }
 
@@ -601,14 +562,8 @@ class _TimelinePageState extends State<TimelinePage> {
   @override
   Widget build(BuildContext context) {
     perfRebuildTick('TimelinePage');
-    if (!widget.isActivePage) {
-      return const ColoredBox(
-        color: Colors.transparent,
-        child: SizedBox.expand(),
-      );
-    }
     P0DateNavDiag.timelineBuild(
-      'date=${widget.selectedDateString} records=${_lastCoalescedRecords.length}',
+      'date=${_dateKey(_visibleDate)} records=${_lastCoalescedRecords.length}',
     );
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -656,16 +611,13 @@ class _TimelinePageState extends State<TimelinePage> {
                 children: [
                   Expanded(
                     child: TextField(
-                      controller: widget.isActivePage
-                          ? widget.titleController
-                          : null,
-                      focusNode: widget.isActivePage ? widget.titleFocus : null,
-                      enabled: widget.isActivePage,
+                      controller: widget.titleController,
+                      focusNode: widget.titleFocus,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) {
-                        if (widget.isFutureDate) {
+                        if (_visibleIsFuture) {
                           widget.onPlan();
-                        } else if (_isToday(widget.selectedDate)) {
+                        } else if (_isToday(_visibleDate)) {
                           widget.onStart();
                         } else {
                           widget.onNewTaskForPastDate();
@@ -684,10 +636,10 @@ class _TimelinePageState extends State<TimelinePage> {
                     builder: (context) {
                       final projectedToday = _localToday();
                       final isToday =
-                          widget.selectedDate.year == projectedToday.year &&
-                          widget.selectedDate.month == projectedToday.month &&
-                          widget.selectedDate.day == projectedToday.day;
-                      final isFuture = widget.isFutureDate;
+                          _visibleDate.year == projectedToday.year &&
+                          _visibleDate.month == projectedToday.month &&
+                          _visibleDate.day == projectedToday.day;
+                      final isFuture = _visibleIsFuture;
                       return FilledButton.icon(
                         onPressed: () {
                           if (isFuture) {
@@ -720,10 +672,157 @@ class _TimelinePageState extends State<TimelinePage> {
             ),
             const SizedBox(height: 8),
             const Divider(height: 1),
-            Expanded(child: _buildTimelineRecordsArea(context)),
+            Expanded(
+              child: EagerDayContentStrip(
+                screen: 'Timeline',
+                dates: widget.mountedWindow.dates,
+                initialIndex: widget.mountedWindow.indexOf(_visibleDate),
+                activeIndex: widget.mountedWindow.indexOf(_visibleDate),
+                controller: widget.stripController,
+                physics: const PageScrollPhysics(),
+                onUserDragStart: widget.onUserDragStart,
+                onUserDragEnd: widget.onUserDragEnd,
+                onScrollTick: widget.onScrollTick,
+                onIndexChanged: (index, date) {
+                  widget.onVisibleDateChanged(index, date);
+                },
+                itemBuilder: (context, date, index, isActive) {
+                  final dateKey = _dateKey(date);
+                  return RepaintBoundary(
+                    child: _TimelineDayCardList(
+                      key: ValueKey<String>('tl-day-$dateKey'),
+                      date: date,
+                      dateKey: dateKey,
+                      isFutureDate: date.isAfter(widget.anchorToday),
+                      isActive: isActive,
+                      showStatsView: widget.showStatsView,
+                      rules: widget.rules,
+                      liveRecordMaps: isActive ? _liveRecordsForVisibleDay() : null,
+                      onStop: widget.onStopRecord,
+                      onDelete: widget.onDeleteRecord,
+                      onEdit: (data) => _showEditRecordSheet(context, data),
+                      onNavigateToDate: widget.onNavigateToDate,
+                      titleFocus: widget.titleFocus,
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Date-dependent timeline body only — real cards from warm snapshot (P0P).
+class _TimelineDayCardList extends StatefulWidget {
+  const _TimelineDayCardList({
+    super.key,
+    required this.date,
+    required this.dateKey,
+    required this.isFutureDate,
+    required this.isActive,
+    required this.showStatsView,
+    required this.rules,
+    this.liveRecordMaps,
+    required this.onStop,
+    required this.onDelete,
+    required this.onEdit,
+    this.onNavigateToDate,
+    required this.titleFocus,
+  });
+
+  final DateTime date;
+  final String dateKey;
+  final bool isFutureDate;
+  final bool isActive;
+  final bool showStatsView;
+  final List<CategoryRule> rules;
+  final List<Map<String, dynamic>>? liveRecordMaps;
+  final Future<void> Function(String systemRowId) onStop;
+  final Future<void> Function(String systemRowId) onDelete;
+  final void Function(Map<String, dynamic> data) onEdit;
+  final void Function(DateTime date)? onNavigateToDate;
+  final FocusNode titleFocus;
+
+  @override
+  State<_TimelineDayCardList> createState() => _TimelineDayCardListState();
+}
+
+class _TimelineDayCardListState extends State<_TimelineDayCardList>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  List<Map<String, dynamic>> _recordMaps() {
+    final live = widget.liveRecordMaps;
+    if (live != null && live.isNotEmpty) {
+      return live;
+    }
+    return DatabaseService.instance
+        .timelineBodyEntryForDate(widget.date)
+        .records;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final sw = Stopwatch()..start();
+    final entry = DatabaseService.instance.timelineBodyEntryForDate(widget.date);
+    final recordMaps = _recordMaps();
+    sw.stop();
+    if (MountedDayRegistry.isMounted('Timeline', widget.dateKey)) {
+      P0SMountDiag.timelinePageHit(date: widget.dateKey);
+    } else {
+      P0SMountDiag.timelinePageMiss(
+        date: widget.dateKey,
+        insideWindow: true,
+        reason: 'notMountedYet',
+      );
+    }
+    P0SMountDiag.timelineBodyMounted(
+      date: widget.dateKey,
+      records: recordMaps.length,
+      ms: sw.elapsedMilliseconds,
+    );
+
+    if (widget.showStatsView) {
+      if (recordMaps.isEmpty) {
+        return EmptyStatePlaceholder(
+          icon: Icons.schedule_rounded,
+          titleL10nKey: 'empty_timeline_title',
+          subtitleL10nKey: 'empty_timeline_subtitle',
+          actionLabelL10nKey: 'empty_action_focus_search',
+          onAction: () => widget.titleFocus.requestFocus(),
+        );
+      }
+      return StatsView(
+        records: recordMaps,
+        rules: widget.rules,
+        isFutureDate: widget.isFutureDate,
+        selectedDate: widget.date,
+        onDayChanged: widget.onNavigateToDate,
+      );
+    }
+
+    if (recordMaps.isEmpty) {
+      return EmptyStatePlaceholder(
+        icon: Icons.schedule_rounded,
+        titleL10nKey: 'empty_timeline_title',
+        subtitleL10nKey: 'empty_timeline_subtitle',
+        actionLabelL10nKey: 'empty_action_focus_search',
+        onAction: () => widget.titleFocus.requestFocus(),
+      );
+    }
+    return _TimelineLazyRecordList(
+      recordMaps: recordMaps,
+      dateKey: widget.dateKey,
+      selectedDate: widget.date,
+      selectedDateString: widget.dateKey,
+      onStop: widget.onStop,
+      onDelete: widget.onDelete,
+      onEdit: widget.onEdit,
     );
   }
 }

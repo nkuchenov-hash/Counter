@@ -232,6 +232,10 @@ extension DbCoreExtension on DatabaseService {
       _categoryDialogUniverse = [];
       _tasksCache = [];
       _cachedFlatRecords = [];
+      _timelineWarmWindow?.invalidateAll();
+      _plansWarmWindow?.invalidateAll();
+      _timelineBodyCache?.invalidateAll();
+      _plansBodyCache?.invalidateAll();
       _settings = UserSettings(userId: '');
       _profileHydratedFromPb = false;
       _profileHydrationError = null;
@@ -395,6 +399,7 @@ extension DbCoreExtension on DatabaseService {
 
   Future<void> _loadInnerWearLiteAfterProfile() async {
     if (_pbHttpBackoffActive) {
+      await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
       _settingsController.add(_settings);
       _categoryController.add(List.from(_rules));
@@ -403,6 +408,7 @@ extension DbCoreExtension on DatabaseService {
       return;
     }
     await _loadRulesFromNoco();
+    await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
     try {
       await _fetchRecordsIntoCache(forceNetwork: true);
     } catch (_) {}
@@ -419,6 +425,11 @@ extension DbCoreExtension on DatabaseService {
 
   Future<void> _loadInnerAfterProfile() async {
     if (_pbHttpBackoffActive) {
+      await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
+      await restorePlansWarmSnapshotsFromDiskAtBoot();
+      await restoreTimelineWarmSnapshotsFromDiskAtBoot();
+      preparePlansMountedWindowBoot(getProjectedToday());
+      prepareTimelineMountedWindowBoot(getTimelineDeviceLocalToday());
       _loadErrorMessage ??= 'PocketBase unreachable; retry scheduled.';
       _settingsController.add(_settings);
       _categoryController.add(List.from(_rules));
@@ -431,6 +442,9 @@ extension DbCoreExtension on DatabaseService {
       return;
     }
     await _loadRulesFromNoco();
+    await bootstrapTimelineRecordsCacheFromPrefsAtBoot();
+    await restorePlansWarmSnapshotsFromDiskAtBoot();
+    await restoreTimelineWarmSnapshotsFromDiskAtBoot();
     try {
       await _fetchRecordsIntoCache(forceNetwork: true);
       await _reconcileDuplicatePrimaryRunningRecords();
@@ -438,6 +452,11 @@ extension DbCoreExtension on DatabaseService {
     await _loadPlanningTasksForToday();
     // Safety re-run: finish startup with a final category load.
     await _loadRulesFromNoco();
+    final projected = getProjectedToday();
+    preparePlansMountedWindowBoot(projected);
+    prepareTimelineMountedWindowBoot(getTimelineDeviceLocalToday());
+    persistPlansWarmSnapshotsToDisk();
+    persistTimelineWarmSnapshotsToDisk();
     _settingsController.add(_settings);
     _categoryController.add(List.from(_rules));
     _tasksController.add(List.from(_tasksCache));

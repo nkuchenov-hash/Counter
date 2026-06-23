@@ -130,6 +130,25 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 
 ## 🟢 Velocity Track
 
+### Codebase cleanup (2026-06-22)
+
+**Status:** Stage A + A.1 + C complete. Architecture splits and boundary fixes deferred.
+
+| Stage | Scope | Status |
+| :--- | :--- | :--- |
+| **A** | Safe deletes — orphan Dart files + non-code in `lib/` | ✅ |
+| **A.1** | Compile baseline — `p0n_perf_diag` import + `_PlanningDayCardListKeepAlive` in `planning_view.dart` | ✅ |
+| **C** | Doc sync — `APP_STRUCTURE`, `CLAUDE.md`, audit report, roadmap, changelog | ✅ |
+| **D** | Architecture guard script (warning mode first) | ⏸ next |
+| **B** | Safe renames/moves (root barrels, duplicate l10n) | ⏸ after D |
+| **E** | Justified large-file splits | ⏸ deferred — **never by line count alone**; mixed-responsibility only |
+
+**Remaining:** 3 runtime test failures in perf/widget harness (`perf_shell_date_settle_test`, `widget_test` smoke) — not Stage A blockers. Large files (`planning_view.dart`, `plan_service.dart`, `record_service.dart`, etc.) stay intact until Stage E with explicit split plan.
+
+Audit: `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`.
+
+---
+
 ### ~~V1. Sharpen `CLAUDE.md` into a navigation map~~ ✅ (shipped 2026-06-10)
 
 `CLAUDE.md` updated for O1 local sync (`lib/data/local_sync/`), flush/resume symbols, offline banner, and shipped F1 status. Goal: any AI session answers "where do I open first?" from `CLAUDE.md` alone — **keep this table current when symbols move.**

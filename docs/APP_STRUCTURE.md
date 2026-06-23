@@ -17,13 +17,15 @@ lib/
 │   ├── pb_config.dart             // [CONFIG] PocketBase URL, Collections, & Expands.
 │   ├── auth_bridge.dart           // [GATE] Auth session management, OAuth, & Profile routing.
 │   ├── category_fuzzy_match.dart  // Category name fuzzy-match scoring.
+│   ├── warm_day_window.dart       // [P0 PERF DEBT] Rolling warm day snapshots (P0O); consolidate later.
+│   ├── rendered_day_body_cache.dart // [P0 PERF DEBT] Rendered day-body warm cache (P0P/P0R); consolidate later.
 │   ├── local_sync/                // [OFFLINE-FIRST] SharedPreferences mutation outboxes + sync state
 │   │   ├── record_mutation_outbox.dart // Records: start/stop/update/delete mutation queue
 │   │   ├── plan_mutation_outbox.dart   // Plans/Lists: create/update/delete mutation queue
 │   │   ├── plan_create_outbox.dart     // Legacy re-export to plan_mutation_outbox.dart
 │   │   ├── offline_sync_state.dart     // Pending count, syncing/auth-paused/error state
 │   │   └── sync_manager.dart           // Connectivity/app-resume drain trigger
-│   └── (platform stubs)          // html_stub.dart, voice_audio_stub.dart, web_history*.dart
+│   └── (platform stubs)          // voice_audio_stub.dart, voice_audio_web.dart, web_history*.dart
 ├── l10n/                          // THE VOICE
 │   ├── dictionary.dart            // [TRANSLATIONS] EN/RU Maps & t() localization helper.
 │   ├── app_locales.dart           // Locale codes, labels, supported language list.
@@ -36,17 +38,36 @@ lib/
 │   ├── shell_layout_state.dart    // ShellLayoutController / ShellLayoutScope (FAB clearance, edge scroll).
 │   ├── app_snackbar.dart          // AppSnack — single-line success/failure toasts.
 │   ├── category_color_palette.dart // Color palette for category tiles.
+│   ├── date_pager_settle_gate.dart // Shared PageView date-settle coordinator (P0 date nav).
+│   ├── date_swipe_physics.dart    // FeatherDateSwipePhysics + related swipe helpers.
+│   ├── (performance / diagnostic layer — active debt, not final architecture) //
+│   │   perf_diag.dart             // Gated by --dart-define=PERF_DIAG=true; frame/rebuild probes.
+│   │   perf_flags.dart            // Internal bisect toggles (LazyIndexedStack, pager sync, etc.).
+│   │   p0_date_nav_diag.dart      // Debounced [P0_*] date-nav debug logs.
+│   │   p0n_perf_diag.dart         // [TIMELINE_*] / [PLANS_*] swipe/cache perf logs.
+│   │   p0o_warm_diag.dart         // [WARM_*] warm-window diagnostics.
+│   │   p0p_content_diag.dart      // [P0P_*] content-only paging diagnostics.
+│   │   p0r_prebuild_diag.dart     // [P0R_*] critical/window body prebuild diagnostics.
+│   │   pre_white_swipe_restore.dart // [PRE_WHITE_SWIPE_RESTORE] PageView swipe restore logs.
+│   │   app_diag.dart              // Thin debugPrint helper (TIME_*, PERF_*).
+│   │   // Consolidate into one perf module later — do not delete while P0 paging is active.
 │   ├── env/                       // env.dart — compile-time environment constants.
 │   ├── services/                  // speech_engine_handle.dart, speech_listen_locale.dart
-│   ├── subscription/              // app_tier.dart — free/pro tier gate.
-│   └── widgets/                   // [SHARED UI] Global system components (8 primitives).
+│   ├── subscription/              // app_tier.dart — free/pro tier gate (unused stub).
+│   └── widgets/                   // [SHARED UI] Canonical Flutter components (V7).
 │       ├── global_app_header.dart             // Unified Date/Time Header.
 │       ├── omni_date_time_picker_dialog.dart  // Unified Web/Desktop Date+Time dialog.
 │       ├── app_loading.dart                   // AppLoading(size:) — canonical spinner.
-│       ├── confirm_dialog.dart                // showConfirmDialog() — canonical yes/no alert.
+│       ├── confirm_dialog.dart                // showConfirmDialog() — canonical yes/no alert (0 prod call sites; keep).
 │       ├── app_button.dart                    // AppButton — canonical action button.
+│       ├── app_icon_button.dart               // AppIconButton — canonical icon button.
 │       ├── app_state_views.dart               // AppErrorState, AppEmptyState.
 │       ├── app_bar_live_clock.dart            // Live clock widget for app bars.
+│       ├── compact_nav_controls.dart          // Compact segmented nav labels/controls.
+│       ├── lazy_indexed_stack.dart            // Optional shell tab stack (perf_flags bisect).
+│       ├── life_card.dart                     // LifeCard / AppTaskCard foundation (Component Lab; 0 prod imports).
+│       ├── plan_card.dart                     // PlanCard wrapper over PlanTimeTaskCard.
+│       ├── plan_time_task_card.dart           // PlanTimeTaskCard — canonical plan/list/time card.
 │       └── mouse_drag_scroll_behavior.dart    // Mouse-drag scroll for desktop/web.
 ├── services/                      // OS & DEVICE BRIDGE (non-UI)
 │   └── notification_service.dart  // [ALARMS] flutter_local_notifications + timezone.
@@ -55,8 +76,7 @@ lib/
 │   │   ├── auth_view.dart         // Sign In, Register, OAuth, Password Reset.
 │   │   └── auth_screen.dart       // Re-export shim.
 │   ├── timeline/                  // [TIME] Activity Feed & Time Blocks (Records)
-│   │   ├── timeline_view.dart     // TimelineSwipeWrapper — horizontal day PageView (date nav)
-│   │   └── timeline_widgets.dart
+│   │   └── timeline_view.dart     // TimelineSwipeWrapper + TimelinePage; header chrome inlined here (Stage A removed timeline_widgets.dart)
 │   ├── stats/                     // [ANALYTICS] Productivity stats (was timeline/stats/)
 │   │   ├── stats_view.dart
 │   │   └── plan_vs_fact_tab.dart
@@ -83,8 +103,6 @@ lib/
 │   │   ├── tag_default_duration_settings_view.dart
 │   │   ├── timezone_settings.dart
 │   │   └── wall_clock.dart        // Profile timezone wall-clock helpers (PLANETARY_TIME).
-│   ├── more/                      // [OVERFLOW] Categories + Profile nav hub
-│   │   └── more_view.dart
 │   ├── dev/                       // [INTERNAL] Admin-only design/dev tools
 │   │   └── component_lab_view.dart // Component Lab, gated by profiles.is_admin
 │   ├── wear/                      // [WEAR OS] Watch companion
@@ -98,8 +116,9 @@ lib/
 │       ├── tag_contrast.dart      // Tag color contrast helpers.
 │       ├── voice_input_sheet.dart // Voice capture bottom sheet.
 │       └── voice_capture_config.dart
-├── app_shell.dart                 // THE NAVIGATOR (Dashboard & BottomNavBar routing)
-└── main.dart                      // THE IGNITION (Initialization & AuthGate barrier)
+├── app_shell.dart                 // THE NAVIGATOR (Dashboard, BottomNavBar, inline More bottom sheet via _openMoreMenu)
+├── main.dart                      // THE IGNITION (Initialization & AuthGate barrier)
+└── (legacy root barrels)          // database_service.dart, models.dart, auth_screen.dart, auth_service.dart — migrate imports to data/features paths
 
 ---
 

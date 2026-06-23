@@ -11,6 +11,55 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-22] - Stage A cleanup + A.1 compile baseline + Stage C doc sync [shipped]
+* **Stage A [shipped]:** Deleted proven orphans/non-code — `p0b_logcat.txt`, `lib/notes` (archived to `docs/archive/lib_notes_scratch.txt`), `lib/deploy.ps1`, `lib/data/html_stub.dart`, `lib/features/more/more_view.dart`, `lib/features/timeline/timeline_widgets.dart`. No P0/perf/warm files touched; More menu stays inline in `app_shell.dart` `_openMoreMenu`; Timeline header stays inline in `timeline_view.dart`.
+* **Stage A.1 [shipped]:** `planning_view.dart` — added `p0n_perf_diag.dart` import; restored `_PlanningDayCardListKeepAlive` keep-alive wrapper for offscreen PageView day bodies. `flutter analyze --no-fatal-infos --no-fatal-warnings` green.
+* **Stage C [shipped]:** Doc sync — `docs/APP_STRUCTURE.md`, `CLAUDE.md`, `docs/ROADMAP.md`, `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md` (cleanup note only).
+* **Tests:** `flutter test` loads/runs; 3 runtime failures remain in perf/widget harness — not compile blockers, unrelated to Stage A deletes.
+
+## [2026-06-15] - P0S: eager mounted content pages ±10 [wip]
+* **`eager_day_content_strip.dart` / `mounted_day_window.dart` / `p0s_mount_diag.dart`:** [wip] Row-based horizontal strip mounts all ±10 day bodies eagerly (not lazy `PageView.builder`); extend/evict at 41 max; `[P0S_*]` diagnostics.
+* **`planning_view.dart` / `timeline_view.dart`:** [wip] Replaced date `PageView.builder` with `EagerDayContentStrip`; static chrome unchanged outside strip.
+* **`plan_service.dart` / `record_service.dart`:** [wip] `preparePlansMountedWindowBoot` / `prepareTimelineMountedWindowBoot`; Timeline warm snapshots disk persist (`warm_timeline_snapshots_v1`).
+* **`db_core.dart`:** [wip] Boot: disk restore → prepare mounted window data → persist snapshots; network after.
+
+## [2026-06-15] - P0R: critical adjacent prebuild + persistent warm snapshots [wip]
+* **`rendered_day_body_cache.dart` / `p0r_prebuild_diag.dart`:** [wip] `TimelineDayBodyEntry` / `PlansDayBodyEntry` with `bodyReady`; critical sync prebuild (±1) before first swipe; chunked ±10 window prebuild; `[P0R_*]` diagnostics.
+* **`plan_service.dart`:** [wip] `restorePlansWarmSnapshotsFromDiskAtBoot` / `persistPlansWarmSnapshotsToDisk` (`warm_plans_snapshots_v1`); `plansBodyEntryForDate` sync cache hit path.
+* **`record_service.dart`:** [wip] `timelineBodyEntryForDate`; `prebuildTimelineCriticalBodiesSync`; boot disk restore log for Timeline flat records.
+* **`db_core.dart`:** [wip] Boot sequence: restore disk → network → critical prebuild → background ±10.
+* **`planning_view.dart` / `timeline_view.dart`:** [wip] PageView reads body cache; first-swipe `[P0R_FIRST_SWIPE_TARGET]` logs; screen open re-prebuilds critical 3.
+* **Preserved:** content-only PageView (P0P), `PageView.builder`, `DatePagerSettleGate`, no full pages in cache.
+
+## [2026-06-15] - P0P: content-only date paging + rendered day-body warm window [wip]
+* **`timeline_view.dart`:** [wip] Static chrome (list/stats toggle, input) mounted once in [TimelinePage]; [PageView] pages only `_TimelineDayCardList` with real `_TimelineLazyRecordList` cards + `AutomaticKeepAliveClientMixin`.
+* **`planning_view.dart`:** [wip] Static chrome (sort tabs, tag strip, quick-add) mounted once; [PageView] inside `_buildPlanningMainColumn` pages only day card lists; tag loader removed from date pages (`SizedBox.shrink` until tags ready); `FeatherDateSwipePhysics` preserved.
+* **`rendered_day_body_cache.dart` / `p0p_content_diag.dart`:** [wip] Render warm radius 3 / max 7 bodies; `[P0P_*]` diagnostics.
+* **Preserved:** `PageView.builder`, `DatePagerSettleGate`, P0O data warm window (±10), shell `selectedDate`.
+
+## [2026-06-15] - P0O: rolling warm day window for Plans/Timeline date paging [wip]
+* **`warm_day_window.dart` / `p0o_warm_diag.dart`:** [wip] `TimelineDaySnapshot` / `PlansDaySnapshot` + `WarmSnapshotWindow` (radius 10, extend 10 @ threshold 3, max 41 LRU); `[WARM_*]` diagnostics.
+* **`record_service.dart`:** [wip] `ensureTimelineWarmWindow` / `extendTimelineWarmWindowIfNeeded` / `timelineWarmSnapshotForDate`; boot hydrate builds ±10 snapshots from prefs day index; network merge keeps local + refreshes stale snapshots.
+* **`plan_service.dart`:** [wip] `ensurePlansWarmWindow` / `extendPlansWarmWindowIfNeeded` / `plansWarmSnapshotForDate`; refresh on `notifyPlanningRefresh`.
+* **`timeline_view.dart` / `planning_view.dart`:** [wip] PageView slots render from warm snapshots sync (no AppLoading/skeleton on swipe); active page seeds from snapshot then live stream patches; extend window on date commit.
+* **Preserved:** `PageView.builder`, `DatePagerSettleGate`, shell `selectedDate` — no P0H–P0L pager experiments.
+
+## [2026-06-15] - P0N: restored PageView performance pass [wip]
+* **`record_service.dart` / `db_core.dart`:** [wip] `bootstrapTimelineRecordsCacheFromPrefsAtBoot()` before network fetch (incl. PB backoff path); day index from prefs; `fetchRecords` keeps local cache when network returns empty (`TIMELINE_CACHE_REFRESH_MERGE`); `peekTimelineRecordsForDate` sync lookup + P0N logs.
+* **`timeline_view.dart`:** [wip] SWIPE GUARD comment; adjacent slots render cached day list via `peekTimelineRecordsForDate` (no stream/network); `RepaintBoundary` on PageView children; preload coalesced records in `initState`.
+* **`planning_view.dart`:** [wip] SWIPE GUARD comment; `FeatherDateSwipePhysics` (20% commit) vs default `PageScrollPhysics`; adjacent days use `planningDayTasksSnapshot` + frozen `PlanCard` list; active-only stream/listeners; P0N swipe/render logs.
+* **`p0n_perf_diag.dart`:** [wip] `[TIMELINE_*]` / `[PLANS_*]` debug diagnostics.
+* **Preserved:** `PageView.builder`, `DatePagerSettleGate`, shell `selectedDate` ownership — no P0H–P0L pager experiments.
+
+## [2026-06-22] - Emergency: restore pre-white-design PageView date swipe [wip]
+* **Root cause:** uncommitted P0H–P0L replaced working `PageView.builder` swipe with `CanonicalDatePager`, hot UI windows, opacity gates, and day-content slot experiments — never landed in git; broke phone tests.
+* **Known-good baseline:** commit `10bebe5` (HEAD) — `PageView` + `DatePagerSettleGate` in `planning_view.dart` / `timeline_view.dart`.
+* **Restored from HEAD:** `planning_view.dart`, `timeline_view.dart`, `app_shell.dart`, `database_service.dart`, `db_core.dart`, `record_service.dart`, `plan_service.dart`, `global_app_header.dart`, `main.dart`.
+* **Removed/disabled (untracked):** `canonical_date_pager.dart`, `canonical_date_physics.dart`, `hot_day_window_*`, `planning/timeline_day_*`, `p0b–p0l_date_diag.dart`, `VisualReadyPageSlot`.
+* **`pre_white_swipe_restore.dart`:** [wip] `[PRE_WHITE_SWIPE_RESTORE]` start/commit/cancel logs on PageView path only.
+* **White card visuals preserved:** `PlanCard` / `PlanTimeTaskCard` / Time mode geometry commits unchanged.
+* **P0H/P0I/P0J/P0K/P0L:** superseded failed experiments — do not re-enable.
+
 ## [2026-06-15] - P0: Timeline Android crash guard + reliable date swipe [shipped]
 * **`record_service.dart` / `database_service.dart`:** [shipped] Lazy per-row `timelineRowVmForRecordMapOrNull` + `_timelineLazyRowVmByDay`; safe skip/fallback for legacy rows (`P0_CRASH_GUARD`); deferred full day-index rebuild when flat cache >480 rows; `_scanSingleDayFromFlat` serves one day while index rebuilds; prefetch warms record maps only (not bulk VMs).
 * **`timeline_view.dart`:** [shipped] `DatePagerSettleGate` — debounced shell date commit, drag blocks external pager sync; standard `PageScrollPhysics`; lazy VM in `ListView.builder`; cancel record stream when page inactive; keep last coalesced list (no blank on refresh).

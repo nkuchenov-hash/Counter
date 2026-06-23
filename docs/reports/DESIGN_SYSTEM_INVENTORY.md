@@ -390,3 +390,8 @@ Representative search targets: `ElevatedButton`, `FilledButton`, `OutlinedButton
 ## Guardrail
 
 Do not mass-replace these findings opportunistically. Migrate one component family at a time under V7, with visual review in Component Lab before touching feature screens.
+
+## Stage A cleanup note (2026-06-22)
+
+- **`life_card.dart`:** Remains the canonical V7H card foundation (`LifeCard` / `AppTaskCard`). Still **zero production imports** — Component Lab only. Not deleted in Stage A; migration deferred.
+- **`confirm_dialog.dart`:** Remains canonical `showConfirmDialog()` surface. Still **zero production call sites** — dead-component candidate, not deleted in Stage A. Wire or migrate in a focused V7 pass.

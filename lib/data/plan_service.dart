@@ -1123,6 +1123,7 @@ extension PlanServiceExtension on DatabaseService {
 
   void _notifyTimelineAfterRecordCacheMutation() {
     if (_recordCacheTimelineNotifyBatchDepth > 0) return;
+    _refreshTimelineWarmSnapshotsAfterCacheMutation();
     _emitTimelineRefreshRaw();
   }
 
@@ -1138,6 +1139,8 @@ extension PlanServiceExtension on DatabaseService {
       _planningRefreshController.add(null);
     }
     _requestPlanAlarmReschedule();
+    _refreshPlansWarmSnapshotsAfterCacheMutation();
+    persistPlansWarmSnapshotsToDisk();
     if (scheduleNetworkRefresh) {
       _planningNotifyNetworkDebounceTimer?.cancel();
       _planningNotifyNetworkDebounceTimer = Timer(
@@ -2136,6 +2139,429 @@ extension PlanServiceExtension on DatabaseService {
         '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
     final base = _filterPlansForWallDay(_allPlansUserCache, wallDay);
     return _mergePlanningOptimistic(key, base);
+  }
+
+  WarmSnapshotWindow<PlansDaySnapshot> get _plansWarm =>
+      _plansWarmWindow ??= WarmSnapshotWindow(
+        dateKeyOf: (d) => '${d.year}-${_two(d.month)}-${_two(d.day)}',
+      );
+
+  PlansDaySnapshot _buildPlansDaySnapshot(DateTime wallDay) {
+    final tasks = planningDayTasksSnapshot(wallDay);
+    return PlansDaySnapshot(
+      dateKey: '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}',
+      knownEmpty: tasks.isEmpty,
+      tasks: List<PlanningTask>.from(tasks),
+      cacheSignature: _allPlansUserCache.length,
+    );
+  }
+
+  void _logPlansWarmMemory() {
+    var taskCount = 0;
+    var approxKb = 0;
+    for (final s in _plansWarm.snapshots) {
+      taskCount += s.tasks.length;
+      approxKb += s.tasks.length * 256 ~/ 1024;
+    }
+    P0OWarmDiag.memory(
+      screen: 'Plans',
+      cachedDays: _plansWarm.cachedDayCount,
+      items: taskCount,
+      approxKb: approxKb,
+    );
+  }
+
+  void ensurePlansWarmWindow(DateTime center) {
+    _plansWarm.ensureInitialWindow(center, _buildPlansDaySnapshot);
+    P0OWarmDiag.plansWindow(
+      center: '${center.year}-${_two(center.month)}-${_two(center.day)}',
+      from: _plansWarm.windowFrom != null
+          ? '${_plansWarm.windowFrom!.year}-${_two(_plansWarm.windowFrom!.month)}-${_two(_plansWarm.windowFrom!.day)}'
+          : '—',
+      to: _plansWarm.windowTo != null
+          ? '${_plansWarm.windowTo!.year}-${_two(_plansWarm.windowTo!.month)}-${_two(_plansWarm.windowTo!.day)}'
+          : '—',
+      cachedDays: _plansWarm.cachedDayCount,
+    );
+    _logPlansWarmMemory();
+  }
+
+  /// P0S: hydrate data snapshots for mounted window ±10 before eager mount.
+  void preparePlansMountedWindowBoot(DateTime center) {
+    ensurePlansWarmWindow(center);
+    final window = MountedDayWindow(center: center);
+    for (final d in window.dates) {
+      plansWarmSnapshotForDate(d);
+      plansBodyEntryForDate(d, allowEmergencyBuild: true);
+    }
+  }
+
+  int get plansWarmWindowTaskEstimate {
+    var n = 0;
+    for (final key in _plansWarm.dateKeys) {
+      n += _plansWarm.peek(key)?.tasks.length ?? 0;
+    }
+    return n;
+  }
+
+  void extendPlansWarmWindowIfNeeded(DateTime center) {
+    final sw = Stopwatch()..start();
+    final direction = _plansWarm.extendIfNeeded(center, _buildPlansDaySnapshot);
+    sw.stop();
+    if (direction != null) {
+      P0OWarmDiag.plansExtend(
+        direction: direction,
+        from: _plansWarm.windowFrom != null
+            ? '${_plansWarm.windowFrom!.year}-${_two(_plansWarm.windowFrom!.month)}-${_two(_plansWarm.windowFrom!.day)}'
+            : '—',
+        to: _plansWarm.windowTo != null
+            ? '${_plansWarm.windowTo!.year}-${_two(_plansWarm.windowTo!.month)}-${_two(_plansWarm.windowTo!.day)}'
+            : '—',
+        ms: sw.elapsedMilliseconds,
+      );
+      _logPlansWarmMemory();
+    }
+  }
+
+  PlansDaySnapshot plansWarmSnapshotForDate(DateTime wallDay) {
+    final lookupSw = Stopwatch()..start();
+    final key = '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+    final sig = _allPlansUserCache.length;
+    final existing = _plansWarm.peek(key);
+    if (existing != null && existing.cacheSignature == sig) {
+      lookupSw.stop();
+      P0OWarmDiag.plansSnapshot(
+        date: key,
+        state: existing.knownEmpty ? 'empty' : 'hit',
+        count: existing.tasks.length,
+        ms: lookupSw.elapsedMilliseconds,
+      );
+      return existing;
+    }
+    final built = _buildPlansDaySnapshot(wallDay);
+    _plansWarm.put(key, built);
+    lookupSw.stop();
+    P0OWarmDiag.plansSnapshot(
+      date: key,
+      state: existing == null ? 'miss' : 'refresh',
+      count: built.tasks.length,
+      ms: lookupSw.elapsedMilliseconds,
+    );
+    return built;
+  }
+
+  void _refreshPlansWarmSnapshotsAfterCacheMutation() {
+    if (_plansWarm.center == null) return;
+    final sig = _allPlansUserCache.length;
+    for (final key in _plansWarm.dateKeys.toList()) {
+      final snap = _plansWarm.peek(key);
+      if (snap == null || snap.cacheSignature == sig) continue;
+      final day = WarmSnapshotWindow.parseDateKey(key);
+      _plansWarm.put(key, _buildPlansDaySnapshot(day));
+    }
+  }
+
+  DayBodyCache<PlansDayBodyEntry> get plansDayBodyCache =>
+      _plansBodyCache ??= DayBodyCache<PlansDayBodyEntry>(screen: 'Plans');
+
+  PlansDayBodyEntry _buildPlansBodyEntry(
+    DateTime wallDay, {
+    required String source,
+  }) {
+    final snap = plansWarmSnapshotForDate(wallDay);
+    return PlansDayBodyEntry(
+      dateKey: '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}',
+      tasks: List<PlanningTask>.from(snap.tasks),
+      knownEmpty: snap.knownEmpty,
+      bodyReady: true,
+      source: source,
+    );
+  }
+
+  PlansDayBodyEntry plansBodyEntryForDate(
+    DateTime wallDay, {
+    bool allowEmergencyBuild = true,
+  }) {
+    final key = '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+    final cache = plansDayBodyCache;
+    final existing = cache.peek(key);
+    if (existing != null && existing.bodyReady) {
+      P0RPrebuildDiag.bodyCacheHit(
+        screen: 'Plans',
+        date: key,
+        source: existing.source,
+      );
+      return existing;
+    }
+    if (!allowEmergencyBuild) {
+      return PlansDayBodyEntry(
+        dateKey: key,
+        tasks: const [],
+        knownEmpty: true,
+        bodyReady: false,
+        source: 'pending',
+      );
+    }
+    final inside = cache.isInsideWarmRange(key);
+    P0RPrebuildDiag.bodyCacheMiss(
+      screen: 'Plans',
+      date: key,
+      insideWarmRange: inside,
+      reason: inside ? 'notPrebuiltYet' : 'outsideWindow',
+    );
+    final sw = Stopwatch()..start();
+    final built = _buildPlansBodyEntry(wallDay, source: 'emergencySyncBuild');
+    sw.stop();
+    cache.put(key, built);
+    P0RPrebuildDiag.emergencySyncBuild(
+      screen: 'Plans',
+      date: key,
+      ms: sw.elapsedMilliseconds,
+    );
+    return built;
+  }
+
+  Future<void> restorePlansWarmSnapshotsFromDiskAtBoot() async {
+    final sw = Stopwatch()..start();
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final raw = prefs.getString(
+        _scopedDataCacheKey(DatabaseService._cachePlansWarmSnapshotsKey),
+      );
+      if (raw == null || raw.trim().isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      var count = 0;
+      for (final entry in decoded.entries) {
+        final key = entry.key.toString();
+        final v = entry.value;
+        if (v is! Map) continue;
+        final tasksRaw = v['tasks'];
+        if (tasksRaw is! List) continue;
+        final tasks = <PlanningTask>[];
+        for (final t in tasksRaw) {
+          if (t is Map) {
+            try {
+              tasks.add(PlanningTask.fromJson(Map<String, dynamic>.from(t)));
+            } catch (_) {}
+          }
+        }
+        final knownEmpty = v['knownEmpty'] == true;
+        final sig = v['cacheSignature'] is int ? v['cacheSignature'] as int : 0;
+        _plansWarm.put(
+          key,
+          PlansDaySnapshot(
+            dateKey: key,
+            knownEmpty: knownEmpty,
+            tasks: tasks,
+            cacheSignature: sig,
+          ),
+        );
+        plansDayBodyCache.put(
+          key,
+          PlansDayBodyEntry(
+            dateKey: key,
+            tasks: List<PlanningTask>.from(tasks),
+            knownEmpty: knownEmpty,
+            bodyReady: true,
+            source: 'diskRestore',
+          ),
+        );
+        count++;
+      }
+      sw.stop();
+      P0RPrebuildDiag.diskRestore(
+        screen: 'Plans',
+        snapshots: count,
+        ms: sw.elapsedMilliseconds,
+      );
+      P0SMountDiag.diskRestore(
+        screen: 'Plans',
+        snapshots: count,
+        ms: sw.elapsedMilliseconds,
+      );
+    } catch (_) {}
+  }
+
+  void persistPlansWarmSnapshotsToDisk() {
+    unawaited(() async {
+      final sw = Stopwatch()..start();
+      try {
+        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        final out = <String, dynamic>{};
+        for (final key in _plansWarm.dateKeys) {
+          final snap = _plansWarm.peek(key);
+          if (snap == null) continue;
+          out[key] = {
+            'knownEmpty': snap.knownEmpty,
+            'cacheSignature': snap.cacheSignature,
+            'tasks': snap.tasks.map((t) => t.toJson()).toList(),
+          };
+        }
+        await prefs.setString(
+          _scopedDataCacheKey(DatabaseService._cachePlansWarmSnapshotsKey),
+          jsonEncode(out),
+        );
+        sw.stop();
+        P0RPrebuildDiag.diskSave(
+          screen: 'Plans',
+          snapshots: out.length,
+          ms: sw.elapsedMilliseconds,
+        );
+        P0SMountDiag.diskSave(
+          screen: 'Plans',
+          snapshots: out.length,
+          ms: sw.elapsedMilliseconds,
+        );
+      } catch (_) {}
+    }());
+  }
+
+  void prebuildPlansCriticalBodiesSync(DateTime center) {
+    final cache = plansDayBodyCache;
+    final centerKey = '${center.year}-${_two(center.month)}-${_two(center.day)}';
+    cache.setCenter(centerKey);
+    P0RPrebuildDiag.criticalStart(
+      screen: 'Plans',
+      dates: 'yesterday,today,tomorrow',
+    );
+    final sw = Stopwatch()..start();
+    for (final offset in [-1, 0, 1]) {
+      final day = DateTime(center.year, center.month, center.day)
+          .add(Duration(days: offset));
+      final entry = _buildPlansBodyEntry(day, source: 'criticalPrebuild');
+      cache.put(entry.dateKey, entry);
+      P0RPrebuildDiag.prebuildBody(
+        screen: 'Plans',
+        date: entry.dateKey,
+        priority: offset,
+        ms: 0,
+      );
+    }
+    sw.stop();
+    P0RPrebuildDiag.criticalDone(
+      screen: 'Plans',
+      count: 3,
+      totalMs: sw.elapsedMilliseconds,
+    );
+    logPlansBootAdjacentReady(center);
+    P0RPrebuildDiag.plansMetadataReady(
+      tags: _userTagsCatalogCache.length,
+      categories: _rules.length,
+      source: 'memory',
+    );
+    P0RPrebuildDiag.plansNoPageLoaders();
+  }
+
+  void logPlansBootAdjacentReady(DateTime center) {
+    for (final label in ['yesterday', 'today', 'tomorrow']) {
+      final offset = label == 'yesterday'
+          ? -1
+          : label == 'tomorrow'
+          ? 1
+          : 0;
+      final day = DateTime(center.year, center.month, center.day)
+          .add(Duration(days: offset));
+      final key = '${day.year}-${_two(day.month)}-${_two(day.day)}';
+      final cache = plansDayBodyCache;
+      final snap = _plansWarm.peek(key);
+      P0RPrebuildDiag.bootAdjacentReady(
+        screen: 'Plans',
+        date: label,
+        dataReady: cache.isDataReady(key) ||
+            snap != null ||
+            plansWarmSnapshotForDate(day).knownEmpty,
+        bodyReady: cache.isBodyReady(key),
+      );
+    }
+  }
+
+  void schedulePlansWindowBodyPrebuild(DateTime center) {
+    if (_plansWindowBodyPrebuildInFlight) return;
+    _plansWindowBodyPrebuildInFlight = true;
+    final gen = ++_plansBodyPrebuildGeneration;
+    final centerKey = '${center.year}-${_two(center.month)}-${_two(center.day)}';
+    plansDayBodyCache.setCenter(centerKey);
+    unawaited(() async {
+      P0RPrebuildDiag.windowStart(
+        screen: 'Plans',
+        center: centerKey,
+        radius: RenderedDayBodyConstants.radius,
+      );
+      final sw = Stopwatch()..start();
+      final total = RenderedDayBodyConstants.radius * 2 + 1;
+      var ready = 0;
+      for (final offset in DayBodyCache.prioritizedOffsets(
+        RenderedDayBodyConstants.radius,
+      )) {
+        if (gen != _plansBodyPrebuildGeneration) return;
+        await Future<void>.delayed(Duration.zero);
+        final day = DateTime(center.year, center.month, center.day)
+            .add(Duration(days: offset));
+        final key = '${day.year}-${_two(day.month)}-${_two(day.day)}';
+        final cache = plansDayBodyCache;
+        if (cache.isBodyReady(key)) {
+          ready++;
+          continue;
+        }
+        final bodySw = Stopwatch()..start();
+        final entry = _buildPlansBodyEntry(day, source: 'windowPrebuild');
+        cache.put(key, entry);
+        bodySw.stop();
+        ready++;
+        P0RPrebuildDiag.prebuildBody(
+          screen: 'Plans',
+          date: key,
+          priority: offset,
+          ms: bodySw.elapsedMilliseconds,
+        );
+        if (ready % 4 == 0 || ready == total) {
+          P0RPrebuildDiag.windowProgress(
+            screen: 'Plans',
+            ready: ready,
+            total: total,
+          );
+        }
+      }
+      sw.stop();
+      P0RPrebuildDiag.windowDone(
+        screen: 'Plans',
+        ready: ready,
+        totalMs: sw.elapsedMilliseconds,
+      );
+      plansDayBodyCache.logMemory(
+        snapshotCount: _plansWarm.cachedDayCount,
+        itemCount: _allPlansUserCache.length,
+      );
+      _plansWindowBodyPrebuildInFlight = false;
+    }());
+  }
+
+  void extendPlansRenderedBodiesIfNeeded(DateTime center) {
+    extendPlansWarmWindowIfNeeded(center);
+    schedulePlansWindowBodyPrebuild(center);
+  }
+
+  void ensurePlansRenderedBodiesWarm(DateTime center) {
+    prebuildPlansCriticalBodiesSync(center);
+    schedulePlansWindowBodyPrebuild(center);
+  }
+
+  void markPlansDayBodyRendered(String dateKey, int buildMs) {
+    final existing = plansDayBodyCache.peek(dateKey);
+    if (existing != null && existing.bodyReady) return;
+    if (existing != null) {
+      plansDayBodyCache.put(
+        dateKey,
+        PlansDayBodyEntry(
+          dateKey: dateKey,
+          tasks: existing.tasks,
+          knownEmpty: existing.knownEmpty,
+          bodyReady: true,
+          source: existing.source,
+        ),
+      );
+    }
   }
 
   /// Auto start/end for a new plan on a day. Explicit parsed range always wins.

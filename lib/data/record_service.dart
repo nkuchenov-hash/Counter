@@ -469,6 +469,20 @@ extension RecordServiceExtension on DatabaseService {
         DatabaseService._log('fetchRecords: mapping loop failed: $e');
         DatabaseService._log(st.toString());
       }
+      if (kept.isEmpty && _cachedFlatRecords.isNotEmpty) {
+        P0NPerfDiag.timelineCacheRefreshMerge(
+          before: _cachedFlatRecords.length,
+          after: 0,
+          keptLocal: true,
+        );
+        P0OWarmDiag.timelineRefreshMerge(
+          before: _cachedFlatRecords.length,
+          after: 0,
+          keptLocal: true,
+        );
+        return List<Map<String, dynamic>>.from(_cachedFlatRecords);
+      }
+      final beforeCount = _cachedFlatRecords.length;
       _cachedFlatRecords = kept;
       _markTimelineDayIndexDirty();
       _pruneRecord404DeadletterUsingCache();
@@ -480,6 +494,8 @@ extension RecordServiceExtension on DatabaseService {
       }
       if (forceNetwork && _isInitialized) {
         _notifyTimelineAfterRecordCacheMutation();
+      } else if (_isInitialized) {
+        _refreshTimelineWarmSnapshotsAfterCacheMutation();
       }
       final cacheKey = _scopedDataCacheKey(
         DatabaseService._cacheRecordsFlatKey,
@@ -1124,8 +1140,461 @@ extension RecordServiceExtension on DatabaseService {
     return base;
   }
 
+  /// Boot-only: hydrate flat records + day index from prefs before network fetch.
+  Future<void> bootstrapTimelineRecordsCacheFromPrefsAtBoot() async {
+    final sw = Stopwatch()..start();
+    await _hydrateRecordsCacheFromPrefsIfEmpty();
+    sw.stop();
+    P0NPerfDiag.timelineCacheRestore(
+      flatRecords: _cachedFlatRecords.length,
+      ms: sw.elapsedMilliseconds,
+      source: 'prefs',
+    );
+    if (_cachedFlatRecords.isEmpty) return;
+    final indexSw = Stopwatch()..start();
+    if (_cachedFlatRecords.length <= _kTimelineIndexMaxSyncRecords) {
+      _buildTimelineDayIndexImpl();
+    } else {
+      _markTimelineDayIndexDirty();
+    }
+    indexSw.stop();
+    P0NPerfDiag.timelineDayIndexReady(
+      days: _timelineRecordsDayIndex.length,
+      records: _cachedFlatRecords.length,
+      ms: indexSw.elapsedMilliseconds,
+    );
+    P0OWarmDiag.timelineIndexReady(
+      days: _timelineRecordsDayIndex.length,
+      records: _cachedFlatRecords.length,
+      ms: indexSw.elapsedMilliseconds,
+    );
+    ensureTimelineWarmWindow(getTimelineDeviceLocalToday());
+    prebuildTimelineCriticalBodiesSync(getTimelineDeviceLocalToday());
+    P0RPrebuildDiag.diskRestore(
+      screen: 'Timeline',
+      snapshots: _timelineWarm.cachedDayCount,
+      ms: sw.elapsedMilliseconds + indexSw.elapsedMilliseconds,
+    );
+    P0OWarmDiag.bootTimelineCache(
+      flatRecords: _cachedFlatRecords.length,
+      days: _timelineWarmWindow?.cachedDayCount ?? 0,
+      ms: sw.elapsedMilliseconds + indexSw.elapsedMilliseconds,
+    );
+  }
+
+  WarmSnapshotWindow<TimelineDaySnapshot> get _timelineWarm =>
+      _timelineWarmWindow ??= WarmSnapshotWindow(
+        dateKeyOf: _timelineDateKeyFromDate,
+      );
+
+  TimelineDaySnapshot _buildTimelineDaySnapshot(DateTime date) {
+    final records = peekTimelineRecordsForDate(date);
+    return TimelineDaySnapshot(
+      dateKey: _timelineDateKeyFromDate(date),
+      knownEmpty: records.isEmpty,
+      records: List<Map<String, dynamic>>.from(records),
+      cacheSignature: _cachedFlatRecords.length,
+    );
+  }
+
+  void _logTimelineWarmMemory() {
+    var records = 0;
+    var approxKb = 0;
+    for (final s in _timelineWarm.snapshots) {
+      records += s.records.length;
+      approxKb += s.records.length * 512 ~/ 1024;
+    }
+    P0OWarmDiag.memory(
+      screen: 'Timeline',
+      cachedDays: _timelineWarm.cachedDayCount,
+      items: records,
+      approxKb: approxKb,
+    );
+  }
+
+  void ensureTimelineWarmWindow(DateTime center) {
+    final sw = Stopwatch()..start();
+    _timelineWarm.ensureInitialWindow(center, _buildTimelineDaySnapshot);
+    sw.stop();
+    P0OWarmDiag.timelineWindow(
+      center: _timelineDateKeyFromDate(center),
+      from: _timelineWarm.windowFrom != null
+          ? _timelineDateKeyFromDate(_timelineWarm.windowFrom!)
+          : '—',
+      to: _timelineWarm.windowTo != null
+          ? _timelineDateKeyFromDate(_timelineWarm.windowTo!)
+          : '—',
+      cachedDays: _timelineWarm.cachedDayCount,
+    );
+    _logTimelineWarmMemory();
+  }
+
+  /// P0S: hydrate timeline snapshots for mounted window ±10 before eager mount.
+  void prepareTimelineMountedWindowBoot(DateTime center) {
+    ensureTimelineWarmWindow(center);
+    final window = MountedDayWindow(center: center);
+    for (final d in window.dates) {
+      timelineWarmSnapshotForDate(d);
+      timelineBodyEntryForDate(d, allowEmergencyBuild: true);
+    }
+  }
+
+  int get timelineWarmWindowRecordEstimate {
+    var n = 0;
+    for (final key in _timelineWarm.dateKeys) {
+      n += _timelineWarm.peek(key)?.records.length ?? 0;
+    }
+    return n;
+  }
+
+  Future<void> restoreTimelineWarmSnapshotsFromDiskAtBoot() async {
+    final sw = Stopwatch()..start();
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final raw = prefs.getString(
+        _scopedDataCacheKey(DatabaseService._cacheTimelineWarmSnapshotsKey),
+      );
+      if (raw == null || raw.trim().isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      var count = 0;
+      for (final entry in decoded.entries) {
+        final key = entry.key.toString();
+        final v = entry.value;
+        if (v is! Map) continue;
+        final recordsRaw = v['records'];
+        if (recordsRaw is! List) continue;
+        final records = <Map<String, dynamic>>[];
+        for (final r in recordsRaw) {
+          if (r is Map) {
+            records.add(Map<String, dynamic>.from(r));
+          }
+        }
+        final knownEmpty = v['knownEmpty'] == true;
+        final sig = v['cacheSignature'] is int ? v['cacheSignature'] as int : 0;
+        _timelineWarm.put(
+          key,
+          TimelineDaySnapshot(
+            dateKey: key,
+            knownEmpty: knownEmpty,
+            records: records,
+            cacheSignature: sig,
+          ),
+        );
+        timelineDayBodyCache.put(
+          key,
+          TimelineDayBodyEntry(
+            dateKey: key,
+            records: List<Map<String, dynamic>>.from(records),
+            knownEmpty: knownEmpty,
+            bodyReady: true,
+            source: 'diskRestore',
+          ),
+        );
+        count++;
+      }
+      sw.stop();
+      P0SMountDiag.diskRestore(
+        screen: 'Timeline',
+        snapshots: count,
+        ms: sw.elapsedMilliseconds,
+      );
+    } catch (_) {}
+  }
+
+  void persistTimelineWarmSnapshotsToDisk() {
+    unawaited(() async {
+      final sw = Stopwatch()..start();
+      try {
+        final prefs = _prefs ?? await SharedPreferences.getInstance();
+        final out = <String, dynamic>{};
+        for (final key in _timelineWarm.dateKeys) {
+          final snap = _timelineWarm.peek(key);
+          if (snap == null) continue;
+          out[key] = {
+            'knownEmpty': snap.knownEmpty,
+            'cacheSignature': snap.cacheSignature,
+            'records': snap.records,
+          };
+        }
+        await prefs.setString(
+          _scopedDataCacheKey(DatabaseService._cacheTimelineWarmSnapshotsKey),
+          jsonEncode(out),
+        );
+        sw.stop();
+        P0SMountDiag.diskSave(
+          screen: 'Timeline',
+          snapshots: out.length,
+          ms: sw.elapsedMilliseconds,
+        );
+      } catch (_) {}
+    }());
+  }
+
+  void extendTimelineWarmWindowIfNeeded(DateTime center) {
+    final sw = Stopwatch()..start();
+    final beforeCount = _timelineWarm.cachedDayCount;
+    final direction = _timelineWarm.extendIfNeeded(center, _buildTimelineDaySnapshot);
+    sw.stop();
+    if (direction != null && _timelineWarm.cachedDayCount >= beforeCount) {
+      P0OWarmDiag.timelineExtend(
+        direction: direction,
+        from: _timelineWarm.windowFrom != null
+            ? _timelineDateKeyFromDate(_timelineWarm.windowFrom!)
+            : '—',
+        to: _timelineWarm.windowTo != null
+            ? _timelineDateKeyFromDate(_timelineWarm.windowTo!)
+            : '—',
+        ms: sw.elapsedMilliseconds,
+      );
+      _logTimelineWarmMemory();
+    }
+  }
+
+  /// Sync warm snapshot for one day; builds emergency snapshot if missing.
+  TimelineDaySnapshot timelineWarmSnapshotForDate(DateTime date) {
+    final lookupSw = Stopwatch()..start();
+    final key = _timelineDateKeyFromDate(date);
+    final sig = _cachedFlatRecords.length;
+    final existing = _timelineWarm.peek(key);
+    if (existing != null && existing.cacheSignature == sig) {
+      lookupSw.stop();
+      P0OWarmDiag.timelineSnapshot(
+        date: key,
+        state: existing.knownEmpty ? 'empty' : 'hit',
+        count: existing.records.length,
+        ms: lookupSw.elapsedMilliseconds,
+      );
+      return existing;
+    }
+    final built = _buildTimelineDaySnapshot(date);
+    _timelineWarm.put(key, built);
+    lookupSw.stop();
+    P0OWarmDiag.timelineSnapshot(
+      date: key,
+      state: existing == null ? 'miss' : 'refresh',
+      count: built.records.length,
+      ms: lookupSw.elapsedMilliseconds,
+    );
+    return built;
+  }
+
+  void _refreshTimelineWarmSnapshotsAfterCacheMutation() {
+    if (_timelineWarm.center == null) return;
+    final sig = _cachedFlatRecords.length;
+    for (final key in _timelineWarm.dateKeys.toList()) {
+      final snap = _timelineWarm.peek(key);
+      if (snap == null || snap.cacheSignature == sig) continue;
+      final day = WarmSnapshotWindow.parseDateKey(key);
+      _timelineWarm.put(key, _buildTimelineDaySnapshot(day));
+    }
+  }
+
+  DayBodyCache<TimelineDayBodyEntry> get timelineDayBodyCache =>
+      _timelineBodyCache ??= DayBodyCache<TimelineDayBodyEntry>(
+        screen: 'Timeline',
+      );
+
+  TimelineDayBodyEntry _buildTimelineBodyEntry(
+    DateTime day, {
+    required String source,
+  }) {
+    final snap = timelineWarmSnapshotForDate(day);
+    return TimelineDayBodyEntry(
+      dateKey: _timelineDateKeyFromDate(day),
+      records: List<Map<String, dynamic>>.from(snap.records),
+      knownEmpty: snap.knownEmpty,
+      bodyReady: true,
+      source: source,
+    );
+  }
+
+  TimelineDayBodyEntry timelineBodyEntryForDate(
+    DateTime day, {
+    bool allowEmergencyBuild = true,
+  }) {
+    final key = _timelineDateKeyFromDate(day);
+    final cache = timelineDayBodyCache;
+    final existing = cache.peek(key);
+    if (existing != null && existing.bodyReady) {
+      P0RPrebuildDiag.bodyCacheHit(
+        screen: 'Timeline',
+        date: key,
+        source: existing.source,
+      );
+      return existing;
+    }
+    if (!allowEmergencyBuild) {
+      return TimelineDayBodyEntry(
+        dateKey: key,
+        records: const [],
+        knownEmpty: true,
+        bodyReady: false,
+        source: 'pending',
+      );
+    }
+    final inside = cache.isInsideWarmRange(key);
+    P0RPrebuildDiag.bodyCacheMiss(
+      screen: 'Timeline',
+      date: key,
+      insideWarmRange: inside,
+      reason: inside ? 'notPrebuiltYet' : 'outsideWindow',
+    );
+    final sw = Stopwatch()..start();
+    final built = _buildTimelineBodyEntry(day, source: 'emergencySyncBuild');
+    sw.stop();
+    cache.put(key, built);
+    P0RPrebuildDiag.emergencySyncBuild(
+      screen: 'Timeline',
+      date: key,
+      ms: sw.elapsedMilliseconds,
+    );
+    return built;
+  }
+
+  void prebuildTimelineCriticalBodiesSync(DateTime center) {
+    final cache = timelineDayBodyCache;
+    final centerKey = _timelineDateKeyFromDate(center);
+    cache.setCenter(centerKey);
+    P0RPrebuildDiag.criticalStart(
+      screen: 'Timeline',
+      dates: 'yesterday,today,tomorrow',
+    );
+    final sw = Stopwatch()..start();
+    for (final offset in [-1, 0, 1]) {
+      final day = DateTime(center.year, center.month, center.day)
+          .add(Duration(days: offset));
+      final entry = _buildTimelineBodyEntry(day, source: 'criticalPrebuild');
+      cache.put(entry.dateKey, entry);
+      P0RPrebuildDiag.prebuildBody(
+        screen: 'Timeline',
+        date: entry.dateKey,
+        priority: offset,
+        ms: 0,
+      );
+    }
+    sw.stop();
+    P0RPrebuildDiag.criticalDone(
+      screen: 'Timeline',
+      count: 3,
+      totalMs: sw.elapsedMilliseconds,
+    );
+    logTimelineBootAdjacentReady(center);
+  }
+
+  void logTimelineBootAdjacentReady(DateTime center) {
+    for (final label in ['yesterday', 'today', 'tomorrow']) {
+      final offset = label == 'yesterday'
+          ? -1
+          : label == 'tomorrow'
+          ? 1
+          : 0;
+      final day = DateTime(center.year, center.month, center.day)
+          .add(Duration(days: offset));
+      final key = _timelineDateKeyFromDate(day);
+      final cache = timelineDayBodyCache;
+      P0RPrebuildDiag.bootAdjacentReady(
+        screen: 'Timeline',
+        date: label,
+        dataReady: cache.isDataReady(key) ||
+            timelineWarmSnapshotForDate(day).records.isNotEmpty ||
+            timelineWarmSnapshotForDate(day).knownEmpty,
+        bodyReady: cache.isBodyReady(key),
+      );
+    }
+  }
+
+  void scheduleTimelineWindowBodyPrebuild(DateTime center) {
+    if (_timelineWindowBodyPrebuildInFlight) return;
+    _timelineWindowBodyPrebuildInFlight = true;
+    final gen = ++_timelineBodyPrebuildGeneration;
+    final centerKey = _timelineDateKeyFromDate(center);
+    timelineDayBodyCache.setCenter(centerKey);
+    unawaited(() async {
+      P0RPrebuildDiag.windowStart(
+        screen: 'Timeline',
+        center: centerKey,
+        radius: RenderedDayBodyConstants.radius,
+      );
+      final sw = Stopwatch()..start();
+      final total = RenderedDayBodyConstants.radius * 2 + 1;
+      var ready = 0;
+      for (final offset in DayBodyCache.prioritizedOffsets(
+        RenderedDayBodyConstants.radius,
+      )) {
+        if (gen != _timelineBodyPrebuildGeneration) return;
+        await Future<void>.delayed(Duration.zero);
+        final day = DateTime(center.year, center.month, center.day)
+            .add(Duration(days: offset));
+        final key = _timelineDateKeyFromDate(day);
+        final cache = timelineDayBodyCache;
+        if (cache.isBodyReady(key)) {
+          ready++;
+          continue;
+        }
+        final bodySw = Stopwatch()..start();
+        final entry = _buildTimelineBodyEntry(day, source: 'windowPrebuild');
+        cache.put(key, entry);
+        bodySw.stop();
+        ready++;
+        P0RPrebuildDiag.prebuildBody(
+          screen: 'Timeline',
+          date: key,
+          priority: offset,
+          ms: bodySw.elapsedMilliseconds,
+        );
+        if (ready % 4 == 0 || ready == total) {
+          P0RPrebuildDiag.windowProgress(
+            screen: 'Timeline',
+            ready: ready,
+            total: total,
+          );
+        }
+      }
+      sw.stop();
+      P0RPrebuildDiag.windowDone(
+        screen: 'Timeline',
+        ready: ready,
+        totalMs: sw.elapsedMilliseconds,
+      );
+      timelineDayBodyCache.logMemory(
+        snapshotCount: _timelineWarm.cachedDayCount,
+        itemCount: _cachedFlatRecords.length,
+      );
+      _timelineWindowBodyPrebuildInFlight = false;
+    }());
+  }
+
+  void extendTimelineRenderedBodiesIfNeeded(DateTime center) {
+    extendTimelineWarmWindowIfNeeded(center);
+    scheduleTimelineWindowBodyPrebuild(center);
+  }
+
+  void ensureTimelineRenderedBodiesWarm(DateTime center) {
+    prebuildTimelineCriticalBodiesSync(center);
+    scheduleTimelineWindowBodyPrebuild(center);
+  }
+
+  void markTimelineDayBodyRendered(String dateKey, int buildMs) {
+    final existing = timelineDayBodyCache.peek(dateKey);
+    if (existing != null && existing.bodyReady) return;
+    if (existing != null) {
+      timelineDayBodyCache.put(
+        dateKey,
+        TimelineDayBodyEntry(
+          dateKey: dateKey,
+          records: existing.records,
+          knownEmpty: existing.knownEmpty,
+          bodyReady: true,
+          source: existing.source,
+        ),
+      );
+    }
+  }
+
   /// Synchronous per-day timeline rows (filtered, sorted, display times). Used by UI + prefetch.
   List<Map<String, dynamic>> peekTimelineRecordsForDate(DateTime date) {
+    final lookupSw = Stopwatch()..start();
     final targetDayStr = _timelineDateKeyFromDate(date);
     final cachedView = _timelineDayViewCache[targetDayStr];
     if (cachedView != null) {
@@ -1152,6 +1621,14 @@ extension RecordServiceExtension on DatabaseService {
     );
     _timelineDayViewCache[targetDayStr] = List<Map<String, dynamic>>.from(
       rendered,
+    );
+    lookupSw.stop();
+    final state = rendered.isEmpty ? 'empty' : 'hit';
+    P0NPerfDiag.timelineDayLookup(
+      date: targetDayStr,
+      state: state,
+      count: rendered.length,
+      ms: lookupSw.elapsedMilliseconds,
     );
     return List<Map<String, dynamic>>.from(rendered);
   }

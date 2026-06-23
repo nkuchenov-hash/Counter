@@ -93,10 +93,11 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **PB — tags** | `lib/data/profile_service.dart` | (same as tag data row above) |
 | **PB — auth / bootstrap** | `lib/data/auth_bridge.dart`, `lib/data/db_core.dart` | session, `ensurePocketBaseReady`, `loadInitialData`, `flushPendingLocalMutations` |
 | **Date/time header strip** | `lib/core/widgets/global_app_header.dart` | `GlobalAppHeader` + `AppBarLiveClock` |
-| **Per-screen header chrome** | `lib/features/timeline/timeline_widgets.dart` | `TimelineTopDateStrip` (timeline) |
+| **Per-screen header chrome** | `lib/features/timeline/timeline_view.dart` | List/stats `SegmentedButton` + day PageView chrome **inlined** (removed orphan `timeline_widgets.dart` in Stage A) |
 | | `lib/features/planning/planning_view.dart` | custom `Material` + `kToolbarHeight` row hosting `GlobalAppHeader` (~L2286) |
 | | `lib/features/lists/lists_view.dart` | same pattern (~L1137) |
-| **Material `AppBar` (opaque nav bar)** | not on main tabs | Main tabs use **no** `Scaffold.appBar`; header is the surface strip above. `AppBar` remains on secondary routes: `category_list_view.dart`, `profile_view.dart`, `more_view.dart`, `tag_settings_*.dart`, `SettingsPage` in `app_shell.dart`, and nested Lists tag-manager push |
+| **More overflow menu** | `lib/app_shell.dart` | `_openMoreMenu()` modal bottom sheet — Categories, Profile, admin Component Lab (removed orphan `more_view.dart` in Stage A) |
+| **Material `AppBar` (opaque nav bar)** | not on main tabs | Main tabs use **no** `Scaffold.appBar`; header is the surface strip above. `AppBar` remains on secondary routes: `category_list_view.dart`, `profile_view.dart`, `tag_settings_*.dart`, `SettingsPage` in `app_shell.dart`, and nested Lists tag-manager push |
 
 ---
 
@@ -165,6 +166,26 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Initial data load (full) | `lib/data/db_core.dart` | `DbCoreExtension.loadInitialData` |
 | Wear OS lite data load | `lib/data/db_core.dart` | `DbCoreExtension.loadInitialDataWearLite` |
 | Date key bucketing (UTC → wall-day string) | `lib/data/record_service.dart` | `DatabaseService._timelineDeviceLocalDayKeyFromUtc` (extension) |
+
+---
+
+## P0 / performance layer (active architecture debt)
+
+**Not random garbage — active diagnostics + warm-cache for Timeline/Planning date paging.** Consolidate later; do not delete while P0 swipe/prebuild work is open. See `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`.
+
+| Concept | File | Notes |
+| :--- | :--- | :--- |
+| Master perf probe | `lib/core/perf_diag.dart` | `--dart-define=PERF_DIAG=true`; frame/rebuild/swipe probes |
+| Bisect toggles | `lib/core/perf_flags.dart` | `LazyIndexedStack`, hidden-tab pager sync, repaint boundary |
+| Date-nav logs | `lib/core/p0_date_nav_diag.dart` | `[P0_*]` debounced date pager logs |
+| Swipe/cache perf logs | `lib/core/p0n_perf_diag.dart` | `[TIMELINE_*]` / `[PLANS_*]` |
+| Warm-window logs | `lib/core/p0o_warm_diag.dart` | `[WARM_*]` |
+| Content paging logs | `lib/core/p0p_content_diag.dart` | `[P0P_*]` |
+| Prebuild logs | `lib/core/p0r_prebuild_diag.dart` | `[P0R_*]` |
+| Swipe restore logs | `lib/core/pre_white_swipe_restore.dart` | `[PRE_WHITE_SWIPE_RESTORE]` |
+| Thin debug helper | `lib/core/app_diag.dart` | `appDebugDiag()` |
+| Warm snapshot data | `lib/data/warm_day_window.dart` | `WarmSnapshotWindow`, P0O constants |
+| Rendered body cache | `lib/data/rendered_day_body_cache.dart` | P0P/P0R day-body warm entries |
 
 ---
 

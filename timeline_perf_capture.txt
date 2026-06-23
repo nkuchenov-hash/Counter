@@ -1,4 +1,4 @@
-[TIMELINE_DAY_LOOKUP] date=2026-06-05 state=empty count=0 ms=3
+[TIMELINE_DAY_LOOKUP] date=2026-06-05 state=empty count=0 ms=4
 [TIMELINE_DAY_LOOKUP] date=2026-06-06 state=empty count=0 ms=0
 [TIMELINE_DAY_LOOKUP] date=2026-06-07 state=empty count=0 ms=0
 [TIMELINE_DAY_LOOKUP] date=2026-06-08 state=empty count=0 ms=0
@@ -28,7 +28,7 @@
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-15 priority=0 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-16 priority=1 ms=0
-[P0R_PREBUILD_CRITICAL_DONE] screen=Timeline count=3 totalMs=0
+[P0R_PREBUILD_CRITICAL_DONE] screen=Timeline count=3 totalMs=1
 [P0R_BOOT_ADJACENT_READY] screen=Timeline date=yesterday dataReady=true bodyReady=true
 [P0R_BOOT_ADJACENT_READY] screen=Timeline date=today dataReady=true bodyReady=true
 [P0R_BOOT_ADJACENT_READY] screen=Timeline date=tomorrow dataReady=true bodyReady=true
@@ -51,147 +51,61 @@
 [P0R_BOOT_ADJACENT_READY] screen=Timeline date=tomorrow dataReady=true bodyReady=true
 [P0P_TIMELINE_CHROME_STATIC] ok=true
 [P0_TIMELINE_BUILD] date=2026-06-15 records=0
-[PLANS_SWIPE_PHYSICS] using=FeatherDateSwipePhysics oldThreshold=PageScrollPhysics~0.50 newThreshold=0.20
-[WARM_PLANS_WINDOW] center=2026-06-15 from=2026-06-05 to=2026-06-25 cachedDays=21
-[WARM_MEMORY] screen=Plans cachedDays=21 tasks=0 approxKb=0
-[P0R_PREBUILD_CRITICAL_START] screen=Plans dates=yesterday,today,tomorrow
-[WARM_PLANS_SNAPSHOT] date=2026-06-14 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-14 priority=-1 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-15 priority=0 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-16 priority=1 ms=0
-[P0R_PREBUILD_CRITICAL_DONE] screen=Plans count=3 totalMs=0
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=yesterday dataReady=true bodyReady=true
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=today dataReady=true bodyReady=true
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=tomorrow dataReady=true bodyReady=true
-[P0R_PLANS_METADATA_READY] tags=0 categories=0 source=memory
-[P0R_PLANS_NO_PAGE_LOADERS] ok=true
-[P0R_PREBUILD_WINDOW_START] screen=Plans center=2026-06-15 radius=10
-[WARM_PLANS_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
-[P0R_PREBUILD_CRITICAL_START] screen=Plans dates=yesterday,today,tomorrow
-[WARM_PLANS_SNAPSHOT] date=2026-06-14 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-14 priority=-1 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-15 priority=0 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-16 priority=1 ms=0
-[P0R_PREBUILD_CRITICAL_DONE] screen=Plans count=3 totalMs=0
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=yesterday dataReady=true bodyReady=true
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=today dataReady=true bodyReady=true
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=tomorrow dataReady=true bodyReady=true
-[P0R_PLANS_METADATA_READY] tags=0 categories=0 source=memory
-[P0R_PLANS_NO_PAGE_LOADERS] ok=true
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=yesterday dataReady=true bodyReady=true
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=today dataReady=true bodyReady=true
-[P0R_BOOT_ADJACENT_READY] screen=Plans date=tomorrow dataReady=true bodyReady=true
-[P0P_PLANS_CHROME_STATIC] ok=true
-[P0P_PLANS_NO_TAG_LOADER_IN_PAGE] ok=true
-[P0R_PLANS_NO_PAGE_LOADERS] ok=true
-[WARM_PLANS_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
 [P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
 [P0P_TIMELINE_REAL_CARDS] ok=true
-[P0R_BODY_CACHE_HIT] screen=Plans date=2026-06-15 source=criticalPrebuild
-[P0P_PLANS_DATE_BODY] date=2026-06-15 cards=0 snapshot=empty buildMs=1
 [P0_TIMELINE_BUILD] date=2026-06-15 records=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
 [P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
 [P0P_TIMELINE_REAL_CARDS] ok=true
-[P0R_BODY_CACHE_HIT] screen=Plans date=2026-06-15 source=criticalPrebuild
-[P0P_PLANS_DATE_BODY] date=2026-06-15 cards=0 snapshot=empty buildMs=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-13 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-13 priority=-2 ms=0
 [P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=4/21
-[WARM_PLANS_SNAPSHOT] date=2026-06-13 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-13 priority=-2 ms=0
-[P0R_PREBUILD_WINDOW_PROGRESS] screen=Plans ready=4/21
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-17 priority=2 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-17 priority=2 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-12 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-12 priority=-3 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-12 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-12 priority=-3 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-18 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-18 priority=3 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-18 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-18 priority=3 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-11 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-11 priority=-4 ms=0
 [P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=8/21
-[WARM_PLANS_SNAPSHOT] date=2026-06-11 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-11 priority=-4 ms=0
-[P0R_PREBUILD_WINDOW_PROGRESS] screen=Plans ready=8/21
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-19 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-19 priority=4 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-19 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-19 priority=4 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-10 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-10 priority=-5 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-10 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-10 priority=-5 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-20 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-20 priority=5 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-20 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-20 priority=5 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-09 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-09 priority=-6 ms=0
 [P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=12/21
-[WARM_PLANS_SNAPSHOT] date=2026-06-09 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-09 priority=-6 ms=0
-[P0R_PREBUILD_WINDOW_PROGRESS] screen=Plans ready=12/21
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-21 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-21 priority=6 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-21 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-21 priority=6 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-08 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-08 priority=-7 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-08 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-08 priority=-7 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-22 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-22 priority=7 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-22 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-22 priority=7 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-07 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-07 priority=-8 ms=0
 [P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=16/21
-[WARM_PLANS_SNAPSHOT] date=2026-06-07 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-07 priority=-8 ms=0
-[P0R_PREBUILD_WINDOW_PROGRESS] screen=Plans ready=16/21
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-23 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-23 priority=8 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-23 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-23 priority=8 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-06 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-06 priority=-9 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-06 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-06 priority=-9 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-24 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-24 priority=9 ms=0
-[WARM_PLANS_SNAPSHOT] date=2026-06-24 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-24 priority=9 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-05 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-05 priority=-10 ms=0
 [P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=20/21
-[WARM_PLANS_SNAPSHOT] date=2026-06-05 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-05 priority=-10 ms=0
-[P0R_PREBUILD_WINDOW_PROGRESS] screen=Plans ready=20/21
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-25 state=empty count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-25 priority=10 ms=0
 [P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=21/21
-[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=616
+[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=527
 [P0R_MEMORY] screen=Timeline renderedBodies=21 snapshots=21 records=0 approxKb=1344
-[WARM_PLANS_SNAPSHOT] date=2026-06-25 state=empty count=0 ms=0
-[P0R_PREBUILD_BODY] screen=Plans date=2026-06-25 priority=10 ms=0
-[P0R_PREBUILD_WINDOW_PROGRESS] screen=Plans ready=21/21
-[P0R_PREBUILD_WINDOW_DONE] screen=Plans ready=21 totalMs=368
-[P0R_MEMORY] screen=Plans renderedBodies=21 snapshots=21 tasks=0 approxKb=1344
 [PRE_WHITE_SWIPE_RESTORE] screen=Timeline event=start date=2026-06-15
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
@@ -218,7 +132,7 @@
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-26 state=miss count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-26 priority=10 ms=0
 [P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=21/21
-[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=0
+[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=1
 [P0R_MEMORY] screen=Timeline renderedBodies=22 snapshots=22 records=0 approxKb=1408
 [P0_TIMELINE_BUILD] date=2026-06-16 records=0
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
@@ -230,29 +144,11 @@
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
 [P0P_TIMELINE_DATE_BODY] date=2026-06-16 records=0 snapshot=empty buildMs=0
 [P0P_TIMELINE_REAL_CARDS] ok=true
-[P0R_BODY_CACHE_HIT] screen=Plans date=2026-06-15 source=criticalPrebuild
-[P0P_PLANS_DATE_BODY] date=2026-06-15 cards=0 snapshot=empty buildMs=0
-[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
-[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
-[P0P_TIMELINE_DATE_BODY] date=2026-06-17 records=0 snapshot=empty buildMs=0
-[P0P_TIMELINE_REAL_CARDS] ok=true
 [P0_TIMELINE_DATE_NAV] page=4995 date=2026-06-17
+[PRE_WHITE_SWIPE_RESTORE] screen=Timeline event=cancel date=2026-06-17
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
 [P0_TIMELINE_BUILD] date=2026-06-17 records=0
-[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
-[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
-[P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
-[P0P_TIMELINE_REAL_CARDS] ok=true
-[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
-[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
-[P0P_TIMELINE_DATE_BODY] date=2026-06-16 records=0 snapshot=empty buildMs=0
-[P0P_TIMELINE_REAL_CARDS] ok=true
-[WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
-[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
-[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
-[P0P_TIMELINE_DATE_BODY] date=2026-06-17 records=0 snapshot=empty buildMs=0
-[P0P_TIMELINE_REAL_CARDS] ok=true
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
 [P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
@@ -273,7 +169,7 @@
 [WARM_TIMELINE_SNAPSHOT] date=2026-06-27 state=miss count=0 ms=0
 [P0R_PREBUILD_BODY] screen=Timeline date=2026-06-27 priority=10 ms=0
 [P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=21/21
-[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=0
+[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=1
 [P0R_MEMORY] screen=Timeline renderedBodies=23 snapshots=23 records=0 approxKb=1472
 [P0_TIMELINE_BUILD] date=2026-06-17 records=0
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
@@ -289,6 +185,191 @@
 [P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
 [P0P_TIMELINE_DATE_BODY] date=2026-06-17 records=0 snapshot=empty buildMs=0
 [P0P_TIMELINE_REAL_CARDS] ok=true
-[P0R_BODY_CACHE_HIT] screen=Plans date=2026-06-15 source=criticalPrebuild
-[P0P_PLANS_DATE_BODY] date=2026-06-15 cards=0 snapshot=empty buildMs=0
+--- TIMELINE PERF LOGS (187) ---
+[TIMELINE_DAY_LOOKUP] date=2026-06-05 state=empty count=0 ms=4
+[TIMELINE_DAY_LOOKUP] date=2026-06-06 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-07 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-08 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-09 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-10 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-11 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-12 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-13 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-14 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-15 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-16 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-17 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-18 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-19 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-20 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-21 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-22 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-23 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-24 state=empty count=0 ms=0
+[TIMELINE_DAY_LOOKUP] date=2026-06-25 state=empty count=0 ms=0
+[WARM_TIMELINE_WINDOW] center=2026-06-15 from=2026-06-05 to=2026-06-25 cachedDays=21
+[WARM_MEMORY] screen=Timeline cachedDays=21 records=0 approxKb=0
+[P0R_PREBUILD_CRITICAL_START] screen=Timeline dates=yesterday,today,tomorrow
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-14 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-14 priority=-1 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-15 priority=0 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-16 priority=1 ms=0
+[P0R_PREBUILD_CRITICAL_DONE] screen=Timeline count=3 totalMs=1
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=yesterday dataReady=true bodyReady=true
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=today dataReady=true bodyReady=true
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=tomorrow dataReady=true bodyReady=true
+[P0R_PREBUILD_WINDOW_START] screen=Timeline center=2026-06-15 radius=10
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
+[P0R_PREBUILD_CRITICAL_START] screen=Timeline dates=yesterday,today,tomorrow
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-14 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-14 priority=-1 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-15 priority=0 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-16 priority=1 ms=0
+[P0R_PREBUILD_CRITICAL_DONE] screen=Timeline count=3 totalMs=0
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=yesterday dataReady=true bodyReady=true
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=today dataReady=true bodyReady=true
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=tomorrow dataReady=true bodyReady=true
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=yesterday dataReady=true bodyReady=true
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=today dataReady=true bodyReady=true
+[P0R_BOOT_ADJACENT_READY] screen=Timeline date=tomorrow dataReady=true bodyReady=true
+[P0P_TIMELINE_CHROME_STATIC] ok=true
+[P0_TIMELINE_BUILD] date=2026-06-15 records=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[P0_TIMELINE_BUILD] date=2026-06-15 records=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-15 state=empty count=0 ms=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-13 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-13 priority=-2 ms=0
+[P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=4/21
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-17 priority=2 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-12 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-12 priority=-3 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-18 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-18 priority=3 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-11 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-11 priority=-4 ms=0
+[P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=8/21
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-19 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-19 priority=4 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-10 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-10 priority=-5 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-20 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-20 priority=5 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-09 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-09 priority=-6 ms=0
+[P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=12/21
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-21 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-21 priority=6 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-08 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-08 priority=-7 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-22 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-22 priority=7 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-07 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-07 priority=-8 ms=0
+[P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=16/21
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-23 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-23 priority=8 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-06 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-06 priority=-9 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-24 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-24 priority=9 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-05 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-05 priority=-10 ms=0
+[P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=20/21
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-25 state=empty count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-25 priority=10 ms=0
+[P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=21/21
+[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=527
+[P0R_MEMORY] screen=Timeline renderedBodies=21 snapshots=21 records=0 approxKb=1344
+[PRE_WHITE_SWIPE_RESTORE] screen=Timeline event=start date=2026-06-15
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-16 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[P0_TIMELINE_DATE_NAV] page=4994 date=2026-06-16
+[P0R_FIRST_SWIPE_TARGET] screen=Timeline targetDate=2026-06-16 dataReady=true bodyReady=true cacheHit=true
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
+[P0_TIMELINE_BUILD] date=2026-06-16 records=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-16 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[P0_TIMELINE_DATE_NAV] shell_commit date=2026-06-16
+[PRE_WHITE_SWIPE_RESTORE] screen=Timeline event=commit date=2026-06-16
+[P0R_PREBUILD_WINDOW_START] screen=Timeline center=2026-06-16 radius=10
+[TIMELINE_DAY_LOOKUP] date=2026-06-26 state=empty count=0 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-26 state=miss count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-26 priority=10 ms=0
+[P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=21/21
+[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=1
+[P0R_MEMORY] screen=Timeline renderedBodies=22 snapshots=22 records=0 approxKb=1408
+[P0_TIMELINE_BUILD] date=2026-06-16 records=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-16 state=empty count=0 ms=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-16 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[P0_TIMELINE_DATE_NAV] page=4995 date=2026-06-17
 [PRE_WHITE_SWIPE_RESTORE] screen=Timeline event=cancel date=2026-06-17
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
+[P0_TIMELINE_BUILD] date=2026-06-17 records=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-16 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-17 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[P0_TIMELINE_DATE_NAV] shell_commit date=2026-06-17
+[PRE_WHITE_SWIPE_RESTORE] screen=Timeline event=commit date=2026-06-17
+[P0R_PREBUILD_WINDOW_START] screen=Timeline center=2026-06-17 radius=10
+[TIMELINE_DAY_LOOKUP] date=2026-06-27 state=empty count=0 ms=0
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-27 state=miss count=0 ms=0
+[P0R_PREBUILD_BODY] screen=Timeline date=2026-06-27 priority=10 ms=0
+[P0R_PREBUILD_WINDOW_PROGRESS] screen=Timeline ready=21/21
+[P0R_PREBUILD_WINDOW_DONE] screen=Timeline ready=21 totalMs=1
+[P0R_MEMORY] screen=Timeline renderedBodies=23 snapshots=23 records=0 approxKb=1472
+[P0_TIMELINE_BUILD] date=2026-06-17 records=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-15 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-15 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-16 source=criticalPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-16 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true
+[WARM_TIMELINE_SNAPSHOT] date=2026-06-17 state=empty count=0 ms=0
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
+[P0R_BODY_CACHE_HIT] screen=Timeline date=2026-06-17 source=windowPrebuild
+[P0P_TIMELINE_DATE_BODY] date=2026-06-17 records=0 snapshot=empty buildMs=0
+[P0P_TIMELINE_REAL_CARDS] ok=true

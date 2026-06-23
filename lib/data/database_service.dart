@@ -4,8 +4,15 @@ import 'dart:math';
 
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/p0_date_nav_diag.dart';
+import 'package:counter/core/p0n_perf_diag.dart';
+import 'package:counter/core/p0o_warm_diag.dart';
+import 'package:counter/core/p0s_mount_diag.dart';
+import 'package:counter/core/p0r_prebuild_diag.dart';
+import 'package:counter/core/widgets/mounted_day_window.dart';
 import 'package:counter/core/perf_diag.dart';
 import 'package:counter/core/link_scalar.dart';
+import 'package:counter/data/warm_day_window.dart';
+import 'package:counter/data/rendered_day_body_cache.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/local_sync/plan_mutation_outbox.dart';
@@ -518,6 +525,23 @@ class DatabaseService {
 
   /// In-flight neighbor prefetch keys (date YYYY-MM-DD).
   final Set<String> _timelinePrefetchInFlight = {};
+
+  /// P0O: rolling warm day snapshots (data only — not full page widgets).
+  WarmSnapshotWindow<TimelineDaySnapshot>? _timelineWarmWindow;
+  WarmSnapshotWindow<PlansDaySnapshot>? _plansWarmWindow;
+
+  /// P0P/P0R: render-warmed day body entries (content lists only).
+  DayBodyCache<TimelineDayBodyEntry>? _timelineBodyCache;
+  DayBodyCache<PlansDayBodyEntry>? _plansBodyCache;
+
+  bool _timelineWindowBodyPrebuildInFlight = false;
+  bool _plansWindowBodyPrebuildInFlight = false;
+  int _timelineBodyPrebuildGeneration = 0;
+  int _plansBodyPrebuildGeneration = 0;
+
+  static const String _cachePlansWarmSnapshotsKey = 'warm_plans_snapshots_v1';
+  static const String _cacheTimelineWarmSnapshotsKey =
+      'warm_timeline_snapshots_v1';
 
   /// PocketBase realtime: unsubscribe function from [RecordService.subscribe] ('*').
   Future<void> Function()? _recordsRealtimeUnsubscribe;
