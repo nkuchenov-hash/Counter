@@ -2257,6 +2257,7 @@ extension RecordServiceExtension on DatabaseService {
     int records,
     String rowVm,
     int rows,
+    bool dayWidgetCached,
   }) timelineTargetDayCacheSnapshot(DateTime date) {
     final key = _timelineDateKeyFromDate(date);
     final indexReady = !_timelineDayIndexDirty &&
@@ -2272,6 +2273,7 @@ extension RecordServiceExtension on DatabaseService {
       records: records,
       rowVm: rowVm,
       rows: rows,
+      dayWidgetCached: viewCached,
     );
   }
 

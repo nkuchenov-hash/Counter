@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0U.6D: first-drag frame diagnostics + TARGET_STATE source fix [wip]
+* **`p0u_timeline_swipe_diag.dart`:** [wip] `DRAG_FRAME_BEGIN`, `TARGET_PAGE_STATE_BEFORE_DRAG`, `TARGET_PAGE_ATTACH`, `TARGET_CHILD_BUILD`, `TARGET_CHILD_LAYOUT_HINT`, `DRAG_FRAME_DONE` (culprit heuristic); `TARGET_STATE` now includes `source=`.
+* **`timeline_view.dart`:** [wip] wires page/list lifecycle probes; `TARGET_STATE` records from `timelineTargetDayDataReadyProbe` (matches `TARGET_DATA_READY`).
+* **`record_service.dart`:** [wip] `timelineTargetDayCacheSnapshot` adds `dayWidgetCached` for before-drag probe.
+
 ## [2026-06-15] - P0 Time View target drop v2: stored intent + explicit-order cascade [wip]
 * **`plan_time_sequential_cascade.dart`:** [wip] `TimeViewInsertionIntent`, `buildExplicitOrderForTargetInsert`, `cascadeScheduledPlansForExplicitTimeViewOrder`, `applyTimeViewTargetInsertion` — target drop no longer sorts by start time.
 * **`planning_view.dart`:** [wip] drag-over stores insertion intent; commit prefers stored intent over release hit-test; preview/commit share `applyTimeViewTargetInsertion`; empty canvas still uses yToTime.

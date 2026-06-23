@@ -21,6 +21,11 @@ abstract final class P0uTimelineSwipeDiag {
   static String _phase = 'drag';
   static final Set<String> _pagesBuilt = {};
 
+  static bool _dragFrameBeginLogged = false;
+  static bool _attachSeenBeforeLongFrame = false;
+  static bool _childBuildSeenBeforeLongFrame = false;
+  static bool _firstLongFrameAttributed = false;
+
   static bool get sessionActive => _sessionActive;
   static bool get isFirstSwipePending => !_firstSwipeConsumed;
 
@@ -46,10 +51,49 @@ abstract final class P0uTimelineSwipeDiag {
     _swipeSw ??= Stopwatch()..start();
     _phase = 'drag';
     _resetFrameStats();
+    _resetDragFrameAttribution();
     _attachTimings();
     debugPrint(
       '[P0U_TIMELINE_SWIPE_BEGIN] fromDate=$fromDate targetDate=$targetDate '
       'page=$page targetPage=$targetPage',
+    );
+    dragFrameBegin(
+      fromDate: fromDate,
+      targetDate: targetDate,
+      page: page,
+      targetPage: targetPage,
+    );
+  }
+
+  static void dragFrameBegin({
+    required String fromDate,
+    required String targetDate,
+    required int page,
+    required int targetPage,
+  }) {
+    if (!_sessionActive || _firstSwipeConsumed) return;
+    if (_dragFrameBeginLogged) return;
+    _dragFrameBeginLogged = true;
+    debugPrint(
+      '[P0U_TIMELINE_DRAG_FRAME_BEGIN] fromDate=$fromDate '
+      'targetDate=$targetDate page=$page targetPage=$targetPage',
+    );
+  }
+
+  static void targetPageStateBeforeDrag({
+    required String targetDate,
+    required bool pageBuilt,
+    required bool elementMounted,
+    required bool dayWidgetCached,
+    required String rowVm,
+    required int rows,
+  }) {
+    if (!_sessionActive || _firstSwipeConsumed) return;
+    if (_targetDateKey != targetDate) return;
+    debugPrint(
+      '[P0U_TIMELINE_TARGET_PAGE_STATE_BEFORE_DRAG] targetDate=$targetDate '
+      'pageBuilt=$pageBuilt elementMounted=$elementMounted '
+      'dayWidgetCached=$dayWidgetCached rowVm=$rowVm rows=$rows',
     );
   }
 
@@ -83,6 +127,7 @@ abstract final class P0uTimelineSwipeDiag {
 
   static void targetState({
     required String targetDate,
+    required String source,
     required String dayIndex,
     required int records,
     required String rowVm,
@@ -92,9 +137,61 @@ abstract final class P0uTimelineSwipeDiag {
   }) {
     if (!_sessionActive || _firstSwipeConsumed) return;
     debugPrint(
-      '[P0U_TIMELINE_TARGET_STATE] targetDate=$targetDate '
+      '[P0U_TIMELINE_TARGET_STATE] targetDate=$targetDate source=$source '
       'dayIndex=$dayIndex records=$records rowVm=$rowVm rows=$rows '
       'pageBuilt=$pageBuilt active=$active',
+    );
+  }
+
+  static void targetPageAttach({
+    required String targetDate,
+    required int ms,
+  }) {
+    if (!_sessionActive || _firstSwipeConsumed) return;
+    if (_targetDateKey != targetDate) return;
+    _attachSeenBeforeLongFrame = true;
+    debugPrint(
+      '[P0U_TIMELINE_TARGET_PAGE_ATTACH] targetDate=$targetDate '
+      'phase=$_phase ms=$ms',
+    );
+  }
+
+  static void targetChildBuild({
+    required String targetDate,
+    required int ms,
+  }) {
+    if (!_sessionActive || _firstSwipeConsumed) return;
+    if (_targetDateKey != targetDate) return;
+    _childBuildSeenBeforeLongFrame = true;
+    debugPrint(
+      '[P0U_TIMELINE_TARGET_CHILD_BUILD] targetDate=$targetDate '
+      'phase=$_phase ms=$ms',
+    );
+  }
+
+  static void targetChildLayoutHint({
+    required String targetDate,
+    required int visibleRows,
+    required int rows,
+  }) {
+    if (!_sessionActive || _firstSwipeConsumed) return;
+    if (_targetDateKey != targetDate) return;
+    debugPrint(
+      '[P0U_TIMELINE_TARGET_CHILD_LAYOUT_HINT] targetDate=$targetDate '
+      'phase=$_phase visibleRows=$visibleRows rows=$rows',
+    );
+  }
+
+  static void dragFrameDone({
+    required String targetDate,
+    required int frameMs,
+    required String culprit,
+  }) {
+    if (!_sessionActive || _firstSwipeConsumed) return;
+    if (_targetDateKey != targetDate) return;
+    debugPrint(
+      '[P0U_TIMELINE_DRAG_FRAME_DONE] targetDate=$targetDate '
+      'frameMs=$frameMs culprit=$culprit',
     );
   }
 
@@ -158,6 +255,23 @@ abstract final class P0uTimelineSwipeDiag {
     _frameLogCount = 0;
   }
 
+  static void _resetDragFrameAttribution() {
+    _dragFrameBeginLogged = false;
+    _attachSeenBeforeLongFrame = false;
+    _childBuildSeenBeforeLongFrame = false;
+    _firstLongFrameAttributed = false;
+  }
+
+  static String _culpritForLongFrame() {
+    if (!_attachSeenBeforeLongFrame && !wasPageBuilt(_targetDateKey ?? '')) {
+      return 'pageAttach';
+    }
+    if (!_childBuildSeenBeforeLongFrame) {
+      return 'childBuild';
+    }
+    return 'unknown';
+  }
+
   static void _attachTimings() {
     if (_timingsCallback != null) return;
     _timingsCallback = (List<FrameTiming> timings) {
@@ -176,6 +290,14 @@ abstract final class P0uTimelineSwipeDiag {
             '[P0U_TIMELINE_SWIPE_FRAME] targetDate=$_targetDateKey '
             'frameMs=$ms phase=$_phase',
           );
+          if (!_firstLongFrameAttributed) {
+            _firstLongFrameAttributed = true;
+            dragFrameDone(
+              targetDate: _targetDateKey!,
+              frameMs: ms,
+              culprit: _culpritForLongFrame(),
+            );
+          }
         }
       }
     };

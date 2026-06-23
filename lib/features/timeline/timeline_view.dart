@@ -145,14 +145,41 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
     final snap = DatabaseService.instance.timelineTargetDayCacheSnapshot(
       targetDate,
     );
+    final data = DatabaseService.instance.timelineTargetDayDataReadyProbe(
+      targetDate,
+    );
+    final vm = DatabaseService.instance.timelineTargetDayVmReadyProbe(targetDate);
+    final pageBuilt = P0uTimelineSwipeDiag.wasPageBuilt(key);
     P0uTimelineSwipeDiag.targetState(
       targetDate: key,
+      source: data.source,
       dayIndex: snap.dayIndex,
-      records: snap.records,
+      records: data.records,
       rowVm: snap.rowVm,
-      rows: snap.rows,
-      pageBuilt: P0uTimelineSwipeDiag.wasPageBuilt(key),
+      rows: vm.rows,
+      pageBuilt: pageBuilt,
       active: active,
+    );
+  }
+
+  void _logSwipeTargetPageStateBeforeDrag(DateTime targetDate) {
+    if (!P0uTimelineSwipeDiag.sessionActive) return;
+    final key = _dateKeyFromDate(targetDate);
+    final snap = DatabaseService.instance.timelineTargetDayCacheSnapshot(
+      targetDate,
+    );
+    final data = DatabaseService.instance.timelineTargetDayDataReadyProbe(
+      targetDate,
+    );
+    final vm = DatabaseService.instance.timelineTargetDayVmReadyProbe(targetDate);
+    final pageBuilt = P0uTimelineSwipeDiag.wasPageBuilt(key);
+    P0uTimelineSwipeDiag.targetPageStateBeforeDrag(
+      targetDate: key,
+      pageBuilt: pageBuilt,
+      elementMounted: pageBuilt,
+      dayWidgetCached: snap.dayWidgetCached,
+      rowVm: snap.rowVm,
+      rows: data.records,
     );
   }
 
@@ -194,6 +221,7 @@ class _TimelineSwipeWrapperState extends State<TimelineSwipeWrapper> {
       page: anchor,
       targetPage: targetPage,
     );
+    _logSwipeTargetPageStateBeforeDrag(targetDate);
     _logSwipeTargetState(targetDate, active: false);
     _swipeBeginLogged = true;
   }
@@ -919,10 +947,21 @@ class _TimelinePageState extends State<TimelinePage> {
     final dateKey = _dateKey(_visibleDate);
     P0uTimelineSwipeDiag.markPageBuilt(dateKey);
     if (P0uTimelineSwipeDiag.isTargetDate(dateKey)) {
+      P0uTimelineSwipeDiag.targetPageAttach(
+        targetDate: dateKey,
+        ms: buildSw.elapsedMilliseconds,
+      );
       P0uTimelineSwipeDiag.targetPageBuild(
         targetDate: dateKey,
         ms: buildSw.elapsedMilliseconds,
       );
+      if (!widget.isActivePage) {
+        P0uTimelineSwipeDiag.targetChildLayoutHint(
+          targetDate: dateKey,
+          visibleRows: 0,
+          rows: _lastCoalescedRecords.length,
+        );
+      }
     } else if (widget.isActivePage) {
       P0uDiag.timelineFirstBuild(
         date: dateKey,
@@ -994,10 +1033,19 @@ class _TimelineDayCardListState extends State<_TimelineDayCardList>
     final recordMaps = _recordMaps();
     sw.stop();
     if (P0uTimelineSwipeDiag.isTargetDate(widget.dateKey)) {
+      P0uTimelineSwipeDiag.targetChildBuild(
+        targetDate: widget.dateKey,
+        ms: sw.elapsedMilliseconds,
+      );
       P0uTimelineSwipeDiag.targetListBuild(
         targetDate: widget.dateKey,
         rows: recordMaps.length,
         ms: sw.elapsedMilliseconds,
+      );
+      P0uTimelineSwipeDiag.targetChildLayoutHint(
+        targetDate: widget.dateKey,
+        visibleRows: recordMaps.length,
+        rows: recordMaps.length,
       );
     } else if (widget.isActive) {
       P0uDiag.timelineFirstListBuild(
