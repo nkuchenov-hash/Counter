@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-23] - P0 Time View card-on-card drop finger resolver [wip]
+* **`plan_time_sequential_cascade.dart`:** [wip] `TimeViewCardLayout`, `TimeViewDropIntent`, `resolveTimeViewDropIntent`, `buildTimeViewInsertionIntentFromDropIntent`, `assertTimeViewTargetCardNoRawY` — finger-position hit-test with absolute target-card priority; empty canvas only when finger outside all card rects.
+* **`planning_view.dart`:** [wip] `_timelineFingerGrabOffsetCanvasPx` + pointer-down offset capture; preview and commit both call central resolver (no stored-intent / card-center / raw-Y fallback on card-on-card).
+* **`test/plan_time_target_drop_test.dart`:** [wip] tests A–J for finger upper/lower half, preview-vs-commit parity, follower/predecessor cascade, empty canvas isolation.
+
 ## [2026-06-23] - Planning Time View: single Day length range slider [wip]
 * **`plan_time_visible_window.dart`:** [wip] extended hour window math (−3..27), overlap filter, wall↔minutes mapping; shared by prefs, Brain, tests.
 * **`planning_day_start_prefs.dart`:** [wip] `visibleDayStartHourExtended` / `visibleDayEndHourExtended` prefs + legacy migration (start=20/end=2 → 20→26).

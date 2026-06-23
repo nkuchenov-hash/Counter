@@ -6,7 +6,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:ui' show lerpDouble;
+import 'dart:ui' show Offset, lerpDouble;
 
 import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
@@ -486,6 +486,9 @@ class _PlanningPageState extends State<PlanningPage>
 
   /// Finger delta (never overwritten by preview snap); used for hit-test on release.
   double _timelineFingerDragDeltaPx = 0;
+
+  /// Canvas-local Y of finger within dragged card at pointer-down (inset + local dy).
+  double _timelineFingerGrabOffsetCanvasPx = 0;
 
   /// Monotonic id per vertical drag gesture (stamped on target-card intents).
   static int _timelineNextDragSequenceId = 0;
@@ -3053,6 +3056,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
     _timelineVerticalDragPlanKey = null;
     _timelineVerticalDragDeltaPx = 0;
     _timelineFingerDragDeltaPx = 0;
+    _timelineFingerGrabOffsetCanvasPx = 0;
     _timelineVerticalDragTask = null;
     _timelineVerticalDragTimeLabel = null;
     _timelineDragInsertTargetKey = null;
@@ -3386,35 +3390,54 @@ DatabaseService.instance.notifyPlanningRefresh();
     return null;
   }
 
-  PlanTimeViewBlockLayout? _timelineLayoutUnderDragCenter({
-    required List<PlanTimeViewBlockLayout> layouts,
-    required double dragCenterY,
-    required String? excludePlanKey,
-  }) {
-    for (final layout in layouts) {
-      if (_planKey(layout.task) == excludePlanKey) continue;
-      final bottom = layout.topPx + layout.heightPx;
-      if (dragCenterY >= layout.topPx && dragCenterY <= bottom) {
-        return layout;
-      }
-    }
-    return null;
+  List<TimeViewCardLayout> _timelineCardLayoutsForResolver(
+    List<PlanTimeViewBlockLayout> layouts,
+  ) {
+    return [
+      for (final layout in layouts)
+        TimeViewCardLayout(
+          planId: layout.task.planRowIdForBackend,
+          topPx: layout.topPx,
+          heightPx: layout.heightPx,
+          targetStartWall: layout.projection?.profileWallStart,
+          targetEndWall: layout.projection?.profileWallEnd,
+        ),
+    ];
   }
 
-  ({PlanTimeViewBlockLayout layout, bool insertBefore})?
-  _timelineResolveDragInsertTarget({
+  double _timelineFingerCanvasY(double deltaPx) =>
+      _timelineVerticalDragOriginTopPx +
+      deltaPx +
+      _timelineFingerGrabOffsetCanvasPx;
+
+  TimeViewDropIntent _timelineResolveDropIntent({
+    required double fingerCanvasY,
     required List<PlanTimeViewBlockLayout> layouts,
-    required double dragCenterY,
-    required String? excludePlanKey,
+    required String draggedPlanId,
+    required DateTime planWallDay,
+    required PlanTimeViewDurationGrid grid,
+    required double maxTopPx,
   }) {
-    final layout = _timelineLayoutUnderDragCenter(
-      layouts: layouts,
-      dragCenterY: dragCenterY,
-      excludePlanKey: excludePlanKey,
+    return resolveTimeViewDropIntent(
+      fingerLocalPosition: Offset(0, fingerCanvasY),
+      scheduledCardLayouts: _timelineCardLayoutsForResolver(layouts),
+      draggedPlanId: draggedPlanId,
+      wallDate: planWallDay,
+      canvasYToMinutes: (y) => _snapTimelineMinutes(
+        grid.minutesFromY(y.clamp(0.0, maxTopPx)),
+      ),
     );
-    if (layout == null) return null;
-    final mid = layout.topPx + layout.heightPx / 2;
-    return (layout: layout, insertBefore: dragCenterY < mid);
+  }
+
+  PlanTimeViewBlockLayout? _timelineLayoutForPlanId(
+    List<PlanTimeViewBlockLayout> layouts,
+    String? planId,
+  ) {
+    if (planId == null) return null;
+    for (final layout in layouts) {
+      if (layout.task.planRowIdForBackend == planId) return layout;
+    }
+    return null;
   }
 
   TimeViewInsertionIntent? _timelineInsertionIntentFromLayout({
@@ -3535,6 +3558,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     required int rangeStart,
     required int rangeEnd,
     required String selectedDayKey,
+    required double fingerGrabOffsetCanvasPx,
   }) {
     _clearTimelineInteractionState();
     if (ShellFlags.enableTimelineProjectionCache) {
@@ -3550,6 +3574,7 @@ DatabaseService.instance.notifyPlanningRefresh();
       _timelineVerticalDragPlanKey = planKey;
       _timelineVerticalDragDeltaPx = 0;
       _timelineFingerDragDeltaPx = 0;
+      _timelineFingerGrabOffsetCanvasPx = fingerGrabOffsetCanvasPx;
       _timelineVerticalDragSequenceId = ++_timelineNextDragSequenceId;
       _timelineVerticalDragOriginTopPx = originTopPx;
       _timelineVerticalDragCardHeightPx = originCardHeightPx;
@@ -3581,12 +3606,10 @@ DatabaseService.instance.notifyPlanningRefresh();
     if (grid == null) return;
     _timelineFingerDragDeltaPx = deltaPx;
     final durMin = _timelineVerticalDragDurationMin.toDouble();
-    final dragHeightPx = math.max(1.0, _timelineVerticalDragCardHeightPx);
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durMin),
     );
-    final fingerTop = _timelineVerticalDragOriginTopPx + deltaPx;
-    final dragCenterY = fingerTop + dragHeightPx / 2;
+    final fingerCanvasY = _timelineFingerCanvasY(deltaPx);
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
@@ -3596,10 +3619,17 @@ DatabaseService.instance.notifyPlanningRefresh();
       endExtended: rangeEnd,
       selectedDayKey: selectedDayKey,
     );
-    final insert = _timelineResolveDragInsertTarget(
+    final dragPlanId = _timelineVerticalDragTask?.planRowIdForBackend ??
+        _timelineVerticalDragPlanKey ??
+        '';
+    final cardLayouts = _timelineCardLayoutsForResolver(layouts);
+    final dropIntent = _timelineResolveDropIntent(
+      fingerCanvasY: fingerCanvasY,
       layouts: layouts,
-      dragCenterY: dragCenterY,
-      excludePlanKey: _timelineVerticalDragPlanKey,
+      draggedPlanId: dragPlanId,
+      planWallDay: planWallDay,
+      grid: grid,
+      maxTopPx: maxTopPx,
     );
 
     double previewTop;
@@ -3608,35 +3638,18 @@ DatabaseService.instance.notifyPlanningRefresh();
     double? markerTop;
     String? previewLabel;
     TimeViewInsertionIntent? storedIntent;
-    final dragPlanId = _timelineVerticalDragTask?.planRowIdForBackend ??
-        _timelineVerticalDragPlanKey ??
-        '';
 
-    if (insert != null) {
-      insertBefore = insert.insertBefore;
-      insertKey = _planKey(insert.layout.task);
-      final freshIntent = _timelineInsertionIntentFromLayout(
-        layout: insert.layout,
-        insertBefore: insertBefore,
+    if (dropIntent.isTargetCard) {
+      insertBefore = dropIntent.insertBefore;
+      insertKey = dropIntent.targetPlanId;
+      storedIntent = buildTimeViewInsertionIntentFromDropIntent(
+        drop: dropIntent,
+        scheduledCardLayouts: cardLayouts,
         draggedPlanId: dragPlanId,
-        draggedDurationMin: _timelineVerticalDragDurationMin,
+        draggedDurationMinutes: _timelineVerticalDragDurationMin,
         draggedHadEnd: _timelineVerticalDragHadEnd,
-        source: TimeViewInsertionSource.targetCard,
         dragSequenceId: _timelineVerticalDragSequenceId,
       );
-      if (freshIntent != null) {
-        storedIntent = freshIntent;
-      } else {
-        final sticky = _timelineStoredInsertionIntent;
-        if (sticky?.isTargetCardMode == true &&
-            sticky?.targetPlanId == insert.layout.task.planRowIdForBackend) {
-          storedIntent = sticky;
-        } else {
-          storedIntent = null;
-          insertKey = null;
-        }
-      }
-
       if (storedIntent != null) {
         final dropResult = DatabaseService.instance.applyTimeViewTargetInsertion(
           scheduledInRange,
@@ -3653,21 +3666,25 @@ DatabaseService.instance.notifyPlanningRefresh();
           dropResult.draggedStartWall,
           dropResult.draggedEndWall,
         );
-        _logTimeDropGuard(
-          'phase=dragOver dragged=$dragPlanId target=${storedIntent.targetPlanId} '
-          'position=${insertBefore ? 'before' : 'after'} source=targetCard',
+        final targetLayout = _timelineLayoutForPlanId(
+          layouts,
+          dropIntent.targetPlanId,
         );
-        if (insertBefore) {
-          markerTop = insert.layout.topPx.clamp(0.0, canvasHeight);
-        } else {
-          markerTop = (insert.layout.topPx + insert.layout.heightPx).clamp(
-            0.0,
-            canvasHeight,
-          );
+        if (targetLayout != null) {
+          if (insertBefore) {
+            markerTop = targetLayout.topPx.clamp(0.0, canvasHeight);
+          } else {
+            markerTop = (targetLayout.topPx + targetLayout.heightPx).clamp(
+              0.0,
+              canvasHeight,
+            );
+          }
         }
       } else {
+        storedIntent = null;
+        insertKey = null;
         final snappedMin = _snapTimelineMinutes(
-          grid.minutesFromY(fingerTop.clamp(0.0, maxTopPx)),
+          grid.minutesFromY(fingerCanvasY.clamp(0.0, maxTopPx)),
         );
         previewTop = grid.yForMinutesFromRangeStart(snappedMin);
         previewLabel = _timelineDragLabelForTopPx(
@@ -3678,25 +3695,12 @@ DatabaseService.instance.notifyPlanningRefresh();
           _timelineVerticalDragHadEnd,
         );
       }
-    } else if (_timelineStoredInsertionIntent?.isTargetCardMode == true) {
-      // Finger left target card — exit target-card mode; empty-canvas preview only.
-      storedIntent = null;
-      final snappedMin = _snapTimelineMinutes(
-        grid.minutesFromY(fingerTop.clamp(0.0, maxTopPx)),
-      );
-      previewTop = grid.yForMinutesFromRangeStart(snappedMin);
-      previewLabel = _timelineDragLabelForTopPx(
-        previewTop,
-        planWallDay,
-        rangeStart,
-        _timelineVerticalDragDurationMin,
-        _timelineVerticalDragHadEnd,
-      );
     } else {
       storedIntent = null;
-      final snappedMin = _snapTimelineMinutes(
-        grid.minutesFromY(fingerTop.clamp(0.0, maxTopPx)),
-      );
+      final snappedMin = dropIntent.wallStartMinute ??
+          _snapTimelineMinutes(
+            grid.minutesFromY(fingerCanvasY.clamp(0.0, maxTopPx)),
+          );
       previewTop = grid.yForMinutesFromRangeStart(snappedMin);
       previewLabel = _timelineDragLabelForTopPx(
         previewTop,
@@ -3744,14 +3748,10 @@ DatabaseService.instance.notifyPlanningRefresh();
       _cancelTimelineVerticalDrag();
       return;
     }
-    final dragHeightPx = math.max(1.0, _timelineVerticalDragCardHeightPx);
     final maxTopPx = grid.yForMinutesFromRangeStart(
       math.max(0, grid.totalMinutes - durMin),
     );
-    final fingerTop = (_timelineVerticalDragOriginTopPx + _timelineFingerDragDeltaPx)
-        .clamp(0.0, maxTopPx);
-    final fingerCenterY = fingerTop + dragHeightPx / 2;
-    final fingerYMinutes = grid.minutesFromY(fingerTop);
+    final fingerCanvasY = _timelineFingerCanvasY(_timelineFingerDragDeltaPx);
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
@@ -3761,20 +3761,47 @@ DatabaseService.instance.notifyPlanningRefresh();
       endExtended: rangeEnd,
       selectedDayKey: selectedDayKey,
     );
+    final cardLayouts = _timelineCardLayoutsForResolver(layouts);
+    final dropIntent = _timelineResolveDropIntent(
+      fingerCanvasY: fingerCanvasY,
+      layouts: layouts,
+      draggedPlanId: task.planRowIdForBackend,
+      planWallDay: planWallDay,
+      grid: grid,
+      maxTopPx: maxTopPx,
+    );
 
-    TimeViewInsertionIntent? insertionIntent = _timelineStoredInsertionIntent;
     String commitSource;
+    TimeViewInsertionIntent? insertionIntent;
 
-    if (insertionIntent?.isTargetCardMode == true) {
-      commitSource = 'storedIntent';
-      insertionIntent = refreshTimeViewInsertionIntentFromScheduled(
-        intent: insertionIntent!,
-        scheduled: scheduledInRange,
-        resolveDurationMinutes:
-            DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+    if (dropIntent.kind == TimeViewDropIntentKind.cancel) {
+      _logTimeDropGuard('phase=cancel reason=${dropIntent.cancelReason}');
+      _cancelTimelineVerticalDrag();
+      return;
+    } else if (dropIntent.isTargetCard) {
+      commitSource = 'targetCard';
+      _logTimeDropGuard(
+        'phase=commit source=targetCard '
+        'position=${dropIntent.insertBefore ? 'before' : 'after'} noRawY=true',
       );
+      insertionIntent = buildTimeViewInsertionIntentFromDropIntent(
+        drop: dropIntent,
+        scheduledCardLayouts: cardLayouts,
+        draggedPlanId: task.planRowIdForBackend,
+        draggedDurationMinutes: durMin,
+        draggedHadEnd: _timelineVerticalDragHadEnd,
+        dragSequenceId: _timelineVerticalDragSequenceId,
+      );
+      insertionIntent = insertionIntent == null
+          ? null
+          : refreshTimeViewInsertionIntentFromScheduled(
+              intent: insertionIntent,
+              scheduled: scheduledInRange,
+              resolveDurationMinutes:
+                  DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+            );
       final cancelReason = insertionIntent == null
-          ? 'targetRefreshFailed'
+          ? 'targetProjectionFailed'
           : validateTimeViewTargetInsertionIntent(
               intent: insertionIntent,
               scheduled: scheduledInRange,
@@ -3785,71 +3812,20 @@ DatabaseService.instance.notifyPlanningRefresh();
         _cancelTimelineVerticalDrag();
         return;
       }
-      _logTimeDropGuard(
-        'phase=commit dragged=${insertionIntent!.draggedPlanId} '
-        'target=${insertionIntent.targetPlanId} '
-        'position=${insertionIntent.insertBefore ? 'before' : 'after'} '
-        'mode=targetCard',
-      );
-    } else if (_timelineDragInsertTargetKey != null) {
-      _logTimeDropGuard('phase=cancel reason=orphanTargetMarker');
-      _cancelTimelineVerticalDrag();
-      return;
     } else {
-      final insert = _timelineResolveDragInsertTarget(
-        layouts: layouts,
-        dragCenterY: fingerCenterY,
-        excludePlanKey: planKey,
-      );
-      if (insert != null) {
-        commitSource = 'releaseHitTest';
-        insertionIntent = _timelineInsertionIntentFromLayout(
-          layout: insert.layout,
-          insertBefore: insert.insertBefore,
-          draggedPlanId: task.planRowIdForBackend,
-          draggedDurationMin: durMin,
-          draggedHadEnd: _timelineVerticalDragHadEnd,
-          source: TimeViewInsertionSource.targetCard,
-          dragSequenceId: _timelineVerticalDragSequenceId,
-        );
-        insertionIntent = insertionIntent == null
-            ? null
-            : refreshTimeViewInsertionIntentFromScheduled(
-                intent: insertionIntent,
-                scheduled: scheduledInRange,
-                resolveDurationMinutes: DatabaseService
-                    .instance
-                    .resolvePlanDurationMinutesFromTags,
-              );
-        final cancelReason = insertionIntent == null
-            ? 'releaseTargetProjectionFailed'
-            : validateTimeViewTargetInsertionIntent(
-                intent: insertionIntent,
-                scheduled: scheduledInRange,
-                expectedDayKey: selectedDayKey,
-              );
-        if (cancelReason != null) {
-          _logTimeDropGuard('phase=cancel reason=$cancelReason');
-          _cancelTimelineVerticalDrag();
-          return;
-        }
-        _logTimeDropGuard(
-          'phase=commit dragged=${insertionIntent!.draggedPlanId} '
-          'target=${insertionIntent.targetPlanId} '
-          'position=${insertionIntent.insertBefore ? 'before' : 'after'} '
-          'mode=targetCard',
-        );
-      } else {
-        commitSource = 'emptyCanvas';
-        insertionIntent = null;
-        _logTimeDropGuard('phase=commit mode=emptyCanvas');
-      }
+      commitSource = 'emptyCanvas';
+      insertionIntent = null;
+      _logTimeDropGuard('phase=commit mode=emptyCanvas');
     }
 
     late final DateTime newStartWall;
     DateTime? newEndWall;
 
     if (insertionIntent != null) {
+      assertTimeViewTargetCardNoRawY(
+        dropIntent: dropIntent,
+        usedRawY: false,
+      );
       final dropResult = DatabaseService.instance.applyTimeViewTargetInsertion(
         scheduledInRange,
         insertionIntent,
@@ -3857,7 +3833,14 @@ DatabaseService.instance.notifyPlanningRefresh();
       newStartWall = dropResult.draggedStartWall;
       newEndWall = dropResult.draggedEndWall;
     } else {
-      final snappedMin = _snapTimelineMinutes(fingerYMinutes);
+      assertTimeViewTargetCardNoRawY(
+        dropIntent: dropIntent,
+        usedRawY: true,
+      );
+      final snappedMin = _snapTimelineMinutes(
+        dropIntent.wallStartMinute ??
+            grid.minutesFromY(fingerCanvasY.clamp(0.0, maxTopPx)),
+      );
       newStartWall = _wallTimeFromTimelineMinutes(
         snappedMin,
         planWallDay,
@@ -3879,7 +3862,9 @@ DatabaseService.instance.notifyPlanningRefresh();
       planWallDay: planWallDay,
       insertionIntent: insertionIntent,
       commitSource: commitSource,
-      rawYMinutesForTrace: fingerYMinutes,
+      rawYMinutesForTrace: grid.minutesFromY(
+        fingerCanvasY.clamp(0.0, maxTopPx),
+      ),
     );
   }
 
@@ -4625,7 +4610,7 @@ DatabaseService.instance.notifyPlanningRefresh();
                 }
               },
               onVerticalDragStart: canInteract
-                  ? () => _beginTimelineVerticalDrag(
+                  ? (fingerGrabOffset) => _beginTimelineVerticalDrag(
                       task: layout.task,
                       planKey: planKey,
                       originTopPx: layout.topPx,
@@ -4636,6 +4621,7 @@ DatabaseService.instance.notifyPlanningRefresh();
                       rangeStart: rangeStart,
                       rangeEnd: rangeEnd,
                       selectedDayKey: selectedDayKey,
+                      fingerGrabOffsetCanvasPx: fingerGrabOffset,
                     )
                   : null,
               onVerticalDragUpdate: canInteract
@@ -6384,7 +6370,7 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
   final double controlsLeftInset;
   final double controlsRightInset;
   final VoidCallback? onBodyTap;
-  final VoidCallback? onVerticalDragStart;
+  final void Function(double fingerGrabOffsetCanvasPx)? onVerticalDragStart;
   final void Function(double deltaPx, double globalDy)? onVerticalDragUpdate;
   final VoidCallback? onVerticalDragEnd;
   final VoidCallback? onVerticalDragCancel;
@@ -6449,7 +6435,9 @@ class _TimelinePlanInteractionBlockState
                   _bodyDragActive = true;
                   _moveAccumulatedDy = 0;
                   _activePointer = e.pointer;
-                  widget.onVerticalDragStart?.call();
+                  widget.onVerticalDragStart?.call(
+                    inset + e.localPosition.dy,
+                  );
                 },
                 onPointerMove: (e) {
                   if (!_bodyDragActive || _activePointer != e.pointer) return;
@@ -6490,12 +6478,14 @@ class _TimelinePlanInteractionBlockState
                 if (_suppressBodyTap || _bodyDragActive) return;
                 widget.onBodyTap!();
               },
-        onLongPressStart: (_) {
+        onLongPressStart: (details) {
                 _suppressBodyTap = true;
                 _bodyDragActive = true;
                 _moveAccumulatedDy = 0;
                 widget.onMovePointerDown?.call();
-                widget.onVerticalDragStart?.call();
+                widget.onVerticalDragStart?.call(
+                  inset + details.localPosition.dy,
+                );
               },
         onLongPressMoveUpdate: (details) {
                 widget.onVerticalDragUpdate?.call(

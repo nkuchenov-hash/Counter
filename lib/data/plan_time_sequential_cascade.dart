@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show Offset;
 
 import 'package:counter/data/models.dart';
 import 'package:flutter/foundation.dart';
@@ -316,6 +317,174 @@ void logTimeDropGuard(String message) {
   _lastTimeDropGuardLogKey = message;
   _lastTimeDropGuardLogAt = now;
   debugPrint('[TIME_DROP_GUARD] $message');
+}
+
+/// Geometry for one scheduled card on the Time View canvas (canvas-local px).
+class TimeViewCardLayout {
+  const TimeViewCardLayout({
+    required this.planId,
+    required this.topPx,
+    required this.heightPx,
+    this.targetStartWall,
+    this.targetEndWall,
+  });
+
+  final String planId;
+  final double topPx;
+  final double heightPx;
+  final DateTime? targetStartWall;
+  final DateTime? targetEndWall;
+
+  double get bottomPx => topPx + heightPx;
+
+  bool containsFingerY(double fingerCanvasY) =>
+      fingerCanvasY >= topPx && fingerCanvasY <= bottomPx;
+}
+
+enum TimeViewDropIntentKind {
+  targetCardBefore,
+  targetCardAfter,
+  emptyCanvas,
+  cancel,
+}
+
+/// Resolved drop intent from finger position (preview + commit share this).
+class TimeViewDropIntent {
+  const TimeViewDropIntent._({
+    required this.kind,
+    this.targetPlanId,
+    this.wallStartMinute,
+    this.cancelReason,
+  });
+
+  final TimeViewDropIntentKind kind;
+  final String? targetPlanId;
+  final double? wallStartMinute;
+  final String? cancelReason;
+
+  factory TimeViewDropIntent.targetCardBefore(String targetPlanId) {
+    return TimeViewDropIntent._(
+      kind: TimeViewDropIntentKind.targetCardBefore,
+      targetPlanId: targetPlanId,
+    );
+  }
+
+  factory TimeViewDropIntent.targetCardAfter(String targetPlanId) {
+    return TimeViewDropIntent._(
+      kind: TimeViewDropIntentKind.targetCardAfter,
+      targetPlanId: targetPlanId,
+    );
+  }
+
+  factory TimeViewDropIntent.emptyCanvas(double wallStartMinute) {
+    return TimeViewDropIntent._(
+      kind: TimeViewDropIntentKind.emptyCanvas,
+      wallStartMinute: wallStartMinute,
+    );
+  }
+
+  factory TimeViewDropIntent.cancel(String reason) {
+    return TimeViewDropIntent._(
+      kind: TimeViewDropIntentKind.cancel,
+      cancelReason: reason,
+    );
+  }
+
+  bool get isTargetCard =>
+      kind == TimeViewDropIntentKind.targetCardBefore ||
+      kind == TimeViewDropIntentKind.targetCardAfter;
+
+  bool get insertBefore => kind == TimeViewDropIntentKind.targetCardBefore;
+}
+
+/// Central finger-position resolver for Time View vertical drop.
+///
+/// Uses [fingerLocalPosition].dy in canvas coordinates only — never preview
+/// delta, dragged card center, or start-time sort.
+TimeViewDropIntent resolveTimeViewDropIntent({
+  required Offset fingerLocalPosition,
+  required List<TimeViewCardLayout> scheduledCardLayouts,
+  required String draggedPlanId,
+  required DateTime wallDate,
+  required double Function(double canvasY) canvasYToMinutes,
+}) {
+  final fingerY = fingerLocalPosition.dy;
+
+  // Topmost painted card under finger (reverse paint order).
+  for (var i = scheduledCardLayouts.length - 1; i >= 0; i--) {
+    final layout = scheduledCardLayouts[i];
+    if (layout.planId == draggedPlanId) continue;
+    if (!layout.containsFingerY(fingerY)) continue;
+
+    final mid = layout.topPx + layout.heightPx / 2;
+    final before = fingerY < mid;
+    final intent = before
+        ? TimeViewDropIntent.targetCardBefore(layout.planId)
+        : TimeViewDropIntent.targetCardAfter(layout.planId);
+    logTimeDropGuard(
+      'phase=resolve source=targetCard position=${before ? 'before' : 'after'} '
+      'dragged=$draggedPlanId target=${layout.planId}',
+    );
+    return intent;
+  }
+
+  final minute = canvasYToMinutes(fingerY);
+  logTimeDropGuard(
+    'phase=resolve source=emptyCanvas y=${fingerY.toStringAsFixed(1)} '
+    'minute=${minute.toStringAsFixed(1)}',
+  );
+  return TimeViewDropIntent.emptyCanvas(minute);
+}
+
+TimeViewInsertionIntent? buildTimeViewInsertionIntentFromDropIntent({
+  required TimeViewDropIntent drop,
+  required List<TimeViewCardLayout> scheduledCardLayouts,
+  required String draggedPlanId,
+  required int draggedDurationMinutes,
+  required bool draggedHadEnd,
+  int? dragSequenceId,
+}) {
+  if (!drop.isTargetCard || drop.targetPlanId == null) return null;
+
+  TimeViewCardLayout? layout;
+  for (final l in scheduledCardLayouts) {
+    if (l.planId == drop.targetPlanId) {
+      layout = l;
+      break;
+    }
+  }
+  final targetStart = layout?.targetStartWall;
+  if (layout == null || targetStart == null) return null;
+
+  final targetEnd = layout.targetEndWall ??
+      targetStart.add(Duration(minutes: draggedDurationMinutes));
+
+  return TimeViewInsertionIntent(
+    draggedPlanId: draggedPlanId,
+    targetPlanId: drop.targetPlanId!,
+    insertPosition: drop.insertBefore
+        ? TimeViewInsertPosition.before
+        : TimeViewInsertPosition.after,
+    targetStartWall: targetStart,
+    targetEndWall: targetEnd,
+    draggedDurationMinutes: draggedDurationMinutes,
+    draggedHadEnd: draggedHadEnd,
+    source: TimeViewInsertionSource.targetCard,
+    dragSequenceId: dragSequenceId,
+  );
+}
+
+/// Debug guard: target-card drop must never fall through to raw Y.
+void assertTimeViewTargetCardNoRawY({
+  required TimeViewDropIntent dropIntent,
+  required bool usedRawY,
+}) {
+  if (!kDebugMode || !dropIntent.isTargetCard || !usedRawY) return;
+  logTimeDropGuard('ERROR targetCardIntentFellThroughToRawY');
+  assert(
+    false,
+    '[TIME_DROP_GUARD] targetCardIntentFellThroughToRawY',
+  );
 }
 
 /// Reorder scheduled tasks for explicit target insert (no start-time sort).
