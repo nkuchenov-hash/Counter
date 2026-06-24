@@ -231,6 +231,7 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `test/` | Unit/widget tests | `flutter test`; perf and domain tests |
 | `integration_test/` | Device integration tests | Emulator/device only |
 | `scripts/` | Tooling | `audit/architecture_guard.ps1`, `sync_locales.dart`, `manual/td.ps1` (deploy), manual PB scripts |
+| `installer/windows/` | Windows packaging | `counter.iss` (Inno Setup) → CI produces `CounterSetup.exe` |
 | `docs/` | Governing documents | `ARCHITECTURE.md`, `DATA_MAP.md`, `POCKETBASE_MANIFEST.md`, `UX_CONTRACT.md`, `DESIGN_SYSTEM.md`, `DEPLOY.md`, `ROADMAP.md` |
 | `pb_hooks/` | PocketBase server hooks (JS) | Deploy next to PocketBase binary on VPS |
 | `design/` | Figma/reference assets | Design reference PNG/SVG |
@@ -238,6 +239,7 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `.dart_tool/` | Dart/Flutter tool cache | **Gitignored** — must not be tracked |
 | `update.ps1` | Deploy wrapper | Calls `scripts/manual/td.ps1` |
 | `.github/workflows/deploy.yml` | CI web deploy | Push `main` → `gh-pages` |
+| `.github/workflows/windows-desktop-build.yml` | CI Windows installer | Manual `workflow_dispatch` → `CounterSetup.exe` |
 | `pocketbase.service` | systemd unit example | VPS ops reference |
 | `pubspec.yaml` | Flutter package manifest | |
 | `analysis_options.yaml` | Analyzer rules | |

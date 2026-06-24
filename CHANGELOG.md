@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-24] - Windows CounterSetup.exe installer (Inno Setup) [shipped]
+* **`installer/windows/counter.iss`:** [shipped] per-user Inno Setup 6 script — `{localappdata}\Programs\Counter`, Start Menu + Desktop shortcuts, HKCU Run autostart (removed on uninstall), post-install launch, full Release tree packaged.
+* **`.github/workflows/windows-desktop-build.yml`:** [shipped] `choco install innosetup` + `ISCC.exe` compile; primary artifact **`CounterSetup`**; debug fallback **`counter-windows-release-debug-<run>`**.
+* **`docs/WINDOWS_INSTALLER.md`:** [shipped] end-user install path; SmartScreen unsigned note; voice command test steps.
+
 ## [2026-06-24] - GitHub Actions Windows desktop artifact workflow [shipped]
 * **`.github/workflows/windows-desktop-build.yml`:** [shipped] manual `workflow_dispatch` on `windows-latest`; Flutter 3.41.6; `flutter test test/voice_command_parser_test.dart`; `flutter build windows --release --dart-define=DESKTOP_VOICE_COMMAND=true`; uploads full `build/windows/x64/runner/Release/` via `actions/upload-artifact@v4`.
 * **`docs/DESKTOP_WINDOWS_ARTIFACT.md`:** [shipped] download/run instructions — no local Visual Studio required to run the artifact; VS C++/ATL only for local `flutter build windows`.

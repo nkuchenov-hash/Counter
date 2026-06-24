@@ -50,6 +50,7 @@ android/build/
 .pub-cache/
 .pub/
 /build/
+installer/windows/output/
 /coverage/
 
 # Symbolication related

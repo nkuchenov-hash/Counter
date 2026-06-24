@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  build-windows-release:
+  build-windows-installer:
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -53,10 +53,38 @@ jobs:
             --dart-define=GIT_COMMIT="$shortSha" `
             --dart-define=BUILD_TIME="$buildTime"
 
-      - name: Upload Windows release folder
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Compile CounterSetup.exe
+        shell: pwsh
+        run: |
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            throw "ISCC.exe not found at $iscc"
+          }
+          New-Item -ItemType Directory -Force -Path installer/windows/output | Out-Null
+          & $iscc `
+            "/DReleaseDir=$PWD\build\windows\x64\runner\Release" `
+            "/DOutputDir=$PWD\installer\windows\output" `
+            "installer\windows\counter.iss"
+          if (-not (Test-Path "installer\windows\output\CounterSetup.exe")) {
+            throw "CounterSetup.exe was not produced"
+          }
+          Get-Item "installer\windows\output\CounterSetup.exe" | Format-List Name, Length, LastWriteTime
+
+      - name: Upload CounterSetup installer (primary)
         uses: actions/upload-artifact@v4
         with:
-          name: counter-windows-release-${{ github.run_number }}
+          name: CounterSetup
+          path: installer/windows/output/CounterSetup.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload raw Release folder (debug fallback only)
+        uses: actions/upload-artifact@v4
+        with:
+          name: counter-windows-release-debug-${{ github.run_number }}
           path: build/windows/x64/runner/Release/
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
