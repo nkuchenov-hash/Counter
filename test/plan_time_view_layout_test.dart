@@ -37,7 +37,7 @@ TimeModeProjectedPlan _proj({
 }
 
 ({
-  PlanTimeViewDurationGrid grid,
+  TimeViewYScale grid,
   List<PlanTimeViewBlockLayout> layouts,
 }) _layout(
   List<TimeModeProjectedPlan> projections, {
@@ -56,8 +56,14 @@ TimeModeProjectedPlan _proj({
   );
 }
 
-double _hourBottom(PlanTimeViewDurationGrid grid, int hourIndex) =>
-    grid.hourTopsPx[hourIndex] + grid.hourHeightsPx[hourIndex];
+double _hourBottom(TimeViewYScale grid, int hourIndex) =>
+    grid.yForMinute((hourIndex + 1) * 60.0);
+
+PlanTimeViewBlockLayout _layoutCard(
+  List<PlanTimeViewBlockLayout> layouts,
+  String id,
+) =>
+    layouts.firstWhere((l) => l.task.planRowId == id);
 
 void main() {
   group('planTimeCardVisualDensityForRenderedHeight', () {
@@ -192,7 +198,7 @@ void main() {
       );
     });
 
-    test('mixed dense hour + normal hour only stretches dense hour', () {
+    test('global rubber increases for dense hour; hour bands stay uniform', () {
       final projections = <TimeModeProjectedPlan>[];
       for (var i = 0; i < 11; i++) {
         projections.add(
@@ -202,17 +208,26 @@ void main() {
       projections.add(
         _proj(hour: 11, minute: 0, durationMin: 60, id: 'd'),
       );
-      final result = _layout(
+      final sparse = _layout(
+        [_proj(hour: 11, minute: 0, durationMin: 60, id: 'solo')],
+        visibleHours: [10, 11],
+        rangeStart: 10,
+      );
+      final dense = _layout(
         projections,
         visibleHours: [10, 11],
         rangeStart: 10,
       );
-      expect(result.grid.hourHeightsPx[0], greaterThan(result.grid.hourHeightsPx[1]));
-      final hour11Card = result.layouts.firstWhere(
-        (l) => l.task.planRowId == 'd',
+      expect(
+        dense.grid.rubberPxPerMinute,
+        greaterThan(sparse.grid.rubberPxPerMinute),
       );
-      final rubber11 = result.grid.pxPerMinuteAtHourIndex(1);
-      expect(hour11Card.heightPx, closeTo(60 * rubber11, 0.51));
+      expect(dense.grid.hourHeightsPx[0], dense.grid.hourHeightsPx[1]);
+      final hour11Card = _layoutCard(dense.layouts, 'd');
+      expect(
+        hour11Card.heightPx,
+        closeTo(60 * dense.grid.rubberPxPerMinute, 0.51),
+      );
     });
 
     test('y/time mapping round-trip uses hour geometry', () {
@@ -287,7 +302,10 @@ void main() {
       final b = result.layouts.firstWhere((l) => l.task.planRowId == 'b');
       expect(b.topPx, closeTo(a.topPx + a.heightPx + kPlanTimeCardGapPx, 0.51));
       final packed = a.heightPx + kPlanTimeCardGapPx + b.heightPx;
-      expect(_hourBottom(result.grid, 0), greaterThanOrEqualTo(packed - 0.5));
+      expect(
+        result.grid.totalHeightPx,
+        greaterThanOrEqualTo(packed - 0.5),
+      );
     });
 
     test('E: adjacent 45 + 45 crossing hour — 4px gap, no fake blank gap', () {
@@ -337,13 +355,120 @@ void main() {
       final c = result.layouts[2];
       expect(b.topPx, closeTo(a.topPx + a.heightPx + kPlanTimeCardGapPx, 0.51));
       expect(c.topPx, closeTo(b.topPx + b.heightPx + kPlanTimeCardGapPx, 0.51));
-      final rubber = result.grid.pxPerMinuteAtHourIndex(0);
       final packed = a.heightPx +
           kPlanTimeCardGapPx +
           b.heightPx +
           kPlanTimeCardGapPx +
           c.heightPx;
-      expect(_hourBottom(result.grid, 0), greaterThanOrEqualTo(packed - 0.5));
+      expect(
+        result.grid.totalHeightPx,
+        greaterThanOrEqualTo(packed - 0.5),
+      );
+    });
+  });
+
+  group('shared TimeViewYScale hour lines + cards', () {
+    test('A: 11:00 line inside 10:45–11:30 crossing card', () {
+      final result = _layout(
+        [_proj(hour: 10, minute: 45, durationMin: 45, id: 'b')],
+        visibleHours: [10, 11],
+        rangeStart: 10,
+      );
+      final b = result.layouts.single;
+      final y11 = result.grid.yForMinute(60);
+      expect(y11, greaterThan(b.topPx));
+      expect(y11, lessThan(b.topPx + b.heightPx));
+    });
+
+    test('B: 12:00 line inside 11:30–12:15 crossing card', () {
+      final result = _layout(
+        [_proj(hour: 11, minute: 30, durationMin: 45, id: 'c')],
+        visibleHours: [10, 11, 12],
+        rangeStart: 10,
+      );
+      final c = result.layouts.single;
+      final y12 = result.grid.yForMinute(120);
+      expect(y12, greaterThan(c.topPx));
+      expect(y12, lessThan(c.topPx + c.heightPx));
+    });
+
+    test('C: adjacent chain A/B/C — 4px gaps + hour lines inside B and C', () {
+      final result = _layout(
+        [
+          _proj(hour: 10, minute: 0, durationMin: 45, id: 'a'),
+          _proj(hour: 10, minute: 45, durationMin: 45, id: 'b'),
+          _proj(hour: 11, minute: 30, durationMin: 45, id: 'c'),
+        ],
+        visibleHours: [10, 11, 12],
+        rangeStart: 10,
+      );
+      final a = _layoutCard(result.layouts, 'a');
+      final b = _layoutCard(result.layouts, 'b');
+      final c = _layoutCard(result.layouts, 'c');
+      expect(b.topPx, closeTo(a.topPx + a.heightPx + kPlanTimeCardGapPx, 0.51));
+      expect(c.topPx, closeTo(b.topPx + b.heightPx + kPlanTimeCardGapPx, 0.51));
+      final y11 = result.grid.yForMinute(60);
+      final y12 = result.grid.yForMinute(120);
+      expect(y11, greaterThan(b.topPx));
+      expect(y11, lessThan(b.topPx + b.heightPx));
+      expect(y12, greaterThan(c.topPx));
+      expect(y12, lessThan(c.topPx + c.heightPx));
+    });
+
+    test('D: 45-minute single card leaves 12:45–13:00 slot', () {
+      final result = _layout(
+        [_proj(hour: 12, minute: 0, durationMin: 45, id: 'a')],
+        visibleHours: [12],
+        rangeStart: 12,
+      );
+      final a = result.layouts.single;
+      final y13 = result.grid.yForMinute(60);
+      expect(a.topPx + a.heightPx, lessThan(y13));
+      expect(y13 - (a.topPx + a.heightPx), closeTo(15 * result.grid.rubberPxPerMinute, 1.5));
+    });
+
+    test('E: real 15-minute schedule gap preserved', () {
+      final result = _layout(
+        [
+          _proj(hour: 10, minute: 0, durationMin: 30, id: 'a'),
+          _proj(hour: 10, minute: 45, durationMin: 30, id: 'b'),
+        ],
+        visibleHours: [10, 11],
+        rangeStart: 10,
+      );
+      final a = _layoutCard(result.layouts, 'a');
+      final b = _layoutCard(result.layouts, 'b');
+      final visualGap = b.topPx - (a.topPx + a.heightPx);
+      expect(visualGap, greaterThan(kPlanTimeCardGapPx + 0.5));
+      expect(visualGap, closeTo(15 * result.grid.rubberPxPerMinute, 2.0));
+    });
+
+    test('F: y(11:00) is not after bottom of 10:45–11:30 card', () {
+      final result = _layout(
+        [
+          _proj(hour: 10, minute: 0, durationMin: 45, id: 'a'),
+          _proj(hour: 10, minute: 45, durationMin: 45, id: 'b'),
+        ],
+        visibleHours: [10, 11],
+        rangeStart: 10,
+      );
+      final b = _layoutCard(result.layouts, 'b');
+      final y11 = result.grid.yForMinute(60);
+      expect(y11, lessThan(b.topPx + b.heightPx));
+      expect(y11, greaterThan(b.topPx));
+    });
+
+    test('hour lines are evenly spaced in shared coordinate system', () {
+      final result = _layout(
+        [_proj(hour: 10, minute: 0, durationMin: 30, id: 'solo')],
+        visibleHours: [10, 11, 12],
+        rangeStart: 10,
+      );
+      final y10 = result.grid.hourLineY(0);
+      final y11 = result.grid.hourLineY(1);
+      final y12 = result.grid.hourLineY(2);
+      expect(y11 - y10, closeTo(y12 - y11, 0.01));
+      expect(y11 - y10, closeTo(result.grid.hourBandHeightPx, 0.01));
     });
   });
 }

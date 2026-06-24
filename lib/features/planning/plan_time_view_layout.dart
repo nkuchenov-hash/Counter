@@ -5,75 +5,85 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/foundation.dart';
 
-/// Duration-true timeline scale with per-hour **rubber** px-per-minute (P0 Time View).
+/// Shared absolute Y coordinate system for Time View cards + hour grid.
 ///
-/// Three separate concepts:
-/// - **Time scale:** wall minutes → Y via [PlanTimeViewDurationGrid] (hour boundaries).
-/// - **Card visual height:** `durationMinutes * rubberPxPerMinute` (never fills unused hour).
-/// - **Card packing:** wall-adjacent cards get [kPlanTimeCardGapPx]; real schedule gaps stay proportional.
-class PlanTimeViewDurationGrid {
-  PlanTimeViewDurationGrid({
+/// One global [rubberPxPerMinute] maps wall minutes → canvas Y for **both**
+/// scheduled cards and hour rail/grid overlays. No per-hour bucket stacking.
+class TimeViewYScale {
+  TimeViewYScale({
     required this.visibleHours,
     required this.rangeStart,
-    required this.hourHeightsPx,
-    required this.hourTopsPx,
-    required this.rubberPxPerMinuteByHour,
+    required this.totalMinutes,
+    required this.rubberPxPerMinute,
+    required this.packedBottomPx,
   });
 
   final List<int> visibleHours;
   final int rangeStart;
-  final List<double> hourHeightsPx;
-  final List<double> hourTopsPx;
+  final double totalMinutes;
+  final double rubberPxPerMinute;
+  final double packedBottomPx;
 
-  /// Rubber scale per visible hour band (`hourHeight / 60`).
-  final List<double> rubberPxPerMinuteByHour;
+  /// Legacy alias used across [planning_view.dart].
+  List<double> get rubberPxPerMinuteByHour =>
+      List<double>.filled(visibleHours.length, rubberPxPerMinute);
+
+  List<double> get hourHeightsPx =>
+      List<double>.filled(visibleHours.length, rubberPxPerMinute * 60);
+
+  List<double> get hourTopsPx => List<double>.generate(
+        visibleHours.length,
+        (i) => yForMinute(i * 60.0),
+      );
 
   List<double> get hourHeights => hourHeightsPx;
-
   List<double> get hourTops => hourTopsPx;
 
-  double get totalMinutes => visibleHours.length * 60.0;
+  double get hourBandHeightPx => rubberPxPerMinute * 60;
 
-  double get totalHeightPx {
-    if (hourHeightsPx.isEmpty) return 0;
-    return hourTopsPx.last + hourHeightsPx.last;
-  }
+  double get totalHeightPx => math.max(
+        totalMinutes * rubberPxPerMinute + kPlanTimeHourVerticalPaddingPx,
+        packedBottomPx + kPlanTimeHourVerticalPaddingPx,
+      );
 
-  double pxPerMinuteAtHourIndex(int hourIndex) {
-    if (hourIndex < 0 || hourIndex >= rubberPxPerMinuteByHour.length) return 0;
-    return rubberPxPerMinuteByHour[hourIndex];
-  }
+  double pxPerMinuteAtHourIndex(int hourIndex) => rubberPxPerMinute;
 
   int hourIndexForMinutesFromRangeStart(double minutesFromRangeStart) {
     final m = minutesFromRangeStart.clamp(0, totalMinutes - 0.001);
     return (m / 60.0).floor().clamp(0, visibleHours.length - 1);
   }
 
-  double yForMinutesFromRangeStart(double minutesFromRangeStart) {
-    if (visibleHours.isEmpty) return 0;
-    final m = minutesFromRangeStart.clamp(0, totalMinutes);
-    final hourIdx = (m / 60.0).floor().clamp(0, visibleHours.length - 1);
-    final withinHour = m - hourIdx * 60.0;
-    return hourTopsPx[hourIdx] +
-        (withinHour / 60.0) * hourHeightsPx[hourIdx];
+  /// Absolute Y for minutes from the visible range start (0 = first hour).
+  double yForMinute(double minuteFromRangeStart) =>
+      minuteFromRangeStart.clamp(0, totalMinutes) * rubberPxPerMinute;
+
+  double yForMinutesFromRangeStart(double minutesFromRangeStart) =>
+      yForMinute(minutesFromRangeStart);
+
+  double minuteForY(double y) {
+    if (rubberPxPerMinute <= 0) return 0;
+    return (y / rubberPxPerMinute).clamp(0, totalMinutes);
   }
 
-  double minutesFromY(double y) {
-    if (visibleHours.isEmpty || totalHeightPx <= 0) return 0;
-    final clampedY = y.clamp(0, totalHeightPx);
-    for (var i = 0; i < visibleHours.length; i++) {
-      final top = hourTopsPx[i];
-      final bottom = top + hourHeightsPx[i];
-      if (clampedY <= bottom || i == visibleHours.length - 1) {
-        final within = (clampedY - top).clamp(0, hourHeightsPx[i]);
-        final ppm = hourHeightsPx[i] / 60.0;
-        if (ppm <= 0) return i * 60.0;
-        return i * 60.0 + within / ppm;
-      }
-    }
-    return totalMinutes;
+  double minutesFromY(double y) => minuteForY(y);
+
+  /// Hour grid / rail line for extended hour at [visibleHours] index.
+  double hourLineY(int hourIndex) => yForMinute(hourIndex * 60.0);
+
+  void logHourLine(int hourIndex) {
+    if (hourIndex < 0 || hourIndex >= visibleHours.length) return;
+    final minute = hourIndex * 60;
+    final hour = visibleHours[hourIndex];
+    final label =
+        '${hour.toString().padLeft(2, '0')}:00';
+    _logTimeYScale(
+      'minute=$minute label=$label y=${hourLineY(hourIndex).toStringAsFixed(1)}',
+    );
   }
 }
+
+/// Legacy name retained for [planning_view.dart] call sites.
+typedef PlanTimeViewDurationGrid = TimeViewYScale;
 
 /// Absolute placement for one scheduled task on the Time View canvas.
 class PlanTimeViewBlockLayout {
@@ -115,21 +125,24 @@ class _PlanTimeViewCardSlot {
 String? _lastTimeLayoutLogKey;
 DateTime? _lastTimeLayoutLogAt;
 
-void _logTimeLayout(String message) {
+void _logTimeLayout(String tag, String message) {
   if (!kDebugMode) return;
+  final full = '$tag $message';
   final now = DateTime.now();
-  if (_lastTimeLayoutLogKey == message &&
+  if (_lastTimeLayoutLogKey == full &&
       _lastTimeLayoutLogAt != null &&
       now.difference(_lastTimeLayoutLogAt!) <
           const Duration(milliseconds: 120)) {
     return;
   }
-  _lastTimeLayoutLogKey = message;
+  _lastTimeLayoutLogKey = full;
   _lastTimeLayoutLogAt = now;
-  debugPrint('[TIME_LAYOUT] $message');
+  debugPrint('[$tag] $message');
 }
 
-/// Pure Time View geometry: rubber minute scale + sequential card packing.
+void _logTimeYScale(String message) => _logTimeLayout('TIME_Y_SCALE', message);
+
+/// Pure Time View geometry: global rubber scale + sequential card packing.
 abstract final class PlanTimeViewLayoutCalculator {
   static double baseHourHeightPx() {
     final cardH = planTimeCardMeasureHeight(
@@ -145,7 +158,6 @@ abstract final class PlanTimeViewLayoutCalculator {
   static double _basePxPerMinute(double baseHourHeightPx) =>
       baseHourHeightPx / 60.0;
 
-  /// Minimum rubber ppm so card meets CardPlan min height for its duration.
   static double _requiredRubberPxPerMinute(int durationMin) {
     final minHeight = planTimeCardRenderedHeightPxForDuration(durationMin);
     return minHeight / math.max(5, durationMin);
@@ -157,10 +169,8 @@ abstract final class PlanTimeViewLayoutCalculator {
   static bool _wallAdjacent(double prevEndMin, double nextStartMin) =>
       (nextStartMin - prevEndMin).abs() < 0.01;
 
-  /// Packed bottom within one hour at a given rubber scale.
-  static double _packedBottomPxInHour({
+  static double _packedBottomPx({
     required List<_PlanTimeViewCardSlot> sorted,
-    required double hourStartMin,
     required double rubberPxPerMinute,
   }) {
     if (sorted.isEmpty) return 0;
@@ -168,14 +178,13 @@ abstract final class PlanTimeViewLayoutCalculator {
     double? prevEndMin;
     var maxBottom = 0.0;
     for (final c in sorted) {
-      final relStart = c.startMin - hourStartMin;
-      final idealTop = relStart * rubberPxPerMinute;
-      final h = _cardHeightPx(c.durationMin, rubberPxPerMinute);
-      final top = prevEndMin != null &&
-              _wallAdjacent(prevEndMin, c.startMin)
-          ? prevBottom! + kPlanTimeCardGapPx
-          : idealTop;
-      final bottom = top + h;
+      final top = _cardTopPx(
+        slot: c,
+        rubberPxPerMinute: rubberPxPerMinute,
+        prevBottom: prevBottom,
+        prevEndMin: prevEndMin,
+      );
+      final bottom = top + _cardHeightPx(c.durationMin, rubberPxPerMinute);
       maxBottom = math.max(maxBottom, bottom);
       prevBottom = bottom;
       prevEndMin = c.endMin;
@@ -183,60 +192,78 @@ abstract final class PlanTimeViewLayoutCalculator {
     return maxBottom;
   }
 
-  static bool _hourHasAdjacentWallChain(List<_PlanTimeViewCardSlot> sorted) {
-    for (var i = 1; i < sorted.length; i++) {
-      if (_wallAdjacent(sorted[i - 1].endMin, sorted[i].startMin)) {
-        return true;
-      }
+  static double _cardTopPx({
+    required _PlanTimeViewCardSlot slot,
+    required double rubberPxPerMinute,
+    required double? prevBottom,
+    required double? prevEndMin,
+  }) {
+    final idealTop = slot.startMin * rubberPxPerMinute;
+    if (prevEndMin != null &&
+        prevBottom != null &&
+        _wallAdjacent(prevEndMin, slot.startMin)) {
+      return prevBottom + kPlanTimeCardGapPx;
     }
-    return false;
+    return idealTop;
   }
 
-  /// Rubber ppm + hour height for one hour band.
-  static ({double rubberPxPerMinute, double hourHeightPx}) _rubberForHour({
-    required List<_PlanTimeViewCardSlot> cards,
-    required double hourStartMin,
-    required double baseHourHeightPx,
-    required int visibleHour,
+  /// Minimum rubber so a wall-positioned card clears packed 4px gaps before it.
+  static double _minPpmForPackedToWallClearance({
+    required List<_PlanTimeViewCardSlot> sorted,
   }) {
-    if (cards.isEmpty) {
-      final rubber = _basePxPerMinute(baseHourHeightPx);
-      return (rubberPxPerMinute: rubber, hourHeightPx: rubber * 60);
-    }
-
-    final sorted = List<_PlanTimeViewCardSlot>.from(cards)
-      ..sort((a, b) => a.startMin.compareTo(b.startMin));
-
-    var rubber = _basePxPerMinute(baseHourHeightPx);
+    var minPpm = 0.0;
+    var adjacentGaps = 0;
+    double? prevEndMin;
     for (final c in sorted) {
-      rubber = math.max(rubber, _requiredRubberPxPerMinute(c.durationMin));
+      if (prevEndMin != null) {
+        if (_wallAdjacent(prevEndMin, c.startMin)) {
+          adjacentGaps++;
+        } else {
+          final wallGapMin = c.startMin - prevEndMin;
+          if (wallGapMin > 0.01 && adjacentGaps > 0) {
+            final needed = (adjacentGaps * kPlanTimeCardGapPx) / wallGapMin;
+            minPpm = math.max(minPpm, needed);
+          }
+          adjacentGaps = 0;
+        }
+      }
+      prevEndMin = c.endMin;
     }
+    return minPpm;
+  }
 
-    final packedBottom = _packedBottomPxInHour(
-      sorted: sorted,
-      hourStartMin: hourStartMin,
-      rubberPxPerMinute: rubber,
+  static double _resolveGlobalRubberPxPerMinute({
+    required List<_PlanTimeViewCardSlot> slots,
+    required double baseHourHeightPx,
+    required double totalMinutes,
+  }) {
+    var ppm = _basePxPerMinute(baseHourHeightPx);
+    for (final c in slots) {
+      ppm = math.max(ppm, _requiredRubberPxPerMinute(c.durationMin));
+    }
+    ppm = math.max(
+      ppm,
+      _minPpmForPackedToWallClearance(sorted: slots),
     );
-    final nominalHourHeight = rubber * 60.0;
-    final needsPackStretch =
-        _hourHasAdjacentWallChain(sorted) && packedBottom > nominalHourHeight;
-    final hourHeight = math.min(
-      needsPackStretch
-          ? packedBottom + kPlanTimeHourVerticalPaddingPx
-          : nominalHourHeight,
-      kPlanTimeMaxReasonableHourHeightPx,
-    );
+    if (totalMinutes <= 0) return ppm;
 
-    _logTimeLayout(
-      'SCALE hour=$visibleHour requiredPxPerMinute=${rubber.toStringAsFixed(3)} '
-      'hourHeight=${hourHeight.toStringAsFixed(1)} reason=cardMinHeight',
-    );
-
-    return (rubberPxPerMinute: rubber, hourHeightPx: hourHeight);
+    for (var iter = 0; iter < 24; iter++) {
+      final packedBottom = _packedBottomPx(
+        sorted: slots,
+        rubberPxPerMinute: ppm,
+      );
+      final neededPpm = packedBottom / totalMinutes;
+      if (neededPpm > ppm + 0.0001) {
+        ppm = neededPpm;
+      } else {
+        break;
+      }
+    }
+    return ppm;
   }
 
   static ({
-    PlanTimeViewDurationGrid grid,
+    TimeViewYScale grid,
     List<PlanTimeViewBlockLayout> layouts,
   }) compute({
     required List<TimeModeProjectedPlan> projections,
@@ -247,6 +274,7 @@ abstract final class PlanTimeViewLayoutCalculator {
     double? baseHourHeightPx,
   }) {
     final baseH = baseHourHeightPx ?? PlanTimeViewLayoutCalculator.baseHourHeightPx();
+    final totalMinutes = visibleHours.length * 60.0;
 
     final slots = <_PlanTimeViewCardSlot>[];
     for (final proj in projections) {
@@ -269,79 +297,63 @@ abstract final class PlanTimeViewLayoutCalculator {
       return a.task.planRowIdForBackend.compareTo(b.task.planRowIdForBackend);
     });
 
-    final byHour = <int, List<_PlanTimeViewCardSlot>>{};
-    for (final slot in slots) {
-      for (var hourIdx = 0; hourIdx < visibleHours.length; hourIdx++) {
-        final hourStart = hourIdx * 60.0;
-        final hourEnd = hourStart + 60.0;
-        if (slot.startMin < hourEnd - 0.001 && slot.endMin > hourStart + 0.001) {
-          byHour.putIfAbsent(hourIdx, () => []).add(slot);
-        }
-      }
-    }
+    final ppm = _resolveGlobalRubberPxPerMinute(
+      slots: slots,
+      baseHourHeightPx: baseH,
+      totalMinutes: totalMinutes,
+    );
+    final packedBottom = _packedBottomPx(
+      sorted: slots,
+      rubberPxPerMinute: ppm,
+    );
 
-    final hourHeights = <double>[];
-    final rubberByHour = <double>[];
-    for (var hourIdx = 0; hourIdx < visibleHours.length; hourIdx++) {
-      final hourStart = hourIdx * 60.0;
-      final result = _rubberForHour(
-        cards: byHour[hourIdx] ?? const [],
-        hourStartMin: hourStart,
-        baseHourHeightPx: baseH,
-        visibleHour: visibleHours[hourIdx],
-      );
-      rubberByHour.add(result.rubberPxPerMinute);
-      hourHeights.add(result.hourHeightPx);
-    }
-
-    final grid = _buildGrid(visibleHours, rangeStart, hourHeights, rubberByHour);
-    final layouts = _placeCards(slots, grid);
-    assertPlanTimeViewLayoutDebug(grid: grid, layouts: layouts, slots: slots);
-    return (grid: grid, layouts: layouts);
-  }
-
-  static PlanTimeViewDurationGrid _buildGrid(
-    List<int> visibleHours,
-    int rangeStart,
-    List<double> hourHeights,
-    List<double> rubberByHour,
-  ) {
-    final tops = <double>[];
-    var y = 0.0;
-    for (var i = 0; i < hourHeights.length; i++) {
-      tops.add(y);
-      y += hourHeights[i];
-    }
-    return PlanTimeViewDurationGrid(
+    final yScale = TimeViewYScale(
       visibleHours: visibleHours,
       rangeStart: rangeStart,
-      hourHeightsPx: hourHeights,
-      hourTopsPx: tops,
-      rubberPxPerMinuteByHour: rubberByHour,
+      totalMinutes: totalMinutes,
+      rubberPxPerMinute: ppm,
+      packedBottomPx: packedBottom,
     );
+
+    for (var i = 0; i < visibleHours.length; i++) {
+      yScale.logHourLine(i);
+    }
+
+    _logTimeLayout(
+      'TIME_LAYOUT_SCALE',
+      'rubberPxPerMinute=${ppm.toStringAsFixed(3)} '
+      'totalMinutes=$totalMinutes canvasHeight=${yScale.totalHeightPx.toStringAsFixed(1)}',
+    );
+
+    final layouts = _placeCards(slots, yScale);
+    assertPlanTimeViewLayoutDebug(yScale: yScale, layouts: layouts, slots: slots);
+    return (grid: yScale, layouts: layouts);
   }
 
   static List<PlanTimeViewBlockLayout> _placeCards(
     List<_PlanTimeViewCardSlot> slots,
-    PlanTimeViewDurationGrid grid,
+    TimeViewYScale yScale,
   ) {
     final layouts = <PlanTimeViewBlockLayout>[];
+    final ppm = yScale.rubberPxPerMinute;
     double? globalPrevEndMin;
     double? globalPrevBottom;
 
     for (final slot in slots) {
-      final hourIdx = grid.hourIndexForMinutesFromRangeStart(slot.startMin);
-      final rubber = grid.pxPerMinuteAtHourIndex(hourIdx);
-      final idealTop = grid.yForMinutesFromRangeStart(slot.startMin);
-      final heightPx = _cardHeightPx(slot.durationMin, rubber);
+      final heightPx = _cardHeightPx(slot.durationMin, ppm);
 
-      var topPx = idealTop;
+      var topPx = _cardTopPx(
+        slot: slot,
+        rubberPxPerMinute: ppm,
+        prevBottom: globalPrevBottom,
+        prevEndMin: globalPrevEndMin,
+      );
       if (globalPrevEndMin != null &&
           globalPrevBottom != null &&
           _wallAdjacent(globalPrevEndMin, slot.startMin)) {
-        topPx = globalPrevBottom + kPlanTimeCardGapPx;
         _logTimeLayout(
-          'PACK adjacent previous=${layouts.last.task.planRowIdForBackend} '
+          'TIME_LAYOUT_PACK',
+          'adjacent previous=${layouts.last.task.planRowIdForBackend} '
           'current=${slot.task.planRowIdForBackend} visualGap=${kPlanTimeCardGapPx.toStringAsFixed(0)}',
         );
       }
@@ -363,35 +375,23 @@ abstract final class PlanTimeViewLayoutCalculator {
 
       final startWall = slot.projection.profileWallStart;
       final endWall = slot.projection.profileWallEnd;
-      if (startWall != null) {
+      {
         final sh = startWall.hour.toString().padLeft(2, '0');
         final sm = startWall.minute.toString().padLeft(2, '0');
         final eh = endWall?.hour.toString().padLeft(2, '0') ?? sh;
         final em = endWall?.minute.toString().padLeft(2, '0') ?? sm;
         _logTimeLayout(
-          'CARD id=${slot.task.planRowIdForBackend} start=$sh:$sm end=$eh:$em '
-          'duration=${slot.durationMin} top=${topPx.toStringAsFixed(1)} '
-          'bottom=${(topPx + heightPx).toStringAsFixed(1)} '
-          'height=${heightPx.toStringAsFixed(1)}',
+          'TIME_LAYOUT_CARD',
+          'id=${slot.task.planRowIdForBackend} start=$sh:$sm end=$eh:$em '
+          'top=${topPx.toStringAsFixed(1)} bottom=${(topPx + heightPx).toStringAsFixed(1)}',
         );
       }
     }
     return layouts;
   }
 
-  static int _durationMinutesFromLayout(PlanTimeViewBlockLayout layout) {
-    final proj = layout.projection;
-    if (proj != null) return math.max(5, proj.durationMinutes);
-    final st = layout.task.startTime;
-    final en = layout.task.endDateTime;
-    if (st != null && en != null) {
-      return math.max(5, en.difference(st).inMinutes);
-    }
-    return 5;
-  }
-
   static void _logEmptySlots({
-    required PlanTimeViewDurationGrid grid,
+    required TimeViewYScale yScale,
     required List<_PlanTimeViewCardSlot> slots,
     required List<int> visibleHours,
   }) {
@@ -409,37 +409,96 @@ abstract final class PlanTimeViewLayoutCalculator {
       final lastEnd = hourSlots.map((s) => s.endMin).reduce(math.max);
       if (lastEnd >= hourEndMin - 0.01) continue;
 
-      final emptyTop = grid.yForMinutesFromRangeStart(lastEnd);
-      final emptyBottom = grid.yForMinutesFromRangeStart(hourEndMin);
+      final emptyTop = yScale.yForMinute(lastEnd);
+      final emptyBottom = yScale.yForMinute(hourEndMin);
       if (emptyBottom - emptyTop < 0.5) continue;
 
-      final fromMin = (lastEnd % 60).round();
       _logTimeLayout(
-        'EMPTY_SLOT hour=${visibleHours[h]} fromMin=$fromMin toMin=60 '
+        'TIME_LAYOUT_EMPTY_SLOT',
+        'hour=${visibleHours[h]} fromMin=${(lastEnd % 60).round()} toMin=60 '
         'top=${emptyTop.toStringAsFixed(1)} bottom=${emptyBottom.toStringAsFixed(1)}',
       );
     }
   }
 
-  /// Debug-only layout invariants (Time View acceptance).
-  static void assertPlanTimeViewLayoutDebug({
-    required PlanTimeViewDurationGrid grid,
+  static void _assertHourLinesInsideCrossingCards({
+    required TimeViewYScale yScale,
     required List<PlanTimeViewBlockLayout> layouts,
     required List<_PlanTimeViewCardSlot> slots,
   }) {
     if (kReleaseMode) return;
 
-    _logEmptySlots(grid: grid, slots: slots, visibleHours: grid.visibleHours);
+    for (var h = 1; h < yScale.visibleHours.length; h++) {
+      final hourMinute = h * 60.0;
+      final hourY = yScale.hourLineY(h);
+      final hourClock = yScale.visibleHours[h];
+
+      for (var i = 0; i < layouts.length; i++) {
+        final slot = slots[i];
+        final layout = layouts[i];
+        if (slot.startMin >= hourMinute - 0.01 ||
+            slot.endMin <= hourMinute + 0.01) {
+          continue;
+        }
+
+        final cardTop = layout.topPx;
+        final cardBottom = layout.topPx + layout.heightPx;
+        final inside =
+            cardTop < hourY - 0.5 && hourY < cardBottom - 0.5;
+
+        if (inside) {
+          _logTimeLayout(
+            'TIME_LAYOUT_ASSERT',
+            'hourLineInsideCrossingCard hour=$hourClock card=${slot.task.planRowIdForBackend} '
+            'start=${slot.startMin} end=${slot.endMin}',
+          );
+        } else if (hourY >= cardBottom - 0.5) {
+          _logTimeLayout(
+            'TIME_LAYOUT_ERROR',
+            'hourLineAfterCrossingCard hour=$hourClock '
+            'card=${slot.startMin}-${slot.endMin} hourY=${hourY.toStringAsFixed(1)} '
+            'cardBottom=${cardBottom.toStringAsFixed(1)}',
+          );
+          assert(
+            false,
+            'hour $hourClock line must not be after crossing card bottom',
+          );
+        } else {
+          assert(
+            inside,
+            'hour $hourClock line Y must be inside crossing card '
+            '${slot.task.planRowIdForBackend}',
+          );
+        }
+      }
+    }
+  }
+
+  static void assertPlanTimeViewLayoutDebug({
+    required TimeViewYScale yScale,
+    required List<PlanTimeViewBlockLayout> layouts,
+    required List<_PlanTimeViewCardSlot> slots,
+  }) {
+    if (kReleaseMode) return;
+
+    _logEmptySlots(
+      yScale: yScale,
+      slots: slots,
+      visibleHours: yScale.visibleHours,
+    );
+    _assertHourLinesInsideCrossingCards(
+      yScale: yScale,
+      layouts: layouts,
+      slots: slots,
+    );
+
+    final ppm = yScale.rubberPxPerMinute;
 
     for (var i = 0; i < layouts.length; i++) {
       final l = layouts[i];
-      final durationMin = _durationMinutesFromLayout(l);
-      final slot = slots.firstWhere(
-        (s) => s.task.planRowIdForBackend == l.task.planRowIdForBackend,
-      );
-      final hourIdx = grid.hourIndexForMinutesFromRangeStart(slot.startMin);
-      final rubber = grid.pxPerMinuteAtHourIndex(hourIdx);
-      final expected = _cardHeightPx(durationMin, rubber);
+      final slot = slots[i];
+      final durationMin = slot.durationMin;
+      final expected = _cardHeightPx(durationMin, ppm);
 
       assert(l.heightPx >= kPlanTimeCardMinHeightPx - 0.01, 'card height < min');
       assert(l.topPx >= 0, 'negative top');
@@ -449,51 +508,41 @@ abstract final class PlanTimeViewLayoutCalculator {
         'card height ${l.heightPx} != duration*rubber $expected',
       );
 
-      final packedAfterAdjacent = i > 0 &&
-          _wallAdjacent(slots[i - 1].endMin, slot.startMin);
-      final idealTop = grid.yForMinutesFromRangeStart(slot.startMin);
-      final timeEndY = grid.yForMinutesFromRangeStart(slot.endMin);
+      final packedAfterAdjacent =
+          i > 0 && _wallAdjacent(slots[i - 1].endMin, slot.startMin);
+      final idealTop = yScale.yForMinute(slot.startMin);
+      final timeEndY = yScale.yForMinute(slot.endMin);
       final cardEndY = l.topPx + l.heightPx;
 
       if (!packedAfterAdjacent) {
-        final hourStretched =
-            grid.hourHeightsPx[hourIdx] > rubber * 60 + 0.51;
         assert(
           (l.topPx - idealTop).abs() < 1.5,
           'unpacked card top must match wall start minute',
         );
-        if (!hourStretched) {
-          assert(
-            (cardEndY - timeEndY).abs() < 1.5,
-            'unpacked card bottom must align with wall end minute',
-          );
-        }
+        assert(
+          (cardEndY - timeEndY).abs() < 1.5,
+          'unpacked card bottom must align with wall end minute',
+        );
       }
 
       if (durationMin < 60 && !packedAfterAdjacent) {
-        final hourStretched =
-            grid.hourHeightsPx[hourIdx] > rubber * 60 + 0.51;
-        if (!hourStretched) {
-          final hourTop = grid.hourTopsPx[hourIdx];
-          final hourBottom = hourTop + grid.hourHeightsPx[hourIdx];
-          if (slot.endMin < hourIdx * 60 + 60 - 0.01) {
-            final remaining = hourBottom - cardEndY;
-            if (remaining > 0.5) {
-              final effectivePpm = grid.hourHeightsPx[hourIdx] / 60.0;
-              final expectedRemaining =
-                  (hourIdx * 60 + 60 - slot.endMin) * effectivePpm;
-              assert(
-                (remaining - expectedRemaining).abs() < 2.5,
-                'remaining slot height mismatch',
-              );
-            }
+        final hourIdx = (slot.endMin / 60).floor();
+        if (slot.endMin < (hourIdx + 1) * 60 - 0.01) {
+          final nextHourY = yScale.yForMinute((hourIdx + 1) * 60.0);
+          final remaining = nextHourY - cardEndY;
+          if (remaining > 0.5) {
+            final expectedRemaining =
+                ((hourIdx + 1) * 60 - slot.endMin) * ppm;
+            assert(
+              (remaining - expectedRemaining).abs() < 2.5,
+              'remaining slot height mismatch',
+            );
           }
           if (durationMin == 45 && slot.endMin - slot.startMin == 45) {
-            final hour = grid.visibleHours[hourIdx];
-            if (hourBottom - cardEndY < 0.5) {
+            if (nextHourY - cardEndY < 0.5) {
               _logTimeLayout(
-                'ERROR cardConsumesUnusedTime id=${l.task.planRowIdForBackend} '
-                'duration=45 hour=$hour',
+                'TIME_LAYOUT_ERROR',
+                'cardConsumesUnusedTime id=${l.task.planRowIdForBackend} duration=45',
               );
               assert(false, 'cardConsumesUnusedTime');
             }
@@ -505,18 +554,14 @@ abstract final class PlanTimeViewLayoutCalculator {
     for (var i = 0; i < layouts.length - 1; i++) {
       final a = layouts[i];
       final b = layouts[i + 1];
-      final slotA = slots.firstWhere(
-        (s) => s.task.planRowIdForBackend == a.task.planRowIdForBackend,
-      );
-      final slotB = slots.firstWhere(
-        (s) => s.task.planRowIdForBackend == b.task.planRowIdForBackend,
-      );
+      final slotA = slots[i];
+      final slotB = slots[i + 1];
       if (_wallAdjacent(slotA.endMin, slotB.startMin)) {
         assert(
           (b.topPx - (a.topPx + a.heightPx + kPlanTimeCardGapPx)).abs() < 0.51,
           'adjacent gap must be ${kPlanTimeCardGapPx}px',
         );
-      } else {
+      } else if (slotB.startMin > slotA.endMin + 0.01) {
         assert(
           b.topPx >= a.topPx + a.heightPx - 0.5,
           'overlap ${a.task.title} -> ${b.task.title}',
@@ -524,23 +569,17 @@ abstract final class PlanTimeViewLayoutCalculator {
       }
     }
 
-    for (var h = 0; h < grid.visibleHours.length; h++) {
+    for (var h = 0; h < yScale.visibleHours.length; h++) {
       assert(
-        grid.hourHeightsPx[h] <= kPlanTimeMaxReasonableHourHeightPx + 0.5,
-        'hour $h height exceeds cap',
-      );
-      final rubber = grid.rubberPxPerMinuteByHour[h];
-      assert(
-        grid.hourHeightsPx[h] + 0.01 >= rubber * 60,
-        'hour height must be at least rubber*60',
+        yScale.hourBandHeightPx <= kPlanTimeMaxReasonableHourHeightPx + 0.5,
+        'hour band height exceeds cap',
       );
     }
 
-    for (var h = 0; h < grid.visibleHours.length; h++) {
-      final min = h * 60.0 + 30.0;
-      final y = grid.yForMinutesFromRangeStart(min);
-      final back = grid.minutesFromY(y);
-      assert((back - min).abs() < 0.75, 'y/time mismatch at hour $h');
+    for (var probe = 0.0; probe <= yScale.totalMinutes; probe += 7) {
+      final y = yScale.yForMinute(probe);
+      final back = yScale.minuteForY(y);
+      assert((back - probe).abs() < 0.75, 'y/time mismatch at minute $probe');
     }
   }
 }

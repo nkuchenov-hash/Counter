@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 Time View shared TimeViewYScale coordinate system [wip]
+* **`plan_time_view_layout.dart`:** [wip] `TimeViewYScale` — single global `rubberPxPerMinute`; `yForMinute`/`minuteForY`/`hourLineY` shared by cards + hour rail/grid; adjacent 4px packing; packed-to-wall clearance formula; debug logs `[TIME_Y_SCALE]`, `[TIME_LAYOUT_CARD]`, `[TIME_LAYOUT_ASSERT]`, `[TIME_LAYOUT_ERROR]`, `[TIME_LAYOUT_PACK]`.
+* **`planning_view.dart`:** [wip] hour labels at `grid.hourLineY(i)`; hour bands fixed `hourBandHeightPx` overlay (not per-bucket row separators).
+* **`test/plan_time_view_layout_test.dart`:** [wip] tests A–F crossing cards, adjacent A/B/C chain, 45-min slot, real gap, no bucket-separator bug, uniform hour spacing.
+
 ## [2026-06-23] - Time View rubber minute scale + empty slot layout [wip]
 * **`plan_time_view_layout.dart`:** [wip] rubber `pxPerMinute` per hour from `cardMinHeight/duration`; card height = `duration * rubber`; hour stretches only for adjacent packed chains (+4px gap); overlap-aware hour buckets; empty slot preserved for partial-hour cards (e.g. 12:00–12:45 leaves 12:45–13:00 visible).
 * **`plan_time_task_card.dart`:** [wip] `kPlanTimeCardGapPx` 2→4 for adjacent card packing gap.

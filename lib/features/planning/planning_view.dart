@@ -4228,7 +4228,7 @@ DatabaseService.instance.notifyPlanningRefresh();
                   children: [
                     for (var i = 0; i < visibleHours.length; i++)
                       Positioned(
-                        top: grid.hourTops[i] - 6,
+                        top: grid.hourLineY(i) - 6,
                         left: 0,
                         right: 0,
                         child: Text(
@@ -4304,10 +4304,10 @@ DatabaseService.instance.notifyPlanningRefresh();
                       ),
                       for (var i = 0; i < visibleHours.length; i++)
                         Positioned(
-                          top: grid.hourTops[i],
+                          top: grid.hourLineY(i),
                           left: 0,
                           right: 0,
-                          height: grid.hourHeights[i],
+                          height: grid.hourBandHeightPx,
                           child: Stack(
                             children: [
                               Positioned(

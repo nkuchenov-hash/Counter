@@ -6,6 +6,28 @@ $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 Set-Location $Root
 
+function Invoke-Flutter {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
+        [string[]]$FlutterArgs
+    )
+
+    # Flutter writes analyzer summaries to stderr even on success; with
+    # $ErrorActionPreference = 'Stop' that becomes a terminating error.
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & flutter @FlutterArgs
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prevEap
+    }
+    if ($exitCode -ne 0) {
+        exit $exitCode
+    }
+}
+
 if (-not (Test-Path -LiteralPath 'lib/core/env/env.dart')) {
   Write-Host '==> creating lib/core/env/env.dart from example (gitignored)' -ForegroundColor Cyan
   New-Item -ItemType Directory -Force -Path 'lib/core/env' | Out-Null
@@ -13,16 +35,14 @@ if (-not (Test-Path -LiteralPath 'lib/core/env/env.dart')) {
 }
 
 Write-Host '==> flutter analyze' -ForegroundColor Cyan
-flutter analyze --no-fatal-infos --no-fatal-warnings
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Invoke-Flutter analyze --no-fatal-infos --no-fatal-warnings
 
 Write-Host '==> flutter build web' -ForegroundColor Cyan
 $gitCommit = (git rev-parse --short HEAD).Trim()
 $buildTime = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none `
+Invoke-Flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run --pwa-strategy=none `
   --dart-define=GIT_COMMIT=$gitCommit `
   --dart-define=BUILD_TIME=$buildTime
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $branch = git branch --show-current
 if (-not $branch) {
