@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Header timezone quick switcher [wip]
+* **`profile_timezone_catalog.dart`:** [wip] shared profile timezone catalog + picker labels (`Moscow · MSK · UTC+3`); used by Profile settings and header quick picker.
+* **`timezone_quick_picker.dart`:** [wip] `HeaderTimezoneQuickSwitcher` — tap timezone label in `GlobalAppHeader`; adaptive sheet (mobile) / menu (desktop); search filter.
+* **`global_app_header.dart`:** [wip] date row and timezone label are separate tap targets; timezone opens quick picker only.
+* **`profile_service.dart`:** [wip] `updateTimeZone` — optimistic reproject before PATCH; rollback + reproject on profile save failure; no records/plans PATCH.
+* **`profile_view.dart`:** [wip] timezone dropdown uses shared catalog labels.
+* **`test/profile_timezone_catalog_test.dart`:** [wip] catalog labels, legacy GMT+3 match, filter, offset helper.
+
 ## [2026-06-15] - P0 Time View shared TimeViewYScale coordinate system [wip]
 * **`plan_time_view_layout.dart`:** [wip] `TimeViewYScale` — single global `rubberPxPerMinute`; `yForMinute`/`minuteForY`/`hourLineY` shared by cards + hour rail/grid; adjacent 4px packing; packed-to-wall clearance formula; debug logs `[TIME_Y_SCALE]`, `[TIME_LAYOUT_CARD]`, `[TIME_LAYOUT_ASSERT]`, `[TIME_LAYOUT_ERROR]`, `[TIME_LAYOUT_PACK]`.
 * **`planning_view.dart`:** [wip] hour labels at `grid.hourLineY(i)`; hour bands fixed `hourBandHeightPx` overlay (not per-bucket row separators).

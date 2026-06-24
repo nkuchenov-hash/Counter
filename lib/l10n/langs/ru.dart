@@ -115,6 +115,8 @@ const Map<String, String> kRuL10n = {
     'add_active_language': 'Добавить язык',
     'all_supported_languages_active': 'Все поддерживаемые языки уже активны.',
     'time_zone': 'Часовой пояс',
+    'change_timezone': 'Сменить часовой пояс',
+    'timezone_current': 'Текущий',
     'loading_settings': 'Загрузка настроек...',
     'account_security': 'Безопасность аккаунта',
     'signed_in_as': 'Вы вошли как',

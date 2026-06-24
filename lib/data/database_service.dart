@@ -28,6 +28,7 @@ import 'package:rrule/rrule.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/data/smart_input_parser.dart';
+import 'package:counter/core/time/profile_timezone_catalog.dart';
 import 'package:counter/core/time/plan_time_labels.dart';
 import 'package:counter/core/time/plan_time_visible_window.dart';
 import 'package:counter/core/time/wall_clock.dart' as wall_clock;

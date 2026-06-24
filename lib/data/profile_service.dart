@@ -183,15 +183,8 @@ int _fixedOffsetHoursFromLabel(String timezone) {
 }
 
 extension ProfileServiceExtension on DatabaseService {
-  static const List<String> _profileTimezoneOptions = [
-    'UTC',
-    'London',
-    'Moscow',
-    'Dubai',
-    'New York',
-  ];
   static List<String> get validTimezonesForProfile =>
-      List.from(_profileTimezoneOptions);
+      profileTimezoneProfileValues();
   List<String> get profileTimezoneOptions => validTimezonesForProfile;
   UserSettings get settings => _settings;
   bool get profileHydratedFromPb => _profileHydratedFromPb;
@@ -710,15 +703,22 @@ extension ProfileServiceExtension on DatabaseService {
   }
 
   Future<bool> updateTimeZone(String label) async {
-    final ok = await saveSettings(
-      _settings.copyWith(
-        preferredTimeZone: label,
-        timezoneOffsetHours: _fixedOffsetHoursFromLabel(label),
-      ),
+    final prev = _settings;
+    final next = _settings.copyWith(
+      preferredTimeZone: label,
+      timezoneOffsetHours: _fixedOffsetHoursFromLabel(label),
     );
+    final saveFuture = saveSettings(next);
     reprojectAllPlansForProfileTimezone();
     notifyPlanningRefresh(scheduleNetworkRefresh: false);
     _notifyTimelineAfterRecordCacheMutation();
+    final ok = await saveFuture;
+    if (!ok) {
+      await saveSettings(prev);
+      reprojectAllPlansForProfileTimezone();
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      _notifyTimelineAfterRecordCacheMutation();
+    }
     return ok;
   }
 

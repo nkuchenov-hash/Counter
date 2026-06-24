@@ -5,8 +5,8 @@
 
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/widgets/app_bar_live_clock.dart';
+import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/core/performance/rebuild_metrics.dart';
-import 'package:counter/core/time/app_clock.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -100,44 +100,52 @@ class GlobalAppHeader extends StatelessWidget {
     );
     final weekday = DateFormat.EEEE(loc).format(selectedDate);
     final dateStr = DateFormat.yMMMd(loc).format(selectedDate);
-    final tzLabel = AppClock.timezoneShortLabel?.call() ?? '';
 
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        onTap: enabled
-            ? () async {
-                await _pickDayForGlobalHeader(
-                  context,
-                  selectedDate,
-                  onDateSelected,
-                );
-              }
-            : null,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: compact ? 2 : 4,
-            horizontal: 2,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Text(
-                  '$weekday · $dateStr',
-                  style: titleStyle,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          vertical: compact ? 2 : 4,
+          horizontal: 2,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: enabled
+                      ? () async {
+                          await _pickDayForGlobalHeader(
+                            context,
+                            selectedDate,
+                            onDateSelected,
+                          );
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 1),
+                    child: Text(
+                      '$weekday · $dateStr',
+                      style: titleStyle,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
               ),
-              Text(' · ', style: titleStyle),
-              AppBarLiveClock(textStyle: clockStyle),
-              Text(' · ', style: clockStyle),
-              Text(tzLabel, style: clockStyle),
-            ],
-          ),
+            ),
+            Text(' · ', style: titleStyle),
+            AppBarLiveClock(textStyle: clockStyle),
+            Text(' · ', style: clockStyle),
+            HeaderTimezoneQuickSwitcher(
+              textStyle: clockStyle,
+              enabled: enabled,
+            ),
+          ],
         ),
       ),
     );

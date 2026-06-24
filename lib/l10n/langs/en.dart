@@ -116,6 +116,8 @@ const Map<String, String> kEnL10n = {
     'all_supported_languages_active':
         'All supported languages are already active.',
     'time_zone': 'Time zone',
+    'change_timezone': 'Change timezone',
+    'timezone_current': 'Current',
     'loading_settings': 'Loading settings...',
     'account_security': 'Account Security',
     'signed_in_as': 'Signed in as',

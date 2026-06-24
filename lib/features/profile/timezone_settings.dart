@@ -2,7 +2,10 @@
 /// No device timezone detection. No DateTime.toLocal().
 library;
 
+import 'package:counter/core/time/profile_timezone_catalog.dart';
+
 export 'package:counter/core/time/category_timezone_options.dart';
+export 'package:counter/core/time/profile_timezone_catalog.dart';
 
 class TimezoneOption {
   const TimezoneOption(this.label, this.offsetHours);
@@ -11,8 +14,7 @@ class TimezoneOption {
   final double offsetHours;
 }
 
-/// Professional, searchable list. Keep it short and stable.
-/// Moscow hard-validated to +3.
+/// Legacy labels — prefer [kProfileTimezoneCatalog] for new UI.
 const List<TimezoneOption> kTimezoneOptions = <TimezoneOption>[
   TimezoneOption('UTC', 0),
   TimezoneOption('London (UTC+0)', 0),
@@ -22,11 +24,12 @@ const List<TimezoneOption> kTimezoneOptions = <TimezoneOption>[
 ];
 
 double offsetForLabel(String label) {
+  final entry = catalogEntryForStoredTimezone(label);
+  if (entry != null) return entry.offsetHours.toDouble();
   final l = label.trim();
   for (final o in kTimezoneOptions) {
     if (o.label == l) return o.offsetHours;
   }
-  // Fallback: accept legacy labels.
   if (l == 'Moscow') return 3;
   if (l == 'Dubai') return 4;
   if (l == 'New York') return -5;

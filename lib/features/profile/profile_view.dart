@@ -556,10 +556,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final validTimezones = tz_settings.kTimezoneOptions
-        .map((e) => e.label)
+    final validTimezones = tz_settings.kProfileTimezoneCatalog
+        .map((e) => e.profileValue)
         .toList();
-    final safeTimeZone = validTimezones.contains(_timeZone) ? _timeZone : 'UTC';
+    final safeTimeZone =
+        tz_settings.catalogEntryForStoredTimezone(_timeZone)?.profileValue ??
+        (validTimezones.contains(_timeZone) ? _timeZone : 'UTC');
     final locale = currentLocale.value;
 
     return Scaffold(
@@ -712,10 +714,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       enableFilter: true,
                       enableSearch: true,
                       label: Text(t(locale, 'search_timezones')),
-                      dropdownMenuEntries: validTimezones
+                      dropdownMenuEntries: tz_settings.kProfileTimezoneCatalog
                           .map(
-                            (z) =>
-                                DropdownMenuEntry<String>(value: z, label: z),
+                            (entry) => DropdownMenuEntry<String>(
+                              value: entry.profileValue,
+                              label: entry.pickerLabel,
+                            ),
                           )
                           .toList(),
                       onSelected: (v) {

@@ -6,6 +6,22 @@ $ErrorActionPreference = 'Stop'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 Set-Location $Root
 
+function Invoke-External {
+    param(
+        [Parameter(Mandatory)]
+        [scriptblock]$Command
+    )
+
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $Command
+        return $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $prevEap
+    }
+}
+
 function Invoke-Flutter {
     [CmdletBinding()]
     param(
@@ -52,14 +68,16 @@ if (-not $branch) {
 $dirty = git status --porcelain
 if ($dirty) {
   Write-Host '==> commit changes' -ForegroundColor Cyan
-  git add -A
+  $addExit = Invoke-External { git add -A }
+  if ($addExit -ne 0) { exit $addExit }
   $msg = "Deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-  git commit -m $msg
+  $commitExit = Invoke-External { git commit -m $msg }
+  if ($commitExit -ne 0) { exit $commitExit }
 }
 
 Write-Host "==> push to origin/$branch" -ForegroundColor Cyan
-git push origin $branch
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$pushExit = Invoke-External { git push origin $branch }
+if ($pushExit -ne 0) { exit $pushExit }
 
 Write-Host ''
 Write-Host 'Pushed. GitHub Actions will build and deploy to gh-pages.' -ForegroundColor Green
