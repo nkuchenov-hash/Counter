@@ -1,0 +1,62 @@
+name: Windows desktop build (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.41.6 (Dart 3.11 satisfies pubspec sdk ^3.11.0)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Flutter doctor (CI environment diagnostics)
+        run: flutter doctor -v
+
+      - name: Create env.dart
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path lib/core/env | Out-Null
+          @"
+          abstract final class Env {
+            static const String placeholder = '';
+          }
+          "@ | Set-Content -Path lib/core/env/env.dart -Encoding utf8
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run voice command parser test
+        run: flutter test test/voice_command_parser_test.dart
+
+      - name: Build Windows release (desktop voice enabled via dart-define)
+        env:
+          GIT_COMMIT: ${{ github.sha }}
+        shell: pwsh
+        run: |
+          $shortSha = git rev-parse --short HEAD
+          $buildTime = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+          flutter build windows --release `
+            --dart-define=DESKTOP_VOICE_COMMAND=true `
+            --dart-define=GIT_COMMIT="$shortSha" `
+            --dart-define=BUILD_TIME="$buildTime"
+
+      - name: Upload Windows release folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: counter-windows-release-${{ github.run_number }}
+          path: build/windows/x64/runner/Release/
+          if-no-files-found: error
+          retention-days: 14

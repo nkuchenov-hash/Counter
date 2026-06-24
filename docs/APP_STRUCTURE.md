@@ -197,7 +197,7 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `profile/` | `profile_view.dart`, `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart` | Profile & tag settings (More menu) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart` | Admin-only Component Lab |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart` | Activity edit sheets, Omni-Picker entry, voice sheet |
+| `shared/` | `shared_widgets.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `voice_command_parser.dart`, `desktop_voice_command_panel.dart` | Activity edit sheets, Omni-Picker entry, voice sheet, desktop Price Reporter voice command |
 
 **Key symbols:** `ActivityDetailSheet` and `showAppDateTimePicker` live in `features/shared/shared_widgets.dart`.
 

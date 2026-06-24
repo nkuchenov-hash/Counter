@@ -23,9 +23,12 @@ import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/widgets/tag_display_mode_scope.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
+import 'package:counter/core/services/desktop_voice_hotkey.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
+import 'package:counter/features/shared/desktop_voice_command_panel.dart';
+import 'package:counter/features/shared/voice_command_parser.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
 import 'package:counter/features/timeline/timeline_view.dart';
@@ -437,6 +440,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   /// Last engine init failure (shown with [speech_unavailable] snackbar detail).
   String? _speechLastInitError;
   bool _isVoiceListening = false;
+  bool _desktopVoicePanelOpen = false;
   void Function(String)? _speechStatusCallback;
 
   /// Tracks device-local calendar day so an open session can follow midnight without restart.
@@ -527,6 +531,16 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         reason: 'notNeededForFirstFrame',
       );
       unawaited(_ensureSpeechReady());
+      if (DesktopVoiceHotkey.isActive) {
+        unawaited(
+          DesktopVoiceHotkey.attachGlobal(
+            onToggle: () {
+              if (!mounted) return;
+              unawaited(_toggleDesktopVoiceCommandPanel());
+            },
+          ),
+        );
+      }
     });
 
     _notificationSub = DatabaseService.instance.notifications.listen((msg) {
@@ -629,6 +643,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _selectedDateListenable.dispose();
     _timelineTasksRevision.dispose();
     _shellPageIndexListenable.dispose();
+    if (DesktopVoiceHotkey.isActive) {
+      unawaited(DesktopVoiceHotkey.detachGlobal());
+    }
     super.dispose();
   }
 
@@ -1542,6 +1559,127 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
   }
 
+  Future<bool> _desktopVoiceSubmitParsed(VoiceCommandParseResult result) async {
+    if (!result.isSafeToStart) return false;
+    final title = result.recordTitle.trim();
+    final cid = result.matchedLocalCategoryId;
+    if (title.isEmpty || cid == null) return false;
+
+    unawaited(_stopAnyActiveTask());
+    final now = DatabaseService.getPlanetaryNow();
+    final pathTag = DatabaseService.instance.getCategoryPath(cid);
+    try {
+      final serverId = await DatabaseService.instance.writeRecord(
+        _timelineVoiceDateKey,
+        title,
+        categoryId: cid,
+        explicitStartTime: now,
+        sourcePlanPocketRecordId: null,
+      );
+      if (!mounted) return false;
+      if (serverId == null || serverId.trim().isEmpty) {
+        _showSyncFailedSnackBar(
+          onRetry: () => unawaited(
+            _retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: null,
+            ),
+          ),
+        );
+        return false;
+      }
+      if (_shellPageIndex == 0) {
+        setState(() {
+          _tasks.add(
+            Task(
+              title: title,
+              startTime: now,
+              endTime: null,
+              tags: [pathTag],
+              isActive: true,
+            ),
+          );
+          _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
+        });
+        unawaited(_saveTasks());
+      }
+      return true;
+    } catch (e) {
+      debugPrint('UI ERROR: $e');
+      if (mounted) {
+        _showSyncFailedSnackBar(
+          onRetry: () => unawaited(
+            _retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: null,
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<void> _toggleDesktopVoiceCommandPanel() async {
+    if (!DesktopVoiceHotkey.isActive || !mounted) return;
+    if (_desktopVoicePanelOpen) return;
+
+    final index = VoiceCommandCategoryIndex.fromCategoryRules(_rules);
+    if (index == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(currentLocale.value, 'desktop_voice_no_price_reporter'),
+          ),
+        ),
+      );
+      return;
+    }
+
+    await _ensureSpeechReady();
+    if (!_speechReady) {
+      if (!mounted) return;
+      final loc = currentLocale.value;
+      final detail = _speechLastInitError?.trim();
+      final text = detail != null && detail.isNotEmpty
+          ? t(loc, 'speech_error_prefix').replaceFirst('%s', detail)
+          : t(loc, 'speech_unavailable');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+      return;
+    }
+    if (!mounted) return;
+
+    _speechHandle ??= SpeechEngineHandle(_speech!);
+    _speechHandle!.speech = _speech!;
+    _desktopVoicePanelOpen = true;
+    try {
+      await showDesktopVoiceCommandPanel(
+        context: context,
+        speechHandle: _speechHandle!,
+        categoryIndex: index,
+        setSpeechStatusCallback: (cb) {
+          if (mounted) setState(() => _speechStatusCallback = cb);
+        },
+        onStartRecord: _desktopVoiceSubmitParsed,
+        onSpeechEngineHardReset: _speechEngineHardReset,
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _desktopVoicePanelOpen = false;
+          _speechStatusCallback = null;
+          _isVoiceListening = false;
+        });
+      } else {
+        _desktopVoicePanelOpen = false;
+      }
+    }
+  }
+
   Future<void> _startVoiceInput() async {
     if (!kIsWeb) {
       final mic = await Permission.microphone.status;
@@ -2332,10 +2470,33 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           ms: shellSw.elapsedMilliseconds,
           builtTabs: builtTabs,
         );
+        if (DesktopVoiceHotkey.isActive) {
+          return Shortcuts(
+            shortcuts: const {
+              DesktopVoiceHotkey.inAppActivator: _DesktopVoiceCommandIntent(),
+            },
+            child: Actions(
+              actions: {
+                _DesktopVoiceCommandIntent:
+                    CallbackAction<_DesktopVoiceCommandIntent>(
+                  onInvoke: (_) {
+                    unawaited(_toggleDesktopVoiceCommandPanel());
+                    return null;
+                  },
+                ),
+              },
+              child: shell,
+            ),
+          );
+        }
         return shell;
       },
     );
   }
+}
+
+class _DesktopVoiceCommandIntent extends Intent {
+  const _DesktopVoiceCommandIntent();
 }
 
 /// Desktop/web left navigation rail (replaces bottom nav at wide breakpoints).

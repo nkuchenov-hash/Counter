@@ -109,6 +109,10 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Concept | File | Symbol |
 | :--- | :--- | :--- |
 | Voice input dispatcher (routes by active tab) | `lib/app_shell.dart` | `_startVoiceInput` |
+| Desktop Price Reporter voice command (kill switch) | `lib/app_shell.dart` | `_toggleDesktopVoiceCommandPanel`, `_desktopVoiceSubmitParsed` |
+| Desktop voice command parser | `lib/features/shared/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex` |
+| Desktop voice command panel UI | `lib/features/shared/desktop_voice_command_panel.dart` | `DesktopVoiceCommandPanel`, `showDesktopVoiceCommandPanel` |
+| Desktop voice hotkey (Ctrl+Shift+Space) | `lib/core/services/desktop_voice_hotkey.dart` | `DesktopVoiceHotkey` — gated by `kDesktopVoiceCommandEnabled` |
 | UI dispatch wrappers (shell-side, debounced) | `lib/app_shell.dart` | `_stopRecordByDocId` / `_deleteRecordByDocId` / `_startTaskFromInput` |
 | Start a record (user taps Start) | `lib/data/record_service.dart` | `DatabaseService.writeRecord` (extension) |
 | Stop a record (user taps Stop) | `lib/data/record_service.dart` | `DatabaseService.stopRecordByDocId` (extension) |

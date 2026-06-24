@@ -28,3 +28,11 @@ const bool kPlansWarmWindowEnabled = false;
 
 /// Planning stream / realtime lifecycle diagnostics (works in release when true).
 const bool kPlanStreamLifecycleDiag = true;
+
+/// Desktop Price Reporter structured voice command panel + Ctrl+Shift+Space hotkey.
+/// **KILL SWITCH (P0V):** default **false** — enable only with
+/// `--dart-define=DESKTOP_VOICE_COMMAND=true` after Windows/desktop verification.
+const bool kDesktopVoiceCommandEnabled = bool.fromEnvironment(
+  'DESKTOP_VOICE_COMMAND',
+  defaultValue: false,
+);

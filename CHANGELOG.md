@@ -11,6 +11,20 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-24] - GitHub Actions Windows desktop artifact workflow [shipped]
+* **`.github/workflows/windows-desktop-build.yml`:** [shipped] manual `workflow_dispatch` on `windows-latest`; Flutter 3.41.6; `flutter test test/voice_command_parser_test.dart`; `flutter build windows --release --dart-define=DESKTOP_VOICE_COMMAND=true`; uploads full `build/windows/x64/runner/Release/` via `actions/upload-artifact@v4`.
+* **`docs/DESKTOP_WINDOWS_ARTIFACT.md`:** [shipped] download/run instructions — no local Visual Studio required to run the artifact; VS C++/ATL only for local `flutter build windows`.
+
+## [2026-06-24] - Desktop Price Reporter structured voice command MVP [shipped]
+* **`lib/features/shared/voice_command_parser.dart`:** [shipped] deterministic `parsePriceReporterVoiceCommand` — required `Price Reporter` root scope, existing child-category prefix match, task title extraction, exact/ambiguous/no_match states; reuses `price_reporter_client_match` generic-task token guard.
+* **`lib/features/shared/desktop_voice_command_panel.dart`:** [shipped] desktop-only floating dialog — listening transcript, resolved path/title, visible error/ambiguity; never barrier-dismiss during capture.
+* **`lib/core/services/desktop_voice_hotkey*.dart`:** [shipped] Ctrl+Shift+Space global (`hotkey_manager`) + in-app `Shortcuts` fallback; **`kDesktopVoiceCommandEnabled`** kill switch default **false** (`--dart-define=DESKTOP_VOICE_COMMAND=true`).
+* **`lib/app_shell.dart`:** [shipped] `_toggleDesktopVoiceCommandPanel` / `_desktopVoiceSubmitParsed` → existing `DatabaseService.writeRecord` + timeline shadow path.
+* **`test/voice_command_parser_test.dart`:** [shipped] exact, no-match, ambiguous, title-extraction tests.
+
+## [2026-06-24] - Price Reporter read-only CSV timesheet export script [shipped]
+* **`scripts/manual/export_price_reporter_timesheet.dart`:** [shipped] read-only PocketBase export for Price Reporter timeline records (2026-05-11 wall → now); profile wall-clock clamp/overlap; deterministic client extraction; main + audit CSV under `exports/`. Price Reporter timesheet export now classifies Client only into existing Price Reporter child categories using app category keyword rules.
+
 ## [2026-06-15] - Header timezone quick switcher [wip]
 * **`profile_timezone_catalog.dart`:** [wip] shared profile timezone catalog + picker labels (`Moscow · MSK · UTC+3`); used by Profile settings and header quick picker.
 * **`timezone_quick_picker.dart`:** [wip] `HeaderTimezoneQuickSwitcher` — tap timezone label in `GlobalAppHeader`; adaptive sheet (mobile) / menu (desktop); search filter.
