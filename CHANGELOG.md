@@ -11,6 +11,117 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-25] - P0 Hotkey crash fix + Microphone card clip fix [shipped]
+* **`lib/core/services/desktop_voice_overlay_host_io.dart`:** [shipped] removed unsafe main-window resize/frameless/skip-taskbar capsule path (crash root cause); host is no-op (`no_window_mutation`); tray-hidden → `notifyTrayOverlayUnavailable` notification fallback only.
+* **`lib/app_shell.dart`:** hotkey handler wrapped in try/catch; markers `HOTKEY_ACTION_RESOLVED`, `HOTKEY_ERROR_CAUGHT`.
+* **`lib/features/shared/desktop_voice_widget.dart`:** overlay insert guarded by window visibility; errors caught without terminating app.
+* **`lib/features/profile/desktop_voice_settings_desktop.dart`:** removed fixed 208px mic card height + `Spacer()`; mic monitor button fully inside card; 24px gap before Tip card.
+* **`lib/core/widgets/app_settings_layout.dart`:** `AppSettingsGridCard` uses `mainAxisSize: min`.
+* **`test/desktop_voice_settings_mic_layout_test.dart`:** mic button visibility regression test.
+* **`scripts/manual/smoke_desktop_hotkey.ps1`:** 10× hotkey stress (process must stay alive).
+* **Installer:** `installer/windows/output/CounterSetup.exe` rebuilt.
+
+## [2026-06-25] - P0 Desktop Voice UX Reset (Handy capsule + tray overlay host) [shipped]
+* **`lib/core/services/desktop_voice_overlay_host_io.dart`:** [shipped] tray-hidden hotkey shows frameless bottom capsule via `window_manager` (no `showMainWindow`); `desktopVoiceShellSuppressed` hides full shell; `screen_retriever` work-area placement; marker `DESKTOP_VOICE_SHOW_MAIN_WINDOW_SKIPPED`.
+* **`lib/features/shared/desktop_voice_capsule.dart`:** [shipped] Handy-style bottom capsule (360–480×72–120, rounded, mic/spinner/timer/cancel).
+* **`lib/features/shared/desktop_voice_widget.dart`:** [shipped] removed large dialog flow; `OverlayEntry` capsule; insert-before-host-activate race fix; Escape cancel; auto-close respects `autoCloseAfterApply`.
+* **`lib/core/widgets/app_settings_layout.dart`:** [shipped] restored full settings layout; `AppHotkeyKeycaps` fixed-width Row keycaps (Ctrl/Shift/P/Space).
+* **`lib/features/shared/voice_command_parser.dart`:** `rice reporter` alias; stop confirmation title-only (`Остановлено: Planning`).
+* **`scripts/manual/smoke_desktop_hotkey.ps1`:** asserts `DESKTOP_VOICE_SHOW_MAIN_WINDOW_SKIPPED` + `DESKTOP_VOICE_OVERLAY_OPENED`.
+* **Build:** `flutter analyze` clean (no errors); acceptance 36+ tests pass; hotkey smoke pass; `installer/windows/output/CounterSetup.exe` (2026-06-25 ~09:33, ~506 MB).
+
+## [2026-06-25] - P0 Desktop Voice UX contract (state machine + overlay-first) [shipped]
+* **`lib/app_shell.dart`:** [shipped] documented hotkey state machine A–E; fixed overlay-open tracking (`isDesktopVoiceOverlayOpen`); State B finish-listening; State D stop via `stopRecordByDocId` + `DesktopVoiceConfirmation`; tray window show on overlay open.
+* **`lib/features/shared/desktop_voice_widget.dart`:** overlay inserts before STT warmup; preparing UI shows timer/mic/cancel; pipeline markers `OVERLAY_OPEN_REQUESTED`, `RECORDING_FAILED`, `OVERLAY_ERROR_VISIBLE`.
+* **`lib/core/services/desktop_voice_overlay_bridge.dart`:** hotkey ↔ overlay finish-listening bridge.
+* **`lib/core/services/desktop_voice_confirmation.dart`:** mandatory AppSnack + OS notification markers (`FALLBACK_SNACK_SHOWN`, `OS_NOTIFICATION_*`).
+* **`lib/core/diagnostics/desktop_voice_pipeline.dart`:** Windows pipeline log `%TEMP%\counter_desktop_voice_pipeline.log`.
+* **`lib/features/shared/voice_command_parser.dart`:** `right reporter` + `play`→`Planning` STT aliases.
+* **`lib/core/widgets/app_settings_layout.dart`:** `AppHotkeyKeycaps` horizontal Row (no stacked Wrap).
+* **`scripts/manual/smoke_desktop_hotkey.ps1`:** physical hotkey smoke (parses registered combo, verifies markers).
+* **Tests:** 36 pass in acceptance suite; installer rebuilt.
+
+## [2026-06-25] - Desktop voice hotkey toggle stop [shipped]
+* **`lib/app_shell.dart`:** [shipped] `_toggleDesktopVoiceWidget` — 1st hotkey opens overlay + STT; 2nd hotkey while running record calls `_desktopVoiceHotkeyStopRunning` (optimistic stop + snack/notification); overlay open → close on hotkey.
+* **`lib/core/services/desktop_voice_hotkey.dart`:** `resolveDesktopVoiceHotkeyAction` + `DesktopVoiceHotkeyAction` enum.
+* **`lib/features/shared/voice_command_parser.dart`:** `voiceCommandStopConfirmationMessage`.
+* **`lib/services/notification_service.dart`:** `showDesktopVoiceRecordStopped`.
+* **`test/desktop_voice_hotkey_self_acceptance_test.dart`:** toggle resolver + stop confirmation (29 tests total in acceptance suite).
+
+## [2026-06-25] - P0 self-acceptance runner + production submit path [shipped]
+* **`lib/core/services/desktop_voice_record_submit.dart`:** [shipped] shared production path `DesktopVoiceRecordSubmit.submitParsed/submitTranscript` → `writeRecord` seam + confirmation markers.
+* **`scripts/manual/run_desktop_voice_acceptance.ps1`:** [shipped] runs parser + acceptance + production-submit + hotkey self-acceptance tests (25 pass).
+* **`test/desktop_voice_production_submit_test.dart`:** Case A/B through production submit with mocked `writeRecord`.
+* **`test/desktop_voice_hotkey_self_acceptance_test.dart`:** hotkey config validity + simulate-hotkey callback.
+* **`lib/app_shell.dart`:** delegates to `DesktopVoiceRecordSubmit`; hotkey registration awaited; simulate-hotkey bridge.
+* **Installer:** `installer/windows/output/CounterSetup.exe` 2026-06-25 06:34:38 (~506 MB).
+
+## [2026-06-25] - P0 installed-app hotkey + settings layout fix [wip]
+* **`lib/core/diagnostics/desktop_voice_pipeline.dart`:** [wip] release-safe step markers (`DESKTOP_VOICE_*`) for hotkey → overlay → writeRecord chain.
+* **`lib/core/services/desktop_voice_acceptance_bridge.dart`:** [wip] deterministic acceptance commands (bypass STT) wired from collapsed Diagnostics.
+* **`lib/app_shell.dart`:** [wip] await hotkey register; pipeline marks; acceptance bridge; timeline revision on voice start; overlay open failure traced.
+* **`lib/features/profile/desktop_voice_settings_desktop.dart`:** [wip] mockup 2×2 grid (Hotkey+Behavior / Widget+Mic); removed misplaced Save footer; collapsed diagnostics only.
+* **`lib/core/services/desktop_voice_hotkey.dart`:** `attachGlobal` returns `bool` for registration feedback.
+* **No new installer** until installed-app acceptance passes.
+
+## [2026-06-25] - P0 desktop voice acceptance grammar + auto-start [shipped code]
+* **`lib/features/shared/voice_command_parser.dart`:** [shipped] Price Reporter command grammar — root-only title (`Planning`), child path + title (`AGE SOLUTIONS ADD MOD`), STT scope aliases (press/prize reporter, price rep, RU variants), child-only → display name as title; `voiceCommandStartConfirmationMessage`.
+* **`lib/features/shared/desktop_voice_widget.dart`:** [shipped] exact/high-confidence commands auto-call `writeRecord` (no preview gate); overlay shows 2s confirmation.
+* **`lib/app_shell.dart`:** [shipped] `_desktopVoiceSubmitParsed` → `AppSnack` + `NotificationService.showDesktopVoiceRecordStarted` after optimistic start.
+* **`lib/core/services/desktop_voice_settings.dart`:** default enabled when `DESKTOP_VOICE_COMMAND=true`; preview-before-confirm default off.
+* **`test/desktop_voice_command_acceptance_test.dart`:** Case A/B + alias near-misses + confirmation copy (19 tests pass with parser suite).
+* **Installer:** fresh `CounterSetup.exe` not produced on this machine — `ISCC.exe` (Inno Setup 6) missing; Release folder rebuilt with parakeet STT payload.
+
+## [2026-06-24] - P0 voice recognizer replacement + settings mockup [wip]
+* **`lib/core/services/desktop_voice_audio_capture.dart`:** [wip] unified PCM16 16 kHz capture; RMS/peak levels; WAV save to `%LOCALAPPDATA%\Counter\voice_samples\`.
+* **`lib/core/services/desktop_voice_benchmark_service.dart`:** [wip] `ENGINE_BENCHMARK` — same WAV through parakeet (GOLOS production), whisper-tiny (debug), Windows System.Speech (`win_speech_wav.ps1`); auto-selects winner.
+* **`lib/core/services/desktop_stt_helper_service.dart`:** [wip] production default **parakeet** (not whisper-tiny); per-engine `/config`; no STT unless `audio_level_seen`; capture diagnostics (`sample_rate`, `rms_amplitude`, `audio_file`).
+* **`installer/windows/prepare_stt_payload.ps1`:** bundles `models/parakeet` + `whisper-tiny` + `win_speech_wav.ps1`; `settings.json` `active_model: parakeet`.
+* **`lib/features/profile/desktop_voice_settings_desktop.dart`:** [wip] mockup-aligned card grid — hero, hotkey keycaps, behavior, widget, mic selector + live meter, tip, benchmark/diag; Save footer.
+* **`lib/core/widgets/app_settings_layout.dart`:** tab bar 56px, 40px content padding, 18px card radius, 48px keycaps, black accents.
+* **`lib/core/shell_adaptive.dart`:** side nav width 272px.
+* **Not shipped** — installed-app mic → benchmark → exact parse → `writeRecord` → Timeline still requires on-machine verification.
+
+## [2026-06-24] - Desktop settings tabs + real mic/STT capture [wip]
+* **`lib/features/profile/profile_view.dart`:** [wip] wide desktop + side nav → tabbed **Profile** layout (Account, Preferences, Desktop Voice, Notifications, Appearance, About); black/neutral accents via `settingsNeutralTheme`; mobile stays single-column.
+* **`lib/features/profile/desktop_voice_settings_desktop.dart`:** [wip] card grid — hero toggle, hotkey keycaps, behavior, voice widget options, live mic monitor, tip, STT diag block.
+* **`lib/core/widgets/app_settings_layout.dart`:** [wip] `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `AppSettingsCardGrid`, `AppSettingsGridCard`.
+* **`lib/core/widgets/app_mic_level_bars.dart`:** [wip] shared PCM-driven level bars (`pcm16RmsLevel`).
+* **`lib/core/services/desktop_stt_helper_service.dart`:** [wip] RMS from PCM16 stream (not decorative `onAmplitudeChanged`); GOLOS `/transcribe/partial_audio` every 400ms; `/status` model-ready gate; `DesktopSttDiagnostics` / `STT_HELPER_CHECK` lines.
+* **`installer/windows/build_stt_helper_en.ps1`:** [wip] builds English Whisper helper (`language=en`, Price Reporter prompt); `prepare_stt_payload.ps1` prefers `stt_helper_build/counter_stt_helper.exe`.
+* **`lib/main.dart`:** Windows min window size 900×600 (maximize allowed; tray hide-on-close unchanged).
+* **`lib/core/services/desktop_voice_settings.dart`:** desktop voice **disabled by default** until user enables; widget prefs (sound, auto-close, preview, undo).
+* **Fresh installer:** `installer/windows/output/CounterSetup.exe` (2026-06-24 ~20:17, ~87.7 MB). **Not marked shipped** — mic/STT/record chain needs installed-app speech test.
+
+## [2026-06-24] - Generic desktop voice overlay + mic feedback [wip]
+* **`lib/features/shared/desktop_voice_widget.dart`:** [wip] generic **Voice command** overlay (not Price Reporter-branded); compact always-on-top card via `OverlayEntry` + `window_manager.setAlwaysOnTop`; immediate recording; timer + live mic level bars; preview-only path/title; Settings parser test field.
+* **`lib/features/shared/voice_command_parser.dart`:** [wip] `parseVoiceCommand`, STT repair (`price report`→`Price Reporter`), flexible root token match, human-readable reason l10n keys.
+* **`lib/core/services/desktop_stt_helper_service.dart`:** amplitude stream + byte/level tracking for overlay feedback.
+* **`lib/core/services/desktop_voice_window_flags.dart`:** always-on-top toggle while overlay open.
+* **Not verified on installed app** — do not mark shipped.
+
+## [2026-06-24] - P0 Settings redesign + desktop voice fixes [wip]
+* **`lib/core/widgets/app_settings_layout.dart`:** [wip] `AppSettingsPageBody` / `AppSettingsSectionCard` — centered max-width (~1040px) neutral settings shell.
+* **`lib/features/profile/profile_view.dart`:** [wip] Profile/Settings rebuilt as section cards (Account & Security, Notifications, Desktop Voice, Appearance, Time & Locale, About); `AppButton` actions; page title **Settings**.
+* **`lib/features/profile/desktop_voice_settings_section.dart`:** [wip] hotkey capture dialog with modifier validation, live preview, Save disabled until valid; registration rollback on failure; test-voice button; diag lines.
+* **`lib/core/services/desktop_hotkey_codec.dart`:** [wip] normalize Ctrl/Shift/Alt/Win; reject modifier-only combos; human-readable labels.
+* **`lib/core/diagnostics/desktop_voice_diag.dart`:** [wip] concise pipeline markers (hotkey → widget → STT → parser → writeRecord).
+* **`lib/features/shared/desktop_voice_widget.dart`:** [wip] preview state + explicit **Start record**; diag hooks; status line on `DesktopVoiceSettings`.
+* **`lib/l10n/langs/ru.dart`:** [wip] full RU strings for desktop voice + tray + settings sections (no raw keys in RU UI).
+* **`lib/l10n/dictionary.dart`:** [wip] `t()` EN fallback before returning key.
+* **`windows/runner/main.cpp`:** `SetQuitOnClose(false)` — close hides to tray via `window_manager`.
+* **`lib/core/services/desktop_tray_service_io.dart`:** localized tray menu via `refreshDesktopTrayMenu`.
+* **Not verified on installed `CounterSetup.exe` yet** — do not mark shipped until full hotkey → voice → writeRecord → Timeline chain passes.
+
+## [2026-06-24] - Desktop voice widget reset (GOLOS local STT + tray) [shipped]
+* **`lib/core/services/desktop_stt_helper_service.dart`:** [shipped] spawns bundled `stt_helper/counter_stt_helper.exe` (GOLOS `golos-backend` HTTP sidecar); PCM16 capture via `record` → `POST /transcribe/stop`; no cloud STT.
+* **`lib/core/services/desktop_voice_recognizer*.dart`:** [shipped] desktop recognizer abstraction; production path = GOLOS helper; `speech_to_text` removed from desktop widget (legacy flag only).
+* **`lib/features/shared/desktop_voice_widget.dart`:** [shipped] always-on-top command widget — listen/finish/process/preview/confirmed/error states; category path + title + action preview; 2s started confirmation + Undo/Stop.
+* **`lib/core/services/desktop_tray_service*.dart`:** [shipped] `window_manager` + `tray_manager` — close hides to tray; tray menu Show/Voice/Stop/Settings/Exit; `--tray` hidden autostart.
+* **`lib/core/services/desktop_voice_settings.dart`:** [shipped] local SharedPreferences — enable, hotkey, autostart, launch-hidden; Profile → Desktop Voice section.
+* **`installer/windows/prepare_stt_payload.ps1`:** [shipped] copies `golos-backend.exe` + `whisper-tiny` model into Release `stt_helper/` before Inno compile.
+* **`installer/windows/counter.iss`:** [shipped] optional autostart task (`--tray`); STT helper bundled via Release tree.
+
 ## [2026-06-24] - Windows CounterSetup.exe installer (Inno Setup) [shipped]
 * **`installer/windows/counter.iss`:** [shipped] per-user Inno Setup 6 script — `{localappdata}\Programs\Counter`, Start Menu + Desktop shortcuts, HKCU Run autostart (removed on uninstall), post-install launch, full Release tree packaged.
 * **`.github/workflows/windows-desktop-build.yml`:** [shipped] `choco install innosetup` + `ISCC.exe` compile; primary artifact **`CounterSetup`**; debug fallback **`counter-windows-release-debug-<run>`**.
@@ -29,6 +140,11 @@
 
 ## [2026-06-24] - Price Reporter read-only CSV timesheet export script [shipped]
 * **`scripts/manual/export_price_reporter_timesheet.dart`:** [shipped] read-only PocketBase export for Price Reporter timeline records (2026-05-11 wall → now); profile wall-clock clamp/overlap; deterministic client extraction; main + audit CSV under `exports/`. Price Reporter timesheet export now classifies Client only into existing Price Reporter child categories using app category keyword rules.
+
+## [2026-06-15] - Time View reproject on profile timezone change [wip]
+* **`plan_service.dart`:** [wip] `reprojectAllPlansForProfileTimezone` re-keys optimistic overlay, bumps `profileTimezoneProjectionRevision`, invalidates plans body/P0T render caches, pokes all planning stream hubs; `plansProjectionCacheSignature` includes tz offset/label (not date-only length).
+* **`planning_view.dart`:** [wip] timezone settings listener refreshes `_latestPlanningDayTasks` from snapshot, clears Time View layout/cascade keys, `ValueKey` on hour grid ListView forces repaint.
+* **`test/plan_time_timezone_projection_test.dart`:** [wip] Moscow/NY wall projection, Y scale shift, wall-day filter, cache signature, layout invariants.
 
 ## [2026-06-15] - Header timezone quick switcher [wip]
 * **`profile_timezone_catalog.dart`:** [wip] shared profile timezone catalog + picker labels (`Moscow · MSK · UTC+3`); used by Profile settings and header quick picker.

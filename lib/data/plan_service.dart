@@ -32,6 +32,7 @@ const String _kBacklogOptimisticDayKey = '__backlog__';
 List<PlanningTask> _allPlansUserCache = [];
 DateTime? _allPlansUserCacheFetchedAt;
 const Duration _allPlansUserCacheFreshTtl = Duration(seconds: 30);
+int _profileTimezoneProjectionRevision = 0;
 Timer? _planningNotifyNetworkDebounceTimer;
 bool _planningRefreshWantsNetworkPump = false;
 Future<void>? _plansRealtimeSubscribeFuture;
@@ -160,6 +161,8 @@ final class _PlanningDayStreamHub {
       unawaited(controller.close());
     }
   }
+
+  void emitCachedPlans(DatabaseService db) => _emitFromCache(db);
 }
 
 List<PlanningTask> _tasksCache = [];
@@ -1940,12 +1943,66 @@ extension PlanServiceExtension on DatabaseService {
     _allPlansUserCache = [
       for (final t in _allPlansUserCache) _reprojectPlanningTaskWallTimes(t),
     ];
+    _rekeyPlanningOptimisticByProfileTimezone();
+    _profileTimezoneProjectionRevision++;
+    plansDayBodyCache.invalidateAll();
+    P0tRenderSnapshotCache.instance.clearPlans();
+    _refreshPlansWarmSnapshotsAfterCacheMutation(force: true);
+    _pokeAllPlanningStreamHubsFromCache();
+  }
+
+  int get profileTimezoneProjectionRevision => _profileTimezoneProjectionRevision;
+
+  int plansProjectionCacheSignature() => Object.hash(
+        _allPlansUserCache.length,
+        _settings.timezoneOffsetHours,
+        _settings.preferredTimeZone.trim(),
+        _profileTimezoneProjectionRevision,
+      );
+
+  void _rekeyPlanningOptimisticByProfileTimezone() {
+    final merged = <String, PlanningTask>{};
+    for (final dayMap in _planningOptimisticByDateKey.values) {
+      merged.addAll(dayMap);
+    }
+    _planningOptimisticByDateKey.clear();
+    for (final t in merged.values) {
+      final projected = _reprojectPlanningTaskWallTimes(t);
+      final dk = _planOptimisticDayKeyFor(projected);
+      _planningOptimisticByDateKey
+          .putIfAbsent(dk, () => {})[projected.planRowIdForBackend] = projected;
+    }
     for (final m in _planningOptimisticByDateKey.values) {
       for (final k in m.keys.toList()) {
         final v = m[k];
-        if (v != null) m[k] = _reprojectPlanningTaskWallTimes(v);
+        if (v != null) {
+          m[k] = _reprojectPlanningTaskWallTimes(v);
+        }
       }
     }
+  }
+
+  void _pokeAllPlanningStreamHubsFromCache() {
+    for (final hub in _planningStreamHubs.values) {
+      hub.emitCachedPlans(this);
+    }
+  }
+
+  /// Profile wall minute-of-day for a stored UTC instant (Time View / filter tests).
+  int profileWallMinuteOfDayFromUtc(DateTime utc) {
+    final wall = _profileWallFromUtc(utc.toUtc());
+    return wall.hour * 60 + wall.minute;
+  }
+
+  /// Whether [startUtc] falls on [wallDay] in the active profile timezone.
+  bool planUtcInstantOnProfileWallDay({
+    required DateTime startUtc,
+    required DateTime wallDay,
+  }) {
+    final startWall = _profileWallFromUtc(startUtc.toUtc());
+    final targetDayStr =
+        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+    return _dateKeyFromDate(startWall) == targetDayStr;
   }
 
   List<PlanningTask> _filterPlansForWallDay(
@@ -2627,7 +2684,7 @@ extension PlanServiceExtension on DatabaseService {
       dateKey: '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}',
       knownEmpty: tasks.isEmpty,
       tasks: List<PlanningTask>.from(tasks),
-      cacheSignature: _allPlansUserCache.length,
+      cacheSignature: plansProjectionCacheSignature(),
     );
   }
 
@@ -2809,12 +2866,12 @@ extension PlanServiceExtension on DatabaseService {
     return built;
   }
 
-  void _refreshPlansWarmSnapshotsAfterCacheMutation() {
+  void _refreshPlansWarmSnapshotsAfterCacheMutation({bool force = false}) {
     if (_plansWarm.center == null) return;
-    final sig = _allPlansUserCache.length;
+    final sig = plansProjectionCacheSignature();
     for (final key in _plansWarm.dateKeys.toList()) {
       final snap = _plansWarm.peek(key);
-      if (snap == null || snap.cacheSignature == sig) continue;
+      if (!force && snap != null && snap.cacheSignature == sig) continue;
       final day = WarmSnapshotWindow.parseDateKey(key);
       _plansWarm.put(key, _buildPlansDaySnapshot(day));
     }

@@ -739,6 +739,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
         lastTzOffset = s.timezoneOffsetHours;
         lastTzLabel = s.preferredTimeZone;
         DatabaseService.instance.reprojectAllPlansForProfileTimezone();
+        _refreshPlanningTasksAfterTimezoneChange();
         _timeModeDidAutoScrollToNow = false;
         DatabaseService.instance.notifyPlanningRefresh(
           scheduleNetworkRefresh: false,
@@ -999,6 +1000,16 @@ DatabaseService.instance.persistPlanningTaskOrder(
       mergeDay(planWallDay.subtract(const Duration(days: 1)));
     }
     return out;
+  }
+
+  void _refreshPlanningTasksAfterTimezoneChange() {
+    final day = widget.selectedDate ?? _today;
+    _latestPlanningDayTasks = DatabaseService.instance
+        .dedupePlanningTasksForDisplay(
+          DatabaseService.instance.planningDayTasksSnapshot(day),
+        );
+    _timeViewCascadeNormalizedDayKey = null;
+    _activeTimelineDurationGrid = null;
   }
 
   bool _projectedPlanInTimeViewWindow(
@@ -4078,7 +4089,8 @@ DatabaseService.instance.notifyPlanningRefresh();
     for (final t in ordered) {
       final proj = DatabaseService.instance.projectPlanForTimeMode(t);
       if (proj == null) {
-        if (t.dateKey == selectedDayKey) {
+        if (t.dateKey.length >= 10 &&
+            t.dateKey.substring(0, 10) == selectedDayKey) {
           unscheduled.add(t);
         }
         continue;
@@ -4151,6 +4163,12 @@ DatabaseService.instance.notifyPlanningRefresh();
     );
 
     return ListView(
+      key: ValueKey<String>(
+        'time-view-${DatabaseService.instance.settings.preferredTimeZone}-'
+        '${DatabaseService.instance.settings.timezoneOffsetHours}-'
+        '${DatabaseService.instance.profileTimezoneProjectionRevision}-'
+        '${widget.selectedDateString}',
+      ),
       controller: _hourGridScrollController,
       physics: _timelineScrollLocked
           ? const NeverScrollableScrollPhysics()
