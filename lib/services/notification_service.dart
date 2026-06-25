@@ -196,4 +196,100 @@ class NotificationService {
       } catch (_) {}
     }
   }
+
+  static const int _kDesktopVoiceNotificationId = 0x7f00d001;
+  static const int _kDesktopVoiceStopNotificationId = 0x7f00d002;
+  static const int _kDesktopVoiceOverlayUnavailableId = 0x7f00d003;
+
+  /// Immediate OS toast when a desktop voice command starts a record (tray-hidden).
+  Future<bool> showDesktopVoiceRecordStarted({required String message}) async {
+    if (kIsWeb) return false;
+    try {
+      await ensureInitialized();
+    } catch (_) {
+      return false;
+    }
+    try {
+      await _plugin.show(
+        id: _kDesktopVoiceNotificationId,
+        title: message,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'desktop_voice',
+            'Desktop voice',
+            channelDescription: 'Record started from desktop voice command',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+          macOS: DarwinNotificationDetails(),
+        ),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Immediate OS toast when the desktop voice hotkey stops a running record.
+  Future<bool> showDesktopVoiceRecordStopped({required String message}) async {
+    if (kIsWeb) return false;
+    try {
+      await ensureInitialized();
+    } catch (_) {
+      return false;
+    }
+    try {
+      await _plugin.show(
+        id: _kDesktopVoiceStopNotificationId,
+        title: message,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'desktop_voice',
+            'Desktop voice',
+            channelDescription: 'Record stopped from desktop voice hotkey',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+          macOS: DarwinNotificationDetails(),
+        ),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Tray-hidden hotkey fallback — voice overlay cannot show without a visible window.
+  Future<bool> showDesktopVoiceOverlayUnavailable({
+    required String message,
+  }) async {
+    if (kIsWeb) return false;
+    try {
+      await ensureInitialized();
+    } catch (_) {
+      return false;
+    }
+    try {
+      await _plugin.show(
+        id: _kDesktopVoiceOverlayUnavailableId,
+        title: message,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'desktop_voice',
+            'Desktop voice',
+            channelDescription: 'Desktop voice overlay unavailable',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(),
+          macOS: DarwinNotificationDetails(),
+        ),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 }

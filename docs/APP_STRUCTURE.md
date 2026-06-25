@@ -165,6 +165,7 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | File | Role |
 | :--- | :--- |
 | `app_button.dart` | `AppButton` |
+| `app_settings_layout.dart` | `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers |
 | `app_icon_button.dart` | `AppIconButton` |
 | `app_loading.dart` | `AppLoading` |
 | `app_state_views.dart` | `AppErrorState`, `AppEmptyState` |
@@ -197,7 +198,9 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `profile/` | `profile_view.dart`, `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart` | Profile & tag settings (More menu) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart` | Admin-only Component Lab |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `voice_command_parser.dart`, `desktop_voice_command_panel.dart` | Activity edit sheets, Omni-Picker entry, voice sheet, desktop Price Reporter voice command |
+| `shared/` | `shared_widgets.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `voice_command_parser.dart`, `desktop_voice_widget.dart` | Activity edit sheets, Omni-Picker entry, mobile/web voice sheet, desktop Price Reporter voice widget |
+| `profile/` | `profile_view.dart`, `desktop_voice_settings_section.dart`, … | Profile tab + desktop voice/tray settings (Windows) |
+| `core/services/` | `desktop_stt_helper_service.dart`, `desktop_voice_recognizer*.dart`, `desktop_tray_service*.dart`, `desktop_voice_settings.dart`, `desktop_voice_hotkey*.dart` | Desktop GOLOS STT helper, tray, hotkey, local settings |
 
 **Key symbols:** `ActivityDetailSheet` and `showAppDateTimePicker` live in `features/shared/shared_widgets.dart`.
 

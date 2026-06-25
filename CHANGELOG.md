@@ -14,6 +14,15 @@
 ## [2026-06-15] - Manual data repair: June 25 plan times MSK reinterpretation [wip]
 * **`scripts/manual/repair_2026_06_25_plan_times_msk.dart`:** [wip] One-off PocketBase repair — reinterpreted 16 scheduled `plans` on 2026-06-25 from New York wall time to Moscow wall time (`start_time`/`end_time` only); explicit `--ids` + `--confirm REINTERPRET_NY_AS_MSK_2026_06_25` apply path; profile `xhjy54inue73piz`; all 16 PATCHes read-back verified; durations preserved.
 
+## [2026-06-25] - P0 Desktop Voice preparing hang fix [shipped]
+* **`lib/core/services/desktop_stt_helper_service.dart`:** [shipped] deadline-based `ensureStarted(maxWait)` with 5s voice-overlay cap; HTTP/status timeouts; one helper restart; markers `HELPER_*`.
+* **`lib/features/shared/desktop_voice_widget.dart`:** [shipped] 5s preparing watchdog; `_cancelSession`; pipeline markers `PREPARING_STARTED`/`STT_WARMUP_*`/`OVERLAY_ERROR_VISIBLE`; error `desktop_voice_recognizer_start_failed`.
+* **`lib/core/services/desktop_voice_hotkey.dart`:** `cancelOverlay` action; preparing/processing hotkey cancels instead of no-op `finishListening`.
+* **`lib/core/services/desktop_voice_overlay_bridge.dart`:** `isPreparing`/`isProcessing`/`requestCancel`.
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** [shipped] X close button + Escape → Dart `overlayCloseClicked`/`overlayEscapePressed`.
+* **`test/desktop_voice_overlay_state_test.dart`:** preparing timeout + cancel bridge tests.
+* **`scripts/manual/smoke_desktop_hotkey.ps1`:** `-PrepareTimeoutSmoke` mode for forced-timeout markers.
+
 ## [2026-06-25] - P0 Tray-hidden native Win32 voice overlay [shipped]
 * **`windows/runner/desktop_voice_native_overlay.cpp`:** [shipped] separate topmost tool-window HWND (460×112) via MethodChannel `counter/desktop_voice_native_overlay`; never mutates main Flutter window.
 * **`lib/core/services/desktop_voice_overlay_service.dart`:** unified overlay API (`showPreparing`/`showListening`/`showStarted`/`showStopped`/`hide`); markers `NATIVE_OVERLAY_*`, `NOTIFICATION_FALLBACK_USED` only on failure.

@@ -33,8 +33,10 @@ final Map<String, Map<String, String>> l10n =
       'zh': _layerOnEnglish(kZhL10n),
     });
 
-/// Safe lookup: [locale] then fallback to `en`. Returns key if missing.
+/// Safe lookup: [locale] then fallback to `en`. Returns key if missing everywhere.
 String t(String locale, String key) {
-  final map = l10n[locale] ?? l10n['en'];
-  return map?[key] ?? key;
+  final map = l10n[locale];
+  final hit = map?[key];
+  if (hit != null) return hit;
+  return l10n['en']?[key] ?? key;
 }

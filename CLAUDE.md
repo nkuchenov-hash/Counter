@@ -111,8 +111,14 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Voice input dispatcher (routes by active tab) | `lib/app_shell.dart` | `_startVoiceInput` |
 | Desktop Price Reporter voice command (kill switch) | `lib/app_shell.dart` | `_toggleDesktopVoiceCommandPanel`, `_desktopVoiceSubmitParsed` |
 | Desktop voice command parser | `lib/features/shared/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex` |
-| Desktop voice command panel UI | `lib/features/shared/desktop_voice_command_panel.dart` | `DesktopVoiceCommandPanel`, `showDesktopVoiceCommandPanel` |
-| Desktop voice hotkey (Ctrl+Shift+Space) | `lib/core/services/desktop_voice_hotkey.dart` | `DesktopVoiceHotkey` — gated by `kDesktopVoiceCommandEnabled` |
+| Desktop voice widget UI (GOLOS STT) | `lib/features/shared/desktop_voice_widget.dart` | `DesktopVoiceWidget`, `showDesktopVoiceWidget` |
+| Desktop GOLOS STT helper | `lib/core/services/desktop_stt_helper_service.dart` | `DesktopSttHelperService` |
+| Desktop voice recognizer | `lib/core/services/desktop_voice_recognizer_factory.dart` | `createDesktopVoiceRecognizer` |
+| Desktop tray | `lib/core/services/desktop_tray_service.dart` | `DesktopTrayService` |
+| Desktop voice settings (local) | `lib/core/services/desktop_voice_settings.dart` | `DesktopVoiceSettings` |
+| Desktop voice hotkey | `lib/core/services/desktop_voice_hotkey.dart` | `DesktopVoiceHotkey` |
+| Profile desktop voice settings UI | `lib/features/profile/desktop_voice_settings_section.dart` | `DesktopVoiceSettingsSection` |
+| Desktop voice shell wiring | `lib/app_shell.dart` | `_toggleDesktopVoiceWidget`, `_desktopVoiceSubmitParsed`, `_initDesktopVoiceLayer` |
 | UI dispatch wrappers (shell-side, debounced) | `lib/app_shell.dart` | `_stopRecordByDocId` / `_deleteRecordByDocId` / `_startTaskFromInput` |
 | Start a record (user taps Start) | `lib/data/record_service.dart` | `DatabaseService.writeRecord` (extension) |
 | Stop a record (user taps Stop) | `lib/data/record_service.dart` | `DatabaseService.stopRecordByDocId` (extension) |

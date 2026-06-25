@@ -1,6 +1,10 @@
+import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:flutter/foundation.dart';
 
-/// No-op global hotkey on web/mobile.
-Future<void> registerDesktopVoiceGlobalHotkey(VoidCallback onToggle) async {}
+Future<bool> registerDesktopVoiceGlobalHotkey(
+  VoidCallback onToggle, {
+  required DesktopVoiceHotkeyConfig config,
+}) async =>
+    false;
 
 Future<void> unregisterDesktopVoiceGlobalHotkey() async {}

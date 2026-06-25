@@ -474,6 +474,16 @@ class DatabaseService {
     return tit.isEmpty ? null : tit;
   }
 
+  /// Category display path for the primary running record (for stop confirmation).
+  String? get cachedPrimaryRunningCategoryPath {
+    final row = _canonicalPrimaryRunningFlatRow();
+    if (row == null) return null;
+    final cid = categoryIdFromRecordRow(row);
+    if (cid == null || cid <= 0) return null;
+    final path = getCategoryPath(cid).trim();
+    return path.isEmpty ? null : path;
+  }
+
   int _indexOfCachedRecordRow(String resolvedRid, String originalInput) {
     for (var i = 0; i < _cachedFlatRecords.length; i++) {
       final r = _cachedFlatRecords[i];

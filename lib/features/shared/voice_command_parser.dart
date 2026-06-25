@@ -146,7 +146,9 @@ class VoiceCommandCategoryIndex {
       }
       final kids = rule.children;
       if (kids == null) return;
-      final nextPath = isRoot ? <String>[] : [...pathParts, rule.name.trim()];
+      final nextPath = isRoot
+          ? [rootRule.name.trim()]
+          : [...pathParts, rule.name.trim()];
       for (final c in kids) {
         collectPhrases(c, nextPath);
       }
@@ -182,12 +184,222 @@ String _stripNormalizedPrefixTokens(String raw, String normalizedPhrase) {
   return rawTokens.skip(phraseTokens.length).join(' ').trim();
 }
 
+/// Normalized command-scope prefixes (longest match wins in [_extractAfterRootScope]).
+const List<String> kPriceReporterScopeNormPrefixes = [
+  'price reporter',
+  'price report',
+  'press reporter',
+  'prize reporter',
+  'price rep',
+  'right reporter',
+  'rice reporter',
+  'райс репортер',
+  'прайс репортер',
+  'райсфер',
+  'присрепорт',
+];
+
+/// Repairs common local-STT mis-hearings before deterministic parsing.
+String repairVoiceCommandTranscript(String transcript) {
+  var t = transcript.trim();
+  if (t.isEmpty) return t;
+  final replacements = <RegExp, String>{
+    RegExp(r'\bprice\s+reporters?\b', caseSensitive: false): 'Price Reporter',
+    RegExp(r'\bprice\s+report\b', caseSensitive: false): 'Price Reporter',
+    RegExp(r'\bpress\s+reporter\b', caseSensitive: false): 'Price Reporter',
+    RegExp(r'\bprize\s+reporter\b', caseSensitive: false): 'Price Reporter',
+    RegExp(r'\bright\s+reporter\b', caseSensitive: false): 'Price Reporter',
+    RegExp(r'\brice\s+reporter\b', caseSensitive: false): 'Price Reporter',
+    RegExp(r'\bprice\s+rep\b', caseSensitive: false): 'Price Reporter',
+    RegExp(r'\bрайс\s*репорт\w*\b', caseSensitive: false, unicode: true):
+        'Price Reporter',
+    RegExp(r'\bпрайс\s*репорт\w*\b', caseSensitive: false, unicode: true):
+        'Price Reporter',
+    RegExp(r'\bрайсфер\b', caseSensitive: false, unicode: true): 'Price Reporter',
+    RegExp(
+      r'\bприсрепорт\b',
+      caseSensitive: false,
+      unicode: true,
+    ): 'Price Reporter',
+  };
+  for (final entry in replacements.entries) {
+    t = t.replaceAll(entry.key, entry.value);
+  }
+  return t.replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
+/// STT mis-hearings for record titles after Price Reporter scope (constrained grammar).
+const Map<String, String> kPriceReporterTitleSttAliases = {
+  'play': 'Planning',
+  'plane': 'Planning',
+  'playing': 'Planning',
+  'planning': 'Planning',
+};
+
+String repairPriceReporterRecordTitle(String rawTitle) {
+  var title = rawTitle.trim();
+  if (title.isEmpty) return title;
+  title = title.replaceAll(RegExp(r'[.,!?;:]+$'), '').trim();
+  final norm = normalizeCategoryLabel(title);
+  final alias = kPriceReporterTitleSttAliases[norm];
+  if (alias != null) return alias;
+  return title;
+}
+
+/// True when transcript likely targets the Price Reporter command route.
+bool transcriptMentionsPriceReporter(String transcript) {
+  final norm = normalizeCategoryLabel(repairVoiceCommandTranscript(transcript));
+  if (norm.isEmpty) return false;
+  for (final prefix in kPriceReporterScopeNormPrefixes) {
+    if (norm == prefix || norm.startsWith('$prefix ')) return true;
+  }
+  return false;
+}
+
+/// User-facing confirmation after a voice-started record (EN/RU templates).
+String voiceCommandStartConfirmationMessage(
+  VoiceCommandParseResult result, {
+  required String localeCode,
+}) {
+  final path =
+      (result.matchedCategoryDisplayPath ?? result.rootLabel).trim();
+  final title = result.recordTitle.trim();
+  if (localeCode == 'ru') {
+    return 'Запущено: $path — $title';
+  }
+  return 'Started: $path — $title';
+}
+
+/// User-facing confirmation after hotkey stop of a running record (EN/RU templates).
+String voiceCommandStopConfirmationMessage({
+  String? path,
+  required String title,
+  required String localeCode,
+}) {
+  final titleTrim = title.trim();
+  if (localeCode == 'ru') {
+    return titleTrim.isEmpty ? 'Остановлено' : 'Остановлено: $titleTrim';
+  }
+  return titleTrim.isEmpty ? 'Stopped' : 'Stopped: $titleTrim';
+}
+
+/// Generic voice command entry — Price Reporter route when scope detected.
+VoiceCommandParseResult parseVoiceCommand({
+  required List<CategoryRule> rules,
+  required String transcript,
+}) {
+  final repaired = repairVoiceCommandTranscript(transcript);
+  if (!transcriptMentionsPriceReporter(repaired)) {
+    return VoiceCommandParseResult(
+      rootLabel: '',
+      matchedCategoryPocketBaseId: null,
+      matchedCategoryDisplayPath: null,
+      matchedLocalCategoryId: null,
+      recordTitle: repaired,
+      confidence: VoiceCommandMatchConfidence.noMatch,
+      originalTranscript: transcript.trim(),
+      ambiguityReason: 'unsupported_command',
+    );
+  }
+  final index = VoiceCommandCategoryIndex.fromCategoryRules(rules);
+  if (index == null) {
+    return VoiceCommandParseResult(
+      rootLabel: VoiceCommandCategoryIndex.kDefaultRootPhrase,
+      matchedCategoryPocketBaseId: null,
+      matchedCategoryDisplayPath: null,
+      matchedLocalCategoryId: null,
+      recordTitle: repaired,
+      confidence: VoiceCommandMatchConfidence.noMatch,
+      originalTranscript: transcript.trim(),
+      ambiguityReason: 'price_reporter_root_not_found',
+    );
+  }
+  return parsePriceReporterVoiceCommand(index: index, transcript: repaired);
+}
+
+/// Maps internal parser reason codes to l10n keys (never show raw codes in UI).
+String voiceCommandReasonL10nKey(String? reason) {
+  switch (reason) {
+    case 'missing_root_scope':
+      return 'desktop_voice_reason_no_root';
+    case 'no_client_match':
+      return 'desktop_voice_reason_no_client';
+    case 'ambiguous_client_prefix':
+      return 'desktop_voice_reason_ambiguous_client';
+    case 'missing_record_title':
+      return 'desktop_voice_reason_no_title';
+    case 'missing_client_and_title':
+      return 'desktop_voice_reason_no_client_title';
+    case 'empty_transcript':
+      return 'desktop_voice_no_speech';
+    case 'invalid_category_pb_id':
+      return 'desktop_voice_reason_invalid_category';
+    case 'price_reporter_root_not_found':
+      return 'desktop_voice_no_price_reporter';
+    case 'unsupported_command':
+      return 'desktop_voice_reason_unsupported';
+    default:
+      return 'desktop_voice_no_match';
+  }
+}
+
+bool _normTokenSequenceMatchesAt(
+  List<String> normTokens,
+  int start,
+  List<String> wantTokens,
+) {
+  if (start + wantTokens.length > normTokens.length) return false;
+  for (var j = 0; j < wantTokens.length; j++) {
+    final got = normTokens[start + j];
+    final want = wantTokens[j];
+    if (got == want) continue;
+    // Allow STT truncation on last scope token (report vs reporter).
+    if (j == wantTokens.length - 1 && want.startsWith(got) && got.length >= 4) {
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
+String? _extractAfterRootScope(String original, VoiceCommandCategoryIndex index) {
+  final repaired = repairVoiceCommandTranscript(original);
+  final normFull = normalizeCategoryLabel(repaired);
+  if (normFull.isEmpty) return null;
+
+  final normTokens = normFull.split(' ').where((t) => t.isNotEmpty).toList();
+  final rawTokens = repaired.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+  if (normTokens.isEmpty || rawTokens.isEmpty) return null;
+
+  final scopePrefixes = <List<String>>[
+  ...kPriceReporterScopeNormPrefixes.map(
+    (p) => p.split(' ').where((t) => t.isNotEmpty).toList(),
+  ),
+    normalizeCategoryLabel(index.rootLabel)
+        .split(' ')
+        .where((t) => t.isNotEmpty)
+        .toList(),
+  ]..sort((a, b) => b.length.compareTo(a.length));
+
+  for (final prefixTokens in scopePrefixes) {
+    if (prefixTokens.isEmpty) continue;
+    if (normTokens.length < prefixTokens.length) continue;
+    for (var i = 0; i <= normTokens.length - prefixTokens.length; i++) {
+      if (!_normTokenSequenceMatchesAt(normTokens, i, prefixTokens)) continue;
+      final skip = i + prefixTokens.length;
+      if (skip >= rawTokens.length) return '';
+      return rawTokens.skip(skip).join(' ').trim();
+    }
+  }
+  return null;
+}
+
 /// Parses a structured Price Reporter voice command against [index].
 VoiceCommandParseResult parsePriceReporterVoiceCommand({
   required VoiceCommandCategoryIndex index,
   required String transcript,
 }) {
-  final original = transcript.trim();
+  final original = repairVoiceCommandTranscript(transcript).trim();
   if (original.isEmpty) {
     return VoiceCommandParseResult(
       rootLabel: index.rootLabel,
@@ -201,11 +413,8 @@ VoiceCommandParseResult parsePriceReporterVoiceCommand({
     );
   }
 
-  final normFull = normalizeCategoryLabel(original);
-  final rootNorm = normalizeCategoryLabel(index.rootLabel);
-  if (rootNorm.isEmpty ||
-      !normFull.startsWith(rootNorm) ||
-      (normFull.length > rootNorm.length && normFull[rootNorm.length] != ' ')) {
+  final afterRoot = _extractAfterRootScope(original, index);
+  if (afterRoot == null) {
     return VoiceCommandParseResult(
       rootLabel: index.rootLabel,
       matchedCategoryPocketBaseId: null,
@@ -218,17 +427,6 @@ VoiceCommandParseResult parsePriceReporterVoiceCommand({
     );
   }
 
-  var afterRoot = original;
-  final rootWords = index.rootLabel.trim().split(RegExp(r'\s+'));
-  if (rootWords.isNotEmpty &&
-      afterRoot.toLowerCase().startsWith(index.rootLabel.toLowerCase())) {
-    afterRoot = afterRoot.substring(index.rootLabel.length);
-    afterRoot = afterRoot.replaceFirst(RegExp(r'^[\s\-–—:|]+'), '');
-  } else {
-    final tokens = original.split(RegExp(r'\s+'));
-    afterRoot = tokens.skip(rootWords.length).join(' ');
-  }
-  afterRoot = afterRoot.trim();
   if (afterRoot.isEmpty) {
     return VoiceCommandParseResult(
       rootLabel: index.rootLabel,
@@ -256,15 +454,39 @@ VoiceCommandParseResult parsePriceReporterVoiceCommand({
   }
 
   if (hits.isEmpty) {
+    final title = repairPriceReporterRecordTitle(afterRoot.trim());
+    if (title.isEmpty) {
+      return VoiceCommandParseResult(
+        rootLabel: index.rootLabel,
+        matchedCategoryPocketBaseId: null,
+        matchedCategoryDisplayPath: null,
+        matchedLocalCategoryId: null,
+        recordTitle: '',
+        confidence: VoiceCommandMatchConfidence.noMatch,
+        originalTranscript: original,
+        ambiguityReason: 'missing_client_and_title',
+      );
+    }
+    if (!_isLikelyPocketBaseRowId(index.rootPocketBaseId)) {
+      return VoiceCommandParseResult(
+        rootLabel: index.rootLabel,
+        matchedCategoryPocketBaseId: null,
+        matchedCategoryDisplayPath: index.rootLabel,
+        matchedLocalCategoryId: null,
+        recordTitle: title,
+        confidence: VoiceCommandMatchConfidence.noMatch,
+        originalTranscript: original,
+        ambiguityReason: 'invalid_category_pb_id',
+      );
+    }
     return VoiceCommandParseResult(
       rootLabel: index.rootLabel,
-      matchedCategoryPocketBaseId: null,
-      matchedCategoryDisplayPath: null,
-      matchedLocalCategoryId: null,
-      recordTitle: afterRoot,
-      confidence: VoiceCommandMatchConfidence.noMatch,
+      matchedCategoryPocketBaseId: index.rootPocketBaseId,
+      matchedCategoryDisplayPath: index.rootLabel,
+      matchedLocalCategoryId: index.rootLocalCategoryId,
+      recordTitle: title,
+      confidence: VoiceCommandMatchConfidence.exact,
       originalTranscript: original,
-      ambiguityReason: 'no_client_match',
     );
   }
 
@@ -302,8 +524,12 @@ VoiceCommandParseResult parsePriceReporterVoiceCommand({
     );
   }
 
-  final recordTitle = _stripNormalizedPrefixTokens(afterRoot, winner.phrase);
-  if (recordTitle.trim().isEmpty) {
+  var recordTitle =
+      repairPriceReporterRecordTitle(_stripNormalizedPrefixTokens(afterRoot, winner.phrase).trim());
+  if (recordTitle.isEmpty) {
+    recordTitle = client.displayName.trim();
+  }
+  if (recordTitle.isEmpty) {
     return VoiceCommandParseResult(
       rootLabel: index.rootLabel,
       matchedCategoryPocketBaseId: client.pocketBaseId,
@@ -321,7 +547,7 @@ VoiceCommandParseResult parsePriceReporterVoiceCommand({
     matchedCategoryPocketBaseId: client.pocketBaseId,
     matchedCategoryDisplayPath: client.displayPath,
     matchedLocalCategoryId: client.localCategoryId,
-    recordTitle: recordTitle.trim(),
+    recordTitle: recordTitle,
     confidence: VoiceCommandMatchConfidence.exact,
     originalTranscript: original,
   );

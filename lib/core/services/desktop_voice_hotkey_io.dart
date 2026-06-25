@@ -1,21 +1,46 @@
+import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 
 HotKey? _desktopVoiceGlobalHotKey;
 
-Future<void> registerDesktopVoiceGlobalHotkey(VoidCallback onToggle) async {
-  if (_desktopVoiceGlobalHotKey != null) return;
+List<HotKeyModifier> _modifiersFromConfig(DesktopVoiceHotkeyConfig config) {
+  final mods = <HotKeyModifier>[];
+  if (config.control) mods.add(HotKeyModifier.control);
+  if (config.shift) mods.add(HotKeyModifier.shift);
+  if (config.alt) mods.add(HotKeyModifier.alt);
+  if (config.meta) mods.add(HotKeyModifier.meta);
+  return mods;
+}
+
+Future<bool> registerDesktopVoiceGlobalHotkey(
+  VoidCallback onToggle, {
+  required DesktopVoiceHotkeyConfig config,
+}) async {
+  if (!config.isValid) {
+    DesktopVoiceSettings.instance.setHotkeyRegistrationError(
+      'Invalid hotkey combination',
+    );
+    return false;
+  }
+  await unregisterDesktopVoiceGlobalHotkey();
   final hotKey = HotKey(
-    key: PhysicalKeyboardKey.space,
-    modifiers: [HotKeyModifier.control, HotKeyModifier.shift],
+    key: config.physicalKey,
+    modifiers: _modifiersFromConfig(config),
     scope: HotKeyScope.system,
   );
-  await hotKeyManager.register(
-    hotKey,
-    keyDownHandler: (_) => onToggle(),
-  );
-  _desktopVoiceGlobalHotKey = hotKey;
+  try {
+    await hotKeyManager.register(
+      hotKey,
+      keyDownHandler: (_) => onToggle(),
+    );
+    _desktopVoiceGlobalHotKey = hotKey;
+    DesktopVoiceSettings.instance.setHotkeyRegistrationError(null);
+    return true;
+  } catch (e) {
+    DesktopVoiceSettings.instance.setHotkeyRegistrationError(e.toString());
+    return false;
+  }
 }
 
 Future<void> unregisterDesktopVoiceGlobalHotkey() async {

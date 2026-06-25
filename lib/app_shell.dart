@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import 'dart:async';
+import 'dart:io' show exit, Platform;
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -23,11 +24,22 @@ import 'package:counter/core/widgets/lazy_indexed_stack.dart';
 import 'package:counter/core/widgets/tag_display_mode_scope.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
+import 'package:counter/core/navigation/app_navigator.dart';
+import 'package:counter/core/diagnostics/desktop_voice_diag.dart';
+import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_stt_helper_service.dart';
+import 'package:counter/core/services/desktop_tray_service.dart';
+import 'package:counter/core/services/desktop_voice_confirmation.dart';
+import 'package:counter/core/services/desktop_voice_overlay_bridge.dart';
+import 'package:counter/core/services/desktop_voice_overlay_host.dart';
+import 'package:counter/core/services/desktop_voice_record_submit.dart';
+import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
 import 'package:counter/core/services/desktop_voice_hotkey.dart';
+import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
-import 'package:counter/features/shared/desktop_voice_command_panel.dart';
+import 'package:counter/features/shared/desktop_voice_widget.dart';
 import 'package:counter/features/shared/voice_command_parser.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
@@ -440,7 +452,6 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   /// Last engine init failure (shown with [speech_unavailable] snackbar detail).
   String? _speechLastInitError;
   bool _isVoiceListening = false;
-  bool _desktopVoicePanelOpen = false;
   void Function(String)? _speechStatusCallback;
 
   /// Tracks device-local calendar day so an open session can follow midnight without restart.
@@ -511,6 +522,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
     _rules = List.from(DatabaseService.instance.rules);
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
+    DesktopVoiceAcceptanceBridge.runCommand = _runDesktopVoiceAcceptanceCommand;
+    DesktopVoiceAcceptanceBridge.simulateHotkeyToggle = _onDesktopVoiceHotkeyToggle;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       StartupLog.deferred(
         name: 'timelineTasksLoad',
@@ -531,16 +544,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         reason: 'notNeededForFirstFrame',
       );
       unawaited(_ensureSpeechReady());
-      if (DesktopVoiceHotkey.isActive) {
-        unawaited(
-          DesktopVoiceHotkey.attachGlobal(
-            onToggle: () {
-              if (!mounted) return;
-              unawaited(_toggleDesktopVoiceCommandPanel());
-            },
-          ),
-        );
-      }
+      unawaited(_initDesktopVoiceLayer());
     });
 
     _notificationSub = DatabaseService.instance.notifications.listen((msg) {
@@ -643,8 +647,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _selectedDateListenable.dispose();
     _timelineTasksRevision.dispose();
     _shellPageIndexListenable.dispose();
-    if (DesktopVoiceHotkey.isActive) {
+    if (DesktopVoiceHotkey.isSupportedPlatform) {
+      DesktopVoiceAcceptanceBridge.runCommand = null;
+      DesktopVoiceAcceptanceBridge.simulateHotkeyToggle = null;
       unawaited(DesktopVoiceHotkey.detachGlobal());
+      unawaited(DesktopTrayService.dispose());
     }
     super.dispose();
   }
@@ -656,6 +663,137 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   String get _timelineVoiceDateKey {
     final d = DatabaseService.instance.getTimelineDeviceLocalToday();
     return '${d.year}-${_two(d.month)}-${_two(d.day)}';
+  }
+
+  Future<void> _refreshDesktopTrayMenu() async {
+    if (!DesktopTrayService.isSupported) return;
+    final loc = currentLocale.value;
+    await DesktopTrayService.refreshMenuLabels(
+      showCounter: t(loc, 'tray_show_counter'),
+      startVoice: t(loc, 'tray_start_voice'),
+      stopRecord: t(loc, 'tray_stop_record'),
+      settings: t(loc, 'tray_settings'),
+      exitCounter: t(loc, 'tray_exit_counter'),
+    );
+  }
+
+  Future<void> _initDesktopVoiceLayer() async {
+    if (!DesktopVoiceHotkey.isSupportedPlatform) return;
+    await DesktopVoiceSettings.instance.loadIfNeeded();
+    if (!mounted) return;
+
+    if (await DesktopTrayService.shouldStartHidden()) {
+      unawaited(DesktopTrayService.hideMainWindow());
+    }
+
+    await DesktopTrayService.initialize(
+      onShowApp: () {
+        unawaited(DesktopTrayService.showMainWindow());
+        _setShellPageIndex(0);
+        if (mounted) setState(() {});
+      },
+      onStartVoice: () => unawaited(_toggleDesktopVoiceWidget()),
+      onStopRunningRecord: () => unawaited(_stopAnyActiveTask()),
+      onOpenSettings: () {
+        unawaited(DesktopTrayService.showMainWindow());
+        _setShellPageIndex(5);
+        if (mounted) setState(() {});
+      },
+      onExitApp: () async {
+        closeDesktopVoiceOverlayIfOpen();
+        await DesktopVoiceHotkey.detachGlobal();
+        await DesktopTrayService.dispose();
+        DesktopSttHelperService.instance.dispose();
+        if (Platform.isWindows) exit(0);
+      },
+    );
+    await _refreshDesktopTrayMenu();
+    unawaited(DesktopTrayService.applyAutostartRegistry());
+
+    if (DesktopVoiceHotkey.isActive) {
+      final ok = await DesktopVoiceHotkey.attachGlobal(
+        onToggle: _onDesktopVoiceHotkeyToggle,
+      );
+      DesktopVoicePipeline.mark(
+        ok
+            ? 'DESKTOP_VOICE_HOTKEY_REGISTERED'
+            : 'DESKTOP_VOICE_HOTKEY_REGISTER_FAILED',
+        DesktopVoiceSettings.instance.hotkey.displayLabel,
+      );
+      if (ok) {
+        unawaited(DesktopSttHelperService.instance.ensureStarted());
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_APP_READY');
+      }
+    } else {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_HOTKEY_SKIPPED',
+        'voice_inactive',
+      );
+    }
+  }
+
+  void _onDesktopVoiceHotkeyToggle() {
+    unawaited(_toggleDesktopVoiceWidget());
+  }
+
+  Future<bool> _runDesktopVoiceAcceptanceCommand(String transcript) async {
+    final outcome = await DesktopVoiceRecordSubmit.submitTranscript(
+      categoryRules: List<CategoryRule>.from(_rules),
+      transcript: transcript,
+      dateKey: _timelineVoiceDateKey,
+      localeCode: currentLocale.value,
+      planetaryNow: DatabaseService.getPlanetaryNow,
+      writeRecord: (req) async {
+        return DatabaseService.instance.writeRecord(
+          req.dateKey,
+          req.title,
+          categoryId: req.categoryId,
+          explicitStartTime: req.explicitStartTime,
+          sourcePlanPocketRecordId: null,
+        );
+      },
+    );
+    if (outcome == null) return false;
+    unawaited(DesktopVoiceConfirmation.showRecordStarted(outcome.confirmationMessage));
+    _timelineTasksRevision.value++;
+    final runningTitle = DatabaseService.instance.cachedPrimaryRunningTitle;
+    final expectedTitle = parseVoiceCommand(
+      rules: List<CategoryRule>.from(_rules),
+      transcript: transcript,
+    ).recordTitle.trim();
+    final visible = runningTitle != null &&
+        runningTitle.trim().toLowerCase() == expectedTitle.toLowerCase();
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_TIMELINE_RECORD_VISIBLE_CHECK',
+      visible ? 'yes' : 'no',
+    );
+    return outcome.writeRecordCalled && visible;
+  }
+
+  Future<bool> _reattachDesktopVoiceHotkey() async {
+    if (!mounted) return false;
+    await DesktopVoiceSettings.instance.loadIfNeeded();
+    if (!DesktopVoiceHotkey.isActive) {
+      await DesktopVoiceHotkey.detachGlobal();
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_DETACHED', 'voice_disabled');
+      if (mounted) setState(() {});
+      return true;
+    }
+    final ok = await DesktopVoiceHotkey.reattachGlobal(
+      onToggle: _onDesktopVoiceHotkeyToggle,
+    );
+    DesktopVoicePipeline.mark(
+      ok
+          ? 'DESKTOP_VOICE_HOTKEY_REGISTERED'
+          : 'DESKTOP_VOICE_HOTKEY_REGISTER_FAILED',
+      DesktopVoiceSettings.instance.hotkeyRegistrationError ??
+          DesktopVoiceSettings.instance.hotkey.displayLabel,
+    );
+    if (ok) {
+      unawaited(DesktopSttHelperService.instance.ensureStarted());
+    }
+    if (mounted) setState(() {});
+    return ok;
   }
 
   bool get _isFutureDate => _selectedDate.isAfter(_localToday());
@@ -1559,124 +1697,214 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     );
   }
 
-  Future<bool> _desktopVoiceSubmitParsed(VoiceCommandParseResult result) async {
-    if (!result.isSafeToStart) return false;
-    final title = result.recordTitle.trim();
-    final cid = result.matchedLocalCategoryId;
-    if (title.isEmpty || cid == null) return false;
-
-    unawaited(_stopAnyActiveTask());
-    final now = DatabaseService.getPlanetaryNow();
-    final pathTag = DatabaseService.instance.getCategoryPath(cid);
-    try {
-      final serverId = await DatabaseService.instance.writeRecord(
-        _timelineVoiceDateKey,
-        title,
-        categoryId: cid,
-        explicitStartTime: now,
-        sourcePlanPocketRecordId: null,
-      );
-      if (!mounted) return false;
-      if (serverId == null || serverId.trim().isEmpty) {
-        _showSyncFailedSnackBar(
-          onRetry: () => unawaited(
-            _retryVoiceWriteNewTask(
-              title,
-              cid,
-              pathTag,
-              sourcePlanPocketRecordId: null,
-            ),
-          ),
-        );
-        return false;
-      }
-      if (_shellPageIndex == 0) {
-        setState(() {
-          _tasks.add(
-            Task(
-              title: title,
-              startTime: now,
-              endTime: null,
-              tags: [pathTag],
-              isActive: true,
+  Future<String?> _desktopVoiceSubmitParsed(VoiceCommandParseResult result) async {
+    final outcome = await DesktopVoiceRecordSubmit.submitParsed(
+      result: result,
+      dateKey: _timelineVoiceDateKey,
+      localeCode: currentLocale.value,
+      planetaryNow: DatabaseService.getPlanetaryNow,
+      writeRecord: (req) async {
+        unawaited(_stopAnyActiveTask());
+        try {
+          return await DatabaseService.instance.writeRecord(
+            req.dateKey,
+            req.title,
+            categoryId: req.categoryId,
+            explicitStartTime: req.explicitStartTime,
+            sourcePlanPocketRecordId: null,
+          );
+        } catch (e) {
+          DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_RESULT', 'error $e');
+          debugPrint('UI ERROR: $e');
+          if (mounted) {
+            final pathTag =
+                DatabaseService.instance.getCategoryPath(req.categoryId);
+            _showSyncFailedSnackBar(
+              onRetry: () => unawaited(
+                _retryVoiceWriteNewTask(
+                  req.title,
+                  req.categoryId,
+                  pathTag,
+                  sourcePlanPocketRecordId: null,
+                ),
+              ),
+            );
+          }
+          return null;
+        }
+      },
+    );
+    if (outcome == null) {
+      if (result.isSafeToStart && mounted) {
+        final cid = result.matchedLocalCategoryId;
+        final title = result.recordTitle.trim();
+        if (cid != null && title.isNotEmpty) {
+          final pathTag = DatabaseService.instance.getCategoryPath(cid);
+          _showSyncFailedSnackBar(
+            onRetry: () => unawaited(
+              _retryVoiceWriteNewTask(
+                title,
+                cid,
+                pathTag,
+                sourcePlanPocketRecordId: null,
+              ),
             ),
           );
-          _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
-        });
-        unawaited(_saveTasks());
+        }
       }
-      return true;
-    } catch (e) {
-      debugPrint('UI ERROR: $e');
-      if (mounted) {
-        _showSyncFailedSnackBar(
-          onRetry: () => unawaited(
-            _retryVoiceWriteNewTask(
-              title,
-              cid,
-              pathTag,
-              sourcePlanPocketRecordId: null,
-            ),
+      return null;
+    }
+    if (!mounted) return outcome.serverId;
+    unawaited(DesktopVoiceConfirmation.showRecordStarted(outcome.confirmationMessage));
+    _timelineTasksRevision.value++;
+    if (_shellPageIndex == 0) {
+      final cid = result.matchedLocalCategoryId!;
+      final title = result.recordTitle.trim();
+      final pathTag = DatabaseService.instance.getCategoryPath(cid);
+      final now = DatabaseService.getPlanetaryNow();
+      setState(() {
+        _tasks.add(
+          Task(
+            title: title,
+            startTime: now,
+            endTime: null,
+            tags: [pathTag],
+            isActive: true,
           ),
         );
+        _tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
+      });
+      unawaited(_saveTasks());
+    }
+    return outcome.serverId;
+  }
+
+  Future<void> _desktopVoiceUndoStop(String? recordDocId) async {
+    final id = recordDocId?.trim();
+    if (id == null || id.isEmpty) return;
+    unawaited(_stopRecordByDocId(id));
+  }
+
+  void _desktopVoiceHotkeyStopRunning(String runningId) {
+    final title = DatabaseService.instance.cachedPrimaryRunningTitle ?? '';
+    final loc = currentLocale.value;
+    final message = voiceCommandStopConfirmationMessage(
+      title: title,
+      localeCode: loc,
+    );
+
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_STOP_RUNNING', title);
+    closeDesktopVoiceOverlayIfOpen();
+
+    unawaited(DesktopVoiceConfirmation.showRecordStopped(message));
+    unawaited(
+      showDesktopVoiceStatusCapsule(
+        primaryLine: loc == 'ru' ? 'Остановлено' : 'Stopped',
+        secondaryLine: title.trim().isEmpty ? null : title.trim(),
+      ),
+    );
+    _timelineTasksRevision.value++;
+
+    if (_shellPageIndex == 0 && mounted) {
+      setState(() {
+        _tasks.removeWhere((task) => task.isRunning);
+      });
+      unawaited(_saveTasks());
+    }
+
+    unawaited(() async {
+      final ok = await DatabaseService.instance.stopRecordByDocId(runningId);
+      if (!ok) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STOP_RECORD_FAILED', title);
+        if (mounted) {
+          AppSnack.show(t(loc, 'desktop_voice_stop_failed'), error: true);
+        }
       }
-      return false;
+      if (mounted) await _stopAnyActiveTask();
+    }());
+  }
+
+  /// Windows Desktop Voice hotkey state machine (UX contract):
+  /// A — idle, no running primary record → open overlay + start STT immediately.
+  /// B — overlay listening → second hotkey finishes capture and processes command.
+  /// C — command accepted → confirmation + optional auto-close (overlay widget).
+  /// D — running primary record, overlay closed → stop record + notify.
+  /// E — app hidden to tray: tray notification fallback; never resize main window.
+  Future<void> _toggleDesktopVoiceWidget() async {
+    try {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_RECEIVED');
+      if (!DesktopVoiceHotkey.isActive) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_BLOCKED', 'voice_inactive');
+        return;
+      }
+
+      final overlayOpen = isDesktopVoiceOverlayOpen;
+      final overlayListening = DesktopVoiceOverlayBridge.isListening;
+      final overlayPreparing = DesktopVoiceOverlayBridge.isPreparing;
+      final overlayProcessing = DesktopVoiceOverlayBridge.isProcessing;
+      final runningId = DatabaseService.instance.canonicalPrimaryRunningBusinessId;
+      final hasRunningRecord =
+          runningId != null && runningId.trim().isNotEmpty;
+
+      final action = resolveDesktopVoiceHotkeyAction(
+        overlayOpen: overlayOpen,
+        overlayListening: overlayListening,
+        overlayPreparing: overlayPreparing,
+        overlayProcessing: overlayProcessing,
+        hasRunningRecord: hasRunningRecord,
+      );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_ACTION_RESOLVED', '$action');
+
+      switch (action) {
+        case DesktopVoiceHotkeyAction.finishListening:
+          if (DesktopVoiceOverlayBridge.requestFinishListening()) {
+            DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_FINISH_LISTENING');
+          }
+          return;
+        case DesktopVoiceHotkeyAction.cancelOverlay:
+          if (overlayPreparing) {
+            DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_CANCEL_PREPARING');
+          }
+          if (DesktopVoiceOverlayBridge.requestCancel()) {
+            return;
+          }
+          closeDesktopVoiceOverlayIfOpen();
+          return;
+        case DesktopVoiceHotkeyAction.stopRunningRecord:
+          _desktopVoiceHotkeyStopRunning(runningId!.trim());
+          return;
+        case DesktopVoiceHotkeyAction.openOverlay:
+          await _openDesktopVoiceOverlay();
+          return;
+      }
+    } catch (e) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_ERROR_CAUGHT', '$e');
     }
   }
 
-  Future<void> _toggleDesktopVoiceCommandPanel() async {
-    if (!DesktopVoiceHotkey.isActive || !mounted) return;
-    if (_desktopVoicePanelOpen) return;
+  Future<void> _openDesktopVoiceOverlay() async {
+    if (isDesktopVoiceOverlayOpen) return;
 
-    final index = VoiceCommandCategoryIndex.fromCategoryRules(_rules);
-    if (index == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            t(currentLocale.value, 'desktop_voice_no_price_reporter'),
-          ),
-        ),
-      );
+    DesktopVoiceDiag.instance.mark('hotkey_or_tray', 'received');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_SHOW_MAIN_WINDOW_SKIPPED');
+
+    final navCtx = appRootNavigatorKey.currentContext ?? context;
+    if (!mounted && appRootNavigatorKey.currentContext == null) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_BLOCKED', 'no_context');
       return;
     }
 
-    await _ensureSpeechReady();
-    if (!_speechReady) {
-      if (!mounted) return;
-      final loc = currentLocale.value;
-      final detail = _speechLastInitError?.trim();
-      final text = detail != null && detail.isNotEmpty
-          ? t(loc, 'speech_error_prefix').replaceFirst('%s', detail)
-          : t(loc, 'speech_unavailable');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
-      return;
-    }
-    if (!mounted) return;
-
-    _speechHandle ??= SpeechEngineHandle(_speech!);
-    _speechHandle!.speech = _speech!;
-    _desktopVoicePanelOpen = true;
-    try {
-      await showDesktopVoiceCommandPanel(
-        context: context,
-        speechHandle: _speechHandle!,
-        categoryIndex: index,
-        setSpeechStatusCallback: (cb) {
-          if (mounted) setState(() => _speechStatusCallback = cb);
-        },
-        onStartRecord: _desktopVoiceSubmitParsed,
-        onSpeechEngineHardReset: _speechEngineHardReset,
+    final opened = await showDesktopVoiceWidget(
+      context: navCtx,
+      categoryRules: List<CategoryRule>.from(_rules),
+      onStartRecord: _desktopVoiceSubmitParsed,
+      onUndoStop: _desktopVoiceUndoStop,
+    );
+    if (!opened) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_OVERLAY_BLOCKED',
+        'overlay_unavailable',
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _desktopVoicePanelOpen = false;
-          _speechStatusCallback = null;
-          _isVoiceListening = false;
-        });
-      } else {
-        _desktopVoicePanelOpen = false;
-      }
     }
   }
 
@@ -2257,6 +2485,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       ProfilePage(
         onSaved: () {
           if (mounted) setState(() {});
+          unawaited(_refreshDesktopTrayMenu());
+        },
+        onDesktopVoiceHotkeyChanged: (_) => _reattachDesktopVoiceHotkey(),
+        onTestDesktopVoice: () {
+          unawaited(_toggleDesktopVoiceWidget());
         },
       ),
     ];
@@ -2264,6 +2497,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     return AnimatedBuilder(
       animation: currentLocale,
       builder: (context, _) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: desktopVoiceShellSuppressed,
+          builder: (context, shellSuppressed, __) {
+            if (shellSuppressed) {
+              return const ColoredBox(
+                color: Colors.transparent,
+                child: SizedBox.expand(),
+              );
+            }
         final shellSw = Stopwatch()..start();
         final scheme = Theme.of(context).colorScheme;
         _shellLayout.applyShellFrame(_shellPageIndex);
@@ -2472,15 +2714,15 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         );
         if (DesktopVoiceHotkey.isActive) {
           return Shortcuts(
-            shortcuts: const {
-              DesktopVoiceHotkey.inAppActivator: _DesktopVoiceCommandIntent(),
+            shortcuts: {
+              DesktopVoiceHotkey.inAppActivator: const _DesktopVoiceCommandIntent(),
             },
             child: Actions(
               actions: {
                 _DesktopVoiceCommandIntent:
                     CallbackAction<_DesktopVoiceCommandIntent>(
                   onInvoke: (_) {
-                    unawaited(_toggleDesktopVoiceCommandPanel());
+                    unawaited(_toggleDesktopVoiceWidget());
                     return null;
                   },
                 ),
@@ -2490,6 +2732,8 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           );
         }
         return shell;
+          },
+        );
       },
     );
   }

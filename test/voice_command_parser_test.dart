@@ -57,8 +57,8 @@ void main() {
     });
 
     test('exact match extracts client and record title', () {
-      final r = parsePriceReporterVoiceCommand(
-        index: index,
+      final r = parseVoiceCommand(
+        rules: [_priceReporterFixtureTree()],
         transcript: 'Price Reporter AGE SOLUTIONS ADD MOD',
       );
       expect(r.confidence, VoiceCommandMatchConfidence.exact);
@@ -69,6 +69,15 @@ void main() {
       expect(r.recordTitle, 'ADD MOD');
       expect(r.rootLabel, 'Price Reporter');
       expect(r.originalTranscript, 'Price Reporter AGE SOLUTIONS ADD MOD');
+    });
+
+    test('STT repair: price report prefix still matches', () {
+      final r = parseVoiceCommand(
+        rules: [_priceReporterFixtureTree()],
+        transcript: 'price report AGE SOLUTIONS ADD MOD',
+      );
+      expect(r.confidence, VoiceCommandMatchConfidence.exact);
+      expect(r.recordTitle, 'ADD MOD');
     });
 
     test('no match when root scope missing', () {
@@ -86,9 +95,10 @@ void main() {
         index: index,
         transcript: 'Price Reporter UNKNOWN CLIENT ADD MOD',
       );
-      expect(r.confidence, VoiceCommandMatchConfidence.noMatch);
-      expect(r.ambiguityReason, 'no_client_match');
-      expect(r.isSafeToStart, isFalse);
+      expect(r.confidence, VoiceCommandMatchConfidence.exact);
+      expect(r.matchedLocalCategoryId, 100);
+      expect(r.recordTitle, 'UNKNOWN CLIENT ADD MOD');
+      expect(r.isSafeToStart, isTrue);
     });
 
     test('ambiguous when two clients share longest prefix', () {
@@ -118,9 +128,30 @@ void main() {
         index: index,
         transcript: 'Price Reporter AGE SOLUTIONS',
       );
-      expect(r.confidence, VoiceCommandMatchConfidence.noMatch);
-      expect(r.ambiguityReason, 'missing_record_title');
-      expect(r.isSafeToStart, isFalse);
+      expect(r.confidence, VoiceCommandMatchConfidence.exact);
+      expect(r.recordTitle, 'AGE SOLUTIONS');
+      expect(r.isSafeToStart, isTrue);
+    });
+
+    test('root-only command: Price Reporter Planning', () {
+      final r = parseVoiceCommand(
+        rules: [_priceReporterFixtureTree()],
+        transcript: 'Price Reporter Planning',
+      );
+      expect(r.confidence, VoiceCommandMatchConfidence.exact);
+      expect(r.isSafeToStart, isTrue);
+      expect(r.matchedCategoryDisplayPath, 'Price Reporter');
+      expect(r.matchedLocalCategoryId, 100);
+      expect(r.recordTitle, 'Planning');
+    });
+
+    test('alias press reporter Planning', () {
+      final r = parseVoiceCommand(
+        rules: [_priceReporterFixtureTree()],
+        transcript: 'press reporter Planning',
+      );
+      expect(r.confidence, VoiceCommandMatchConfidence.exact);
+      expect(r.recordTitle, 'Planning');
     });
   });
 }

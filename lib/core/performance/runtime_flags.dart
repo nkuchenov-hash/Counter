@@ -36,3 +36,9 @@ const bool kDesktopVoiceCommandEnabled = bool.fromEnvironment(
   'DESKTOP_VOICE_COMMAND',
   defaultValue: false,
 );
+
+/// Smoke/diag only — force STT prepare to fail after showing Preparing (never in release handoff).
+const bool kDesktopVoiceForcePrepareTimeout = bool.fromEnvironment(
+  'DESKTOP_VOICE_FORCE_PREPARE_TIMEOUT',
+  defaultValue: false,
+);

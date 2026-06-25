@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:ui' show PlatformDispatcher;
+
+import 'package:counter/core/navigation/app_navigator.dart';
 
 import 'package:counter/core/app_build_info.dart';
 import 'package:counter/core/performance/rebuild_metrics.dart';
@@ -29,6 +32,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:counter/core/diagnostics/runtime_log.dart';
 import 'package:counter/core/diagnostics/platform_log.dart';
@@ -104,6 +108,10 @@ Future<void> _mainAsync() async {
     return false;
   };
   RebuildMetrics.instance.attachIfNeeded();
+  if (!kIsWeb && Platform.isWindows) {
+    await windowManager.ensureInitialized();
+    await windowManager.setMinimumSize(const Size(900, 600));
+  }
   if (!kIsWeb) {
     unawaited(NotificationService.instance.ensureInitialized());
     try {
@@ -196,6 +204,7 @@ class _DateTimeTrackerAppState extends State<DateTimeTrackerApp> {
           builder: (context, settingsSnap) {
             final s = settingsSnap.data ?? DatabaseService.instance.settings;
             return MaterialApp(
+              navigatorKey: appRootNavigatorKey,
               scaffoldMessengerKey: appSnackMessengerKey,
               title: t(locale, 'app_title'),
               locale: materialLocaleForUiLanguage(locale),

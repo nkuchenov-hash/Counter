@@ -7,7 +7,7 @@
 const double kShellDesktopNavBreakpoint = 900;
 
 /// Expanded side navigation width (icons + labels).
-const double kShellSideNavWidth = 200;
+const double kShellSideNavWidth = 272;
 
 bool shellUsesSideNavigation(double width) =>
     width >= kShellDesktopNavBreakpoint;

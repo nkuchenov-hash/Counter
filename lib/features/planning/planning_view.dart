@@ -51,6 +51,9 @@ import 'package:counter/core/time/plan_time_labels.dart';
 import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
 
+/// Scheduled Time View canvas only (`_buildProportionalDayTimelineCanvas`).
+const _kPlanningTimeViewCanvasColor = Color(0xFFD0D5DD);
+
 enum _PlanSortMode { category, time, tags, custom }
 
 /// Order matches [SegmentedButton] segments (persisted as [DatabaseService.kPrefsPlanActiveTab]).
@@ -4303,14 +4306,7 @@ DatabaseService.instance.notifyPlanningRefresh();
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: Color.alphaBlend(
-                              scheme.surfaceContainerHighest.withValues(
-                                alpha: 0.78,
-                              ),
-                              scheme.surfaceContainerHigh.withValues(
-                                alpha: 0.94,
-                              ),
-                            ),
+                            color: _kPlanningTimeViewCanvasColor,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: scheme.outlineVariant.withValues(
