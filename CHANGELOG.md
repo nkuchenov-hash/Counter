@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - Manual data repair: June 25 plan times MSK reinterpretation [wip]
+* **`scripts/manual/repair_2026_06_25_plan_times_msk.dart`:** [wip] One-off PocketBase repair — reinterpreted 16 scheduled `plans` on 2026-06-25 from New York wall time to Moscow wall time (`start_time`/`end_time` only); explicit `--ids` + `--confirm REINTERPRET_NY_AS_MSK_2026_06_25` apply path; profile `xhjy54inue73piz`; all 16 PATCHes read-back verified; durations preserved.
+
+## [2026-06-25] - P0 Tray-hidden native Win32 voice overlay [shipped]
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** [shipped] separate topmost tool-window HWND (460×112) via MethodChannel `counter/desktop_voice_native_overlay`; never mutates main Flutter window.
+* **`lib/core/services/desktop_voice_overlay_service.dart`:** unified overlay API (`showPreparing`/`showListening`/`showStarted`/`showStopped`/`hide`); markers `NATIVE_OVERLAY_*`, `NOTIFICATION_FALLBACK_USED` only on failure.
+* **`lib/features/shared/desktop_voice_widget.dart`:** Windows uses native overlay for all states; Flutter `OverlayEntry` runs STT session logic only; tray-hidden no longer notification-only.
+* **`scripts/manual/smoke_desktop_hotkey.ps1`:** requires `DESKTOP_VOICE_NATIVE_OVERLAY_SHOWN_WHILE_TRAY_HIDDEN`; 5× hotkey stress while hidden.
+
 ## [2026-06-25] - P0 Hotkey crash fix + Microphone card clip fix [shipped]
 * **`lib/core/services/desktop_voice_overlay_host_io.dart`:** [shipped] removed unsafe main-window resize/frameless/skip-taskbar capsule path (crash root cause); host is no-op (`no_window_mutation`); tray-hidden → `notifyTrayOverlayUnavailable` notification fallback only.
 * **`lib/app_shell.dart`:** hotkey handler wrapped in try/catch; markers `HOTKEY_ACTION_RESOLVED`, `HOTKEY_ERROR_CAUGHT`.
