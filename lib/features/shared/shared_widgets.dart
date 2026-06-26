@@ -47,6 +47,39 @@ DateTime displayToUtc(DateTime displayNaive) =>
 DateTime displayNow() =>
     DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
 
+/// Debounced background sync for edit sheets; [flush] on explicit Save / close.
+class EditSheetAutosaveGate {
+  EditSheetAutosaveGate({this.debounce = const Duration(milliseconds: 650)});
+
+  final Duration debounce;
+  Timer? _timer;
+  bool _dirty = false;
+
+  bool get isDirty => _dirty;
+
+  void markDirty() => _dirty = true;
+
+  void markClean() => _dirty = false;
+
+  void schedule(void Function() action) {
+    _dirty = true;
+    _timer?.cancel();
+    _timer = Timer(debounce, () {
+      if (_dirty) action();
+    });
+  }
+
+  void flush(void Function() action) {
+    _timer?.cancel();
+    if (_dirty) {
+      action();
+      _dirty = false;
+    }
+  }
+
+  void dispose() => _timer?.cancel();
+}
+
 /// Shared start/end time control for Timeline and Planning edit sheets.
 class AppEditSheetTimeButton extends StatelessWidget {
   const AppEditSheetTimeButton({
@@ -570,10 +603,16 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   late _PlanRepeatUi _repeatUi;
   String? _rruleCustomRaw;
   late final TextEditingController _rruleCustomController;
+  late final PlanningTask _baselineTask;
+  final EditSheetAutosaveGate _planAutosaveGate = EditSheetAutosaveGate();
+  StreamSubscription<DocChange>? _planQuillChangesSub;
+
+  bool get _isPersistedPlan => widget.task.planRowIdForBackend.trim().isNotEmpty;
 
   @override
   void initState() {
     super.initState();
+    _baselineTask = widget.task;
     _startedAsUndatedBacklog =
         widget.task.startTime == null && widget.task.dateKey.trim().length < 10;
     if (_startedAsUndatedBacklog) {
@@ -647,6 +686,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       controllers: _checklistControllers,
       done: _checklistDone,
     );
+    _planQuillChangesSub = _quillController.document.changes.listen((_) {
+      if (!mounted) return;
+      _onPlanFieldChanged();
+    });
   }
 
   bool get _shouldShowGraduateUi =>
@@ -654,6 +697,16 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
 
   @override
   void dispose() {
+    if (_isPersistedPlan) {
+      final draft = _buildDraftTask();
+      if (draft != null) {
+        _planAutosaveGate.flush(
+          () => unawaited(_syncPlanDraftToNetwork(draft)),
+        );
+      }
+    }
+    unawaited(_planQuillChangesSub?.cancel());
+    _planAutosaveGate.dispose();
     _tabController?.dispose();
     _planTabController?.dispose();
     _titleController.dispose();
@@ -671,6 +724,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     final fuzzy = DatabaseService.instance.findCategoryByFuzzyMatch(title);
     if (fuzzy != null && fuzzy.id != _categoryId && mounted) {
       setState(() => _categoryId = fuzzy.id);
+      _onPlanFieldChanged(immediate: true);
     }
   }
 
@@ -678,7 +732,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _applyFuzzyCategoryFromTitle(
       raw.trim().isEmpty ? _titleController.text : raw,
     );
-    if (_startedAsUndatedBacklog) return;
+    if (_startedAsUndatedBacklog) {
+      _onPlanFieldChanged();
+      return;
+    }
     final range = SmartInputParser.parseTitleForTimeRange(raw);
     if (range != null) {
       if (!mounted) return;
@@ -686,14 +743,19 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         _scheduledTime = range.startWallOn(_date);
         _endTime = range.endWallOn(_date);
       });
+      _onPlanFieldChanged();
       return;
     }
     final parsed = SmartInputParser.parseTitleForScheduledTime(raw);
-    if (parsed == null) return;
+    if (parsed == null) {
+      _onPlanFieldChanged();
+      return;
+    }
     if (!mounted) return;
     setState(() {
       _scheduledTime = parsed.wallDateTimeOn(_date);
     });
+    _onPlanFieldChanged();
   }
 
   Future<void> _openTagManagerAndReload() async {
@@ -729,6 +791,96 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       }
       _selectedTags = next;
     });
+    _onPlanFieldChanged(immediate: true);
+  }
+
+  void _applyPlanDraftLocally(PlanningTask draft) {
+    if (!_isPersistedPlan) return;
+    DatabaseService.instance.applyOptimisticPlanningTask(draft);
+    DatabaseService.instance.notifyPlanningRefresh();
+  }
+
+  Future<void> _syncPlanDraftToNetwork(PlanningTask draft) async {
+    if (!_isPersistedPlan) return;
+    final baseline = _baselineTask;
+    final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
+      baseline,
+    );
+    const minKeyLen = 10;
+    final persistInitial = anchorShort.length >= minKeyLen
+        ? anchorShort
+        : DatabaseService.instance.planningWallScheduleDateKey(baseline);
+    final newSk = DatabaseService.instance.planningWallScheduleDateKey(draft);
+    final initForPatch = persistInitial.length >= minKeyLen
+        ? persistInitial
+        : (newSk.length >= minKeyLen ? newSk : '');
+    final postponed =
+        !draft.isDone &&
+        initForPatch.length >= minKeyLen &&
+        DatabaseService.instance.planningShouldMarkPostponed(
+          anchorKey: initForPatch,
+          newScheduleKey: newSk.length >= minKeyLen ? newSk : initForPatch,
+        );
+    await DatabaseService.instance.updatePlanningTask(
+      draft.planRowIdForBackend,
+      planBusinessId: draft.planRowId,
+      title: draft.title,
+      categoryId: draft.categoryId,
+      isDone: draft.isDone,
+      notesPlain: draft.notesPlain,
+      notesDeltaJson: draft.notesDeltaJson,
+      checklist: draft.checklist,
+      parentPlanId: draft.parentPlanId,
+      startTimeDisplay: draft.startTime,
+      endDateTimeDisplay: draft.endDateTime,
+      clearEnd: draft.endDateTime == null,
+      tags: draft.tags,
+      suppressAppSnack: true,
+      planInitialDateKey: initForPatch.length >= minKeyLen ? initForPatch : null,
+      planIsPostponed: postponed,
+      patchPlanAlarmRecurrence: true,
+      planRrule: draft.rrule,
+      planReminderOffset: draft.reminderOffset,
+      planExceptionDates:
+          (draft.rrule != null && draft.rrule!.trim().isNotEmpty)
+          ? draft.exceptionDates
+          : const <String>[],
+      recurrenceInstanceDateKey:
+          draft.recurrenceInstanceDateKey ?? baseline.recurrenceInstanceDateKey,
+    );
+    _planAutosaveGate.markClean();
+  }
+
+  void _onPlanFieldChanged({bool immediate = false}) {
+    final draft = _buildDraftTask();
+    if (draft == null) return;
+    _applyPlanDraftLocally(draft);
+    if (!_isPersistedPlan) return;
+    _planAutosaveGate.markDirty();
+    if (immediate) {
+      _planAutosaveGate.flush(
+        () => unawaited(_syncPlanDraftToNetwork(draft)),
+      );
+    } else {
+      _planAutosaveGate.schedule(
+        () => unawaited(_syncPlanDraftToNetwork(draft)),
+      );
+    }
+  }
+
+  bool _planDraftsSemanticallyEqual(PlanningTask a, PlanningTask b) {
+    return a.title == b.title &&
+        a.categoryId == b.categoryId &&
+        a.dateKey == b.dateKey &&
+        a.startTime == b.startTime &&
+        a.endDateTime == b.endDateTime &&
+        a.notesPlain == b.notesPlain &&
+        a.notesDeltaJson == b.notesDeltaJson &&
+        jsonEncode(a.checklist) == jsonEncode(b.checklist) &&
+        jsonEncode(a.tags.map((t) => t.tagId).toList()) ==
+            jsonEncode(b.tags.map((t) => t.tagId).toList()) &&
+        a.rrule == b.rrule &&
+        a.reminderOffset == b.reminderOffset;
   }
 
   /// Optional URL line prefix in [notesPlain] for backlog ideas (no separate PB field).
@@ -808,9 +960,29 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
       month >= 1 && month <= 12 ? _shortMonths[month - 1] : '';
 
   void _commitSave() {
+    final updated = _buildDraftTask();
+    if (updated == null) return;
+    final changed = !_planDraftsSemanticallyEqual(updated, _baselineTask);
+    _applyPlanDraftLocally(updated);
+    if (_isPersistedPlan) {
+      _planAutosaveGate.flush(
+        () => unawaited(_syncPlanDraftToNetwork(updated)),
+      );
+    }
+    if (changed) {
+      AppSnack.changesSaved();
+    }
+    if (widget.onSaved != null) {
+      widget.onSaved!(updated);
+    } else {
+      Navigator.of(context).pop<PlanningTask?>(updated);
+    }
+  }
+
+  PlanningTask? _buildDraftTask() {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final title = _titleController.text.trim();
-    if (title.isEmpty) return;
+    if (title.isEmpty) return null;
     final catId = pairs.any((p) => p.id == _categoryId)
         ? _categoryId
         : (pairs.isNotEmpty ? pairs.first.id : _categoryId);
@@ -846,7 +1018,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     }
     final shouldClear =
         notesPlainOut == null && _isTrivialEmptyNotes(deltaJson, plainTrimmed);
-    final updated = shouldClear
+    return shouldClear
         ? widget.task.copyWith(
             title: title,
             categoryId: catId,
@@ -902,11 +1074,6 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
             reminderOffset: _reminderMinutes,
             clearReminderOffset: _reminderMinutes == null,
           );
-    if (widget.onSaved != null) {
-      widget.onSaved!(updated);
-    } else {
-      Navigator.of(context).pop<PlanningTask?>(updated);
-    }
   }
 
   @override
@@ -976,8 +1143,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
               decoration: InputDecoration(
                 labelText: t(currentLocale.value, 'category_label'),
               ),
-              onChanged: (id) =>
-                  setState(() => _categoryId = id ?? _categoryId),
+              onChanged: (id) {
+                setState(() => _categoryId = id ?? _categoryId);
+                _onPlanFieldChanged(immediate: true);
+              },
             ),
           ),
           Expanded(
@@ -1105,20 +1274,24 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 horizontalTitleGap: 4,
                                 leading: Checkbox(
                                   value: rowDone,
-                                  onChanged: (v) => setState(() {
-                                    _syncChecklistDoneLength(
-                                      _checklistControllers,
-                                      _checklistDone,
-                                    );
-                                    _checklistDone[i] = v ?? false;
-                                    _partitionChecklistRowsByDone(
-                                      controllers: _checklistControllers,
-                                      done: _checklistDone,
-                                    );
-                                  }),
+                                  onChanged: (v) {
+                                    setState(() {
+                                      _syncChecklistDoneLength(
+                                        _checklistControllers,
+                                        _checklistDone,
+                                      );
+                                      _checklistDone[i] = v ?? false;
+                                      _partitionChecklistRowsByDone(
+                                        controllers: _checklistControllers,
+                                        done: _checklistDone,
+                                      );
+                                    });
+                                    _onPlanFieldChanged(immediate: true);
+                                  },
                                 ),
                                 title: TextField(
                                   controller: _checklistControllers[i],
+                                  onChanged: (_) => _onPlanFieldChanged(),
                                   style: TextStyle(
                                     decoration: rowDone
                                         ? TextDecoration.lineThrough
@@ -1161,13 +1334,16 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     color: scheme.error,
                                   ),
                                   tooltip: t(currentLocale.value, 'delete'),
-                                  onPressed: () => setState(() {
-                                    _removeChecklistRowAt(
-                                      i,
-                                      controllers: _checklistControllers,
-                                      done: _checklistDone,
-                                    );
-                                  }),
+                                  onPressed: () {
+                                    setState(() {
+                                      _removeChecklistRowAt(
+                                        i,
+                                        controllers: _checklistControllers,
+                                        done: _checklistDone,
+                                      );
+                                    });
+                                    _onPlanFieldChanged(immediate: true);
+                                  },
                                 ),
                               );
                             }),
@@ -1183,12 +1359,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              onTap: () => setState(() {
-                                _checklistControllers.add(
-                                  TextEditingController(),
-                                );
-                                _checklistDone.add(false);
-                              }),
+                              onTap: () {
+                                setState(() {
+                                  _checklistControllers.add(
+                                    TextEditingController(),
+                                  );
+                                  _checklistDone.add(false);
+                                });
+                                _onPlanFieldChanged();
+                              },
                             ),
                           ],
                         ),
@@ -1233,6 +1412,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                     );
                                     _scheduledTime = picked;
                                   });
+                                  _onPlanFieldChanged(immediate: true);
                                 }
                               },
                             ),
@@ -1267,6 +1447,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       picked.minute,
                                     ),
                                   );
+                                  _onPlanFieldChanged(immediate: true);
                                 }
                               },
                             ),
@@ -1315,8 +1496,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                   ),
                                 ),
                               ],
-                              onChanged: (v) =>
-                                  setState(() => _reminderMinutes = v),
+                              onChanged: (v) {
+                                setState(() => _reminderMinutes = v);
+                                _onPlanFieldChanged(immediate: true);
+                              },
                             ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<_PlanRepeatUi>(
@@ -1401,6 +1584,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                         _rruleCustomRaw ?? '';
                                   }
                                 });
+                                _onPlanFieldChanged(immediate: true);
                               },
                             ),
                             if (_repeatUi == _PlanRepeatUi.custom) ...[
@@ -1409,6 +1593,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                 controller: _rruleCustomController,
                                 minLines: 2,
                                 maxLines: 5,
+                                onChanged: (_) => _onPlanFieldChanged(),
                                 decoration: InputDecoration(
                                   labelText: t(
                                     currentLocale.value,
@@ -1464,6 +1649,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                         );
                                         _scheduledTime = picked;
                                       });
+                                      _onPlanFieldChanged(immediate: true);
                                     }
                                   },
                                 ),
@@ -1501,6 +1687,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                           picked.minute,
                                         ),
                                       );
+                                      _onPlanFieldChanged(immediate: true);
                                     }
                                   },
                                 ),
@@ -1854,8 +2041,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                         ),
                                       ),
                                     ],
-                                    onChanged: (v) =>
-                                        setState(() => _reminderMinutes = v),
+                                    onChanged: (v) {
+                                      setState(() => _reminderMinutes = v);
+                                      _onPlanFieldChanged(immediate: true);
+                                    },
                                   ),
                                   const SizedBox(height: 12),
                                   DropdownButtonFormField<_PlanRepeatUi>(
@@ -1947,6 +2136,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                               _rruleCustomRaw ?? '';
                                         }
                                       });
+                                      _onPlanFieldChanged(immediate: true);
                                     },
                                   ),
                                   if (_repeatUi == _PlanRepeatUi.custom) ...[
@@ -1955,6 +2145,7 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
                                       controller: _rruleCustomController,
                                       minLines: 2,
                                       maxLines: 5,
+                                      onChanged: (_) => _onPlanFieldChanged(),
                                       decoration: InputDecoration(
                                         labelText: t(
                                           currentLocale.value,
@@ -2090,6 +2281,10 @@ class _TimelineRecordSheetContentState
   late String _sourcePlanPbId;
   List<PlanningTask> _plansForLink = [];
   bool _plansLoading = true;
+  final EditSheetAutosaveGate _recordAutosaveGate = EditSheetAutosaveGate();
+  StreamSubscription<DocChange>? _recordQuillChangesSub;
+
+  bool get _isPersistedRecord => widget.record.id.trim().isNotEmpty;
 
   List<Map<String, dynamic>> _checklistForApi() {
     _syncChecklistDoneLength(_checklistControllers, _checklistDone);
@@ -2109,6 +2304,122 @@ class _TimelineRecordSheetContentState
     final fuzzy = DatabaseService.instance.findCategoryByFuzzyMatch(title);
     if (fuzzy != null && fuzzy.id != _categoryId && mounted) {
       setState(() => _categoryId = fuzzy.id);
+      _onRecordFieldChanged(immediate: true);
+    }
+  }
+
+  TimelineRecord _buildOptimisticRecord({
+    required String title,
+    required String noteText,
+    required List<Map<String, dynamic>> checklistPayload,
+    required ({bool sync, bool clear, String? id}) planPatch,
+    DateTime? startUtc,
+    DateTime? endUtc,
+  }) {
+    return widget.record.copyWith(
+      title: title,
+      startTime: startUtc,
+      endTime: endUtc,
+      categoryId: _categoryId,
+      note: noteText.isEmpty ? null : noteText,
+      checklist: checklistPayload.isEmpty ? null : checklistPayload,
+      sourcePlanId: planPatch.sync
+          ? (planPatch.clear ? null : planPatch.id)
+          : widget.record.sourcePlanId,
+    );
+  }
+
+  void _applyRecordLocalEdit({
+    required String title,
+    required String noteText,
+    required List<Map<String, dynamic>> checklistPayload,
+    required ({bool sync, bool clear, String? id}) planPatch,
+    DateTime? startUtc,
+    DateTime? endUtc,
+  }) {
+    if (!_isPersistedRecord) return;
+    DatabaseService.instance.applyOptimisticRecordRowEdit(
+      recordId: widget.record.id,
+      title: title,
+      startTime: startUtc,
+      endTime: endUtc,
+      categoryId: _categoryId,
+      note: noteText,
+      checklist: checklistPayload,
+      syncSourcePlan: planPatch.sync,
+      clearSourcePlan: planPatch.clear,
+      sourcePlanPocketRecordId: planPatch.id,
+    );
+  }
+
+  Future<void> _syncRecordToNetwork({
+    required String title,
+    required String noteText,
+    required List<Map<String, dynamic>> checklistPayload,
+    required ({bool sync, bool clear, String? id}) planPatch,
+    DateTime? startUtc,
+    DateTime? endUtc,
+  }) async {
+    if (!_isPersistedRecord) return;
+    final server = await DatabaseService.instance.updateRecord(
+      recordId: widget.record.id,
+      title: title,
+      startTime: startUtc,
+      endTime: endUtc,
+      categoryId: _categoryId,
+      note: noteText,
+      checklist: checklistPayload,
+      syncSourcePlan: planPatch.sync,
+      clearSourcePlan: planPatch.clear,
+      sourcePlanPocketRecordId: planPatch.id,
+    );
+    if (!mounted) return;
+    if (server == null) {
+      AppSnack.failed();
+    } else {
+      _recordAutosaveGate.markClean();
+    }
+  }
+
+  void _onRecordFieldChanged({bool immediate = false}) {
+    if (!_isPersistedRecord) return;
+    final title = _titleController.text.trim();
+    if (title.isEmpty) return;
+    final noteText = _recordQuillController.document
+        .toPlainText()
+        .replaceAll('\u200b', '')
+        .trim();
+    final checklistPayload = _checklistForApi();
+    final planPatch = _sourcePlanPatchArgs();
+    final isRunning = widget.record.endTime == null;
+    final startUtc = _startDisplay != null ? displayToUtc(_startDisplay!) : null;
+    DateTime? endUtc;
+    if (!isRunning && _startDisplay != null && _endDisplay != null) {
+      endUtc = displayToUtc(_endDisplay!);
+    }
+    _applyRecordLocalEdit(
+      title: title,
+      noteText: noteText,
+      checklistPayload: checklistPayload,
+      planPatch: planPatch,
+      startUtc: startUtc,
+      endUtc: endUtc,
+    );
+    _recordAutosaveGate.markDirty();
+    void sync() => unawaited(
+      _syncRecordToNetwork(
+        title: title,
+        noteText: noteText,
+        checklistPayload: checklistPayload,
+        planPatch: planPatch,
+        startUtc: startUtc,
+        endUtc: endUtc,
+      ),
+    );
+    if (immediate) {
+      _recordAutosaveGate.flush(sync);
+    } else {
+      _recordAutosaveGate.schedule(sync);
     }
   }
 
@@ -2149,6 +2460,10 @@ class _TimelineRecordSheetContentState
         '';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_loadPlansForLink());
+    });
+    _recordQuillChangesSub = _recordQuillController.document.changes.listen((_) {
+      if (!mounted) return;
+      _onRecordFieldChanged();
     });
   }
 
@@ -2253,6 +2568,7 @@ class _TimelineRecordSheetContentState
     );
     if (picked != null && mounted) {
       setState(() => _sourcePlanPbId = picked);
+      _onRecordFieldChanged(immediate: true);
     }
   }
 
@@ -2356,6 +2672,37 @@ class _TimelineRecordSheetContentState
 
   @override
   void dispose() {
+    if (_isPersistedRecord) {
+      _recordAutosaveGate.flush(() {
+        final title = _titleController.text.trim();
+        if (title.isEmpty) return;
+        final noteText = _recordQuillController.document
+            .toPlainText()
+            .replaceAll('\u200b', '')
+            .trim();
+        final checklistPayload = _checklistForApi();
+        final planPatch = _sourcePlanPatchArgs();
+        final isRunning = widget.record.endTime == null;
+        final startUtc =
+            _startDisplay != null ? displayToUtc(_startDisplay!) : null;
+        DateTime? endUtc;
+        if (!isRunning && _startDisplay != null && _endDisplay != null) {
+          endUtc = displayToUtc(_endDisplay!);
+        }
+        unawaited(
+          _syncRecordToNetwork(
+            title: title,
+            noteText: noteText,
+            checklistPayload: checklistPayload,
+            planPatch: planPatch,
+            startUtc: startUtc,
+            endUtc: endUtc,
+          ),
+        );
+      });
+    }
+    unawaited(_recordQuillChangesSub?.cancel());
+    _recordAutosaveGate.dispose();
     _tabController.dispose();
     _titleController.dispose();
     _recordQuillController.dispose();
@@ -2373,13 +2720,17 @@ class _TimelineRecordSheetContentState
     if (picked != null && mounted) {
       setState(() => _startDisplay = picked);
       unawaited(_loadPlansForLink());
+      _onRecordFieldChanged(immediate: true);
     }
   }
 
   Future<void> _pickEnd() async {
     final initial = _endDisplay ?? displayNow();
     final picked = await showAppDateTimePicker(context, initial: initial);
-    if (picked != null && mounted) setState(() => _endDisplay = picked);
+    if (picked != null && mounted) {
+      setState(() => _endDisplay = picked);
+      _onRecordFieldChanged(immediate: true);
+    }
   }
 
   Future<void> _save() async {
@@ -2450,49 +2801,33 @@ class _TimelineRecordSheetContentState
       final startUtc = _startDisplay != null
           ? displayToUtc(_startDisplay!)
           : null;
-      DatabaseService.instance.applyOptimisticRecordRowEdit(
-        recordId: widget.record.id,
+      _applyRecordLocalEdit(
         title: title,
-        startTime: startUtc,
-        categoryId: _categoryId,
-        note: noteText,
-        checklist: checklistPayload,
-        syncSourcePlan: planPatch.sync,
-        clearSourcePlan: planPatch.clear,
-        sourcePlanPocketRecordId: planPatch.id,
+        noteText: noteText,
+        checklistPayload: checklistPayload,
+        planPatch: planPatch,
+        startUtc: startUtc,
       );
-      final optimistic = widget.record.copyWith(
+      final optimistic = _buildOptimisticRecord(
         title: title,
-        startTime: startUtc,
-        categoryId: _categoryId,
-        note: noteText.isEmpty ? null : noteText,
-        checklist: checklistPayload.isEmpty ? null : checklistPayload,
-        sourcePlanId: planPatch.sync
-            ? (planPatch.clear ? null : planPatch.id)
-            : widget.record.sourcePlanId,
+        noteText: noteText,
+        checklistPayload: checklistPayload,
+        planPatch: planPatch,
+        startUtc: startUtc,
       );
-      AppSnack.saved();
+      _recordAutosaveGate.flush(
+        () => unawaited(
+          _syncRecordToNetwork(
+            title: title,
+            noteText: noteText,
+            checklistPayload: checklistPayload,
+            planPatch: planPatch,
+            startUtc: startUtc,
+          ),
+        ),
+      );
+      AppSnack.changesSaved();
       widget.onSaved(optimistic);
-      unawaited(
-        DatabaseService.instance
-            .updateRecord(
-              recordId: widget.record.id,
-              title: title,
-              startTime: startUtc,
-              categoryId: _categoryId,
-              note: noteText,
-              checklist: checklistPayload,
-              syncSourcePlan: planPatch.sync,
-              clearSourcePlan: planPatch.clear,
-              sourcePlanPocketRecordId: planPatch.id,
-            )
-            .then((TimelineRecord? server) {
-              if (!mounted) return;
-              if (server == null) {
-                AppSnack.failed();
-              }
-            }),
-      );
       return;
     }
 
@@ -2509,83 +2844,68 @@ class _TimelineRecordSheetContentState
       }
       return;
     }
-    final overlap = await DatabaseService.instance
-        .checkOverlapWithExistingRecords(
-          startUtc,
-          endUtc,
-          excludeRecordId: widget.record.id.isNotEmpty
-              ? widget.record.id
-              : null,
-        );
-    if (overlap && mounted) {
-      final conflict = await DatabaseService.instance
-          .findFirstOverlappingRecord(
-            startUtc,
-            endUtc,
-            excludeRecordId: widget.record.id.isNotEmpty
-                ? widget.record.id
-                : null,
-          );
-      if (!mounted) return;
+    final conflict = DatabaseService.instance.findFirstOverlappingRecordInCache(
+      startUtc,
+      endUtc,
+      excludeRecordId: widget.record.id,
+    );
+    if (conflict != null && mounted) {
       final loc = currentLocale.value;
-      final rawTitle = (conflict?['title'] ?? '').toString().trim();
+      final rawTitle = (conflict['title'] ?? '').toString().trim();
       final otherLabel = rawTitle.isNotEmpty ? rawTitle : t(loc, 'untitled');
       final msg = t(
         loc,
         'time_conflict_with_title',
       ).replaceFirst('%s', otherLabel);
-      final sm = ScaffoldMessenger.maybeOf(context);
-      Navigator.of(context).pop();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        sm?.showSnackBar(SnackBar(content: Text(msg)));
-      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
       return;
     }
     final planPatchStopped = _sourcePlanPatchArgs();
-    DatabaseService.instance.applyOptimisticRecordRowEdit(
-      recordId: widget.record.id,
+    _applyRecordLocalEdit(
       title: title,
-      startTime: startUtc,
-      endTime: endUtc,
-      categoryId: _categoryId,
-      note: noteText,
-      checklist: checklistPayload,
-      syncSourcePlan: planPatchStopped.sync,
-      clearSourcePlan: planPatchStopped.clear,
-      sourcePlanPocketRecordId: planPatchStopped.id,
+      noteText: noteText,
+      checklistPayload: checklistPayload,
+      planPatch: planPatchStopped,
+      startUtc: startUtc,
+      endUtc: endUtc,
     );
-    final optimisticStopped = widget.record.copyWith(
+    final optimisticStopped = _buildOptimisticRecord(
       title: title,
-      startTime: startUtc,
-      endTime: endUtc,
-      categoryId: _categoryId,
-      note: noteText.isEmpty ? null : noteText,
-      checklist: checklistPayload.isEmpty ? null : checklistPayload,
-      sourcePlanId: planPatchStopped.sync
-          ? (planPatchStopped.clear ? null : planPatchStopped.id)
-          : widget.record.sourcePlanId,
+      noteText: noteText,
+      checklistPayload: checklistPayload,
+      planPatch: planPatchStopped,
+      startUtc: startUtc,
+      endUtc: endUtc,
     );
-    AppSnack.saved();
+    _recordAutosaveGate.flush(
+      () => unawaited(
+        _syncRecordToNetwork(
+          title: title,
+          noteText: noteText,
+          checklistPayload: checklistPayload,
+          planPatch: planPatchStopped,
+          startUtc: startUtc,
+          endUtc: endUtc,
+        ),
+      ),
+    );
+    AppSnack.changesSaved();
     widget.onSaved(optimisticStopped);
     unawaited(
       DatabaseService.instance
-          .updateRecord(
-            recordId: widget.record.id,
-            title: title,
-            startTime: startUtc,
-            endTime: endUtc,
-            categoryId: _categoryId,
-            note: noteText,
-            checklist: checklistPayload,
-            syncSourcePlan: planPatchStopped.sync,
-            clearSourcePlan: planPatchStopped.clear,
-            sourcePlanPocketRecordId: planPatchStopped.id,
+          .checkOverlapWithExistingRecords(
+            startUtc,
+            endUtc,
+            excludeRecordId: widget.record.id,
           )
-          .then((TimelineRecord? server) {
-            if (!mounted) return;
-            if (server == null) {
-              AppSnack.failed();
-            }
+          .then((overlap) {
+            if (!mounted || !overlap) return;
+            AppSnack.warning(
+              t(currentLocale.value, 'time_conflict_with_title').replaceFirst(
+                '%s',
+                t(currentLocale.value, 'untitled'),
+              ),
+            );
           }),
     );
   }
@@ -2652,7 +2972,10 @@ class _TimelineRecordSheetContentState
                               ),
                             ),
                             textCapitalization: TextCapitalization.sentences,
-                            onChanged: _applyFuzzyCategoryFromRecordTitle,
+                            onChanged: (raw) {
+                              _applyFuzzyCategoryFromRecordTitle(raw);
+                              _onRecordFieldChanged();
+                            },
                           ),
                           const SizedBox(height: 8),
                           Padding(
@@ -2669,9 +2992,12 @@ class _TimelineRecordSheetContentState
                               ),
                               onChanged: pairs.isEmpty
                                   ? (_) {}
-                                  : (id) => setState(
-                                      () => _categoryId = id ?? catVal,
-                                    ),
+                                  : (id) {
+                                      setState(
+                                        () => _categoryId = id ?? catVal,
+                                      );
+                                      _onRecordFieldChanged(immediate: true);
+                                    },
                             ),
                           ),
                           Padding(
@@ -2836,20 +3162,24 @@ class _TimelineRecordSheetContentState
                               horizontalTitleGap: 4,
                               leading: Checkbox(
                                 value: rowDone,
-                                onChanged: (v) => setState(() {
-                                  _syncChecklistDoneLength(
-                                    _checklistControllers,
-                                    _checklistDone,
-                                  );
-                                  _checklistDone[i] = v ?? false;
-                                  _partitionChecklistRowsByDone(
-                                    controllers: _checklistControllers,
-                                    done: _checklistDone,
-                                  );
-                                }),
+                                onChanged: (v) {
+                                  setState(() {
+                                    _syncChecklistDoneLength(
+                                      _checklistControllers,
+                                      _checklistDone,
+                                    );
+                                    _checklistDone[i] = v ?? false;
+                                    _partitionChecklistRowsByDone(
+                                      controllers: _checklistControllers,
+                                      done: _checklistDone,
+                                    );
+                                  });
+                                  _onRecordFieldChanged(immediate: true);
+                                },
                               ),
                               title: TextField(
                                 controller: _checklistControllers[i],
+                                onChanged: (_) => _onRecordFieldChanged(),
                                 style: TextStyle(
                                   decoration: rowDone
                                       ? TextDecoration.lineThrough
@@ -2888,13 +3218,16 @@ class _TimelineRecordSheetContentState
                                   color: scheme.error,
                                 ),
                                 tooltip: t(currentLocale.value, 'delete'),
-                                onPressed: () => setState(() {
-                                  _removeChecklistRowAt(
-                                    i,
-                                    controllers: _checklistControllers,
-                                    done: _checklistDone,
-                                  );
-                                }),
+                                onPressed: () {
+                                  setState(() {
+                                    _removeChecklistRowAt(
+                                      i,
+                                      controllers: _checklistControllers,
+                                      done: _checklistDone,
+                                    );
+                                  });
+                                  _onRecordFieldChanged(immediate: true);
+                                },
                               ),
                             );
                           }),
@@ -2910,12 +3243,15 @@ class _TimelineRecordSheetContentState
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            onTap: () => setState(() {
-                              _checklistControllers.add(
-                                TextEditingController(),
-                              );
-                              _checklistDone.add(false);
-                            }),
+                            onTap: () {
+                              setState(() {
+                                _checklistControllers.add(
+                                  TextEditingController(),
+                                );
+                                _checklistDone.add(false);
+                              });
+                              _onRecordFieldChanged();
+                            },
                           ),
                         ],
                       ),

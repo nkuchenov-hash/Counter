@@ -34,6 +34,10 @@ class AppSnack {
   static void saved() =>
       show(t(currentLocale.value, 'toast_saved'), error: false);
 
+  /// Confirms local apply after explicit Save in edit sheets (not remote PB ack).
+  static void changesSaved() =>
+      show(t(currentLocale.value, 'changes_saved'), error: false);
+
   static void deleted() =>
       show(t(currentLocale.value, 'toast_deleted'), error: false);
 

@@ -11,8 +11,37 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-06-15] - P0 edit sheet save/autosave repair [wip]
+* **`lib/features/shared/shared_widgets.dart`:** [wip] `EditSheetAutosaveGate` — local-first plan/record edit drafts; optimistic Brain apply on field change; debounced `updatePlanningTask` / `updateRecord` (~650ms); explicit Save flushes pending draft; `AppSnack.changesSaved()` (`Изменения сохранены` / `Changes saved`) on successful local apply.
+* **`lib/data/record_service.dart`:** [wip] `findFirstOverlappingRecordInCache` + `applyOptimisticRecordRowEdit` PB id resolution — stopped-record Save no longer blocks on network overlap before optimistic UI.
+* **`lib/core/app_snackbar.dart`:** `AppSnack.changesSaved()`.
+* **`lib/app_shell.dart`:** plan edit `onSaved` pop-only (persist handled in sheet); no duplicate toast/optimistic.
+* **`test/edit_sheet_autosave_test.dart`:** debounce/flush gate tests.
+
 ## [2026-06-15] - Manual data repair: June 25 plan times MSK reinterpretation [wip]
 * **`scripts/manual/repair_2026_06_25_plan_times_msk.dart`:** [wip] One-off PocketBase repair — reinterpreted 16 scheduled `plans` on 2026-06-25 from New York wall time to Moscow wall time (`start_time`/`end_time` only); explicit `--ids` + `--confirm REINTERPRET_NY_AS_MSK_2026_06_25` apply path; profile `xhjy54inue73piz`; all 16 PATCHes read-back verified; durations preserved.
+
+## [2026-06-26] - P0 Desktop Voice command-first UX + hotkey smoke proof [shipped]
+* **Hotkey smoke passes** with runtime-registered combo (`DESKTOP_VOICE_HOTKEY_REGISTERED_COMBO`); SendInput path proven; native file-hook fallback retained.
+* **`lib/core/services/desktop_voice_hotkey_markers.dart`:** structured registration markers (`yes combo=… enabled=… command_define=…`).
+* **`lib/core/services/desktop_voice_smoke_bridge.dart`:** production-handler file trigger; `HOTKEY_RECEIVED_FROM_NATIVE_TEST_HOOK`.
+* **`scripts/manual/smoke_desktop_hotkey.ps1`:** no hardcoded combo; parses log; `-CommandFirstSmoke` verifies preserved-running.
+* Command-first UX: hotkey listen-first; stop/switch only after recognition (prior session files).
+
+## [2026-06-26] - P0 Desktop Voice acceptance fix (Plenty→Planning, mic, confirmation) [shipped]
+* **`lib/features/shared/voice_command_parser.dart`:** [shipped] Price Reporter scope title aliases `plenty`/`planing`/`plan`→Planning.
+* **`lib/core/services/desktop_voice_command_normalize.dart`:** final normalization gate before `writeRecord`; blocks wrong titles.
+* **`lib/core/services/desktop_voice_confirmation.dart`:** mandatory native overlay start/stop confirmation + OS notification markers.
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** always-visible mic bars during Listening; `InvalidateRect` on level update.
+* **`lib/core/services/desktop_voice_overlay_service.dart`:** `NATIVE_OVERLAY_LEVEL_UPDATE`; full confirmation line as primary.
+
+## [2026-06-25] - P0 Recording-first Desktop Voice (no Preparing UI) [shipped]
+* **`lib/core/services/desktop_stt_helper_service.dart`:** [shipped] `startListening` never awaits helper; `prewarmRecognizerInBackground()` + `DesktopRecognizerPrewarmState`; processing wait `kVoiceProcessingMaxWait` (10s) after capture only.
+* **`lib/features/shared/desktop_voice_widget.dart`:** [shipped] hotkey → immediate Listening + mic capture; markers `RECORDING_STARTED_IMMEDIATELY`, `FIRST_VISIBLE_STATE_LISTENING`, `NO_PREPARING_UI`; removed preparing phase from production overlay.
+* **`lib/core/services/desktop_voice_overlay_service.dart`:** `showPreparing` redirects to `showListening`; processing overlay uses «Распознаю…» / «Transcribing…».
+* **`lib/l10n`:** overlay listening «Слушаю…»/«Listening…»; `desktop_voice_recognize_failed`.
+* **`test/desktop_voice_overlay_state_test.dart`:** recording-first + no-preparing UI guard.
+* **`scripts/manual/smoke_desktop_hotkey.ps1`:** `-NoPreparingUiSmoke` mode.
 
 ## [2026-06-25] - P0 Desktop Voice preparing hang fix [shipped]
 * **`lib/core/services/desktop_stt_helper_service.dart`:** [shipped] deadline-based `ensureStarted(maxWait)` with 5s voice-overlay cap; HTTP/status timeouts; one helper restart; markers `HELPER_*`.

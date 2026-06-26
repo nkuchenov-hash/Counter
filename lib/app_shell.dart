@@ -2178,15 +2178,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                 planningTask: task,
                 scrollController: scrollController,
                 onSaved: (dynamic updatedRaw) {
-                  final updated = updatedRaw as PlanningTask;
-                  if (!_shellIsNewPlanningDraft(task)) {
-                    DatabaseService.instance.applyOptimisticPlanningTask(
-                      updated,
-                    );
-                    DatabaseService.instance.notifyPlanningRefresh();
-                  }
-                  AppSnack.saved();
-                  Navigator.of(ctx).pop(updated);
+                  Navigator.of(ctx).pop(updatedRaw);
                 },
                 onDelete: _shellIsNewPlanningDraft(task)
                     ? null
@@ -2236,7 +2228,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
         }
         HapticFeedback.heavyImpact();
       } else {
-        unawaited(_persistPlanningEditFromSheet(task, result));
+        // Persisted plan edits: local apply + debounced PATCH run inside edit sheet.
       }
     } catch (e) {
       if (mounted) {

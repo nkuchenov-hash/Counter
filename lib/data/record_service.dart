@@ -2112,6 +2112,14 @@ extension RecordServiceExtension on DatabaseService {
     bool bypassConflictCheck = false,
   }) async {
     if (bypassConflictCheck) return false;
+    if (findFirstOverlappingRecordInCache(
+          start,
+          end,
+          excludeRecordId: excludeRecordId,
+        ) !=
+        null) {
+      return true;
+    }
     final c = await findFirstOverlappingRecord(
       start,
       end,
@@ -2177,6 +2185,34 @@ extension RecordServiceExtension on DatabaseService {
       if (excludeKeys.contains(c)) return true;
     }
     return false;
+  }
+
+  /// Synchronous overlap probe on warm cache — safe before optimistic UI apply.
+  Map<String, dynamic>? findFirstOverlappingRecordInCache(
+    DateTime start,
+    DateTime end, {
+    String? excludeRecordId,
+  }) {
+    try {
+      final now = DatabaseService.getPlanetaryNow();
+      final excludeKeys =
+          excludeRecordId == null || excludeRecordId.trim().isEmpty
+          ? <String>{}
+          : _excludeOverlapIdentityKeys(excludeRecordId);
+      for (final row in _cachedFlatRecords) {
+        if (_rowHasNonEmptyParent(row['parent_id'])) continue;
+        final data = _rowToRecordMap(row);
+        if (_recordMapOverlapsExcludeKeys(data, excludeKeys)) continue;
+        final otherStart = CategoryServiceExtension.startTimeFromRecord(data);
+        if (otherStart == null) continue;
+        final otherEnd =
+            CategoryServiceExtension.endTimeFromRecord(data) ?? now;
+        if (_rangesOverlap(start, end, otherStart, otherEnd)) return data;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<Map<String, dynamic>?> findFirstOverlappingRecord(
@@ -3630,10 +3666,11 @@ extension RecordServiceExtension on DatabaseService {
     String? sourcePlanPocketRecordId,
   }) {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
-    var rid = recordId.trim();
-    if (rid.isEmpty) return;
-    final originalInput = rid;
-    final idx = _indexOfCachedRecordRow(rid, originalInput);
+    final originalInput = recordId.trim();
+    if (originalInput.isEmpty) return;
+    final resolved =
+        _tryResolveRecordIdFromCacheOnly(originalInput) ?? originalInput;
+    final idx = _indexOfCachedRecordRow(resolved, originalInput);
     if (idx < 0) return;
     final row = _cachedFlatRecords[idx];
     if (title != null) row['title'] = title;
