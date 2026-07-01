@@ -113,7 +113,13 @@ abstract final class RecordMutationOutbox {
       if (_isDeleteItem(item)) {
         if (biz.isNotEmpty) {
           out.removeWhere((e) => _bizKey(e) == biz);
-          updateIndexByBiz.remove(biz);
+          updateIndexByBiz.clear();
+          for (var i = 0; i < out.length; i++) {
+            final candidate = out[i];
+            if (_isRecordUpdateItem(candidate)) {
+              updateIndexByBiz[_bizKey(candidate)] = i;
+            }
+          }
         }
         out.add(item);
         continue;
