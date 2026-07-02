@@ -1,0 +1,5543 @@
+// Single-day Planning tab body (task list, Time View, quick-add).
+// ---------------------------------------------------------------------------
+// PLANNING FEATURE — Day planning & task list tab. UI_ISOLATION (§7). FEATURE-FIRST (§17).
+// All strings via t(). Use Theme.of(context). No hardcoded colors.
+// ---------------------------------------------------------------------------
+
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math' as math;
+import 'dart:ui' show Offset, lerpDouble;
+
+import 'package:counter/core/date_pager_settle_gate.dart';
+import 'package:counter/core/date_swipe_physics.dart';
+import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/core/diagnostics/runtime_log.dart';
+import 'package:counter/core/diagnostics/platform_log.dart';
+import 'package:counter/core/widgets/day_content_strip.dart';
+import 'package:counter/core/widgets/day_window.dart';
+import 'package:counter/core/performance/rebuild_metrics.dart';
+import 'package:counter/core/performance/shell_flags.dart';
+import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/shell_layout_state.dart';
+import 'package:counter/core/picker_entry_modes.dart';
+import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/compact_nav_controls.dart';
+import 'package:counter/core/widgets/global_app_header.dart';
+import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
+import 'package:counter/data/database_service.dart';
+import 'package:counter/data/cache/render_snapshot.dart';
+import 'package:counter/data/models.dart';
+import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
+import 'package:counter/features/planning/recurrence_scope_dialog.dart';
+import 'package:counter/data/plan_time_sequential_cascade.dart';
+import 'package:counter/data/time_view_fixed_time_policy.dart';
+import 'package:counter/features/planning/plan_time_gesture_contract.dart';
+import 'package:counter/features/planning/plan_time_view_layout.dart';
+import 'package:counter/features/planning/planning_day_start_prefs.dart';
+import 'package:counter/data/smart_input_parser.dart';
+import 'package:counter/features/planning/smart_plan_sheet.dart';
+import 'package:counter/core/tag_contrast.dart';
+import 'package:counter/features/profile/tag_settings_hub.dart';
+import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
+import 'package:counter/core/widgets/chip_component.dart';
+import 'package:counter/features/shared/shared_widgets.dart';
+import 'package:counter/l10n/category_db_display.dart';
+import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show SchedulerBinding, Ticker;
+import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:counter/core/widgets/app_state_views.dart';
+import 'package:counter/core/time/plan_time_labels.dart';
+import 'package:counter/core/widgets/plan_card.dart';
+import 'package:counter/core/widgets/plan_time_task_card.dart';
+import 'package:counter/features/planning/settings/default_plan_category_search.dart';
+import 'package:counter/features/planning/settings/default_plan_timezone_search.dart';
+import 'package:counter/features/planning/settings/plan_record_link_settings.dart';
+import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
+import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
+import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
+import 'package:counter/features/planning/time_view/time_view_fixed_time_settings.dart';
+import 'package:counter/features/planning/time_view/time_view_interaction_block.dart';
+import 'package:counter/features/planning/widgets/plan_card_reorder_settle.dart';
+import 'package:counter/features/planning/widgets/planning_day_card_list_keep_alive.dart';
+import 'package:counter/features/planning/widgets/planning_menu_overlay.dart';
+import 'package:counter/features/planning/planning_sort_mode.dart';
+import 'package:counter/features/planning/widgets/planning_bulk_bar.dart';
+import 'package:counter/features/planning/widgets/planning_empty_states.dart';
+import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
+import 'package:counter/features/planning/widgets/planning_list_helpers.dart';
+
+/// Scheduled Time View canvas only (`_buildProportionalDayTimelineCanvas`).
+const _kPlanningTimeViewCanvasColor = Color(0xFFD0D5DD);
+
+class PlanningPage extends StatefulWidget {
+  const PlanningPage({
+    super.key,
+    required this.selectedDateString,
+    this.selectedDate,
+    this.isActivePlanningDay = false,
+    this.shellTabActive = true,
+    this.mountedWindow,
+    this.stripController,
+    this.datePagerLocked = false,
+    this.onVisibleDateChanged,
+    this.onUserDragStart,
+    this.onUserDragEnd,
+    this.onScrollTick,
+    required this.selectedCategoryId,
+    required this.onCategoryChanged,
+    required this.onStartRecordFromTask,
+    required this.onEditTask,
+    this.onDatePicked,
+    this.onDateChanged,
+    this.onDatePagerLockChanged,
+  });
+
+  final String selectedDateString;
+  final DateTime? selectedDate;
+
+  /// Only the visible PageView day should be true (live planning stream).
+  final bool isActivePlanningDay;
+  final bool shellTabActive;
+  final DayWindow? mountedWindow;
+  final EagerDayContentStripController? stripController;
+  final bool datePagerLocked;
+  final void Function(int windowIndex, DateTime date)? onVisibleDateChanged;
+  final VoidCallback? onUserDragStart;
+  final VoidCallback? onUserDragEnd;
+  final void Function(double pageFraction)? onScrollTick;
+  final int? selectedCategoryId;
+  final void Function(int? categoryId) onCategoryChanged;
+  final Future<void> Function(
+    String title,
+    int categoryId,
+    String dateKey, {
+    String? sourcePlanPocketRecordId,
+  })
+  onStartRecordFromTask;
+  final void Function(PlanningTask task) onEditTask;
+  final void Function(DateTime date)? onDatePicked;
+  final void Function(DateTime date)? onDateChanged;
+  final void Function(bool locked)? onDatePagerLockChanged;
+
+  @override
+  State<PlanningPage> createState() => _PlanningPageState();
+}
+
+class _PlanningPageState extends State<PlanningPage>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  final _textController = TextEditingController();
+  final _quickAddFocus = FocusNode();
+  final Set<String> _selectedPlanKeys = {};
+  final List<PlanningTask> _optimisticTasks = [];
+  bool _planQuickAddInFlight = false;
+
+  /// Last server list for this day from [planningStream] (avoids `nextPlanningOrderForDate` network on quick-add).
+  List<PlanningTask> _latestPlanningDayTasks = const [];
+  String? _timeViewCascadeNormalizedDayKey;
+  final Map<String, bool> _planDoneOverride = {};
+  /// Keeps completed cards at their list index until the completion moment finishes.
+  final Set<String> _planCompletionHoldKeys = {};
+  final Map<String, Timer> _planCompletionHoldTimers = {};
+  final Set<String> _planReorderSettleKeys = {};
+  static const Duration _kPlanCompletionHoldDuration =
+      Duration(milliseconds: 250);
+  static const Duration _kPlanReorderSettleDuration =
+      Duration(milliseconds: 280);
+  Stream<List<PlanningTask>>? _planningStream;
+  String? _planningStreamKey;
+  List<PlanningTask>? _dragOrder;
+  bool _planSelectMode = false;
+  PlanSortMode _sortMode = PlanSortMode.custom;
+  int _timelineHourStart = 0;
+  int _timelineHourEnd = 23;
+
+  /// Hour-grid day timeline scroll (edge auto-scroll while dragging a plan).
+  final ScrollController _hourGridScrollController = ScrollController();
+
+  static const double _kTimelineHourHeightMinPx = 120;
+  static const double _kTimelineHourHeightMaxPx = 160;
+  static const double _kTimelineRailWidthDesktopPx = 48;
+  static const double _kTimelineRailWidthMobilePx = 28;
+  static const double _kTimelineCompactBreakpoint = 600;
+
+  bool _timelineCompactLayout(BuildContext context) =>
+      MediaQuery.sizeOf(context).width < _kTimelineCompactBreakpoint;
+
+  double _timelineRailWidthPx(BuildContext context) =>
+      _timelineCompactLayout(context)
+          ? _kTimelineRailWidthMobilePx
+          : _kTimelineRailWidthDesktopPx;
+
+  List<TimeModeProjectedPlan> _cachedTimeModeProjections = const [];
+  List<PlanTimeViewBlockLayout> _dragInsertLayoutsCache = const [];
+  Set<String> _timeViewFixedTagIds = {};
+  Set<String> _timelineDragExcludedPlanIds = {};
+  Set<String> _timelineBulkDragPlanIds = {};
+  Map<String, int> _timelineBulkDragRelativeOffsetMin = {};
+  Map<String, double> _timelineBulkDragPreviewTopPxByPlanId = {};
+
+  static const int _kTimelineDefaultBlockMinutes = 30;
+
+  /// Duration-true timeline scale for the active Time-mode canvas build.
+  PlanTimeViewDurationGrid? _activeTimelineDurationGrid;
+
+  bool _timeModeDidAutoScrollToNow = false;
+
+  /// Local preview height while dragging (intrinsic card height).
+  double _timelineVerticalDragCardHeightPx = 0;
+
+  /// Active vertical timeline drag (Time mode); local preview only until drop.
+  String? _timelineVerticalDragPlanKey;
+  double _timelineVerticalDragDeltaPx = 0;
+  double _timelineVerticalDragOriginTopPx = 0;
+  int _timelineVerticalDragDurationMin = _kTimelineDefaultBlockMinutes;
+  PlanningTask? _timelineVerticalDragTask;
+  bool _timelineVerticalDragHadEnd = false;
+  bool _timelineScrollLocked = false;
+  String? _timelineVerticalDragTimeLabel;
+
+  /// Midpoint insert-before/after target while dragging over another card.
+  String? _timelineDragInsertTargetKey;
+  bool _timelineDragInsertBefore = false;
+  double? _timelineDragInsertMarkerTopPx;
+  TimeViewInsertionIntent? _timelineStoredInsertionIntent;
+
+  /// Finger delta (never overwritten by preview snap); used for hit-test on release.
+  double _timelineFingerDragDeltaPx = 0;
+
+  /// Canvas-local Y of finger within dragged card at pointer-down (inset + local dy).
+  double _timelineFingerGrabOffsetCanvasPx = 0;
+
+  /// Monotonic id per vertical drag gesture (stamped on target-card intents).
+  static int _timelineNextDragSequenceId = 0;
+  int _timelineVerticalDragSequenceId = 0;
+
+  /// Top/bottom edge resize (Time mode); local preview until release.
+  String? _timelineResizePlanKey;
+  TimelineResizeEdge? _timelineResizeEdge;
+  double _timelineResizeOriginTopPx = 0;
+  double _timelineResizeOriginHeightPx = 0;
+  int _timelineResizeOriginStartMin = 0;
+  int _timelineResizeOriginEndMin = 0;
+  double _timelineResizePreviewTopPx = 0;
+  double _timelineResizePreviewHeightPx = 0;
+  PlanningTask? _timelineResizeTask;
+  String? _timelineResizeTimeLabel;
+
+  static const double _kTimelineResizeHandlePx = 16;
+
+  late final Ticker _hourGridEdgeScrollTicker;
+  double _hourGridScrollVelocityPxPerSec = 0;
+  Duration? _hourGridTickerElapsedLast;
+
+  static const double _kShellBulkBarReservePx = 56;
+
+  /// Pixels per second while the drag pointer sits in the top/bottom 10% bands.
+  static const double _kHourGridEdgeScrollSpeedPxPerSec = 400;
+
+  StreamSubscription<void>? _planningTimeSub;
+  StreamSubscription<void>? _tagsCatalogSub;
+  StreamSubscription<UserSettings>? _settingsSub;
+  String? _activeRecordingTitleNorm;
+
+  static const int _kUntaggedPlanGroupId = -1;
+
+  /// Persisted order of tag ids in the quick-add strip, including [_kUntaggedPlanGroupId] for “No Tags”.
+  static const String _prefsKeyQuickBarTagOrder =
+      'planning_quick_bar_tag_ids_v1';
+
+  /// Local-only prefs for the synthetic “No Tags” chip (not PocketBase).
+  static const String _prefsKeyNoTagsVisible = 'no_tags_visible';
+  static const String _prefsKeyNoTagsColor = 'no_tags_color';
+  static const String _defaultNoTagsColorHex = '#9E9E9E';
+  /// Tags for quick-add row; reloaded after returning from [TagSettingsHub].
+  List<Tag> _quickAddAvailableTags = [];
+  bool _quickAddTagsLoading = false;
+  bool _noTagsChipVisible = true;
+  String _noTagsColorHex = _defaultNoTagsColorHex;
+
+  /// M2M tags selected before submitting the inline task.
+  List<Tag> _creationSelectedTags = [];
+
+  DateTime get _today => DatabaseService.instance.getTimelineDeviceLocalToday();
+
+  int _nextPlanOrderForQuickAdd() {
+    var m = -1;
+    for (final t in _latestPlanningDayTasks) {
+      if (t.order > m) m = t.order;
+    }
+    for (final t in _optimisticTasks) {
+      if (t.order > m) m = t.order;
+    }
+    return m + 1;
+  }
+
+  String _dateKeyFromDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  DateTime? _planDateFromTaskDateKey(String key) {
+    if (key.length < 10) return null;
+    final y = int.tryParse(key.substring(0, 4));
+    final m = int.tryParse(key.substring(5, 7));
+    final d = int.tryParse(key.substring(8, 10));
+    if (y == null || m == null || d == null) return null;
+    return DateTime.utc(y, m, d);
+  }
+
+  Future<void> _changeSingleTaskDate(PlanningTask task) async {
+    if (task.planRowIdForBackend.startsWith('optimistic-')) return;
+    if (task.id <= 0) return;
+    final loc = currentLocale.value;
+    final initial =
+        _planDateFromTaskDateKey(task.dateKey) ?? widget.selectedDate ?? _today;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.utc(initial.year, initial.month, initial.day),
+      firstDate: DateTime.utc(2020),
+      lastDate: DateTime.utc(2035),
+      initialEntryMode: appDatePickerEntryMode(),
+    );
+    if (picked == null || !mounted) return;
+    var h = 9;
+    var min = 0;
+    if (task.startTime != null) {
+      h = task.startTime!.hour;
+      min = task.startTime!.minute;
+    }
+    final wallStart = DateTime(picked.year, picked.month, picked.day, h, min);
+    DateTime? wallEnd;
+    if (task.endDateTime != null) {
+      wallEnd = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        task.endDateTime!.hour,
+        task.endDateTime!.minute,
+      );
+    }
+    final newKey = _dateKeyFromDate(picked);
+    final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
+      task,
+    );
+    const minKeyLen = 10;
+    final persistInitial = anchorShort.length >= minKeyLen
+        ? anchorShort
+        : DatabaseService.instance.planningWallScheduleDateKey(task);
+    final initForPatch = persistInitial.length >= minKeyLen
+        ? persistInitial
+        : newKey;
+    final postponed =
+        !task.isDone &&
+        DatabaseService.instance.planningShouldMarkPostponed(
+          anchorKey: initForPatch,
+          newScheduleKey: newKey,
+        );
+    final updated = task.copyWith(
+      dateKey: newKey,
+      date: DateTime.utc(picked.year, picked.month, picked.day),
+      startTime: wallStart,
+      endDateTime: wallEnd,
+      endDateKey: wallEnd != null ? newKey : null,
+      clearEnd: task.endDateTime == null,
+      initialDateKey: initForPatch,
+      isPostponed: postponed,
+    );
+    DatabaseService.instance.applyOptimisticPlanningTask(updated);
+    DatabaseService.instance.notifyPlanningRefresh();
+    setState(() {});
+    final ok = await DatabaseService.instance.updatePlanningTask(
+      task.planRowIdForBackend,
+      planBusinessId: task.planRowId,
+      startTimeDisplay: wallStart,
+      endDateTimeDisplay: wallEnd,
+      clearEnd: task.endDateTime == null,
+      suppressAppSnack: true,
+      recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+      planInitialDateKey: initForPatch.length >= minKeyLen
+          ? initForPatch
+          : null,
+      planIsPostponed: postponed,
+    );
+    if (!mounted) return;
+    if (!ok) {
+      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      DatabaseService.instance.notifyPlanningRefresh();
+      setState(() {});
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
+    }
+  }
+
+  /// Stable unique key for list tiles. Never use bare `id` alone — Noco `id` can be 0 for
+  /// multiple rows before sync, which duplicates [ValueKey]s and crashes the Time grid.
+  static String _planKey(PlanningTask t) {
+    final p = t.planRowIdForBackend.trim();
+    if (p.isNotEmpty) return p;
+    return 'plan-fallback-${t.id}-${t.order}-${t.dateKey}-${t.categoryId}-${t.title}';
+  }
+
+  bool _planCanReorderTask(PlanningTask task) {
+    final id = task.planRowIdForBackend;
+    return !id.startsWith('optimistic-') && !id.startsWith('virt-');
+  }
+
+  void _commitPlanningReorder({
+    required String mode,
+    required PlanningTask moved,
+    required int fromIndex,
+    required int toIndex,
+    required List<PlanningTask> withOrders,
+    required List<PlanningTask> baselineBefore,
+  }) {
+DatabaseService.instance.persistPlanningTaskOrder(
+      withOrders,
+      baselineBeforeReorder: baselineBefore,
+    );
+    setState(() => _dragOrder = null);
+  }
+
+  Stream<List<PlanningTask>> _planningStreamForCurrentDay() {
+    final day = widget.selectedDate ?? _today;
+    final listen = widget.isActivePlanningDay && widget.shellTabActive;
+    final key =
+        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}|$listen';
+    if (_planningStreamKey == key && _planningStream != null) {
+      return _planningStream!;
+    }
+    _planningStreamKey = key;
+    _planningStream = DatabaseService.instance.planningStream(
+      day,
+      listenToGlobalPlanningRefresh: listen,
+    );
+    return _planningStream!;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final persisted = DatabaseService.instance.getPlanActiveTabIndexOrNull();
+    if (persisted != null) {
+      _sortMode = planSortModeFromPersistedIndex(persisted);
+    }
+    WidgetsBinding.instance.addObserver(this);
+    _activeRecordingTitleNorm = DatabaseService
+        .instance
+        .cachedPrimaryRunningTitle
+        ?.trim()
+        .toLowerCase();
+    final day = widget.selectedDate ?? _today;
+    DatabaseService.instance.scrubJitVirtualPlansFromUserCache();
+    _latestPlanningDayTasks = DatabaseService.instance
+        .dedupePlanningTasksForDisplay(
+          DatabaseService.instance.planningDayTasksSnapshot(day),
+        );
+    if (widget.isActivePlanningDay) {
+      _planningStream = _planningStreamForCurrentDay();
+    }
+    _planningTimeSub = DatabaseService.instance.timeUpdates.listen((_) {
+      if (!mounted) return;
+      final t = DatabaseService.instance.cachedPrimaryRunningTitle
+          ?.trim()
+          .toLowerCase();
+      if (t != _activeRecordingTitleNorm) {
+        setState(() => _activeRecordingTitleNorm = t);
+      }
+    });
+    _tagsCatalogSub = DatabaseService.instance.tagsCatalogUpdated.listen((_) {
+      if (!mounted) return;
+      setState(() {});
+    });
+    var lastTzOffset = DatabaseService.instance.settings.timezoneOffsetHours;
+    var lastTzLabel = DatabaseService.instance.settings.preferredTimeZone;
+    _settingsSub = DatabaseService.instance.userSettingsStream.listen((s) {
+      if (!mounted) return;
+      if (s.timezoneOffsetHours != lastTzOffset ||
+          s.preferredTimeZone != lastTzLabel) {
+        lastTzOffset = s.timezoneOffsetHours;
+        lastTzLabel = s.preferredTimeZone;
+        DatabaseService.instance.reprojectAllPlansForProfileTimezone();
+        _refreshPlanningTasksAfterTimezoneChange();
+        _timeModeDidAutoScrollToNow = false;
+        DatabaseService.instance.notifyPlanningRefresh(
+          scheduleNetworkRefresh: false,
+        );
+        setState(() {});
+      }
+    });
+    unawaited(_loadPlanningTimelineBounds());
+    unawaited(_loadTimeViewFixedTagIds());
+    unawaited(_reloadQuickAddTags());
+    _hourGridEdgeScrollTicker = createTicker(_onHourGridEdgeScrollTick);
+  }
+
+  Tag _syntheticNoTagsTag() {
+    final loc = currentLocale.value;
+    return Tag(
+      tagId: _kUntaggedPlanGroupId,
+      name: t(loc, 'plan_filter_no_tags'),
+      color: _noTagsColorHex,
+      sortOrder: 0,
+      isSynced: true,
+    );
+  }
+
+  List<Tag> _mergeQuickBarTagsFromServer(
+    List<Tag> serverTags,
+    List<int>? savedOrder,
+  ) {
+    final synthetic = _syntheticNoTagsTag();
+    if (savedOrder == null || savedOrder.isEmpty) {
+      return [...serverTags, synthetic];
+    }
+    final byId = {for (final t in serverTags) t.tagId: t};
+    final out = <Tag>[];
+    final usedServer = <int>{};
+    var placedSynthetic = false;
+    for (final id in savedOrder) {
+      if (id == 0) continue;
+      if (id == _kUntaggedPlanGroupId) {
+        if (!placedSynthetic) {
+          out.add(synthetic);
+          placedSynthetic = true;
+        }
+        continue;
+      }
+      final t = byId[id];
+      if (t != null) {
+        out.add(t);
+        usedServer.add(id);
+      }
+    }
+    for (final t in serverTags) {
+      if (!usedServer.contains(t.tagId)) {
+        out.add(t);
+      }
+    }
+    if (!placedSynthetic) {
+      out.add(synthetic);
+    }
+    return out;
+  }
+
+  Future<void> _persistQuickBarTagIdOrderPrefs(List<Tag> ordered) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _prefsKeyQuickBarTagOrder,
+        jsonEncode(ordered.map((t) => t.tagId).toList()),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _reloadQuickAddTags() async {
+    if (!mounted) return;
+    setState(() => _quickAddTagsLoading = true);
+    final prefs = await SharedPreferences.getInstance();
+    final visible = prefs.getBool(_prefsKeyNoTagsVisible) ?? true;
+    final cr = prefs.getString(_prefsKeyNoTagsColor)?.trim();
+    final colorHex =
+        (cr != null &&
+            cr.startsWith('#') &&
+            cr.length >= 7 &&
+            parseTagHexColor(cr) != null)
+        ? cr
+        : _defaultNoTagsColorHex;
+
+    final list = await DatabaseService.instance.fetchTagsForCurrentUser(
+      scope: TagCatalogScope.plan,
+    );
+    List<int>? order;
+    try {
+      final raw = prefs.getString(_prefsKeyQuickBarTagOrder);
+      if (raw != null && raw.isNotEmpty) {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          order = decoded
+              .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+              .where((id) => id != 0)
+              .toList();
+        }
+      }
+    } catch (_) {}
+    if (!mounted) return;
+    _noTagsChipVisible = visible;
+    _noTagsColorHex = colorHex;
+    var merged = _mergeQuickBarTagsFromServer(list, order);
+    if (!visible) {
+      merged = merged.where((t) => t.tagId != _kUntaggedPlanGroupId).toList();
+    }
+    setState(() {
+      _quickAddAvailableTags = merged;
+      _quickAddTagsLoading = false;
+    });
+  }
+
+  Future<void> _openTagManagerFromQuickAdd() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (ctx) => const TagSettingsHub()),
+    );
+    await _reloadQuickAddTags();
+  }
+
+  void _toggleCreationTag(Tag tag) {
+    if (tag.tagId == _kUntaggedPlanGroupId) return;
+    setState(() {
+      final next = List<Tag>.from(_creationSelectedTags);
+      final i = next.indexWhere((x) => x.tagId == tag.tagId);
+      if (i >= 0) {
+        next.removeAt(i);
+      } else {
+        next.add(tag);
+      }
+      _creationSelectedTags = next;
+    });
+  }
+
+  void _onPlanningQuickBarReorder(int oldIndex, int newIndex) {
+    if (_quickAddAvailableTags.length < 2) return;
+    if (oldIndex < 0 || oldIndex >= _quickAddAvailableTags.length) return;
+    if (newIndex < 0 || newIndex > _quickAddAvailableTags.length) return;
+    var ni = newIndex;
+    if (oldIndex < ni) ni -= 1;
+    if (ni < 0 || ni >= _quickAddAvailableTags.length) return;
+
+    final previous = List<Tag>.from(_quickAddAvailableTags);
+    final row = previous[oldIndex];
+    final next = List<Tag>.from(previous);
+    next.removeAt(oldIndex);
+    next.insert(ni, row);
+    final withSort = <Tag>[
+      for (var i = 0; i < next.length; i++) next[i].copyWith(sortOrder: i),
+    ];
+    setState(() => _quickAddAvailableTags = withSort);
+    unawaited(_persistQuickBarTagIdOrderPrefs(withSort));
+    unawaited(_persistPlanningQuickBarSortOrder(previous, withSort));
+  }
+
+  Future<void> _persistPlanningQuickBarSortOrder(
+    List<Tag> previousUiOrder,
+    List<Tag> ordered,
+  ) async {
+    final persistable = ordered
+        .where((t) => t.tagId != _kUntaggedPlanGroupId)
+        .toList();
+    final withSort = <Tag>[
+      for (var i = 0; i < persistable.length; i++)
+        persistable[i].copyWith(sortOrder: i),
+    ];
+    final ok = await DatabaseService.instance
+        .persistTagsSortOrderForCurrentUser(withSort);
+    if (!mounted) return;
+    if (ok) {
+      await _persistQuickBarTagIdOrderPrefs(ordered);
+      DatabaseService.instance.notifyPlanningRefresh();
+      return;
+    }
+    setState(() => _quickAddAvailableTags = List<Tag>.from(previousUiOrder));
+    AppSnack.failed();
+  }
+
+  Widget _buildQuickAddTagStrip(ColorScheme scheme) {
+    final loc = currentLocale.value;
+    if (_quickAddTagsLoading && _quickAddAvailableTags.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    if (_quickAddAvailableTags.isEmpty) {
+      return Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton(
+          onPressed: _openTagManagerFromQuickAdd,
+          child: Text(t(loc, 'plan_quick_add_no_tags')),
+        ),
+      );
+    }
+    final canReorder = _quickAddAvailableTags.length >= 2;
+    return TagQuickPickStrip(
+      tags: _quickAddAvailableTags,
+      selected: _creationSelectedTags,
+      onToggle: _toggleCreationTag,
+      fallbackColor: scheme.primary,
+      variant: CategoryChipVariant.largePicker,
+      externalSelectionRing: true,
+      onReorder: canReorder ? _onPlanningQuickBarReorder : null,
+    );
+  }
+
+  Future<void> _loadTimeViewFixedTagIds() async {
+    final ids = await TimeViewFixedTagPrefs.load();
+    if (mounted) {
+      setState(() => _timeViewFixedTagIds = ids);
+    }
+  }
+
+  Future<void> _loadPlanningTimelineBounds() async {
+    final range = await PlanningSheetTimelinePrefs.loadVisibleDayRange();
+    if (mounted) {
+      setState(() {
+        _timelineHourStart = range.start;
+        _timelineHourEnd = range.end;
+      });
+    }
+  }
+
+  void _onPlanningTimelineBoundsChanged(int start, int end) {
+    final range = PlanningSheetTimelinePrefs.normalizeExtendedRange(start, end);
+    setState(() {
+      _timelineHourStart = range.start;
+      _timelineHourEnd = range.end;
+    });
+    unawaited(PlanningSheetTimelinePrefs.saveVisibleDayRange(range.start, range.end));
+  }
+
+  String _formatDayLengthValueSummary(int start, int end) {
+    final loc = currentLocale.value;
+    final hours = PlanningSheetTimelinePrefs.visibleDurationHours(start, end);
+    final startClock = PlanningSheetTimelinePrefs.formatExtendedHourClock(start);
+    final endClock = PlanningSheetTimelinePrefs.formatExtendedHourClock(end);
+    final startSuffix =
+        start < 0 ? ' ${t(loc, 'day_length_prev_day')}' : '';
+    final endSuffix = end > 24 ? ' ${t(loc, 'day_length_next_day')}' : '';
+    if (loc == 'ru') {
+      return '$startClock$startSuffix — $endClock$endSuffix · $hours ч';
+    }
+    return '$startClock$startSuffix — $endClock$endSuffix · ${hours}h';
+  }
+
+  List<PlanningTask> _planningTasksForTimeViewWindow(DateTime planWallDay) {
+    final startExt = _timelineHourStart;
+    final endExt = _timelineHourEnd;
+    final seen = <String>{};
+    final out = <PlanningTask>[];
+
+    void mergeDay(DateTime day) {
+      for (final task
+          in DatabaseService.instance.planningDayTasksSnapshot(day)) {
+        final id = task.planRowIdForBackend;
+        if (seen.add(id)) out.add(task);
+      }
+    }
+
+    mergeDay(planWallDay);
+    if (PlanningSheetTimelinePrefs.needsNextDayTasks(endExt)) {
+      mergeDay(planWallDay.add(const Duration(days: 1)));
+    }
+    if (PlanningSheetTimelinePrefs.needsPreviousDayTasks(startExt)) {
+      mergeDay(planWallDay.subtract(const Duration(days: 1)));
+    }
+    return out;
+  }
+
+  void _refreshPlanningTasksAfterTimezoneChange() {
+    final day = widget.selectedDate ?? _today;
+    _latestPlanningDayTasks = DatabaseService.instance
+        .dedupePlanningTasksForDisplay(
+          DatabaseService.instance.planningDayTasksSnapshot(day),
+        );
+    _timeViewCascadeNormalizedDayKey = null;
+    _activeTimelineDurationGrid = null;
+  }
+
+  bool _projectedPlanInTimeViewWindow(
+    TimeModeProjectedPlan proj,
+    DateTime planWallDay,
+    int startExt,
+    int endExt,
+  ) {
+    return PlanningSheetTimelinePrefs.projectedPlanOverlapsVisibleWindow(
+      wallStart: proj.profileWallStart,
+      wallEnd: proj.profileWallEnd,
+      durationMinutes: proj.durationMinutes,
+      selectedDay: planWallDay,
+      startExtended: startExt,
+      endExtended: endExt,
+    );
+  }
+
+  String _hhmmFromTimeOfDay(TimeOfDay t) {
+    return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  }
+
+  TimeOfDay _timeOfDayFromHhmm(String? raw) {
+    final sanitized = DatabaseService.instance.sanitizeDefaultPlanTime(raw);
+    if (sanitized == null) return const TimeOfDay(hour: 9, minute: 0);
+    return TimeOfDay(
+      hour: int.parse(sanitized.substring(0, 2)),
+      minute: int.parse(sanitized.substring(3, 5)),
+    );
+  }
+
+  Future<void> _editCategoryDefaultPlanSchedule(
+    int categoryId,
+    void Function(void Function())? modalSetState,
+  ) async {
+    final loc = currentLocale.value;
+    final db = DatabaseService.instance;
+    final rule = db.getCategoryRuleById(categoryId);
+    final currentTime = db.sanitizeDefaultPlanTime(rule?.defaultPlanTime) ??
+        db.effectiveDefaultPlanTimeForCategory(categoryId);
+    var pickedTime = _timeOfDayFromHhmm(currentTime);
+    var useProfileTz = db.usesProfileDefaultPlanTimezone(rule?.defaultPlanTimezone);
+    var fixedIana = db.sanitizeDefaultPlanTimezone(rule?.defaultPlanTimezone) ??
+        tz_settings.kCategoryDefaultTimezoneOptions.first.ianaId;
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final profileTzLabel = db.profileTimezoneShortLabel();
+            final timeLabel = _hhmmFromTimeOfDay(pickedTime);
+            final fixedShort = tz_settings.shortLabelForCategoryDefaultTimezoneIana(
+              fixedIana,
+            );
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  8,
+                  16,
+                  16 + MediaQuery.paddingOf(context).bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      t(loc, 'plan_default_time_set'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(t(loc, 'plan_default_time_field_time')),
+                      subtitle: Text(timeLabel),
+                      trailing: const Icon(Icons.schedule_rounded),
+                      onTap: () async {
+                        final picked = await showTimePicker(
+                          context: context,
+                          initialTime: pickedTime,
+                          initialEntryMode: appTimePickerEntryMode(),
+                        );
+                        if (picked == null) return;
+                        setSheetState(() => pickedTime = picked);
+                      },
+                    ),
+                    Text(
+                      t(loc, 'plan_default_time_field_timezone'),
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    SegmentedButton<bool>(
+                      segments: [
+                        ButtonSegment<bool>(
+                          value: true,
+                          label: Text(
+                            t(loc, 'plan_default_time_tz_profile')
+                                .replaceFirst('%s', profileTzLabel),
+                          ),
+                        ),
+                        ButtonSegment<bool>(
+                          value: false,
+                          label: Text(t(loc, 'plan_default_time_tz_fixed')),
+                        ),
+                      ],
+                      selected: {useProfileTz},
+                      onSelectionChanged: (s) {
+                        setSheetState(() => useProfileTz = s.first);
+                      },
+                    ),
+                    if (!useProfileTz) ...[
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final picked = await showSearch<String?>(
+                            context: context,
+                            delegate: DefaultPlanTimezoneSearchDelegate(
+                              loc: loc,
+                              options: tz_settings.kCategoryDefaultTimezoneOptions,
+                            ),
+                          );
+                          if (picked == null) return;
+                          setSheetState(() => fixedIana = picked);
+                        },
+                        icon: const Icon(Icons.public_rounded),
+                        label: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                            '$fixedShort (${fixedIana.replaceAll('_', ' ')})',
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    AppButton.primary(
+                      label: t(loc, 'save'),
+                      onPressed: () => Navigator.pop(context, true),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    if (saved != true || !mounted) return;
+
+    final result = await db.updateCategoryDefaultPlanSchedule(
+      categoryId,
+      _hhmmFromTimeOfDay(pickedTime),
+      useProfileTz ? null : fixedIana,
+    );
+    if (!mounted) return;
+    if (!result.ok) {
+      if (result.timezoneFieldMissing) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t(loc, 'plan_default_timezone_field_missing')),
+          ),
+        );
+      } else {
+        AppSnack.failed();
+      }
+      return;
+    }
+    setState(() {});
+    modalSetState?.call(() {});
+  }
+
+  Future<void> _setCategoryDefaultPlanTime(
+    int categoryId,
+    void Function(void Function())? modalSetState,
+  ) async {
+    await _editCategoryDefaultPlanSchedule(categoryId, modalSetState);
+  }
+
+  Future<void> _clearCategoryDefaultPlanTime(
+    int categoryId,
+    void Function(void Function())? modalSetState,
+  ) async {
+    final result = await DatabaseService.instance.updateCategoryDefaultPlanSchedule(
+      categoryId,
+      null,
+      null,
+    );
+    if (!mounted) return;
+    if (!result.ok) {
+      if (result.timezoneFieldMissing) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(t(currentLocale.value, 'plan_default_timezone_field_missing')),
+          ),
+        );
+      } else {
+        AppSnack.failed();
+      }
+      return;
+    }
+    setState(() {});
+    modalSetState?.call(() {});
+  }
+
+  void _showDefaultPlanTimesSheet() {
+    int? selectedCategoryId;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final loc = currentLocale.value;
+            final db = DatabaseService.instance;
+            final pairs = db.allCategoryIdPathPairs
+                .where((p) => p.id != CategoryRule.uncategorizedSyntheticId)
+                .toList();
+            final configuredPairs = pairs.where((p) {
+              final rule = db.getCategoryRuleById(p.id);
+              return db.sanitizeDefaultPlanTime(rule?.defaultPlanTime) != null;
+            }).toList();
+            ({int id, String path})? selectedPair;
+            for (final p in pairs) {
+              if (p.id == selectedCategoryId) {
+                selectedPair = p;
+                break;
+              }
+            }
+            final selectedRule = selectedCategoryId == null
+                ? null
+                : db.getCategoryRuleById(selectedCategoryId!);
+            final selectedOwn = db.sanitizeDefaultPlanTime(
+              selectedRule?.defaultPlanTime,
+            );
+            final selectedEffective = selectedCategoryId == null
+                ? null
+                : db.effectiveDefaultPlanScheduleForCategory(
+                    selectedCategoryId!,
+                  );
+            String statusText({
+              required String? own,
+              required String? ownTz,
+              required ({String? hhmm, String? timezoneIana, int? sourceCategoryId})?
+                  effective,
+            }) {
+              if (own != null) {
+                return t(loc, 'plan_default_time_own').replaceFirst(
+                  '%s',
+                  db.formatDefaultPlanTimeWithTimezoneLabel(own, ownTz),
+                );
+              }
+              if (effective?.hhmm != null) {
+                return t(loc, 'plan_default_time_inherited').replaceFirst(
+                  '%s',
+                  db.formatDefaultPlanTimeWithTimezoneLabel(
+                    effective!.hhmm!,
+                    effective.timezoneIana,
+                  ),
+                );
+              }
+              return t(loc, 'plan_default_time_none');
+            }
+
+            Future<void> pickCategory() async {
+              final picked = await showSearch<DefaultPlanCategoryOption?>(
+                context: context,
+                delegate: DefaultPlanCategorySearchDelegate(
+                  loc: loc,
+                  options: [
+                    for (final p in pairs)
+                      DefaultPlanCategoryOption(id: p.id, path: p.path),
+                  ],
+                ),
+              );
+              if (picked == null || !context.mounted) return;
+              setModalState(() => selectedCategoryId = picked.id);
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      t(loc, 'plan_default_times_title'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      t(loc, 'plan_default_times_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      t(loc, 'plan_default_times_profile_tz_notice').replaceFirst(
+                        '%s',
+                        db.profileTimezoneShortLabel(),
+                      ),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: pairs.isEmpty
+                          ? null
+                          : () => unawaited(pickCategory()),
+                      icon: const Icon(Icons.search_rounded),
+                      label: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          selectedPair?.path ??
+                              t(loc, 'plan_default_time_select_category'),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (selectedPair != null)
+                      Builder(
+                        builder: (context) {
+                          final pair = selectedPair!;
+                          return Card(
+                            margin: EdgeInsets.zero,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    pair.path,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    statusText(
+                                      own: selectedOwn,
+                                      ownTz: selectedRule?.defaultPlanTimezone,
+                                      effective: selectedEffective,
+                                    ),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Wrap(
+                                    spacing: 8,
+                                    runSpacing: 8,
+                                    children: [
+                                      AppButton.secondary(
+                                        label: t(loc, 'plan_default_time_set'),
+                                        onPressed: () => unawaited(
+                                          _setCategoryDefaultPlanTime(
+                                            pair.id,
+                                            setModalState,
+                                          ),
+                                        ),
+                                      ),
+                                      AppButton.ghost(
+                                        label: t(
+                                          loc,
+                                          'plan_default_time_clear',
+                                        ),
+                                        onPressed: selectedOwn == null
+                                            ? null
+                                            : () => unawaited(
+                                                _clearCategoryDefaultPlanTime(
+                                                  pair.id,
+                                                  setModalState,
+                                                ),
+                                              ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    const SizedBox(height: 16),
+                    Text(
+                      t(loc, 'plan_default_time_configured_categories'),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.sizeOf(context).height * 0.45,
+                      ),
+                      child: configuredPairs.isEmpty
+                          ? Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: Text(t(loc, 'plan_default_time_none')),
+                            )
+                          : ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: configuredPairs.length,
+                              separatorBuilder: (_, _) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, i) {
+                                final pair = configuredPairs[i];
+                                final rule = db.getCategoryRuleById(pair.id);
+                                final own = db.sanitizeDefaultPlanTime(
+                                  rule?.defaultPlanTime,
+                                );
+                                final subtitle = own != null
+                                    ? db.formatDefaultPlanTimeWithTimezoneLabel(
+                                        own,
+                                        rule?.defaultPlanTimezone,
+                                      )
+                                    : '';
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    pair.path,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(subtitle),
+                                  trailing: Wrap(
+                                    spacing: 4,
+                                    children: [
+                                      IconButton(
+                                        tooltip: t(
+                                          loc,
+                                          'plan_default_time_set',
+                                        ),
+                                        icon: const Icon(Icons.edit_rounded),
+                                        onPressed: () {
+                                          setModalState(
+                                            () => selectedCategoryId = pair.id,
+                                          );
+                                          unawaited(
+                                            _setCategoryDefaultPlanTime(
+                                              pair.id,
+                                              setModalState,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      IconButton(
+                                        tooltip: t(
+                                          loc,
+                                          'plan_default_time_clear',
+                                        ),
+                                        icon: const Icon(Icons.clear_rounded),
+                                        onPressed: () => unawaited(
+                                          _clearCategoryDefaultPlanTime(
+                                            pair.id,
+                                            setModalState,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  onTap: () => setModalState(
+                                    () => selectedCategoryId = pair.id,
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    const SizedBox(height: 16),
+                    // TODO(F2C): remove sanity marker after web + APK verification.
+                    Text(
+                      'F2C selector UI',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showPlanningSettingsSheet() {
+    final loc = currentLocale.value;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            child: PlanningTimelineBoundsSheet(
+              initialStart: _timelineHourStart,
+              initialEnd: _timelineHourEnd,
+              onBoundsChanged: _onPlanningTimelineBoundsChanged,
+              title: t(loc, 'day_length_title'),
+              helper: t(loc, 'day_length_helper'),
+              valueSummaryBuilder: _formatDayLengthValueSummary,
+              prevDayMarker: t(loc, 'day_length_prev_day'),
+              nextDayMarker: t(loc, 'day_length_next_day'),
+              header: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  PlanningNoTagsSettingsBlock(
+                    initialVisible: _noTagsChipVisible,
+                    initialColorHex: _noTagsColorHex,
+                    onApply: (visible, colorHex) async {
+                      final p = await SharedPreferences.getInstance();
+                      await p.setBool(_prefsKeyNoTagsVisible, visible);
+                      await p.setString(_prefsKeyNoTagsColor, colorHex);
+                      if (!mounted) return;
+                      setState(() {
+                        _noTagsChipVisible = visible;
+                        _noTagsColorHex = colorHex;
+                      });
+                      await _reloadQuickAddTags();
+                    },
+                  ),
+                  const Divider(height: 1),
+                  const PlanRecordLinkSuggestionSettingsBlock(),
+                  const Divider(height: 24),
+                  TimeViewFixedTagsSettingsBlock(
+                    initialSelectedIds: _timeViewFixedTagIds,
+                    onSave: (ids) async {
+                      await TimeViewFixedTagPrefs.save(ids);
+                      if (mounted) {
+                        setState(() => _timeViewFixedTagIds = ids);
+                      }
+                    },
+                  ),
+                  const Divider(height: 24),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.schedule_rounded),
+                    title: Text(t(loc, 'plan_default_times_title')),
+                    subtitle: Text(
+                      t(loc, 'plan_default_times_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(sheetCtx).pop();
+                      _showDefaultPlanTimesSheet();
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.timer_outlined),
+                    title: Text(t(loc, 'tag_default_durations_title')),
+                    subtitle: Text(
+                      t(loc, 'tag_default_durations_sheet_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(sheetCtx).pop();
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TagSettingsHub(
+                            initialTabIndex: 2,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.label_outline_rounded),
+                    title: Text(t(loc, 'tag_settings_hub_title')),
+                    subtitle: Text(
+                      t(loc, 'tag_settings_sheet_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      Navigator.of(sheetCtx).pop();
+                      Navigator.of(context).push<void>(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TagSettingsHub(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(DatabaseService.instance.flushPlanningOrderSyncNow());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant PlanningPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedDate != widget.selectedDate ||
+        oldWidget.selectedDateString != widget.selectedDateString ||
+        oldWidget.isActivePlanningDay != widget.isActivePlanningDay ||
+        oldWidget.shellTabActive != widget.shellTabActive) {
+      setState(() {
+        if (widget.isActivePlanningDay) {
+          _planningStream = _planningStreamForCurrentDay();
+        } else {
+          _planningStream = null;
+          _planningStreamKey = null;
+        }
+        _latestPlanningDayTasks = DatabaseService.instance
+            .dedupePlanningTasksForDisplay(
+              DatabaseService.instance.planningDayTasksSnapshot(
+                widget.selectedDate ?? _today,
+              ),
+            );
+        if (oldWidget.selectedDate != widget.selectedDate ||
+            oldWidget.selectedDateString != widget.selectedDateString) {
+          _optimisticTasks.clear();
+          _planDoneOverride.clear();
+          _clearAllPlanCompletionHolds();
+          _dragOrder = null;
+          _selectedPlanKeys.clear();
+          _planSelectMode = false;
+          _sortMode = PlanSortMode.custom;
+          _timeViewCascadeNormalizedDayKey = null;
+        }
+      });
+      _syncPlanningShellFabBulkReserve();
+    }
+  }
+
+  @override
+  void dispose() {
+    _clearAllPlanCompletionHolds();
+    _planningTimeSub?.cancel();
+    _tagsCatalogSub?.cancel();
+    _settingsSub?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(DatabaseService.instance.flushPlanningOrderSyncNow());
+    _stopHourGridEdgeScroll();
+    _hourGridEdgeScrollTicker.dispose();
+    _hourGridScrollController.dispose();
+    _textController.dispose();
+    _quickAddFocus.dispose();
+    super.dispose();
+  }
+
+  void _onHourGridEdgeScrollTick(Duration elapsed) {
+    if (!mounted) {
+      return;
+    }
+    if (!_hourGridScrollController.hasClients) {
+      return;
+    }
+    final v = _hourGridScrollVelocityPxPerSec;
+    if (v == 0) {
+      return;
+    }
+    final last = _hourGridTickerElapsedLast;
+    _hourGridTickerElapsedLast = elapsed;
+    if (last == null) {
+      return;
+    }
+    final dtSeconds = (elapsed - last).inMicroseconds / 1000000.0;
+    if (dtSeconds <= 0) {
+      return;
+    }
+    final c = _hourGridScrollController;
+    final deltaPx = v * dtSeconds;
+    final next = (c.offset + deltaPx).clamp(0.0, c.position.maxScrollExtent);
+    c.jumpTo(next.toDouble());
+  }
+
+  void _ensureHourGridEdgeTickerRunning() {
+    if (!_hourGridEdgeScrollTicker.isActive) {
+      _hourGridTickerElapsedLast = null;
+      _hourGridEdgeScrollTicker.start();
+    }
+  }
+
+  void _stopHourGridEdgeScroll() {
+    _hourGridScrollVelocityPxPerSec = 0;
+    _hourGridTickerElapsedLast = null;
+    if (_hourGridEdgeScrollTicker.isActive) {
+      _hourGridEdgeScrollTicker.stop();
+    }
+  }
+
+  /// While dragging in the hour grid, set scroll velocity from global Y bands
+  /// (top/bottom 10% of viewport); motion is applied in [_onHourGridEdgeScrollTick].
+  void _handleHourGridDragUpdateForEdgeScroll(double globalDy) {
+    if (_sortMode != PlanSortMode.time) {
+      return;
+    }
+    final viewH = MediaQuery.sizeOf(context).height;
+    if (viewH <= 1) {
+      return;
+    }
+    final topBand = viewH * 0.1;
+    final bottomBand = viewH * 0.9;
+    if (globalDy < topBand) {
+      _hourGridScrollVelocityPxPerSec = -_kHourGridEdgeScrollSpeedPxPerSec;
+      _ensureHourGridEdgeTickerRunning();
+    } else if (globalDy > bottomBand) {
+      _hourGridScrollVelocityPxPerSec = _kHourGridEdgeScrollSpeedPxPerSec;
+      _ensureHourGridEdgeTickerRunning();
+    } else {
+      _stopHourGridEdgeScroll();
+    }
+  }
+
+  static String? _planBusinessUuidForMerge(PlanningTask t) {
+    final row = t.planRowId?.trim() ?? '';
+    if (row.isNotEmpty) {
+      if (row.startsWith('optimistic-')) {
+        final id = row.substring('optimistic-'.length).trim();
+        return id.isEmpty ? null : id;
+      }
+      if (!row.startsWith('virt-')) return row;
+    }
+    final pr = t.pocketRecordId?.trim() ?? '';
+    if (pr.startsWith('optimistic-')) {
+      final id = pr.substring('optimistic-'.length).trim();
+      return id.isEmpty ? null : id;
+    }
+    return null;
+  }
+
+  List<PlanningTask> _mergeWithOptimistic(List<PlanningTask> server) {
+    final pending = _optimisticTasks
+        .where(
+          (o) => !server.any((s) {
+            final oBiz = _planBusinessUuidForMerge(o);
+            final sBiz = _planBusinessUuidForMerge(s);
+            if (oBiz != null &&
+                sBiz != null &&
+                oBiz.isNotEmpty &&
+                oBiz == sBiz) {
+              return true;
+            }
+            return s.title.trim() == o.title.trim() && s.dateKey == o.dateKey;
+          }),
+        )
+        .toList();
+    final merged = [...pending, ...server];
+    merged.sort((a, b) {
+      if (_sortTreatAsDone(a) != _sortTreatAsDone(b)) {
+        return _sortTreatAsDone(a) ? 1 : -1;
+      }
+      final o = a.order.compareTo(b.order);
+      if (o != 0) return o;
+      return a.title.compareTo(b.title);
+    });
+    return merged;
+  }
+
+  /// Done for display uses override; done for sort can be held during completion moment.
+  bool _sortTreatAsDone(PlanningTask task) {
+    final key = _planKey(task);
+    if (_planCompletionHoldKeys.contains(key)) return false;
+    final override = _planDoneOverride[key];
+    if (override != null) return override;
+    return task.isDone;
+  }
+
+  void _clearAllPlanCompletionHolds() {
+    for (final timer in _planCompletionHoldTimers.values) {
+      timer.cancel();
+    }
+    _planCompletionHoldTimers.clear();
+    _planCompletionHoldKeys.clear();
+    _planReorderSettleKeys.clear();
+  }
+
+  void _cancelPlanCompletionHold(String key) {
+    _planCompletionHoldTimers.remove(key)?.cancel();
+    _planCompletionHoldKeys.remove(key);
+    _planReorderSettleKeys.remove(key);
+  }
+
+  void _beginPlanCompletionHold(String key) {
+    _planCompletionHoldTimers.remove(key)?.cancel();
+    _planCompletionHoldKeys.add(key);
+    _planCompletionHoldTimers[key] = Timer(_kPlanCompletionHoldDuration, () {
+      if (!mounted) return;
+      _planCompletionHoldTimers.remove(key);
+      if (!_planCompletionHoldKeys.remove(key)) return;
+      setState(() => _planReorderSettleKeys.add(key));
+      Timer(_kPlanReorderSettleDuration, () {
+        if (!mounted) return;
+        setState(() => _planReorderSettleKeys.remove(key));
+      });
+    });
+  }
+
+  List<PlanningTask> _displayTasks(List<PlanningTask> server) {
+    final dayKey = widget.selectedDateString.length >= 10
+        ? widget.selectedDateString.substring(0, 10)
+        : DatabaseService.instance.getProjectedTodayDateKey();
+    final merged = DatabaseService.instance.dedupePlanningTasksForDisplay(
+      _mergeWithOptimistic(server),
+      traceSource: 'ui',
+      dayKey: dayKey,
+    );
+    if (_dragOrder != null && _dragOrder!.length == merged.length) {
+      final keys = merged.map(_planKey).toSet();
+      final dragKeys = _dragOrder!.map(_planKey).toSet();
+      if (keys.length == dragKeys.length && keys.containsAll(dragKeys)) {
+        return _dragOrder!;
+      }
+    }
+    return merged;
+  }
+
+  void _syncPlanningShellFabBulkReserve() {
+    if (!mounted) {
+      return;
+    }
+    final shell = ShellLayoutScope.read(context, listen: false);
+    if (shell.primaryTabIndex != 1) {
+      return;
+    }
+    final next = _selectedPlanKeys.isNotEmpty ? _kShellBulkBarReservePx : 0.0;
+    shell.setFabBottomReservePx(next);
+  }
+
+  void _exitSelectMode() {
+    setState(() {
+      _planSelectMode = false;
+      _selectedPlanKeys.clear();
+    });
+    _syncPlanningShellFabBulkReserve();
+  }
+
+  void _toggleKeySelection(String key) {
+    setState(() {
+      if (_selectedPlanKeys.contains(key)) {
+        _selectedPlanKeys.remove(key);
+      } else {
+        _selectedPlanKeys.add(key);
+      }
+    });
+    _syncPlanningShellFabBulkReserve();
+  }
+
+  void _clearSelection() {
+    setState(() {
+      _selectedPlanKeys.clear();
+      _planSelectMode = false;
+    });
+    _syncPlanningShellFabBulkReserve();
+  }
+
+  bool _allVisiblePlanTasksSelected(List<PlanningTask> list) {
+    if (list.isEmpty) return false;
+    for (final t in list) {
+      if (!_selectedPlanKeys.contains(_planKey(t))) return false;
+    }
+    return true;
+  }
+
+  void _toggleSelectAllVisiblePlans(List<PlanningTask> list) {
+    if (list.isEmpty) return;
+    setState(() {
+      if (_allVisiblePlanTasksSelected(list)) {
+        for (final t in list) {
+          _selectedPlanKeys.remove(_planKey(t));
+        }
+      } else {
+        for (final t in list) {
+          _selectedPlanKeys.add(_planKey(t));
+        }
+      }
+    });
+    _syncPlanningShellFabBulkReserve();
+  }
+
+  Future<void> _openBulkPlanningEdit(List<PlanningTask> tasks) async {
+    if (_selectedPlanKeys.isEmpty) return;
+    final loc = currentLocale.value;
+    final initial = widget.selectedDate ?? _today;
+    final selectedList = <PlanningTask>[];
+    for (final t in tasks) {
+      if (_selectedPlanKeys.contains(_planKey(t))) {
+        selectedList.add(t);
+      }
+    }
+    if (selectedList.isEmpty) return;
+
+    final result = await showBulkPlanningEditSheet(
+      context,
+      initialDay: initial,
+      selectedTasks: selectedList,
+    );
+    if (result == null || !mounted) return;
+
+    final refDay = widget.selectedDate ?? _today;
+    final sameDay =
+        result.targetDate.year == refDay.year &&
+        result.targetDate.month == refDay.month &&
+        result.targetDate.day == refDay.day;
+    if (sameDay && !result.applyTargetTime) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t(loc, 'plan_bulk_edit_no_changes'))),
+      );
+      return;
+    }
+
+    final patches = <PlanningBulkPatch>[];
+    for (final key in _selectedPlanKeys.toList()) {
+      PlanningTask? match;
+      for (final t in tasks) {
+        if (_planKey(t) == key) {
+          match = t;
+          break;
+        }
+      }
+      if (match == null) continue;
+      if (match.planRowIdForBackend.startsWith('optimistic-')) continue;
+      final pbId = match.pocketRecordId?.trim() ?? '';
+      if (pbId.isEmpty) continue;
+
+      final wall = computeBulkEditWallTimes(match, result);
+      final d = DateTime(wall.start.year, wall.start.month, wall.start.day);
+      final newKey = _dateKeyFromDate(d);
+      final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
+        match,
+      );
+      const minKeyLen = 10;
+      final persistInitial = anchorShort.length >= minKeyLen
+          ? anchorShort
+          : DatabaseService.instance.planningWallScheduleDateKey(match);
+      final initForPatch = persistInitial.length >= minKeyLen
+          ? persistInitial
+          : newKey;
+      final postponed =
+          !match.isDone &&
+          DatabaseService.instance.planningShouldMarkPostponed(
+            anchorKey: initForPatch,
+            newScheduleKey: newKey,
+          );
+      final updated = match.copyWith(
+        dateKey: newKey,
+        date: DateTime.utc(d.year, d.month, d.day),
+        startTime: wall.start,
+        endDateTime: wall.end,
+        endDateKey: wall.end != null ? newKey : null,
+        clearEnd: wall.end == null,
+        initialDateKey: initForPatch,
+        isPostponed: postponed,
+      );
+      DatabaseService.instance.applyOptimisticPlanningTask(updated);
+      patches.add(
+        PlanningBulkPatch(
+          planRowId: match.planRowIdForBackend,
+          planBusinessId: match.planRowId,
+          startTimeDisplay: wall.start,
+          endDateTimeDisplay: wall.end,
+          clearEnd: wall.end == null,
+          initialDateKey: initForPatch,
+          isPostponed: postponed,
+        ),
+      );
+    }
+
+    if (patches.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
+      }
+      return;
+    }
+
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+    final ok = await DatabaseService.instance.bulkUpdatePlans(
+      patches,
+      suppressAppSnack: true,
+    );
+    if (!mounted) return;
+    setState(() {
+      _selectedPlanKeys.clear();
+      _planSelectMode = false;
+    });
+    _syncPlanningShellFabBulkReserve();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          ok ? t(loc, 'plan_bulk_edit_success') : t(loc, 'plan_save_failed'),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _bulkDelete(List<PlanningTask> tasks) async {
+    final ids = <String>[];
+    for (final key in _selectedPlanKeys.toList()) {
+      PlanningTask? match;
+      for (final t in tasks) {
+        if (_planKey(t) == key) {
+          match = t;
+          break;
+        }
+      }
+      if (match == null) continue;
+      if (match.planRowIdForBackend.startsWith('optimistic-')) continue;
+      final rid = match.recordIdForBackend.trim();
+      if (rid.isEmpty) continue;
+      ids.add(rid);
+    }
+    await DatabaseService.instance.deletePlanningTasksBulk(ids);
+    if (mounted) {
+      setState(() {
+        _selectedPlanKeys.clear();
+        _planSelectMode = false;
+      });
+      _syncPlanningShellFabBulkReserve();
+    }
+  }
+
+  void _openEditDialog(PlanningTask task) {
+    widget.onEditTask(task);
+  }
+
+  Future<void> _deletePlanningTaskWithOptionalRecurrenceScope(
+    PlanningTask task,
+  ) async {
+    if (DatabaseService.instance.planningTaskIsRecurringForScope(task)) {
+      final scope = await showRecurrenceScopeDialog(
+        context,
+        task: task,
+        isDelete: true,
+      );
+      if (scope == null) return;
+      await DatabaseService.instance.deletePlanningTaskWithRecurrenceScope(
+        task.planRowIdForBackend,
+        scope: scope,
+        planBusinessId: task.planRowId,
+        recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+      );
+    } else {
+      await DatabaseService.instance.deletePlanningTask(
+        task.planRowIdForBackend,
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Opens edit sheet with [hour] (0–23) on the visible planning day (wall clock → UTC).
+  void _openQuickAddForHour(int hour) {
+    final h = hour.clamp(0, 23);
+    final d = widget.selectedDate ?? _today;
+    final wall = DateTime(d.year, d.month, d.day, h, 0);
+    final categoryId =
+        widget.selectedCategoryId ??
+        DatabaseService.instance.defaultCategoryId ??
+        (DatabaseService.instance.rules.isNotEmpty
+            ? DatabaseService.instance.rules.first.id
+            : 0);
+    final draft = PlanningTask(
+      id: 0,
+      planRowId: null,
+      title: '',
+      categoryId: categoryId,
+      isDone: false,
+      dateKey: widget.selectedDateString,
+      order: 0,
+      startTime: wall,
+      date: DateTime.utc(d.year, d.month, d.day),
+      endDateTime: null,
+      checklist: const [],
+      parentPlanId: null,
+      initialDateKey: widget.selectedDateString.length >= 10
+          ? widget.selectedDateString.substring(0, 10)
+          : null,
+      isPostponed: false,
+    );
+    widget.onEditTask(draft);
+  }
+
+  /// Semi-circle expanding FAB (long-press friendly targets) anchored at the card menu control.
+  void _showPlanRadialMenu(BuildContext anchorContext, PlanningTask task) {
+    final overlay = Overlay.maybeOf(anchorContext);
+    if (overlay == null) return;
+    final box = anchorContext.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    final anchorCenter = rect.center;
+
+    late OverlayEntry entry;
+    void dismiss() {
+      entry.remove();
+    }
+
+    entry = OverlayEntry(
+      builder: (ctx) {
+        return SemicirclePlanningMenuOverlay(
+          anchorCenter: anchorCenter,
+          onDismiss: dismiss,
+          onEdit: () {
+            dismiss();
+            _openEditDialog(task);
+          },
+          onSelect: () {
+            dismiss();
+            setState(() {
+              _planSelectMode = true;
+              _selectedPlanKeys.add(_planKey(task));
+            });
+            _syncPlanningShellFabBulkReserve();
+          },
+          onDelete: () {
+            dismiss();
+            unawaited(_deletePlanningTaskWithOptionalRecurrenceScope(task));
+          },
+        );
+      },
+    );
+    overlay.insert(entry);
+  }
+
+  void _maybeShowPlanScheduleOverloadWarning({
+    required List<PlanningTask> dayPlans,
+  }) {
+    final report = DatabaseService.instance.evaluatePlanDayScheduleOverload(
+      dayPlans: dayPlans,
+      timelineStartHour: _timelineHourStart,
+      timelineEndHour: _timelineHourEnd,
+    );
+    if (!report.shouldWarn) return;
+    AppSnack.warning(t(currentLocale.value, 'plan_schedule_overload_warning'));
+  }
+
+  Future<void> _addTask() async {
+    final taskDateKey = widget.selectedDateString;
+    final raw = _textController.text;
+    final baseDay = widget.selectedDate ?? _today;
+    final wallDay = DateTime(baseDay.year, baseDay.month, baseDay.day);
+
+    final range = SmartInputParser.parseTitleForTimeRange(raw);
+    SmartTimeParseResult? parsed;
+    final title = SmartInputParser.preservedTitleFromRaw(raw);
+    if (title.isEmpty) return;
+
+    if (range == null) {
+      parsed = SmartInputParser.parseTitleForScheduledTime(raw);
+    }
+
+    final match = DatabaseService.instance.identifyCategory(title);
+    final categoryId =
+        match?.id ??
+        widget.selectedCategoryId ??
+        DatabaseService.instance.defaultCategoryId ??
+        (DatabaseService.instance.rules.isNotEmpty
+            ? DatabaseService.instance.rules.first.id
+            : 0);
+    final tagsForCreate = List<Tag>.from(_creationSelectedTags);
+    final existingDay = [
+      ..._latestPlanningDayTasks,
+      ..._optimisticTasks.where(
+        (t) => t.dateKey == taskDateKey || t.startTime != null,
+      ),
+    ];
+    final explicitStartWall = range != null
+        ? range.startWallOn(wallDay)
+        : parsed?.wallDateTimeOn(wallDay);
+    final explicitEndWall = range?.endWallOn(wallDay);
+    final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+      wallDay: wallDay,
+      categoryId: categoryId,
+      tags: tagsForCreate,
+      existingDayPlans: existingDay,
+      explicitStartWall: explicitStartWall,
+      explicitEndWall: explicitEndWall,
+      hasExplicitTimeRange: range != null,
+      timelineDayStartHour: _timelineHourStart,
+    );
+    var nextOrder = _nextPlanOrderForQuickAdd();
+    final clientPlanId = DatabaseService.newClientUuid();
+    if (_planQuickAddInFlight) return;
+    _planQuickAddInFlight = true;
+    unawaited(() async {
+      try {
+        final ok = await DatabaseService.instance.addPlanningTask(
+          DatabaseService.instance.planningTaskWithAutoSchedule(
+            PlanningTask(
+              id: 0,
+              title: title,
+              categoryId: categoryId,
+              isDone: false,
+              dateKey: taskDateKey,
+              order: nextOrder,
+              checklist: const [],
+              parentPlanId: null,
+              tags: tagsForCreate,
+              isSynced: false,
+            ),
+            schedule,
+          ),
+          clientPlanId: clientPlanId,
+        );
+        if (!mounted) return;
+        if (ok) {
+          _textController.clear();
+          setState(() {
+            _creationSelectedTags = [];
+          });
+          final displayWalls =
+              DatabaseService.instance.profileDisplayWallsFromAutoSchedule(
+            schedule,
+          );
+          _maybeShowPlanScheduleOverloadWarning(
+            dayPlans: [
+              ...existingDay,
+              PlanningTask(
+                id: 0,
+                title: title,
+                categoryId: categoryId,
+                isDone: false,
+                dateKey: taskDateKey,
+                order: nextOrder,
+                startTime: displayWalls.startWall,
+                endDateTime: displayWalls.endWall,
+                tags: tagsForCreate,
+              ),
+            ],
+          );
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('PLAN_ADD_UI: $e');
+        }
+      } finally {
+        _planQuickAddInFlight = false;
+      }
+    }());
+  }
+
+  /// Smart Plan: append AI-parsed tasks sequentially on [widget.selectedDateString].
+  Future<int> _injectSmartPlanTasks(List<Map<String, dynamic>> items) async {
+    if (items.isEmpty) return 0;
+    final taskDateKey = widget.selectedDateString;
+    final baseDay = widget.selectedDate ?? _today;
+    final wallDay = DateTime(baseDay.year, baseDay.month, baseDay.day);
+
+    var nextOrder = _nextPlanOrderForQuickAdd();
+    var cursorPlans = [
+      ..._latestPlanningDayTasks,
+      ..._optimisticTasks.where(
+        (t) => t.dateKey == taskDateKey || t.startTime != null,
+      ),
+    ];
+
+    var created = 0;
+    PlanningTask? lastCreated;
+    for (var i = 0; i < items.length; i++) {
+      final m = items[i];
+      final title = (m['title'] ?? '').toString().trim();
+      if (title.isEmpty) continue;
+      final durRaw = m['durationMinutes'];
+      int? explicitDuration;
+      if (durRaw != null) {
+        explicitDuration = durRaw is int
+            ? durRaw
+            : (durRaw is num
+                ? durRaw.round()
+                : int.tryParse('$durRaw'));
+        if (explicitDuration != null && explicitDuration < 1) {
+          explicitDuration = null;
+        }
+      }
+
+      final aiCategoryStr = m['category']?.toString().trim();
+      final fromAiId = DatabaseService.instance
+          .resolveCategoryIdFromSmartPlanLabel(aiCategoryStr);
+      final fromTitle = DatabaseService.instance.identifyCategory(title);
+      final categoryId =
+          fromAiId ??
+          fromTitle?.id ??
+          widget.selectedCategoryId ??
+          DatabaseService.instance.defaultCategoryId ??
+          (DatabaseService.instance.rules.isNotEmpty
+              ? DatabaseService.instance.rules.first.id
+              : 0);
+
+      final schedule = DatabaseService.instance.resolveAutoPlanSchedule(
+        wallDay: wallDay,
+        categoryId: categoryId,
+        tags: const [],
+        existingDayPlans: cursorPlans,
+        timelineDayStartHour: _timelineHourStart,
+        explicitDurationMinutes: explicitDuration,
+      );
+
+      final order = nextOrder + i;
+      final clientPlanId = DatabaseService.newClientUuid();
+
+      try {
+        final ok = await DatabaseService.instance.addPlanningTask(
+          DatabaseService.instance.planningTaskWithAutoSchedule(
+            PlanningTask(
+              id: 0,
+              title: title,
+              categoryId: categoryId,
+              isDone: false,
+              dateKey: taskDateKey,
+              order: order,
+              checklist: const [],
+              parentPlanId: null,
+              tags: const [],
+              isSynced: false,
+            ),
+            schedule,
+          ),
+          clientPlanId: clientPlanId,
+        );
+        if (!mounted) return created;
+        if (ok) {
+          created++;
+          lastCreated = PlanningTask(
+            id: 0,
+            title: title,
+            categoryId: categoryId,
+            isDone: false,
+            dateKey: taskDateKey,
+            order: order,
+            startTime: schedule.startWall,
+            endDateTime: schedule.endWall,
+            tags: const [],
+          );
+          cursorPlans = [...cursorPlans, lastCreated];
+        }
+      } catch (_) {}
+    }
+    if (created > 0 && lastCreated != null) {
+      _maybeShowPlanScheduleOverloadWarning(dayPlans: cursorPlans);
+    }
+    return created;
+  }
+
+  void _openSmartPlanSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (ctx) => SmartPlanSheet(onCommit: _injectSmartPlanTasks),
+    );
+  }
+
+  Future<void> _toggleDone(PlanningTask task, bool currentDisplayDone) async {
+    if (task.planRowIdForBackend.startsWith('optimistic-')) return;
+    final key = _planKey(task);
+    final next = !currentDisplayDone;
+    setState(() {
+      _planDoneOverride[key] = next;
+      if (next) {
+        _beginPlanCompletionHold(key);
+      } else {
+        _cancelPlanCompletionHold(key);
+      }
+    });
+    try {
+      final ok = await DatabaseService.instance.updatePlanningTask(
+        task.planRowIdForBackend,
+        planBusinessId: task.planRowId,
+        isDone: next,
+        recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+      );
+      if (!mounted) return;
+      if (!ok) {
+        setState(() {
+          _planDoneOverride.remove(key);
+          _cancelPlanCompletionHold(key);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
+        );
+      }
+    } catch (e) {
+      debugPrint('UI ERROR: $e');
+      if (mounted) {
+        setState(() {
+          _planDoneOverride.remove(key);
+          _cancelPlanCompletionHold(key);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(t(currentLocale.value, 'plan_save_failed'))),
+        );
+      }
+    }
+  }
+
+  int _taskSortCmp(PlanningTask a, PlanningTask b) {
+    if (_sortTreatAsDone(a) != _sortTreatAsDone(b)) {
+      return _sortTreatAsDone(a) ? 1 : -1;
+    }
+    final o = a.order.compareTo(b.order);
+    if (o != 0) return o;
+    return a.title.compareTo(b.title);
+  }
+
+  int _planningClockOrderMinutes(
+    DateTime t,
+    DateTime planWallDay,
+    int startExtended,
+  ) {
+    return PlanningSheetTimelinePrefs.minutesFromWindowStart(
+      t,
+      planWallDay,
+      startExtended,
+    ).round();
+  }
+
+  List<PlanningTask> _tasksForTimeMode(
+    List<PlanningTask> tasks,
+    DateTime planWallDay,
+    int dayStartExtended,
+  ) {
+    final copy = List<PlanningTask>.from(tasks);
+    copy.sort((a, b) {
+      final ap = DatabaseService.instance.projectPlanForTimeMode(a);
+      final bp = DatabaseService.instance.projectPlanForTimeMode(b);
+      if (ap == null && bp == null) return _taskSortCmp(a, b);
+      if (ap == null) return 1;
+      if (bp == null) return -1;
+      final ca = _planningClockOrderMinutes(
+        ap.profileWallStart,
+        planWallDay,
+        dayStartExtended,
+      );
+      final cb = _planningClockOrderMinutes(
+        bp.profileWallStart,
+        planWallDay,
+        dayStartExtended,
+      );
+      if (ca != cb) return ca.compareTo(cb);
+      return _taskSortCmp(a, b);
+    });
+    return copy;
+  }
+
+  Map<String, List<PlanningTask>> _groupTasksByCategoryPath(
+    List<PlanningTask> tasks,
+  ) {
+    final groups = <String, List<PlanningTask>>{};
+    for (final t in tasks) {
+      final path = DatabaseService.instance.getCategoryPath(t.categoryId);
+      groups.putIfAbsent(path, () => []).add(t);
+    }
+    for (final e in groups.entries) {
+      e.value.sort(_taskSortCmp);
+    }
+    return groups;
+  }
+
+  /// Bar index for [tagId] in [masterBarOrder]; tags not in the bar sort after all bar tags.
+  int _masterBarIndexForTag(int tagId, List<Tag> masterBarOrder) {
+    for (var i = 0; i < masterBarOrder.length; i++) {
+      if (masterBarOrder[i].tagId == tagId) return i;
+    }
+    return 1 << 20;
+  }
+
+  /// Chip tag that appears earliest in the quick-pick / master sequence wins the group.
+  /// Canonical [Tag] is taken from [masterBarOrder] when present, else the task tag.
+  Tag? _priorityTagForPlanByMasterBar(
+    PlanningTask p,
+    List<Tag> masterBarOrder,
+  ) {
+    Tag? best;
+    var bestIdx = 1 << 30;
+    var bestBiz = 1 << 30;
+    for (final tg in p.tags) {
+      if (!tg.rendersAsChip) continue;
+      final idx = _masterBarIndexForTag(tg.tagId, masterBarOrder);
+      final id = tg.tagId;
+      if (idx < bestIdx || (idx == bestIdx && id < bestBiz)) {
+        bestIdx = idx;
+        bestBiz = id;
+        Tag? canonical;
+        for (final m in masterBarOrder) {
+          if (m.tagId == id) {
+            canonical = m;
+            break;
+          }
+        }
+        best = canonical ?? tg;
+      }
+    }
+    return best;
+  }
+
+  List<Tag> _tagSortMasterBarOrder() {
+    final raw = _quickAddAvailableTags.isNotEmpty
+        ? _quickAddAvailableTags
+        : List<Tag>.from(DatabaseService.instance.cachedUserTagsCatalog);
+    if (raw.any((t) => t.tagId == _kUntaggedPlanGroupId)) {
+      return raw;
+    }
+    return [...raw, _syntheticNoTagsTag()];
+  }
+
+  Map<int, List<PlanningTask>> _groupTasksByMasterBar(
+    List<PlanningTask> tasks,
+    List<Tag> masterBarOrder,
+  ) {
+    final groups = <int, List<PlanningTask>>{};
+    for (final p in tasks) {
+      final pt = _priorityTagForPlanByMasterBar(p, masterBarOrder);
+      final gid = pt == null ? _kUntaggedPlanGroupId : pt.tagId;
+      groups.putIfAbsent(gid, () => []).add(p);
+    }
+    for (final e in groups.entries) {
+      e.value.sort(_taskSortCmp);
+    }
+    return groups;
+  }
+
+  /// Group column order: follow [masterBarOrder] (including synthetic “No Tags” at [-1]),
+  /// then orphan tag ids (by id). Untagged tasks appear where [-1] sits in the bar order.
+  List<int> _groupIdsInMasterBarSequence(
+    Map<int, List<PlanningTask>> groups,
+    List<Tag> masterBarOrder,
+  ) {
+    final seen = <int>{};
+    final out = <int>[];
+    for (final t in masterBarOrder) {
+      final id = t.tagId;
+      if (id == 0) continue;
+      if (id == _kUntaggedPlanGroupId) {
+        final bucket = groups[_kUntaggedPlanGroupId];
+        if (bucket != null &&
+            bucket.isNotEmpty &&
+            !seen.contains(_kUntaggedPlanGroupId)) {
+          seen.add(_kUntaggedPlanGroupId);
+          out.add(_kUntaggedPlanGroupId);
+        }
+        continue;
+      }
+      final bucket = groups[id];
+      if (bucket != null && bucket.isNotEmpty && !seen.contains(id)) {
+        seen.add(id);
+        out.add(id);
+      }
+    }
+    final orphan =
+        groups.keys
+            .where((k) => k != _kUntaggedPlanGroupId && !seen.contains(k))
+            .toList()
+          ..sort();
+    out.addAll(orphan);
+    if (!seen.contains(_kUntaggedPlanGroupId)) {
+      final untagged = groups[_kUntaggedPlanGroupId];
+      if (untagged != null && untagged.isNotEmpty) {
+        out.add(_kUntaggedPlanGroupId);
+      }
+    }
+    return out;
+  }
+
+  PlanCard _planningTaskCardForRow(
+    PlanningTask task,
+    String key,
+    bool displayDone,
+    bool isSelected, {
+    required bool highlightAsRunning,
+    bool omitLongPress = false,
+    required Map<String, int> planActualByPbId,
+    bool timelineBlock = false,
+    bool timelineInteracting = false,
+    bool timelineScheduleConflict = false,
+    String? timelineTimeLabel,
+    double? timelineBlockHeightPx,
+  }) {
+    final pbId = DatabaseService.pocketRelationIdOrNull(task.pocketRecordId);
+    final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
+    final estimate = PlanServiceExtension.planningWallEstimateSeconds(task);
+    return PlanCard(
+      task: task,
+      planTrackedSeconds: tracked,
+      planEstimatedSeconds: estimate,
+      displayIsDone: displayDone,
+      selectMode: _planSelectMode,
+      isSelected: isSelected,
+      highlightAsRunning: highlightAsRunning,
+      timelineBlock: timelineBlock,
+      timelineInteracting: timelineInteracting,
+      timelineScheduleConflict: timelineScheduleConflict,
+      timelineTimeLabel: timelineTimeLabel,
+      timelineBlockHeightPx: timelineBlockHeightPx,
+      toggleDoneEnabled: !task.planRowIdForBackend.startsWith('optimistic-'),
+      onToggleDone: () => _toggleDone(task, displayDone),
+      onBodyTap: () {
+        if (_planSelectMode) {
+          _toggleKeySelection(key);
+        } else {
+          _openEditDialog(task);
+        }
+      },
+      onLongPress: omitLongPress
+          ? null
+          : () {
+              setState(() {
+                _planSelectMode = true;
+                _selectedPlanKeys.add(key);
+              });
+              _syncPlanningShellFabBulkReserve();
+            },
+      onPlay: () async {
+        final dateKeyForRecord = task.startTime != null
+            ? task.dateKey
+            : DatabaseService.instance.getTimelineDeviceLocalTodayDateKey();
+        await widget.onStartRecordFromTask(
+          task.title,
+          task.categoryId,
+          dateKeyForRecord,
+          sourcePlanPocketRecordId: DatabaseService.pocketRelationIdOrNull(
+            task.pocketRecordId,
+          ),
+        );
+        if (mounted) setState(() {});
+      },
+      onOpenMenu: (anchorCtx) => _showPlanRadialMenu(anchorCtx, task),
+    );
+  }
+
+  int? _wallClockHourFromTask(PlanningTask task) {
+    final st = task.startTime;
+    if (st == null) return null;
+    return st.hour;
+  }
+
+  /// Profile-wall minutes from the visible day window start on [planWallDay].
+  double _timelineMinutesFromRangeStart(
+    DateTime wall,
+    DateTime planWallDay,
+    int startExtended,
+  ) {
+    return PlanningSheetTimelinePrefs.minutesFromWindowStart(
+      wall,
+      planWallDay,
+      startExtended,
+    );
+  }
+
+  int _timelineBlockDurationMinutes(PlanningTask task) {
+    final proj = DatabaseService.instance.projectPlanForTimeMode(task);
+    if (proj != null) return proj.durationMinutes;
+    return _kTimelineDefaultBlockMinutes;
+  }
+
+  /// ~1.5× normal CardPlan height; base hour band before per-hour stretch.
+  double _timelineHourHeightPx() => PlanTimeViewLayoutCalculator.baseHourHeightPx();
+
+  double _computeTimelinePxPerMinute(List<TimeModeProjectedPlan> projections) {
+    return _timelineHourHeightPx() / 60.0;
+  }
+
+  double _timelineCanvasHeightPx(PlanTimeViewDurationGrid grid) =>
+      grid.totalHeightPx;
+
+  ({
+    double startMin,
+    double endMin,
+  }) _timelineSpanMinutesFromProjection(
+    TimeModeProjectedPlan proj,
+    DateTime planWallDay,
+    int startExtended,
+  ) {
+    final startMin = _timelineMinutesFromRangeStart(
+      proj.profileWallStart,
+      planWallDay,
+      startExtended,
+    );
+    final endMin = proj.profileWallEnd != null
+        ? _timelineMinutesFromRangeStart(
+            proj.profileWallEnd!,
+            planWallDay,
+            startExtended,
+          )
+        : startMin + proj.durationMinutes;
+    return (startMin: startMin, endMin: endMin);
+  }
+
+  ({
+    PlanTimeViewDurationGrid grid,
+    List<PlanTimeViewBlockLayout> layouts,
+  }) _computeTimelineDurationLayout(
+    List<TimeModeProjectedPlan> projections,
+    DateTime planWallDay,
+    int startExtended,
+    int endExtended,
+    String selectedDayKey,
+  ) {
+    return RebuildMetrics.instance.perfBlock(
+      'Planning._computeTimelineDurationLayout',
+      () {
+        final visibleHours = PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(
+          startExtended,
+          endExtended,
+        );
+        if (kVerbosePlanTimeTzProjectionLogs && !kReleaseMode) {
+          for (final proj in projections) {
+            DatabaseService.instance.logTimeTzProjectForTimeMode(
+              proj,
+              selectedDay: selectedDayKey,
+              visible: true,
+            );
+          }
+        }
+        final result = PlanTimeViewLayoutCalculator.compute(
+          projections: projections,
+          visibleHours: visibleHours,
+          rangeStart: startExtended,
+          baseHourHeightPx: _timelineHourHeightPx(),
+          startMinOf: (proj) => _timelineSpanMinutesFromProjection(
+            proj,
+            planWallDay,
+            startExtended,
+          ).startMin,
+          endMinOf: (proj) => _timelineSpanMinutesFromProjection(
+            proj,
+            planWallDay,
+            startExtended,
+          ).endMin,
+        );
+        for (final layout in result.layouts) {
+          final proj = layout.projection;
+          if (proj == null) continue;
+          final span = _timelineSpanMinutesFromProjection(
+            proj,
+            planWallDay,
+            startExtended,
+          );
+          final hourIdx = result.grid.hourIndexForMinutesFromRangeStart(
+            span.startMin,
+          );
+          _logTimeDurationLayout(
+            proj: proj,
+            startMinute: span.startMin.round(),
+            endMinute: span.endMin.round(),
+            durationMin: math.max(
+              kPlanTimeMinDurationMinutes,
+              (span.endMin - span.startMin).round(),
+            ),
+            pxPerMinute: result.grid.pxPerMinuteAtHourIndex(hourIdx),
+            topPx: layout.topPx,
+            heightPx: layout.heightPx,
+          );
+        }
+        return result;
+      },
+      meta: {'projections': projections.length},
+    );
+  }
+
+  List<PlanTimeViewBlockLayout> _timelineBlockLayouts(
+    List<TimeModeProjectedPlan> projections,
+    DateTime planWallDay,
+    int startExtended,
+    int endExtended,
+    String selectedDayKey,
+  ) {
+    final result = _computeTimelineDurationLayout(
+      projections,
+      planWallDay,
+      startExtended,
+      endExtended,
+      selectedDayKey,
+    );
+    _activeTimelineDurationGrid = result.grid;
+    return result.layouts;
+  }
+
+  String? _lastTimeDurationLayoutLogKey;
+  DateTime? _lastTimeDurationLayoutLogAt;
+  String? _lastTimeModeRailLogKey;
+  DateTime? _lastTimeModeRailLogAt;
+  String? _lastTimeResizePreviewLogKey;
+  DateTime? _lastTimeResizePreviewLogAt;
+  static const Duration _timeModeLogDebounce = Duration(seconds: 8);
+
+  String _timelineLogWallIso(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}T'
+      '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  void _maybeNormalizeTimeViewOverlapsOnce(
+    DateTime planWallDay,
+    List<PlanningTask> schedulable,
+  ) {
+    if (_sortMode != PlanSortMode.time) return;
+    final dayKey = '${planWallDay.year}-'
+        '${planWallDay.month.toString().padLeft(2, '0')}-'
+        '${planWallDay.day.toString().padLeft(2, '0')}';
+    if (_timeViewCascadeNormalizedDayKey == dayKey) return;
+    _timeViewCascadeNormalizedDayKey = dayKey;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _sortMode != PlanSortMode.time) return;
+      DatabaseService.instance.applySequentialTimeViewCascadeIfNeeded(
+        wallDay: planWallDay,
+        scheduledSubset: schedulable,
+      );
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _logTimeDurationLayout({
+    required TimeModeProjectedPlan proj,
+    required int startMinute,
+    required int endMinute,
+    required int durationMin,
+    required double pxPerMinute,
+    required double topPx,
+    required double heightPx,
+  }) {
+    final planId = proj.planId;
+    final lineKey =
+        '$planId|$startMinute|$endMinute|${topPx.toStringAsFixed(1)}|${heightPx.toStringAsFixed(1)}';
+    final now = DateTime.now();
+    if (_lastTimeDurationLayoutLogKey == lineKey &&
+        _lastTimeDurationLayoutLogAt != null &&
+        now.difference(_lastTimeDurationLayoutLogAt!) < _timeModeLogDebounce) {
+      return;
+    }
+    _lastTimeDurationLayoutLogKey = lineKey;
+    _lastTimeDurationLayoutLogAt = now;
+}
+
+  void _logTimeResizePreview({
+    required String planId,
+    required String edge,
+    required double pointerY,
+    required int minute,
+    required int snapped,
+    required DateTime newStart,
+    required DateTime? newEnd,
+    required int durationMin,
+  }) {
+    final lineKey = '$planId|$edge|$snapped|$durationMin';
+    final now = DateTime.now();
+    if (_lastTimeResizePreviewLogKey == lineKey &&
+        _lastTimeResizePreviewLogAt != null &&
+        now.difference(_lastTimeResizePreviewLogAt!) < _timeModeLogDebounce) {
+      return;
+    }
+    _lastTimeResizePreviewLogKey = lineKey;
+    _lastTimeResizePreviewLogAt = now;
+}
+
+  void _logTimeModeRail({
+    required DateTime selectedDay,
+    required List<int> visibleHours,
+  }) {
+    final dayStr =
+        '${selectedDay.year}-${selectedDay.month.toString().padLeft(2, '0')}-${selectedDay.day.toString().padLeft(2, '0')}';
+    final lineKey = '$dayStr|${visibleHours.join(',')}';
+    final now = DateTime.now();
+    if (_lastTimeModeRailLogKey == lineKey &&
+        _lastTimeModeRailLogAt != null &&
+        now.difference(_lastTimeModeRailLogAt!) < _timeModeLogDebounce) {
+      return;
+    }
+    _lastTimeModeRailLogKey = lineKey;
+    _lastTimeModeRailLogAt = now;
+}
+
+  bool _isProfileTodaySelectedForPlanning() {
+    final profileTodayKey =
+        DatabaseService.instance.getProjectedTodayDateKey();
+    final raw = widget.selectedDateString.trim();
+    if (raw.length >= 10) {
+      return raw.substring(0, 10) == profileTodayKey;
+    }
+    final planDay = widget.selectedDate ?? _today;
+    final profileToday = DatabaseService.instance.getProjectedToday();
+    return planDay.year == profileToday.year &&
+        planDay.month == profileToday.month &&
+        planDay.day == profileToday.day;
+  }
+
+  String? _lastPlanTimeNowLineLogKey;
+  DateTime? _lastPlanTimeNowLineLogAt;
+  static const Duration _planTimeNowLineLogDebounce = Duration(seconds: 8);
+
+  void _logPlanTimeNowLine({
+    required DateTime nowUtc,
+    required DateTime wallNow,
+    required String selectedDay,
+    required bool visible,
+    required double? yPx,
+    required double pxPerMinute,
+  }) {
+    final lineKey =
+        '$selectedDay|${wallNow.hour}:${wallNow.minute}|visible=$visible|y=${yPx?.toStringAsFixed(1) ?? '-'}';
+    final now = DateTime.now();
+    if (_lastPlanTimeNowLineLogKey == lineKey &&
+        _lastPlanTimeNowLineLogAt != null &&
+        now.difference(_lastPlanTimeNowLineLogAt!) <
+            _planTimeNowLineLogDebounce) {
+      return;
+    }
+    _lastPlanTimeNowLineLogKey = lineKey;
+    _lastPlanTimeNowLineLogAt = now;
+}
+
+  DateTime _profileWallNow() =>
+      DatabaseService.instance.applyUserOffset(DatabaseService.getPlanetaryNow());
+
+  double? _timelineNowLineTopPx(
+    DateTime planWallDay,
+    int startExtended,
+    int endExtended,
+    PlanTimeViewDurationGrid grid,
+  ) {
+    final selectedDay = widget.selectedDateString.length >= 10
+        ? widget.selectedDateString.substring(0, 10)
+        : DatabaseService.instance.getProjectedTodayDateKey();
+    final wallNow = _profileWallNow();
+    final minProbe = _timelineMinutesFromRangeStart(
+      wallNow,
+      planWallDay,
+      startExtended,
+    );
+    final ppm = grid.pxPerMinuteAtHourIndex(
+      grid.hourIndexForMinutesFromRangeStart(minProbe.toDouble()),
+    );
+    if (!_isProfileTodaySelectedForPlanning()) {
+      _logPlanTimeNowLine(
+        nowUtc: DatabaseService.getPlanetaryNow(),
+        wallNow: _profileWallNow(),
+        selectedDay: selectedDay,
+        visible: false,
+        yPx: null,
+        pxPerMinute: ppm,
+      );
+      return null;
+    }
+    final nowUtc = DatabaseService.getPlanetaryNow();
+    final min = _timelineMinutesFromRangeStart(wallNow, planWallDay, startExtended);
+    if (!PlanningSheetTimelinePrefs.wallInstantInsideVisibleWindow(
+      wallNow,
+      planWallDay,
+      startExtended,
+      endExtended,
+    )) {
+      _logPlanTimeNowLine(
+        nowUtc: nowUtc,
+        wallNow: wallNow,
+        selectedDay: selectedDay,
+        visible: false,
+        yPx: null,
+        pxPerMinute: ppm,
+      );
+      return null;
+    }
+    final y = grid.yForMinutesFromRangeStart(min.toDouble());
+    _logPlanTimeNowLine(
+      nowUtc: nowUtc,
+      wallNow: wallNow,
+      selectedDay: selectedDay,
+      visible: true,
+      yPx: y,
+      pxPerMinute: ppm,
+    );
+    return y;
+  }
+
+  void _maybeAutoScrollTimelineToNow(double nowTopPx, double canvasHeight) {
+    if (!_isProfileTodaySelectedForPlanning()) return;
+    if (_timeModeDidAutoScrollToNow) return;
+    if (!_hourGridScrollController.hasClients) return;
+    _timeModeDidAutoScrollToNow = true;
+    final viewport = MediaQuery.sizeOf(context).height * 0.45;
+    final target = (nowTopPx - viewport * 0.35).clamp(
+      0.0,
+      math.max(0.0, _hourGridScrollController.position.maxScrollExtent),
+    ).toDouble();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_hourGridScrollController.hasClients) return;
+      _hourGridScrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  static const double _kTimelineBlockHorizontalPadPx = 8;
+
+  double _snapTimelineMinutes(double rawMinutes) {
+    final snap = PlanningSheetTimelinePrefs.timelineSnapMinutes;
+    return (rawMinutes / snap).round() * snap.toDouble();
+  }
+
+  Set<String> _timeViewFixedPlanIdsForTasks(Iterable<PlanningTask> tasks) {
+    if (_timeViewFixedTagIds.isEmpty) return {};
+    final out = <String>{};
+    for (final task in tasks) {
+      if (isPlanFixedInTimeView(task, _timeViewFixedTagIds)) {
+        out.add(task.planRowIdForBackend);
+      }
+    }
+    return out;
+  }
+
+  bool _planIsTimelineScheduledDraggable(PlanningTask task) {
+    if (task.startTime == null) return false;
+    if (task.planRowIdForBackend.startsWith('optimistic-')) return false;
+    final rrule = task.rrule?.trim() ?? '';
+    if (rrule.isNotEmpty) return false;
+    final inst = task.recurrenceInstanceDateKey?.trim() ?? '';
+    if (inst.isNotEmpty) return false;
+    return true;
+  }
+
+  bool _planCanMoveInTimeView(PlanningTask task, String planKey) {
+    if (!_planIsTimelineScheduledDraggable(task)) return false;
+    if (_planSelectMode) {
+      return _selectedPlanKeys.contains(planKey);
+    }
+    return true;
+  }
+
+  bool _planIsTimelineVerticallyDraggable(PlanningTask task) {
+    if (_planSelectMode) return false;
+    return _planIsTimelineScheduledDraggable(task);
+  }
+
+  DateTime _wallTimeFromTimelineMinutes(
+    double minutesFromRangeStart,
+    DateTime planWallDay,
+    int startExtended,
+  ) {
+    return PlanningSheetTimelinePrefs.wallFromWindowMinutes(
+      planWallDay,
+      startExtended,
+      _snapTimelineMinutes(minutesFromRangeStart),
+    );
+  }
+
+  String _formatTimelineWallRangeLabel(DateTime start, DateTime? end) {
+    String hhmm(DateTime t) =>
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+    if (end != null) return '${hhmm(start)} – ${hhmm(end)}';
+    return hhmm(start);
+  }
+
+  String _formatTimelineResizeLabel(DateTime start, DateTime end) {
+    final mins = end.difference(start).inMinutes.clamp(
+      PlanningSheetTimelinePrefs.timelineMinDurationMinutes,
+      24 * 60,
+    );
+    return '${_formatTimelineWallRangeLabel(start, end)} · ${_shortTimelineDuration(mins)}';
+  }
+
+  String _shortTimelineDuration(int minutes) {
+    if (minutes < 60) return '${minutes}m';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (m == 0) return '${h}h';
+    return '${h}h ${m}m';
+  }
+
+  int _timelineMaxVisibleMinutes(int startExtended, int endExtended) {
+    return PlanningSheetTimelinePrefs.visibleDurationHours(
+          startExtended,
+          endExtended,
+        ) *
+        60;
+  }
+
+  ({int startMin, int endMin}) _timelineStartEndMinutesFromTask(
+    PlanningTask task,
+    DateTime planWallDay,
+    int startExtended,
+  ) {
+    final proj = DatabaseService.instance.projectPlanForTimeMode(task);
+    if (proj == null) {
+      return (startMin: 0, endMin: _kTimelineDefaultBlockMinutes);
+    }
+    final span = _timelineSpanMinutesFromProjection(
+      proj,
+      planWallDay,
+      startExtended,
+    );
+    return (startMin: span.startMin.round(), endMin: span.endMin.round());
+  }
+
+  void _clearTimelineInteractionState() {
+    _timelineVerticalDragPlanKey = null;
+    _timelineVerticalDragDeltaPx = 0;
+    _timelineFingerDragDeltaPx = 0;
+    _timelineFingerGrabOffsetCanvasPx = 0;
+    _timelineVerticalDragTask = null;
+    _timelineVerticalDragTimeLabel = null;
+    _timelineDragInsertTargetKey = null;
+    _timelineDragInsertBefore = false;
+    _timelineDragInsertMarkerTopPx = null;
+    _timelineStoredInsertionIntent = null;
+    _timelineDragExcludedPlanIds = {};
+    _timelineBulkDragPlanIds = {};
+    _timelineBulkDragRelativeOffsetMin = {};
+    _timelineBulkDragPreviewTopPxByPlanId = {};
+    _dragInsertLayoutsCache = const [];
+    _timelineResizePlanKey = null;
+    _timelineResizeEdge = null;
+    _timelineResizeTask = null;
+    _timelineResizeTimeLabel = null;
+    _setTimelineInteractionLock(false);
+  }
+
+  void _setTimelineInteractionLock(bool locked) {
+    if (_timelineScrollLocked != locked) {
+      setState(() => _timelineScrollLocked = locked);
+    }
+    widget.onDatePagerLockChanged?.call(locked);
+  }
+
+  void _updateTimelineResizeLabel({
+    required int startMin,
+    required int endMin,
+    required DateTime planWallDay,
+    required int rangeStart,
+  }) {
+    final startWall = _wallTimeFromTimelineMinutes(
+      startMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    final endWall = _wallTimeFromTimelineMinutes(
+      endMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    _timelineResizeTimeLabel = _formatTimelineResizeLabel(startWall, endWall);
+  }
+
+  void _beginTimelineResize({
+    required TimelineResizeEdge edge,
+    required PlanningTask task,
+    required String planKey,
+    required double originTopPx,
+    required double originHeightPx,
+    required int originStartMin,
+    required int originEndMin,
+    required DateTime planWallDay,
+    required int rangeStart,
+  }) {
+    _clearTimelineInteractionState();
+    setState(() {
+      _timelineResizePlanKey = planKey;
+      _timelineResizeEdge = edge;
+      _timelineResizeOriginTopPx = originTopPx;
+      _timelineResizeOriginHeightPx = originHeightPx;
+      _timelineResizeOriginStartMin = originStartMin;
+      _timelineResizeOriginEndMin = originEndMin;
+      _timelineResizePreviewTopPx = originTopPx;
+      _timelineResizePreviewHeightPx = originHeightPx;
+      _timelineResizeTask = task;
+      _setTimelineInteractionLock(true);
+      _updateTimelineResizeLabel(
+        startMin: originStartMin,
+        endMin: originEndMin,
+        planWallDay: planWallDay,
+        rangeStart: rangeStart,
+      );
+    });
+  }
+
+  void _updateTimelineResize({
+    required double deltaPx,
+    required double globalDy,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+  }) {
+    final edge = _timelineResizeEdge;
+    if (edge == null) return;
+    final grid = _activeTimelineDurationGrid;
+    if (grid == null) return;
+    final minDur = PlanningSheetTimelinePrefs.timelineMinDurationMinutes;
+    final maxEndMin = _timelineMaxVisibleMinutes(rangeStart, rangeEnd);
+
+    double heightForSpan(int start, int end) {
+      final top = grid.yForMinutesFromRangeStart(start.toDouble());
+      final bottom = grid.yForMinutesFromRangeStart(end.toDouble());
+      return math.max(bottom - top, kPlanTimeCardMinHeightPx);
+    }
+
+    var previewTop = _timelineResizeOriginTopPx;
+    var previewHeight = _timelineResizeOriginHeightPx;
+    var startMin = _timelineResizeOriginStartMin;
+    var endMin = _timelineResizeOriginEndMin;
+
+    if (edge == TimelineResizeEdge.top) {
+      final fixedEndMin = _timelineResizeOriginEndMin;
+      final maxTopForDur = grid.yForMinutesFromRangeStart(
+        math.max(0, fixedEndMin - minDur).toDouble(),
+      );
+      previewTop = (_timelineResizeOriginTopPx + deltaPx).clamp(
+        0.0,
+        maxTopForDur,
+      );
+      startMin = _snapTimelineMinutes(grid.minutesFromY(previewTop)).round();
+      endMin = fixedEndMin;
+      if (endMin - startMin < minDur) {
+        startMin = endMin - minDur;
+      }
+      if (startMin < 0) {
+        startMin = 0;
+        endMin = math.max(endMin, minDur);
+      }
+      previewTop = grid.yForMinutesFromRangeStart(startMin.toDouble());
+      previewHeight = heightForSpan(startMin, endMin);
+    } else {
+      previewTop = _timelineResizeOriginTopPx;
+      startMin = _timelineResizeOriginStartMin;
+      final originBottom = _timelineResizeOriginTopPx + _timelineResizeOriginHeightPx;
+      final minBottom = grid.yForMinutesFromRangeStart(
+        (startMin + minDur).toDouble(),
+      );
+      final newBottom = (originBottom + deltaPx).clamp(
+        minBottom,
+        grid.totalHeightPx,
+      );
+      endMin = _snapTimelineMinutes(grid.minutesFromY(newBottom)).round();
+      if (endMin > maxEndMin) endMin = maxEndMin;
+      if (endMin - startMin < minDur) endMin = startMin + minDur;
+      previewHeight = heightForSpan(startMin, endMin);
+    }
+
+    final newStartWall = _wallTimeFromTimelineMinutes(
+      startMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    final newEndWall = _wallTimeFromTimelineMinutes(
+      endMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    _logTimeResizePreview(
+      planId: _timelineResizeTask?.planRowIdForBackend ?? '-',
+      edge: edge == TimelineResizeEdge.top ? 'top' : 'bottom',
+      pointerY: previewTop + previewHeight,
+      minute: grid.minutesFromY(previewTop + previewHeight).round(),
+      snapped: edge == TimelineResizeEdge.top ? startMin : endMin,
+      newStart: newStartWall,
+      newEnd: newEndWall,
+      durationMin: endMin - startMin,
+    );
+
+    setState(() {
+      _timelineResizePreviewTopPx = previewTop;
+      _timelineResizePreviewHeightPx = previewHeight;
+      _updateTimelineResizeLabel(
+        startMin: startMin,
+        endMin: endMin,
+        planWallDay: planWallDay,
+        rangeStart: rangeStart,
+      );
+    });
+    _handleHourGridDragUpdateForEdgeScroll(globalDy);
+  }
+
+  void _cancelTimelineResize() {
+    if (_timelineResizePlanKey == null) return;
+    _stopHourGridEdgeScroll();
+    setState(_clearTimelineInteractionState);
+  }
+
+  void _commitTimelineResize({
+    required DateTime planWallDay,
+    required int rangeStart,
+  }) {
+    final task = _timelineResizeTask;
+    _stopHourGridEdgeScroll();
+    if (task == null || _timelineResizePlanKey == null) {
+      _cancelTimelineResize();
+      return;
+    }
+    final grid = _activeTimelineDurationGrid;
+    if (grid == null) {
+      _cancelTimelineResize();
+      return;
+    }
+    final startMin = _snapTimelineMinutes(
+      grid.minutesFromY(_timelineResizePreviewTopPx),
+    ).round();
+    final endMin = _snapTimelineMinutes(
+      grid.minutesFromY(
+        _timelineResizePreviewTopPx + _timelineResizePreviewHeightPx,
+      ),
+    ).round();
+    final newStartWall = _wallTimeFromTimelineMinutes(
+      startMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    final newEndWall = _wallTimeFromTimelineMinutes(
+      endMin.toDouble(),
+      planWallDay,
+      rangeStart,
+    );
+    setState(_clearTimelineInteractionState);
+    _persistTimelineScheduleChange(
+      task: task,
+      newStartWall: newStartWall,
+      newEndWall: newEndWall,
+    );
+  }
+
+  void _persistTimelineScheduleChange({
+    required PlanningTask task,
+    required DateTime newStartWall,
+    required DateTime? newEndWall,
+  }) {
+    final updated = task.copyWith(
+      startTime: newStartWall,
+      endDateTime: newEndWall,
+      clearEnd: newEndWall == null,
+    );
+    DatabaseService.instance.applyOptimisticPlanningTask(updated);
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+    unawaited(
+      DatabaseService.instance.updatePlanningTask(
+        task.planRowIdForBackend,
+        planBusinessId: task.planRowId,
+        startTimeDisplay: newStartWall,
+        endDateTimeDisplay: newEndWall,
+        clearEnd: newEndWall == null,
+        suppressAppSnack: true,
+        recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+      ),
+    );
+  }
+
+  void _persistTimeViewCascadePatches({
+    required List<PlanningTask> resolved,
+    required List<PlanningTask> scheduledBefore,
+    String? commitSource,
+  }) {
+    if (kDebugMode) {
+      debugPrint('[TIME_VIEW_INSERTION_COMMIT_PATCHES] source=$commitSource');
+      debugPrint('[TIME_VIEW_BRAIN_PATCH_STARTED]');
+    }
+    final beforeByKey = {for (final t in scheduledBefore) _planKey(t): t};
+    for (final task in resolved) {
+      final key = _planKey(task);
+      final before = beforeByKey[key];
+      if (before == null) continue;
+      if (before.startTime == task.startTime &&
+          before.endDateTime == task.endDateTime) {
+        continue;
+      }
+      if (kDebugMode) {
+        debugPrint('[TIME_VIEW_OPTIMISTIC_APPLIED] id=${task.planRowIdForBackend}');
+      }
+      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      unawaited(
+        DatabaseService.instance.updatePlanningTask(
+          task.planRowIdForBackend,
+          planBusinessId: task.planRowId,
+          startTimeDisplay: task.startTime,
+          endDateTimeDisplay: task.endDateTime,
+          clearEnd: task.endDateTime == null,
+          suppressAppSnack: true,
+          recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+        ),
+      );
+      if (kDebugMode) {
+        debugPrint('[TIME_VIEW_NETWORK_PATCH_ENQUEUED_OR_SENT]');
+      }
+    }
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+  }
+
+  void _persistTimelineDragWithCascade({
+    required PlanningTask movedTask,
+    required DateTime newStartWall,
+    required DateTime? newEndWall,
+    required List<PlanningTask> scheduledInRange,
+    required int rangeStart,
+    required int rangeEnd,
+    required DateTime planWallDay,
+    TimeViewInsertionIntent? insertionIntent,
+    String? commitSource,
+    double? rawYMinutesForTrace,
+  }) {
+    final movedKey = _planKey(movedTask);
+    final List<PlanningTask> resolved;
+    final List<String> orderBefore;
+    final List<String> orderAfter;
+
+    if (insertionIntent != null) {
+      final result = DatabaseService.instance.applyTimeViewTargetInsertion(
+        scheduledInRange,
+        insertionIntent,
+      );
+      resolved = result.cascaded;
+      orderBefore = result.orderBefore;
+      orderAfter = result.orderAfter;
+      newStartWall = result.draggedStartWall;
+      newEndWall = result.draggedEndWall;
+    } else {
+      orderBefore = scheduledInRange.map(_planKey).toList();
+      final movedUpdated = movedTask.copyWith(
+        startTime: newStartWall,
+        endDateTime: newEndWall,
+        clearEnd: newEndWall == null,
+      );
+      final merged = scheduledInRange
+          .map(
+            (t) => _planKey(t) == movedKey ? movedUpdated : t,
+          )
+          .toList(growable: false);
+      resolved = DatabaseService.instance.normalizeSequentialPlanTimesForDay(
+        merged,
+      );
+      orderAfter = resolved.map(_planKey).toList();
+    }
+
+    final patchParts = <String>[];
+    for (final task in resolved) {
+      final key = _planKey(task);
+      final before = key == movedKey
+          ? movedTask
+          : _timelineTaskByPlanKey(scheduledInRange, key);
+      if (before == null) continue;
+      if (before.startTime == task.startTime &&
+          before.endDateTime == task.endDateTime) {
+        continue;
+      }
+      final s = task.startTime;
+      final e = task.endDateTime;
+      if (s != null) {
+        patchParts.add(
+          '${task.planRowIdForBackend}:'
+          '${s.hour.toString().padLeft(2, '0')}:${s.minute.toString().padLeft(2, '0')}-'
+          '${e != null ? '${e.hour.toString().padLeft(2, '0')}:${e.minute.toString().padLeft(2, '0')}' : 'open'}',
+        );
+      }
+      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      unawaited(
+        DatabaseService.instance.updatePlanningTask(
+          task.planRowIdForBackend,
+          planBusinessId: task.planRowId,
+          startTimeDisplay: task.startTime,
+          endDateTimeDisplay: task.endDateTime,
+          clearEnd: task.endDateTime == null,
+          suppressAppSnack: true,
+          recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+        ),
+      );
+    }
+
+DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+  }
+
+  PlanningTask? _timelineTaskByPlanKey(
+    List<PlanningTask> scheduled,
+    String planKey,
+  ) {
+    for (final t in scheduled) {
+      if (_planKey(t) == planKey) return t;
+    }
+    return null;
+  }
+
+  List<TimeViewCardLayout> _timelineCardLayoutsForResolver(
+    List<PlanTimeViewBlockLayout> layouts,
+  ) {
+    return [
+      for (final layout in layouts)
+        TimeViewCardLayout(
+          planId: layout.task.planRowIdForBackend,
+          topPx: layout.topPx,
+          heightPx: layout.heightPx,
+          targetStartWall: layout.projection?.profileWallStart,
+          targetEndWall: layout.projection?.profileWallEnd,
+        ),
+    ];
+  }
+
+  double _timelineFingerCanvasY(double deltaPx) =>
+      _timelineVerticalDragOriginTopPx +
+      deltaPx +
+      _timelineFingerGrabOffsetCanvasPx;
+
+  void _applyTimelineCascadePreviewTops({
+    required TimeViewInsertionCascadeResult cascadeResult,
+    required String dragPlanId,
+    required PlanTimeViewDurationGrid grid,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required double maxTopPx,
+  }) {
+    _timelineBulkDragPreviewTopPxByPlanId = {};
+    for (final t in cascadeResult.previewRows) {
+      final id = t.planRowIdForBackend;
+      if (!_timelineBulkDragPlanIds.contains(id)) continue;
+      final st = t.startTime;
+      if (st == null) continue;
+      _timelineBulkDragPreviewTopPxByPlanId[id] =
+          _timelinePreviewTopPxForStartWall(
+        startWall: st,
+        grid: grid,
+        planWallDay: planWallDay,
+        startExtended: rangeStart,
+        maxTopPx: maxTopPx,
+      );
+    }
+  }
+
+  TimeViewInsertionCascadeResult _timelineCascadeForDrag({
+    required List<PlanningTask> scheduledInRange,
+    required String dragPlanId,
+    required Set<String> dragIds,
+    required Map<String, int> bulkOffsets,
+    required TimeViewInsertionIntent? targetIntent,
+    required DateTime? emptyCanvasStartWall,
+    required bool hadEnd,
+    required int durationMin,
+  }) {
+    return computeTimeViewInsertionCascade(
+      scheduledTasks: scheduledInRange,
+      draggedPlanIds: dragIds,
+      primaryDraggedPlanId: dragPlanId,
+      fixedPlanIds: _timeViewFixedPlanIdsForTasks(scheduledInRange),
+      resolveDurationMinutes:
+          DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+      targetIntent: targetIntent,
+      emptyCanvasStartWall: emptyCanvasStartWall,
+      emptyCanvasHadEnd: hadEnd,
+      emptyCanvasDurationMin: durationMin,
+      bulkRelativeOffsetMinutes: bulkOffsets.isEmpty ? null : bulkOffsets,
+    );
+  }
+
+  TimeViewDropIntent _timelineResolveDropIntent({
+    required double fingerCanvasY,
+    required List<PlanTimeViewBlockLayout> layouts,
+    required String draggedPlanId,
+    required DateTime planWallDay,
+    required PlanTimeViewDurationGrid grid,
+    required double maxTopPx,
+  }) {
+    return resolveTimeViewDropIntent(
+      fingerLocalPosition: Offset(0, fingerCanvasY),
+      scheduledCardLayouts: _timelineCardLayoutsForResolver(layouts),
+      draggedPlanId: draggedPlanId,
+      wallDate: planWallDay,
+      canvasYToMinutes: (y) => _snapTimelineMinutes(
+        grid.minutesFromY(y.clamp(0.0, maxTopPx)),
+      ),
+    );
+  }
+
+  PlanTimeViewBlockLayout? _timelineLayoutForPlanId(
+    List<PlanTimeViewBlockLayout> layouts,
+    String? planId,
+  ) {
+    if (planId == null) return null;
+    for (final layout in layouts) {
+      if (layout.task.planRowIdForBackend == planId) return layout;
+    }
+    return null;
+  }
+
+  TimeViewInsertionIntent? _timelineInsertionIntentFromLayout({
+    required PlanTimeViewBlockLayout layout,
+    required bool insertBefore,
+    required String draggedPlanId,
+    required int draggedDurationMin,
+    required bool draggedHadEnd,
+    required TimeViewInsertionSource source,
+    int? dragSequenceId,
+  }) {
+    final proj = layout.projection ??
+        DatabaseService.instance.projectPlanForTimeMode(layout.task);
+    final targetStart = proj?.profileWallStart;
+    if (proj == null || targetStart == null) return null;
+    final targetEnd = proj.profileWallEnd ??
+        targetStart.add(Duration(minutes: proj.durationMinutes));
+    return TimeViewInsertionIntent(
+      draggedPlanId: draggedPlanId,
+      targetPlanId: layout.task.planRowIdForBackend,
+      insertPosition: insertBefore
+          ? TimeViewInsertPosition.before
+          : TimeViewInsertPosition.after,
+      targetStartWall: targetStart,
+      targetEndWall: targetEnd,
+      draggedDurationMinutes: draggedDurationMin,
+      draggedHadEnd: draggedHadEnd,
+      source: source,
+      dragSequenceId: dragSequenceId,
+    );
+  }
+
+  void _logTimeDropGuard(String message) => logTimeDropGuard(message);
+
+  TimeViewTargetDropSchedule? _timelineTargetDropScheduleForLayout({
+    required PlanTimeViewBlockLayout layout,
+    required bool insertBefore,
+    required int draggedDurationMin,
+    required bool draggedHadEnd,
+  }) {
+    final proj = layout.projection ??
+        DatabaseService.instance.projectPlanForTimeMode(layout.task);
+    final targetStart = proj?.profileWallStart;
+    if (proj == null || targetStart == null) return null;
+    final targetEnd = proj.profileWallEnd ??
+        targetStart.add(Duration(minutes: proj.durationMinutes));
+    return computeTimeViewTargetDropSchedule(
+      targetStartWall: targetStart,
+      targetEndWall: targetEnd,
+      draggedDurationMinutes: draggedDurationMin,
+      insertBefore: insertBefore,
+      draggedHadEnd: draggedHadEnd,
+    );
+  }
+
+  double _timelinePreviewTopPxForStartWall({
+    required DateTime startWall,
+    required PlanTimeViewDurationGrid grid,
+    required DateTime planWallDay,
+    required int startExtended,
+    required double maxTopPx,
+  }) {
+    final startMin = _timelineMinutesFromRangeStart(
+      startWall,
+      planWallDay,
+      startExtended,
+    );
+    return grid.yForMinutesFromRangeStart(startMin).clamp(0.0, maxTopPx);
+  }
+
+  List<PlanTimeViewBlockLayout> _timelineDragLayoutsForDay({
+    required DateTime planWallDay,
+    required int startExtended,
+    required int endExtended,
+    required String selectedDayKey,
+  }) {
+    if (ShellFlags.enableTimelineProjectionCache &&
+        _dragInsertLayoutsCache.isNotEmpty) {
+      return _dragInsertLayoutsCache;
+    }
+    final projections = _timelineDragExcludedPlanIds.isEmpty
+        ? _cachedTimeModeProjections
+        : _cachedTimeModeProjections
+            .where(
+              (p) =>
+                  !_timelineDragExcludedPlanIds
+                      .contains(p.task.planRowIdForBackend),
+            )
+            .toList(growable: false);
+    return _timelineBlockLayouts(
+      projections,
+      planWallDay,
+      startExtended,
+      endExtended,
+      selectedDayKey,
+    );
+  }
+
+  String? _timelineDragLabelForTopPx(
+    double topPx,
+    DateTime planWallDay,
+    int rangeStart,
+    int durationMin,
+    bool hadEnd,
+  ) {
+    final grid = _activeTimelineDurationGrid;
+    final startMin = grid?.minutesFromY(topPx) ?? topPx;
+    final startWall = _wallTimeFromTimelineMinutes(
+      startMin,
+      planWallDay,
+      rangeStart,
+    );
+    final endWall = hadEnd
+        ? startWall.add(Duration(minutes: durationMin))
+        : null;
+    return _formatTimelineWallRangeLabel(startWall, endWall);
+  }
+
+  void _beginTimelineVerticalDrag({
+    required PlanningTask task,
+    required String planKey,
+    required double originTopPx,
+    required double originCardHeightPx,
+    required int durationMin,
+    required bool hadEnd,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+    required String selectedDayKey,
+    required double fingerGrabOffsetCanvasPx,
+    required List<PlanningTask> scheduledInRange,
+  }) {
+    _clearTimelineInteractionState();
+
+    var dragIds = <String>{task.planRowIdForBackend};
+    var relativeOffsets = <String, int>{};
+    if (_planSelectMode) {
+      final selected = scheduledInRange
+          .where((t) => _selectedPlanKeys.contains(_planKey(t)))
+          .where((t) => t.startTime != null)
+          .toList();
+      if (selected.length > 1) {
+        dragIds = selected.map((t) => t.planRowIdForBackend).toSet();
+        final primaryStart = task.startTime!;
+        for (final t in selected) {
+          final st = t.startTime;
+          if (st == null) continue;
+          relativeOffsets[t.planRowIdForBackend] =
+              st.difference(primaryStart).inMinutes;
+        }
+        if (kDebugMode) {
+          debugPrint(
+            '[TIME_VIEW_BULK_DRAG_STARTED] group=${dragIds.length}',
+          );
+        }
+      }
+    }
+
+    _timelineDragExcludedPlanIds = dragIds;
+    _timelineBulkDragPlanIds = dragIds;
+    _timelineBulkDragRelativeOffsetMin = relativeOffsets;
+
+    if (ShellFlags.enableTimelineProjectionCache) {
+      final filtered = _cachedTimeModeProjections
+          .where((p) => !dragIds.contains(p.task.planRowIdForBackend))
+          .toList(growable: false);
+      _dragInsertLayoutsCache = _timelineBlockLayouts(
+        filtered,
+        planWallDay,
+        rangeStart,
+        rangeEnd,
+        selectedDayKey,
+      );
+    }
+    if (kDebugMode) {
+      debugPrint(
+        '[TIME_VIEW_DRAG_EXCLUDED_FROM_COLLISION_SET] count=${dragIds.length}',
+      );
+      debugPrint(
+        '[TIME_VIEW_DRAG_GRAB_OFFSET_CAPTURED] '
+        'offset=${fingerGrabOffsetCanvasPx.toStringAsFixed(1)}',
+      );
+    }
+    setState(() {
+      _timelineVerticalDragPlanKey = planKey;
+      _timelineVerticalDragDeltaPx = 0;
+      _timelineFingerDragDeltaPx = 0;
+      _timelineFingerGrabOffsetCanvasPx = fingerGrabOffsetCanvasPx;
+      _timelineVerticalDragSequenceId = ++_timelineNextDragSequenceId;
+      _timelineVerticalDragOriginTopPx = originTopPx;
+      _timelineVerticalDragCardHeightPx = originCardHeightPx;
+      _timelineVerticalDragDurationMin = durationMin;
+      _timelineVerticalDragTask = task;
+      _timelineVerticalDragHadEnd = hadEnd;
+      _timelineVerticalDragTimeLabel = _timelineDragLabelForTopPx(
+        originTopPx,
+        planWallDay,
+        rangeStart,
+        durationMin,
+        hadEnd,
+      );
+    });
+    _setTimelineInteractionLock(true);
+  }
+
+  void _updateTimelineVerticalDrag({
+    required double deltaPx,
+    required double globalDy,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+    required double canvasHeight,
+    required List<PlanningTask> scheduledInRange,
+    required Map<String, int> planActualByPbId,
+  }) {
+    final grid = _activeTimelineDurationGrid;
+    if (grid == null) return;
+    _timelineFingerDragDeltaPx = deltaPx;
+    final durMin = _timelineVerticalDragDurationMin.toDouble();
+    final maxTopPx = grid.yForMinutesFromRangeStart(
+      math.max(0, grid.totalMinutes - durMin),
+    );
+    final fingerCanvasY = _timelineFingerCanvasY(deltaPx);
+    final pointerAnchoredTopPx = (fingerCanvasY - _timelineFingerGrabOffsetCanvasPx)
+        .clamp(0.0, maxTopPx);
+    final selectedDayKey = widget.selectedDateString.length >= 10
+        ? widget.selectedDateString.substring(0, 10)
+        : DatabaseService.instance.getProjectedTodayDateKey();
+    final layouts = _timelineDragLayoutsForDay(
+      planWallDay: planWallDay,
+      startExtended: rangeStart,
+      endExtended: rangeEnd,
+      selectedDayKey: selectedDayKey,
+    );
+    final dragPlanId = _timelineVerticalDragTask?.planRowIdForBackend ??
+        _timelineVerticalDragPlanKey ??
+        '';
+    final cardLayouts = _timelineCardLayoutsForResolver(layouts);
+    final dropIntent = _timelineResolveDropIntent(
+      fingerCanvasY: fingerCanvasY,
+      layouts: layouts,
+      draggedPlanId: dragPlanId,
+      planWallDay: planWallDay,
+      grid: grid,
+      maxTopPx: maxTopPx,
+    );
+
+    double previewTop;
+    String? insertKey;
+    var insertBefore = false;
+    double? markerTop;
+    String? previewLabel;
+    TimeViewInsertionIntent? storedIntent;
+
+    if (dropIntent.isTargetCard) {
+      insertBefore = dropIntent.insertBefore;
+      insertKey = dropIntent.targetPlanId;
+      storedIntent = buildTimeViewInsertionIntentFromDropIntent(
+        drop: dropIntent,
+        scheduledCardLayouts: cardLayouts,
+        draggedPlanId: dragPlanId,
+        draggedDurationMinutes: _timelineVerticalDragDurationMin,
+        draggedHadEnd: _timelineVerticalDragHadEnd,
+        dragSequenceId: _timelineVerticalDragSequenceId,
+      );
+      storedIntent = storedIntent == null
+          ? null
+          : refreshTimeViewInsertionIntentFromScheduled(
+              intent: storedIntent,
+              scheduled: scheduledInRange,
+              resolveDurationMinutes:
+                  DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+            );
+      if (storedIntent != null) {
+        final cascadeResult = _timelineCascadeForDrag(
+          scheduledInRange: scheduledInRange,
+          dragPlanId: dragPlanId,
+          dragIds: _timelineBulkDragPlanIds.isEmpty
+              ? {dragPlanId}
+              : _timelineBulkDragPlanIds,
+          bulkOffsets: _timelineBulkDragRelativeOffsetMin,
+          targetIntent: storedIntent,
+          emptyCanvasStartWall: null,
+          hadEnd: _timelineVerticalDragHadEnd,
+          durationMin: _timelineVerticalDragDurationMin,
+        );
+        if (cascadeResult.accepted &&
+            cascadeResult.draggedStartWall != null) {
+          _applyTimelineCascadePreviewTops(
+            cascadeResult: cascadeResult,
+            dragPlanId: dragPlanId,
+            grid: grid,
+            planWallDay: planWallDay,
+            rangeStart: rangeStart,
+            maxTopPx: maxTopPx,
+          );
+          previewTop = _timelineBulkDragPreviewTopPxByPlanId[dragPlanId] ??
+              _timelinePreviewTopPxForStartWall(
+                startWall: cascadeResult.draggedStartWall!,
+                grid: grid,
+                planWallDay: planWallDay,
+                startExtended: rangeStart,
+                maxTopPx: maxTopPx,
+              );
+          previewLabel = _formatTimelineWallRangeLabel(
+            cascadeResult.draggedStartWall!,
+            cascadeResult.draggedEndWall,
+          );
+        } else {
+          storedIntent = null;
+          insertKey = null;
+          _timelineBulkDragPreviewTopPxByPlanId = {};
+          final snappedMin = _snapTimelineMinutes(
+            grid.minutesFromY(pointerAnchoredTopPx),
+          );
+          previewTop = grid.yForMinutesFromRangeStart(snappedMin);
+          previewLabel = _timelineDragLabelForTopPx(
+            previewTop,
+            planWallDay,
+            rangeStart,
+            _timelineVerticalDragDurationMin,
+            _timelineVerticalDragHadEnd,
+          );
+        }
+        final targetLayout = _timelineLayoutForPlanId(
+          layouts,
+          dropIntent.targetPlanId,
+        );
+        if (targetLayout != null) {
+          if (insertBefore) {
+            markerTop = targetLayout.topPx.clamp(0.0, canvasHeight);
+          } else {
+            markerTop = (targetLayout.topPx + targetLayout.heightPx).clamp(
+              0.0,
+              canvasHeight,
+            );
+          }
+        }
+      } else {
+        storedIntent = null;
+        insertKey = null;
+        _timelineBulkDragPreviewTopPxByPlanId = {};
+        final snappedMin = _snapTimelineMinutes(
+          grid.minutesFromY(pointerAnchoredTopPx),
+        );
+        previewTop = grid.yForMinutesFromRangeStart(snappedMin);
+        previewLabel = _timelineDragLabelForTopPx(
+          previewTop,
+          planWallDay,
+          rangeStart,
+          _timelineVerticalDragDurationMin,
+          _timelineVerticalDragHadEnd,
+        );
+      }
+    } else {
+      storedIntent = null;
+      final snappedMin = dropIntent.wallStartMinute ??
+          _snapTimelineMinutes(grid.minutesFromY(pointerAnchoredTopPx));
+      final emptyStart = _wallTimeFromTimelineMinutes(
+        snappedMin,
+        planWallDay,
+        rangeStart,
+      );
+      final cascadeResult = _timelineCascadeForDrag(
+        scheduledInRange: scheduledInRange,
+        dragPlanId: dragPlanId,
+        dragIds: _timelineBulkDragPlanIds.isEmpty
+            ? {dragPlanId}
+            : _timelineBulkDragPlanIds,
+        bulkOffsets: _timelineBulkDragRelativeOffsetMin,
+        targetIntent: null,
+        emptyCanvasStartWall: emptyStart,
+        hadEnd: _timelineVerticalDragHadEnd,
+        durationMin: _timelineVerticalDragDurationMin,
+      );
+      if (cascadeResult.accepted && cascadeResult.draggedStartWall != null) {
+        _applyTimelineCascadePreviewTops(
+          cascadeResult: cascadeResult,
+          dragPlanId: dragPlanId,
+          grid: grid,
+          planWallDay: planWallDay,
+          rangeStart: rangeStart,
+          maxTopPx: maxTopPx,
+        );
+        previewTop = _timelineBulkDragPreviewTopPxByPlanId[dragPlanId] ??
+            _timelinePreviewTopPxForStartWall(
+              startWall: cascadeResult.draggedStartWall!,
+              grid: grid,
+              planWallDay: planWallDay,
+              startExtended: rangeStart,
+              maxTopPx: maxTopPx,
+            );
+        previewLabel = _formatTimelineWallRangeLabel(
+          cascadeResult.draggedStartWall!,
+          cascadeResult.draggedEndWall,
+        );
+      } else {
+        _timelineBulkDragPreviewTopPxByPlanId = {};
+        previewTop = grid.yForMinutesFromRangeStart(snappedMin);
+        previewLabel = _timelineDragLabelForTopPx(
+          previewTop,
+          planWallDay,
+          rangeStart,
+          _timelineVerticalDragDurationMin,
+          _timelineVerticalDragHadEnd,
+        );
+      }
+    }
+
+    setState(() {
+      _timelineVerticalDragDeltaPx =
+          previewTop - _timelineVerticalDragOriginTopPx;
+      _timelineDragInsertTargetKey = insertKey;
+      _timelineDragInsertBefore = insertBefore;
+      _timelineDragInsertMarkerTopPx = markerTop;
+      _timelineStoredInsertionIntent = storedIntent;
+      _timelineVerticalDragTimeLabel = previewLabel;
+    });
+    _handleHourGridDragUpdateForEdgeScroll(globalDy);
+  }
+
+  void _cancelTimelineVerticalDrag() {
+    if (_timelineVerticalDragPlanKey == null) return;
+    _stopHourGridEdgeScroll();
+    setState(_clearTimelineInteractionState);
+  }
+
+  void _commitTimelineVerticalDrag({
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+    required List<PlanningTask> scheduledInRange,
+  }) {
+    final task = _timelineVerticalDragTask;
+    final planKey = _timelineVerticalDragPlanKey;
+    final bulkDragIds = Set<String>.from(_timelineBulkDragPlanIds);
+    final bulkOffsets = Map<String, int>.from(_timelineBulkDragRelativeOffsetMin);
+    _stopHourGridEdgeScroll();
+    if (task == null || planKey == null) {
+      _cancelTimelineVerticalDrag();
+      return;
+    }
+    if (planTimeViewMovementBelowDragThreshold(_timelineFingerDragDeltaPx)) {
+      _logTimeDropGuard('phase=cancel reason=belowDragThreshold');
+      _cancelTimelineVerticalDrag();
+      return;
+    }
+    final durMin = _timelineVerticalDragDurationMin;
+    final grid = _activeTimelineDurationGrid;
+    if (grid == null) {
+      _cancelTimelineVerticalDrag();
+      return;
+    }
+    final maxTopPx = grid.yForMinutesFromRangeStart(
+      math.max(0, grid.totalMinutes - durMin),
+    );
+    final fingerCanvasY = _timelineFingerCanvasY(_timelineFingerDragDeltaPx);
+    final pointerAnchoredTopPx = (fingerCanvasY - _timelineFingerGrabOffsetCanvasPx)
+        .clamp(0.0, maxTopPx);
+    final selectedDayKey = widget.selectedDateString.length >= 10
+        ? widget.selectedDateString.substring(0, 10)
+        : DatabaseService.instance.getProjectedTodayDateKey();
+    final layouts = _timelineDragLayoutsForDay(
+      planWallDay: planWallDay,
+      startExtended: rangeStart,
+      endExtended: rangeEnd,
+      selectedDayKey: selectedDayKey,
+    );
+    final cardLayouts = _timelineCardLayoutsForResolver(layouts);
+    final dropIntent = _timelineResolveDropIntent(
+      fingerCanvasY: fingerCanvasY,
+      layouts: layouts,
+      draggedPlanId: task.planRowIdForBackend,
+      planWallDay: planWallDay,
+      grid: grid,
+      maxTopPx: maxTopPx,
+    );
+
+    String commitSource;
+    TimeViewInsertionIntent? insertionIntent;
+
+    if (dropIntent.kind == TimeViewDropIntentKind.cancel) {
+      _logTimeDropGuard('phase=cancel reason=${dropIntent.cancelReason}');
+      _cancelTimelineVerticalDrag();
+      return;
+    } else if (dropIntent.isTargetCard) {
+      commitSource = 'targetCard';
+      _logTimeDropGuard(
+        'phase=commit source=targetCard '
+        'position=${dropIntent.insertBefore ? 'before' : 'after'} noRawY=true',
+      );
+      insertionIntent = _timelineStoredInsertionIntent;
+      if (insertionIntent == null) {
+        insertionIntent = buildTimeViewInsertionIntentFromDropIntent(
+          drop: dropIntent,
+          scheduledCardLayouts: cardLayouts,
+          draggedPlanId: task.planRowIdForBackend,
+          draggedDurationMinutes: durMin,
+          draggedHadEnd: _timelineVerticalDragHadEnd,
+          dragSequenceId: _timelineVerticalDragSequenceId,
+        );
+        insertionIntent = insertionIntent == null
+            ? null
+            : refreshTimeViewInsertionIntentFromScheduled(
+                intent: insertionIntent,
+                scheduled: scheduledInRange,
+                resolveDurationMinutes:
+                    DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+              );
+      }
+      final cancelReason = insertionIntent == null
+          ? 'targetProjectionFailed'
+          : validateTimeViewTargetInsertionIntent(
+              intent: insertionIntent,
+              scheduled: scheduledInRange,
+              expectedDayKey: selectedDayKey,
+            );
+      if (cancelReason != null) {
+        _logTimeDropGuard('phase=cancel reason=$cancelReason');
+        _cancelTimelineVerticalDrag();
+        return;
+      }
+    } else {
+      commitSource = 'emptyCanvas';
+      insertionIntent = null;
+      _logTimeDropGuard('phase=commit mode=emptyCanvas');
+    }
+
+    final fixedPlanIds = _timeViewFixedPlanIdsForTasks(scheduledInRange);
+    final draggedPlanIds = bulkDragIds.isEmpty
+        ? {task.planRowIdForBackend}
+        : bulkDragIds;
+
+    DateTime? emptyCanvasStartWall;
+    if (insertionIntent == null) {
+      final snappedMin = _snapTimelineMinutes(
+        dropIntent.wallStartMinute ??
+            grid.minutesFromY(pointerAnchoredTopPx),
+      );
+      emptyCanvasStartWall = _wallTimeFromTimelineMinutes(
+        snappedMin,
+        planWallDay,
+        rangeStart,
+      );
+    }
+
+    final cascadeResult = computeTimeViewInsertionCascade(
+      scheduledTasks: scheduledInRange,
+      draggedPlanIds: draggedPlanIds,
+      primaryDraggedPlanId: task.planRowIdForBackend,
+      fixedPlanIds: fixedPlanIds,
+      resolveDurationMinutes:
+          DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+      targetIntent: insertionIntent,
+      emptyCanvasStartWall: emptyCanvasStartWall,
+      emptyCanvasHadEnd: _timelineVerticalDragHadEnd,
+      emptyCanvasDurationMin: durMin,
+      bulkRelativeOffsetMinutes:
+          bulkOffsets.isEmpty ? null : bulkOffsets,
+    );
+
+    if (!cascadeResult.accepted) {
+      if (cascadeResult.blockedReason == 'fixedBarrier') {
+        if (kDebugMode) {
+          debugPrint('[TIME_VIEW_BULK_DRAG_BLOCKED_BY_FIXED_TIME]');
+        }
+        if (mounted) {
+          AppSnack.warning(
+            currentLocale.value == 'ru'
+                ? 'Фиксированная встреча блокирует сдвиг'
+                : 'Fixed-time meeting blocks this move',
+          );
+        }
+      }
+      _logTimeDropGuard(
+        'phase=cancel reason=${cascadeResult.blockedReason ?? 'cascadeRejected'}',
+      );
+      _cancelTimelineVerticalDrag();
+      return;
+    }
+
+    if (kDebugMode && draggedPlanIds.length > 1) {
+      debugPrint(
+        '[TIME_VIEW_BULK_DRAG_PATCHES_COMPUTED] patches=${cascadeResult.patches.length}',
+      );
+    }
+
+    setState(_clearTimelineInteractionState);
+    _persistTimeViewCascadePatches(
+      resolved: cascadeResult.previewRows,
+      scheduledBefore: scheduledInRange,
+      commitSource: commitSource,
+    );
+    if (kDebugMode && draggedPlanIds.length > 1) {
+      debugPrint('[TIME_VIEW_BULK_DRAG_COMMITTED]');
+    }
+  }
+
+  Future<void> _onPlanningTaskDroppedOnHour(
+    PlanningTask task,
+    int targetHour,
+  ) async {
+    if (task.planRowIdForBackend.startsWith('optimistic-')) return;
+    final h = targetHour.clamp(0, 23);
+    final currentHour = _wallClockHourFromTask(task);
+    if (currentHour != null && currentHour == h) return;
+
+    final d = widget.selectedDate ?? _today;
+    var minute = 0;
+    if (task.startTime != null) {
+      minute = task.startTime!.minute;
+    }
+    final wallStart = DateTime(d.year, d.month, d.day, h, minute);
+
+    final ok = await DatabaseService.instance.updatePlanningTask(
+      task.planRowIdForBackend,
+      planBusinessId: task.planRowId,
+      startTimeDisplay: wallStart,
+      suppressAppSnack: true,
+      recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+    );
+    if (!mounted) return;
+    final loc = currentLocale.value;
+    final label = '${h.toString().padLeft(2, '0')}:00';
+    if (ok) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          content: Text(
+            t(loc, 'plan_task_moved_hour').replaceFirst('%s', label),
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
+    }
+  }
+
+  Widget _planCardRow({
+    required BuildContext context,
+    required PlanningTask task,
+    required String key,
+    required bool displayDone,
+    required bool isSelected,
+    required Map<String, int> planActualByPbId,
+    bool enableLongPressDrag = false,
+
+    /// When true, [InkWell.onLongPress] is omitted so [ReorderableDelayedDragStartListener] can claim long-press reorder.
+    bool omitLongPressForReorder = false,
+
+    /// When true, omits list trailing padding (timeline absolute blocks).
+    bool timelineEmbedded = false,
+
+    /// When true with [timelineEmbedded], elevates border during drag/resize preview.
+    bool timelineInteracting = false,
+
+    /// True when stored schedule overlaps a prior task on the same day.
+    bool timelineScheduleConflict = false,
+
+    String? timelineTimeLabel,
+
+    double? timelineBlockHeightPx,
+
+    /// When set with [enableLongPressDrag], drives hour-grid edge auto-scroll from [DragUpdateDetails.globalPosition].
+    ValueChanged<double>? onHourGridDragGlobalDy,
+    VoidCallback? onHourGridDragEnded,
+  }) {
+    final highlightAsRunning =
+        _activeRecordingTitleNorm != null &&
+        _activeRecordingTitleNorm == task.title.trim().toLowerCase();
+    final omitLongPress = omitLongPressForReorder;
+    final card = _planningTaskCardForRow(
+      task,
+      key,
+      displayDone,
+      isSelected,
+      highlightAsRunning: highlightAsRunning,
+      omitLongPress: omitLongPress || timelineEmbedded,
+      planActualByPbId: planActualByPbId,
+      timelineBlock: timelineEmbedded,
+      timelineInteracting: timelineInteracting,
+      timelineScheduleConflict: timelineScheduleConflict,
+      timelineTimeLabel: timelineTimeLabel,
+      timelineBlockHeightPx: timelineBlockHeightPx,
+    );
+    final allowLongPressDrag =
+        enableLongPressDrag &&
+        !_planSelectMode &&
+        !task.planRowIdForBackend.startsWith('optimistic-');
+    if (!allowLongPressDrag) {
+      return _wrapPlanCardForDisplay(key, card, timelineEmbedded: timelineEmbedded);
+    }
+
+    final maxFeedbackW = MediaQuery.sizeOf(context).width * 0.9;
+    final onDragEnded = onHourGridDragEnded;
+    final draggable = LongPressDraggable<PlanningTask>(
+        delay: const Duration(milliseconds: 300),
+        data: task,
+        onDragUpdate: onHourGridDragGlobalDy == null
+            ? null
+            : (details) => onHourGridDragGlobalDy(details.globalPosition.dy),
+        onDragEnd: onDragEnded == null ? null : (_) => onDragEnded(),
+        onDraggableCanceled: onDragEnded == null
+            ? null
+            : (_, _) => onDragEnded(),
+        feedback: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: AbsorbPointer(
+            child: Opacity(
+              opacity: 0.88,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxFeedbackW),
+                child: _planningTaskCardForRow(
+                  task,
+                  key,
+                  displayDone,
+                  isSelected,
+                  highlightAsRunning: highlightAsRunning,
+                  omitLongPress: true,
+                  planActualByPbId: planActualByPbId,
+                ),
+              ),
+            ),
+          ),
+        ),
+        childWhenDragging: Opacity(
+          opacity: 0.35,
+          child: _planningTaskCardForRow(
+            task,
+            key,
+            displayDone,
+            isSelected,
+            highlightAsRunning: highlightAsRunning,
+            omitLongPress: true,
+            planActualByPbId: planActualByPbId,
+          ),
+        ),
+        child: card,
+    );
+    if (timelineEmbedded) {
+      return _wrapPlanCardForDisplay(key, draggable, timelineEmbedded: true);
+    }
+    return _wrapPlanCardForDisplay(key, draggable);
+  }
+
+  Widget _wrapPlanCardForDisplay(
+    String planKey,
+    Widget card, {
+    bool timelineEmbedded = false,
+  }) {
+    final wrapped = PlanCardReorderSettle(
+      animate: _planReorderSettleKeys.contains(planKey),
+      child: card,
+    );
+    if (timelineEmbedded) return wrapped;
+    return Padding(padding: const EdgeInsets.only(bottom: 6), child: wrapped);
+  }
+
+  Widget _buildHourGridView(
+    List<PlanningTask> tasks,
+    Map<String, int> planActualByPbId,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final loc = currentLocale.value;
+    final rangeStart = _timelineHourStart;
+    final rangeEnd = _timelineHourEnd;
+    final planWallDay = widget.selectedDate ?? _today;
+    final selectedDayKey = widget.selectedDateString.length >= 10
+        ? widget.selectedDateString.substring(0, 10)
+        : DatabaseService.instance.getProjectedTodayDateKey();
+    var ordered = _tasksForTimeMode(
+      _planningTasksForTimeViewWindow(planWallDay),
+      planWallDay,
+      rangeStart,
+    );
+    final schedulablePre = <PlanningTask>[];
+    for (final t in ordered) {
+      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
+      if (proj == null) continue;
+      if (!_projectedPlanInTimeViewWindow(
+        proj,
+        planWallDay,
+        rangeStart,
+        rangeEnd,
+      )) {
+        continue;
+      }
+      schedulablePre.add(t);
+    }
+    if (schedulablePre.isNotEmpty) {
+      _maybeNormalizeTimeViewOverlapsOnce(planWallDay, schedulablePre);
+      ordered = _tasksForTimeMode(
+        _planningTasksForTimeViewWindow(planWallDay),
+        planWallDay,
+        rangeStart,
+      );
+    }
+    final unscheduled = <PlanningTask>[];
+    final projections = <TimeModeProjectedPlan>[];
+    for (final t in ordered) {
+      final proj = DatabaseService.instance.projectPlanForTimeMode(t);
+      if (proj == null) {
+        if (t.dateKey.length >= 10 &&
+            t.dateKey.substring(0, 10) == selectedDayKey) {
+          unscheduled.add(t);
+        }
+        continue;
+      }
+      if (!_projectedPlanInTimeViewWindow(
+        proj,
+        planWallDay,
+        rangeStart,
+        rangeEnd,
+      )) {
+        continue;
+      }
+      projections.add(proj);
+    }
+    _cachedTimeModeProjections = projections;
+    final visibleHours = PlanningSheetTimelinePrefs.visibleExtendedHoursOrdered(
+      rangeStart,
+      rangeEnd,
+    );
+
+    final inRangeScheduled = projections.map((p) => p.projectedTask).toList();
+    _logTimeModeRail(selectedDay: planWallDay, visibleHours: visibleHours);
+
+    final children = <Widget>[];
+    if (unscheduled.isNotEmpty) {
+      children.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: Text(
+            t(loc, 'plan_unscheduled'),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+      );
+      for (final task in unscheduled) {
+        final key = _planKey(task);
+        final displayDone = _planDoneOverride[key] ?? task.isDone;
+        children.add(
+          _planCardRow(
+            context: context,
+            task: task,
+            key: key,
+            displayDone: displayDone,
+            isSelected: _selectedPlanKeys.contains(key),
+            planActualByPbId: planActualByPbId,
+            enableLongPressDrag: true,
+            onHourGridDragGlobalDy: _handleHourGridDragUpdateForEdgeScroll,
+            onHourGridDragEnded: _stopHourGridEdgeScroll,
+          ),
+        );
+      }
+      children.add(const SizedBox(height: 8));
+    }
+
+    children.add(
+      _buildProportionalDayTimelineCanvas(
+        scheme: scheme,
+        loc: loc,
+        planWallDay: planWallDay,
+        rangeStart: rangeStart,
+        rangeEnd: rangeEnd,
+        visibleHours: visibleHours,
+        scheduledInRange: inRangeScheduled,
+        projections: projections,
+        selectedDayKey: selectedDayKey,
+        planActualByPbId: planActualByPbId,
+      ),
+    );
+
+    return ListView(
+      key: ValueKey<String>(
+        'time-view-${DatabaseService.instance.settings.preferredTimeZone}-'
+        '${DatabaseService.instance.settings.timezoneOffsetHours}-'
+        '${DatabaseService.instance.profileTimezoneProjectionRevision}-'
+        '${widget.selectedDateString}',
+      ),
+      controller: _hourGridScrollController,
+      physics: _timelineScrollLocked
+          ? const NeverScrollableScrollPhysics()
+          : null,
+      padding: EdgeInsets.symmetric(
+        horizontal: _timelineCompactLayout(context) ? 4 : 8,
+        vertical: 8,
+      ),
+      children: children,
+    );
+  }
+
+  Widget _buildProportionalDayTimelineCanvas({
+    required ColorScheme scheme,
+    required String loc,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+    required List<int> visibleHours,
+    required List<PlanningTask> scheduledInRange,
+    required List<TimeModeProjectedPlan> projections,
+    required String selectedDayKey,
+    required Map<String, int> planActualByPbId,
+  }) {
+    final durationResult = _computeTimelineDurationLayout(
+      projections,
+      planWallDay,
+      rangeStart,
+      rangeEnd,
+      selectedDayKey,
+    );
+    _activeTimelineDurationGrid = durationResult.grid;
+    final grid = durationResult.grid;
+    final layouts = durationResult.layouts;
+    final canvasHeight = _timelineCanvasHeightPx(grid);
+    final gridColor = scheme.outlineVariant.withValues(alpha: 0.28);
+    final nowTop = _timelineNowLineTopPx(planWallDay, rangeStart, rangeEnd, grid);
+    final wallNow = _profileWallNow();
+    final nowLabel = nowTop != null
+        ? '${wallNow.hour.toString().padLeft(2, '0')}:${wallNow.minute.toString().padLeft(2, '0')}'
+        : null;
+    if (nowTop != null) {
+      _maybeAutoScrollTimelineToNow(nowTop, canvasHeight);
+    }
+
+    final compact = _timelineCompactLayout(context);
+    final railWidth = _timelineRailWidthPx(context);
+    final prevMarker = t(loc, 'day_length_prev_day');
+    final nextMarker = t(loc, 'day_length_next_day');
+    String hourLabel(int extHour) {
+      final clock = PlanningSheetTimelinePrefs.formatExtendedHourClock(extHour);
+      final mod = PlanningSheetTimelinePrefs.displayHourMod24(extHour);
+      if (extHour < 0) {
+        return compact ? '$mod$prevMarker' : '$clock $prevMarker';
+      }
+      if (extHour >= 24) {
+        return compact ? '$mod$nextMarker' : '$clock $nextMarker';
+      }
+      return compact ? '$mod' : clock;
+    }
+
+    final canvas = SizedBox(
+      height: canvasHeight + 8,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: railWidth,
+                height: canvasHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    for (var i = 0; i < visibleHours.length; i++)
+                      Positioned(
+                        top: grid.hourLineY(i) - 6,
+                        left: 0,
+                        right: 0,
+                        child: Text(
+                          hourLabel(visibleHours[i]),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    if (nowTop != null && nowLabel != null)
+                      Positioned(
+                        top: nowTop.clamp(0, canvasHeight - 1) - 10,
+                        left: 0,
+                        right: 0,
+                        child: IgnorePointer(
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: scheme.primary.withValues(alpha: 0.92),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                nowLabel,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: scheme.onPrimary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10,
+                                    ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SizedBox(
+                  height: canvasHeight,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: _kPlanningTimeViewCanvasColor,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: scheme.outlineVariant.withValues(
+                                alpha: 0.32,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      for (var i = 0; i < visibleHours.length; i++)
+                        Positioned(
+                          top: grid.hourLineY(i),
+                          left: 0,
+                          right: 0,
+                          height: grid.hourBandHeightPx,
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                child: Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: gridColor,
+                                ),
+                              ),
+                              Positioned(
+                                top: 0,
+                                right: 4,
+                                child: IconButton(
+                                  tooltip: t(loc, 'plan_quick_add_hour'),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 28,
+                                    height: 28,
+                                  ),
+                                  visualDensity: VisualDensity.compact,
+                                  style: IconButton.styleFrom(
+                                    foregroundColor: scheme.onSurfaceVariant
+                                        .withValues(alpha: 0.5),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  iconSize: 18,
+                                  icon: const Icon(Icons.add_rounded),
+                                  onPressed: () =>
+                                      _openQuickAddForHour(visibleHours[i]),
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: DragTarget<PlanningTask>(
+                                  hitTestBehavior: HitTestBehavior.translucent,
+                                  onWillAcceptWithDetails: (_) =>
+                                      !_planSelectMode &&
+                                      _timelineVerticalDragPlanKey == null &&
+                                      _timelineResizePlanKey == null,
+                                  onAcceptWithDetails: (details) {
+                                    unawaited(
+                                      _onPlanningTaskDroppedOnHour(
+                                        details.data,
+                                        visibleHours[i],
+                                      ),
+                                    );
+                                  },
+                                  builder: (context, candidate, rejected) {
+                                    final hover = candidate.isNotEmpty;
+                                    return GestureDetector(
+                                      behavior: HitTestBehavior.translucent,
+                                      onTap: () => _openQuickAddForHour(
+                                        visibleHours[i],
+                                      ),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(
+                                          milliseconds: 120,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: hover
+                                              ? scheme.primaryContainer
+                                                    .withValues(alpha: 0.28)
+                                              : null,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (_timelineDragInsertMarkerTopPx != null &&
+                          _timelineVerticalDragPlanKey != null)
+                        Positioned(
+                          top: _timelineDragInsertMarkerTopPx!.clamp(
+                            0,
+                            canvasHeight - 4,
+                          ),
+                          left: 6,
+                          right: 6,
+                          child: Container(
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: scheme.primary.withValues(alpha: 0.62),
+                              borderRadius: BorderRadius.circular(2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: scheme.primary.withValues(alpha: 0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ...[
+                        ...layouts
+                            .where(
+                              (l) =>
+                                  _planKey(l.task) !=
+                                  _timelineElevatedPlanKey(),
+                            )
+                            .map(
+                              (layout) => _buildTimelinePlanStackLayer(
+                                layout: layout,
+                                canvasHeight: canvasHeight,
+                                scheme: scheme,
+                                planWallDay: planWallDay,
+                                rangeStart: rangeStart,
+                                rangeEnd: rangeEnd,
+                                selectedDayKey: selectedDayKey,
+                                planActualByPbId: planActualByPbId,
+                                scheduledInRange: scheduledInRange,
+                              ),
+                            ),
+                        ...layouts
+                            .where(
+                              (l) =>
+                                  _planKey(l.task) ==
+                                  _timelineElevatedPlanKey(),
+                            )
+                            .map(
+                              (layout) => _buildTimelinePlanStackLayer(
+                                layout: layout,
+                                canvasHeight: canvasHeight,
+                                scheme: scheme,
+                                planWallDay: planWallDay,
+                                rangeStart: rangeStart,
+                                rangeEnd: rangeEnd,
+                                selectedDayKey: selectedDayKey,
+                                planActualByPbId: planActualByPbId,
+                                scheduledInRange: scheduledInRange,
+                              ),
+                            ),
+                      ],
+                      if (nowTop != null)
+                        Positioned(
+                          top: nowTop.clamp(0, canvasHeight - 1),
+                          left: 0,
+                          right: 0,
+                          child: IgnorePointer(
+                            child: Container(
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: scheme.primary.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(1),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    ],
+      ),
+    );
+    if (ShellFlags.enableTimelineRepaintBoundary) {
+      return RepaintBoundary(child: canvas);
+    }
+    return canvas;
+  }
+
+  String? _timelineElevatedPlanKey() =>
+      _timelineResizePlanKey ?? _timelineVerticalDragPlanKey;
+
+  Widget _buildTimelinePlanStackLayer({
+    required PlanTimeViewBlockLayout layout,
+    required double canvasHeight,
+    required ColorScheme scheme,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required int rangeEnd,
+    required String selectedDayKey,
+    required Map<String, int> planActualByPbId,
+    required List<PlanningTask> scheduledInRange,
+  }) {
+    final planKey = _planKey(layout.task);
+    final inBulkDragPreview = _timelineVerticalDragPlanKey != null &&
+        _timelineBulkDragPlanIds.contains(layout.task.planRowIdForBackend);
+    final isDragging = inBulkDragPreview;
+    final isResizing = _timelineResizePlanKey == planKey;
+    final isInteracting = isDragging || isResizing;
+    final bulkPreviewTop =
+        _timelineBulkDragPreviewTopPxByPlanId[layout.task.planRowIdForBackend];
+    final topPx = bulkPreviewTop ??
+        (isDragging
+            ? layout.topPx + _timelineVerticalDragDeltaPx
+            : isResizing
+            ? _timelineResizePreviewTopPx
+            : layout.topPx);
+    final heightPx = isResizing
+        ? math.max(1.0, _timelineResizePreviewHeightPx)
+        : layout.heightPx;
+    const horizontalPad = _kTimelineBlockHorizontalPadPx;
+    final canMove = _planCanMoveInTimeView(layout.task, planKey);
+    final canResize =
+        _planIsTimelineScheduledDraggable(layout.task) && !_planSelectMode;
+    final durMin = _timelineBlockDurationMinutes(layout.task);
+    final hadEnd = layout.task.endDateTime != null;
+    final times = _timelineStartEndMinutesFromTask(
+      layout.task,
+      planWallDay,
+      rangeStart,
+    );
+    final interactionLabel = isResizing
+        ? _timelineResizeTimeLabel
+        : _timelineVerticalDragTimeLabel;
+    final blockDensity = layout.density;
+    final resizeHeightPx = math.max(heightPx, kPlanTimeCardMinHeightPx);
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        if (isInteracting)
+          Positioned(
+            top: layout.topPx,
+            left: 0,
+            right: 0,
+            height: layout.heightPx,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: _kTimelineBlockHorizontalPadPx,
+              ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: scheme.outlineVariant.withValues(alpha: 0.45),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (isInteracting && (interactionLabel ?? '').isNotEmpty)
+          Positioned(
+            top: (topPx - 22).clamp(0, canvasHeight - 20),
+            left: horizontalPad,
+            child: Material(
+              elevation: 3,
+              borderRadius: BorderRadius.circular(6),
+              color: scheme.primary.withValues(alpha: 0.92),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                child: Text(
+                  interactionLabel!,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: scheme.onPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (isInteracting)
+          Positioned(
+            top: topPx + heightPx - 2,
+            left: horizontalPad,
+            right: horizontalPad,
+            child: Container(
+              height: 2,
+              decoration: BoxDecoration(
+                color: scheme.primary.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ),
+        Positioned(
+          top: topPx,
+          left: 0,
+          right: 0,
+          height: resizeHeightPx,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: _kTimelineBlockHorizontalPadPx,
+            ),
+            child: TimelinePlanInteractionBlock(
+              canMove: canMove,
+              canResize: canResize,
+              bulkSelectMode: _planSelectMode,
+              resizeHandlePx: _kTimelineResizeHandlePx,
+              blockHeightPx: resizeHeightPx,
+              controlsLeftInset: planCardBodyGestureLeftInsetPx(
+                blockDensity,
+                timeline: true,
+              ),
+              controlsRightInset: planCardBodyGestureRightInsetPx(),
+              onMovePointerDown: canMove
+                  ? () {
+                      _setTimelineInteractionLock(true);
+                    }
+                  : null,
+              onBodyTap: () {
+                if (_planSelectMode) {
+                  if (kDebugMode) {
+                    debugPrint('[TIME_VIEW_BULK_SELECTION_TOGGLED] key=$planKey');
+                  }
+                  _toggleKeySelection(planKey);
+                } else {
+                  if (kDebugMode) {
+                    debugPrint('[TIME_VIEW_TAP_OPEN_EDIT] key=$planKey');
+                  }
+                  _openEditDialog(layout.task);
+                }
+              },
+              onVerticalDragStart: canMove
+                  ? (fingerGrabOffset) => _beginTimelineVerticalDrag(
+                      task: layout.task,
+                      planKey: planKey,
+                      originTopPx: layout.topPx,
+                      originCardHeightPx: layout.heightPx,
+                      durationMin: durMin,
+                      hadEnd: hadEnd,
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                      rangeEnd: rangeEnd,
+                      selectedDayKey: selectedDayKey,
+                      fingerGrabOffsetCanvasPx: fingerGrabOffset,
+                      scheduledInRange: scheduledInRange,
+                    )
+                  : null,
+              onVerticalDragUpdate: canMove
+                  ? (delta, globalDy) => _updateTimelineVerticalDrag(
+                      deltaPx: delta,
+                      globalDy: globalDy,
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                      rangeEnd: rangeEnd,
+                      canvasHeight: canvasHeight,
+                      scheduledInRange: scheduledInRange,
+                      planActualByPbId: planActualByPbId,
+                    )
+                  : null,
+              onVerticalDragEnd: canMove
+                  ? () => _commitTimelineVerticalDrag(
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                      rangeEnd: rangeEnd,
+                      scheduledInRange: scheduledInRange,
+                    )
+                  : null,
+              onVerticalDragCancel:
+                  canMove ? _cancelTimelineVerticalDrag : null,
+              onResizeStart: canResize
+                  ? (edge) => _beginTimelineResize(
+                      edge: edge,
+                      task: layout.task,
+                      planKey: planKey,
+                      originTopPx: layout.topPx,
+                      originHeightPx: layout.heightPx,
+                      originStartMin: times.startMin,
+                      originEndMin: times.endMin,
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                    )
+                  : null,
+              onResizeUpdate: canResize
+                  ? (delta, globalDy) => _updateTimelineResize(
+                      deltaPx: delta,
+                      globalDy: globalDy,
+                      planWallDay: planWallDay,
+                      rangeStart: rangeStart,
+                      rangeEnd: rangeEnd,
+                    )
+                  : null,
+              onResizeEnd:
+                  canResize
+                      ? () => _commitTimelineResize(
+                          planWallDay: planWallDay,
+                          rangeStart: rangeStart,
+                        )
+                      : null,
+              onResizeCancel: canResize ? _cancelTimelineResize : null,
+              isInteracting: isInteracting,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  height: resizeHeightPx,
+                  child: _planCardRow(
+                    context: context,
+                    task: layout.task,
+                    key: planKey,
+                    displayDone:
+                        _planDoneOverride[planKey] ?? layout.task.isDone,
+                    isSelected: _selectedPlanKeys.contains(planKey),
+                    planActualByPbId: planActualByPbId,
+                    timelineEmbedded: true,
+                    timelineInteracting: isInteracting,
+                    timelineScheduleConflict: false,
+                    timelineTimeLabel: layout.projection?.plannedTimeLabel,
+                    timelineBlockHeightPx: resizeHeightPx,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategoryGroupedView(
+    List<PlanningTask> tasks,
+    Map<String, int> planActualByPbId,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final groups = _groupTasksByCategoryPath(tasks);
+    final keys = groups.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final children = <Widget>[];
+    var firstCategoryGroup = true;
+    for (final k in keys) {
+      final bucket = groups[k];
+      if (bucket == null || bucket.isEmpty) continue;
+      if (!firstCategoryGroup) {
+        children.add(const SizedBox(height: 32));
+      }
+      firstCategoryGroup = false;
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              localizeCategoryBreadcrumbPath(k, currentLocale.value),
+              textAlign: TextAlign.start,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      );
+      if (_planSelectMode) {
+        for (final task in bucket) {
+          final key = _planKey(task);
+          final displayDone = _planDoneOverride[key] ?? task.isDone;
+          children.add(
+            _planCardRow(
+              context: context,
+              task: task,
+              key: key,
+              displayDone: displayDone,
+              isSelected: _selectedPlanKeys.contains(key),
+              planActualByPbId: planActualByPbId,
+            ),
+          );
+        }
+      } else {
+        children.add(
+          ReorderableListView.builder(
+            key: ValueKey<String>('category-bucket-$k'),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            proxyDecorator: planningReorderProxyDecorator,
+            itemCount: bucket.length,
+            onReorder: (oldI, newI) =>
+                _onCategoryBucketReorder(tasks, k, oldI, newI),
+            itemBuilder: (context, index) {
+              final task = bucket[index];
+              final key = _planKey(task);
+              final displayDone = _planDoneOverride[key] ?? task.isDone;
+              final canReorder = !_planSelectMode && _planCanReorderTask(task);
+              return ReorderableDelayedDragStartListener(
+                key: ValueKey<String>(key),
+                index: index,
+                enabled: canReorder,
+                child: _planCardRow(
+                  context: context,
+                  task: task,
+                  key: key,
+                  displayDone: displayDone,
+                  isSelected: _selectedPlanKeys.contains(key),
+                  planActualByPbId: planActualByPbId,
+                  omitLongPressForReorder: canReorder,
+                ),
+              );
+            },
+          ),
+        );
+      }
+    }
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      children: children,
+    );
+  }
+
+  Widget _buildTagGroupedListView(
+    List<PlanningTask> tasks,
+    Map<String, int> planActualByPbId,
+  ) {
+    final masterBar = _tagSortMasterBarOrder();
+    final groups = _groupTasksByMasterBar(tasks, masterBar);
+    final orderedIds = _groupIdsInMasterBarSequence(groups, masterBar);
+    final children = <Widget>[];
+    var firstGroup = true;
+    for (final gid in orderedIds) {
+      final bucket = groups[gid];
+      if (bucket == null || bucket.isEmpty) continue;
+      if (!firstGroup) {
+        children.add(const SizedBox(height: 24));
+      }
+      firstGroup = false;
+      if (_planSelectMode) {
+        for (final task in bucket) {
+          final key = _planKey(task);
+          final displayDone = _planDoneOverride[key] ?? task.isDone;
+          children.add(
+            _planCardRow(
+              context: context,
+              task: task,
+              key: key,
+              displayDone: displayDone,
+              isSelected: _selectedPlanKeys.contains(key),
+              planActualByPbId: planActualByPbId,
+            ),
+          );
+        }
+      } else {
+        children.add(
+          ReorderableListView.builder(
+            key: ValueKey<String>('tag-bucket-$gid'),
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            proxyDecorator: planningReorderProxyDecorator,
+            itemCount: bucket.length,
+            onReorder: (oldI, newI) =>
+                _onTagBucketReorder(tasks, masterBar, gid, oldI, newI),
+            itemBuilder: (context, index) {
+              final task = bucket[index];
+              final key = _planKey(task);
+              final displayDone = _planDoneOverride[key] ?? task.isDone;
+              final canReorder = !_planSelectMode && _planCanReorderTask(task);
+              return ReorderableDelayedDragStartListener(
+                key: ValueKey<String>(key),
+                index: index,
+                enabled: canReorder,
+                child: _planCardRow(
+                  context: context,
+                  task: task,
+                  key: key,
+                  displayDone: displayDone,
+                  isSelected: _selectedPlanKeys.contains(key),
+                  planActualByPbId: planActualByPbId,
+                  omitLongPressForReorder: canReorder,
+                ),
+              );
+            },
+          ),
+        );
+      }
+    }
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      children: children,
+    );
+  }
+
+  void _onCategoryBucketReorder(
+    List<PlanningTask> allDisplayed,
+    String categoryPath,
+    int oldIndex,
+    int newIndex,
+  ) {
+    if (_planSelectMode || _sortMode != PlanSortMode.category) return;
+    final groups = _groupTasksByCategoryPath(allDisplayed);
+    final keys = groups.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final bucket = List<PlanningTask>.from(groups[categoryPath] ?? []);
+    if (bucket.isEmpty) return;
+    if (oldIndex < 0 || oldIndex >= bucket.length) return;
+    var ni = newIndex;
+    if (ni > oldIndex) ni -= 1;
+    if (ni < 0 || ni > bucket.length) return;
+    final row = bucket[oldIndex];
+    if (!_planCanReorderTask(row)) return;
+    bucket.removeAt(oldIndex);
+    bucket.insert(ni, row);
+    groups[categoryPath] = bucket;
+    final flat = <PlanningTask>[];
+    for (final k in keys) {
+      flat.addAll(groups[k] ?? const <PlanningTask>[]);
+    }
+    if (flat.length != allDisplayed.length) return;
+    final withOrders = <PlanningTask>[
+      for (var i = 0; i < flat.length; i++) flat[i].copyWith(order: i),
+    ];
+    _commitPlanningReorder(
+      mode: 'category',
+      moved: row,
+      fromIndex: oldIndex,
+      toIndex: ni,
+      withOrders: withOrders,
+      baselineBefore: allDisplayed,
+    );
+  }
+
+  void _onTagBucketReorder(
+    List<PlanningTask> allDisplayed,
+    List<Tag> masterBar,
+    int groupId,
+    int oldIndex,
+    int newIndex,
+  ) {
+    if (_planSelectMode || _sortMode != PlanSortMode.tags) return;
+    final groups = _groupTasksByMasterBar(allDisplayed, masterBar);
+    final bucket = List<PlanningTask>.from(groups[groupId] ?? []);
+    if (bucket.isEmpty) return;
+    if (oldIndex < 0 || oldIndex >= bucket.length) return;
+    var ni = newIndex;
+    if (ni > oldIndex) ni -= 1;
+    if (ni < 0 || ni > bucket.length) return;
+    final row = bucket[oldIndex];
+    if (!_planCanReorderTask(row)) return;
+    bucket.removeAt(oldIndex);
+    bucket.insert(ni, row);
+    groups[groupId] = bucket;
+    final orderedIds = _groupIdsInMasterBarSequence(groups, masterBar);
+    final flat = <PlanningTask>[];
+    for (final gid in orderedIds) {
+      flat.addAll(groups[gid] ?? const <PlanningTask>[]);
+    }
+    if (flat.length != allDisplayed.length) return;
+    final withOrders = <PlanningTask>[
+      for (var i = 0; i < flat.length; i++) flat[i].copyWith(order: i),
+    ];
+    _commitPlanningReorder(
+      mode: 'tags',
+      moved: row,
+      fromIndex: oldIndex,
+      toIndex: ni,
+      withOrders: withOrders,
+      baselineBefore: allDisplayed,
+    );
+  }
+
+  void _onReorder(List<PlanningTask> current, int oldIndex, int newIndex) {
+    if (_planSelectMode || _sortMode != PlanSortMode.custom) return;
+    if (oldIndex < 0 ||
+        oldIndex >= current.length ||
+        newIndex < 0 ||
+        newIndex > current.length) {
+      return;
+    }
+    var ni = newIndex;
+    if (ni > oldIndex) ni -= 1;
+    final row = current[oldIndex];
+    if (!_planCanReorderTask(row)) return;
+    final next = List<PlanningTask>.from(current);
+    next.removeAt(oldIndex);
+    next.insert(ni, row);
+    final withOrders = <PlanningTask>[
+      for (var i = 0; i < next.length; i++) next[i].copyWith(order: i),
+    ];
+    _commitPlanningReorder(
+      mode: 'custom',
+      moved: row,
+      fromIndex: oldIndex,
+      toIndex: ni,
+      withOrders: withOrders,
+      baselineBefore: current,
+    );
+  }
+
+  Widget _buildFrozenPlanCardList(
+    List<PlanningTask> tasks,
+    ColorScheme scheme,
+    DateTime wallDay,
+  ) {
+    DatabaseService.instance.buildPlansDayRenderSnapshot(
+      wallDay,
+      activeRecordingTitleNorm: _activeRecordingTitleNorm,
+    );
+    final renderSnap =
+        DatabaseService.instance.plansRenderSnapshotForDate(wallDay);
+    final planActual = DatabaseService.instance
+        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+
+    if (tasks.isEmpty) {
+      return PlanningFrozenListEmptyState(scheme: scheme);
+    }
+
+    final cards = renderSnap?.ready == true
+        ? renderSnap!.cards
+        : tasks.map((task) {
+            final pbId = DatabaseService.pocketRelationIdOrNull(
+              task.pocketRecordId,
+            );
+            return PlanCardRenderDto(
+              task: task,
+              planTrackedSeconds: pbId != null ? (planActual[pbId] ?? 0) : 0,
+              planEstimatedSeconds:
+                  PlanServiceExtension.planningWallEstimateSeconds(task),
+              displayIsDone: task.isDone,
+              showPlay: !task.isDone,
+              highlightAsRunning: false,
+              timeLabel: timelineTimeRangeLabel(task),
+              tagsReady: true,
+              categoryReady: true,
+            );
+          }).toList();
+
+    return ColoredBox(
+      color: scheme.surface,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        physics: const ClampingScrollPhysics(),
+        itemCount: cards.length,
+        itemBuilder: (context, index) {
+          final dto = cards[index];
+          return PlanCard(
+            key: ValueKey<String>(
+              'plan-day-${dto.task.planRowIdForBackend}',
+            ),
+            task: dto.task,
+            planTrackedSeconds: dto.planTrackedSeconds,
+            planEstimatedSeconds: dto.planEstimatedSeconds,
+            displayIsDone: dto.displayIsDone,
+            selectMode: false,
+            isSelected: false,
+            highlightAsRunning: dto.highlightAsRunning,
+            toggleDoneEnabled: false,
+            onToggleDone: () {},
+            onBodyTap: () {},
+            onPlay: dto.showPlay ? () {} : null,
+            onOpenMenu: (_) {},
+          );
+        },
+      ),
+    );
+  }
+
+  DateTime _dateForPageIndex(int index) =>
+      widget.mountedWindow?.dateAt(index) ??
+      (widget.selectedDate ?? _today);
+
+  String _dateKeyForPageIndex(int index) =>
+      DayWindow.dateKey(_dateForPageIndex(index));
+
+  /// Stable PageView path — live planning stream for this page's day.
+  Widget _buildActiveDayBody(
+    BuildContext context,
+    ColorScheme scheme,
+    List<PlanningTask> tasks,
+  ) {
+    if (!widget.isActivePlanningDay) {
+      return const ColoredBox(
+        color: Colors.transparent,
+        child: SizedBox.expand(),
+      );
+    }
+    final wallDay = widget.selectedDate ?? _today;
+    final planActualByPbId = DatabaseService.instance
+        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+    if (tasks.isEmpty) {
+      return PlanningDayEmptyState(
+        onFocusQuickAdd: () => FocusScope.of(context).requestFocus(_quickAddFocus),
+      );
+    }
+    if (_sortMode == PlanSortMode.time) {
+      return _buildHourGridView(tasks, planActualByPbId);
+    }
+    if (_sortMode == PlanSortMode.category) {
+      return _buildCategoryGroupedView(tasks, planActualByPbId);
+    }
+    if (_sortMode == PlanSortMode.tags) {
+      return _buildTagGroupedListView(tasks, planActualByPbId);
+    }
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      buildDefaultDragHandles: false,
+      proxyDecorator: planningReorderProxyDecorator,
+      itemCount: tasks.length,
+      onReorder: (oldI, newI) => _onReorder(tasks, oldI, newI),
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        final key = _planKey(task);
+        final displayDone = _planDoneOverride[key] ?? task.isDone;
+        final canReorder = !_planSelectMode && _planCanReorderTask(task);
+        return ReorderableDelayedDragStartListener(
+          key: ValueKey(key),
+          index: index,
+          enabled: canReorder,
+          child: _planCardRow(
+            context: context,
+            task: task,
+            key: key,
+            displayDone: displayDone,
+            isSelected: _selectedPlanKeys.contains(key),
+            planActualByPbId: planActualByPbId,
+            omitLongPressForReorder: canReorder,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDayContentForPageIndex(
+    BuildContext context,
+    ColorScheme scheme,
+    int index,
+    List<PlanningTask> visibleDayTasks,
+  ) {
+    final wallDay = _dateForPageIndex(index);
+    final isActive = widget.shellTabActive &&
+        widget.selectedDate != null &&
+        (widget.mountedWindow == null ||
+            DayWindow.dateOnly(wallDay) ==
+                DayWindow.dateOnly(widget.selectedDate!));
+    final bodyEntry = DatabaseService.instance.plansBodyEntryForDate(wallDay);
+    final tasks = isActive ? visibleDayTasks : bodyEntry.tasks;
+    if (!isActive) {
+      final planActualByPbId = DatabaseService.instance
+          .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+      if (_sortMode == PlanSortMode.time) {
+        return RepaintBoundary(
+          child: PlanningDayCardListKeepAlive(
+            child: AbsorbPointer(
+              child: _buildHourGridView(tasks, planActualByPbId),
+            ),
+          ),
+        );
+      }
+      return RepaintBoundary(
+        child: PlanningDayCardListKeepAlive(
+          child: _buildFrozenPlanCardList(tasks, scheme, wallDay),
+        ),
+      );
+    }
+    final planActualByPbId = DatabaseService.instance
+        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+    if (tasks.isEmpty) {
+      return PlanningDayEmptyState(
+        onFocusQuickAdd: () => FocusScope.of(context).requestFocus(_quickAddFocus),
+      );
+    }
+    if (_sortMode == PlanSortMode.time) {
+      return _buildHourGridView(tasks, planActualByPbId);
+    }
+    if (_sortMode == PlanSortMode.category) {
+      return _buildCategoryGroupedView(tasks, planActualByPbId);
+    }
+    if (_sortMode == PlanSortMode.tags) {
+      return _buildTagGroupedListView(tasks, planActualByPbId);
+    }
+    return ReorderableListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      buildDefaultDragHandles: false,
+      proxyDecorator: planningReorderProxyDecorator,
+      itemCount: tasks.length,
+      onReorder: (oldI, newI) => _onReorder(tasks, oldI, newI),
+      itemBuilder: (context, index) {
+        final task = tasks[index];
+        final key = _planKey(task);
+        final displayDone = _planDoneOverride[key] ?? task.isDone;
+        final canReorder = !_planSelectMode && _planCanReorderTask(task);
+        return ReorderableDelayedDragStartListener(
+          key: ValueKey(key),
+          index: index,
+          enabled: canReorder,
+          child: _planCardRow(
+            context: context,
+            task: task,
+            key: key,
+            displayDone: displayDone,
+            isSelected: _selectedPlanKeys.contains(key),
+            planActualByPbId: planActualByPbId,
+            omitLongPressForReorder: canReorder,
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    rebuildMetricsTick('PlanningPage');
+    final scheme = Theme.of(context).colorScheme;
+
+    return StreamBuilder<List<PlanningTask>>(
+      stream: _planningStream,
+      builder: (context, snapshot) {
+        List<PlanningTask>? displayedForChrome;
+        late final Widget body;
+        try {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData &&
+              _latestPlanningDayTasks.isEmpty) {
+            _latestPlanningDayTasks = DatabaseService.instance
+                .dedupePlanningTasksForDisplay(
+                  DatabaseService.instance.planningDayTasksSnapshot(
+                    widget.selectedDate ?? _today,
+                  ),
+                );
+          }
+          if (snapshot.hasError && _latestPlanningDayTasks.isEmpty) {
+            body = AppErrorState(
+              message: t(currentLocale.value, 'no_data_found'),
+            );
+          } else {
+            final server = snapshot.hasData
+                ? snapshot.data!
+                : _latestPlanningDayTasks;
+            _latestPlanningDayTasks = server;
+            if (server.isNotEmpty && _optimisticTasks.isNotEmpty) {
+              final toDrop = _optimisticTasks
+                  .where(
+                    (o) => server.any((s) {
+                      final oBiz = _planBusinessUuidForMerge(o);
+                      final sBiz = _planBusinessUuidForMerge(s);
+                      if (oBiz != null &&
+                          sBiz != null &&
+                          oBiz.isNotEmpty &&
+                          oBiz == sBiz) {
+                        return true;
+                      }
+                      return s.title.trim() == o.title.trim() &&
+                          s.dateKey == o.dateKey;
+                    }),
+                  )
+                  .toList();
+              if (toDrop.isNotEmpty) {
+                final dropIds = toDrop.map((e) => e.planRowId).toSet();
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(
+                    () => _optimisticTasks.removeWhere(
+                      (o) => dropIds.contains(o.planRowId),
+                    ),
+                  );
+                });
+              }
+            }
+            final tasks = _displayTasks(server);
+            displayedForChrome = tasks;
+            body = _buildPlanningMainColumn(context, scheme, tasks);
+          }
+        } catch (e, st) {
+          if (kDebugMode) {
+            debugPrint('PlanningPage stream builder: $e\n$st');
+          }
+          body = AppErrorState(
+            message: t(currentLocale.value, 'no_data_found'),
+          );
+        }
+
+        final visiblePlans = displayedForChrome;
+        _syncPlanningShellFabBulkReserve();
+        return Scaffold(
+          resizeToAvoidBottomInset: true,
+          body: SafeArea(
+            top: false,
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_planSelectMode) ...[
+                  Material(
+                    color: scheme.surface,
+                    elevation: 0,
+                    surfaceTintColor: scheme.surfaceTint,
+                    child: SizedBox(
+                      height: kGlobalCompactHeaderHeight,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: _exitSelectMode,
+                            tooltip: t(currentLocale.value, 'plan_exit_select'),
+                          ),
+                          Expanded(
+                            child: Text(
+                              t(currentLocale.value, 'plan_select_mode'),
+                              style: Theme.of(context).textTheme.titleMedium,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (visiblePlans != null)
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
+                              ),
+                              onPressed: () =>
+                                  _toggleSelectAllVisiblePlans(visiblePlans),
+                              child: Text(
+                                _allVisiblePlanTasksSelected(visiblePlans)
+                                    ? t(
+                                        currentLocale.value,
+                                        'plan_deselect_visible',
+                                      )
+                                    : t(currentLocale.value, 'plan_select_all'),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Divider(height: 1, color: scheme.outlineVariant),
+                ],
+                Expanded(child: body),
+              ],
+            ),
+          ),
+          bottomNavigationBar: displayedForChrome != null
+              ? PlanningBulkBottomBar(
+                selectedCount: _selectedPlanKeys.length,
+                onClear: _clearSelection,
+                onBulkEdit: () => unawaited(_openBulkPlanningEdit(displayedForChrome!)),
+                onBulkDelete: () => unawaited(_bulkDelete(displayedForChrome!)),
+              )
+              : null,
+        );
+      },
+    );
+  }
+
+  Widget _buildPlanningMainColumn(
+    BuildContext context,
+    ColorScheme scheme,
+    List<PlanningTask> tasks,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!_planSelectMode)
+          PlanningSortModeBar(
+            sortMode: _sortMode,
+            onSortModeChanged: (mode) => setState(() => _sortMode = mode),
+          ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 40,
+                      child: _buildQuickAddTagStrip(scheme),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    style: IconButton.styleFrom(
+                      foregroundColor: scheme.primary,
+                      splashFactory: NoSplash.splashFactory,
+                      hoverColor: Colors.transparent,
+                    ),
+                    icon: const Icon(Icons.settings_rounded),
+                    tooltip: t(currentLocale.value, 'plan_settings_tooltip'),
+                    onPressed: _showPlanningSettingsSheet,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _textController,
+                      focusNode: _quickAddFocus,
+                      decoration: InputDecoration(
+                        hintText: t(
+                          currentLocale.value,
+                          'input_placeholder_plan',
+                        ),
+                      ),
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _addTask(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: _addTask,
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(t(currentLocale.value, 'add')),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
+                    style: IconButton.styleFrom(
+                      foregroundColor: scheme.primary,
+                      splashFactory: NoSplash.splashFactory,
+                      hoverColor: Colors.transparent,
+                    ),
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    tooltip: t(currentLocale.value, 'smart_plan_tooltip'),
+                    onPressed: _openSmartPlanSheet,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: kUseMountedDayStrip &&
+                  widget.mountedWindow != null &&
+                  widget.stripController != null &&
+                  widget.onVisibleDateChanged != null
+              ? StreamBuilder<void>(
+                  stream: DatabaseService.instance.timeUpdates,
+                  builder: (context, _) {
+                    final window = widget.mountedWindow!;
+                    final visibleDate = widget.selectedDate ?? _today;
+                    final rawIdx = window.contains(visibleDate)
+                        ? window.indexOf(visibleDate)
+                        : window.indexOf(_today);
+                    final activeIndex = rawIdx
+                        .clamp(0, math.max(0, window.length - 1))
+                        .toInt();
+                    return EagerDayContentStrip(
+                      screen: 'Plans',
+                      dates: window.dates,
+                      initialIndex: activeIndex,
+                      activeIndex: activeIndex,
+                      controller: widget.stripController,
+                      physics: widget.datePagerLocked
+                          ? const NeverScrollableScrollPhysics()
+                          : const FeatherDateSwipePhysics(),
+                      scrollLocked: widget.datePagerLocked,
+                      onUserDragStart: widget.onUserDragStart,
+                      onUserDragEnd: widget.onUserDragEnd,
+                      onScrollTick: widget.onScrollTick,
+                      onIndexChanged: widget.onVisibleDateChanged!,
+                      itemBuilder: (context, date, index, isActive) {
+                        return RepaintBoundary(
+                          child: _buildDayContentForPageIndex(
+                            context,
+                            scheme,
+                            index,
+                            tasks,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                )
+              : RepaintBoundary(
+                  child: _buildActiveDayBody(context, scheme, tasks),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Keeps offscreen plan day bodies alive in [PageView] (P0P render warm).
