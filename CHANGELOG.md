@@ -18,7 +18,11 @@
 * **`lib/core/diagnostics/desktop_voice_log.dart`:** [shipped] renamed from `desktop_voice_diag.dart`; class `DesktopVoiceLog` (release quiet; debug markers only).
 * **`docs/APP_STRUCTURE.md`:** [shipped] full manifest for desktop voice stack, timezone modules, `voice_command_parser`, navigation helper; fixed malformed features table; added `ProfileTimezoneActions` shell injection row.
 * **`docs/APP_STRUCTURE_EXPLAINED_RU.md`**, **`CLAUDE.md`**, **`docs/ROADMAP.md`:** E.0.5A complete markers and navigation updates.
-* **Verification:** `architecture_guard.ps1 -Strict` exit 0; `flutter analyze`, `flutter test`, `flutter build web` green.
+* **Verification:** `architecture_guard.ps1 -Strict` exit 0; `flutter analyze`, `flutter test` (223 passed), `flutter build web` green.
+* **Checkpoint commit:** `77e4afd` — `chore(structure): finish desktop voice and timezone baseline before splits`.
+* **APK:** `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` (arm64 release).
+* **Windows smoke:** `check_no_preparing_ui.ps1`, `smoke_desktop_voice_recording_first.ps1`, `smoke_desktop_hotkey.ps1`, `smoke_desktop_voice_helper_failure.ps1` — PASS on Release exe; fresh `flutter build windows` not re-verified (LNK1104 file lock during parallel smoke).
+* **HANDY comparison file:** not in repo; acceptance via existing desktop voice tests + CHANGELOG. Stage E1 not started.
 
 ## [2026-07-02] - Stage E.0 large-file split blueprint [shipped]
 * **`docs/reports/LARGE_FILE_SPLIT_BLUEPRINT_2026-07-02.md`:** [shipped] Repo-specific split plan for all `lib/` files >800 lines — classifications, target module trees, E1–E8 ordering, risk matrix, tests, APP_STRUCTURE/guard deltas, rollback. Planning only; no production Dart changes.
