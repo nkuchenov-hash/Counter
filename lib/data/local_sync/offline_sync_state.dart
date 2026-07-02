@@ -181,7 +181,7 @@ class OfflineSyncController extends ChangeNotifier {
 
   void logTapRetry({required String phase}) {
     _syncDiagPrint(
-      'SYNC_BANNER_${phase} pendingCount=$pendingCount '
+      'SYNC_BANNER_$phase pendingCount=$pendingCount '
       'lastError=${lastError ?? '-'} authPaused=$authPaused '
       'blockingError=$hasBlockingSyncError '
       'recordsOutbox=$recordsOutboxCount plansOutbox=$plansOutboxCount',

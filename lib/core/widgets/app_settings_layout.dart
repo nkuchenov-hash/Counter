@@ -486,7 +486,7 @@ class AppSettingsGridCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (trailing != null) trailing!,
+                  ?trailing,
                 ],
               ),
             if (title != null || leading != null) const SizedBox(height: 12),

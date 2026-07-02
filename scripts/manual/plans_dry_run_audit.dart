@@ -269,7 +269,7 @@ Future<void> main() async {
   stderr.writeln('User email: $userEmail');
 
   final pb = await _authenticatedPb(baseUrl);
-  final uid = pb.authStore.record?.id?.trim() ?? '';
+  final uid = pb.authStore.record?.id.trim() ?? '';
   if (uid.isEmpty) {
     stderr.writeln('Auth succeeded but no profile id in session.');
     exit(1);

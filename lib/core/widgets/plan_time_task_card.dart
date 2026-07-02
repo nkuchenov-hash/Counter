@@ -137,6 +137,7 @@ class PlanTimeTaskCard extends StatefulWidget {
   final PlanningTask task;
   final PlanTimeTaskCardDensity density;
   final PlanCardSurface surface;
+
   /// Time View CardPlan band from rendered block height (explicit layout path).
   final PlanTimeCardVisualDensity? timelineVisualDensity;
   final double? timelineBlockHeightPx;
@@ -153,6 +154,7 @@ class PlanTimeTaskCard extends StatefulWidget {
   final List<Widget> metaIcons;
   final bool showFooterBreadcrumb;
   final bool showProgressBar;
+
   /// When true (Time mode duration blocks), card fills parent height and pins
   /// progress + footer to the bottom edge.
   final bool timelineFillHeight;
@@ -224,8 +226,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
     final loc = currentLocale.value;
     final lookup = PlanCategoryLookup.resolve;
     final categoryPresentation = lookup?.call(widget.task.categoryId);
-    final categoryTone = categoryPresentation?.color ??
-        Theme.of(context).colorScheme.primary;
+    final categoryTone =
+        categoryPresentation?.color ?? Theme.of(context).colorScheme.primary;
     final categoryTrailRaw = widget.showFooterBreadcrumb
         ? localizeCategoryBreadcrumbPath(
             (categoryPresentation?.breadcrumbPath ?? '').trim(),
@@ -243,21 +245,21 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
     final borderColor = selected
         ? scheme.primary.withValues(alpha: 0.52)
         : widget.highlightAsRunning
-            ? scheme.primary
-            : widget.interacting
-                ? scheme.primary.withValues(alpha: 0.45)
-                : hovered
-                    ? scheme.outlineVariant.withValues(alpha: 0.62)
-                    : scheme.outlineVariant.withValues(alpha: 0.38);
+        ? scheme.primary
+        : widget.interacting
+        ? scheme.primary.withValues(alpha: 0.45)
+        : hovered
+        ? scheme.outlineVariant.withValues(alpha: 0.62)
+        : scheme.outlineVariant.withValues(alpha: 0.38);
     final borderWidth = selected
         ? 1.25
         : widget.highlightAsRunning
-            ? 1.75
-            : widget.interacting
-                ? 1.5
-                : hovered
-                    ? 1.25
-                    : 1.0;
+        ? 1.75
+        : widget.interacting
+        ? 1.5
+        : hovered
+        ? 1.25
+        : 1.0;
 
     var surface = selected
         ? Color.alphaBlend(
@@ -317,110 +319,106 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
         onBodyLongPress: widget.onLongPress,
       );
     } else {
-    switch (effectiveDensity) {
-      case PlanTimeTaskCardDensity.micro:
-        body = _TimelinePlanCardSmall(
-          task: widget.task,
-          timeLabel: widget.timeLabel,
-          displayIsDone: widget.displayIsDone,
-          selectMode: widget.selectMode,
-          isSelected: widget.isSelected,
-          hasRepeat: _hasRepeat,
-          showPlay: _showPlay,
-          visibleTags: _visibleTags,
-          toggleDoneEnabled: widget.toggleDoneEnabled,
-          metaIcons: widget.metaIcons,
-          metricsBlock: progressSlot,
-          onToggleDone: widget.onToggleDone,
-          onSelectToggle: widget.onSelectToggle,
-          onPlay: widget.onPlay,
-          onOpenMenu: widget.onOpenMenu,
-          onBodyTap: widget.onTap,
-          onBodyLongPress: widget.onLongPress,
-        );
-      case PlanTimeTaskCardDensity.compact:
-        body = _TimelinePlanCardSmall(
-          task: widget.task,
-          timeLabel: effectiveTimeLabel,
-          displayIsDone: widget.displayIsDone,
-          selectMode: widget.selectMode,
-          isSelected: widget.isSelected,
-          hasRepeat: _hasRepeat,
-          showPlay: _showPlay,
-          visibleTags: _visibleTags,
-          toggleDoneEnabled: widget.toggleDoneEnabled,
-          metaIcons: widget.metaIcons,
-          metricsBlock: progressSlot,
-          timelineFillHeight: widget.timelineFillHeight,
-          categoryTrail: widget.showFooterBreadcrumb ? categoryTrail : '',
-          categoryColor: categoryTone,
-          scheduleConflict: widget.scheduleConflict,
-          onToggleDone: widget.onToggleDone,
-          onSelectToggle: widget.onSelectToggle,
-          onPlay: widget.onPlay,
-          onOpenMenu: widget.onOpenMenu,
-          onBodyTap: widget.onTap,
-          onBodyLongPress: widget.onLongPress,
-        );
-      case PlanTimeTaskCardDensity.medium:
-        body = _TimelinePlanCardMedium(
-          task: widget.task,
-          timeLabel: effectiveTimeLabel,
-          categoryTrail:
-              widget.showFooterBreadcrumb ? categoryTrail : '',
-          categoryColor: categoryTone,
-          displayIsDone: widget.displayIsDone,
-          selectMode: widget.selectMode,
-          isSelected: widget.isSelected,
-          hasRepeat: _hasRepeat,
-          showPlay: _showPlay,
-          visibleTags: _visibleTags,
-          scheduleConflict: widget.scheduleConflict,
-          toggleDoneEnabled: widget.toggleDoneEnabled,
-          metaIcons: widget.metaIcons,
-          metricsBlock: progressSlot,
-          spacing: cardSpacing,
-          timelineFillHeight: widget.timelineFillHeight,
-          onToggleDone: widget.onToggleDone,
-          onSelectToggle: widget.onSelectToggle,
-          onPlay: widget.onPlay,
-          onOpenMenu: widget.onOpenMenu,
-          onBodyTap: widget.onTap,
-          onBodyLongPress: widget.onLongPress,
-          titleMaxLines: 1,
-        );
-      case PlanTimeTaskCardDensity.large:
-        body = _TimelinePlanCardLarge(
-          task: widget.task,
-          timeLabel: effectiveTimeLabel,
-          categoryTrail:
-              widget.showFooterBreadcrumb ? categoryTrail : '',
-          categoryColor: categoryTone,
-          displayIsDone: widget.displayIsDone,
-          selectMode: widget.selectMode,
-          isSelected: widget.isSelected,
-          hasRepeat: _hasRepeat,
-          showPlay: _showPlay,
-          visibleTags: _visibleTags,
-          scheduleConflict: widget.scheduleConflict,
-          toggleDoneEnabled: widget.toggleDoneEnabled,
-          metaIcons: widget.metaIcons,
-          metricsBlock: progressSlot,
-          spacing: cardSpacing,
-          timelineFillHeight: widget.timelineFillHeight,
-          onToggleDone: widget.onToggleDone,
-          onSelectToggle: widget.onSelectToggle,
-          onPlay: widget.onPlay,
-          onOpenMenu: widget.onOpenMenu,
-          onBodyTap: widget.onTap,
-          onBodyLongPress: widget.onLongPress,
-        );
-    }
+      switch (effectiveDensity) {
+        case PlanTimeTaskCardDensity.micro:
+          body = _TimelinePlanCardSmall(
+            task: widget.task,
+            timeLabel: widget.timeLabel,
+            displayIsDone: widget.displayIsDone,
+            selectMode: widget.selectMode,
+            isSelected: widget.isSelected,
+            hasRepeat: _hasRepeat,
+            showPlay: _showPlay,
+            visibleTags: _visibleTags,
+            toggleDoneEnabled: widget.toggleDoneEnabled,
+            metaIcons: widget.metaIcons,
+            metricsBlock: progressSlot,
+            onToggleDone: widget.onToggleDone,
+            onSelectToggle: widget.onSelectToggle,
+            onPlay: widget.onPlay,
+            onOpenMenu: widget.onOpenMenu,
+            onBodyTap: widget.onTap,
+            onBodyLongPress: widget.onLongPress,
+          );
+        case PlanTimeTaskCardDensity.compact:
+          body = _TimelinePlanCardSmall(
+            task: widget.task,
+            timeLabel: effectiveTimeLabel,
+            displayIsDone: widget.displayIsDone,
+            selectMode: widget.selectMode,
+            isSelected: widget.isSelected,
+            hasRepeat: _hasRepeat,
+            showPlay: _showPlay,
+            visibleTags: _visibleTags,
+            toggleDoneEnabled: widget.toggleDoneEnabled,
+            metaIcons: widget.metaIcons,
+            metricsBlock: progressSlot,
+            timelineFillHeight: widget.timelineFillHeight,
+            categoryTrail: widget.showFooterBreadcrumb ? categoryTrail : '',
+            categoryColor: categoryTone,
+            scheduleConflict: widget.scheduleConflict,
+            onToggleDone: widget.onToggleDone,
+            onSelectToggle: widget.onSelectToggle,
+            onPlay: widget.onPlay,
+            onOpenMenu: widget.onOpenMenu,
+            onBodyTap: widget.onTap,
+            onBodyLongPress: widget.onLongPress,
+          );
+        case PlanTimeTaskCardDensity.medium:
+          body = _TimelinePlanCardMedium(
+            task: widget.task,
+            timeLabel: effectiveTimeLabel,
+            categoryTrail: widget.showFooterBreadcrumb ? categoryTrail : '',
+            categoryColor: categoryTone,
+            displayIsDone: widget.displayIsDone,
+            selectMode: widget.selectMode,
+            isSelected: widget.isSelected,
+            hasRepeat: _hasRepeat,
+            showPlay: _showPlay,
+            visibleTags: _visibleTags,
+            scheduleConflict: widget.scheduleConflict,
+            toggleDoneEnabled: widget.toggleDoneEnabled,
+            metaIcons: widget.metaIcons,
+            metricsBlock: progressSlot,
+            spacing: cardSpacing,
+            timelineFillHeight: widget.timelineFillHeight,
+            onToggleDone: widget.onToggleDone,
+            onSelectToggle: widget.onSelectToggle,
+            onPlay: widget.onPlay,
+            onOpenMenu: widget.onOpenMenu,
+            onBodyTap: widget.onTap,
+            onBodyLongPress: widget.onLongPress,
+            titleMaxLines: 1,
+          );
+        case PlanTimeTaskCardDensity.large:
+          body = _TimelinePlanCardLarge(
+            task: widget.task,
+            timeLabel: effectiveTimeLabel,
+            categoryTrail: widget.showFooterBreadcrumb ? categoryTrail : '',
+            categoryColor: categoryTone,
+            displayIsDone: widget.displayIsDone,
+            selectMode: widget.selectMode,
+            isSelected: widget.isSelected,
+            hasRepeat: _hasRepeat,
+            showPlay: _showPlay,
+            visibleTags: _visibleTags,
+            scheduleConflict: widget.scheduleConflict,
+            toggleDoneEnabled: widget.toggleDoneEnabled,
+            metaIcons: widget.metaIcons,
+            metricsBlock: progressSlot,
+            spacing: cardSpacing,
+            timelineFillHeight: widget.timelineFillHeight,
+            onToggleDone: widget.onToggleDone,
+            onSelectToggle: widget.onSelectToggle,
+            onPlay: widget.onPlay,
+            onOpenMenu: widget.onOpenMenu,
+            onBodyTap: widget.onTap,
+            onBodyLongPress: widget.onLongPress,
+          );
+      }
     }
 
-    final minH = _isListLike
-        ? planTimeCardListMinHeight(widget.density)
-        : null;
+    final minH = _isListLike ? planTimeCardListMinHeight(widget.density) : null;
 
     Widget card = DecoratedBox(
       decoration: BoxDecoration(
@@ -439,7 +437,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
           builder: (context, constraints) {
             final w = constraints.maxWidth;
             final timelineBlockH = widget.timelineBlockHeightPx;
-            final measuredH = widget.surface == PlanCardSurface.timeline &&
+            final measuredH =
+                widget.surface == PlanCardSurface.timeline &&
                     widget.timelineVisualDensity != null &&
                     timelineBlockH != null
                 ? timelineBlockH
@@ -451,7 +450,8 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
             final h = constraints.maxHeight.isFinite
                 ? constraints.maxHeight
                 : measuredH;
-            final showWatermark = widget.surface != PlanCardSurface.timeline &&
+            final showWatermark =
+                widget.surface != PlanCardSurface.timeline &&
                 !widget.timelineFillHeight &&
                 effectiveDensity != PlanTimeTaskCardDensity.micro &&
                 h >= _PlanCardGeom.watermarkMinCardHeight;
@@ -459,19 +459,19 @@ class _PlanTimeTaskCardState extends State<PlanTimeTaskCard>
               height: h.isFinite ? h : measuredH,
               width: w.isFinite ? w : null,
               child: Stack(
-              fit: StackFit.passthrough,
-              children: [
-                if (showWatermark)
-                  _PlanCardWatermark(
-                    icon: categoryIcon,
-                    color: categoryTone,
-                    density: effectiveDensity,
-                    cardWidth: w.isFinite ? w : _PlanCardGeom.refWidth,
-                    cardHeight: h.isFinite ? h : measuredH,
-                  ),
-                body,
-              ],
-            ),
+                fit: StackFit.passthrough,
+                children: [
+                  if (showWatermark)
+                    _PlanCardWatermark(
+                      icon: categoryIcon,
+                      color: categoryTone,
+                      density: effectiveDensity,
+                      cardWidth: w.isFinite ? w : _PlanCardGeom.refWidth,
+                      cardHeight: h.isFinite ? h : measuredH,
+                    ),
+                  body,
+                ],
+              ),
             );
           },
         ),
@@ -563,11 +563,11 @@ abstract final class _PlanCardGeom {
   static const double watermarkMinCardHeight = 90;
 
   static double refHeight(PlanTimeTaskCardDensity d) => switch (d) {
-        PlanTimeTaskCardDensity.micro => refHeightMicro,
-        PlanTimeTaskCardDensity.compact => refHeightSmall,
-        PlanTimeTaskCardDensity.medium => refHeightMedium,
-        PlanTimeTaskCardDensity.large => refHeightLarge,
-      };
+    PlanTimeTaskCardDensity.micro => refHeightMicro,
+    PlanTimeTaskCardDensity.compact => refHeightSmall,
+    PlanTimeTaskCardDensity.medium => refHeightMedium,
+    PlanTimeTaskCardDensity.large => refHeightLarge,
+  };
 
   static double contentSpanWidth(double cardWidth) =>
       cardWidth - contentXMediumLarge - padRight;
@@ -612,8 +612,7 @@ final class _PlanCardVerticalSpacing {
   double progressSlotHeight({required bool hasTrackedProgress}) =>
       actualTimeSlotHeight + progressAfterActualGap + progressBarHeight;
 
-  double tagsSlotHeight({required bool hasTags}) =>
-      emptyTagsSlotHeight;
+  double tagsSlotHeight({required bool hasTags}) => emptyTagsSlotHeight;
 }
 
 // --- Visual tokens (design/CardPlan *.svg fallback) ---------------------------
@@ -634,7 +633,8 @@ abstract final class _PlanCardTokens {
   static const Color tagPurpleBg = Color(0xFFEEE5F8);
   static const Color tagPurpleText = Color(0xFF7118E5);
 
-  static List<BoxShadow> cardShadow(bool interacting, {bool hovered = false}) => [
+  static List<BoxShadow> cardShadow(bool interacting, {bool hovered = false}) =>
+      [
         BoxShadow(
           color: Color(hovered ? 0x14000000 : 0x0A000000),
           blurRadius: interacting ? 6 : (hovered ? 8 : 4),
@@ -660,8 +660,9 @@ class _PlanCardProgressSlot extends StatelessWidget {
   Widget build(BuildContext context) {
     final estimated = planEstimatedSeconds ?? 0;
     final hasActual = planTrackedSeconds > 0;
-    final slotHeight =
-        spacing.progressSlotHeight(hasTrackedProgress: hasActual);
+    final slotHeight = spacing.progressSlotHeight(
+      hasTrackedProgress: hasActual,
+    );
     return SizedBox(
       height: slotHeight,
       child: Column(
@@ -890,8 +891,9 @@ class _PlanCardRailShell extends StatelessWidget {
         spacing.padBottom,
       ),
       child: Row(
-        crossAxisAlignment:
-            fillHeight ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+        crossAxisAlignment: fillHeight
+            ? CrossAxisAlignment.stretch
+            : CrossAxisAlignment.start,
         children: [
           _PlanCardControlRail(
             showPlay: showPlay,
@@ -957,8 +959,8 @@ class _PlanCardProgressRow extends StatelessWidget {
     final showFill = estimatedSeconds > 0;
     final fraction = showFill
         ? (trackedSeconds <= estimatedSeconds
-            ? trackedSeconds / estimatedSeconds
-            : 1.0)
+              ? trackedSeconds / estimatedSeconds
+              : 1.0)
         : 0.0;
     final trackRadius = BorderRadius.circular(trackHeight / 2);
     return Row(
@@ -1095,16 +1097,26 @@ class _TimeViewDensityBody extends StatelessWidget {
       onBodyLongPress: onBodyLongPress,
     );
     return switch (visual) {
-      PlanTimeCardVisualDensity.verySmall =>
-        _TimeViewVerySmallLayout(common: common, heightPx: heightPx),
-      PlanTimeCardVisualDensity.small =>
-        _TimeViewSmallLayout(common: common, heightPx: heightPx),
-      PlanTimeCardVisualDensity.moreCompact =>
-        _TimeViewMoreCompactLayout(common: common, heightPx: heightPx),
-      PlanTimeCardVisualDensity.compact =>
-        _TimeViewCompactLayout(common: common, heightPx: heightPx),
-      PlanTimeCardVisualDensity.medium =>
-        _TimeViewMediumLayout(common: common, heightPx: heightPx),
+      PlanTimeCardVisualDensity.verySmall => _TimeViewVerySmallLayout(
+        common: common,
+        heightPx: heightPx,
+      ),
+      PlanTimeCardVisualDensity.small => _TimeViewSmallLayout(
+        common: common,
+        heightPx: heightPx,
+      ),
+      PlanTimeCardVisualDensity.moreCompact => _TimeViewMoreCompactLayout(
+        common: common,
+        heightPx: heightPx,
+      ),
+      PlanTimeCardVisualDensity.compact => _TimeViewCompactLayout(
+        common: common,
+        heightPx: heightPx,
+      ),
+      PlanTimeCardVisualDensity.medium => _TimeViewMediumLayout(
+        common: common,
+        heightPx: heightPx,
+      ),
     };
   }
 }
@@ -1160,10 +1172,7 @@ class _TimeViewCardCommon {
 }
 
 class _TimeViewLeftControls extends StatelessWidget {
-  const _TimeViewLeftControls({
-    required this.common,
-    this.inlinePlay = true,
-  });
+  const _TimeViewLeftControls({required this.common, this.inlinePlay = true});
 
   final _TimeViewCardCommon common;
   final bool inlinePlay;
@@ -1239,7 +1248,7 @@ class _TimeViewResponsiveShell extends StatelessWidget {
             leftControls,
             const SizedBox(width: _PlanCardGeom.timeViewRailToContentGap),
             Expanded(child: center),
-            if (menu != null) menu!,
+            ?menu,
           ],
         ),
       ),
@@ -1289,10 +1298,7 @@ class _TimeViewVerticalShell extends StatelessWidget {
 
 /// Time View tag row ? every tag visible (horizontal scroll, never +N).
 class _TimeViewTagsRow extends StatelessWidget {
-  const _TimeViewTagsRow({
-    required this.tags,
-    this.trailing,
-  });
+  const _TimeViewTagsRow({required this.tags, this.trailing});
 
   final List<Tag> tags;
   final Widget? trailing;
@@ -1308,32 +1314,29 @@ class _TimeViewTagsRow extends StatelessWidget {
           if (tags.isNotEmpty)
             Expanded(
               child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const ClampingScrollPhysics(),
-              itemCount: tags.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(width: _PlanCardGeom.tagGap),
-              itemBuilder: (context, index) {
-                final tag = tags[index];
-                return CategoryChip(
-                  mode: CategoryDisplayMode.letterChip,
-                  label: tag.name.trim().isNotEmpty
-                      ? tag.name.trim()
-                      : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                  color: parseTagHexColor(tag.color) ?? scheme.primary,
-                  icon: iconForTagKey(tag.icon),
-                  compactGlyphLayout: true,
-                  syntheticNoTagsMonochrome: tag.tagId == -1,
-                );
-              },
-            ),
-          )
+                scrollDirection: Axis.horizontal,
+                physics: const ClampingScrollPhysics(),
+                itemCount: tags.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: _PlanCardGeom.tagGap),
+                itemBuilder: (context, index) {
+                  final tag = tags[index];
+                  return CategoryChip(
+                    mode: CategoryDisplayMode.letterChip,
+                    label: tag.name.trim().isNotEmpty
+                        ? tag.name.trim()
+                        : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
+                    color: parseTagHexColor(tag.color) ?? scheme.primary,
+                    icon: iconForTagKey(tag.icon),
+                    compactGlyphLayout: true,
+                    syntheticNoTagsMonochrome: tag.tagId == -1,
+                  );
+                },
+              ),
+            )
           else
             const Spacer(),
-          if (trailing != null) ...[
-            const SizedBox(width: 6),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: 6), trailing!],
         ],
       ),
     );
@@ -1371,10 +1374,7 @@ class _TimeViewTagStack extends StatelessWidget {
 
 /// Compact CardPlan tag pill for minimum-density Time View (16px, readable).
 class _TimeViewCompactTagPill extends StatelessWidget {
-  const _TimeViewCompactTagPill({
-    required this.tag,
-    required this.scheme,
-  });
+  const _TimeViewCompactTagPill({required this.tag, required this.scheme});
 
   final Tag tag;
   final ColorScheme scheme;
@@ -1464,10 +1464,7 @@ class _TimeViewVerySmallLayout extends StatelessWidget {
 
 /// Small 39?54px ? title row + tags/time metadata row (CardPlan ref).
 class _TimeViewSmallLayout extends StatelessWidget {
-  const _TimeViewSmallLayout({
-    required this.common,
-    required this.heightPx,
-  });
+  const _TimeViewSmallLayout({required this.common, required this.heightPx});
 
   final _TimeViewCardCommon common;
   final double heightPx;
@@ -1553,18 +1550,14 @@ class _TimeViewTwoRowCenterLayout extends StatelessWidget {
 
 /// Compact 78?94px ? vertical rail, title/tags, optional footer (CardPlan ref).
 class _TimeViewCompactLayout extends StatelessWidget {
-  const _TimeViewCompactLayout({
-    required this.common,
-    required this.heightPx,
-  });
+  const _TimeViewCompactLayout({required this.common, required this.heightPx});
 
   final _TimeViewCardCommon common;
   final double heightPx;
 
   @override
   Widget build(BuildContext context) {
-    final showProgress =
-        common.showProgressBar && common.metricsBlock != null;
+    final showProgress = common.showProgressBar && common.metricsBlock != null;
     final showBreadcrumb = common.categoryTrail.trim().isNotEmpty;
     return _TimeViewVerticalShell(
       heightPx: heightPx,
@@ -1620,17 +1613,15 @@ class _TimeViewCompactLayout extends StatelessWidget {
 
 /// Medium 95px+ ? full CardPlan hierarchy (CardPlan ref).
 class _TimeViewMediumLayout extends StatelessWidget {
-  const _TimeViewMediumLayout({
-    required this.common,
-    required this.heightPx,
-  });
+  const _TimeViewMediumLayout({required this.common, required this.heightPx});
 
   final _TimeViewCardCommon common;
   final double heightPx;
 
   @override
   Widget build(BuildContext context) {
-    final progressSlot = common.metricsBlock ??
+    final progressSlot =
+        common.metricsBlock ??
         _PlanCardProgressSlot(
           planTrackedSeconds: 0,
           categoryColor: common.categoryColor,
@@ -1752,13 +1743,18 @@ class _TimelinePlanCardSmall extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         _PlanCardGeom.padLeft,
-        timelineFillHeight ? _PlanCardGeom.padTopSmall : _PlanCardGeom.padTopSmall,
+        timelineFillHeight
+            ? _PlanCardGeom.padTopSmall
+            : _PlanCardGeom.padTopSmall,
         _PlanCardGeom.padRight,
-        timelineFillHeight ? _PlanCardGeom.footerBottomPad : _PlanCardGeom.padTopSmall,
+        timelineFillHeight
+            ? _PlanCardGeom.footerBottomPad
+            : _PlanCardGeom.padTopSmall,
       ),
       child: Row(
-        crossAxisAlignment:
-            timelineFillHeight ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
+        crossAxisAlignment: timelineFillHeight
+            ? CrossAxisAlignment.stretch
+            : CrossAxisAlignment.start,
         children: [
           _PlanCardCheckbox(
             selectMode: selectMode,
@@ -1774,7 +1770,8 @@ class _TimelinePlanCardSmall extends StatelessWidget {
             const SizedBox(width: _PlanCardGeom.playAfterCheckboxGap),
           ] else
             SizedBox(
-              width: _PlanCardGeom.contentXSmall -
+              width:
+                  _PlanCardGeom.contentXSmall -
                   _PlanCardGeom.padLeft -
                   _PlanCardGeom.controlSize,
             ),
@@ -1893,7 +1890,8 @@ class _TimelinePlanCardMedium extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progressSlot = metricsBlock ??
+    final progressSlot =
+        metricsBlock ??
         _PlanCardProgressSlot(
           planTrackedSeconds: 0,
           categoryColor: categoryColor,
@@ -1983,7 +1981,8 @@ class _TimelinePlanCardLarge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progressSlot = metricsBlock ??
+    final progressSlot =
+        metricsBlock ??
         _PlanCardProgressSlot(
           planTrackedSeconds: 0,
           categoryColor: categoryColor,
@@ -2165,7 +2164,9 @@ class _PlanCardCheckboxState extends State<_PlanCardCheckbox>
 
   @override
   Widget build(BuildContext context) {
-    final checked = widget.selectMode ? widget.isSelected : widget.displayIsDone;
+    final checked = widget.selectMode
+        ? widget.isSelected
+        : widget.displayIsDone;
     final enabled = widget.selectMode
         ? widget.onSelectToggle != null
         : widget.toggleDoneEnabled && widget.onToggleDone != null;
@@ -2189,8 +2190,8 @@ class _PlanCardCheckboxState extends State<_PlanCardCheckbox>
         child: GestureDetector(
           onTap: enabled
               ? (widget.selectMode
-                  ? widget.onSelectToggle
-                  : widget.onToggleDone)
+                    ? widget.onSelectToggle
+                    : widget.onToggleDone)
               : null,
           child: SizedBox(
             width: widget.size,
@@ -2410,9 +2411,7 @@ class _PlanCardMenuButtonState extends State<_PlanCardMenuButton> {
                       : _PlanCardTokens.menuBg,
                   shape: BoxShape.circle,
                 ),
-                child: const CustomPaint(
-                  painter: _PlanCardMenuIconPainter(),
-                ),
+                child: const CustomPaint(painter: _PlanCardMenuIconPainter()),
               ),
             ),
           ),
@@ -2472,8 +2471,9 @@ class _PlanCardTitleRow extends StatelessWidget {
       height: 1.0,
       fontWeight: FontWeight.w400,
       leadingDistribution: TextLeadingDistribution.even,
-      decoration:
-          displayIsDone ? TextDecoration.lineThrough : TextDecoration.none,
+      decoration: displayIsDone
+          ? TextDecoration.lineThrough
+          : TextDecoration.none,
       color: displayIsDone
           ? _PlanCardTokens.titleColor.withValues(alpha: 0.55)
           : _PlanCardTokens.titleColor,
@@ -2520,10 +2520,7 @@ class _PlanCardTitleRow extends StatelessWidget {
 }
 
 class _PlanCardTagsRow extends StatelessWidget {
-  const _PlanCardTagsRow({
-    required this.tags,
-    this.trailing,
-  });
+  const _PlanCardTagsRow({required this.tags, this.trailing});
 
   final List<Tag> tags;
   final Widget? trailing;
@@ -2557,10 +2554,7 @@ class _PlanCardTagsRow extends StatelessWidget {
               },
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 8),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: 8), trailing!],
         ],
       ),
     );
@@ -2678,9 +2672,11 @@ class _PlanCardWatermark extends StatelessWidget {
     if (icon == null) return const SizedBox.shrink();
 
     final ref = switch (density) {
-      PlanTimeTaskCardDensity.micro ||
-      PlanTimeTaskCardDensity.compact =>
-        (left: 213.0, top: 18.86, size: 102.68),
+      PlanTimeTaskCardDensity.micro || PlanTimeTaskCardDensity.compact => (
+        left: 213.0,
+        top: 18.86,
+        size: 102.68,
+      ),
       PlanTimeTaskCardDensity.medium => (left: 183.0, top: 33.40, size: 149.80),
       PlanTimeTaskCardDensity.large => (left: 128.93, top: 60.01, size: 230.48),
     };
@@ -2762,20 +2758,23 @@ double planTimeCardMeasureHeight({
     return planTimeCardListMinHeight(density);
   }
   const spacing = _PlanCardVerticalSpacing.shared;
-  final titleBlock = spacing.titleTopInset +
+  final titleBlock =
+      spacing.titleTopInset +
       _PlanCardGeom.titleRowHeight * (titleLines > 1 ? titleLines / 1.0 : 1.0);
   final tagsBlock = spacing.tagsSlotHeight(hasTags: hasTags);
-  final progressBlock =
-      spacing.progressSlotHeight(hasTrackedProgress: hasTrackedProgress);
-  final footerBlock =
-      spacing.footerBlockGap + _PlanCardGeom.footerTextHeight;
-  final contentColumn = titleBlock +
+  final progressBlock = spacing.progressSlotHeight(
+    hasTrackedProgress: hasTrackedProgress,
+  );
+  final footerBlock = spacing.footerBlockGap + _PlanCardGeom.footerTextHeight;
+  final contentColumn =
+      titleBlock +
       tagsBlock +
       _PlanCardGeom.tagsToProgressGap +
       progressBlock +
       footerBlock;
   final contentWithPad = spacing.padTop + contentColumn + spacing.padBottom;
-  const railInner = _PlanCardGeom.controlSize +
+  const railInner =
+      _PlanCardGeom.controlSize +
       _PlanCardGeom.checkboxPlayGap +
       _PlanCardGeom.controlSize;
   final railWithPad = spacing.padTop + railInner + spacing.padBottom;
@@ -2798,17 +2797,15 @@ double planTimeCardTimelineAllocatedHeight({
 double planCardBodyGestureLeftInsetPx(
   PlanTimeTaskCardDensity density, {
   bool timeline = false,
-}) =>
-    switch (density) {
-      PlanTimeTaskCardDensity.micro => _PlanCardGeom.contentXSmall,
-      PlanTimeTaskCardDensity.compact =>
-        timeline ? _PlanCardGeom.contentXSmall : _PlanCardGeom.contentXSmall,
-      PlanTimeTaskCardDensity.medium ||
-      PlanTimeTaskCardDensity.large =>
-        _PlanCardGeom.padLeft +
-            _PlanCardGeom.railWidth +
-            _PlanCardGeom.railToContentGap,
-    };
+}) => switch (density) {
+  PlanTimeTaskCardDensity.micro => _PlanCardGeom.contentXSmall,
+  PlanTimeTaskCardDensity.compact =>
+    timeline ? _PlanCardGeom.contentXSmall : _PlanCardGeom.contentXSmall,
+  PlanTimeTaskCardDensity.medium || PlanTimeTaskCardDensity.large =>
+    _PlanCardGeom.padLeft +
+        _PlanCardGeom.railWidth +
+        _PlanCardGeom.railToContentGap,
+};
 
 /// Right inset for timeline drag/tap body zone ? excludes menu button column.
 double planCardBodyGestureRightInsetPx({bool hasMenu = true}) =>

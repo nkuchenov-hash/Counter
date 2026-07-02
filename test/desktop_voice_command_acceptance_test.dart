@@ -1,5 +1,5 @@
 import 'package:counter/data/models.dart';
-import 'package:counter/features/shared/voice_command_parser.dart';
+import 'package:counter/data/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 CategoryRule _fixtureTree() {
@@ -112,6 +112,16 @@ void main() {
       expect(r.confidence, VoiceCommandMatchConfidence.exact);
       expect(r.isSafeToStart, isTrue);
       expect(r.recordTitle, 'AGE SOLUTIONS');
+    });
+
+    test('Price Reporter Plenty STT mis-hear maps to Planning', () {
+      for (final phrase in ['Price Reporter Plenty', 'Price Reporter plenty']) {
+        final r = parseVoiceCommand(rules: rules, transcript: phrase);
+        expect(r.confidence, VoiceCommandMatchConfidence.exact, reason: phrase);
+        expect(r.isSafeToStart, isTrue, reason: phrase);
+        expect(r.recordTitle, 'Planning', reason: phrase);
+        expect(r.recordTitle, isNot('Plenty'), reason: phrase);
+      }
     });
 
     test('low confidence unsupported command does not start record', () {

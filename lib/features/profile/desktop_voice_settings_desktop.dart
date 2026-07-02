@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
-import 'package:counter/core/diagnostics/desktop_voice_diag.dart';
+import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
 import 'package:counter/core/services/desktop_tray_service.dart';
@@ -76,7 +76,7 @@ class _DesktopVoiceSettingsDesktopGridState
     await _stt.fetchDiagnostics();
     final lines = <String>[
       ..._stt.lastDiagnostics.toDiagLines(),
-      ...DesktopVoiceDiag.instance.lines,
+      ...DesktopVoiceLog.instance.lines,
     ];
     if (!mounted) return;
     setState(() => _diagLines = lines);

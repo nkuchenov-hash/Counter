@@ -2,6 +2,7 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
+import 'package:counter/core/widgets/app_timezone_icon.dart';
 import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/data/database_service.dart';
@@ -38,6 +39,7 @@ class ComponentLabPage extends StatelessWidget {
         children: const [
           _LabSection(title: 'Buttons', child: _ButtonsDemo()),
           _LabSection(title: 'Icon Button', child: _IconButtonsDemo()),
+          _LabSection(title: 'Timezone Icons', child: _TimezoneIconsDemo()),
           _LabSection(
             title: 'Loading / Empty / Error states',
             child: _StateViewsDemo(),
@@ -576,6 +578,79 @@ class _IconButtonsDemo extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _TimezoneIconsDemo extends StatelessWidget {
+  const _TimezoneIconsDemo();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _ButtonGroup(
+      label: 'Solid monochrome timezone family',
+      children: [
+        _TimezoneIconExample(
+          name: 'UTC',
+          keyName: 'utc',
+          timezoneKey: AppTimezoneIconKey.utc,
+        ),
+        _TimezoneIconExample(
+          name: 'London',
+          keyName: 'london',
+          timezoneKey: AppTimezoneIconKey.london,
+        ),
+        _TimezoneIconExample(
+          name: 'Moscow',
+          keyName: 'moscow',
+          timezoneKey: AppTimezoneIconKey.moscow,
+        ),
+        _TimezoneIconExample(
+          name: 'Dubai',
+          keyName: 'dubai',
+          timezoneKey: AppTimezoneIconKey.dubai,
+        ),
+        _TimezoneIconExample(
+          name: 'New York',
+          keyName: 'newYork',
+          timezoneKey: AppTimezoneIconKey.newYork,
+        ),
+      ],
+    );
+  }
+}
+
+class _TimezoneIconExample extends StatelessWidget {
+  const _TimezoneIconExample({
+    required this.name,
+    required this.keyName,
+    required this.timezoneKey,
+  });
+
+  final String name;
+  final String keyName;
+  final AppTimezoneIconKey timezoneKey;
+
+  @override
+  Widget build(BuildContext context) {
+    return _LabExample(
+      title: 'Icon / Timezone / $name',
+      flutterMapping:
+          'AppTimezoneIcon(timezoneKey: AppTimezoneIconKey.$keyName)',
+      variant: 'solid monochrome',
+      size: '24 / 32 / 40',
+      state: 'review',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          AppTimezoneIcon(timezoneKey: timezoneKey, size: 24),
+          const SizedBox(width: 14),
+          AppTimezoneIcon(timezoneKey: timezoneKey, size: 32),
+          const SizedBox(width: 14),
+          AppTimezoneIcon(timezoneKey: timezoneKey, size: 40),
+        ],
+      ),
     );
   }
 }

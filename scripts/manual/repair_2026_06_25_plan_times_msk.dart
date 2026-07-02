@@ -485,7 +485,7 @@ Future<void> main(List<String> args) async {
   final modeLabel = apply ? 'APPLY' : 'DRY-RUN';
   stderr.writeln('=== June 25, 2026 plan time repair ($modeLabel) ===');
   if (explicitIdsMode) {
-    stderr.writeln('Explicit id mode: ${explicitIds!.length} PB id(s)');
+    stderr.writeln('Explicit id mode: ${explicitIds.length} PB id(s)');
   }
 
   final baseUrl = _env('PB_BASE_URL', _defaultPbUrl).replaceAll(RegExp(r'/$'), '');
@@ -510,7 +510,7 @@ Future<void> main(List<String> args) async {
   }
 
   if (explicitIdsMode) {
-    for (final id in explicitIds!) {
+    for (final id in explicitIds) {
       if (!_isPbSystemId(id)) {
         stderr.writeln('Kill switch: invalid explicit PB id: $id');
         exit(1);
@@ -521,7 +521,7 @@ Future<void> main(List<String> args) async {
   final categoryNames = await _fetchCategoryNames(pb, uid);
   final List<RecordModel> prefetch;
   if (explicitIdsMode) {
-    prefetch = await _fetchPlansByIds(pb, explicitIds!);
+    prefetch = await _fetchPlansByIds(pb, explicitIds);
   } else {
     prefetch = await _fetchPlansForDayPrefetch(pb, uid);
   }
@@ -536,7 +536,7 @@ Future<void> main(List<String> args) async {
   if (explicitIdsMode) {
     final fetchedIds = prefetch.map((p) => p.id).toSet();
     final missing =
-        explicitIds!.where((id) => !fetchedIds.contains(id)).toList();
+        explicitIds.where((id) => !fetchedIds.contains(id)).toList();
     if (missing.isNotEmpty) {
       stderr.writeln('Kill switch: explicit id(s) not found: $missing');
       exit(1);

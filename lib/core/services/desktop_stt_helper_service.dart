@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_diagnostics.dart';
 import 'package:counter/core/services/desktop_voice_audio_capture.dart';
@@ -21,6 +22,8 @@ class DesktopSttHelperService {
   static const _baseUrl = 'http://127.0.0.1:8765';
   static const _port = 8765;
   static const _levelThreshold = 0.008;
+  static const _statusUrl = '$_baseUrl/status';
+  static const _transcribeStopEndpoint = '/transcribe/stop';
 
   final _capture = DesktopVoiceAudioCapture.instance;
 
@@ -31,6 +34,13 @@ class DesktopSttHelperService {
   String? _engine;
   int _lastCaptureBytes = 0;
   bool _starting = false;
+  bool _spawnAttempted = false;
+  int? _helperExitCodeObserved;
+  String? _lastStatusHttpResult;
+  String? _lastStatusBody;
+  String? _lastTranscribeHttpResult;
+  String? _lastTranscribeErrorKind;
+  String? _lastTranscribeErrorDetail;
   DesktopSttDiagnostics _lastDiagnostics = const DesktopSttDiagnostics();
 
   int get lastCaptureBytes => _lastCaptureBytes;
@@ -60,8 +70,102 @@ class DesktopSttHelperService {
     return DesktopVoiceSettings.instance.resolveProductionEngine();
   }
 
-  /// Voice-overlay warmup — hard 5s cap; never blocks UI in Preparing forever.
+  /// Voice-overlay warmup — hard 5s cap; never blocks mic capture.
   static const Duration kVoiceOverlayWarmupMax = Duration(seconds: 5);
+
+  /// Max wait for STT HTTP after recording finishes.
+  static const Duration kVoiceProcessingMaxWait = Duration(seconds: 10);
+
+  bool _restartAttemptedThisTranscribe = false;
+  final List<String> _helperStdoutTail = [];
+  final List<String> _helperStderrTail = [];
+
+  void prewarmRecognizerInBackground() {
+    final engine = resolveProductionEngine();
+    if (engine == DesktopVoiceEngineId.windowsSpeech) return;
+    unawaited(
+      ensureStarted(
+        engine: engine,
+        maxWait: kVoiceOverlayWarmupMax,
+        allowRestart: true,
+      ),
+    );
+  }
+
+  int? get helperPid => _process?.pid;
+
+  bool _helperProcessAlive() {
+    // Synchronous best-effort probe: Process.exitCode returns a Future that only
+    // completes when the process exits. There is no synchronous liveness API,
+    // so this call uses the cached exit code observed by the async probe in
+    // [_helperExitCodeIfAnyLive]. Returns true only if we have a process and
+    // have not observed it exit yet.
+    return _process != null && _helperExitCodeObserved == null;
+  }
+
+  /// Authoritative asynchronous liveness check used by diagnostics callsites.
+  /// Returns the exit code if the process has exited, otherwise null (alive).
+  Future<int?> _helperExitCodeIfAnyLive() async {
+    final p = _process;
+    if (p == null) return null;
+    try {
+      return await p.exitCode.timeout(const Duration(milliseconds: 50));
+    } catch (_) {
+      // Timeout → process still running.
+      return null;
+    }
+  }
+
+  void _appendStderrTail(String chunk) {
+    for (final line in chunk.split(RegExp(r'\r?\n'))) {
+      final t = line.trim();
+      if (t.isEmpty) continue;
+      _helperStderrTail.add(t);
+      if (_helperStderrTail.length > 12) {
+        _helperStderrTail.removeAt(0);
+      }
+    }
+  }
+
+  void _appendStdoutTail(String chunk) {
+    // GOLOS emits status lines like "[parakeet] loaded OK", "inference error:
+    // parakeet not loaded" on STDOUT. Without this capture the user has no
+    // visibility into why a transcribe returned HTTP 500 between model loads.
+    for (final line in chunk.split(RegExp(r'\r?\n'))) {
+      final t = line.trim();
+      if (t.isEmpty) continue;
+      _helperStdoutTail.add(t);
+      if (_helperStdoutTail.length > 12) {
+        _helperStdoutTail.removeAt(0);
+      }
+    }
+  }
+
+  String get _helperStdoutTailJoined =>
+      _helperStdoutTail.isEmpty ? '' : _helperStdoutTail.join(' | ');
+
+  String get _helperStderrTailJoined =>
+      _helperStderrTail.isEmpty ? '' : _helperStderrTail.join(' | ');
+
+  String? get helperSettingsPath {
+    final exe = helperPath;
+    if (exe == null) return null;
+    return '${File(exe).parent.path}${Platform.pathSeparator}settings.json';
+  }
+
+  /// Models the expected file count of a valid engine model dir so the
+  /// diagnostics can flag a half-installed model even when the directory
+  /// itself exists. parakeet = 6 files, whisper-tiny = 2 files.
+  int _expectedModelFilesCount(String engineId) {
+    switch (engineId) {
+      case 'parakeet':
+        return 6;
+      case 'whisper-tiny':
+        return 2;
+      default:
+        return 0;
+    }
+  }
 
   Future<bool> ensureStarted({
     DesktopVoiceEngineId? engine,
@@ -106,25 +210,54 @@ class DesktopSttHelperService {
 
     if (!await _ping(markStatus: true)) {
       final exe = _resolveHelperExe();
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_HELPER_PATH_CHECK',
+        exe ?? 'not_found',
+      );
       if (exe == null) {
         _lastError = 'STT helper not found';
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_SPAWN_FAILED', 'not_found');
         return false;
       }
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_PROCESS_START');
+      final workingDir = File(exe).parent.path;
+      _spawnAttempted = true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_SPAWN_ATTEMPT', workingDir);
       try {
         _process = await Process.start(
           exe,
           ['--port', '$_port'],
-          workingDirectory: File(exe).parent.path,
+          workingDirectory: workingDir,
         );
-        _process?.stdout.transform(utf8.decoder).listen((_) {});
-        _process?.stderr.transform(utf8.decoder).listen((_) {});
+        _process?.stdout.transform(utf8.decoder).listen(_appendStdoutTail);
+        _process?.stderr.transform(utf8.decoder).listen(_appendStderrTail);
+        // Watch the process so [_helperProcessAlive] can update without a
+        // synchronous blocking probe.
+        unawaited(_process!.exitCode.then((c) {
+          _helperExitCodeObserved = c;
+        }));
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_HELPER_SPAWN_SUCCESS',
+          'pid=${_process?.pid}',
+        );
       } catch (e) {
         _lastError = 'Failed to start STT helper: $e';
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_HELPER_SPAWN_FAILED',
+          'exception $e',
+        );
         return false;
       }
       while (!pastDeadline()) {
         await Future<void>.delayed(const Duration(milliseconds: 250));
+        final exitCode = await _helperExitCodeIfAnyLive();
+        if (exitCode != null) {
+          _lastError = 'STT helper exited (code=$exitCode) before responding';
+          DesktopVoicePipeline.mark(
+            'DESKTOP_VOICE_HELPER_SPAWN_FAILED',
+            'process_crashed exit=$exitCode',
+          );
+          return false;
+        }
         if (await _ping(markStatus: true)) {
           _ready = true;
           break;
@@ -151,7 +284,9 @@ class DesktopSttHelperService {
     _ready = false;
     _engineReady.clear();
     final ok = await _ensureHelperRunning(deadline, target);
-    if (!ok) {
+    if (ok) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_RESTART_SUCCESS');
+    } else {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_RESTART_FAILED');
     }
     return ok;
@@ -163,6 +298,7 @@ class DesktopSttHelperService {
     } catch (_) {}
     _process = null;
     _ready = false;
+    _helperExitCodeObserved = null;
   }
 
   String? _resolveHelperExe() {
@@ -190,8 +326,10 @@ class DesktopSttHelperService {
       final r = await http
           .get(Uri.parse('$_baseUrl/ping'))
           .timeout(const Duration(seconds: 2));
+      _lastStatusHttpResult = 'ping HTTP ${r.statusCode}';
       return r.statusCode == 200;
-    } catch (_) {
+    } catch (e) {
+      _lastStatusHttpResult = 'ping error $e';
       return false;
     }
   }
@@ -203,9 +341,20 @@ class DesktopSttHelperService {
     bool pastDeadline() => !DateTime.now().isBefore(deadline);
 
     final modelDir = modelPathFor(engine);
-    if (modelDir == null || !Directory(modelDir).existsSync()) {
+    final modelExistsOnDisk =
+        modelDir != null && Directory(modelDir).existsSync();
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_HELPER_MODEL_CHECK',
+      '${engine.helperEngineId} exists=${modelExistsOnDisk ? 'yes' : 'no'}'
+      ' dir=${modelDir ?? '—'}',
+    );
+    if (!modelExistsOnDisk) {
       _lastError = 'Model not found: ${engine.helperEngineId}';
       _engineReady[engine.helperEngineId] = false;
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_HELPER_STATUS_FAILED',
+        'model_missing ${engine.helperEngineId}',
+      );
       return false;
     }
     try {
@@ -237,12 +386,20 @@ class DesktopSttHelperService {
   }
 
   Future<bool> _refreshRemoteStatus(DesktopVoiceEngineId engine) async {
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_STATUS_REQUEST', 'status');
     try {
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_STATUS_REQUEST', 'status');
       final r = await http
-          .get(Uri.parse('$_baseUrl/status'))
+          .get(Uri.parse(_statusUrl))
           .timeout(const Duration(seconds: 2));
-      if (r.statusCode != 200) return false;
+      _lastStatusHttpResult = 'HTTP ${r.statusCode}';
+      _lastStatusBody = r.body.length > 400 ? '${r.body.substring(0, 400)}…' : r.body;
+      if (r.statusCode != 200) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_HELPER_STATUS_FAILED',
+          '${r.statusCode}',
+        );
+        return false;
+      }
       final body = jsonDecode(r.body);
       if (body is! Map<String, dynamic>) return false;
       final active = body['engine'] ?? body['model'];
@@ -250,9 +407,19 @@ class DesktopSttHelperService {
       if (active is String && active.isNotEmpty) _engine = active;
       if (ready && active == engine.helperEngineId) {
         _engineReady[engine.helperEngineId] = true;
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_HELPER_STATUS_READY',
+          engine.helperEngineId,
+        );
         return true;
       }
-    } catch (_) {}
+    } catch (e) {
+      _lastStatusHttpResult = 'error $e';
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_HELPER_STATUS_FAILED',
+        'exception $e',
+      );
+    }
     return false;
   }
 
@@ -260,18 +427,28 @@ class DesktopSttHelperService {
       _capture.listInputDevices();
 
   Future<bool> startListening({String? deviceId, String? deviceLabel}) async {
-    final engine = resolveProductionEngine();
-    if (engine != DesktopVoiceEngineId.windowsSpeech) {
-      if (!await ensureStarted(engine: engine)) return false;
-    }
+    // Recording-first: local mic capture never awaits helper HTTP.
     final ok = await _capture.start(deviceId: deviceId, deviceLabel: deviceLabel);
     if (!ok) {
       _lastError = _capture.lastError;
       return false;
     }
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_LOCAL_AUDIO_CAPTURE_STARTED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_BUFFER_STARTED');
+
+    if (Platform.environment['COUNTER_DESKTOP_VOICE_SMOKE'] == '1') {
+      unawaited(
+        Future<void>.delayed(const Duration(milliseconds: 400), () {
+          _capture.injectSmokeLevelBurst();
+        }),
+      );
+    }
+
+    final engine = resolveProductionEngine();
     if (engine != DesktopVoiceEngineId.windowsSpeech) {
+      prewarmRecognizerInBackground();
       _capture.attachPartialTimer((bytes) {
-        unawaited(_sendPartialAudio(bytes));
+        if (_ready) unawaited(_sendPartialAudio(bytes));
       });
     }
     return true;
@@ -291,11 +468,27 @@ class DesktopSttHelperService {
   }
 
   Future<DesktopSttTranscript?> stopAndTranscribe() async {
+    _restartAttemptedThisTranscribe = false;
+    // Reset stale transcribe-side diagnostics before this attempt.
+    _lastTranscribeHttpResult = null;
+    _lastTranscribeErrorKind = null;
+    _lastTranscribeErrorDetail = null;
+
     final capture = await _capture.stopAndSaveWav();
     if (capture == null) {
       _lastError = _capture.lastError ?? 'Not enough audio';
       await _updateDiagnostics(error: _lastError);
       return null;
+    }
+
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_RECORDING_FINISHED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_SAMPLE_SAVED', capture.wavPath);
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_AUDIO_SAMPLE_READY_FOR_STT',
+      '${capture.pcmBytes.length} bytes · ${capture.durationMs}ms',
+    );
+    for (final line in capture.captureDiagLines()) {
+      DesktopVoiceLog.instance.mark('capture', line);
     }
 
     _lastCaptureBytes = capture.pcmBytes.length;
@@ -307,6 +500,9 @@ class DesktopSttHelperService {
       return null;
     }
 
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_USING_SAVED_WAV', capture.wavPath);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_HTTP_REQUEST_STARTED_AFTER_RECORDING');
+
     final engine = resolveProductionEngine();
     final t0 = DateTime.now();
     String? text;
@@ -316,11 +512,42 @@ class DesktopSttHelperService {
       text = await DesktopWinSpeechService.instance.transcribeWav(capture.wavPath);
       error = DesktopWinSpeechService.instance.lastError;
     } else {
-      if (!await ensureStarted(engine: engine)) {
-        await _updateDiagnostics(capture: capture, error: _lastError);
+      if (!await ensureStarted(
+        engine: engine,
+        maxWait: kVoiceProcessingMaxWait,
+        allowRestart: true,
+      )) {
+        await _noteSttFriendlyFailure(
+          capture: capture,
+          stage: 'ensure_started',
+          endpoint: '/status',
+        );
         return null;
       }
-      final r = await _transcribePcm(engine, capture.pcmBytes);
+      // Pre-flight authoritative readiness — the GOLOS /status can briefly
+      // report ready=true while the model is reloading (race observed in
+      // prod: helper returns HTTP 500 "parakeet not loaded" 1-2s around a
+      // reload). Re-check immediately before sending the PCM so we retry
+      // gracefully instead of failing the user's attempt.
+      await _refreshRemoteStatus(engine);
+      var r = await _transcribePcm(engine, capture.pcmBytes);
+      if (r == null &&
+          _lastTranscribeErrorKind == 'helper_error' &&
+          (_lastTranscribeErrorDetail ?? '').contains('not loaded') &&
+          !_restartAttemptedThisTranscribe) {
+        // Wait briefly for the model to finish loading then retry once with
+        // the SAME saved PCM. The captured WAV is intentionally preserved
+        // above so we never lose the user's recorded audio on this path.
+        _restartAttemptedThisTranscribe = true;
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_TRANSCRIBE_RETRY_AFTER_PARTIAL_LOAD',
+          'waiting 3s for model reload',
+        );
+        await Future<void>.delayed(const Duration(seconds: 3));
+        await _refreshRemoteStatus(engine);
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_USING_SAVED_WAV', capture.wavPath);
+        r = await _transcribePcm(engine, capture.pcmBytes);
+      }
       text = r?.text;
       error = r == null ? _lastError : null;
     }
@@ -330,10 +557,12 @@ class DesktopSttHelperService {
     if (text == null || text.trim().isEmpty) {
       _lastError = error ?? 'Empty transcript';
       await _updateDiagnostics(capture: capture, error: _lastError);
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_RECOGNIZER_FAILED_NO_RECORD_CHANGE');
       return null;
     }
 
     _lastError = null;
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_SUCCESS', text.trim());
     await _updateDiagnostics(
       capture: capture,
       engine: engine,
@@ -347,46 +576,262 @@ class DesktopSttHelperService {
     );
   }
 
+  Future<void> _noteSttFriendlyFailure({
+    DesktopVoiceCaptureResult? capture,
+    required String stage,
+    required String endpoint,
+  }) async {
+    final err = (_lastError ?? '').trim();
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_RAW_EXCEPTION_SUPPRESSED',
+      err.isEmpty ? stage : err,
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_REQUEST_FAILED_FRIENDLY', stage);
+    DesktopVoiceLog.instance.mark('helper_path', helperPath ?? '');
+    DesktopVoiceLog.instance.mark('helper_pid', '${helperPid ?? ''}');
+    DesktopVoiceLog.instance.mark('endpoint', endpoint);
+    DesktopVoiceLog.instance.mark('stage', stage);
+    DesktopVoiceLog.instance.mark(
+      'helper_stderr_tail',
+      _helperStderrTailJoined,
+    );
+    await _updateDiagnostics(capture: capture, error: _lastError);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_RECOGNIZER_FAILED_NO_RECORD_CHANGE');
+  }
+
   Future<DesktopSttTranscript?> _transcribePcm(
     DesktopVoiceEngineId engine,
     List<int> pcm,
   ) async {
+    const endpoint = _transcribeStopEndpoint;
+    _lastTranscribeHttpResult = null;
+    _lastTranscribeErrorKind = null;
+    _lastTranscribeErrorDetail = null;
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_REQUEST', endpoint);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_HTTP_REQUEST_STARTED', endpoint);
+    final exitBefore = await _helperExitCodeIfAnyLive();
+    final aliveBefore = exitBefore == null;
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_HELPER_HEALTH_CHECK',
+      'before alive=$aliveBefore pid=${helperPid ?? ''} exit=$exitBefore',
+    );
+
     try {
       final r = await http
           .post(
-            Uri.parse('$_baseUrl/transcribe/stop'),
+            Uri.parse('$_baseUrl$endpoint'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'audio_base64': base64Encode(pcm)}),
           )
-          .timeout(const Duration(seconds: 180));
+          .timeout(kVoiceProcessingMaxWait);
+      _lastTranscribeHttpResult = 'HTTP ${r.statusCode}';
       if (r.statusCode != 200) {
         _lastError = 'STT HTTP ${r.statusCode}';
+        _lastTranscribeErrorKind = 'http_status';
+        _lastTranscribeErrorDetail = '${r.statusCode} ${r.body}';
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+          '$endpoint HTTP ${r.statusCode}',
+        );
+        await _handleSttHttpFailure(
+          endpoint: endpoint,
+          stage: 'http_status',
+          aliveBefore: aliveBefore,
+        );
         return null;
       }
       final body = jsonDecode(r.body);
       if (body is! Map<String, dynamic>) {
         _lastError = 'Invalid STT response';
+        _lastTranscribeErrorKind = 'invalid_response';
+        _lastTranscribeErrorDetail = 'non-map body';
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+          '$endpoint invalid_response',
+        );
+        await _handleSttHttpFailure(
+          endpoint: endpoint,
+          stage: 'invalid_json',
+          aliveBefore: aliveBefore,
+        );
         return null;
       }
       final err = body['error'];
       if (err is String && err.isNotEmpty) {
         _lastError = err;
+        _lastTranscribeErrorKind = 'helper_error';
+        _lastTranscribeErrorDetail = err;
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+          '$endpoint helper_error $err',
+        );
+        await _handleSttHttpFailure(
+          endpoint: endpoint,
+          stage: 'helper_error',
+          aliveBefore: aliveBefore,
+        );
         return null;
       }
       final text = (body['text'] as String?)?.trim() ?? '';
       if (text.isEmpty) {
         _lastError = 'Empty transcript';
+        _lastTranscribeErrorKind = 'empty_transcript';
+        _lastTranscribeErrorDetail = '200 OK but text=""';
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+          '$endpoint empty_transcript',
+        );
+        await _handleSttHttpFailure(
+          endpoint: endpoint,
+          stage: 'empty_transcript',
+          aliveBefore: aliveBefore,
+        );
         return null;
       }
       final duration = (body['duration'] as num?)?.toDouble() ?? 0;
+      // Success marker is also emitted by stopAndTranscribe for end-to-end
+      // tracing; repeat here so a single _transcribePcm call is self-contained.
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_SUCCESS', text);
       return DesktopSttTranscript(
         text: text,
         durationSec: duration,
         engine: engine.helperEngineId,
       );
+    } on TimeoutException {
+      _lastError = 'STT HTTP timeout';
+      _lastTranscribeErrorKind = 'transcribe_timeout';
+      _lastTranscribeErrorDetail = endpoint;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_HTTP_TIMEOUT', endpoint);
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_FAILED', '$endpoint timeout');
+      await _handleSttHttpFailure(
+        endpoint: endpoint,
+        stage: 'timeout',
+        aliveBefore: aliveBefore,
+      );
+      return null;
+    } on http.ClientException catch (e) {
+      final msg = e.message;
+      if (msg.contains('Connection closed before full header')) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_HTTP_CONNECTION_CLOSED', endpoint);
+      }
+      _lastError = msg;
+      _lastTranscribeErrorKind = 'transcribe_connection_closed';
+      _lastTranscribeErrorDetail = msg;
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+        '$endpoint client_exception $msg',
+      );
+      await _handleSttHttpFailure(
+        endpoint: endpoint,
+        stage: 'client_exception',
+        aliveBefore: aliveBefore,
+        exitCode: await _helperExitCodeIfAnyLive(),
+      );
+      return null;
+    } on SocketException catch (e) {
+      _lastError = e.message;
+      _lastTranscribeErrorKind = 'transcribe_connection_closed';
+      _lastTranscribeErrorDetail = e.message;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_HELPER_UNAVAILABLE', endpoint);
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+        '$endpoint socket_exception ${e.message}',
+      );
+      await _handleSttHttpFailure(
+        endpoint: endpoint,
+        stage: 'socket',
+        aliveBefore: aliveBefore,
+      );
+      return null;
+    } on HttpException catch (e) {
+      _lastError = e.message;
+      _lastTranscribeErrorKind = 'http_exception';
+      _lastTranscribeErrorDetail = e.message;
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+        '$endpoint http_exception ${e.message}',
+      );
+      await _handleSttHttpFailure(
+        endpoint: endpoint,
+        stage: 'http_exception',
+        aliveBefore: aliveBefore,
+      );
+      return null;
+    } on FormatException catch (e) {
+      _lastError = e.message;
+      _lastTranscribeErrorKind = 'invalid_response';
+      _lastTranscribeErrorDetail = e.message;
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+        '$endpoint format_exception ${e.message}',
+      );
+      await _handleSttHttpFailure(
+        endpoint: endpoint,
+        stage: 'format',
+        aliveBefore: aliveBefore,
+      );
+      return null;
     } catch (e) {
       _lastError = e.toString();
+      _lastTranscribeErrorKind = 'unknown';
+      _lastTranscribeErrorDetail = e.toString();
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_TRANSCRIBE_FAILED',
+        '$endpoint unknown $e',
+      );
+      await _handleSttHttpFailure(
+        endpoint: endpoint,
+        stage: 'unknown',
+        aliveBefore: aliveBefore,
+      );
       return null;
+    }
+  }
+
+
+  Future<void> _handleSttHttpFailure({
+    required String endpoint,
+    required String stage,
+    required bool aliveBefore,
+    int? exitCode,
+  }) async {
+    final aliveAfter = _helperProcessAlive();
+    if (!aliveBefore && !aliveAfter) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_HELPER_PROCESS_EXITED', '$exitCode');
+    }
+    DesktopVoiceLog.instance.mark('helper_path', helperPath ?? '');
+    DesktopVoiceLog.instance.mark('helper_pid', '${helperPid ?? ''}');
+    DesktopVoiceLog.instance.mark(
+      'helper_alive_before_request',
+      aliveBefore ? 'yes' : 'no',
+    );
+    DesktopVoiceLog.instance.mark(
+      'helper_alive_after_failure',
+      aliveAfter ? 'yes' : 'no',
+    );
+    if (exitCode != null) {
+      DesktopVoiceLog.instance.mark('helper_exit_code', '$exitCode');
+    }
+    DesktopVoiceLog.instance.mark('helper_stderr_tail', _helperStderrTailJoined);
+    DesktopVoiceLog.instance.mark('endpoint', endpoint);
+    DesktopVoiceLog.instance.mark('stage', stage);
+    final err = (_lastError ?? '').trim();
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_RAW_EXCEPTION_SUPPRESSED',
+      err.isEmpty ? stage : err,
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_REQUEST_FAILED_FRIENDLY', stage);
+
+    if (!aliveAfter && !_restartAttemptedThisTranscribe) {
+      _restartAttemptedThisTranscribe = true;
+      final engine = resolveProductionEngine();
+      unawaited(
+        ensureStarted(
+          engine: engine,
+          maxWait: const Duration(seconds: 8),
+          allowRestart: true,
+        ),
+      );
     }
   }
 
@@ -459,11 +904,51 @@ class DesktopSttHelperService {
   }) async {
     final e = engine ?? resolveProductionEngine();
     final model = modelPathFor(e);
+    final helperExe = helperPath;
+    final helperExeExists = helperExe != null && File(helperExe).existsSync();
+    final settingsExePath = helperSettingsPath;
+    final settingsExists =
+        settingsExePath != null && File(settingsExePath).existsSync();
+    final modelDirExists =
+        model != null && Directory(model).existsSync();
+    final modelFilesCount = modelDirExists
+        ? Directory(model).listSync(followLinks: false).whereType<File>().length
+        : 0;
+    final latestWav = capture?.wavPath ?? _capture.lastWavPath;
+    final latestWavExists =
+        latestWav != null && File(latestWav).existsSync();
+    final latestWavBytes =
+        latestWavExists ? await File(latestWav).length() : 0;
     _lastDiagnostics = DesktopSttDiagnostics(
-      helperPath: helperPath,
+      helperPath: helperExe,
+      helperExists: helperExeExists,
+      helperWorkingDirectory:
+          helperExe == null ? null : File(helperExe).parent.path,
+      helperSettingsPath: settingsExePath,
+      helperSettingsExists: settingsExists,
       modelPath: model,
-      modelExists: model != null && Directory(model).existsSync(),
+      modelExists: modelDirExists,
+      modelFilesCount: modelFilesCount,
       modelLoaded: e == DesktopVoiceEngineId.windowsSpeech || modelLoaded,
+      helperSpawnAttempted: _spawnAttempted,
+      helperPid: helperPid,
+      helperProcessAlive: await _helperExitCodeIfAnyLive() == null,
+      helperExitCode: _helperExitCodeObserved,
+      helperStdoutTail: _helperStdoutTailJoined,
+      helperStderrTail: _helperStderrTailJoined,
+      helperPort: _port,
+      helperStatusUrl: _statusUrl,
+      helperStatusHttpResult: _lastStatusHttpResult,
+      helperStatusResponseBody: _lastStatusBody,
+      helperReady: _ready,
+      transcribeEndpoint: _transcribeStopEndpoint,
+      transcribeHttpResult: _lastTranscribeHttpResult,
+      transcribeErrorKind: _lastTranscribeErrorKind,
+      transcribeErrorDetail: _lastTranscribeErrorDetail,
+      latestWavPath: latestWav,
+      latestWavExists: latestWavExists,
+      latestWavBytes: latestWavBytes,
+      latestWavDurationMs: capture?.durationMs ?? 0,
       engine: e.helperEngineId,
       languageHint: e == DesktopVoiceEngineId.windowsSpeech ? 'en-US' : 'en',
       audioDevice: capture?.deviceLabel ?? 'default',

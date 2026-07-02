@@ -346,8 +346,9 @@ class CategoryRule {
   }
 
   IconData get iconOrDefault {
-    if (iconCodePoint != null)
+    if (iconCodePoint != null) {
       return IconData(iconCodePoint!, fontFamily: 'MaterialIcons');
+    }
     return Icons.folder_rounded;
   }
 

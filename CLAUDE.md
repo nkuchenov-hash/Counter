@@ -110,7 +110,8 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | :--- | :--- | :--- |
 | Voice input dispatcher (routes by active tab) | `lib/app_shell.dart` | `_startVoiceInput` |
 | Desktop Price Reporter voice command (kill switch) | `lib/app_shell.dart` | `_toggleDesktopVoiceCommandPanel`, `_desktopVoiceSubmitParsed` |
-| Desktop voice command parser | `lib/features/shared/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex` |
+| Desktop voice command parser | `lib/data/voice_command_parser.dart` | `parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`, `parseVoiceCommand` |
+| Desktop voice pipeline log | `lib/core/diagnostics/desktop_voice_log.dart` | `DesktopVoiceLog` — debug/profile pipeline markers |
 | Desktop voice widget UI (GOLOS STT) | `lib/features/shared/desktop_voice_widget.dart` | `DesktopVoiceWidget`, `showDesktopVoiceWidget` |
 | Desktop GOLOS STT helper | `lib/core/services/desktop_stt_helper_service.dart` | `DesktopSttHelperService` |
 | Desktop voice recognizer | `lib/core/services/desktop_voice_recognizer_factory.dart` | `createDesktopVoiceRecognizer` |

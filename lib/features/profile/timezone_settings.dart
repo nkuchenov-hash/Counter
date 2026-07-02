@@ -17,15 +17,17 @@ class TimezoneOption {
 /// Legacy labels — prefer [kProfileTimezoneCatalog] for new UI.
 const List<TimezoneOption> kTimezoneOptions = <TimezoneOption>[
   TimezoneOption('UTC', 0),
-  TimezoneOption('London (UTC+0)', 0),
-  TimezoneOption('Moscow (UTC+3)', 3),
-  TimezoneOption('Dubai (UTC+4)', 4),
-  TimezoneOption('New York (UTC-5)', -5),
+  TimezoneOption('London', 0),
+  TimezoneOption('Moscow', 3),
+  TimezoneOption('Dubai', 4),
+  TimezoneOption('New York', -5),
 ];
 
 double offsetForLabel(String label) {
   final entry = catalogEntryForStoredTimezone(label);
-  if (entry != null) return entry.offsetHours.toDouble();
+  if (entry != null) {
+    return currentOffsetHoursForProfileTimezone(entry.profileValue).toDouble();
+  }
   final l = label.trim();
   for (final o in kTimezoneOptions) {
     if (o.label == l) return o.offsetHours;
@@ -36,4 +38,3 @@ double offsetForLabel(String label) {
   if (l == 'London') return 0;
   return 0;
 }
-

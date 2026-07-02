@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 /// Concise desktop-voice pipeline markers (no spam; one line per step).
-class DesktopVoiceDiag {
-  DesktopVoiceDiag._();
+class DesktopVoiceLog {
+  DesktopVoiceLog._();
 
-  static final DesktopVoiceDiag instance = DesktopVoiceDiag._();
+  static final DesktopVoiceLog instance = DesktopVoiceLog._();
 
   final List<String> _lines = <String>[];
   static const _maxLines = 32;

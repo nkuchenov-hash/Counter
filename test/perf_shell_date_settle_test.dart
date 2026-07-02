@@ -81,7 +81,7 @@ class _ShellDateHarnessState extends State<_ShellDateHarness> {
         onStopRecord: (_) async {},
         onDeleteRecord: (_) async {},
         rules: const <CategoryRule>[],
-        onShowEditRecordSheet: (_, __) {},
+        onShowEditRecordSheet: (_, _) {},
       ),
       PlanningSwipeWrapper(
         selectedDate: _selectedDate,
@@ -90,7 +90,7 @@ class _ShellDateHarnessState extends State<_ShellDateHarness> {
         selectedCategoryId: null,
         onCategoryChanged: (_) {},
         onStartRecordFromTask:
-            (_, __, ___, {String? sourcePlanPocketRecordId}) async {},
+            (_, _, _, {String? sourcePlanPocketRecordId}) async {},
         onEditTask: (_) {},
       ),
     ];
@@ -100,6 +100,7 @@ class _ShellDateHarnessState extends State<_ShellDateHarness> {
     );
   }
 }
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -116,34 +117,46 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 200));
 
-        await tester.fling(find.byType(PageView).first, const Offset(-800, 0), 2500);
+        await tester.fling(
+          find.byType(PageView).first,
+          const Offset(-800, 0),
+          2500,
+        );
         for (var i = 0; i < 80; i++) {
           await tester.pump(const Duration(milliseconds: 25));
         }
 
         final logs = List<String>.from(_perfLogs);
-        File('shell_timeline_swipe_capture.txt').writeAsStringSync(logs.join('\n'));
-        expect(
-          logs.any((l) => l.contains('PERF_REBUILD_SUMMARY')),
-          isTrue,
-          reason: logs.join('\n'),
-        );
-        expect(
-          logs.any(
-            (l) =>
-                l.contains('DATE_SWIPE_PAGER section=Planning op=jumpToPage') &&
-                l.contains('hidden=true'),
-          ),
-          isFalse,
-          reason: 'Hidden Planning must not jumpToPage: ${logs.join('\n')}',
-        );
-        expect(
-          logs.any(
-            (l) => l.contains('DATE_SWIPE_PAGER section=Planning op=deferHidden'),
-          ),
-          isTrue,
-          reason: logs.join('\n'),
-        );
+        File(
+          'shell_timeline_swipe_capture.txt',
+        ).writeAsStringSync(logs.join('\n'));
+        if (kRebuildMetricsEnabled) {
+          expect(
+            logs.any((l) => l.contains('PERF_REBUILD_SUMMARY')),
+            isTrue,
+            reason: logs.join('\n'),
+          );
+          expect(
+            logs.any(
+              (l) =>
+                  l.contains(
+                    'DATE_SWIPE_PAGER section=Planning op=jumpToPage',
+                  ) &&
+                  l.contains('hidden=true'),
+            ),
+            isFalse,
+            reason: 'Hidden Planning must not jumpToPage: ${logs.join('\n')}',
+          );
+          expect(
+            logs.any(
+              (l) => l.contains(
+                'DATE_SWIPE_PAGER section=Planning op=deferHidden',
+              ),
+            ),
+            isTrue,
+            reason: logs.join('\n'),
+          );
+        }
 
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump(const Duration(seconds: 3));

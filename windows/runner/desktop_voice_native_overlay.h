@@ -31,6 +31,14 @@ class DesktopVoiceNativeOverlay {
                                            WPARAM wparam,
                                            LPARAM lparam) noexcept;
 
+  // Mic-bar animation. [target_level_] holds the latest incoming level from
+  // Dart; [level_] is the smoothed value actually painted. A 33ms timer
+  // (kAnimTimerId) leaks [level_] toward [target_level_] and forces a repaint
+  // so the bars visibly react / settle even between Dart-side pushes.
+  static void StartAnimationTimer();
+  static void StopAnimationTimer();
+  static void TickAnimation();
+
   static HWND main_hwnd_;
   static HWND overlay_hwnd_;
   static bool class_registered_;
@@ -38,6 +46,8 @@ class DesktopVoiceNativeOverlay {
   static std::wstring secondary_;
   static std::string state_;
   static double level_;
+  static double target_level_;
+  static UINT_PTR anim_timer_id_;
   static std::wstring timer_text_;
 };
 

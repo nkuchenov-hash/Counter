@@ -68,22 +68,17 @@ abstract final class DesktopVoiceOverlayService {
   }
 
   static Future<bool> showPreparing({String? timer}) async {
-    final loc = currentLocale.value;
-    if (usesNativeOverlay) {
-      return _showNative(
-        primary: t(loc, 'desktop_voice_overlay_stt_warming'),
-        state: 'preparing',
-        timer: timer,
-      );
-    }
-    return true;
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_FORBIDDEN_PREPARING_REDIRECTED_TO_LISTENING',
+    );
+    return showListening(timer: timer);
   }
 
   static Future<bool> showListening({String? timer, double level = 0}) async {
     final loc = currentLocale.value;
     if (usesNativeOverlay) {
       return _showNative(
-        primary: t(loc, 'desktop_voice_overlay_listening_hint'),
+        primary: t(loc, 'desktop_voice_state_listening'),
         state: 'listening',
         level: level,
         timer: timer,
@@ -96,7 +91,7 @@ abstract final class DesktopVoiceOverlayService {
     if (!usesNativeOverlay || !_visible) return;
     final loc = currentLocale.value;
     await _showNative(
-      primary: t(loc, 'desktop_voice_overlay_listening_hint'),
+      primary: t(loc, 'desktop_voice_state_listening'),
       state: 'listening',
       level: level,
       timer: timer,
@@ -110,7 +105,7 @@ abstract final class DesktopVoiceOverlayService {
     final loc = currentLocale.value;
     if (usesNativeOverlay) {
       return _showNative(
-        primary: t(loc, 'desktop_voice_parsing'),
+        primary: t(loc, 'desktop_voice_transcribing'),
         secondary: transcript,
         state: 'processing',
         timer: timer,

@@ -51,7 +51,7 @@ final class DayBodyCache<TEntry> {
   final Map<String, TEntry> _entries = {};
   String? _centerKey;
   int _windowPrebuildGeneration = 0;
-  bool _windowPrebuildInFlight = false;
+  final bool _windowPrebuildInFlight = false;
 
   int get bodyCount => _entries.length;
 

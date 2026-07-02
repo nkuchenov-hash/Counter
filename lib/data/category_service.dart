@@ -259,10 +259,12 @@ extension CategoryServiceExtension on DatabaseService {
   /// Sets `is_archived` false on a PocketBase **categories** row. Returns local id after reload.
   Future<int?> restoreArchivedCategory(String pbRowId) async {
     final rid = pbRowId.trim();
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false))
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return null;
-    if (rid.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(rid))
+    }
+    if (rid.isEmpty || !DatabaseService._isLikelyPocketBaseRowId(rid)) {
       return null;
+    }
     try {
       await ensurePocketBaseReady();
       final rec = await _pb.collection(PbCollections.categories).getOne(rid);
@@ -1678,8 +1680,9 @@ extension CategoryServiceExtension on DatabaseService {
       final pb = _categoryBackendRowIdStrict(r);
       if (pb == null ||
           pb.isEmpty ||
-          !DatabaseService._isLikelyPocketBaseRowId(pb))
+          !DatabaseService._isLikelyPocketBaseRowId(pb)) {
         return;
+      }
       final name = r.name.trim();
       if (name.isEmpty) return;
       final catTokens = _smartInferMeaningfulTokens(name);
@@ -2652,8 +2655,9 @@ extension CategoryServiceExtension on DatabaseService {
 
   /// UI-first: move category in _rules, push; then PocketBase PATCH `parent_id`.
   Future<bool> updateCategoryParent(int categoryId, int? newParentId) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false))
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
+    }
 
     final oldParentId = getParentId(categoryId);
     if (!_moveCategoryInRules(categoryId, newParentId)) return false;
@@ -2770,8 +2774,9 @@ extension CategoryServiceExtension on DatabaseService {
   }
 
   Future<bool> deleteCategory(int id) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false))
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
+    }
 
     final rule = getCategoryRuleById(id);
     if (rule == null || rule.id == -1) {
@@ -2943,8 +2948,9 @@ extension CategoryServiceExtension on DatabaseService {
 
   /// UI-first: add child to _rules (temp id -1), push; then PocketBase create.
   Future<bool> addNestedCategory(int? parentId, CategoryRule child) async {
-    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false))
+    if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return false;
+    }
 
     final ownerPbId = _userIdForWhere;
     if (ownerPbId == null || ownerPbId.isEmpty) {

@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:counter/core/app_snackbar.dart';
+import 'package:counter/core/time/profile_timezone_actions.dart';
 import 'package:counter/core/time/profile_timezone_catalog.dart';
-import 'package:counter/data/database_service.dart';
+import 'package:counter/core/widgets/app_timezone_icon.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -21,14 +22,18 @@ class HeaderTimezoneQuickSwitcher extends StatelessWidget {
 
   Future<void> _openPicker(BuildContext context) async {
     final loc = currentLocale.value;
-    final current = DatabaseService.instance.settings.preferredTimeZone;
+    final actions = ProfileTimezoneActions.currentSettings;
+    final save = ProfileTimezoneActions.saveTimezone;
+    if (actions == null || save == null) return;
+
+    final current = actions().preferredTimeZone;
     final selected = await showTimezoneQuickPicker(
       context: context,
       currentTimezone: current,
     );
     if (selected == null || !context.mounted) return;
 
-    final ok = await DatabaseService.instance.updateTimeZone(selected);
+    final ok = await save(selected);
     if (!context.mounted) return;
     if (!ok) {
       AppSnack.show(t(loc, 'timezone_save_failed'), error: true);
@@ -41,10 +46,10 @@ class HeaderTimezoneQuickSwitcher extends StatelessWidget {
     final tooltip = t(loc, 'change_timezone');
 
     return StreamBuilder<UserSettings>(
-      stream: DatabaseService.instance.userSettingsStream,
-      initialData: DatabaseService.instance.settings,
+      stream: ProfileTimezoneActions.settingsStream,
+      initialData: ProfileTimezoneActions.currentSettings?.call(),
       builder: (context, snapshot) {
-        final label = DatabaseService.instance.profileTimezoneShortLabel();
+        final label = ProfileTimezoneActions.shortLabel?.call() ?? '';
         final child = Text(label, style: textStyle);
 
         if (!enabled) return child;
@@ -61,8 +66,10 @@ class HeaderTimezoneQuickSwitcher extends StatelessWidget {
                   onTap: () => unawaited(_openPicker(anchorContext)),
                   borderRadius: BorderRadius.circular(4),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 2,
+                      vertical: 1,
+                    ),
                     child: child,
                   ),
                 ),
@@ -71,6 +78,74 @@ class HeaderTimezoneQuickSwitcher extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class TimezonePickerField extends StatelessWidget {
+  const TimezonePickerField({
+    super.key,
+    required this.currentTimezone,
+    required this.label,
+    required this.onSelected,
+    this.enabled = true,
+  });
+
+  final String currentTimezone;
+  final String label;
+  final ValueChanged<String> onSelected;
+  final bool enabled;
+
+  Future<void> _openPicker(BuildContext context) async {
+    final selected = await showTimezoneQuickPicker(
+      context: context,
+      currentTimezone: currentTimezone,
+    );
+    if (selected == null || !context.mounted) return;
+    onSelected(selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final entry =
+        catalogEntryForStoredTimezone(currentTimezone) ??
+        kProfileTimezoneCatalog.first;
+
+    return Semantics(
+      button: true,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: enabled ? () => unawaited(_openPicker(context)) : null,
+          borderRadius: BorderRadius.circular(4),
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: label,
+              border: const OutlineInputBorder(),
+              enabled: enabled,
+              suffixIcon: const Icon(Icons.arrow_drop_down_rounded),
+            ),
+            isFocused: false,
+            isEmpty: false,
+            child: Row(
+              children: [
+                AppTimezoneIcon(
+                  timezoneKey: entry.iconKey,
+                  size: 28,
+                  color: enabled ? scheme.onSurfaceVariant : scheme.outline,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _TimezoneOptionText(entry: entry, selected: false),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -89,9 +164,8 @@ Future<String?> showTimezoneQuickPicker({
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      builder: (ctx) => _TimezoneQuickPickerSheet(
-        currentTimezone: currentTimezone,
-      ),
+      builder: (ctx) =>
+          _TimezoneQuickPickerSheet(currentTimezone: currentTimezone),
     );
   }
 
@@ -124,7 +198,7 @@ Future<String?> showTimezoneQuickPicker({
       for (final entry in kProfileTimezoneCatalog)
         PopupMenuItem<String>(
           value: entry.profileValue,
-          child: _TimezonePickerRow(
+          child: TimezonePickerOptionRow(
             entry: entry,
             selected: profileTimezoneValuesMatch(
               currentTimezone,
@@ -162,7 +236,7 @@ class _TimezoneQuickPickerSheetState extends State<_TimezoneQuickPickerSheet> {
     final entries = filterProfileTimezoneCatalog(_query);
     final currentEntry =
         catalogEntryForStoredTimezone(widget.currentTimezone) ??
-            kProfileTimezoneCatalog.first;
+        kProfileTimezoneCatalog.first;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -194,11 +268,7 @@ class _TimezoneQuickPickerSheetState extends State<_TimezoneQuickPickerSheet> {
             height: math.min(300, MediaQuery.sizeOf(context).height * 0.42),
             child: ListView(
               children: [
-                _TimezonePickerRow(
-                  entry: currentEntry,
-                  selected: true,
-                  subtitle: t(loc, 'timezone_current'),
-                ),
+                TimezonePickerOptionRow(entry: currentEntry, selected: true),
                 const Divider(height: 1),
                 for (final entry in entries)
                   if (!profileTimezoneValuesMatch(
@@ -206,8 +276,9 @@ class _TimezoneQuickPickerSheetState extends State<_TimezoneQuickPickerSheet> {
                     currentEntry.profileValue,
                   ))
                     InkWell(
-                      onTap: () => Navigator.of(context).pop(entry.profileValue),
-                      child: _TimezonePickerRow(
+                      onTap: () =>
+                          Navigator.of(context).pop(entry.profileValue),
+                      child: TimezonePickerOptionRow(
                         entry: entry,
                         selected: false,
                       ),
@@ -221,49 +292,79 @@ class _TimezoneQuickPickerSheetState extends State<_TimezoneQuickPickerSheet> {
   }
 }
 
-class _TimezonePickerRow extends StatelessWidget {
-  const _TimezonePickerRow({
+@visibleForTesting
+class TimezonePickerOptionRow extends StatelessWidget {
+  const TimezonePickerOptionRow({
+    super.key,
     required this.entry,
     required this.selected,
-    this.subtitle,
   });
 
   final ProfileTimezoneCatalogEntry entry;
   final bool selected;
-  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.pickerLabel,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                        color: selected ? scheme.primary : null,
-                      ),
-                ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                  ),
-              ],
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            AppTimezoneIcon(
+              timezoneKey: entry.iconKey,
+              size: 30,
+              color: selected ? scheme.primary : scheme.onSurfaceVariant,
             ),
-          ),
-          if (selected)
-            Icon(Icons.check_rounded, size: 20, color: scheme.primary),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: _TimezoneOptionText(entry: entry, selected: selected),
+            ),
+            if (selected)
+              Icon(Icons.check_rounded, size: 20, color: scheme.primary),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _TimezoneOptionText extends StatelessWidget {
+  const _TimezoneOptionText({required this.entry, required this.selected});
+
+  final ProfileTimezoneCatalogEntry entry;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final effectiveSubtitle = formatProfileTimezoneSecondaryLine(entry);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          formatProfileTimezonePrimaryLine(entry),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            color: selected ? scheme.primary : null,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          effectiveSubtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 }

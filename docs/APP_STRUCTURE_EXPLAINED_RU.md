@@ -125,6 +125,8 @@
 | **Деплой** | `update.ps1`, `docs/DEPLOY.md` |
 | **Тесты** | `test/` — например `smart_input_parser_test.dart`, `plan_time_view_layout_test.dart` |
 | **Навигация / FAB / голос** | `lib/app_shell.dart` |
+| **Desktop Price Reporter (Windows)** | `lib/features/shared/desktop_voice_widget.dart`, `lib/core/services/desktop_voice_*.dart`, `lib/data/voice_command_parser.dart`, настройки — `lib/features/profile/desktop_voice_settings_section.dart` |
+| **Часовой пояс профиля** | `lib/core/widgets/timezone_quick_picker.dart`, каталог — `lib/core/time/profile_timezone_catalog.dart`, иконки — `lib/core/widgets/app_timezone_icon.dart`, сохранение — `lib/data/profile_service.dart` (`updateTimeZone`) |
 | **Старт приложения** | `lib/main.dart` |
 | **Поведение тапов/сохранения** | `docs/UX_CONTRACT.md` |
 

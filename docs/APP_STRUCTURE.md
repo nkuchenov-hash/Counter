@@ -44,6 +44,7 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | Symbol | File | Wired from | Purpose |
 | :--- | :--- | :--- | :--- |
 | `AppClock` | `core/time/app_clock.dart` | `main.dart` `_wireAppClock()` | Profile-timezone wall clock and tick stream for headers |
+| `ProfileTimezoneActions` | `core/time/profile_timezone_actions.dart` | `main.dart` `_wireProfileTimezoneActions()` | Profile timezone label, settings stream, and save hook for header picker |
 | `PlanCategoryLookup` | `core/plan_category_lookup.dart` | `main.dart` `_wirePlanCategoryLookup()` | Category color, icon, breadcrumb for plan cards without importing Brain in widgets |
 | `TagDisplayModeScope` | `core/widgets/tag_display_mode_scope.dart` | `app_shell.dart` | Inherited tag display mode from profile settings |
 
@@ -81,6 +82,8 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `pb_config.dart` | PocketBase URL, collection names, expand constants |
 | `auth_bridge.dart` | Session check, OAuth routing |
 | `category_fuzzy_match.dart` | Category name scoring |
+| `price_reporter_client_match.dart` | Price Reporter client-category token guard for voice parse |
+| `voice_command_parser.dart` | Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`) |
 | `smart_input_parser.dart` | Natural-language plan/list parse (client + AI backend hook) |
 | `plan_time_sequential_cascade.dart` | Plan time sequential layout math |
 | `cache/day_snapshot_window.dart` | Rolling warm day snapshots for date paging |
@@ -108,6 +111,7 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `constants.dart` | UI limits, global keys |
 | `app_snackbar.dart` | `AppSnack` toasts |
 | `app_build_info.dart` | Build metadata |
+| `app_icons.dart` | Canonical icon tokens (timezone family, shared glyphs) |
 | `category_color_palette.dart` | Category tile palette |
 | `date_pager_settle_gate.dart` | Shared date `PageView` settle coordinator |
 | `date_swipe_physics.dart` | Date swipe physics |
@@ -127,6 +131,14 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `platform_log.dart` | Platform-specific log sinks |
 | `startup_log.dart` | Boot-phase structured logs |
 | `plan_duplicate_log.dart` | Plan duplicate detection logs |
+| `desktop_voice_log.dart` | `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet) |
+| `desktop_voice_pipeline.dart` | Desktop-voice pipeline step helpers built on `DesktopVoiceLog` |
+
+**`core/navigation/`**
+
+| File | Role |
+| :--- | :--- |
+| `app_navigator.dart` | `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden |
 
 **`core/performance/`**
 
@@ -141,6 +153,8 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | File | Role |
 | :--- | :--- |
 | `app_clock.dart` | Injectable wall clock + timezone label |
+| `profile_timezone_actions.dart` | Injectable profile timezone read/write hooks (`ProfileTimezoneActions`) |
+| `profile_timezone_catalog.dart` | Canonical profile timezone catalog, IANA IDs, DST labels |
 | `web_redirect.dart` | Production web OAuth redirect URI helper |
 | `wall_clock.dart` | Wall-clock formatting helpers |
 | `plan_time_labels.dart` | Plan time label formatting |
@@ -155,10 +169,46 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 
 **`core/services/`**
 
-| File | Role |
+| File / pattern | Role |
 | :--- | :--- |
 | `speech_engine_handle.dart` | Speech-to-text engine lifecycle |
 | `speech_listen_locale.dart` | STT locale resolution |
+| `pcm_audio_utils.dart` | PCM/WAV audio helpers for desktop STT |
+| `desktop_hotkey_codec.dart` | Desktop hotkey string encode/decode |
+| `desktop_stt_diagnostics.dart` | STT helper diagnostics markers |
+| `desktop_stt_helper_service.dart` | Desktop GOLOS STT helper subprocess and HTTP transcribe |
+| `desktop_tray_service.dart` | System tray entry (conditional export) |
+| `desktop_tray_service_io.dart` | Windows tray implementation |
+| `desktop_tray_service_stub.dart` | Non-desktop tray stub |
+| `desktop_voice_settings.dart` | Local desktop voice prefs (SharedPreferences) |
+| `desktop_voice_hotkey.dart` | Global desktop voice hotkey coordinator |
+| `desktop_voice_hotkey_io.dart` | Windows hotkey registration |
+| `desktop_voice_hotkey_stub.dart` | Non-desktop hotkey stub |
+| `desktop_voice_hotkey_markers.dart` | Hotkey self-test / acceptance markers |
+| `desktop_voice_recognizer.dart` | Desktop voice recognizer interface |
+| `desktop_voice_recognizer_factory.dart` | Platform recognizer factory |
+| `desktop_voice_recognizer_io.dart` | Windows recognizer implementation |
+| `desktop_voice_recognizer_stub.dart` | Non-desktop recognizer stub |
+| `desktop_voice_engine.dart` | Desktop voice engine lifecycle |
+| `desktop_voice_audio_capture.dart` | Mic capture for desktop voice |
+| `desktop_voice_overlay_service.dart` | Native overlay state machine |
+| `desktop_voice_native_overlay.dart` | Native overlay channel bridge |
+| `desktop_voice_overlay_bridge.dart` | Overlay ↔ Flutter bridge |
+| `desktop_voice_overlay_host.dart` | Overlay host conditional export |
+| `desktop_voice_overlay_host_io.dart` | Windows overlay host |
+| `desktop_voice_overlay_host_stub.dart` | Non-desktop overlay host stub |
+| `desktop_voice_window_flags.dart` | Desktop window visibility flags |
+| `desktop_voice_confirmation.dart` | Start/stop voice confirmation copy |
+| `desktop_voice_command_normalize.dart` | Transcript normalization before parse/submit |
+| `desktop_voice_record_submit.dart` | Parsed voice command → `writeRecord` bridge |
+| `desktop_voice_user_error.dart` | Friendly desktop voice error mapping |
+| `desktop_voice_attempt_log.dart` | Persisted voice attempt history for profile UI |
+| `desktop_voice_acceptance_bridge.dart` | Acceptance-test hooks for desktop voice |
+| `desktop_voice_smoke_bridge.dart` | Smoke-test hooks for desktop voice |
+| `desktop_voice_benchmark_service.dart` | Desktop voice benchmark harness |
+| `desktop_win_speech_service.dart` | Windows speech platform adapter |
+
+Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `core/services/`; new modules should stay in this folder and be listed here.
 
 **`core/widgets/`** — canonical shared UI
 
@@ -167,10 +217,13 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `app_button.dart` | `AppButton` |
 | `app_settings_layout.dart` | `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers |
 | `app_icon_button.dart` | `AppIconButton` |
+| `app_mic_level_bars.dart` | Mic level visualization bars for voice UI |
+| `app_timezone_icon.dart` | Canonical solid timezone icon family |
 | `app_loading.dart` | `AppLoading` |
 | `app_state_views.dart` | `AppErrorState`, `AppEmptyState` |
 | `confirm_dialog.dart` | `showConfirmDialog` |
 | `global_app_header.dart` | Date/time header strip |
+| `timezone_quick_picker.dart` | `HeaderTimezoneQuickSwitcher`, profile timezone quick picker |
 | `app_bar_live_clock.dart` | Live clock chip |
 | `omni_date_time_picker_dialog.dart` | Unified date+time picker |
 | `compact_nav_controls.dart` | Compact segmented controls |
@@ -195,12 +248,10 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `lists/` | `lists_view.dart` | Lists/backlog tab |
 | `calendar/` | `calendar_view.dart` | Calendar tab |
 | `categories/` | `category_list_view.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart` | Category manager (More menu) |
-| `profile/` | `profile_view.dart`, `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart` | Profile & tag settings (More menu) |
+| `profile/` | `profile_view.dart`, `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart`, `desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart` | Profile & tag settings, timezone, desktop voice settings (Windows) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart` | Admin-only Component Lab |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `voice_command_parser.dart`, `desktop_voice_widget.dart` | Activity edit sheets, Omni-Picker entry, mobile/web voice sheet, desktop Price Reporter voice widget |
-| `profile/` | `profile_view.dart`, `desktop_voice_settings_section.dart`, … | Profile tab + desktop voice/tray settings (Windows) |
-| `core/services/` | `desktop_stt_helper_service.dart`, `desktop_voice_recognizer*.dart`, `desktop_tray_service*.dart`, `desktop_voice_settings.dart`, `desktop_voice_hotkey*.dart` | Desktop GOLOS STT helper, tray, hotkey, local settings |
+| `shared/` | `shared_widgets.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_command_panel.dart` | Activity edit sheets, Omni-Picker entry, mobile/web voice sheet, desktop Price Reporter voice UI |
 
 **Key symbols:** `ActivityDetailSheet` and `showAppDateTimePicker` live in `features/shared/shared_widgets.dart`.
 

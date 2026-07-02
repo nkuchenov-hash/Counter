@@ -1,7 +1,8 @@
+import 'package:counter/core/services/desktop_voice_command_normalize.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/core/diagnostics/desktop_voice_diag.dart';
+import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
-import 'package:counter/features/shared/voice_command_parser.dart';
+import 'package:counter/data/voice_command_parser.dart';
 
 /// Arguments passed to the Brain [DatabaseService.writeRecord] boundary.
 class DesktopVoiceWriteRecordRequest {
@@ -67,20 +68,22 @@ abstract final class DesktopVoiceRecordSubmit {
     required DesktopVoiceWriteRecordFn writeRecord,
     required DateTime Function() planetaryNow,
   }) async {
-    if (!result.isSafeToStart) {
+    final norm = normalizeDesktopVoiceCommand(result);
+    if (norm == null || !norm.autoStartAllowed) {
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_WRITE_RECORD_BLOCKED',
         result.ambiguityReason ?? result.confidence.name,
       );
       return null;
     }
-    final title = result.recordTitle.trim();
-    final cid = result.matchedLocalCategoryId;
+    final effective = norm.effectiveResult;
+    final title = norm.normalizedTitle.trim();
+    final cid = effective.matchedLocalCategoryId;
     if (title.isEmpty || cid == null) return null;
 
     DesktopVoicePipeline.mark('DESKTOP_VOICE_SUBMIT_PARSED_CALLED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_CALLED', '$title · $cid');
-    DesktopVoiceDiag.instance.mark('writeRecord_args', '$title · cat $cid');
+    DesktopVoiceLog.instance.mark('writeRecord_args', '$title · cat $cid');
 
     final now = planetaryNow();
     final serverId = await writeRecord(
@@ -99,7 +102,7 @@ abstract final class DesktopVoiceRecordSubmit {
 
     DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_RESULT', 'ok $serverId');
     final confirmation = voiceCommandStartConfirmationMessage(
-      result,
+      effective,
       localeCode: localeCode,
     );
     DesktopVoicePipeline.mark('DESKTOP_VOICE_CONFIRMATION_SHOWN');

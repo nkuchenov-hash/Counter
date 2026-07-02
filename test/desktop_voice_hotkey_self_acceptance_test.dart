@@ -1,7 +1,7 @@
 import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
 import 'package:counter/core/services/desktop_voice_hotkey.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
-import 'package:counter/features/shared/voice_command_parser.dart';
+import 'package:counter/data/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -49,7 +49,7 @@ void main() {
       );
     });
 
-    test('hotkey stops running record when overlay closed', () {
+    test('hotkey opens overlay when running record (command-first)', () {
       expect(
         resolveDesktopVoiceHotkeyAction(
           overlayOpen: false,
@@ -58,7 +58,7 @@ void main() {
           overlayProcessing: false,
           hasRunningRecord: true,
         ),
-        DesktopVoiceHotkeyAction.stopRunningRecord,
+        DesktopVoiceHotkeyAction.openOverlay,
       );
     });
 

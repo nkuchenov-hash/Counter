@@ -3,22 +3,30 @@
 /// BANNED: DateTime.toLocal(), system timezone, browser/device timezone.
 library;
 
+import 'package:counter/core/time/profile_timezone_catalog.dart';
 import 'package:timezone/timezone.dart' as tz;
 
-/// True when [preferredTzLabel] should use IANA `America/New_York` (EST/EDT), not a fixed hour offset.
+/// True when [preferredTzLabel] resolves to the New York IANA zone.
 bool profileLabelUsesNewYorkWallClock(String preferredTzLabel) {
-  final t = preferredTzLabel.trim().toLowerCase();
-  return t.contains('new york');
+  return profileLabelIanaId(preferredTzLabel) == 'America/New_York';
 }
 
-/// Wall-clock view of [utc]: either fixed [offsetHours] or America/New_York with DST. Requires [tz.initializeTimeZones] in main.
+String? profileLabelIanaId(String preferredTzLabel) {
+  final entry = catalogEntryForStoredTimezone(preferredTzLabel);
+  if (entry == null || entry.fixed) return null;
+  return entry.ianaId;
+}
+
+/// Wall-clock view of [utc]: either fixed [offsetHours] or the selected profile IANA zone.
+/// Requires [tz.initializeTimeZones] in main.
 DateTime toWallClockForLabel(
   DateTime utc,
   int offsetHours,
   String preferredTzLabel,
 ) {
-  if (profileLabelUsesNewYorkWallClock(preferredTzLabel)) {
-    final loc = tz.getLocation('America/New_York');
+  final ianaId = profileLabelIanaId(preferredTzLabel);
+  if (ianaId != null) {
+    final loc = tz.getLocation(ianaId);
     final z = tz.TZDateTime.from(utc.toUtc(), loc);
     return DateTime(
       z.year,
@@ -40,8 +48,9 @@ DateTime wallClockToUtcForLabel(
   int offsetHours,
   String preferredTzLabel,
 ) {
-  if (profileLabelUsesNewYorkWallClock(preferredTzLabel)) {
-    final loc = tz.getLocation('America/New_York');
+  final ianaId = profileLabelIanaId(preferredTzLabel);
+  if (ianaId != null) {
+    final loc = tz.getLocation(ianaId);
     final z = tz.TZDateTime(
       loc,
       wallClock.year,
@@ -64,8 +73,9 @@ DateTime wallClockToUtcForLabel(
   int offsetHours,
   String preferredTzLabel,
 ) {
-  if (profileLabelUsesNewYorkWallClock(preferredTzLabel)) {
-    final loc = tz.getLocation('America/New_York');
+  final ianaId = profileLabelIanaId(preferredTzLabel);
+  if (ianaId != null) {
+    final loc = tz.getLocation(ianaId);
     final y = wallClockDate.year;
     final m = wallClockDate.month;
     final d = wallClockDate.day;
@@ -135,8 +145,16 @@ DateTime wallClockToUtc(DateTime wallClock, int offsetHours) {
   final s = wallClock.second;
   final ms = wallClock.millisecond;
   final mc = wallClock.microsecond;
-  return DateTime.utc(y, mo, d, h, mi, s, ms, mc)
-      .subtract(Duration(hours: offsetHours));
+  return DateTime.utc(
+    y,
+    mo,
+    d,
+    h,
+    mi,
+    s,
+    ms,
+    mc,
+  ).subtract(Duration(hours: offsetHours));
 }
 
 /// ISO-8601 offset like "+03:00" or "-05:00" from hours.
@@ -149,11 +167,27 @@ String offsetIso(int offsetHours) {
 /// Build wall-clock day bounds as ISO strings with an explicit offset.
 /// Returned strings are UTC ISO (ending in "Z") to avoid unencoded "+" issues in query strings.
 /// Example (offset +3): "2026-03-16T21:00:00.000Z" .. "2026-03-17T20:59:59.000Z"
-(String startIso, String endIso) wallClockDayBoundsIso(DateTime wallClockDate, int offsetHours) {
-  final startWall = DateTime(wallClockDate.year, wallClockDate.month, wallClockDate.day, 0, 0, 0);
-  final endWall = DateTime(wallClockDate.year, wallClockDate.month, wallClockDate.day, 23, 59, 59);
+(String startIso, String endIso) wallClockDayBoundsIso(
+  DateTime wallClockDate,
+  int offsetHours,
+) {
+  final startWall = DateTime(
+    wallClockDate.year,
+    wallClockDate.month,
+    wallClockDate.day,
+    0,
+    0,
+    0,
+  );
+  final endWall = DateTime(
+    wallClockDate.year,
+    wallClockDate.month,
+    wallClockDate.day,
+    23,
+    59,
+    59,
+  );
   final startUtc = wallClockToUtc(startWall, offsetHours);
   final endUtc = wallClockToUtc(endWall, offsetHours);
   return (startUtc.toIso8601String(), endUtc.toIso8601String());
 }
-

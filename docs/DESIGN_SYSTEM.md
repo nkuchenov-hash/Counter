@@ -126,6 +126,14 @@ Each mapping must answer:
 - New feature-screen icon actions should not introduce fresh raw `IconButton` unless documented as temporary legacy.
 - Icon-only actions require a tooltip or semantic label where practical.
 
+### Timezone Icons
+
+- Current canonical: `AppTimezoneIcon` in `lib/core/widgets/app_timezone_icon.dart`.
+- Figma `Icon / Timezone / UTC|London|Moscow|Dubai|New York` maps to `AppTimezoneIcon(timezoneKey: AppTimezoneIconKey...)`.
+- The approved style is solid / filled monochrome silhouettes with no circular container, gradients, shadows, mixed line/filled treatment, raster assets, SVG assets, downloaded icon packs, or generated-preview production files.
+- Timezone option UI must consume `AppTimezoneIcon`; feature screens must not draw timezone landmarks or access painter internals directly.
+- Component Lab must show each timezone icon at 24px, 32px, and 40px for visual review.
+
 ### Cards
 
 - Current canonical foundation: `LifeCard` and `AppTaskCard` in `lib/core/widgets/life_card.dart`.

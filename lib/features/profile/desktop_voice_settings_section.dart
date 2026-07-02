@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
-import 'package:counter/core/diagnostics/desktop_voice_diag.dart';
+import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/services/desktop_hotkey_codec.dart';
 import 'package:counter/core/services/desktop_voice_hotkey.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
@@ -9,7 +9,7 @@ import 'package:counter/core/services/desktop_tray_service.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/data/database_service.dart';
-import 'package:counter/features/shared/voice_command_parser.dart';
+import 'package:counter/data/voice_command_parser.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -111,7 +111,7 @@ class _DesktopVoiceSettingsSectionState extends State<DesktopVoiceSettingsSectio
 
     final err = _settings.hotkeyRegistrationError;
     final status = _settings.voiceStatusLine;
-    final diag = DesktopVoiceDiag.instance.lines;
+    final diag = DesktopVoiceLog.instance.lines;
 
     return AppSettingsSectionCard(
       title: t(loc, 'desktop_voice_settings_section'),

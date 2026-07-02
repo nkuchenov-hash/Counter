@@ -45,7 +45,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart' show SchedulerBinding, Ticker;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/time/plan_time_labels.dart';
 import 'package:counter/core/widgets/plan_card.dart';

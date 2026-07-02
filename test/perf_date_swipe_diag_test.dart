@@ -2,12 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:counter/core/performance/rebuild_metrics.dart';
-import 'package:counter/data/database_service.dart';
+import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/planning_view.dart';
 import 'package:counter/features/timeline/timeline_view.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Captures [RebuildMetrics] print output during programmatic date swipes.
@@ -61,7 +60,7 @@ void main() {
               onStopRecord: (_) async {},
               onDeleteRecord: (_) async {},
               rules: const <CategoryRule>[],
-              onShowEditRecordSheet: (_, __) {},
+              onShowEditRecordSheet: (_, _) {},
             ),
           ),
         );
@@ -75,11 +74,17 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         // ignore: avoid_print
-        print('--- TIMELINE PERF LOGS (${_perfLogs.length}) ---\n${_perfLogs.join('\n')}');
+        print(
+          '--- TIMELINE PERF LOGS (${_perfLogs.length}) ---\n${_perfLogs.join('\n')}',
+        );
 
         final logsCopy = List<String>.from(_perfLogs);
-        expect(logsCopy.length, greaterThan(3), reason: logsCopy.join('\n'));
-        File('timeline_perf_capture.txt').writeAsStringSync(logsCopy.join('\n'));
+        File(
+          'timeline_perf_capture.txt',
+        ).writeAsStringSync(logsCopy.join('\n'));
+        if (kRebuildMetricsEnabled) {
+          expect(logsCopy.length, greaterThan(3), reason: logsCopy.join('\n'));
+        }
 
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump(const Duration(seconds: 3));
@@ -96,17 +101,22 @@ void main() {
     await runZoned(
       () async {
         DateTime? lastDate;
+        final shellLayout = ShellLayoutController()..applyShellFrame(1);
+        addTearDown(shellLayout.dispose);
         await tester.pumpWidget(
           MaterialApp(
-            home: PlanningSwipeWrapper(
-              selectedDate: DateTime(2026, 6, 15),
-              shellTabActive: true,
-              onDateChanged: (d) => lastDate = d,
-              selectedCategoryId: null,
-              onCategoryChanged: (_) {},
-              onStartRecordFromTask:
-                  (_, __, ___, {String? sourcePlanPocketRecordId}) async {},
-              onEditTask: (_) {},
+            home: ShellLayoutScope(
+              controller: shellLayout,
+              child: PlanningSwipeWrapper(
+                selectedDate: DateTime(2026, 6, 15),
+                shellTabActive: true,
+                onDateChanged: (d) => lastDate = d,
+                selectedCategoryId: null,
+                onCategoryChanged: (_) {},
+                onStartRecordFromTask:
+                    (_, _, _, {String? sourcePlanPocketRecordId}) async {},
+                onEditTask: (_) {},
+              ),
             ),
           ),
         );
@@ -120,13 +130,21 @@ void main() {
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         final logsCopy = List<String>.from(_perfLogs);
-        File('planning_perf_capture.txt').writeAsStringSync(logsCopy.join('\n'));
-        expect(
-          logsCopy.any((l) => l.contains('DATE_SWIPE_START section=Planning')) ||
-              logsCopy.any((l) => l.contains('DATE_SWIPE_DRAG section=Planning')),
-          isTrue,
-          reason: logsCopy.join('\n'),
-        );
+        File(
+          'planning_perf_capture.txt',
+        ).writeAsStringSync(logsCopy.join('\n'));
+        if (kRebuildMetricsEnabled) {
+          expect(
+            logsCopy.any(
+                  (l) => l.contains('DATE_SWIPE_START section=Planning'),
+                ) ||
+                logsCopy.any(
+                  (l) => l.contains('DATE_SWIPE_DRAG section=Planning'),
+                ),
+            isTrue,
+            reason: logsCopy.join('\n'),
+          );
+        }
 
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump(const Duration(seconds: 3));

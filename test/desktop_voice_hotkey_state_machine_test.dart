@@ -29,7 +29,7 @@ void main() {
       );
     });
 
-    test('State D: running record stops when overlay closed', () {
+    test('State D: running record opens overlay (command-first)', () {
       expect(
         resolveDesktopVoiceHotkeyAction(
           overlayOpen: false,
@@ -38,7 +38,7 @@ void main() {
           overlayProcessing: false,
           hasRunningRecord: true,
         ),
-        DesktopVoiceHotkeyAction.stopRunningRecord,
+        DesktopVoiceHotkeyAction.openOverlay,
       );
     });
 

@@ -40,6 +40,7 @@ import 'package:counter/core/diagnostics/startup_log.dart';
 import 'package:counter/core/performance/runtime_flags.dart';
 import 'package:counter/core/plan_category_lookup.dart';
 import 'package:counter/core/time/app_clock.dart';
+import 'package:counter/core/time/profile_timezone_actions.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 
 /// P0T stabilization: disable biometric gate until phone pass.
@@ -54,6 +55,14 @@ void _wireAppClock() {
       () => db.applyUserOffset(DatabaseService.getPlanetaryNow());
   AppClock.timeTicks = db.timeUpdates;
   AppClock.timezoneShortLabel = db.profileTimezoneShortLabel;
+}
+
+void _wireProfileTimezoneActions() {
+  final db = DatabaseService.instance;
+  ProfileTimezoneActions.shortLabel = db.profileTimezoneShortLabel;
+  ProfileTimezoneActions.settingsStream = db.userSettingsStream;
+  ProfileTimezoneActions.currentSettings = () => db.settings;
+  ProfileTimezoneActions.saveTimezone = db.updateTimeZone;
 }
 
 void _wirePlanCategoryLookup() {
@@ -337,6 +346,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       DatabaseService.instance.offlineSync.resumeAfterAuthIfNeeded();
       OfflineSyncController.resetVisibleDiagForNewSession();
       _wireAppClock();
+      _wireProfileTimezoneActions();
       _wirePlanCategoryLookup();
       setState(() {
         _profileId = id;

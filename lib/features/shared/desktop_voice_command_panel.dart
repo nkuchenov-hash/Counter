@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/services/speech_listen_locale.dart';
 import 'package:counter/core/widgets/app_button.dart';
-import 'package:counter/features/shared/voice_command_parser.dart';
+import 'package:counter/data/voice_command_parser.dart';
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';

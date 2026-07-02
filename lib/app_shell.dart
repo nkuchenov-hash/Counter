@@ -14,6 +14,7 @@ import 'package:counter/features/calendar/calendar_view.dart';
 import 'package:counter/features/dev/component_lab_view.dart';
 import 'package:counter/features/lists/lists_view.dart';
 import 'package:counter/features/planning/planning_view.dart';
+import 'package:counter/features/profile/desktop_voice_attempt_dialog.dart';
 import 'package:counter/features/profile/profile_view.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/performance/runtime_flags.dart';
@@ -25,7 +26,7 @@ import 'package:counter/core/widgets/tag_display_mode_scope.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/shell_layout_state.dart';
 import 'package:counter/core/navigation/app_navigator.dart';
-import 'package:counter/core/diagnostics/desktop_voice_diag.dart';
+import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_tray_service.dart';
@@ -35,12 +36,14 @@ import 'package:counter/core/services/desktop_voice_overlay_host.dart';
 import 'package:counter/core/services/desktop_voice_record_submit.dart';
 import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
 import 'package:counter/core/services/desktop_voice_hotkey.dart';
+import 'package:counter/core/services/desktop_voice_hotkey_markers.dart';
+import 'package:counter/core/services/desktop_voice_smoke_bridge.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/speech_engine_handle.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/shared/desktop_voice_widget.dart';
-import 'package:counter/features/shared/voice_command_parser.dart';
+import 'package:counter/data/voice_command_parser.dart';
 import 'package:counter/features/shared/voice_capture_config.dart';
 import 'package:counter/features/shared/voice_input_sheet.dart';
 import 'package:counter/features/timeline/timeline_view.dart';
@@ -524,6 +527,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     _selectedCategoryId = DatabaseService.instance.defaultCategoryId;
     DesktopVoiceAcceptanceBridge.runCommand = _runDesktopVoiceAcceptanceCommand;
     DesktopVoiceAcceptanceBridge.simulateHotkeyToggle = _onDesktopVoiceHotkeyToggle;
+    DesktopVoiceSmokeBridge.attachIfNeeded();
+    DesktopVoiceSmokeBridge.onFireHotkey = _onDesktopVoiceHotkeyToggle;
+    unawaited(DesktopVoiceSmokeBridge.ensureVoiceEnabledForSmoke());
+    DesktopVoiceSmokeBridge.startPolling();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       StartupLog.deferred(
         name: 'timelineTasksLoad',
@@ -714,14 +721,9 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       final ok = await DesktopVoiceHotkey.attachGlobal(
         onToggle: _onDesktopVoiceHotkeyToggle,
       );
-      DesktopVoicePipeline.mark(
-        ok
-            ? 'DESKTOP_VOICE_HOTKEY_REGISTERED'
-            : 'DESKTOP_VOICE_HOTKEY_REGISTER_FAILED',
-        DesktopVoiceSettings.instance.hotkey.displayLabel,
-      );
+      DesktopVoiceHotkeyMarkers.logRegistration(ok: ok);
       if (ok) {
-        unawaited(DesktopSttHelperService.instance.ensureStarted());
+        DesktopSttHelperService.instance.prewarmRecognizerInBackground();
         DesktopVoicePipeline.mark('DESKTOP_VOICE_APP_READY');
       }
     } else {
@@ -782,15 +784,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     final ok = await DesktopVoiceHotkey.reattachGlobal(
       onToggle: _onDesktopVoiceHotkeyToggle,
     );
-    DesktopVoicePipeline.mark(
-      ok
-          ? 'DESKTOP_VOICE_HOTKEY_REGISTERED'
-          : 'DESKTOP_VOICE_HOTKEY_REGISTER_FAILED',
-      DesktopVoiceSettings.instance.hotkeyRegistrationError ??
-          DesktopVoiceSettings.instance.hotkey.displayLabel,
+    DesktopVoiceHotkeyMarkers.logRegistration(
+      ok: ok,
+      error: ok
+          ? null
+          : DesktopVoiceSettings.instance.hotkeyRegistrationError,
     );
     if (ok) {
-      unawaited(DesktopSttHelperService.instance.ensureStarted());
+      DesktopSttHelperService.instance.prewarmRecognizerInBackground();
     }
     if (mounted) setState(() {});
     return ok;
@@ -1756,6 +1757,14 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
     }
     if (!mounted) return outcome.serverId;
     unawaited(DesktopVoiceConfirmation.showRecordStarted(outcome.confirmationMessage));
+    // Pipe-level confirmation that the hotkey-driven writeRecord produced a new
+    // task the user can see (closes the silent-success gap: serverId ok but no
+    // visible task in Timeline).
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_TASK_CREATED_VISIBLE',
+      'serverId=${outcome.serverId} title=${result.recordTitle.trim()}'
+      ' onTimelineTab=${_shellPageIndex == 0}',
+    );
     _timelineTasksRevision.value++;
     if (_shellPageIndex == 0) {
       final cid = result.matchedLocalCategoryId!;
@@ -1825,11 +1834,11 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   }
 
   /// Windows Desktop Voice hotkey state machine (UX contract):
-  /// A — idle, no running primary record → open overlay + start STT immediately.
+  /// A — idle → open overlay + start listening immediately.
   /// B — overlay listening → second hotkey finishes capture and processes command.
   /// C — command accepted → confirmation + optional auto-close (overlay widget).
-  /// D — running primary record, overlay closed → stop record + notify.
-  /// E — app hidden to tray: tray notification fallback; never resize main window.
+  /// D — running primary record, overlay closed → open overlay (record preserved).
+  /// E — app hidden to tray: native overlay; never resize main window.
   Future<void> _toggleDesktopVoiceWidget() async {
     try {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_RECEIVED');
@@ -1870,10 +1879,10 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
           }
           closeDesktopVoiceOverlayIfOpen();
           return;
-        case DesktopVoiceHotkeyAction.stopRunningRecord:
-          _desktopVoiceHotkeyStopRunning(runningId!.trim());
-          return;
         case DesktopVoiceHotkeyAction.openOverlay:
+          if (hasRunningRecord) {
+            DesktopVoicePipeline.mark('DESKTOP_VOICE_RUNNING_RECORD_PRESERVED');
+          }
           await _openDesktopVoiceOverlay();
           return;
       }
@@ -1885,7 +1894,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
   Future<void> _openDesktopVoiceOverlay() async {
     if (isDesktopVoiceOverlayOpen) return;
 
-    DesktopVoiceDiag.instance.mark('hotkey_or_tray', 'received');
+    DesktopVoiceLog.instance.mark('hotkey_or_tray', 'received');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_SHOW_MAIN_WINDOW_SKIPPED');
 
     final navCtx = appRootNavigatorKey.currentContext ?? context;
@@ -2076,6 +2085,19 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
                           builder: (_) => const ComponentLabPage(),
                         ),
                       );
+                    },
+                  ),
+                if (DesktopVoiceHotkey.isActive || kIsWeb == false)
+                  ListTile(
+                    leading: const Icon(Icons.graphic_eq_rounded),
+                    title: Text(t(loc, 'more_menu_voice_diagnostics')),
+                    subtitle: Text(
+                      t(loc, 'more_menu_voice_diagnostics_subtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      showDesktopVoiceAttemptDialog(context);
                     },
                   ),
                 Padding(
@@ -2491,7 +2513,7 @@ class _LifeOSDashboardState extends State<LifeOSDashboard> {
       builder: (context, _) {
         return ValueListenableBuilder<bool>(
           valueListenable: desktopVoiceShellSuppressed,
-          builder: (context, shellSuppressed, __) {
+          builder: (context, shellSuppressed, _) {
             if (shellSuppressed) {
               return const ColoredBox(
                 color: Colors.transparent,

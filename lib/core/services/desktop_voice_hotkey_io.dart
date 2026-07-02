@@ -1,3 +1,4 @@
+import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -39,6 +40,13 @@ Future<bool> registerDesktopVoiceGlobalHotkey(
     return true;
   } catch (e) {
     DesktopVoiceSettings.instance.setHotkeyRegistrationError(e.toString());
+    // Pipe-level marker so a failed OS-level hotkey registration is visible in
+    // the runtime smoke log (distinguishes "hotkey never registered" from
+    // "hotkey registered but user never pressed it").
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_HOTKEY_REGISTER_FAILED',
+      e.toString(),
+    );
     return false;
   }
 }

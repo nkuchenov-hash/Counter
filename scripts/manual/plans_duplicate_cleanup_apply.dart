@@ -324,7 +324,7 @@ Future<void> main(List<String> args) async {
   stderr.writeln('Expected deletes from JSON: $expectedDeleteCount');
 
   final pb = await _authenticatedPb(baseUrl);
-  final uid = pb.authStore.record?.id?.trim() ?? '';
+  final uid = pb.authStore.record?.id.trim() ?? '';
   if (uid.isEmpty) _die('Auth ok but no profile id.');
 
   stderr.writeln('Auth OK. user=$uid');

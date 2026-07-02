@@ -1,8 +1,9 @@
-import 'package:counter/core/performance/runtime_flags.dart';
-import 'package:counter/core/diagnostics/desktop_voice_diag.dart';
+import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_voice_recognizer.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
+import 'package:counter/core/services/desktop_voice_user_error.dart';
+import 'package:counter/l10n/dictionary.dart';
 
 Future<DesktopVoiceRecognizer> createDesktopVoiceRecognizer() async {
   return DesktopVoiceRecognizerGolosHelper();
@@ -13,14 +14,10 @@ class DesktopVoiceRecognizerGolosHelper implements DesktopVoiceRecognizer {
   final _helper = DesktopSttHelperService.instance;
 
   @override
-  Future<bool> prepare() {
-    if (kDesktopVoiceForcePrepareTimeout) {
-      return Future<bool>.value(false);
-    }
-    return _helper.ensureStarted(
-      maxWait: DesktopSttHelperService.kVoiceOverlayWarmupMax,
-      allowRestart: true,
-    );
+  Future<bool> prepare() async {
+    // Recording-first: mic capture must never await helper HTTP warmup.
+    _helper.prewarmRecognizerInBackground();
+    return true;
   }
 
   @override
@@ -47,13 +44,20 @@ class DesktopVoiceRecognizerGolosHelper implements DesktopVoiceRecognizer {
     final result = await _helper.stopAndTranscribe();
     final diag = _helper.lastDiagnostics;
     for (final line in diag.toDiagLines()) {
-      DesktopVoiceDiag.instance.mark('stt', line);
+      DesktopVoiceLog.instance.mark('stt', line);
     }
     if (result == null) {
+      final loc = currentLocale.value;
+      final friendly = DesktopVoiceUserError.resolve(
+        message: null,
+        error: _helper.lastError,
+        stage: DesktopVoiceErrorStage.transcribing,
+        localeCode: loc,
+      );
       return DesktopVoiceRecognitionResult(
         transcript: '',
         engineLabel: diag.engine ?? engine.helperEngineId,
-        error: _helper.lastError ?? 'Recognition failed',
+        error: friendly.message,
         audioBytes: _helper.lastCaptureBytes,
       );
     }

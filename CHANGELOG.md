@@ -11,6 +11,26 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-02] - Stage E.0.5A structure guard green [shipped]
+* **`lib/data/voice_command_parser.dart`:** [shipped] git-moved from `features/shared/` — Brain-owned deterministic voice command parse; all `lib/` + `test/` imports → `package:counter/data/voice_command_parser.dart`.
+* **`lib/core/time/profile_timezone_actions.dart`:** [shipped] `ProfileTimezoneActions` injectable hooks (`shortLabel`, `settingsStream`, `currentSettings`, `saveTimezone`); wired in `main.dart` `_wireProfileTimezoneActions()` after Brain init.
+* **`lib/core/widgets/timezone_quick_picker.dart`:** [shipped] `HeaderTimezoneQuickSwitcher` uses `ProfileTimezoneActions` instead of forbidden `core→database_service` import.
+* **`lib/core/diagnostics/desktop_voice_log.dart`:** [shipped] renamed from `desktop_voice_diag.dart`; class `DesktopVoiceLog` (release quiet; debug markers only).
+* **`docs/APP_STRUCTURE.md`:** [shipped] full manifest for desktop voice stack, timezone modules, `voice_command_parser`, navigation helper; fixed malformed features table; added `ProfileTimezoneActions` shell injection row.
+* **`docs/APP_STRUCTURE_EXPLAINED_RU.md`**, **`CLAUDE.md`**, **`docs/ROADMAP.md`:** E.0.5A complete markers and navigation updates.
+* **Verification:** `architecture_guard.ps1 -Strict` exit 0; `flutter analyze`, `flutter test`, `flutter build web` green.
+
+## [2026-07-02] - Stage E.0 large-file split blueprint [shipped]
+* **`docs/reports/LARGE_FILE_SPLIT_BLUEPRINT_2026-07-02.md`:** [shipped] Repo-specific split plan for all `lib/` files >800 lines — classifications, target module trees, E1–E8 ordering, risk matrix, tests, APP_STRUCTURE/guard deltas, rollback. Planning only; no production Dart changes.
+* **Kill-switch note:** Strict guard fails (49 violations) on dirty desktop-voice/timezone tree — E1 implementation blocked until APP_STRUCTURE + guard green.
+
+## [2026-07-02] - Solid timezone icon family and dynamic profile timezone picker [wip]
+* **`lib/core/widgets/app_timezone_icon.dart` / `lib/core/app_icons.dart`:** [wip] Added the canonical solid, filled, monochrome `AppTimezoneIcon` family for UTC, London, Moscow, Dubai, and New York without raster/SVG assets or circular containers.
+* **`lib/core/time/profile_timezone_catalog.dart` / `lib/core/time/wall_clock.dart`:** [wip] Profile timezone catalog now stores canonical values (`UTC`, `London`, `Moscow`, `Dubai`, `New York`), keeps UTC separate from London, uses IANA IDs for wall-clock math, and produces dynamic DST labels (`BST`/`GMT`, `EDT`/`EST`) with current UTC offsets.
+* **`lib/core/widgets/timezone_quick_picker.dart`, `lib/features/profile/profile_view.dart`, `lib/app_shell.dart`:** [wip] Replaced static dropdown rows with the approved `[icon][timezone text][checkmark]` picker row and canonical save path.
+* **`lib/features/dev/component_lab_view.dart`, `docs/DESIGN_SYSTEM.md`, `docs/DATA_MAP.md`:** [wip] Added the Component Lab icon review section and documented the canonical timezone icon/profile timezone API.
+* **Verification:** [wip] Targeted timezone/icon tests pass; `flutter analyze --no-fatal-infos --no-fatal-warnings`, full `flutter test`, and release `flutter build web` pass. Deploy not run because unrelated dirty/untracked files remain in the worktree.
+
 ## [2026-06-15] - P0 edit sheet save/autosave repair [wip]
 * **`lib/features/shared/shared_widgets.dart`:** [wip] `EditSheetAutosaveGate` — local-first plan/record edit drafts; optimistic Brain apply on field change; debounced `updatePlanningTask` / `updateRecord` (~650ms); explicit Save flushes pending draft; `AppSnack.changesSaved()` (`Изменения сохранены` / `Changes saved`) on successful local apply.
 * **`lib/data/record_service.dart`:** [wip] `findFirstOverlappingRecordInCache` + `applyOptimisticRecordRowEdit` PB id resolution — stopped-record Save no longer blocks on network overlap before optimistic UI.
@@ -20,6 +40,23 @@
 
 ## [2026-06-15] - Manual data repair: June 25 plan times MSK reinterpretation [wip]
 * **`scripts/manual/repair_2026_06_25_plan_times_msk.dart`:** [wip] One-off PocketBase repair — reinterpreted 16 scheduled `plans` on 2026-06-25 from New York wall time to Moscow wall time (`start_time`/`end_time` only); explicit `--ids` + `--confirm REINTERPRET_NY_AS_MSK_2026_06_25` apply path; profile `xhjy54inue73piz`; all 16 PATCHes read-back verified; durations preserved.
+
+## [2026-06-26] - P0 No Preparing UI — production overlay recording-first [shipped]
+* **`lib/features/shared/desktop_voice_widget.dart`:** [shipped] `showDesktopVoiceWidget` opens native overlay with `showListening` + `FIRST_VISIBLE_STATE_LISTENING`; removed `showPreparing` entry path; processing uses `desktop_voice_transcribing`.
+* **`lib/core/services/desktop_voice_overlay_service.dart`:** [shipped] `showPreparing` redirects to `showListening` + `FORBIDDEN_PREPARING_REDIRECTED_TO_LISTENING`; native primary = `desktop_voice_state_listening` («Слушаю…»/«Listening…»).
+* **`lib/l10n`:** removed `desktop_voice_overlay_stt_warming` / `overlay_preparing`; added `desktop_voice_transcribing`.
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** mic bars visible immediately in listening state (min height baseline).
+* **`scripts/manual/check_no_preparing_ui.ps1`**, **`scripts/manual/smoke_desktop_voice_recording_first.ps1`:** anti-regression checks.
+
+## [2026-06-26] - P0 Desktop Voice helper failure isolation [shipped]
+* **`lib/core/services/desktop_voice_user_error.dart`:** [shipped] `DesktopVoiceUserError.fromException` / `resolve` — maps `ClientException`/socket/HTTP/localhost/stack traces to EN/RU friendly overlay copy; markers `ERROR_MAPPED`, `RAW_EXCEPTION_SUPPRESSED`, `OVERLAY_FRIENDLY_ERROR_SHOWN`.
+* **`lib/core/services/desktop_stt_helper_service.dart`:** [shipped] `startListening` capture-first (no `ensureStarted` before mic); `stopAndTranscribe` saves WAV then STT HTTP; hardened `_transcribePcm` timeouts + `http.ClientException`/`SocketException`/`HttpException`/`FormatException`; helper health/restart-once; smoke audio inject.
+* **`lib/features/shared/desktop_voice_widget.dart`:** [shipped] recording-first `_beginSessionRecordingFirst`; `_failFriendly` never surfaces raw exceptions; retry skips Preparing UI.
+* **`lib/core/services/desktop_voice_command_normalize.dart`:** [shipped] normalization gate before `writeRecord`; Plenty/plan aliases → Planning.
+* **`lib/core/services/desktop_voice_hotkey.dart`:** [shipped] command-first — hotkey always `openOverlay` (removed `stopRunningRecord`).
+* **`scripts/manual/smoke_desktop_voice_helper_failure.ps1`:** [shipped] kill `counter_stt_helper.exe` → Listening + capture + friendly STT error smoke.
+* **`test/desktop_voice_user_error_test.dart`**, **`test/desktop_voice_helper_failure_test.dart`:** failure isolation unit tests.
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** fix `g_overlay_channel` unique_ptr assignment (Windows build).
 
 ## [2026-06-26] - P0 Desktop Voice command-first UX + hotkey smoke proof [shipped]
 * **Hotkey smoke passes** with runtime-registered combo (`DESKTOP_VOICE_HOTKEY_REGISTERED_COMBO`); SendInput path proven; native file-hook fallback retained.

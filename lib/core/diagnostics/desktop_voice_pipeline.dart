@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:counter/core/diagnostics/desktop_voice_diag.dart';
+import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode, kIsWeb;
 
 /// One-line desktop voice pipeline markers (installed-app acceptance tracing).
@@ -16,7 +16,7 @@ abstract final class DesktopVoicePipeline {
 
   static void mark(String step, [String? detail]) {
     final line = detail == null || detail.isEmpty ? step : '$step $detail';
-    DesktopVoiceDiag.instance.mark(step, detail);
+    DesktopVoiceLog.instance.mark(step, detail);
     if (step.startsWith('DESKTOP_VOICE_')) {
       final stamped = '${DateTime.now().toIso8601String()} $line';
       if (kDebugMode) {

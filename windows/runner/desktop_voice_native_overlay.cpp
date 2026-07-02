@@ -72,7 +72,46 @@ std::wstring DesktopVoiceNativeOverlay::primary_;
 std::wstring DesktopVoiceNativeOverlay::secondary_;
 std::string DesktopVoiceNativeOverlay::state_;
 double DesktopVoiceNativeOverlay::level_ = 0.0;
+double DesktopVoiceNativeOverlay::target_level_ = 0.0;
+UINT_PTR DesktopVoiceNativeOverlay::anim_timer_id_ = 0;
 std::wstring DesktopVoiceNativeOverlay::timer_text_;
+
+constexpr UINT_PTR kAnimTimerId = 0x534F;  // 'SO'
+constexpr UINT kAnimTimerIntervalMs = 33;  // ~30fps
+
+void DesktopVoiceNativeOverlay::StartAnimationTimer() {
+  if (anim_timer_id_ != 0) return;
+  if (overlay_hwnd_ == nullptr) return;
+  anim_timer_id_ = SetTimer(overlay_hwnd_, kAnimTimerId,
+                            kAnimTimerIntervalMs, nullptr);
+}
+
+void DesktopVoiceNativeOverlay::StopAnimationTimer() {
+  if (anim_timer_id_ == 0) return;
+  if (overlay_hwnd_ != nullptr) {
+    KillTimer(overlay_hwnd_, anim_timer_id_);
+  }
+  anim_timer_id_ = 0;
+}
+
+// Smoothly step [level_] toward [target_level_] and force a repaint. Called on
+// every 33ms tick. Asymmetric: rises fast (audible reaction), decays slower
+// (organic settling), so quiet rooms still produce gentle motion rather than
+// a dead flat row of bars.
+void DesktopVoiceNativeOverlay::TickAnimation() {
+  constexpr double kAttack = 0.55;   // fraction of remaining gap per tick (up)
+  constexpr double kRelease = 0.18;  // fraction per tick (down)
+  constexpr double kEpsilon = 0.001;
+  const double diff = target_level_ - level_;
+  if (std::abs(diff) < kEpsilon && level_ < kEpsilon) {
+    return;
+  }
+  const double k = diff > 0 ? kAttack : kRelease;
+  level_ += diff * k;
+  if (overlay_hwnd_ != nullptr) {
+    InvalidateRect(overlay_hwnd_, nullptr, FALSE);
+  }
+}
 
 void DesktopVoiceNativeOverlay::EnsureClassRegistered() {
   if (class_registered_) {
@@ -158,16 +197,29 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
   SelectObject(hdc, old_close_pen);
   DeleteObject(close_pen);
 
-  if (state_ == "listening" && level_ > 0.01) {
+  if (state_ == "listening") {
     const int bar_count = 8;
     const int bar_w = 6;
     const int gap = 4;
     const int base_y = 82;
     const int max_h = 18;
+    // Sqrt gain curve: a real-voice peak of ~0.1 maps to ~0.32 visible level so
+    // bars reach ~10px (out of 18) — visibly reactive. Quiet rooms still get a
+    // minimum floor so bars aren't dead-flat between speech bursts.
+    const double gain = std::sqrt(std::max(level_, 0.0));
+    const double min_visible = 0.06;  // ambient floor — bars gently pulse
+    const double effective_level = std::max(gain, min_visible);
+    // Phase offset so bars don't look like a static sine wave; combined with
+    // the 33ms animation timer it produces gentle continuous motion.
+    const double phase =
+        static_cast<double>(GetTickCount64()) / 220.0;
     int x = 20;
     for (int i = 0; i < bar_count; ++i) {
-      const double factor = 0.35 + 0.65 * std::sin((i + 1) * 0.9 + level_ * 8.0);
-      const int h = static_cast<int>(std::clamp(level_ * max_h * factor, 2.0, static_cast<double>(max_h)));
+      // Per-bar shape: 0.45 base + 0.55 sinusoidal modulation, scaled by level.
+      const double shape = 0.45 + 0.55 * std::sin(phase + (i + 1) * 0.9);
+      const double leveled = effective_level * shape + min_visible * 0.35;
+      const int h = static_cast<int>(
+          std::clamp(leveled * max_h, 3.0, static_cast<double>(max_h)));
       HBRUSH bar = CreateSolidBrush(RGB(30, 30, 30));
       RECT bar_rect = {x, base_y - h, x + bar_w, base_y};
       FillRect(hdc, &bar_rect, bar);
@@ -213,6 +265,13 @@ LRESULT CALLBACK DesktopVoiceNativeOverlay::OverlayWndProc(
         return 0;
       }
       return DefWindowProcW(hwnd, message, wparam, lparam);
+    case WM_TIMER: {
+      if (wparam == kAnimTimerId) {
+        TickAnimation();
+        return 0;
+      }
+      return DefWindowProcW(hwnd, message, wparam, lparam);
+    }
     case WM_ERASEBKGND:
       return 1;
     case WM_DESTROY:
@@ -235,7 +294,14 @@ bool DesktopVoiceNativeOverlay::Show(const std::string& primary,
   primary_ = Utf8ToWide(primary);
   secondary_ = Utf8ToWide(secondary);
   state_ = state;
-  level_ = level;
+  // Drive the smoothed [level_] via [target_level_]; the animation timer
+  // interpolates between them so bars settle smoothly rather than snapping.
+  target_level_ = level;
+  // First-ever show: seed [level_] from the incoming value so we don't ramp
+  // up from 0 on every fresh overlay.
+  if (anim_timer_id_ == 0) {
+    level_ = level;
+  }
   timer_text_ = Utf8ToWide(timer_text);
 
   EnsureClassRegistered();
@@ -252,11 +318,16 @@ bool DesktopVoiceNativeOverlay::Show(const std::string& primary,
 
   PositionOverlay();
   ShowWindow(overlay_hwnd_, SW_SHOWNOACTIVATE);
+  StartAnimationTimer();
+  InvalidateRect(overlay_hwnd_, nullptr, TRUE);
   UpdateWindow(overlay_hwnd_);
   return true;
 }
 
 void DesktopVoiceNativeOverlay::Hide() {
+  StopAnimationTimer();
+  target_level_ = 0.0;
+  level_ = 0.0;
   if (overlay_hwnd_ != nullptr && IsWindow(overlay_hwnd_)) {
     ShowWindow(overlay_hwnd_, SW_HIDE);
   }
@@ -270,14 +341,11 @@ void DesktopVoiceNativeOverlay::Register(flutter::FlutterEngine* engine,
                                          HWND main_hwnd) {
   main_hwnd_ = main_hwnd;
 
-  static std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
-      channel;
-  channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+  g_overlay_channel = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       engine->messenger(), "counter/desktop_voice_native_overlay",
       &flutter::StandardMethodCodec::GetInstance());
-  g_overlay_channel = channel.get();
 
-  channel->SetMethodCallHandler(
+  g_overlay_channel->SetMethodCallHandler(
       [](const flutter::MethodCall<flutter::EncodableValue>& call,
          std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
         const std::string& method = call.method_name();

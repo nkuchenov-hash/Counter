@@ -5,7 +5,6 @@ import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:flutter/foundation.dart'
     show TargetPlatform, defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 /// Desktop-only global / in-app hotkey for the Price Reporter voice widget.
 abstract final class DesktopVoiceHotkey {
@@ -77,9 +76,6 @@ enum DesktopVoiceHotkeyAction {
 
   /// Overlay open (preparing / processing / error) → cancel and hide.
   cancelOverlay,
-
-  /// State D/E: running primary record, overlay closed → stop record.
-  stopRunningRecord,
 }
 
 /// Resolves global hotkey behavior per Desktop Voice UX contract.
@@ -97,11 +93,7 @@ DesktopVoiceHotkeyAction resolveDesktopVoiceHotkeyAction({
     return DesktopVoiceHotkeyAction.cancelOverlay;
   }
   if (overlayOpen) {
-    // Error / confirmation / idle-with-overlay → dismiss.
     return DesktopVoiceHotkeyAction.cancelOverlay;
-  }
-  if (!overlayOpen && hasRunningRecord) {
-    return DesktopVoiceHotkeyAction.stopRunningRecord;
   }
   return DesktopVoiceHotkeyAction.openOverlay;
 }

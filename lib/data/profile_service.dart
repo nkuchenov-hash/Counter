@@ -107,14 +107,16 @@ void _profileHydratedLog({
 String _normalizeTimezone(String timezone) {
   final t = timezone.trim();
   if (t.isEmpty) return 'UTC';
+  final entry = catalogEntryForStoredTimezone(t);
+  if (entry != null) return entry.profileValue;
   switch (t) {
     case 'London':
     case 'London (UTC+0)':
-      return 'UTC';
+      return 'London';
     case 'Moscow':
     case 'Moscow (UTC+3)':
-    case 'Dubai':
       return 'GMT+3';
+    case 'Dubai':
     case 'Dubai (UTC+4)':
       return 'Dubai';
     case 'New York':
@@ -124,7 +126,8 @@ String _normalizeTimezone(String timezone) {
       if (t.contains('Moscow') || t.contains('UTC+3')) return 'GMT+3';
       if (t.contains('Dubai') || t.contains('UTC+4')) return 'Dubai';
       if (t.contains('New York') || t.contains('UTC-5')) return 'New York';
-      if (t.contains('London') || t.contains('UTC+0')) return 'UTC';
+      if (t.contains('London')) return 'London';
+      if (t.contains('UTC+0')) return 'UTC';
       return t;
   }
 }
@@ -144,6 +147,10 @@ bool _profileBool(dynamic value, [bool fallback = false]) {
 
 int _fixedOffsetHoursFromLabel(String timezone) {
   final tz = _normalizeTimezone(timezone);
+  final entry = catalogEntryForStoredTimezone(tz);
+  if (entry != null) {
+    return currentOffsetHoursForProfileTimezone(entry.profileValue);
+  }
   switch (tz) {
     case 'UTC':
       return 0;
@@ -196,8 +203,7 @@ extension ProfileServiceExtension on DatabaseService {
     if (dn != null && dn.isNotEmpty) return dn;
     final name = s.accountName?.trim();
     if (name != null && name.isNotEmpty) return name;
-    final email =
-        s.profileEmail?.trim() ?? _authRecordEmail() ?? '';
+    final email = s.profileEmail?.trim() ?? _authRecordEmail() ?? '';
     if (email.isNotEmpty) {
       if (email.contains('@')) {
         final local = email.split('@').first.trim();
@@ -410,10 +416,7 @@ extension ProfileServiceExtension on DatabaseService {
     }
     final rowUid = data['user_id']?.toString().trim() ?? '';
     if (rowUid.isEmpty) {
-      throw _ProfileFetchFailedException(
-        422,
-        'Profile row missing user_id',
-      );
+      throw _ProfileFetchFailedException(422, 'Profile row missing user_id');
     }
     DatabaseService._log('Profile data loaded from PocketBase.');
     final authUid = _userIdForWhere ?? '';
@@ -439,9 +442,8 @@ extension ProfileServiceExtension on DatabaseService {
               : int.tryParse(tzOffsetRaw.toString()) ?? 0);
     final dc = data['default_category_id'];
     final rawTheme = (data['theme_mode'] as String?)?.trim().toLowerCase();
-    final themeMode = (rawTheme == 'light' ||
-            rawTheme == 'dark' ||
-            rawTheme == 'system')
+    final themeMode =
+        (rawTheme == 'light' || rawTheme == 'dark' || rawTheme == 'system')
         ? rawTheme!
         : 'system';
     final primaryLangRaw = data['primary_language']?.toString().trim() ?? '';
@@ -456,8 +458,9 @@ extension ProfileServiceExtension on DatabaseService {
         : ((nameRaw != null && nameRaw.trim().isNotEmpty)
               ? nameRaw.trim()
               : null);
-    final accountName =
-        (nameRaw != null && nameRaw.trim().isNotEmpty) ? nameRaw.trim() : null;
+    final accountName = (nameRaw != null && nameRaw.trim().isNotEmpty)
+        ? nameRaw.trim()
+        : null;
     final tagModeRaw = data['tag_display_mode']?.toString().trim();
     final rawListBeh = data['list_completion_behavior'];
     final listBehRaw = rawListBeh == null
@@ -571,10 +574,14 @@ extension ProfileServiceExtension on DatabaseService {
   ) {
     final fields = <String, dynamic>{};
     final nextLang = resolvedUiLanguageCode(
-      next.primaryLanguage.trim().isNotEmpty ? next.primaryLanguage : next.language,
+      next.primaryLanguage.trim().isNotEmpty
+          ? next.primaryLanguage
+          : next.language,
     );
     final prevLang = resolvedUiLanguageCode(
-      prev.primaryLanguage.trim().isNotEmpty ? prev.primaryLanguage : prev.language,
+      prev.primaryLanguage.trim().isNotEmpty
+          ? prev.primaryLanguage
+          : prev.language,
     );
     if (nextLang != prevLang) {
       fields['primary_language'] = nextLang;
@@ -594,13 +601,13 @@ extension ProfileServiceExtension on DatabaseService {
       fields['display_name'] = nextDn.isEmpty ? null : nextDn;
     }
     if (next.tagDisplayMode != prev.tagDisplayMode ||
-        tagDisplayModeWireForPatch(next) !=
-            tagDisplayModeWireForPatch(prev)) {
+        tagDisplayModeWireForPatch(next) != tagDisplayModeWireForPatch(prev)) {
       fields['tag_display_mode'] = tagDisplayModeWireForPatch(next);
     }
     if (next.listCompletionBehavior != prev.listCompletionBehavior) {
-      fields['list_completion_behavior'] =
-          listCompletionBehaviorWireForPatch(next);
+      fields['list_completion_behavior'] = listCompletionBehaviorWireForPatch(
+        next,
+      );
     }
     return fields;
   }
@@ -681,9 +688,7 @@ extension ProfileServiceExtension on DatabaseService {
         _settings = _settings.copyWith(tagDisplayModeWireRaw: patchedTagWire);
         _settingsController.add(_settings);
       }
-      _profileVerboseDiag(
-        'PROFILE_SAVE_SUCCESS fields=$fieldNames',
-      );
+      _profileVerboseDiag('PROFILE_SAVE_SUCCESS fields=$fieldNames');
       await _mirrorProfileSettingsToDeviceCache();
       return true;
     } on ClientException catch (e) {
@@ -974,9 +979,7 @@ extension ProfileServiceExtension on DatabaseService {
       'TAG_DURATION_SAVE_REQUEST tagId=$tagBizId pbId=$rid minutes=${sanitized ?? 'null'}',
     );
     try {
-      final body = <String, dynamic>{
-        'user_id': _pidForPbFilter,
-      };
+      final body = <String, dynamic>{'user_id': _pidForPbFilter};
       if (sanitized == null) {
         body['default_plan_duration_minutes'] = null;
       } else {

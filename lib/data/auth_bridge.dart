@@ -121,7 +121,7 @@ class AuthBridge {
       'display_name': 'User',
       'primary_language': 'en',
       'theme_mode': 'system',
-      'preferred_timezone': 'UTC (UTC+0)',
+      'preferred_timezone': 'UTC',
       'timezone_offset': 0,
       'biometric_enabled': false,
     };
@@ -262,7 +262,7 @@ class AuthBridge {
               'display_name': displayName,
               'primary_language': 'en',
               'theme_mode': 'system',
-              'preferred_timezone': 'UTC (UTC+0)',
+              'preferred_timezone': 'UTC',
               'timezone_offset': 0,
               'biometric_enabled': false,
             },

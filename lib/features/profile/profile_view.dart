@@ -6,6 +6,7 @@ import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
+import 'package:counter/core/widgets/timezone_quick_picker.dart';
 import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -272,10 +273,9 @@ class _AccountSecuritySection extends StatelessWidget {
       initialData: DatabaseService.instance.settings,
       builder: (context, snap) {
         final settings = snap.data ?? DatabaseService.instance.settings;
-        final label =
-            ProfileServiceExtension.resolveProfileDisplayLabelFor(
-              settings: settings,
-            );
+        final label = ProfileServiceExtension.resolveProfileDisplayLabelFor(
+          settings: settings,
+        );
         final hydrated = DatabaseService.instance.profileHydratedFromPb;
         final subtitle = label.isNotEmpty
             ? label
@@ -366,7 +366,7 @@ class ProfilePage extends StatefulWidget {
 
   final VoidCallback? onSaved;
   final Future<bool> Function(DesktopVoiceHotkeyConfig config)?
-      onDesktopVoiceHotkeyChanged;
+  onDesktopVoiceHotkeyChanged;
   final VoidCallback? onTestDesktopVoice;
 
   @override
@@ -584,8 +584,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return Theme(
         data: settingsNeutralTheme(context),
         child: Scaffold(
-          backgroundColor:
-              Theme.of(context).colorScheme.surfaceContainerLowest,
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
           body: _buildDesktopSettings(context, locale, safeTimeZone),
         ),
       );
@@ -617,10 +616,10 @@ class _ProfilePageState extends State<ProfilePage> {
         Text(
           t(locale, 'profile_page_title'),
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 32,
-                height: 1.15,
-              ),
+            fontWeight: FontWeight.w700,
+            fontSize: 32,
+            height: 1.15,
+          ),
         ),
         const SizedBox(height: 16),
         AppSettingsCategoryTabs(
@@ -636,41 +635,41 @@ class _ProfilePageState extends State<ProfilePage> {
         const SizedBox(height: 20),
         switch (_desktopSettingsTab) {
           AppSettingsTab.account => AppSettingsSectionCard(
-              title: t(locale, 'account_security'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _AccountSecuritySection(),
-                  const SizedBox(height: 8),
-                  _SecuritySection(onSaved: widget.onSaved, embedded: true),
-                ],
-              ),
+            title: t(locale, 'account_security'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _AccountSecuritySection(),
+                const SizedBox(height: 8),
+                _SecuritySection(onSaved: widget.onSaved, embedded: true),
+              ],
             ),
+          ),
           AppSettingsTab.preferences => AppSettingsSectionCard(
-              title: t(locale, 'profile_time_locale_section'),
-              child: _buildTimeLocaleFields(context, locale, safeTimeZone),
-            ),
+            title: t(locale, 'profile_time_locale_section'),
+            child: _buildTimeLocaleFields(context, locale, safeTimeZone),
+          ),
           AppSettingsTab.desktopVoice => DesktopVoiceSettingsDesktopGrid(
-              onHotkeyChanged: widget.onDesktopVoiceHotkeyChanged,
-            ),
+            onHotkeyChanged: widget.onDesktopVoiceHotkeyChanged,
+          ),
           AppSettingsTab.notifications => AppSettingsSectionCard(
-              title: t(locale, 'profile_notifications_section'),
-              subtitle: t(locale, 'profile_notifications_subtitle'),
-              child: _ProfileNotificationsSection(embedded: true),
-            ),
+            title: t(locale, 'profile_notifications_section'),
+            subtitle: t(locale, 'profile_notifications_subtitle'),
+            child: _ProfileNotificationsSection(embedded: true),
+          ),
           AppSettingsTab.appearance => AppSettingsSectionCard(
-              title: t(locale, 'appearance'),
-              child: _buildAppearanceFields(context, locale),
-            ),
+            title: t(locale, 'appearance'),
+            child: _buildAppearanceFields(context, locale),
+          ),
           AppSettingsTab.about => AppSettingsSectionCard(
-              title: t(locale, 'profile_about_section'),
-              child: Text(
-                '${t(locale, 'profile_build_label')} ${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+            title: t(locale, 'profile_about_section'),
+            child: Text(
+              '${t(locale, 'profile_build_label')} ${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
+          ),
         },
       ],
     );
@@ -716,8 +715,8 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Text(
             '${t(locale, 'profile_build_label')} ${AppBuildInfo.gitCommit} · ${AppBuildInfo.builtAt}',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],
@@ -848,24 +847,11 @@ class _ProfilePageState extends State<ProfilePage> {
           absorbing: _savingTimeZone,
           child: Opacity(
             opacity: _savingTimeZone ? 0.55 : 1,
-            child: DropdownMenu<String>(
-              initialSelection: safeTimeZone,
-              expandedInsets: EdgeInsets.zero,
-              enableFilter: true,
-              enableSearch: true,
-              label: Text(t(locale, 'search_timezones')),
-              dropdownMenuEntries: tz_settings.kProfileTimezoneCatalog
-                  .map(
-                    (entry) => DropdownMenuEntry<String>(
-                      value: entry.profileValue,
-                      label: entry.pickerLabel,
-                    ),
-                  )
-                  .toList(),
-              onSelected: (v) {
-                if (v == null) return;
-                unawaited(_selectTimeZone(v));
-              },
+            child: TimezonePickerField(
+              currentTimezone: safeTimeZone,
+              label: t(locale, 'search_timezones'),
+              enabled: !_savingTimeZone,
+              onSelected: (v) => unawaited(_selectTimeZone(v)),
             ),
           ),
         ),

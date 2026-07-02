@@ -814,7 +814,7 @@ extension RecordServiceExtension on DatabaseService {
   String? get canonicalPrimaryRunningBusinessId =>
       resolveCanonicalPrimaryRunningBusinessId();
 
-  void _resetCanonicalRunningBusinessIdCache({String reason = 'reset'}) {
+  void _resetCanonicalRunningBusinessIdCache() {
     _canonicalRunningBusinessIdCacheDirty = true;
     _cachedCanonicalRunningBusinessId = null;
   }
@@ -2323,8 +2323,9 @@ extension RecordServiceExtension on DatabaseService {
         '';
     if (u == parentRecordId) return true;
     final pInt = int.tryParse(parentRecordId);
-    if (pInt != null && CategoryServiceExtension._rowInt(raw) == pInt)
+    if (pInt != null && CategoryServiceExtension._rowInt(raw) == pInt) {
       return true;
+    }
     return false;
   }
 
@@ -2536,8 +2537,9 @@ extension RecordServiceExtension on DatabaseService {
           final local = _cachedFlatRecords;
           for (final r in local) {
             if (_rowHasNonEmptyParent(r['parent_id'])) continue;
-            if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r))
+            if (!CategoryServiceExtension._isNocoRowSacredStopTarget(r)) {
               continue;
+            }
             if (!_rowStartWallDayIsProjectedToday(r)) continue;
             final id = CategoryServiceExtension.recordsTablePk(r);
             if (id.isEmpty) continue;
@@ -3460,8 +3462,7 @@ extension RecordServiceExtension on DatabaseService {
             'type': 'record',
             'checklist': <Map<String, dynamic>>[],
             if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
-            if (sourcePlanForPayload != null)
-              'source_plan_id': sourcePlanForPayload,
+            'source_plan_id': ?sourcePlanForPayload,
           });
           if (pr != null && pr.isNotEmpty) {
             runningFields['parent_id'] = pr;
@@ -3571,8 +3572,7 @@ extension RecordServiceExtension on DatabaseService {
           'type': 'record',
           'checklist': <Map<String, dynamic>>[],
           if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
-          if (sourcePlanForPayload != null)
-            'source_plan_id': sourcePlanForPayload,
+          'source_plan_id': ?sourcePlanForPayload,
         });
         if (pr != null && pr.isNotEmpty) {
           runningFields['parent_id'] = pr;
@@ -3616,8 +3616,7 @@ extension RecordServiceExtension on DatabaseService {
           'type': 'record',
           'checklist': <Map<String, dynamic>>[],
           if (parsed.tags.isNotEmpty) 'tags': parsed.tags.join(','),
-          if (sourcePlanForPayload != null)
-            'source_plan_id': sourcePlanForPayload,
+          'source_plan_id': ?sourcePlanForPayload,
         });
         if (pr != null && pr.isNotEmpty) {
           completedFields['parent_id'] = pr;

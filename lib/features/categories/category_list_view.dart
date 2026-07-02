@@ -342,7 +342,7 @@ class CategoryRowWidget extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           iconHitTarget,
-                          if (visibilityBtn != null) visibilityBtn,
+                          ?visibilityBtn,
                           gear,
                         ],
                       ),

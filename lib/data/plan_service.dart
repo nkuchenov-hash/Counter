@@ -107,11 +107,7 @@ final class _PlanningDayStreamHub {
       base = db._filterPlansForWallDay(_allPlansUserCache, wallDay);
     }
     final merged = db._mergePlanningOptimistic(dayKey, base);
-    db._logPlanDupTraceLayer(
-      source: 'stream',
-      tasks: merged,
-      dayKey: dayKey,
-    );
+    db._logPlanDupTraceLayer(source: 'stream', tasks: merged, dayKey: dayKey);
     _logPlanningStreamEmit(merged);
     controller.add(merged);
   }
@@ -614,7 +610,8 @@ extension PlanServiceExtension on DatabaseService {
         rrule: patchPlanAlarmRecurrence ? planRrule : null,
         exceptionDates: patchPlanAlarmRecurrence ? planExceptionDates : null,
         reminderOffset: patchPlanAlarmRecurrence ? planReminderOffset : null,
-        clearRrule: patchPlanAlarmRecurrence && (planRrule ?? '').trim().isEmpty,
+        clearRrule:
+            patchPlanAlarmRecurrence && (planRrule ?? '').trim().isEmpty,
         clearReminderOffset:
             patchPlanAlarmRecurrence && planReminderOffset == null,
         isSynced: false,
@@ -624,8 +621,10 @@ extension PlanServiceExtension on DatabaseService {
         endUtcInstant: clearEnd
             ? null
             : ((endDateTimeDisplay ?? endDateTime) != null
-                ? _profileUtcFromWall((endDateTimeDisplay ?? endDateTime)!).toUtc()
-                : current.endUtcInstant),
+                  ? _profileUtcFromWall(
+                      (endDateTimeDisplay ?? endDateTime)!,
+                    ).toUtc()
+                  : current.endUtcInstant),
         clearEndUtc: clearEnd,
       ),
     );
@@ -1455,17 +1454,13 @@ extension PlanServiceExtension on DatabaseService {
       for (final t in tasks)
         if (!_isJitVirtualPlanningTask(t)) t,
     ];
-    return dedupePlanningTasksForDisplay(
-      noVirt,
-      traceSource: 'cacheScrub',
-    );
+    return dedupePlanningTasksForDisplay(noVirt, traceSource: 'cacheScrub');
   }
 
   Future<void> scrubPersistedPlanningDayCachesOnRestore() async {
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      final prefix =
-          '${_scopedDataCacheKey('cache_plans_day_v1')}_';
+      final prefix = '${_scopedDataCacheKey('cache_plans_day_v1')}_';
       final keys = prefs.getKeys().where((k) => k.startsWith(prefix)).toList();
       for (final key in keys) {
         final dayKey = key.substring(prefix.length);
@@ -1515,7 +1510,8 @@ extension PlanServiceExtension on DatabaseService {
       final inst = t.recurrenceInstanceDateKey?.trim();
       if (inst == null || inst.length < 10) continue;
       final parentPb = t.pocketRecordId?.trim();
-      if (parentPb != null && DatabaseService._isLikelyPocketBaseRowId(parentPb)) {
+      if (parentPb != null &&
+          DatabaseService._isLikelyPocketBaseRowId(parentPb)) {
         materializedInstanceKeys.add('$parentPb|$inst');
       }
       final biz = _planBusinessUuidFromTask(t);
@@ -1774,8 +1770,7 @@ extension PlanServiceExtension on DatabaseService {
     final startMin = wallStart != null
         ? wallStart.hour * 60 + wallStart.minute
         : null;
-    final endMin =
-        wallEnd != null ? wallEnd.hour * 60 + wallEnd.minute : null;
+    final endMin = wallEnd != null ? wallEnd.hour * 60 + wallEnd.minute : null;
     print(
       'TIME_TZ_PROJECT planId=${planId.isEmpty ? '-' : planId} '
       'profileTz=${_settings.preferredTimeZone.trim().isEmpty ? 'offset:${_settings.timezoneOffsetHours}' : _settings.preferredTimeZone.trim()} '
@@ -1951,14 +1946,15 @@ extension PlanServiceExtension on DatabaseService {
     _pokeAllPlanningStreamHubsFromCache();
   }
 
-  int get profileTimezoneProjectionRevision => _profileTimezoneProjectionRevision;
+  int get profileTimezoneProjectionRevision =>
+      _profileTimezoneProjectionRevision;
 
   int plansProjectionCacheSignature() => Object.hash(
-        _allPlansUserCache.length,
-        _settings.timezoneOffsetHours,
-        _settings.preferredTimeZone.trim(),
-        _profileTimezoneProjectionRevision,
-      );
+    _allPlansUserCache.length,
+    _settings.timezoneOffsetHours,
+    _settings.preferredTimeZone.trim(),
+    _profileTimezoneProjectionRevision,
+  );
 
   void _rekeyPlanningOptimisticByProfileTimezone() {
     final merged = <String, PlanningTask>{};
@@ -1969,8 +1965,10 @@ extension PlanServiceExtension on DatabaseService {
     for (final t in merged.values) {
       final projected = _reprojectPlanningTaskWallTimes(t);
       final dk = _planOptimisticDayKeyFor(projected);
-      _planningOptimisticByDateKey
-          .putIfAbsent(dk, () => {})[projected.planRowIdForBackend] = projected;
+      _planningOptimisticByDateKey.putIfAbsent(
+        dk,
+        () => {},
+      )[projected.planRowIdForBackend] = projected;
     }
     for (final m in _planningOptimisticByDateKey.values) {
       for (final k in m.keys.toList()) {
@@ -2410,29 +2408,32 @@ extension PlanServiceExtension on DatabaseService {
     return RebuildMetrics.instance.perfBlockAsync(
       'Planning._fetchPlanningTasksForDate',
       () async {
-    try {
-      if (!_isPlansTableConfigured) {
-        DatabaseService._log('TABLE_GUARD: plans fetch disabled.');
-        return [];
-      }
-      if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
-        return [];
-      }
-      final targetDayStr =
-          '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
-      try {
-        await _ensureAllPlansUserCacheFresh();
-        final plans = _filterPlansForWallDay(_allPlansUserCache, selectedDate);
-        final merged = _mergePlanningOptimistic(targetDayStr, plans);
-        await _persistPlanningTasksDayCache(targetDayStr, merged);
-        return merged;
-      } catch (_) {
-        final cached = await _loadPlanningTasksDayCache(targetDayStr);
-        return _mergePlanningOptimistic(targetDayStr, cached);
-      }
-    } catch (_) {
-      return [];
-    }
+        try {
+          if (!_isPlansTableConfigured) {
+            DatabaseService._log('TABLE_GUARD: plans fetch disabled.');
+            return [];
+          }
+          if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
+            return [];
+          }
+          final targetDayStr =
+              '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
+          try {
+            await _ensureAllPlansUserCacheFresh();
+            final plans = _filterPlansForWallDay(
+              _allPlansUserCache,
+              selectedDate,
+            );
+            final merged = _mergePlanningOptimistic(targetDayStr, plans);
+            await _persistPlanningTasksDayCache(targetDayStr, merged);
+            return merged;
+          } catch (_) {
+            final cached = await _loadPlanningTasksDayCache(targetDayStr);
+            return _mergePlanningOptimistic(targetDayStr, cached);
+          }
+        } catch (_) {
+          return [];
+        }
       },
       meta: {
         'date':
@@ -2617,13 +2618,17 @@ extension PlanServiceExtension on DatabaseService {
   }) {
     final dayKey =
         '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
-    final dayTasks = scheduledSubset ??
-        planningDayTasksSnapshot(wallDay)
-            .where((t) => t.startTime != null)
-            .toList();
+    final dayTasks =
+        scheduledSubset ??
+        planningDayTasksSnapshot(
+          wallDay,
+        ).where((t) => t.startTime != null).toList();
     if (dayTasks.isEmpty) return false;
     final cascaded = normalizeSequentialPlanTimesForDay(dayTasks);
-    final patches = plan_time_seq.diffSequentialCascadePatches(dayTasks, cascaded);
+    final patches = plan_time_seq.diffSequentialCascadePatches(
+      dayTasks,
+      cascaded,
+    );
     if (patches.isEmpty) return false;
     var applied = 0;
     final appliedPatches = <plan_time_seq.PlanTimeSequentialCascadePatch>[];
@@ -2667,8 +2672,7 @@ extension PlanServiceExtension on DatabaseService {
 
   /// Cache + optimistic overlay for one wall day (no network).
   List<PlanningTask> planningDayTasksSnapshot(DateTime wallDay) {
-    final key =
-        '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
+    final key = '${wallDay.year}-${_two(wallDay.month)}-${_two(wallDay.day)}';
     final base = _filterPlansForWallDay(_allPlansUserCache, wallDay);
     return _mergePlanningOptimistic(key, base);
   }
@@ -2702,8 +2706,11 @@ extension PlanServiceExtension on DatabaseService {
     ensurePlansWarmWindow(center);
     if (criticalOnly) {
       for (final offset in [-1, 0, 1]) {
-        final d = DateTime(center.year, center.month, center.day)
-            .add(Duration(days: offset));
+        final d = DateTime(
+          center.year,
+          center.month,
+          center.day,
+        ).add(Duration(days: offset));
         plansWarmSnapshotForDate(d);
         plansBodyEntryForDate(d, allowEmergencyBuild: true);
         buildPlansDayRenderSnapshot(d);
@@ -2719,9 +2726,11 @@ extension PlanServiceExtension on DatabaseService {
   }
 
   void schedulePlansMountedWindowBootBackground(DateTime center) {
-    unawaited(Future.microtask(() {
-      preparePlansMountedWindowBoot(center);
-    }));
+    unawaited(
+      Future.microtask(() {
+        preparePlansMountedWindowBoot(center);
+      }),
+    );
   }
 
   PlansDayRenderSnapshot? plansRenderSnapshotForDate(DateTime wallDay) {
@@ -2754,17 +2763,24 @@ extension PlanServiceExtension on DatabaseService {
   }) {
     final key = p0tDateKey(wallDay);
     final body = plansBodyEntryForDate(wallDay);
-    final planActual = aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
+    final planActual = aggregateSourcePlanActualSecondsForWallCalendarDay(
+      wallDay,
+    );
     final cards = <PlanCardRenderDto>[];
     var missing = 'none';
 
     for (final task in body.tasks) {
       final hydrated = _hydratePlanTaskForRender(task);
-      final pbId = DatabaseService.pocketRelationIdOrNull(hydrated.pocketRecordId);
+      final pbId = DatabaseService.pocketRelationIdOrNull(
+        hydrated.pocketRecordId,
+      );
       final tracked = pbId != null ? (planActual[pbId] ?? 0) : 0;
-      final estimate = PlanServiceExtension.planningWallEstimateSeconds(hydrated);
+      final estimate = PlanServiceExtension.planningWallEstimateSeconds(
+        hydrated,
+      );
       final titleNorm = hydrated.title.trim().toLowerCase();
-      final highlight = activeRecordingTitleNorm != null &&
+      final highlight =
+          activeRecordingTitleNorm != null &&
           activeRecordingTitleNorm == titleNorm;
       final categoryReady =
           hydrated.categoryId == 0 ||
@@ -2818,17 +2834,18 @@ extension PlanServiceExtension on DatabaseService {
 
   bool _planTaskTagsRenderReady(PlanningTask task) {
     if (task.tags.isEmpty) return true;
-    return task.tags.every(
-      (t) => t.name.trim().isNotEmpty && t.rendersAsChip,
-    );
+    return task.tags.every((t) => t.name.trim().isNotEmpty && t.rendersAsChip);
   }
 
   void preparePlansCriticalRenderReady(DateTime center) {
     final sw = Stopwatch()..start();
     var ready = 0;
     for (final offset in [-1, 0, 1]) {
-      final day = DateTime(center.year, center.month, center.day)
-          .add(Duration(days: offset));
+      final day = DateTime(
+        center.year,
+        center.month,
+        center.day,
+      ).add(Duration(days: offset));
       buildPlansDayRenderSnapshot(day);
       if (isPlansDateFullyReady(day)) ready++;
     }
@@ -3006,12 +3023,16 @@ extension PlanServiceExtension on DatabaseService {
 
   void prebuildPlansCriticalBodiesSync(DateTime center) {
     final cache = plansDayBodyCache;
-    final centerKey = '${center.year}-${_two(center.month)}-${_two(center.day)}';
+    final centerKey =
+        '${center.year}-${_two(center.month)}-${_two(center.day)}';
     cache.setCenter(centerKey);
     final sw = Stopwatch()..start();
     for (final offset in [-1, 0, 1]) {
-      final day = DateTime(center.year, center.month, center.day)
-          .add(Duration(days: offset));
+      final day = DateTime(
+        center.year,
+        center.month,
+        center.day,
+      ).add(Duration(days: offset));
       final entry = _buildPlansBodyEntry(day, source: 'criticalPrebuild');
       cache.put(entry.dateKey, entry);
     }
@@ -3026,8 +3047,11 @@ extension PlanServiceExtension on DatabaseService {
           : label == 'tomorrow'
           ? 1
           : 0;
-      final day = DateTime(center.year, center.month, center.day)
-          .add(Duration(days: offset));
+      final day = DateTime(
+        center.year,
+        center.month,
+        center.day,
+      ).add(Duration(days: offset));
       final key = '${day.year}-${_two(day.month)}-${_two(day.day)}';
       final cache = plansDayBodyCache;
       final snap = _plansWarm.peek(key);
@@ -3038,7 +3062,8 @@ extension PlanServiceExtension on DatabaseService {
     if (_plansWindowBodyPrebuildInFlight) return;
     _plansWindowBodyPrebuildInFlight = true;
     final gen = ++_plansBodyPrebuildGeneration;
-    final centerKey = '${center.year}-${_two(center.month)}-${_two(center.day)}';
+    final centerKey =
+        '${center.year}-${_two(center.month)}-${_two(center.day)}';
     plansDayBodyCache.setCenter(centerKey);
     unawaited(() async {
       final sw = Stopwatch()..start();
@@ -3049,8 +3074,11 @@ extension PlanServiceExtension on DatabaseService {
       )) {
         if (gen != _plansBodyPrebuildGeneration) return;
         await Future<void>.delayed(Duration.zero);
-        final day = DateTime(center.year, center.month, center.day)
-            .add(Duration(days: offset));
+        final day = DateTime(
+          center.year,
+          center.month,
+          center.day,
+        ).add(Duration(days: offset));
         final key = '${day.year}-${_two(day.month)}-${_two(day.day)}';
         final cache = plansDayBodyCache;
         if (cache.isBodyReady(key)) {
@@ -3062,8 +3090,7 @@ extension PlanServiceExtension on DatabaseService {
         cache.put(key, entry);
         bodySw.stop();
         ready++;
-        if (ready % 4 == 0 || ready == total) {
-        }
+        if (ready % 4 == 0 || ready == total) {}
       }
       sw.stop();
       plansDayBodyCache.logMemory(
@@ -3110,7 +3137,8 @@ extension PlanServiceExtension on DatabaseService {
     DateTime endWall,
     DateTime? startUtcInstant,
     DateTime? endUtcInstant,
-  }) resolveAutoPlanSchedule({
+  })
+  resolveAutoPlanSchedule({
     required DateTime wallDay,
     required int categoryId,
     required List<Tag> tags,
@@ -3139,9 +3167,10 @@ extension PlanServiceExtension on DatabaseService {
         tags: tags,
         planRowId: probePlanId,
       );
-      final cascadedProbe = normalizeSequentialPlanTimesForDay(
-        [...existingDayPlans, probe],
-      ).firstWhere((t) => t.planRowId == probePlanId);
+      final cascadedProbe = normalizeSequentialPlanTimesForDay([
+        ...existingDayPlans,
+        probe,
+      ]).firstWhere((t) => t.planRowId == probePlanId);
       return (
         startWall: cascadedProbe.startTime ?? explicitStartWall,
         endWall: cascadedProbe.endDateTime ?? explicitEndWall,
@@ -3150,8 +3179,8 @@ extension PlanServiceExtension on DatabaseService {
       );
     }
 
-    final durationMin = explicitDurationMinutes != null &&
-            explicitDurationMinutes > 0
+    final durationMin =
+        explicitDurationMinutes != null && explicitDurationMinutes > 0
         ? explicitDurationMinutes.clamp(1, 24 * 60)
         : resolvePlanDurationMinutesFromTags(tags);
 
@@ -3206,7 +3235,8 @@ extension PlanServiceExtension on DatabaseService {
       existingDayPlans: existingDayPlans,
     );
 
-    var endWall = explicitEndWall != null &&
+    var endWall =
+        explicitEndWall != null &&
             explicitEndWall.isAfter(resolvedStart) &&
             hasExplicitTimeRange
         ? explicitEndWall
@@ -3227,9 +3257,10 @@ extension PlanServiceExtension on DatabaseService {
       tags: tags,
       planRowId: probePlanId,
     );
-    final cascadedProbe = normalizeSequentialPlanTimesForDay(
-      [...existingDayPlans, probe],
-    ).firstWhere((t) => t.planRowId == probePlanId);
+    final cascadedProbe = normalizeSequentialPlanTimesForDay([
+      ...existingDayPlans,
+      probe,
+    ]).firstWhere((t) => t.planRowId == probePlanId);
     resolvedStart = cascadedProbe.startTime ?? resolvedStart;
     endWall = cascadedProbe.endDateTime ?? endWall;
 
@@ -3263,7 +3294,8 @@ extension PlanServiceExtension on DatabaseService {
       DateTime endWall,
       DateTime? startUtcInstant,
       DateTime? endUtcInstant,
-    }) schedule,
+    })
+    schedule,
   ) {
     if (schedule.startUtcInstant != null) {
       final sw = _profileWallFromUtc(schedule.startUtcInstant!);
@@ -3282,7 +3314,8 @@ extension PlanServiceExtension on DatabaseService {
       DateTime endWall,
       DateTime? startUtcInstant,
       DateTime? endUtcInstant,
-    }) schedule,
+    })
+    schedule,
   ) {
     if (schedule.startUtcInstant != null) {
       return task.copyWith(
@@ -3337,11 +3370,7 @@ extension PlanServiceExtension on DatabaseService {
           }
         }
       }
-      wallDay ??= DateTime(
-        latestEnd.year,
-        latestEnd.month,
-        latestEnd.day,
-      );
+      wallDay ??= DateTime(latestEnd.year, latestEnd.month, latestEnd.day);
       final windowStart = PlanTimeVisibleWindow.windowStartWall(
         wallDay,
         timelineStartHour,
@@ -3372,7 +3401,7 @@ extension PlanServiceExtension on DatabaseService {
     final authId = _userIdForWhere;
     if (authId == null || authId.isEmpty) return [];
     final uid = _escapeForPbFilter(authId);
-  final sw = Stopwatch()..start();
+    final sw = Stopwatch()..start();
     try {
       final tagCatalog = await _fetchPlanAndListTagCatalog();
       final list = await _pb
@@ -3939,7 +3968,11 @@ extension PlanServiceExtension on DatabaseService {
       final d = int.parse(dateKey.substring(8, 10));
       final startWall = DateTime(y, m, d, 0, 0, 0);
       return wall_clock
-          .wallClockToUtc(startWall, _settings.timezoneOffsetHours)
+          .wallClockToUtcForLabel(
+            startWall,
+            _settings.timezoneOffsetHours,
+            _settings.preferredTimeZone,
+          )
           .toIso8601String();
     } catch (_) {
       return null;
@@ -4541,9 +4574,7 @@ extension PlanServiceExtension on DatabaseService {
           final m = int.tryParse(ymd[1]);
           final d = int.tryParse(ymd[2]);
           if (y != null && m != null && d != null) {
-            applySequentialTimeViewCascadeIfNeeded(
-              wallDay: DateTime(y, m, d),
-            );
+            applySequentialTimeViewCascadeIfNeeded(wallDay: DateTime(y, m, d));
           }
         }
       }
@@ -5066,9 +5097,7 @@ extension PlanServiceExtension on DatabaseService {
         startTimeDisplay,
       ).toIso8601String();
     } else if (startTime != null) {
-      fields['start_time'] = _profileUtcFromWall(
-        startTime,
-      ).toIso8601String();
+      fields['start_time'] = _profileUtcFromWall(startTime).toIso8601String();
     }
     if (clearEnd) {
       fields['end_time'] = null;
@@ -5077,9 +5106,7 @@ extension PlanServiceExtension on DatabaseService {
         endDateTimeDisplay,
       ).toIso8601String();
     } else if (endDateTime != null) {
-      fields['end_time'] = _profileUtcFromWall(
-        endDateTime,
-      ).toIso8601String();
+      fields['end_time'] = _profileUtcFromWall(endDateTime).toIso8601String();
     }
     final bizPid = planBusinessId?.trim() ?? '';
     if (bizPid.isNotEmpty && !bizPid.startsWith('optimistic-')) {
@@ -5538,11 +5565,7 @@ extension PlanServiceExtension on DatabaseService {
       }
 
       final scheduleDay = newStartWall != null
-          ? DateTime(
-              newStartWall.year,
-              newStartWall.month,
-              newStartWall.day,
-            )
+          ? DateTime(newStartWall.year, newStartWall.month, newStartWall.day)
           : DateTime(
               int.parse(day.substring(0, 4)),
               int.parse(day.substring(5, 7)),
@@ -6361,7 +6384,9 @@ extension PlanServiceExtension on DatabaseService {
       _plansRealtimeFailureStreak = 0;
       _plansRealtimeReconnectTimer?.cancel();
       _plansRealtimeReconnectTimer = null;
-      planStreamLifecycleLog('realtimeSubscribe status=success collection=plans');
+      planStreamLifecycleLog(
+        'realtimeSubscribe status=success collection=plans',
+      );
     } catch (e) {
       _logPlansRealtimeSubscribeQuiet(e);
       _handleRealtimeSubscribeFailure(e, source: 'plans');
@@ -6480,18 +6505,18 @@ class TimeModeProjectedPlan {
   }
 
   PlanningTask get projectedTask => task.copyWith(
-        startUtcInstant: startUtc,
-        endUtcInstant: endUtc,
-        startTime: wallStart,
-        endDateTime: wallEnd,
-        dateKey: wallDateKey,
-        endDateKey: wallEnd != null
-            ? '${wallEnd!.year.toString().padLeft(4, '0')}-'
-                '${wallEnd!.month.toString().padLeft(2, '0')}-'
-                '${wallEnd!.day.toString().padLeft(2, '0')}'
-            : wallDateKey,
-        date: DateTime.utc(wallStart.year, wallStart.month, wallStart.day),
-      );
+    startUtcInstant: startUtc,
+    endUtcInstant: endUtc,
+    startTime: wallStart,
+    endDateTime: wallEnd,
+    dateKey: wallDateKey,
+    endDateKey: wallEnd != null
+        ? '${wallEnd!.year.toString().padLeft(4, '0')}-'
+              '${wallEnd!.month.toString().padLeft(2, '0')}-'
+              '${wallEnd!.day.toString().padLeft(2, '0')}'
+        : wallDateKey,
+    date: DateTime.utc(wallStart.year, wallStart.month, wallStart.day),
+  );
 }
 
 extension PlanTimeModeProjection on DatabaseService {
@@ -6543,9 +6568,8 @@ extension PlanTimeModeProjection on DatabaseService {
 
   String profileTimezoneShortLabel() {
     final label = settings.preferredTimeZone.trim();
-    if (wall_clock.profileLabelUsesNewYorkWallClock(label)) return 'NY';
-    final lower = label.toLowerCase();
-    if (lower.contains('moscow') || lower.contains('msk')) return 'MSK';
+    final entry = catalogEntryForStoredTimezone(label);
+    if (entry != null) return entry.code;
     final off = settings.timezoneOffsetHours;
     if (off == 0) return 'UTC';
     return off > 0 ? 'UTC+$off' : 'UTC$off';

@@ -158,6 +158,9 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 | **C** | Doc sync (APP_STRUCTURE, CLAUDE, audit) | ✅ |
 | **Lockdown** | Full-repo manifest + APP_STRUCTURE contract + `architecture_guard.ps1` | ✅ 2026-06-23 |
 | **Release structure** | Delete/migrate non-release files; strict guard; `APP_STRUCTURE_EXPLAINED_RU.md`; l10n SSOT | ✅ 2026-06-23 |
+| **E.0 Blueprint** | Large-file split plan — `docs/reports/LARGE_FILE_SPLIT_BLUEPRINT_2026-07-02.md` | ✅ 2026-07-02 |
+| **E.0.5A Guard green** | Move `voice_command_parser` to Brain; `ProfileTimezoneActions` injection; `DesktopVoiceLog` rename; APP_STRUCTURE manifest for desktop voice + timezone modules | ✅ 2026-07-02 |
+| **E.1+ Implementation** | Split passes per blueprint (profile → sheets → plan card → …) | ⏸ next after E.0.5A |
 | **D** | Architecture guard **-Strict** in CI | ⏸ next |
 | **B** | Safe renames/moves (root barrels, Archive/, duplicate l10n) | ⏸ after D |
 | **E** | Justified large-file splits | ⏸ — **never by line count alone** |

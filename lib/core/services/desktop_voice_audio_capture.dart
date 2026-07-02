@@ -1,12 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:counter/core/services/desktop_stt_helper_service.dart';
-import 'package:counter/core/services/desktop_voice_engine.dart';
-import 'package:counter/core/services/desktop_win_speech_service.dart';
+import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
-import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
 
 /// Live microphone capture for desktop voice — PCM16 16 kHz mono + WAV save.
@@ -30,6 +26,7 @@ class DesktopVoiceAudioCapture {
   double _rmsAmplitude = 0;
   String? _lastWavPath;
   String? _lastError;
+  bool _levelMarkerLogged = false;
 
   Stream<double>? get amplitudeStream => _ampController?.stream;
   int get capturedBytes => _buffer.length;
@@ -64,6 +61,7 @@ class DesktopVoiceAudioCapture {
       _rmsAmplitude = 0;
       _lastWavPath = null;
       _lastError = null;
+      _levelMarkerLogged = false;
       _ampController = StreamController<double>.broadcast();
 
       _recorder = AudioRecorder();
@@ -109,7 +107,18 @@ class DesktopVoiceAudioCapture {
     if (rms >= _levelThreshold || peak >= _levelThreshold) {
       _audioLevelSeen = true;
     }
-    _ampController?.add(rms.clamp(0.0, 1.0));
+    if (!_levelMarkerLogged) {
+      _levelMarkerLogged = true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_UPDATE');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_RMS', rms.toStringAsFixed(4));
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_PEAK', peak.toStringAsFixed(4));
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_WAVEFORM_UPDATE');
+    }
+    // Mic-bar visual source: PEAK (not RMS). RMS mathematically under-reports
+    // transient speech bursts (typical RMS ~0.02 vs peak ~0.15), so RMS-only
+    // bars look dead. Peak tracks what the user actually hears. We emit on
+    // every chunk so the overlay animates per-frame, not only on loud frames.
+    _ampController?.add(peak.clamp(0.0, 1.0));
   }
 
   Future<DesktopVoiceCaptureResult?> stopAndSaveWav({
@@ -167,6 +176,18 @@ class DesktopVoiceAudioCapture {
       deviceLabel: _deviceLabel ?? 'default',
       deviceId: _deviceId,
     );
+  }
+
+  void injectSmokeLevelBurst() {
+    if (Platform.environment['COUNTER_DESKTOP_VOICE_SMOKE'] != '1') return;
+    if (_recorder == null) return;
+    final chunk = <int>[];
+    for (var i = 0; i < 8000; i++) {
+      chunk.add(0x00);
+      chunk.add(0x60);
+    }
+    _onChunk(chunk);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_SMOKE_AUDIO_INJECTED');
   }
 
   Future<void> cancel() async {

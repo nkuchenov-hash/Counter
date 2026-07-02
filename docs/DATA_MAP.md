@@ -156,7 +156,7 @@ description: Revisions and corrections for DATA_MAP.md.
 | **updated** | ISO8601 String | System | NO | PocketBase auto-updates this. |
 | **primary_language**| String | UI | **YES** | App interface language code (e.g., "ru", "en"). |
 | **theme_mode** | Select | UI | **YES** | App appearance: `light`, `dark`, or `system`. |
-| **preferred_timezone**| String | Time | **YES** | Textual timezone name (e.g., "New York (UTC-5)"). |
+| **preferred_timezone**| String | Time | **YES** | Canonical profile timezone (`UTC`, `London`, `Moscow`, `Dubai`, `New York`; legacy offset labels are normalized on read). |
 | **timezone_offset** | Number | Time | **YES** | Numerical offset from UTC (e.g., -5). |
 | **biometric_enabled**| Bool | Security | **YES** | Toggle for FaceID/Fingerprint authentication. |
 | **is_admin** | Bool | Access | NO | Admin-only app flag. Default false. Read-only for the client UI. Used to reveal internal/admin tools such as Component Lab. Managed manually in PocketBase Admin UI; normal profile settings must not PATCH this field. |

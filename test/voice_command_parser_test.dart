@@ -1,10 +1,8 @@
 import 'package:counter/data/models.dart';
-import 'package:counter/features/shared/voice_command_parser.dart';
+import 'package:counter/data/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-CategoryRule _priceReporterFixtureTree({
-  List<CategoryRule>? extraChildren,
-}) {
+CategoryRule _priceReporterFixtureTree({List<CategoryRule>? extraChildren}) {
   return CategoryRule(
     id: 100,
     name: 'Price Reporter',
@@ -18,11 +16,7 @@ CategoryRule _priceReporterFixtureTree({
           'en': ['age solutions'],
         },
       ),
-      CategoryRule(
-        id: 102,
-        name: 'BETA CORP',
-        backendRowId: 'betaclient12345',
-      ),
+      CategoryRule(id: 102, name: 'BETA CORP', backendRowId: 'betaclient12345'),
       if (extraChildren != null) ...extraChildren,
     ],
   );
@@ -35,15 +29,19 @@ void main() {
         _priceReporterFixtureTree(),
       ]);
       expect(index, isNotNull);
-      expect(index!.rootLabel, 'Price Reporter');
-      expect(index.candidates.length, greaterThanOrEqualTo(2));
+      final scope = index!.priceReporterScope;
+      expect(scope, isNotNull);
+      expect(scope!.rootLabel, 'Price Reporter');
+      expect(scope.candidates.length, greaterThanOrEqualTo(2));
     });
 
-    test('returns null when root missing', () {
+    test('indexes non-Price Reporter roots without a Price Reporter scope', () {
       final index = VoiceCommandCategoryIndex.fromCategoryRules([
         CategoryRule(id: 1, name: 'Other', backendRowId: 'other1234567890'),
       ]);
-      expect(index, isNull);
+      expect(index, isNotNull);
+      expect(index!.priceReporterScope, isNull);
+      expect(index.roots.single.rootLabel, 'Other');
     });
   });
 
@@ -80,14 +78,15 @@ void main() {
       expect(r.recordTitle, 'ADD MOD');
     });
 
-    test('no match when root scope missing', () {
+    test('rootless child command extracts client and record title', () {
       final r = parsePriceReporterVoiceCommand(
         index: index,
         transcript: 'AGE SOLUTIONS ADD MOD',
       );
-      expect(r.confidence, VoiceCommandMatchConfidence.noMatch);
-      expect(r.isSafeToStart, isFalse);
-      expect(r.ambiguityReason, 'missing_root_scope');
+      expect(r.confidence, VoiceCommandMatchConfidence.exact);
+      expect(r.isSafeToStart, isTrue);
+      expect(r.matchedLocalCategoryId, 101);
+      expect(r.recordTitle, 'ADD MOD');
     });
 
     test('no match for unknown client', () {
@@ -109,7 +108,9 @@ void main() {
               id: 103,
               name: 'AGE SOLUTIONS ALT',
               backendRowId: 'agealtclient12345',
-              keywords: {'en': ['age solutions']},
+              keywords: {
+                'en': ['age solutions'],
+              },
             ),
           ],
         ),

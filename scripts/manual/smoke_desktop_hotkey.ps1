@@ -3,7 +3,8 @@
 # Optional: -PrepareTimeoutSmoke uses build with DESKTOP_VOICE_FORCE_PREPARE_TIMEOUT=true
 
 param(
-    [switch]$PrepareTimeoutSmoke
+    [switch]$PrepareTimeoutSmoke,
+    [switch]$CommandFirstSmoke
 )
 
 $ErrorActionPreference = 'Stop'
@@ -132,6 +133,8 @@ Write-Host "Exe: $exe"
 Get-Process counter,counter_stt_helper -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
+$env:COUNTER_DESKTOP_VOICE_SMOKE = '1'
+$env:COUNTER_DESKTOP_VOICE_SMOKE_FORCE_ENABLE = '1'
 $proc = Start-Process -FilePath $exe -PassThru
 Write-Host "PID: $($proc.Id)"
 
@@ -141,15 +144,34 @@ if (-not $readyText) {
     throw 'TIMEOUT: DESKTOP_VOICE_HOTKEY_REGISTERED not seen (enable Desktop Voice in settings)'
 }
 
-$hotkeyLabel = 'Ctrl+Shift+Space'
+$hotkeyLabel = $null
 foreach ($line in ($readyText -split "`n")) {
-    if ($line -match 'DESKTOP_VOICE_HOTKEY_REGISTERED\s+(.+)$') {
+    if ($line -match 'DESKTOP_VOICE_HOTKEY_REGISTERED\s+yes combo=([^\r\n]+)') {
         $hotkeyLabel = $Matches[1].Trim()
         break
     }
+    if ($line -match 'DESKTOP_VOICE_HOTKEY_REGISTERED_COMBO\s+([^\r\n]+)') {
+        $hotkeyLabel = $Matches[1].Trim()
+        break
+    }
+    if ($null -eq $hotkeyLabel -and $line -match 'DESKTOP_VOICE_HOTKEY_REGISTERED\s+(.+)$') {
+        $candidate = $Matches[1].Trim()
+        if ($candidate -notmatch '^yes combo=') {
+            $hotkeyLabel = $candidate
+        }
+    }
+}
+if ([string]::IsNullOrWhiteSpace($hotkeyLabel)) {
+    throw 'FAIL: could not parse registered hotkey combo from pipeline log'
 }
 Write-Host "Registered hotkey: $hotkeyLabel"
 
+function Fire-NativeSmokeHotkey {
+    $trigger = Join-Path $env:TEMP 'counter_voice_smoke_fire.hotkey'
+    Set-Content -Path $trigger -Value '1' -NoNewline
+}
+
+$null = Wait-LogMarker 'DESKTOP_VOICE_APP_READY' 60
 Start-Sleep -Seconds 2
 Hide-CounterToTray -Process $proc
 Start-Sleep -Seconds 2
@@ -163,8 +185,28 @@ for ($i = 1; $i -le 5; $i++) {
 }
 Start-Sleep -Seconds 2
 
+$logText = Get-Content $logPath -Raw -ErrorAction SilentlyContinue
+if (-not ($logText -and $logText.Contains('DESKTOP_VOICE_HOTKEY_RECEIVED'))) {
+    Write-Host 'SendInput missed — trying native smoke file hook'
+    Fire-NativeSmokeHotkey
+    Start-Sleep -Seconds 2
+}
+
 if ($proc.HasExited) {
     throw 'FAIL: counter.exe exited after tray-hidden hotkey stress'
+}
+
+if ($CommandFirstSmoke) {
+    $inject = Join-Path $env:TEMP 'counter_voice_smoke_inject_running'
+    Set-Content -Path $inject -Value '1' -NoNewline
+    Start-Sleep -Seconds 1
+    Send-RegisteredHotkey -DisplayLabel $hotkeyLabel
+    Start-Sleep -Seconds 2
+    $cfLog = Get-Content $logPath -Raw -ErrorAction SilentlyContinue
+    if ($cfLog -and $cfLog.Contains('DESKTOP_VOICE_HOTKEY_STOP_RUNNING')) {
+        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+        throw 'FAIL: command-first violated — hotkey stopped running record'
+    }
 }
 
 $logText = Get-Content $logPath -Raw -ErrorAction SilentlyContinue
