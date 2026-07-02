@@ -466,6 +466,7 @@ class _PlanningPageState extends State<PlanningPage>
   Set<String> _timelineDragExcludedPlanIds = {};
   Set<String> _timelineBulkDragPlanIds = {};
   Map<String, int> _timelineBulkDragRelativeOffsetMin = {};
+  Map<String, double> _timelineBulkDragPreviewTopPxByPlanId = {};
 
   static const int _kTimelineDefaultBlockMinutes = 30;
 
@@ -3149,6 +3150,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
     _timelineDragExcludedPlanIds = {};
     _timelineBulkDragPlanIds = {};
     _timelineBulkDragRelativeOffsetMin = {};
+    _timelineBulkDragPreviewTopPxByPlanId = {};
     _dragInsertLayoutsCache = const [];
     _timelineResizePlanKey = null;
     _timelineResizeEdge = null;
@@ -3538,6 +3540,56 @@ DatabaseService.instance.notifyPlanningRefresh();
       deltaPx +
       _timelineFingerGrabOffsetCanvasPx;
 
+  void _applyTimelineCascadePreviewTops({
+    required TimeViewInsertionCascadeResult cascadeResult,
+    required String dragPlanId,
+    required PlanTimeViewDurationGrid grid,
+    required DateTime planWallDay,
+    required int rangeStart,
+    required double maxTopPx,
+  }) {
+    _timelineBulkDragPreviewTopPxByPlanId = {};
+    for (final t in cascadeResult.previewRows) {
+      final id = t.planRowIdForBackend;
+      if (!_timelineBulkDragPlanIds.contains(id)) continue;
+      final st = t.startTime;
+      if (st == null) continue;
+      _timelineBulkDragPreviewTopPxByPlanId[id] =
+          _timelinePreviewTopPxForStartWall(
+        startWall: st,
+        grid: grid,
+        planWallDay: planWallDay,
+        startExtended: rangeStart,
+        maxTopPx: maxTopPx,
+      );
+    }
+  }
+
+  TimeViewInsertionCascadeResult _timelineCascadeForDrag({
+    required List<PlanningTask> scheduledInRange,
+    required String dragPlanId,
+    required Set<String> dragIds,
+    required Map<String, int> bulkOffsets,
+    required TimeViewInsertionIntent? targetIntent,
+    required DateTime? emptyCanvasStartWall,
+    required bool hadEnd,
+    required int durationMin,
+  }) {
+    return computeTimeViewInsertionCascade(
+      scheduledTasks: scheduledInRange,
+      draggedPlanIds: dragIds,
+      primaryDraggedPlanId: dragPlanId,
+      fixedPlanIds: _timeViewFixedPlanIdsForTasks(scheduledInRange),
+      resolveDurationMinutes:
+          DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+      targetIntent: targetIntent,
+      emptyCanvasStartWall: emptyCanvasStartWall,
+      emptyCanvasHadEnd: hadEnd,
+      emptyCanvasDurationMin: durationMin,
+      bulkRelativeOffsetMinutes: bulkOffsets.isEmpty ? null : bulkOffsets,
+    );
+  }
+
   TimeViewDropIntent _timelineResolveDropIntent({
     required double fingerCanvasY,
     required List<PlanTimeViewBlockLayout> layouts,
@@ -3831,22 +3883,65 @@ DatabaseService.instance.notifyPlanningRefresh();
         draggedHadEnd: _timelineVerticalDragHadEnd,
         dragSequenceId: _timelineVerticalDragSequenceId,
       );
+      storedIntent = storedIntent == null
+          ? null
+          : refreshTimeViewInsertionIntentFromScheduled(
+              intent: storedIntent,
+              scheduled: scheduledInRange,
+              resolveDurationMinutes:
+                  DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+            );
       if (storedIntent != null) {
-        final dropResult = DatabaseService.instance.applyTimeViewTargetInsertion(
-          scheduledInRange,
-          storedIntent,
+        final cascadeResult = _timelineCascadeForDrag(
+          scheduledInRange: scheduledInRange,
+          dragPlanId: dragPlanId,
+          dragIds: _timelineBulkDragPlanIds.isEmpty
+              ? {dragPlanId}
+              : _timelineBulkDragPlanIds,
+          bulkOffsets: _timelineBulkDragRelativeOffsetMin,
+          targetIntent: storedIntent,
+          emptyCanvasStartWall: null,
+          hadEnd: _timelineVerticalDragHadEnd,
+          durationMin: _timelineVerticalDragDurationMin,
         );
-        previewTop = _timelinePreviewTopPxForStartWall(
-          startWall: dropResult.draggedStartWall,
-          grid: grid,
-          planWallDay: planWallDay,
-          startExtended: rangeStart,
-          maxTopPx: maxTopPx,
-        );
-        previewLabel = _formatTimelineWallRangeLabel(
-          dropResult.draggedStartWall,
-          dropResult.draggedEndWall,
-        );
+        if (cascadeResult.accepted &&
+            cascadeResult.draggedStartWall != null) {
+          _applyTimelineCascadePreviewTops(
+            cascadeResult: cascadeResult,
+            dragPlanId: dragPlanId,
+            grid: grid,
+            planWallDay: planWallDay,
+            rangeStart: rangeStart,
+            maxTopPx: maxTopPx,
+          );
+          previewTop = _timelineBulkDragPreviewTopPxByPlanId[dragPlanId] ??
+              _timelinePreviewTopPxForStartWall(
+                startWall: cascadeResult.draggedStartWall!,
+                grid: grid,
+                planWallDay: planWallDay,
+                startExtended: rangeStart,
+                maxTopPx: maxTopPx,
+              );
+          previewLabel = _formatTimelineWallRangeLabel(
+            cascadeResult.draggedStartWall!,
+            cascadeResult.draggedEndWall,
+          );
+        } else {
+          storedIntent = null;
+          insertKey = null;
+          _timelineBulkDragPreviewTopPxByPlanId = {};
+          final snappedMin = _snapTimelineMinutes(
+            grid.minutesFromY(pointerAnchoredTopPx),
+          );
+          previewTop = grid.yForMinutesFromRangeStart(snappedMin);
+          previewLabel = _timelineDragLabelForTopPx(
+            previewTop,
+            planWallDay,
+            rangeStart,
+            _timelineVerticalDragDurationMin,
+            _timelineVerticalDragHadEnd,
+          );
+        }
         final targetLayout = _timelineLayoutForPlanId(
           layouts,
           dropIntent.targetPlanId,
@@ -3864,6 +3959,7 @@ DatabaseService.instance.notifyPlanningRefresh();
       } else {
         storedIntent = null;
         insertKey = null;
+        _timelineBulkDragPreviewTopPxByPlanId = {};
         final snappedMin = _snapTimelineMinutes(
           grid.minutesFromY(pointerAnchoredTopPx),
         );
@@ -3880,14 +3976,55 @@ DatabaseService.instance.notifyPlanningRefresh();
       storedIntent = null;
       final snappedMin = dropIntent.wallStartMinute ??
           _snapTimelineMinutes(grid.minutesFromY(pointerAnchoredTopPx));
-      previewTop = grid.yForMinutesFromRangeStart(snappedMin);
-      previewLabel = _timelineDragLabelForTopPx(
-        previewTop,
+      final emptyStart = _wallTimeFromTimelineMinutes(
+        snappedMin,
         planWallDay,
         rangeStart,
-        _timelineVerticalDragDurationMin,
-        _timelineVerticalDragHadEnd,
       );
+      final cascadeResult = _timelineCascadeForDrag(
+        scheduledInRange: scheduledInRange,
+        dragPlanId: dragPlanId,
+        dragIds: _timelineBulkDragPlanIds.isEmpty
+            ? {dragPlanId}
+            : _timelineBulkDragPlanIds,
+        bulkOffsets: _timelineBulkDragRelativeOffsetMin,
+        targetIntent: null,
+        emptyCanvasStartWall: emptyStart,
+        hadEnd: _timelineVerticalDragHadEnd,
+        durationMin: _timelineVerticalDragDurationMin,
+      );
+      if (cascadeResult.accepted && cascadeResult.draggedStartWall != null) {
+        _applyTimelineCascadePreviewTops(
+          cascadeResult: cascadeResult,
+          dragPlanId: dragPlanId,
+          grid: grid,
+          planWallDay: planWallDay,
+          rangeStart: rangeStart,
+          maxTopPx: maxTopPx,
+        );
+        previewTop = _timelineBulkDragPreviewTopPxByPlanId[dragPlanId] ??
+            _timelinePreviewTopPxForStartWall(
+              startWall: cascadeResult.draggedStartWall!,
+              grid: grid,
+              planWallDay: planWallDay,
+              startExtended: rangeStart,
+              maxTopPx: maxTopPx,
+            );
+        previewLabel = _formatTimelineWallRangeLabel(
+          cascadeResult.draggedStartWall!,
+          cascadeResult.draggedEndWall,
+        );
+      } else {
+        _timelineBulkDragPreviewTopPxByPlanId = {};
+        previewTop = grid.yForMinutesFromRangeStart(snappedMin);
+        previewLabel = _timelineDragLabelForTopPx(
+          previewTop,
+          planWallDay,
+          rangeStart,
+          _timelineVerticalDragDurationMin,
+          _timelineVerticalDragHadEnd,
+        );
+      }
     }
 
     setState(() {
@@ -3972,22 +4109,25 @@ DatabaseService.instance.notifyPlanningRefresh();
         'phase=commit source=targetCard '
         'position=${dropIntent.insertBefore ? 'before' : 'after'} noRawY=true',
       );
-      insertionIntent = buildTimeViewInsertionIntentFromDropIntent(
-        drop: dropIntent,
-        scheduledCardLayouts: cardLayouts,
-        draggedPlanId: task.planRowIdForBackend,
-        draggedDurationMinutes: durMin,
-        draggedHadEnd: _timelineVerticalDragHadEnd,
-        dragSequenceId: _timelineVerticalDragSequenceId,
-      );
-      insertionIntent = insertionIntent == null
-          ? null
-          : refreshTimeViewInsertionIntentFromScheduled(
-              intent: insertionIntent,
-              scheduled: scheduledInRange,
-              resolveDurationMinutes:
-                  DatabaseService.instance.resolvePlanDurationMinutesFromTags,
-            );
+      insertionIntent = _timelineStoredInsertionIntent;
+      if (insertionIntent == null) {
+        insertionIntent = buildTimeViewInsertionIntentFromDropIntent(
+          drop: dropIntent,
+          scheduledCardLayouts: cardLayouts,
+          draggedPlanId: task.planRowIdForBackend,
+          draggedDurationMinutes: durMin,
+          draggedHadEnd: _timelineVerticalDragHadEnd,
+          dragSequenceId: _timelineVerticalDragSequenceId,
+        );
+        insertionIntent = insertionIntent == null
+            ? null
+            : refreshTimeViewInsertionIntentFromScheduled(
+                intent: insertionIntent,
+                scheduled: scheduledInRange,
+                resolveDurationMinutes:
+                    DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+              );
+      }
       final cancelReason = insertionIntent == null
           ? 'targetProjectionFailed'
           : validateTimeViewTargetInsertionIntent(
@@ -4702,14 +4842,19 @@ DatabaseService.instance.notifyPlanningRefresh();
     required List<PlanningTask> scheduledInRange,
   }) {
     final planKey = _planKey(layout.task);
-    final isDragging = _timelineVerticalDragPlanKey == planKey;
+    final inBulkDragPreview = _timelineVerticalDragPlanKey != null &&
+        _timelineBulkDragPlanIds.contains(layout.task.planRowIdForBackend);
+    final isDragging = inBulkDragPreview;
     final isResizing = _timelineResizePlanKey == planKey;
     final isInteracting = isDragging || isResizing;
-    final topPx = isDragging
-        ? layout.topPx + _timelineVerticalDragDeltaPx
-        : isResizing
-        ? _timelineResizePreviewTopPx
-        : layout.topPx;
+    final bulkPreviewTop =
+        _timelineBulkDragPreviewTopPxByPlanId[layout.task.planRowIdForBackend];
+    final topPx = bulkPreviewTop ??
+        (isDragging
+            ? layout.topPx + _timelineVerticalDragDeltaPx
+            : isResizing
+            ? _timelineResizePreviewTopPx
+            : layout.topPx);
     final heightPx = isResizing
         ? math.max(1.0, _timelineResizePreviewHeightPx)
         : layout.heightPx;

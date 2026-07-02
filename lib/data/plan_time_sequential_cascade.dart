@@ -488,6 +488,42 @@ void assertTimeViewTargetCardNoRawY({
   );
 }
 
+/// Reorder scheduled tasks for explicit bulk target insert (no start-time sort).
+List<PlanningTask> buildExplicitOrderForBulkTargetInsert({
+  required List<PlanningTask> scheduled,
+  required Set<String> draggedPlanIds,
+  required String targetPlanId,
+  required bool insertBefore,
+}) {
+  if (scheduled.isEmpty || draggedPlanIds.isEmpty) return const [];
+
+  final dragged = <PlanningTask>[];
+  final rest = <PlanningTask>[];
+  for (final t in scheduled) {
+    if (draggedPlanIds.contains(t.planRowIdForBackend)) {
+      dragged.add(t);
+    } else {
+      rest.add(t);
+    }
+  }
+  if (dragged.isEmpty) return List<PlanningTask>.from(scheduled);
+
+  dragged.sort(_planCascadeSortCompare);
+
+  var targetIdx = -1;
+  for (var i = 0; i < rest.length; i++) {
+    if (rest[i].planRowIdForBackend == targetPlanId) {
+      targetIdx = i;
+      break;
+    }
+  }
+  if (targetIdx < 0) return List<PlanningTask>.from(scheduled);
+
+  final insertAt = insertBefore ? targetIdx : targetIdx + 1;
+  rest.insertAll(insertAt, dragged);
+  return rest;
+}
+
 /// Reorder scheduled tasks for explicit target insert (no start-time sort).
 List<PlanningTask> buildExplicitOrderForTargetInsert({
   required List<PlanningTask> scheduled,
@@ -778,16 +814,80 @@ TimeViewInsertionCascadeResult computeTimeViewInsertionCascade({
   List<PlanningTask> working = List<PlanningTask>.from(scheduledTasks);
 
   if (targetIntent != null) {
-    final ordered = buildExplicitOrderForTargetInsert(
-      scheduled: working,
-      draggedPlanId: targetIntent.draggedPlanId,
-      targetPlanId: targetIntent.targetPlanId,
-      insertBefore: targetIntent.insertBefore,
+    final primaryId = targetIntent.draggedPlanId;
+    PlanningTask? primaryTask;
+    for (final t in working) {
+      if (t.planRowIdForBackend == primaryId) {
+        primaryTask = t;
+        break;
+      }
+    }
+    if (primaryTask == null) {
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'primaryMissing',
+      );
+    }
+
+    final offsets = <String, int>{
+      for (final id in draggedPlanIds)
+        id: bulkRelativeOffsetMinutes?[id] ?? (id == primaryId ? 0 : 0),
+    };
+    if (!offsets.containsKey(primaryId)) {
+      offsets[primaryId] = 0;
+    }
+
+    final primaryDur = planWallDurationMinutesForCascade(
+      primaryTask,
+      resolveDurationMinutes: resolveDurationMinutes,
     );
+    final primaryHadEnd =
+        targetIntent.draggedHadEnd || primaryTask.endDateTime != null;
+    final anchorSchedule = computeTimeViewTargetDropSchedule(
+      targetStartWall: targetIntent.targetStartWall,
+      targetEndWall: targetIntent.targetEndWall,
+      draggedDurationMinutes: primaryDur,
+      insertBefore: targetIntent.insertBefore,
+      draggedHadEnd: primaryHadEnd,
+    );
+    final anchorStart = anchorSchedule.startWall;
+
+    working = working.map((t) {
+      final id = t.planRowIdForBackend;
+      if (!draggedPlanIds.contains(id)) return t;
+      final offset = offsets[id] ?? 0;
+      final start = anchorStart.add(Duration(minutes: offset));
+      final dur = planWallDurationMinutesForCascade(
+        t,
+        resolveDurationMinutes: resolveDurationMinutes,
+      );
+      final end = primaryHadEnd || t.endDateTime != null
+          ? start.add(Duration(minutes: dur))
+          : null;
+      return t.copyWith(
+        startTime: start,
+        endDateTime: end,
+        clearEnd: end == null,
+      );
+    }).toList(growable: false);
+
+    final ordered = draggedPlanIds.length > 1
+        ? buildExplicitOrderForBulkTargetInsert(
+            scheduled: working,
+            draggedPlanIds: draggedPlanIds,
+            targetPlanId: targetIntent.targetPlanId,
+            insertBefore: targetIntent.insertBefore,
+          )
+        : buildExplicitOrderForTargetInsert(
+            scheduled: working,
+            draggedPlanId: primaryId,
+            targetPlanId: targetIntent.targetPlanId,
+            insertBefore: targetIntent.insertBefore,
+          );
+
     final cascaded = cascadeScheduledPlansForExplicitTimeViewOrderWithBarriers(
       explicitOrder: ordered,
       resolveDurationMinutes: resolveDurationMinutes,
-      targetIntent: targetIntent,
       fixedPlanIds: fixedPlanIds,
       draggedPlanIds: draggedPlanIds,
     );
@@ -805,14 +905,29 @@ TimeViewInsertionCascadeResult computeTimeViewInsertionCascade({
         blockedByFixedPlanId: blockedId,
       );
     }
+    if (scheduledPlansHaveWallOverlap(
+      cascaded.where((t) => t.startTime != null).toList(),
+      resolveDurationMinutes: resolveDurationMinutes,
+    )) {
+      logTimeDropGuard('TIME_VIEW_INSERTION_NO_OVERLAP_VERIFIED failed');
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'overlap',
+      );
+    }
     final patches = diffSequentialCascadePatches(scheduledTasks, cascaded);
     final shifted = patches.map((p) => p.task.planRowIdForBackend).toSet();
     if (shifted.isNotEmpty && kDebugMode) {
       debugPrint('[TIME_VIEW_INSERTION_SHIFTED_CHAIN] count=${shifted.length}');
     }
     final dragged = cascaded.firstWhere(
-      (t) => t.planRowIdForBackend == targetIntent.draggedPlanId,
+      (t) => t.planRowIdForBackend == primaryId,
     );
+    if (draggedPlanIds.length > 1 && kDebugMode) {
+      debugPrint(
+        '[TIME_VIEW_BULK_DRAG_PATCHES_COMPUTED] targetCard patches=${patches.length}',
+      );
+    }
     return TimeViewInsertionCascadeResult(
       accepted: true,
       patches: patches,

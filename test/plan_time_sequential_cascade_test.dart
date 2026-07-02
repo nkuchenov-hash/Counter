@@ -363,4 +363,53 @@ void main() {
       );
     });
   });
+
+  group('computeTimeViewInsertionCascade fixed barriers', () {
+    PlanningTask _t(
+      String pbId,
+      int h,
+      int m,
+      int dur, {
+      bool fixed = false,
+    }) {
+      final start = DateTime(2026, 6, 15, h, m);
+      return PlanningTask(
+        id: pbId.hashCode,
+        title: pbId,
+        dateKey: '2026-06-15',
+        startTime: start,
+        endDateTime: start.add(Duration(minutes: dur)),
+        order: 0,
+        isDone: false,
+        categoryId: 1,
+        planRowId: pbId,
+        pocketRecordId: pbId.padRight(15, '0').substring(0, 15),
+        tags: fixed
+            ? [
+                Tag(
+                  tagId: 1,
+                  name: 'Meeting',
+                  pbRecordId: 'fixed0000000001',
+                ),
+              ]
+            : const [],
+      );
+    }
+
+    test('flexible insert blocked by fixed unselected meeting', () {
+      final meeting = _t('meet00000000001', 11, 30, 30, fixed: true);
+      final flex = _t('flex000000000001', 11, 0, 30);
+      final result = computeTimeViewInsertionCascade(
+        scheduledTasks: [flex, meeting],
+        draggedPlanIds: {flex.planRowIdForBackend},
+        primaryDraggedPlanId: flex.planRowIdForBackend,
+        fixedPlanIds: {meeting.planRowIdForBackend},
+        resolveDurationMinutes: (_) => 30,
+        emptyCanvasStartWall: DateTime(2026, 6, 15, 11, 15),
+        emptyCanvasHadEnd: true,
+      );
+      expect(result.accepted, isFalse);
+      expect(result.blockedReason, 'fixedBarrier');
+    });
+  });
 }

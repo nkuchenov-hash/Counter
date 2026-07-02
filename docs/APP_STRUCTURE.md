@@ -86,7 +86,8 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `voice_command_parser.dart` | Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`) |
 | `smart_input_parser.dart` | Natural-language plan/list parse (client + AI backend hook) |
 | `recurrence_edit_scope.dart` | `RecurrenceEditScope` enum for recurring plan edit/delete scope |
-| `plan_time_sequential_cascade.dart` | Plan time sequential layout math |
+| `plan_time_sequential_cascade.dart` | Plan time sequential layout math + `computeTimeViewInsertionCascade` |
+| `time_view_fixed_time_policy.dart` | Local prefs `time_view_fixed_tag_ids_v1`; `isPlanFixedInTimeView` (schema gap: no PB sync yet) |
 | `cache/day_snapshot_window.dart` | Rolling warm day snapshots for date paging |
 | `cache/rendered_day_body_cache.dart` | Rendered day-body LRU cache |
 | `cache/render_snapshot.dart` | Render snapshot helpers for day strips |
