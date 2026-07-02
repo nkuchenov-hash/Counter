@@ -21,7 +21,8 @@
 * **Verification:** `architecture_guard.ps1 -Strict` exit 0; `flutter analyze`, `flutter test` (223 passed), `flutter build web` green.
 * **Checkpoint commit:** `77e4afd` — `chore(structure): finish desktop voice and timezone baseline before splits`.
 * **APK:** `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk` (arm64 release).
-* **Windows smoke:** `check_no_preparing_ui.ps1`, `smoke_desktop_voice_recording_first.ps1`, `smoke_desktop_hotkey.ps1`, `smoke_desktop_voice_helper_failure.ps1` — PASS on Release exe; fresh `flutter build windows` not re-verified (LNK1104 file lock during parallel smoke).
+* **Web deploy:** [shipped] `.\update.ps1` pushed `672a576`; live `https://nkuchenov-hash.github.io/Counter/` — console `APP_BUILD commit=9a64a84` (web build stamped before deploy commit).
+* **Windows build:** [shipped] `flutter build windows --release --dart-define=DESKTOP_VOICE_COMMAND=true` green after stopping smoke processes (`build/windows/x64/runner/Release/counter.exe`).
 * **HANDY comparison file:** not in repo; acceptance via existing desktop voice tests + CHANGELOG. Stage E1 not started.
 
 ## [2026-07-02] - Stage E.0 large-file split blueprint [shipped]
