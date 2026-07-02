@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-02] - Structure refactor pass 2 [shipped]
+
+* **`lib/features/planning/`:** [shipped] `planning_view.dart` → barrel; `planning_page.dart` (~5543) + `planning_page_shell.dart` (~292); sort/bulk/filter/empty/list-helper widgets extracted; Time View gesture state unchanged.
+* **`lib/core/widgets/plan_card/`:** [shipped] `plan_card_geometry.dart`, `plan_card_controls.dart`, `plan_card_sections.dart`; `plan_time_task_card.dart` 2559→2003 lines; public API unchanged.
+* **`lib/app_shell.dart` / navigation:** [shipped] `shell_side_navigation.dart`, `profile_hydration_status_bar.dart`, `settings_page.dart`; shell 2646→2453 lines; nav/auth/voice/sync unchanged.
+* **Brain `plan_service`/`record_service`:** [skipped] no safe pure-helper seams without PB/optimistic risk.
+
 ## [2026-07-02] - P0-SAFE structure decomposition pass acceptance [accepted]
 
 * **Commits `54b9b54..5a30b33` (final `5a30b33`):** Manual smoke **accepted by user** — Plans→Time View opens; tap/edit basically OK; Time View drag/bulk mechanics acceptable for baseline; edit sheet works; Profile/settings not visibly broken.

@@ -71,7 +71,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | What | File | Entry symbol / notes |
 | :--- | :--- | :--- |
 | **Lists screen** | `lib/features/lists/lists_view.dart` | `ListsPage` — wired in `app_shell.dart` IndexedStack index 3 |
-| **Plans screen** | `lib/features/planning/planning_view.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |
+| **Plans screen** | `lib/features/planning/planning_view.dart` (barrel), `planning_page.dart`, `planning_page_shell.dart` | `PlanningSwipeWrapper` → `PlanningPage`; shell index 1 |
 | **Component Lab (admin-only)** | `lib/features/dev/component_lab_view.dart` | `ComponentLabPage`; More → Dev / Design Lab only when `DatabaseService.instance.settings.isAdmin` |
 | **Shared edit sheets** | `lib/features/shared/activity_detail_sheet.dart` | `ActivityDetailSheet` (router) → `PlanningTaskEditSheet` (plans/lists) or `TimelineRecordSheetContent` (timeline records); barrel: `shared_widgets.dart` |
 | **Omni-Picker / autosave** | `lib/features/shared/edit_sheet/sheet_time_picker.dart`, `sheet_autosave_gate.dart` | `showAppDateTimePicker`, `EditSheetAutosaveGate` |
@@ -153,7 +153,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | AI task parse | `lib/data/plan_service.dart` | `DatabaseService.parseTaskViaAiBackend` / `parsePlanningItemsViaAiBackend` (extension) |
 | Plan link scoring (title similarity) | `lib/data/plan_service.dart` | `PlanServiceExtension.titleSimilarityForPlanLink` (static) |
 | Plan wall-estimate seconds | `lib/data/plan_service.dart` | `PlanServiceExtension.planningWallEstimateSeconds` (static) |
-| Plan / planning task done-toggle | `lib/features/planning/planning_view.dart` | `_PlanningViewState._toggleDone` |
+| Plan / planning task done-toggle | `lib/features/planning/planning_page.dart` | `_PlanningPageState._toggleDone` |
 | List done-toggle (optimistic; rollback only on hard failure) | `lib/features/lists/lists_view.dart` | `_ListsPageState._onListToggleDone` → `updatePlanningTask(isDone:)` (queues offline) |
 | Tag link to plan | `lib/data/plan_service.dart` | `DatabaseService._syncPlanTagsPocket` (extension) |
 | Timeline render (list) | `lib/features/timeline/timeline_view.dart` | `TimelinePage` |

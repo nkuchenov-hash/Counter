@@ -232,7 +232,10 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `chip_component.dart` | `TagChip`, `CategoryChip`, tag quick-pick strip |
 | `plan_time_task_card.dart` | Plan/list/time card (re-exports `plan_card/*` metrics) |
 | `plan_card/plan_card_metrics.dart` | Time View card height constants, `PlanCardSurface`, duration→px helpers |
-| `plan_card/plan_time_card_density.dart` | `PlanTimeCardVisualDensity` bands + footer/progress visibility helpers |
+| `plan_card/plan_time_card_density.dart` | Visual density bands + footer/progress visibility helpers |
+| `plan_card/plan_card_geometry.dart` | Figma geometry, vertical spacing, visual tokens |
+| `plan_card/plan_card_controls.dart` | Checkbox/play/menu/title rail widgets |
+| `plan_card/plan_card_sections.dart` | Tags, time text, footer, watermark |
 | `plan_card.dart` | `PlanCard` wrapper |
 | `life_card.dart` | Card foundation for Component Lab |
 | `day_content_strip.dart` | Day content pager strip |
@@ -248,7 +251,7 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
 | `timeline/` | `timeline_view.dart` | `TimelineSwipeWrapper`, `TimelinePage`; list/stats sub-tabs |
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
-| `planning/` | `planning_view.dart`, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`** (interaction block, drag state, fixed-time settings), **`settings/`** (timeline bounds, record-link, no-tags, default category/TZ search), **`widgets/`** (menu overlay, keep-alive, reorder settle) | Plans tab, Time View canvas + gestures, settings sheets, bulk edit, smart add |
+| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** (bulk bar, filter controls, empty states, list helpers, menu overlay, keep-alive, reorder settle) | Plans tab: date pager shell + day page body, Time View, settings, bulk edit |
 | `lists/` | `lists_view.dart` | Lists/backlog tab |
 | `calendar/` | `calendar_view.dart` | Calendar tab |
 | `categories/` | `category_list_view.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart` | Category manager (More menu) |
@@ -328,6 +331,16 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_menu_overlay.dart` | Semicircle plan card radial menu |
 | `planning/widgets/planning_day_card_list_keep_alive.dart` | List keep-alive wrapper |
 | `planning/widgets/plan_card_reorder_settle.dart` | Done-card reorder slide settle |
+| `planning/planning_page.dart` | `PlanningPage` + day body state (~5.5k lines; Time View logic) |
+| `planning/planning_page_shell.dart` | `PlanningSwipeWrapper` date pager |
+| `planning/planning_sort_mode.dart` | `PlanSortMode` + persist index helpers |
+| `planning/widgets/planning_bulk_bar.dart` | Bulk selection bottom bar |
+| `planning/widgets/planning_filter_controls.dart` | Sort-mode segmented control |
+| `planning/widgets/planning_empty_states.dart` | Planning empty-state widgets |
+| `planning/widgets/planning_list_helpers.dart` | Reorder list proxy decorator |
+| `profile/settings/settings_page.dart` | Language/TZ settings page (shell route) |
+| `shared/profile_hydration_status_bar.dart` | Profile hydration error banner |
+| `core/navigation/shell_side_navigation.dart` | Desktop/web side navigation rail |
 | `profile/settings/account_settings_section.dart` | Signed-in identity + logout row |
 | `profile/settings/notification_settings_section.dart` | OS notification permission block |
 | `profile/settings/security_settings_section.dart` | Password reset + biometric lock |
