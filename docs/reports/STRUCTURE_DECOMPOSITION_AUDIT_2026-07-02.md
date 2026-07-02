@@ -137,3 +137,9 @@ Also audited: `lib/data/database_service.dart` (843 lines) — **KEEP** (singlet
 - `flutter test`: 248/248  
 - `architecture_guard.ps1`: warnings only (undocumented until APP_STRUCTURE sync)  
 - `architecture_guard.ps1 -Strict`: green after APP_STRUCTURE documents new modules  
+
+---
+
+## Pass 2 (2026-07-02) — baseline `c200d77`
+
+See extractions: `planning_page.dart`, `planning_page_shell.dart`, plan-card geometry/controls/sections, shell side-nav/settings/hydration bar. Brain services untouched. `planning_page.dart` remains ~5543 lines (Time View state machine stays monolithic by design).
