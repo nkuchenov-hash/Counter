@@ -28,6 +28,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/cache/render_snapshot.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
+import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
@@ -2045,6 +2046,30 @@ DatabaseService.instance.persistPlanningTaskOrder(
     widget.onEditTask(task);
   }
 
+  Future<void> _deletePlanningTaskWithOptionalRecurrenceScope(
+    PlanningTask task,
+  ) async {
+    if (DatabaseService.instance.planningTaskIsRecurringForScope(task)) {
+      final scope = await showRecurrenceScopeDialog(
+        context,
+        task: task,
+        isDelete: true,
+      );
+      if (scope == null) return;
+      await DatabaseService.instance.deletePlanningTaskWithRecurrenceScope(
+        task.planRowIdForBackend,
+        scope: scope,
+        planBusinessId: task.planRowId,
+        recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+      );
+    } else {
+      await DatabaseService.instance.deletePlanningTask(
+        task.planRowIdForBackend,
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
   /// Opens edit sheet with [hour] (0–23) on the visible planning day (wall clock → UTC).
   void _openQuickAddForHour(int hour) {
     final h = hour.clamp(0, 23);
@@ -2110,12 +2135,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
           },
           onDelete: () {
             dismiss();
-            unawaited(
-              DatabaseService.instance.deletePlanningTask(
-                task.planRowIdForBackend,
-              ),
-            );
-            if (mounted) setState(() {});
+            unawaited(_deletePlanningTaskWithOptionalRecurrenceScope(task));
           },
         );
       },
@@ -2744,7 +2764,10 @@ DatabaseService.instance.persistPlanningTaskOrder(
             proj: proj,
             startMinute: span.startMin.round(),
             endMinute: span.endMin.round(),
-            durationMin: math.max(5, (span.endMin - span.startMin).round()),
+            durationMin: math.max(
+              kPlanTimeMinDurationMinutes,
+              (span.endMin - span.startMin).round(),
+            ),
             pxPerMinute: result.grid.pxPerMinuteAtHourIndex(hourIdx),
             topPx: layout.topPx,
             heightPx: layout.heightPx,

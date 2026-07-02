@@ -208,6 +208,16 @@ const Map<String, String> kRuL10n = {
     'plan_repeat_monthly': 'Каждый месяц',
     'plan_repeat_yearly': 'Каждый год',
     'plan_repeat_custom': 'Своё правило (с сервера)',
+    'plan_recurrence_edit_scope_title': 'Изменить повторяющееся событие',
+    'plan_recurrence_delete_scope_title': 'Удалить повторяющееся событие',
+    'plan_recurrence_edit_this': 'Только это событие',
+    'plan_recurrence_edit_future': 'Это и будущие события',
+    'plan_recurrence_edit_series': 'Вся серия',
+    'plan_recurrence_delete_this': 'Удалить только это событие',
+    'plan_recurrence_delete_future': 'Удалить это и будущие',
+    'plan_recurrence_delete_series': 'Удалить всю серию',
+    'plan_recurrence_future_disabled_hint':
+        'Разделение серии для этого правила повтора пока недоступно.',
     'profile_notifications_section': 'Уведомления',
     'profile_notifications_subtitle':
         'Разрешите приложению ставить локальные напоминания по планам (Android / iOS).',

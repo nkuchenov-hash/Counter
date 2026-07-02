@@ -1358,6 +1358,91 @@ extension PlanServiceExtension on DatabaseService {
     return task.planRowIdForBackend.startsWith('virt-');
   }
 
+  bool _isMaterializedRecurrenceException(PlanningTask task) {
+    if (_isJitVirtualPlanningTask(task)) return false;
+    final inst = task.recurrenceInstanceDateKey?.trim();
+    if (inst == null || inst.length < 10) return false;
+    final series = task.parentPlanPocketId?.trim();
+    return series != null && DatabaseService._isLikelyPocketBaseRowId(series);
+  }
+
+  /// UI + Brain: recurring occurrence, virtual JIT row, or materialized exception.
+  bool planningTaskIsRecurringForScope(PlanningTask task) {
+    if (_isJitVirtualPlanningTask(task)) return true;
+    if (task.rrule?.trim().isNotEmpty == true) return true;
+    return _isMaterializedRecurrenceException(task);
+  }
+
+  void _collectMaterializedRecurrenceSuppressionKeys(
+    PlanningTask task,
+    Set<String> keys,
+  ) {
+    if (_isJitVirtualPlanningTask(task)) return;
+    final inst = task.recurrenceInstanceDateKey?.trim();
+    if (inst == null || inst.length < 10) return;
+    final instDay = inst.substring(0, 10);
+
+    final seriesPb = task.parentPlanPocketId?.trim();
+    if (seriesPb != null &&
+        DatabaseService._isLikelyPocketBaseRowId(seriesPb)) {
+      keys.add('$seriesPb|$instDay');
+    }
+
+    final pocket = task.pocketRecordId?.trim();
+    if (pocket != null &&
+        DatabaseService._isLikelyPocketBaseRowId(pocket) &&
+        (seriesPb == null || seriesPb.isEmpty)) {
+      keys.add('$pocket|$instDay');
+    }
+
+    final biz = _planBusinessUuidFromTask(task);
+    if (biz != null && biz.isNotEmpty) {
+      keys.add('biz:$biz|$instDay');
+    }
+  }
+
+  String? _resolveRecurrenceInstanceDateKey({
+    required String planRowId,
+    String? recurrenceInstanceDateKey,
+    PlanningTask? cached,
+  }) {
+    final hint = recurrenceInstanceDateKey?.trim() ?? '';
+    if (hint.length >= 10) return hint.substring(0, 10);
+    final virt = _parseVirtualPlanRowId(planRowId);
+    if (virt != null) return virt.instanceDateKey;
+    final fromTask = cached?.recurrenceInstanceDateKey?.trim() ?? '';
+    if (fromTask.length >= 10) return fromTask.substring(0, 10);
+    return null;
+  }
+
+  String? _resolveRecurrenceSeriesPocketId({
+    required String planRowId,
+    String? planBusinessId,
+    PlanningTask? cached,
+  }) {
+    final virt = _parseVirtualPlanRowId(planRowId);
+    if (virt != null) return virt.parentPocketId;
+    final task = cached ??
+        _findCachedPlanningTaskForEdit(
+          planRowId,
+          planBusinessId: planBusinessId,
+        );
+    if (task == null) return null;
+    if (task.rrule?.trim().isNotEmpty == true) {
+      final pb = task.pocketRecordId?.trim();
+      if (pb != null && DatabaseService._isLikelyPocketBaseRowId(pb)) {
+        return pb;
+      }
+    }
+    final parent = task.parentPlanPocketId?.trim();
+    if (parent != null && DatabaseService._isLikelyPocketBaseRowId(parent)) {
+      return parent;
+    }
+    final pb = task.pocketRecordId?.trim();
+    if (pb != null && DatabaseService._isLikelyPocketBaseRowId(pb)) return pb;
+    return null;
+  }
+
   /// Stable list identity: PB system id → business plan_id → virt occurrence id.
   String planningStableIdentityKey(PlanningTask task) {
     final backend = task.planRowIdForBackend.trim();
@@ -1506,18 +1591,10 @@ extension PlanServiceExtension on DatabaseService {
 
     final materializedInstanceKeys = <String>{};
     for (final t in tasks) {
-      if (_isJitVirtualPlanningTask(t)) continue;
-      final inst = t.recurrenceInstanceDateKey?.trim();
-      if (inst == null || inst.length < 10) continue;
-      final parentPb = t.pocketRecordId?.trim();
-      if (parentPb != null &&
-          DatabaseService._isLikelyPocketBaseRowId(parentPb)) {
-        materializedInstanceKeys.add('$parentPb|$inst');
-      }
-      final biz = _planBusinessUuidFromTask(t);
-      if (biz != null && biz.isNotEmpty) {
-        materializedInstanceKeys.add('biz:$biz|$inst');
-      }
+      _collectMaterializedRecurrenceSuppressionKeys(
+        t,
+        materializedInstanceKeys,
+      );
     }
 
     final byKey = <String, PlanningTask>{};
@@ -2474,7 +2551,7 @@ extension PlanServiceExtension on DatabaseService {
   static const int kDefaultPlanDurationMinutes = 30;
 
   /// Keep in sync with [PlanningSheetTimelinePrefs.timelineSnapMinutes].
-  static const int kPlanScheduleSnapMinutes = 5;
+  static const int kPlanScheduleSnapMinutes = 10;
 
   static const int kPlanDayOverloadTotalMinutes = 12 * 60;
 
@@ -3781,18 +3858,10 @@ extension PlanServiceExtension on DatabaseService {
 
     final materializedOccurrenceKeys = <String>{};
     for (final p in allPlans) {
-      if (_isJitVirtualPlanningTask(p)) continue;
-      final inst = p.recurrenceInstanceDateKey?.trim();
-      if (inst == null || inst.length < 10) continue;
-      final parentPb = p.pocketRecordId?.trim();
-      if (parentPb != null &&
-          DatabaseService._isLikelyPocketBaseRowId(parentPb)) {
-        materializedOccurrenceKeys.add('$parentPb|$inst');
-      }
-      final biz = _planBusinessUuidFromTask(p);
-      if (biz != null && biz.isNotEmpty) {
-        materializedOccurrenceKeys.add('biz:$biz|$inst');
-      }
+      _collectMaterializedRecurrenceSuppressionKeys(
+        p,
+        materializedOccurrenceKeys,
+      );
     }
     final emittedVirtKeys = <String>{};
 
@@ -4519,6 +4588,10 @@ extension PlanServiceExtension on DatabaseService {
     }
     if (task.reminderOffset != null) {
       body['reminder_offset'] = task.reminderOffset;
+    }
+    final instKey = task.recurrenceInstanceDateKey?.trim() ?? '';
+    if (instKey.length >= 10) {
+      body['recurrence_instance_date_key'] = instKey.substring(0, 10);
     }
     if (task.tags.isNotEmpty) {
       final pbIds = await _pbTagRecordIdsFromTags(task.tags);
@@ -5310,6 +5383,19 @@ extension PlanServiceExtension on DatabaseService {
       if (task.tags.isNotEmpty) {
         await _syncPlanTagsPocket(record.id, task.tags);
       }
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
+      final persisted = _planningTaskFromPocketRecord(
+        record,
+        pocketTagCatalog: tagCatalog,
+      );
+      _upsertPlanInUserCache(
+        persisted.copyWith(
+          parentPlanPocketId: task.parentPlanPocketId,
+          recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+          initialDateKey: task.initialDateKey,
+          isPostponed: task.isPostponed,
+        ),
+      );
       return true;
     } catch (e, st) {
       DatabaseService._log('MATERIALIZE_PLAN_PB: $e');
@@ -5390,6 +5476,8 @@ extension PlanServiceExtension on DatabaseService {
         tags: List<Tag>.from(parent.tags),
         initialDateKey: day,
         isPostponed: false,
+        parentPlanPocketId: pid,
+        recurrenceInstanceDateKey: day,
       );
 
       final created = await _createPlanningTaskPocketStrict(material);
@@ -5514,13 +5602,12 @@ extension PlanServiceExtension on DatabaseService {
     }
 
     // ignore: avoid_print
-    print(
-      'RECURRENCE_INSTANCE_EDIT_REQUEST planId=${planBusinessId ?? planRowId} '
-      'pocketId=$pid isVirtual=true oldStart=${oldStart != null ? '${oldStart.hour.toString().padLeft(2, '0')}:${oldStart.minute.toString().padLeft(2, '0')}' : '-'} '
-      'oldEnd=${oldEnd != null ? '${oldEnd.hour.toString().padLeft(2, '0')}:${oldEnd.minute.toString().padLeft(2, '0')}' : '-'} '
-      'newStart=${newStartWall != null ? '${newStartWall.hour.toString().padLeft(2, '0')}:${newStartWall.minute.toString().padLeft(2, '0')}' : '-'} '
-      'newEnd=${newEndWall != null ? '${newEndWall.hour.toString().padLeft(2, '0')}:${newEndWall.minute.toString().padLeft(2, '0')}' : '-'}',
-    );
+    if (kDebugMode) {
+      debugPrint(
+        'RECURRENCE_INSTANCE_EDIT_REQUEST planId=${planBusinessId ?? planRowId} '
+        'pocketId=$pid isVirtual=true',
+      );
+    }
 
     final patched = await _patchRecurringTemplateExceptionDates(
       parentPlanPocketId: pid,
@@ -5530,11 +5617,6 @@ extension PlanServiceExtension on DatabaseService {
       deferPlanningNotify: true,
     );
     if (!patched) {
-      // ignore: avoid_print
-      print(
-        'RECURRENCE_INSTANCE_EDIT_FAIL reason=exception_patch_failed '
-        'payload=parent=$pid day=$day',
-      );
       if (!suppressAppSnack) AppSnack.failed();
       return false;
     }
@@ -5555,10 +5637,6 @@ extension PlanServiceExtension on DatabaseService {
           addException: false,
           suppressAppSnack: true,
           deferPlanningNotify: true,
-        );
-        // ignore: avoid_print
-        print(
-          'RECURRENCE_INSTANCE_EDIT_FAIL reason=parent_missing_rrule payload=$pid',
         );
         if (!suppressAppSnack) AppSnack.failed();
         return false;
@@ -5596,6 +5674,8 @@ extension PlanServiceExtension on DatabaseService {
         initialDateKey: planInitialDateKey ?? day,
         isPostponed: planIsPostponed ?? false,
         reminderOffset: planReminderOffset ?? cached?.reminderOffset,
+        parentPlanPocketId: pid,
+        recurrenceInstanceDateKey: day,
       );
 
       final created = await _createPlanningTaskPocketStrict(material);
@@ -5607,11 +5687,6 @@ extension PlanServiceExtension on DatabaseService {
           suppressAppSnack: true,
           deferPlanningNotify: true,
         );
-        // ignore: avoid_print
-        print(
-          'RECURRENCE_INSTANCE_EDIT_FAIL reason=materialize_create_failed '
-          'payload=$scheduleKey',
-        );
         if (!suppressAppSnack) AppSnack.failed();
         return false;
       }
@@ -5619,11 +5694,6 @@ extension PlanServiceExtension on DatabaseService {
       clearOptimisticPlanningForPlanRow(planRowId);
       notifyPlanningRefresh();
       _notifyTimelineAfterRecordCacheMutation();
-      // ignore: avoid_print
-      print(
-        'RECURRENCE_INSTANCE_MATERIALIZED parentPlanId=$pid '
-        'newPlanId=${material.planRowId ?? 'pending'} exceptionDate=$day',
-      );
       return true;
     } catch (e, st) {
       DatabaseService._log('RECURRENCE_INSTANCE_MATERIALIZE: $e');
@@ -5635,8 +5705,6 @@ extension PlanServiceExtension on DatabaseService {
         suppressAppSnack: true,
         deferPlanningNotify: true,
       );
-      // ignore: avoid_print
-      print('RECURRENCE_INSTANCE_EDIT_FAIL reason=$e payload=parent=$pid');
       if (!suppressAppSnack) AppSnack.failed();
       return false;
     }
@@ -5771,11 +5839,12 @@ extension PlanServiceExtension on DatabaseService {
             endDateTime != null ||
             endDateTimeDisplay != null ||
             clearEnd)) {
-      // ignore: avoid_print
-      print(
-        'RECURRENCE_INSTANCE_EDIT_SERIES_ROW planId=${planBusinessId ?? rid} '
-        'pocketId=${existingTask?.pocketRecordId ?? '-'}',
-      );
+      if (kDebugMode) {
+        debugPrint(
+          'RECURRENCE_INSTANCE_EDIT_SERIES_ROW planId=${planBusinessId ?? rid} '
+          'pocketId=${existingTask?.pocketRecordId ?? '-'}',
+        );
+      }
     }
     final oldCategoryId = existingTask?.categoryId;
     final autoCategoryId = _resolveCategoryIdForEditedTitle(
@@ -6227,6 +6296,188 @@ extension PlanServiceExtension on DatabaseService {
       );
       unawaited(_persistPlanningTaskOrdersBulkNow(pending));
     });
+  }
+
+  /// Applies [scope] for recurring plan edits (virtual, materialized, or series row).
+  Future<bool> updatePlanningTaskWithRecurrenceScope(
+    String planRowId, {
+    required RecurrenceEditScope scope,
+    String? planBusinessId,
+    String? title,
+    int? categoryId,
+    bool? isDone,
+    String? notesPlain,
+    String? notesDeltaJson,
+    List<Map<String, dynamic>>? checklist,
+    int? parentPlanId,
+    int? order,
+    DateTime? startTime,
+    DateTime? startTimeDisplay,
+    DateTime? endDateTime,
+    DateTime? endDateTimeDisplay,
+    bool clearEnd = false,
+    bool suppressAppSnack = false,
+    List<Tag>? tags,
+    String? planInitialDateKey,
+    bool? planIsPostponed,
+    bool patchPlanAlarmRecurrence = false,
+    String? planRrule,
+    int? planReminderOffset,
+    List<String>? planExceptionDates,
+    String? recurrenceInstanceDateKey,
+  }) async {
+    if (scope == RecurrenceEditScope.thisAndFuture) {
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    }
+    final cached = _findCachedPlanningTaskForEdit(
+      planRowId,
+      planBusinessId: planBusinessId,
+    );
+    if (scope == RecurrenceEditScope.entireSeries) {
+      final seriesPb = _resolveRecurrenceSeriesPocketId(
+        planRowId: planRowId,
+        planBusinessId: planBusinessId,
+        cached: cached,
+      );
+      if (seriesPb == null ||
+          !DatabaseService._isLikelyPocketBaseRowId(seriesPb)) {
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+      final seriesTask = cached?.rrule?.trim().isNotEmpty == true
+          ? cached
+          : _findCachedPlanningTaskForEdit(seriesPb);
+      return updatePlanningTask(
+        seriesPb,
+        planBusinessId: seriesTask?.planRowId ?? planBusinessId,
+        title: title,
+        categoryId: categoryId,
+        isDone: isDone,
+        notesPlain: notesPlain,
+        notesDeltaJson: notesDeltaJson,
+        checklist: checklist,
+        parentPlanId: parentPlanId,
+        order: order,
+        startTime: startTime,
+        startTimeDisplay: startTimeDisplay,
+        endDateTime: endDateTime,
+        endDateTimeDisplay: endDateTimeDisplay,
+        clearEnd: clearEnd,
+        suppressAppSnack: suppressAppSnack,
+        tags: tags,
+        planInitialDateKey: planInitialDateKey,
+        planIsPostponed: planIsPostponed,
+        patchPlanAlarmRecurrence: patchPlanAlarmRecurrence,
+        planRrule: planRrule,
+        planReminderOffset: planReminderOffset,
+        planExceptionDates: planExceptionDates,
+        recurrenceInstanceDateKey: recurrenceInstanceDateKey,
+      );
+    }
+    return updatePlanningTask(
+      planRowId,
+      planBusinessId: planBusinessId,
+      title: title,
+      categoryId: categoryId,
+      isDone: isDone,
+      notesPlain: notesPlain,
+      notesDeltaJson: notesDeltaJson,
+      checklist: checklist,
+      parentPlanId: parentPlanId,
+      order: order,
+      startTime: startTime,
+      startTimeDisplay: startTimeDisplay,
+      endDateTime: endDateTime,
+      endDateTimeDisplay: endDateTimeDisplay,
+      clearEnd: clearEnd,
+      suppressAppSnack: suppressAppSnack,
+      tags: tags,
+      planInitialDateKey: planInitialDateKey,
+      planIsPostponed: planIsPostponed,
+      patchPlanAlarmRecurrence: patchPlanAlarmRecurrence,
+      planRrule: planRrule,
+      planReminderOffset: planReminderOffset,
+      planExceptionDates: planExceptionDates,
+      recurrenceInstanceDateKey: recurrenceInstanceDateKey,
+    );
+  }
+
+  /// Applies [scope] for recurring plan deletes.
+  Future<bool> deletePlanningTaskWithRecurrenceScope(
+    String planRowId, {
+    required RecurrenceEditScope scope,
+    String? planBusinessId,
+    String? recurrenceInstanceDateKey,
+    bool suppressAppSnack = false,
+  }) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return false;
+    if (!_isPlansTableConfigured) return false;
+    final rid = planRowId.trim();
+    if (rid.isEmpty) return false;
+
+    if (scope == RecurrenceEditScope.thisAndFuture) {
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    }
+
+    final cached = _findCachedPlanningTaskForEdit(
+      rid,
+      planBusinessId: planBusinessId,
+    );
+
+    if (scope == RecurrenceEditScope.entireSeries) {
+      final seriesPb = _resolveRecurrenceSeriesPocketId(
+        planRowId: rid,
+        planBusinessId: planBusinessId,
+        cached: cached,
+      );
+      if (seriesPb == null ||
+          !DatabaseService._isLikelyPocketBaseRowId(seriesPb)) {
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+      return deletePlanningTasksBulk([seriesPb]);
+    }
+
+    final virt = _parseVirtualPlanRowId(rid);
+    if (virt != null) {
+      return deletePlanningTasksBulk([rid]);
+    }
+
+    if (_isMaterializedRecurrenceException(
+      cached ??
+          PlanningTask(
+            id: 0,
+            title: '',
+            categoryId: 0,
+            isDone: false,
+            dateKey: '',
+            order: 0,
+          ),
+    )) {
+      return deletePlanningTasksBulk([rid]);
+    }
+
+    final instDay = _resolveRecurrenceInstanceDateKey(
+      planRowId: rid,
+      recurrenceInstanceDateKey: recurrenceInstanceDateKey,
+      cached: cached,
+    );
+    if (instDay != null && cached?.rrule?.trim().isNotEmpty == true) {
+      final seriesPb = cached?.pocketRecordId?.trim();
+      if (seriesPb != null &&
+          DatabaseService._isLikelyPocketBaseRowId(seriesPb)) {
+        return _patchRecurringTemplateExceptionDates(
+          parentPlanPocketId: seriesPb,
+          instanceDateKey: instDay,
+          addException: true,
+          suppressAppSnack: suppressAppSnack,
+        );
+      }
+    }
+
+    return deletePlanningTasksBulk([rid]);
   }
 
   /// Deletes one plan row via [deletePlanningTasksBulk].

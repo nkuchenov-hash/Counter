@@ -14,7 +14,9 @@ import 'package:counter/core/theme.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/data/smart_input_parser.dart';
+import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -605,6 +607,8 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   late final TextEditingController _rruleCustomController;
   late final PlanningTask _baselineTask;
   final EditSheetAutosaveGate _planAutosaveGate = EditSheetAutosaveGate();
+  RecurrenceEditScope? _recurrenceEditScopeChosen;
+  bool _recurrenceScopePromptOpen = false;
   StreamSubscription<DocChange>? _planQuillChangesSub;
 
   bool get _isPersistedPlan => widget.task.planRowIdForBackend.trim().isNotEmpty;
@@ -802,6 +806,25 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
 
   Future<void> _syncPlanDraftToNetwork(PlanningTask draft) async {
     if (!_isPersistedPlan) return;
+    if (DatabaseService.instance.planningTaskIsRecurringForScope(_baselineTask)) {
+      if (_recurrenceEditScopeChosen == null) {
+        if (_recurrenceScopePromptOpen || !mounted) return;
+        _recurrenceScopePromptOpen = true;
+        final scope = await showRecurrenceScopeDialog(
+          context,
+          task: _baselineTask,
+          isDelete: false,
+        );
+        _recurrenceScopePromptOpen = false;
+        if (!mounted) return;
+        if (scope == null) {
+          _applyPlanDraftLocally(_baselineTask);
+          _planAutosaveGate.markClean();
+          return;
+        }
+        _recurrenceEditScopeChosen = scope;
+      }
+    }
     final baseline = _baselineTask;
     final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
       baseline,
@@ -821,8 +844,10 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
           anchorKey: initForPatch,
           newScheduleKey: newSk.length >= minKeyLen ? newSk : initForPatch,
         );
-    await DatabaseService.instance.updatePlanningTask(
+    await DatabaseService.instance.updatePlanningTaskWithRecurrenceScope(
       draft.planRowIdForBackend,
+      scope:
+          _recurrenceEditScopeChosen ?? RecurrenceEditScope.singleOccurrence,
       planBusinessId: draft.planRowId,
       title: draft.title,
       categoryId: draft.categoryId,

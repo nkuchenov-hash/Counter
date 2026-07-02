@@ -159,12 +159,12 @@ abstract final class PlanTimeViewLayoutCalculator {
       baseHourHeightPx / 60.0;
 
   static double _requiredRubberPxPerMinute(int durationMin) {
-    final minHeight = planTimeCardRenderedHeightPxForDuration(durationMin);
-    return minHeight / math.max(5, durationMin);
+    return planTimeCardRenderedHeightPxForDuration(durationMin) /
+        math.max(kPlanTimeMinDurationMinutes, durationMin);
   }
 
   static double _cardHeightPx(int durationMin, double rubberPxPerMinute) =>
-      durationMin * rubberPxPerMinute;
+      planTimeCardRenderedHeightPxForDuration(durationMin);
 
   static bool _wallAdjacent(double prevEndMin, double nextStartMin) =>
       (nextStartMin - prevEndMin).abs() < 0.01;
@@ -259,7 +259,8 @@ abstract final class PlanTimeViewLayoutCalculator {
         break;
       }
     }
-    return ppm;
+    final maxPpm = kPlanTimeMaxHourHeightPx / 60.0;
+    return ppm.clamp(_basePxPerMinute(baseHourHeightPx), maxPpm);
   }
 
   static ({
@@ -280,7 +281,10 @@ abstract final class PlanTimeViewLayoutCalculator {
     for (final proj in projections) {
       final startMin = startMinOf(proj);
       final endMin = endMinOf(proj);
-      final dur = math.max(5, (endMin - startMin).round());
+      final dur = math.max(
+        kPlanTimeMinDurationMinutes,
+        (endMin - startMin).round(),
+      );
       slots.add(
         _PlanTimeViewCardSlot(
           projection: proj,
@@ -454,20 +458,10 @@ abstract final class PlanTimeViewLayoutCalculator {
           );
         } else if (hourY >= cardBottom - 0.5) {
           _logTimeLayout(
-            'TIME_LAYOUT_ERROR',
-            'hourLineAfterCrossingCard hour=$hourClock '
+            'TIME_LAYOUT_NOTE',
+            'hourLineAfterPiecewiseCard hour=$hourClock '
             'card=${slot.startMin}-${slot.endMin} hourY=${hourY.toStringAsFixed(1)} '
             'cardBottom=${cardBottom.toStringAsFixed(1)}',
-          );
-          assert(
-            false,
-            'hour $hourClock line must not be after crossing card bottom',
-          );
-        } else {
-          assert(
-            inside,
-            'hour $hourClock line Y must be inside crossing card '
-            '${slot.task.planRowIdForBackend}',
           );
         }
       }
@@ -505,47 +499,32 @@ abstract final class PlanTimeViewLayoutCalculator {
       assert(l.heightPx > 0, 'non-positive height');
       assert(
         (l.heightPx - expected).abs() < 0.51,
-        'card height ${l.heightPx} != duration*rubber $expected',
+        'card height ${l.heightPx} != piecewise $expected',
       );
 
       final packedAfterAdjacent =
           i > 0 && _wallAdjacent(slots[i - 1].endMin, slot.startMin);
       final idealTop = yScale.yForMinute(slot.startMin);
-      final timeEndY = yScale.yForMinute(slot.endMin);
-      final cardEndY = l.topPx + l.heightPx;
 
       if (!packedAfterAdjacent) {
         assert(
           (l.topPx - idealTop).abs() < 1.5,
           'unpacked card top must match wall start minute',
         );
-        assert(
-          (cardEndY - timeEndY).abs() < 1.5,
-          'unpacked card bottom must align with wall end minute',
-        );
       }
 
       if (durationMin < 60 && !packedAfterAdjacent) {
         final hourIdx = (slot.endMin / 60).floor();
         if (slot.endMin < (hourIdx + 1) * 60 - 0.01) {
+          final cardEndY = l.topPx + l.heightPx;
           final nextHourY = yScale.yForMinute((hourIdx + 1) * 60.0);
           final remaining = nextHourY - cardEndY;
-          if (remaining > 0.5) {
-            final expectedRemaining =
-                ((hourIdx + 1) * 60 - slot.endMin) * ppm;
-            assert(
-              (remaining - expectedRemaining).abs() < 2.5,
-              'remaining slot height mismatch',
+          if (remaining > 0.5 && durationMin >= 45) {
+            _logTimeLayout(
+              'TIME_LAYOUT_EMPTY_SLOT',
+              'hour=$hourIdx remaining=${remaining.toStringAsFixed(1)} '
+              'cardEnd=${cardEndY.toStringAsFixed(1)} nextHour=${nextHourY.toStringAsFixed(1)}',
             );
-          }
-          if (durationMin == 45 && slot.endMin - slot.startMin == 45) {
-            if (nextHourY - cardEndY < 0.5) {
-              _logTimeLayout(
-                'TIME_LAYOUT_ERROR',
-                'cardConsumesUnusedTime id=${l.task.planRowIdForBackend} duration=45',
-              );
-              assert(false, 'cardConsumesUnusedTime');
-            }
           }
         }
       }

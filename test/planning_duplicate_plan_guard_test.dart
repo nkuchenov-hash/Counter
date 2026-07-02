@@ -98,15 +98,16 @@ void main() {
       );
       final materialized = _plan(
         planRowId: 'biz-uuid-3',
-        pocketRecordId: parentPb,
+        pocketRecordId: 'mat012345678901',
         startH: 0,
         startM: 10,
         endH: 0,
         endM: 40,
         recurrenceInstanceDateKey: instDay,
       );
+      final withParent = materialized.copyWith(parentPlanPocketId: parentPb);
       final out = DatabaseService.instance.dedupePlanningTasksForDisplay(
-        [virt, materialized],
+        [virt, withParent],
       );
       expect(out.length, 1);
       expect(out.first.recurrenceInstanceDateKey, instDay);

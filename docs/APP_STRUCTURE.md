@@ -85,6 +85,7 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | `price_reporter_client_match.dart` | Price Reporter client-category token guard for voice parse |
 | `voice_command_parser.dart` | Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`) |
 | `smart_input_parser.dart` | Natural-language plan/list parse (client + AI backend hook) |
+| `recurrence_edit_scope.dart` | `RecurrenceEditScope` enum for recurring plan edit/delete scope |
 | `plan_time_sequential_cascade.dart` | Plan time sequential layout math |
 | `cache/day_snapshot_window.dart` | Rolling warm day snapshots for date paging |
 | `cache/rendered_day_body_cache.dart` | Rendered day-body LRU cache |
@@ -244,7 +245,7 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
 | `timeline/` | `timeline_view.dart` | `TimelineSwipeWrapper`, `TimelinePage`; list/stats sub-tabs |
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
-| `planning/` | `planning_view.dart`, `plan_time_view_layout.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `smart_plan_sheet.dart` | Plans tab, time view layout, bulk edit, smart add |
+| `planning/` | `planning_view.dart`, `plan_time_view_layout.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart` | Plans tab, time view layout, recurrence scope dialog, bulk edit, smart add |
 | `lists/` | `lists_view.dart` | Lists/backlog tab |
 | `calendar/` | `calendar_view.dart` | Calendar tab |
 | `categories/` | `category_list_view.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart` | Category manager (More menu) |

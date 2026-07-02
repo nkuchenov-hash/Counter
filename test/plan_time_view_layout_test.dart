@@ -67,22 +67,28 @@ PlanTimeViewBlockLayout _layoutCard(
 
 void main() {
   group('planTimeCardVisualDensityForRenderedHeight', () {
-    test('single 5-minute block is VerySmall at 38px', () {
+    test('10-minute block is VerySmall at 38px', () {
+      expect(planTimeCardRenderedHeightPxForDuration(10), closeTo(38, 0.01));
       expect(
         planTimeCardVisualDensityForRenderedHeight(38),
         PlanTimeCardVisualDensity.verySmall,
       );
-      expect(planTimeCardRenderedHeightPxForDuration(5), 38);
     });
 
-    test('single 10-minute block stays VerySmall at 38px', () {
-      expect(planTimeCardRenderedHeightPxForDuration(10), 38);
+    test('30-minute block maps to 75px', () {
+      expect(planTimeCardRenderedHeightPxForDuration(30), closeTo(75, 0.01));
+    });
+
+    test('60-minute block maps to 120px', () {
+      expect(planTimeCardRenderedHeightPxForDuration(60), closeTo(120, 0.01));
       expect(
-        planTimeCardVisualDensityForRenderedHeight(
-          planTimeCardRenderedHeightPxForDuration(10),
-        ),
-        PlanTimeCardVisualDensity.verySmall,
+        planTimeCardVisualDensityForRenderedHeight(120),
+        PlanTimeCardVisualDensity.medium,
       );
+    });
+
+    test('sub-10-minute duration clamps to 10-minute height', () {
+      expect(planTimeCardRenderedHeightPxForDuration(5), closeTo(38, 0.01));
     });
 
     test('Small band 39–54px', () {
@@ -139,13 +145,12 @@ void main() {
       );
     });
 
-    test('single 10-minute task — rubber scale, not full hour fill', () {
+    test('single 10-minute task — fixed 38px height', () {
       final result = _layout([
         _proj(hour: 11, minute: 0, durationMin: 10, id: 'b'),
       ]);
       final card = result.layouts.single;
-      final rubber = result.grid.pxPerMinuteAtHourIndex(0);
-      expect(card.heightPx, closeTo(10 * rubber, 0.51));
+      expect(card.heightPx, closeTo(38, 0.51));
       expect(card.topPx + card.heightPx, lessThan(_hourBottom(result.grid, 0)));
       expect(
         card.visualDensity,
@@ -163,22 +168,50 @@ void main() {
         expect(l.heightPx, closeTo(38, 0.01));
         expect(l.visualDensity, PlanTimeCardVisualDensity.verySmall);
       }
-      expect(result.grid.hourHeightsPx.single, lessThan(230));
+      expect(result.grid.hourHeightsPx.single, lessThanOrEqualTo(kPlanTimeMaxHourHeightPx));
     });
 
-    test('11 × 5-minute tasks — all 38px, gap, no overlap', () {
+    test('six 10-minute tasks fit within 248px hour cap', () {
+      final projections = <TimeModeProjectedPlan>[];
+      for (var i = 0; i < 6; i++) {
+        projections.add(
+          _proj(hour: 11, minute: i * 10, durationMin: 10, id: 's$i'),
+        );
+      }
+      final result = _layout(projections);
+      expect(result.layouts.length, 6);
+      for (final l in result.layouts) {
+        expect(l.heightPx, closeTo(38, 0.51));
+      }
+      expect(
+        result.grid.hourHeightsPx.single,
+        lessThanOrEqualTo(kPlanTimeMaxHourHeightPx + 0.5),
+      );
+    });
+
+    test('seven overlapping 10-minute rows do not exceed hour cap', () {
+      final projections = <TimeModeProjectedPlan>[];
+      for (var i = 0; i < 7; i++) {
+        projections.add(
+          _proj(hour: 11, minute: 0, durationMin: 10, id: 'd$i'),
+        );
+      }
+      final result = _layout(projections);
+      expect(
+        result.grid.hourHeightsPx.single,
+        lessThanOrEqualTo(kPlanTimeMaxHourHeightPx + 0.5),
+      );
+    });
+
+    test('11 × 10-minute tasks — capped hour height', () {
       final projections = <TimeModeProjectedPlan>[];
       for (var i = 0; i < 11; i++) {
         projections.add(
-          _proj(hour: 11, minute: i * 5, durationMin: 5, id: 'p$i'),
+          _proj(hour: 11, minute: i * 10, durationMin: 10, id: 'p$i'),
         );
       }
       final result = _layout(projections);
       expect(result.layouts.length, 11);
-      for (final l in result.layouts) {
-        final rubber = result.grid.pxPerMinuteAtHourIndex(0);
-        expect(l.heightPx, closeTo(5 * rubber, 0.51));
-      }
       for (var i = 0; i < result.layouts.length - 1; i++) {
         final a = result.layouts[i];
         final b = result.layouts[i + 1];
@@ -189,29 +222,19 @@ void main() {
       }
       expect(
         result.grid.hourHeightsPx.first,
-        greaterThan(120),
-        reason: 'dense hour should stretch container only',
-      );
-      expect(
-        result.grid.hourHeightsPx.first,
-        lessThanOrEqualTo(kPlanTimeMaxReasonableHourHeightPx),
+        lessThanOrEqualTo(kPlanTimeMaxHourHeightPx + 0.5),
       );
     });
 
-    test('global rubber increases for dense hour; hour bands stay uniform', () {
+    test('global rubber is capped for dense hours', () {
       final projections = <TimeModeProjectedPlan>[];
-      for (var i = 0; i < 11; i++) {
+      for (var i = 0; i < 6; i++) {
         projections.add(
-          _proj(hour: 10, minute: i * 5, durationMin: 5, id: 'a$i'),
+          _proj(hour: 10, minute: i * 10, durationMin: 10, id: 'a$i'),
         );
       }
       projections.add(
         _proj(hour: 11, minute: 0, durationMin: 60, id: 'd'),
-      );
-      final sparse = _layout(
-        [_proj(hour: 11, minute: 0, durationMin: 60, id: 'solo')],
-        visibleHours: [10, 11],
-        rangeStart: 10,
       );
       final dense = _layout(
         projections,
@@ -220,14 +243,16 @@ void main() {
       );
       expect(
         dense.grid.rubberPxPerMinute,
-        greaterThan(sparse.grid.rubberPxPerMinute),
+        lessThanOrEqualTo(kPlanTimeMaxHourHeightPx / 60 + 0.01),
       );
-      expect(dense.grid.hourHeightsPx[0], dense.grid.hourHeightsPx[1]);
-      final hour11Card = _layoutCard(dense.layouts, 'd');
       expect(
-        hour11Card.heightPx,
-        closeTo(60 * dense.grid.rubberPxPerMinute, 0.51),
+        dense.grid.hourHeightsPx.every(
+          (h) => h <= kPlanTimeMaxHourHeightPx + 0.5,
+        ),
+        isTrue,
       );
+      final hour11Card = _layoutCard(dense.layouts, 'd');
+      expect(hour11Card.heightPx, closeTo(120, 0.51));
     });
 
     test('y/time mapping round-trip uses hour geometry', () {
@@ -243,50 +268,35 @@ void main() {
   });
 
   group('rubber minute scale', () {
-    test('A: single 45-minute card leaves 15-minute slot', () {
+    test('A: single 45-minute card uses piecewise height', () {
       final result = _layout(
         [_proj(hour: 12, minute: 0, durationMin: 45, id: 'a')],
         visibleHours: [12],
         rangeStart: 12,
       );
       final card = result.layouts.single;
-      final rubber = result.grid.pxPerMinuteAtHourIndex(0);
-      final hourBottom = _hourBottom(result.grid, 0);
       expect(card.topPx, closeTo(0, 0.51));
-      expect(card.heightPx, closeTo(45 * rubber, 0.51));
-      expect(card.topPx + card.heightPx, lessThan(hourBottom));
-      final remaining = hourBottom - (card.topPx + card.heightPx);
-      expect(remaining, greaterThan(0));
-      expect(remaining, closeTo(15 * rubber, 1.0));
+      expect(card.heightPx, closeTo(97.5, 1.0));
     });
 
-    test('B: single 30-minute card leaves 30-minute slot', () {
+    test('B: single 30-minute card maps to 75px', () {
       final result = _layout(
         [_proj(hour: 12, minute: 0, durationMin: 30, id: 'a')],
         visibleHours: [12],
         rangeStart: 12,
       );
       final card = result.layouts.single;
-      final rubber = result.grid.pxPerMinuteAtHourIndex(0);
-      final remaining =
-          _hourBottom(result.grid, 0) - (card.topPx + card.heightPx);
-      expect(remaining, greaterThan(0));
-      expect(remaining, closeTo(30 * rubber, 1.0));
+      expect(card.heightPx, closeTo(75, 0.51));
     });
 
-    test('C: full-hour 60-minute card may fill hour duration area', () {
+    test('C: full-hour 60-minute card maps to 120px', () {
       final result = _layout(
         [_proj(hour: 12, minute: 0, durationMin: 60, id: 'a')],
         visibleHours: [12],
         rangeStart: 12,
       );
       final card = result.layouts.single;
-      final rubber = result.grid.pxPerMinuteAtHourIndex(0);
-      expect(card.heightPx, closeTo(60 * rubber, 0.51));
-      expect(
-        card.topPx + card.heightPx,
-        closeTo(_hourBottom(result.grid, 0), 5.0),
-      );
+      expect(card.heightPx, closeTo(120, 0.51));
     });
 
     test('D: adjacent 45 + 15 chain — 4px gap, hour fits both', () {

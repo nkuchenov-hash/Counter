@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-02] - P0 planning recurrence scope + bounded Time View density [shipped]
+
+* **`lib/data/recurrence_edit_scope.dart` / `lib/features/planning/recurrence_scope_dialog.dart`:** [shipped] `RecurrenceEditScope` (`singleOccurrence`, `thisAndFuture` disabled, `entireSeries`) + EN/RU scope dialog wired from `planning_view.dart` delete menu and `_PlanningTaskEditSheet` autosave in `shared_widgets.dart`.
+* **`lib/data/plan_service.dart`:** [shipped] `updatePlanningTaskWithRecurrenceScope` / `deletePlanningTaskWithRecurrenceScope`; materialized exceptions set `parentPlanPocketId` + `recurrenceInstanceDateKey`; `_collectMaterializedRecurrenceSuppressionKeys` fixes virtual+materialized duplicate cards; release `print()` spam removed from materialize path.
+* **`lib/core/widgets/plan_time_task_card.dart` / `lib/features/planning/plan_time_view_layout.dart`:** [shipped] Piecewise card heights (10→38, 30→75, 60→120 px), 10-minute min snap/duration, hour cap **248 px** (`kPlanTimeMaxHourHeightPx`).
+* **`test/plan_recurrence_scope_test.dart` / `test/plan_time_view_layout_test.dart`:** [shipped] Recurrence dedupe/scope guards + bounded density anchors.
+
 ## [2026-07-02] - Stage E.0.5A structure guard green [shipped]
 * **`lib/data/voice_command_parser.dart`:** [shipped] git-moved from `features/shared/` — Brain-owned deterministic voice command parse; all `lib/` + `test/` imports → `package:counter/data/voice_command_parser.dart`.
 * **`lib/core/time/profile_timezone_actions.dart`:** [shipped] `ProfileTimezoneActions` injectable hooks (`shortLabel`, `settingsStream`, `currentSettings`, `saveTimezone`); wired in `main.dart` `_wireProfileTimezoneActions()` after Brain init.

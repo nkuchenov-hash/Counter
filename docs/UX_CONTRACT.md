@@ -114,9 +114,19 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - **Timezone / storage:** Plan and record instants are stored as **UTC ISO**. Time mode projects them into the **profile timezone** for day filter, block placement, labels, and drag/resize math. User-entered wall time at create/edit belongs to the **current profile timezone**.
 - **Current-time line:** Uses profile-projected “now”; renders **above** plan cards (`IgnorePointer`); must not sit behind blocks.
 - **Visible range:** No “outside visible range” / out-of-hours fallback bucket. Scheduled cards outside the selected wall day or visible hour range are **not shown**.
-- **Snap / duration:** Time mode supports **5-minute** minimum duration and **5-minute** snap for move and top/bottom resize (`timelineSnapMinutes`, `kPlanScheduleSnapMinutes`).
+- **Snap / duration:** Time mode supports **10-minute** minimum duration and **10-minute** snap for move and top/bottom resize (`timelineSnapMinutes`, `kPlanScheduleSnapMinutes`, `kPlanTimeMinDurationMinutes`).
+- **Dense hour cap:** One wall-clock hour visually stretches to at most **248 px** (six 10-minute cards at 38 px + 4 px gaps). Card heights use piecewise anchors (10→38, 30→75, 60→120 px), not unbounded proportional stretch.
 - **Card density:** Short blocks use **micro** / **compact** layouts (essential controls only). **Medium** / **large** blocks show progress separator + category breadcrumb + planned time footer (`PlanTimeTaskCard`).
 - **Interactions:** Checkbox, play, menu, body tap, drag, and resize keep independent hit zones; optimistic schedule updates follow the Iron Laws.
+
+## Recurring plan edit/delete scope
+
+- **One stored row per series:** Client expands `plans.rrule` into virtual `virt-{seriesPb}-{YYYY-MM-DD}` rows for the visible window; `exception_dates` omits instances; materialized one-offs link to the series via `parent_plan_id` + `recurrence_instance_date_key`.
+- **Scope dialog (EN/RU):** Editing or deleting a recurring/virtual/materialized occurrence prompts:
+  - **This event** — single occurrence only (`exception_dates` + materialized one-off on edit; exception only on delete for virtual rows).
+  - **This and following events** — disabled until safe RRULE split-series (UNTIL boundary) ships.
+  - **All events in the series** — PATCH/DELETE the stored series row only (15-char PocketBase `id`; never `virt-*`).
+- **Dedupe:** Materialized occurrence for `{seriesPb, instanceDate}` suppresses the matching virtual card. Virtual rows must never enter persistent caches or REST PATCH/DELETE paths.
 
 ## Gesture Ownership / Date Swipe Law
 

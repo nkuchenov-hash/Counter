@@ -21,6 +21,7 @@ import 'package:counter/data/local_sync/sync_manager.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart' as plan_time_seq;
 import 'package:counter/data/pb_config.dart';
+import 'package:counter/data/recurrence_edit_scope.dart';
 import 'package:counter/services/notification_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:pocketbase/pocketbase.dart';
