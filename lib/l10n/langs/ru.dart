@@ -229,6 +229,8 @@ const Map<String, String> kRuL10n = {
     'notif_status_unknown': 'Статус недоступен',
     'record_synced': 'Запись синхронизирована',
     'changes_saved': 'Изменения сохранены',
+    'edit_save_title_required': 'Введите название перед сохранением.',
+    'edit_save_time_required': 'Укажите время начала и окончания перед сохранением.',
     'toast_saved': 'Сохранено',
     'toast_deleted': 'Удалено',
     'toast_updated': 'Обновлено',

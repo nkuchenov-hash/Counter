@@ -217,6 +217,8 @@ User items in scope: #6, #7, #12, #13, #15, and #1.
 
 User item: #14. Also resolves the "notes deleted on close" complaint.
 
+**P0 shipped (2026-07-02):** Explicit Save is **local-first** — optimistic apply + snack + sheet close before PocketBase; `EditSheetAutosaveGate.flush(force: true)` on Save; validation errors never silent. Full F3 (remove Save button, 800ms debounce-only UX) remains paused.
+
 **What to build:**
 - In `ActivityDetailSheet` and `_PlanningTaskEditSheet`: replace the explicit Save button with debounced auto-save. On any field change, wait 800ms of inactivity, then fire the PATCH optimistically (update local cache first, sync async, rollback on failure per Iron Law).
 - Notes field (`notes_delta` / `notes_plain`) must auto-save on every Quill change event with the same debounce. This is the most important one — notes are currently lost on sheet close without Save.

@@ -71,12 +71,14 @@ class EditSheetAutosaveGate {
     });
   }
 
-  void flush(void Function() action) {
+  /// Runs [action] immediately and cancels any pending debounce.
+  /// When [force] is true (explicit Save), runs even if not dirty.
+  void flush(void Function() action, {bool force = false}) {
     _timer?.cancel();
-    if (_dirty) {
+    if (force || _dirty) {
       action();
-      _dirty = false;
     }
+    _dirty = false;
   }
 
   void dispose() => _timer?.cancel();
@@ -702,12 +704,15 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
   @override
   void dispose() {
     if (_isPersistedPlan) {
-      final draft = _buildDraftTask();
-      if (draft != null) {
-        _planAutosaveGate.flush(
-          () => unawaited(_syncPlanDraftToNetwork(draft)),
-        );
-      }
+      _planAutosaveGate.flush(
+        () {
+          final latest = _buildDraftTask();
+          if (latest != null) {
+            unawaited(_syncPlanDraftToNetwork(latest));
+          }
+        },
+        force: _planAutosaveGate.isDirty,
+      );
     }
     unawaited(_planQuillChangesSub?.cancel());
     _planAutosaveGate.dispose();
@@ -818,7 +823,6 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
         _recurrenceScopePromptOpen = false;
         if (!mounted) return;
         if (scope == null) {
-          _applyPlanDraftLocally(_baselineTask);
           _planAutosaveGate.markClean();
           return;
         }
@@ -882,14 +886,16 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
     _applyPlanDraftLocally(draft);
     if (!_isPersistedPlan) return;
     _planAutosaveGate.markDirty();
+    void syncLatestDraft() {
+      final latest = _buildDraftTask();
+      if (latest != null) {
+        unawaited(_syncPlanDraftToNetwork(latest));
+      }
+    }
     if (immediate) {
-      _planAutosaveGate.flush(
-        () => unawaited(_syncPlanDraftToNetwork(draft)),
-      );
+      _planAutosaveGate.flush(syncLatestDraft);
     } else {
-      _planAutosaveGate.schedule(
-        () => unawaited(_syncPlanDraftToNetwork(draft)),
-      );
+      _planAutosaveGate.schedule(syncLatestDraft);
     }
   }
 
@@ -986,17 +992,25 @@ class _PlanningTaskEditSheetState extends State<_PlanningTaskEditSheet>
 
   void _commitSave() {
     final updated = _buildDraftTask();
-    if (updated == null) return;
-    final changed = !_planDraftsSemanticallyEqual(updated, _baselineTask);
+    if (updated == null) {
+      AppSnack.warning(
+        t(currentLocale.value, 'edit_save_title_required'),
+      );
+      return;
+    }
     _applyPlanDraftLocally(updated);
     if (_isPersistedPlan) {
       _planAutosaveGate.flush(
-        () => unawaited(_syncPlanDraftToNetwork(updated)),
+        () {
+          final latest = _buildDraftTask();
+          if (latest != null) {
+            unawaited(_syncPlanDraftToNetwork(latest));
+          }
+        },
+        force: true,
       );
     }
-    if (changed) {
-      AppSnack.changesSaved();
-    }
+    AppSnack.changesSaved();
     if (widget.onSaved != null) {
       widget.onSaved!(updated);
     } else {
@@ -2386,7 +2400,7 @@ class _TimelineRecordSheetContentState
     DateTime? endUtc,
   }) async {
     if (!_isPersistedRecord) return;
-    final server = await DatabaseService.instance.updateRecord(
+    await DatabaseService.instance.updateRecord(
       recordId: widget.record.id,
       title: title,
       startTime: startUtc,
@@ -2397,13 +2411,10 @@ class _TimelineRecordSheetContentState
       syncSourcePlan: planPatch.sync,
       clearSourcePlan: planPatch.clear,
       sourcePlanPocketRecordId: planPatch.id,
+      bypassConflictCheck: true,
     );
     if (!mounted) return;
-    if (server == null) {
-      AppSnack.failed();
-    } else {
-      _recordAutosaveGate.markClean();
-    }
+    _recordAutosaveGate.markClean();
   }
 
   void _onRecordFieldChanged({bool immediate = false}) {
@@ -2431,20 +2442,37 @@ class _TimelineRecordSheetContentState
       endUtc: endUtc,
     );
     _recordAutosaveGate.markDirty();
-    void sync() => unawaited(
-      _syncRecordToNetwork(
-        title: title,
-        noteText: noteText,
-        checklistPayload: checklistPayload,
-        planPatch: planPatch,
-        startUtc: startUtc,
-        endUtc: endUtc,
-      ),
-    );
+    void syncLatest() {
+      final tTitle = _titleController.text.trim();
+      if (tTitle.isEmpty) return;
+      final tNote = _recordQuillController.document
+          .toPlainText()
+          .replaceAll('\u200b', '')
+          .trim();
+      final tChecklist = _checklistForApi();
+      final tPlanPatch = _sourcePlanPatchArgs();
+      final tRunning = widget.record.endTime == null;
+      final tStartUtc =
+          _startDisplay != null ? displayToUtc(_startDisplay!) : null;
+      DateTime? tEndUtc;
+      if (!tRunning && _startDisplay != null && _endDisplay != null) {
+        tEndUtc = displayToUtc(_endDisplay!);
+      }
+      unawaited(
+        _syncRecordToNetwork(
+          title: tTitle,
+          noteText: tNote,
+          checklistPayload: tChecklist,
+          planPatch: tPlanPatch,
+          startUtc: tStartUtc,
+          endUtc: tEndUtc,
+        ),
+      );
+    }
     if (immediate) {
-      _recordAutosaveGate.flush(sync);
+      _recordAutosaveGate.flush(syncLatest);
     } else {
-      _recordAutosaveGate.schedule(sync);
+      _recordAutosaveGate.schedule(syncLatest);
     }
   }
 
@@ -2698,33 +2726,36 @@ class _TimelineRecordSheetContentState
   @override
   void dispose() {
     if (_isPersistedRecord) {
-      _recordAutosaveGate.flush(() {
-        final title = _titleController.text.trim();
-        if (title.isEmpty) return;
-        final noteText = _recordQuillController.document
-            .toPlainText()
-            .replaceAll('\u200b', '')
-            .trim();
-        final checklistPayload = _checklistForApi();
-        final planPatch = _sourcePlanPatchArgs();
-        final isRunning = widget.record.endTime == null;
-        final startUtc =
-            _startDisplay != null ? displayToUtc(_startDisplay!) : null;
-        DateTime? endUtc;
-        if (!isRunning && _startDisplay != null && _endDisplay != null) {
-          endUtc = displayToUtc(_endDisplay!);
-        }
-        unawaited(
-          _syncRecordToNetwork(
-            title: title,
-            noteText: noteText,
-            checklistPayload: checklistPayload,
-            planPatch: planPatch,
-            startUtc: startUtc,
-            endUtc: endUtc,
-          ),
-        );
-      });
+      _recordAutosaveGate.flush(
+        () {
+          final title = _titleController.text.trim();
+          if (title.isEmpty) return;
+          final noteText = _recordQuillController.document
+              .toPlainText()
+              .replaceAll('\u200b', '')
+              .trim();
+          final checklistPayload = _checklistForApi();
+          final planPatch = _sourcePlanPatchArgs();
+          final isRunning = widget.record.endTime == null;
+          final startUtc =
+              _startDisplay != null ? displayToUtc(_startDisplay!) : null;
+          DateTime? endUtc;
+          if (!isRunning && _startDisplay != null && _endDisplay != null) {
+            endUtc = displayToUtc(_endDisplay!);
+          }
+          unawaited(
+            _syncRecordToNetwork(
+              title: title,
+              noteText: noteText,
+              checklistPayload: checklistPayload,
+              planPatch: planPatch,
+              startUtc: startUtc,
+              endUtc: endUtc,
+            ),
+          );
+        },
+        force: _recordAutosaveGate.isDirty,
+      );
     }
     unawaited(_recordQuillChangesSub?.cancel());
     _recordAutosaveGate.dispose();
@@ -2760,7 +2791,12 @@ class _TimelineRecordSheetContentState
 
   Future<void> _save() async {
     final title = _titleController.text.trim();
-    if (title.isEmpty) return;
+    if (title.isEmpty) {
+      AppSnack.warning(
+        t(currentLocale.value, 'edit_save_title_required'),
+      );
+      return;
+    }
     final noteText = _recordQuillController.document
         .toPlainText()
         .replaceAll('\u200b', '')
@@ -2773,7 +2809,12 @@ class _TimelineRecordSheetContentState
     // CREATE path (past-date "New Record" entry): no existing row id.
     // Single shared edit sheet — no separate EditRecordSheet for past dates.
     if (isCreate) {
-      if (_startDisplay == null || _endDisplay == null) return;
+      if (_startDisplay == null || _endDisplay == null) {
+        AppSnack.warning(
+          t(currentLocale.value, 'edit_save_time_required'),
+        );
+        return;
+      }
       final startUtc = displayToUtc(_startDisplay!);
       final endUtc = displayToUtc(_endDisplay!);
       if (endUtc.isBefore(startUtc) || endUtc.isAtSameMomentAs(startUtc)) {
@@ -2841,48 +2882,34 @@ class _TimelineRecordSheetContentState
         startUtc: startUtc,
       );
       _recordAutosaveGate.flush(
-        () => unawaited(
-          _syncRecordToNetwork(
-            title: title,
-            noteText: noteText,
-            checklistPayload: checklistPayload,
-            planPatch: planPatch,
-            startUtc: startUtc,
-          ),
-        ),
+        () {
+          unawaited(
+            _syncRecordToNetwork(
+              title: title,
+              noteText: noteText,
+              checklistPayload: checklistPayload,
+              planPatch: planPatch,
+              startUtc: startUtc,
+            ),
+          );
+        },
+        force: true,
       );
       AppSnack.changesSaved();
       widget.onSaved(optimistic);
       return;
     }
 
-    if (_startDisplay == null || _endDisplay == null) return;
+    if (_startDisplay == null || _endDisplay == null) {
+      AppSnack.warning(
+        t(currentLocale.value, 'edit_save_time_required'),
+      );
+      return;
+    }
     final startUtc = displayToUtc(_startDisplay!);
     final endUtc = displayToUtc(_endDisplay!);
     if (endUtc.isBefore(startUtc) || endUtc.isAtSameMomentAs(startUtc)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t(currentLocale.value, 'end_time_after_start')),
-          ),
-        );
-      }
-      return;
-    }
-    final conflict = DatabaseService.instance.findFirstOverlappingRecordInCache(
-      startUtc,
-      endUtc,
-      excludeRecordId: widget.record.id,
-    );
-    if (conflict != null && mounted) {
-      final loc = currentLocale.value;
-      final rawTitle = (conflict['title'] ?? '').toString().trim();
-      final otherLabel = rawTitle.isNotEmpty ? rawTitle : t(loc, 'untitled');
-      final msg = t(
-        loc,
-        'time_conflict_with_title',
-      ).replaceFirst('%s', otherLabel);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      AppSnack.warning(t(currentLocale.value, 'end_time_after_start'));
       return;
     }
     final planPatchStopped = _sourcePlanPatchArgs();
@@ -2903,35 +2930,38 @@ class _TimelineRecordSheetContentState
       endUtc: endUtc,
     );
     _recordAutosaveGate.flush(
-      () => unawaited(
-        _syncRecordToNetwork(
-          title: title,
-          noteText: noteText,
-          checklistPayload: checklistPayload,
-          planPatch: planPatchStopped,
-          startUtc: startUtc,
-          endUtc: endUtc,
-        ),
-      ),
+      () {
+        unawaited(
+          _syncRecordToNetwork(
+            title: title,
+            noteText: noteText,
+            checklistPayload: checklistPayload,
+            planPatch: planPatchStopped,
+            startUtc: startUtc,
+            endUtc: endUtc,
+          ),
+        );
+      },
+      force: true,
     );
     AppSnack.changesSaved();
     widget.onSaved(optimisticStopped);
     unawaited(
-      DatabaseService.instance
-          .checkOverlapWithExistingRecords(
-            startUtc,
-            endUtc,
-            excludeRecordId: widget.record.id,
-          )
-          .then((overlap) {
-            if (!mounted || !overlap) return;
-            AppSnack.warning(
-              t(currentLocale.value, 'time_conflict_with_title').replaceFirst(
-                '%s',
-                t(currentLocale.value, 'untitled'),
-              ),
+      Future<void>(() async {
+        final conflict = DatabaseService.instance
+            .findFirstOverlappingRecordInCache(
+              startUtc,
+              endUtc,
+              excludeRecordId: widget.record.id,
             );
-          }),
+        if (!mounted || conflict == null) return;
+        final loc = currentLocale.value;
+        final rawTitle = (conflict['title'] ?? '').toString().trim();
+        final otherLabel = rawTitle.isNotEmpty ? rawTitle : t(loc, 'untitled');
+        AppSnack.warning(
+          t(loc, 'time_conflict_with_title').replaceFirst('%s', otherLabel),
+        );
+      }),
     );
   }
 

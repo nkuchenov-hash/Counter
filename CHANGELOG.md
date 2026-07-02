@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-02] - P0 edit Save local-first reliability [shipped]
+
+* **`lib/features/shared/shared_widgets.dart` — `EditSheetAutosaveGate` / `_commitSave` / `_save`:** [shipped] Explicit Save uses `flush(force: true)` with latest draft; empty title / missing times show localized warnings; stopped Timeline edits apply optimistic UI before overlap warning; recurrence scope dismiss no longer rolls back local state after Save.
+* **`test/edit_sheet_autosave_test.dart`:** [shipped] Force-flush + latest-draft-at-fire-time coverage.
+
 ## [2026-07-02] - P0 planning recurrence scope + bounded Time View density [shipped]
 
 * **`lib/data/recurrence_edit_scope.dart` / `lib/features/planning/recurrence_scope_dialog.dart`:** [shipped] `RecurrenceEditScope` (`singleOccurrence`, `thisAndFuture` disabled, `entireSeries`) + EN/RU scope dialog wired from `planning_view.dart` delete menu and `_PlanningTaskEditSheet` autosave in `shared_widgets.dart`.

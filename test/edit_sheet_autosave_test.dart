@@ -14,13 +14,32 @@ void main() {
       gate.dispose();
     });
 
-    test('flush runs immediately and clears dirty', () {
+    test('flush runs immediately when dirty and clears dirty', () {
       final gate = EditSheetAutosaveGate();
       var runs = 0;
       gate.markDirty();
       gate.flush(() => runs++);
       expect(runs, 1);
       expect(gate.isDirty, isFalse);
+      gate.dispose();
+    });
+
+    test('force flush runs even when clean (explicit Save)', () {
+      final gate = EditSheetAutosaveGate();
+      var runs = 0;
+      gate.markClean();
+      gate.flush(() => runs++, force: true);
+      expect(runs, 1);
+      expect(gate.isDirty, isFalse);
+      gate.dispose();
+    });
+
+    test('non-force flush skips when clean', () {
+      final gate = EditSheetAutosaveGate();
+      var runs = 0;
+      gate.markClean();
+      gate.flush(() => runs++);
+      expect(runs, 0);
       gate.dispose();
     });
 
@@ -39,19 +58,21 @@ void main() {
       final gate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 80));
       var runs = 0;
       gate.schedule(() => runs++);
-      gate.flush(() => runs++);
+      gate.flush(() => runs++, force: true);
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(runs, 1);
       gate.dispose();
     });
 
-    test('markClean prevents redundant flush', () {
-      final gate = EditSheetAutosaveGate();
-      var runs = 0;
-      gate.markDirty();
-      gate.markClean();
-      gate.flush(() => runs++);
-      expect(runs, 0);
+    test('flush with force supersedes pending debounced callback', () async {
+      final gate = EditSheetAutosaveGate(debounce: const Duration(milliseconds: 80));
+      var scheduledRuns = 0;
+      var flushRuns = 0;
+      gate.schedule(() => scheduledRuns++);
+      gate.flush(() => flushRuns++, force: true);
+      expect(flushRuns, 1);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+      expect(scheduledRuns, 0);
       gate.dispose();
     });
   });

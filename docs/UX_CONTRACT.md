@@ -119,6 +119,13 @@ Performance, responsiveness, and stability are **P0 correctness**, not polish. S
 - **Card density:** Short blocks use **micro** / **compact** layouts (essential controls only). **Medium** / **large** blocks show progress separator + category breadcrumb + planned time footer (`PlanTimeTaskCard`).
 - **Interactions:** Checkbox, play, menu, body tap, drag, and resize keep independent hit zones; optimistic schedule updates follow the Iron Laws.
 
+## Edit sheet Save (local-first)
+
+- **Save is a local commit button**, not a network gate. Valid Save applies optimistic Brain/cache/UI **immediately**, shows **Changes saved** (or a specific validation error), and closes the sheet without waiting for PocketBase.
+- **Explicit Save beats autosave:** `EditSheetAutosaveGate.flush(force: true)` always runs the latest draft sync and cancels pending debounce; autosave debounce must read the latest controller state at fire time, not a stale captured draft.
+- **Network is background:** PocketBase PATCH runs after local apply; retriable failures keep optimistic UI and enqueue outbox; non-retriable failures roll back once with one error snack.
+- **Validation feedback:** Empty title or missing required times show an immediate localized warning — never a silent no-op tap.
+
 ## Recurring plan edit/delete scope
 
 - **One stored row per series:** Client expands `plans.rrule` into virtual `virt-{seriesPb}-{YYYY-MM-DD}` rows for the visible window; `exception_dates` omits instances; materialized one-offs link to the series via `parent_plan_id` + `recurrence_instance_date_key`.

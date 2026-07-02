@@ -230,6 +230,8 @@ const Map<String, String> kEnL10n = {
     'notif_status_unknown': 'Status unavailable',
     'record_synced': 'Record synced',
     'changes_saved': 'Changes saved',
+    'edit_save_title_required': 'Enter a title before saving.',
+    'edit_save_time_required': 'Set start and end time before saving.',
     'toast_saved': 'Saved',
     'toast_deleted': 'Deleted',
     'toast_updated': 'Updated',
