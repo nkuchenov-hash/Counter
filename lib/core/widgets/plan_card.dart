@@ -91,7 +91,8 @@ class PlanCard extends StatelessWidget {
     final blockH = timelineBlockHeightPx ?? kPlanTimeCardMinHeightPx;
     final visual = planTimeCardVisualDensityForRenderedHeight(blockH);
     final density = planTimeCardTaskDensityForVisual(visual);
-    final fillHeight = false;
+    // TIME_VIEW_CARD_FILLS_SCHEDULED_SLOT — shell fills duration block in Time View.
+    const fillHeight = true;
     final showBreadcrumb = planTimeCardShowFooterBreadcrumbForVisual(visual);
     final showProgress = planTimeCardShowProgressForVisual(visual);
     final suppressChildInk = Theme.of(context).copyWith(

@@ -181,7 +181,8 @@ void main() {
       final result = _layout(projections);
       expect(result.layouts.length, 6);
       for (final l in result.layouts) {
-        expect(l.heightPx, closeTo(38, 0.51));
+        expect(l.heightPx, greaterThanOrEqualTo(38 - 0.01));
+        expect(l.heightPx, lessThanOrEqualTo(42 + 0.51));
       }
       expect(
         result.grid.hourHeightsPx.single,
@@ -252,7 +253,10 @@ void main() {
         isTrue,
       );
       final hour11Card = _layoutCard(dense.layouts, 'd');
-      expect(hour11Card.heightPx, closeTo(120, 0.51));
+      expect(
+        hour11Card.heightPx,
+        closeTo(60 * dense.grid.rubberPxPerMinute, 0.51),
+      );
     });
 
     test('y/time mapping round-trip uses hour geometry', () {
@@ -268,7 +272,7 @@ void main() {
   });
 
   group('rubber minute scale', () {
-    test('A: single 45-minute card uses piecewise height', () {
+    test('A: single 45-minute card uses duration time scale', () {
       final result = _layout(
         [_proj(hour: 12, minute: 0, durationMin: 45, id: 'a')],
         visibleHours: [12],
@@ -276,20 +280,20 @@ void main() {
       );
       final card = result.layouts.single;
       expect(card.topPx, closeTo(0, 0.51));
-      expect(card.heightPx, closeTo(97.5, 1.0));
+      expect(card.heightPx, closeTo(90, 1.0));
     });
 
-    test('B: single 30-minute card maps to 75px', () {
+    test('B: single 30-minute card spans half hour at time scale', () {
       final result = _layout(
         [_proj(hour: 12, minute: 0, durationMin: 30, id: 'a')],
         visibleHours: [12],
         rangeStart: 12,
       );
       final card = result.layouts.single;
-      expect(card.heightPx, closeTo(75, 0.51));
+      expect(card.heightPx, closeTo(60, 0.51));
     });
 
-    test('C: full-hour 60-minute card maps to 120px', () {
+    test('C: full-hour 60-minute card spans hour at time scale', () {
       final result = _layout(
         [_proj(hour: 12, minute: 0, durationMin: 60, id: 'a')],
         visibleHours: [12],
@@ -297,6 +301,7 @@ void main() {
       );
       final card = result.layouts.single;
       expect(card.heightPx, closeTo(120, 0.51));
+      expect(card.heightPx, closeTo(result.grid.hourHeightsPx.single, 0.51));
     });
 
     test('D: adjacent 45 + 15 chain — 4px gap, hour fits both', () {

@@ -159,12 +159,27 @@ abstract final class PlanTimeViewLayoutCalculator {
       baseHourHeightPx / 60.0;
 
   static double _requiredRubberPxPerMinute(int durationMin) {
-    return planTimeCardRenderedHeightPxForDuration(durationMin) /
-        math.max(kPlanTimeMinDurationMinutes, durationMin);
+    final d = math.max(kPlanTimeMinDurationMinutes, durationMin);
+    if (durationMin <= kPlanTimeMinDurationMinutes) {
+      return kPlanTimeMinCardHeightPx / d;
+    }
+    return 1.0;
+  }
+
+  /// Scheduled slot height from duration × rubber scale (TIME_VIEW_CARD_SLOT_HEIGHT_FROM_DURATION).
+  static double scheduledSlotHeightPx(
+    int durationMin,
+    double rubberPxPerMinute,
+  ) {
+    final timeTruth = durationMin * rubberPxPerMinute;
+    if (durationMin <= kPlanTimeMinDurationMinutes) {
+      return math.max(timeTruth, kPlanTimeMinCardHeightPx);
+    }
+    return timeTruth;
   }
 
   static double _cardHeightPx(int durationMin, double rubberPxPerMinute) =>
-      planTimeCardRenderedHeightPxForDuration(durationMin);
+      scheduledSlotHeightPx(durationMin, rubberPxPerMinute);
 
   static bool _wallAdjacent(double prevEndMin, double nextStartMin) =>
       (nextStartMin - prevEndMin).abs() < 0.01;
@@ -365,6 +380,7 @@ abstract final class PlanTimeViewLayoutCalculator {
       globalPrevEndMin = slot.endMin;
       globalPrevBottom = topPx + heightPx;
 
+      // TIME_VIEW_CARD_CONTENT_DENSITY_FROM_AVAILABLE_HEIGHT — inner layout only.
       final visual = planTimeCardVisualDensityForRenderedHeight(heightPx);
       layouts.add(
         PlanTimeViewBlockLayout(
@@ -499,7 +515,7 @@ abstract final class PlanTimeViewLayoutCalculator {
       assert(l.heightPx > 0, 'non-positive height');
       assert(
         (l.heightPx - expected).abs() < 0.51,
-        'card height ${l.heightPx} != piecewise $expected',
+        'TIME_VIEW_DURATION_VISUAL_MISMATCH_BLOCKED: height ${l.heightPx} != slot $expected',
       );
 
       final packedAfterAdjacent =

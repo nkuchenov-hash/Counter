@@ -30,6 +30,8 @@ import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
+import 'package:counter/data/time_view_fixed_time_policy.dart';
+import 'package:counter/features/planning/plan_time_gesture_contract.dart';
 import 'package:counter/features/planning/plan_time_view_layout.dart';
 import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/data/smart_input_parser.dart';
@@ -460,6 +462,10 @@ class _PlanningPageState extends State<PlanningPage>
 
   List<TimeModeProjectedPlan> _cachedTimeModeProjections = const [];
   List<PlanTimeViewBlockLayout> _dragInsertLayoutsCache = const [];
+  Set<String> _timeViewFixedTagIds = {};
+  Set<String> _timelineDragExcludedPlanIds = {};
+  Set<String> _timelineBulkDragPlanIds = {};
+  Map<String, int> _timelineBulkDragRelativeOffsetMin = {};
 
   static const int _kTimelineDefaultBlockMinutes = 30;
 
@@ -751,6 +757,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
       }
     });
     unawaited(_loadPlanningTimelineBounds());
+    unawaited(_loadTimeViewFixedTagIds());
     unawaited(_reloadQuickAddTags());
     _hourGridEdgeScrollTicker = createTicker(_onHourGridEdgeScrollTick);
   }
@@ -946,6 +953,13 @@ DatabaseService.instance.persistPlanningTaskOrder(
       externalSelectionRing: true,
       onReorder: canReorder ? _onPlanningQuickBarReorder : null,
     );
+  }
+
+  Future<void> _loadTimeViewFixedTagIds() async {
+    final ids = await TimeViewFixedTagPrefs.load();
+    if (mounted) {
+      setState(() => _timeViewFixedTagIds = ids);
+    }
   }
 
   Future<void> _loadPlanningTimelineBounds() async {
@@ -1544,6 +1558,16 @@ DatabaseService.instance.persistPlanningTaskOrder(
                   ),
                   const Divider(height: 1),
                   const _PlanRecordLinkSuggestionSettingsBlock(),
+                  const Divider(height: 24),
+                  _TimeViewFixedTagsSettingsBlock(
+                    initialSelectedIds: _timeViewFixedTagIds,
+                    onSave: (ids) async {
+                      await TimeViewFixedTagPrefs.save(ids);
+                      if (mounted) {
+                        setState(() => _timeViewFixedTagIds = ids);
+                      }
+                    },
+                  ),
                   const Divider(height: 24),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
@@ -3017,8 +3041,18 @@ DatabaseService.instance.persistPlanningTaskOrder(
     return (rawMinutes / snap).round() * snap.toDouble();
   }
 
-  bool _planIsTimelineVerticallyDraggable(PlanningTask task) {
-    if (_planSelectMode) return false;
+  Set<String> _timeViewFixedPlanIdsForTasks(Iterable<PlanningTask> tasks) {
+    if (_timeViewFixedTagIds.isEmpty) return {};
+    final out = <String>{};
+    for (final task in tasks) {
+      if (isPlanFixedInTimeView(task, _timeViewFixedTagIds)) {
+        out.add(task.planRowIdForBackend);
+      }
+    }
+    return out;
+  }
+
+  bool _planIsTimelineScheduledDraggable(PlanningTask task) {
     if (task.startTime == null) return false;
     if (task.planRowIdForBackend.startsWith('optimistic-')) return false;
     final rrule = task.rrule?.trim() ?? '';
@@ -3026,6 +3060,19 @@ DatabaseService.instance.persistPlanningTaskOrder(
     final inst = task.recurrenceInstanceDateKey?.trim() ?? '';
     if (inst.isNotEmpty) return false;
     return true;
+  }
+
+  bool _planCanMoveInTimeView(PlanningTask task, String planKey) {
+    if (!_planIsTimelineScheduledDraggable(task)) return false;
+    if (_planSelectMode) {
+      return _selectedPlanKeys.contains(planKey);
+    }
+    return true;
+  }
+
+  bool _planIsTimelineVerticallyDraggable(PlanningTask task) {
+    if (_planSelectMode) return false;
+    return _planIsTimelineScheduledDraggable(task);
   }
 
   DateTime _wallTimeFromTimelineMinutes(
@@ -3099,6 +3146,10 @@ DatabaseService.instance.persistPlanningTaskOrder(
     _timelineDragInsertBefore = false;
     _timelineDragInsertMarkerTopPx = null;
     _timelineStoredInsertionIntent = null;
+    _timelineDragExcludedPlanIds = {};
+    _timelineBulkDragPlanIds = {};
+    _timelineBulkDragRelativeOffsetMin = {};
+    _dragInsertLayoutsCache = const [];
     _timelineResizePlanKey = null;
     _timelineResizeEdge = null;
     _timelineResizeTask = null;
@@ -3333,6 +3384,47 @@ DatabaseService.instance.persistPlanningTaskOrder(
     );
   }
 
+  void _persistTimeViewCascadePatches({
+    required List<PlanningTask> resolved,
+    required List<PlanningTask> scheduledBefore,
+    String? commitSource,
+  }) {
+    if (kDebugMode) {
+      debugPrint('[TIME_VIEW_INSERTION_COMMIT_PATCHES] source=$commitSource');
+      debugPrint('[TIME_VIEW_BRAIN_PATCH_STARTED]');
+    }
+    final beforeByKey = {for (final t in scheduledBefore) _planKey(t): t};
+    for (final task in resolved) {
+      final key = _planKey(task);
+      final before = beforeByKey[key];
+      if (before == null) continue;
+      if (before.startTime == task.startTime &&
+          before.endDateTime == task.endDateTime) {
+        continue;
+      }
+      if (kDebugMode) {
+        debugPrint('[TIME_VIEW_OPTIMISTIC_APPLIED] id=${task.planRowIdForBackend}');
+      }
+      DatabaseService.instance.applyOptimisticPlanningTask(task);
+      unawaited(
+        DatabaseService.instance.updatePlanningTask(
+          task.planRowIdForBackend,
+          planBusinessId: task.planRowId,
+          startTimeDisplay: task.startTime,
+          endDateTimeDisplay: task.endDateTime,
+          clearEnd: task.endDateTime == null,
+          suppressAppSnack: true,
+          recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
+        ),
+      );
+      if (kDebugMode) {
+        debugPrint('[TIME_VIEW_NETWORK_PATCH_ENQUEUED_OR_SENT]');
+      }
+    }
+    DatabaseService.instance.notifyPlanningRefresh();
+    if (mounted) setState(() {});
+  }
+
   void _persistTimelineDragWithCascade({
     required PlanningTask movedTask,
     required DateTime newStartWall,
@@ -3554,8 +3646,17 @@ DatabaseService.instance.notifyPlanningRefresh();
         _dragInsertLayoutsCache.isNotEmpty) {
       return _dragInsertLayoutsCache;
     }
+    final projections = _timelineDragExcludedPlanIds.isEmpty
+        ? _cachedTimeModeProjections
+        : _cachedTimeModeProjections
+            .where(
+              (p) =>
+                  !_timelineDragExcludedPlanIds
+                      .contains(p.task.planRowIdForBackend),
+            )
+            .toList(growable: false);
     return _timelineBlockLayouts(
-      _cachedTimeModeProjections,
+      projections,
       planWallDay,
       startExtended,
       endExtended,
@@ -3595,15 +3696,57 @@ DatabaseService.instance.notifyPlanningRefresh();
     required int rangeEnd,
     required String selectedDayKey,
     required double fingerGrabOffsetCanvasPx,
+    required List<PlanningTask> scheduledInRange,
   }) {
     _clearTimelineInteractionState();
+
+    var dragIds = <String>{task.planRowIdForBackend};
+    var relativeOffsets = <String, int>{};
+    if (_planSelectMode) {
+      final selected = scheduledInRange
+          .where((t) => _selectedPlanKeys.contains(_planKey(t)))
+          .where((t) => t.startTime != null)
+          .toList();
+      if (selected.length > 1) {
+        dragIds = selected.map((t) => t.planRowIdForBackend).toSet();
+        final primaryStart = task.startTime!;
+        for (final t in selected) {
+          final st = t.startTime;
+          if (st == null) continue;
+          relativeOffsets[t.planRowIdForBackend] =
+              st.difference(primaryStart).inMinutes;
+        }
+        if (kDebugMode) {
+          debugPrint(
+            '[TIME_VIEW_BULK_DRAG_STARTED] group=${dragIds.length}',
+          );
+        }
+      }
+    }
+
+    _timelineDragExcludedPlanIds = dragIds;
+    _timelineBulkDragPlanIds = dragIds;
+    _timelineBulkDragRelativeOffsetMin = relativeOffsets;
+
     if (ShellFlags.enableTimelineProjectionCache) {
+      final filtered = _cachedTimeModeProjections
+          .where((p) => !dragIds.contains(p.task.planRowIdForBackend))
+          .toList(growable: false);
       _dragInsertLayoutsCache = _timelineBlockLayouts(
-        _cachedTimeModeProjections,
+        filtered,
         planWallDay,
         rangeStart,
         rangeEnd,
         selectedDayKey,
+      );
+    }
+    if (kDebugMode) {
+      debugPrint(
+        '[TIME_VIEW_DRAG_EXCLUDED_FROM_COLLISION_SET] count=${dragIds.length}',
+      );
+      debugPrint(
+        '[TIME_VIEW_DRAG_GRAB_OFFSET_CAPTURED] '
+        'offset=${fingerGrabOffsetCanvasPx.toStringAsFixed(1)}',
       );
     }
     setState(() {
@@ -3646,6 +3789,8 @@ DatabaseService.instance.notifyPlanningRefresh();
       math.max(0, grid.totalMinutes - durMin),
     );
     final fingerCanvasY = _timelineFingerCanvasY(deltaPx);
+    final pointerAnchoredTopPx = (fingerCanvasY - _timelineFingerGrabOffsetCanvasPx)
+        .clamp(0.0, maxTopPx);
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
@@ -3720,7 +3865,7 @@ DatabaseService.instance.notifyPlanningRefresh();
         storedIntent = null;
         insertKey = null;
         final snappedMin = _snapTimelineMinutes(
-          grid.minutesFromY(fingerCanvasY.clamp(0.0, maxTopPx)),
+          grid.minutesFromY(pointerAnchoredTopPx),
         );
         previewTop = grid.yForMinutesFromRangeStart(snappedMin);
         previewLabel = _timelineDragLabelForTopPx(
@@ -3734,9 +3879,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     } else {
       storedIntent = null;
       final snappedMin = dropIntent.wallStartMinute ??
-          _snapTimelineMinutes(
-            grid.minutesFromY(fingerCanvasY.clamp(0.0, maxTopPx)),
-          );
+          _snapTimelineMinutes(grid.minutesFromY(pointerAnchoredTopPx));
       previewTop = grid.yForMinutesFromRangeStart(snappedMin);
       previewLabel = _timelineDragLabelForTopPx(
         previewTop,
@@ -3773,8 +3916,15 @@ DatabaseService.instance.notifyPlanningRefresh();
   }) {
     final task = _timelineVerticalDragTask;
     final planKey = _timelineVerticalDragPlanKey;
+    final bulkDragIds = Set<String>.from(_timelineBulkDragPlanIds);
+    final bulkOffsets = Map<String, int>.from(_timelineBulkDragRelativeOffsetMin);
     _stopHourGridEdgeScroll();
     if (task == null || planKey == null) {
+      _cancelTimelineVerticalDrag();
+      return;
+    }
+    if (planTimeViewMovementBelowDragThreshold(_timelineFingerDragDeltaPx)) {
+      _logTimeDropGuard('phase=cancel reason=belowDragThreshold');
       _cancelTimelineVerticalDrag();
       return;
     }
@@ -3788,6 +3938,8 @@ DatabaseService.instance.notifyPlanningRefresh();
       math.max(0, grid.totalMinutes - durMin),
     );
     final fingerCanvasY = _timelineFingerCanvasY(_timelineFingerDragDeltaPx);
+    final pointerAnchoredTopPx = (fingerCanvasY - _timelineFingerGrabOffsetCanvasPx)
+        .clamp(0.0, maxTopPx);
     final selectedDayKey = widget.selectedDateString.length >= 10
         ? widget.selectedDateString.substring(0, 10)
         : DatabaseService.instance.getProjectedTodayDateKey();
@@ -3854,54 +4006,74 @@ DatabaseService.instance.notifyPlanningRefresh();
       _logTimeDropGuard('phase=commit mode=emptyCanvas');
     }
 
-    late final DateTime newStartWall;
-    DateTime? newEndWall;
+    final fixedPlanIds = _timeViewFixedPlanIdsForTasks(scheduledInRange);
+    final draggedPlanIds = bulkDragIds.isEmpty
+        ? {task.planRowIdForBackend}
+        : bulkDragIds;
 
-    if (insertionIntent != null) {
-      assertTimeViewTargetCardNoRawY(
-        dropIntent: dropIntent,
-        usedRawY: false,
-      );
-      final dropResult = DatabaseService.instance.applyTimeViewTargetInsertion(
-        scheduledInRange,
-        insertionIntent,
-      );
-      newStartWall = dropResult.draggedStartWall;
-      newEndWall = dropResult.draggedEndWall;
-    } else {
-      assertTimeViewTargetCardNoRawY(
-        dropIntent: dropIntent,
-        usedRawY: true,
-      );
+    DateTime? emptyCanvasStartWall;
+    if (insertionIntent == null) {
       final snappedMin = _snapTimelineMinutes(
         dropIntent.wallStartMinute ??
-            grid.minutesFromY(fingerCanvasY.clamp(0.0, maxTopPx)),
+            grid.minutesFromY(pointerAnchoredTopPx),
       );
-      newStartWall = _wallTimeFromTimelineMinutes(
+      emptyCanvasStartWall = _wallTimeFromTimelineMinutes(
         snappedMin,
         planWallDay,
         rangeStart,
       );
-      newEndWall = _timelineVerticalDragHadEnd
-          ? newStartWall.add(Duration(minutes: durMin))
-          : null;
+    }
+
+    final cascadeResult = computeTimeViewInsertionCascade(
+      scheduledTasks: scheduledInRange,
+      draggedPlanIds: draggedPlanIds,
+      primaryDraggedPlanId: task.planRowIdForBackend,
+      fixedPlanIds: fixedPlanIds,
+      resolveDurationMinutes:
+          DatabaseService.instance.resolvePlanDurationMinutesFromTags,
+      targetIntent: insertionIntent,
+      emptyCanvasStartWall: emptyCanvasStartWall,
+      emptyCanvasHadEnd: _timelineVerticalDragHadEnd,
+      emptyCanvasDurationMin: durMin,
+      bulkRelativeOffsetMinutes:
+          bulkOffsets.isEmpty ? null : bulkOffsets,
+    );
+
+    if (!cascadeResult.accepted) {
+      if (cascadeResult.blockedReason == 'fixedBarrier') {
+        if (kDebugMode) {
+          debugPrint('[TIME_VIEW_BULK_DRAG_BLOCKED_BY_FIXED_TIME]');
+        }
+        if (mounted) {
+          AppSnack.warning(
+            currentLocale.value == 'ru'
+                ? 'Фиксированная встреча блокирует сдвиг'
+                : 'Fixed-time meeting blocks this move',
+          );
+        }
+      }
+      _logTimeDropGuard(
+        'phase=cancel reason=${cascadeResult.blockedReason ?? 'cascadeRejected'}',
+      );
+      _cancelTimelineVerticalDrag();
+      return;
+    }
+
+    if (kDebugMode && draggedPlanIds.length > 1) {
+      debugPrint(
+        '[TIME_VIEW_BULK_DRAG_PATCHES_COMPUTED] patches=${cascadeResult.patches.length}',
+      );
     }
 
     setState(_clearTimelineInteractionState);
-    _persistTimelineDragWithCascade(
-      movedTask: task,
-      newStartWall: newStartWall,
-      newEndWall: newEndWall,
-      scheduledInRange: scheduledInRange,
-      rangeStart: rangeStart,
-      rangeEnd: rangeEnd,
-      planWallDay: planWallDay,
-      insertionIntent: insertionIntent,
+    _persistTimeViewCascadePatches(
+      resolved: cascadeResult.previewRows,
+      scheduledBefore: scheduledInRange,
       commitSource: commitSource,
-      rawYMinutesForTrace: grid.minutesFromY(
-        fingerCanvasY.clamp(0.0, maxTopPx),
-      ),
     );
+    if (kDebugMode && draggedPlanIds.length > 1) {
+      debugPrint('[TIME_VIEW_BULK_DRAG_COMMITTED]');
+    }
   }
 
   Future<void> _onPlanningTaskDroppedOnHour(
@@ -4542,7 +4714,9 @@ DatabaseService.instance.notifyPlanningRefresh();
         ? math.max(1.0, _timelineResizePreviewHeightPx)
         : layout.heightPx;
     const horizontalPad = _kTimelineBlockHorizontalPadPx;
-    final canInteract = _planIsTimelineVerticallyDraggable(layout.task);
+    final canMove = _planCanMoveInTimeView(layout.task, planKey);
+    final canResize =
+        _planIsTimelineScheduledDraggable(layout.task) && !_planSelectMode;
     final durMin = _timelineBlockDurationMinutes(layout.task);
     final hadEnd = layout.task.endDateTime != null;
     final times = _timelineStartEndMinutesFromTask(
@@ -4624,8 +4798,9 @@ DatabaseService.instance.notifyPlanningRefresh();
               horizontal: _kTimelineBlockHorizontalPadPx,
             ),
             child: _TimelinePlanInteractionBlock(
-              canMove: canInteract,
-              canResize: canInteract,
+              canMove: canMove,
+              canResize: canResize,
+              bulkSelectMode: _planSelectMode,
               resizeHandlePx: _kTimelineResizeHandlePx,
               blockHeightPx: resizeHeightPx,
               controlsLeftInset: planCardBodyGestureLeftInsetPx(
@@ -4633,19 +4808,25 @@ DatabaseService.instance.notifyPlanningRefresh();
                 timeline: true,
               ),
               controlsRightInset: planCardBodyGestureRightInsetPx(),
-              onMovePointerDown: canInteract
+              onMovePointerDown: canMove
                   ? () {
                       _setTimelineInteractionLock(true);
                     }
                   : null,
               onBodyTap: () {
                 if (_planSelectMode) {
+                  if (kDebugMode) {
+                    debugPrint('[TIME_VIEW_BULK_SELECTION_TOGGLED] key=$planKey');
+                  }
                   _toggleKeySelection(planKey);
                 } else {
+                  if (kDebugMode) {
+                    debugPrint('[TIME_VIEW_TAP_OPEN_EDIT] key=$planKey');
+                  }
                   _openEditDialog(layout.task);
                 }
               },
-              onVerticalDragStart: canInteract
+              onVerticalDragStart: canMove
                   ? (fingerGrabOffset) => _beginTimelineVerticalDrag(
                       task: layout.task,
                       planKey: planKey,
@@ -4658,9 +4839,10 @@ DatabaseService.instance.notifyPlanningRefresh();
                       rangeEnd: rangeEnd,
                       selectedDayKey: selectedDayKey,
                       fingerGrabOffsetCanvasPx: fingerGrabOffset,
+                      scheduledInRange: scheduledInRange,
                     )
                   : null,
-              onVerticalDragUpdate: canInteract
+              onVerticalDragUpdate: canMove
                   ? (delta, globalDy) => _updateTimelineVerticalDrag(
                       deltaPx: delta,
                       globalDy: globalDy,
@@ -4672,7 +4854,7 @@ DatabaseService.instance.notifyPlanningRefresh();
                       planActualByPbId: planActualByPbId,
                     )
                   : null,
-              onVerticalDragEnd: canInteract
+              onVerticalDragEnd: canMove
                   ? () => _commitTimelineVerticalDrag(
                       planWallDay: planWallDay,
                       rangeStart: rangeStart,
@@ -4681,8 +4863,8 @@ DatabaseService.instance.notifyPlanningRefresh();
                     )
                   : null,
               onVerticalDragCancel:
-                  canInteract ? _cancelTimelineVerticalDrag : null,
-              onResizeStart: canInteract
+                  canMove ? _cancelTimelineVerticalDrag : null,
+              onResizeStart: canResize
                   ? (edge) => _beginTimelineResize(
                       edge: edge,
                       task: layout.task,
@@ -4695,7 +4877,7 @@ DatabaseService.instance.notifyPlanningRefresh();
                       rangeStart: rangeStart,
                     )
                   : null,
-              onResizeUpdate: canInteract
+              onResizeUpdate: canResize
                   ? (delta, globalDy) => _updateTimelineResize(
                       deltaPx: delta,
                       globalDy: globalDy,
@@ -4705,13 +4887,13 @@ DatabaseService.instance.notifyPlanningRefresh();
                     )
                   : null,
               onResizeEnd:
-                  canInteract
+                  canResize
                       ? () => _commitTimelineResize(
                           planWallDay: planWallDay,
                           rangeStart: rangeStart,
                         )
                       : null,
-              onResizeCancel: canInteract ? _cancelTimelineResize : null,
+              onResizeCancel: canResize ? _cancelTimelineResize : null,
               isInteracting: isInteracting,
               child: Align(
                 alignment: Alignment.topCenter,
@@ -6263,6 +6445,121 @@ class _DefaultPlanTimezoneSearchDelegate extends SearchDelegate<String?> {
   }
 }
 
+/// Local Time View setting: tags whose plans block cascade shifts.
+class _TimeViewFixedTagsSettingsBlock extends StatefulWidget {
+  const _TimeViewFixedTagsSettingsBlock({
+    required this.initialSelectedIds,
+    required this.onSave,
+  });
+
+  final Set<String> initialSelectedIds;
+  final Future<void> Function(Set<String> ids) onSave;
+
+  @override
+  State<_TimeViewFixedTagsSettingsBlock> createState() =>
+      _TimeViewFixedTagsSettingsBlockState();
+}
+
+class _TimeViewFixedTagsSettingsBlockState
+    extends State<_TimeViewFixedTagsSettingsBlock> {
+  late Set<String> _selected;
+  List<Tag> _tags = const [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = Set<String>.from(widget.initialSelectedIds);
+    unawaited(_loadTags());
+  }
+
+  Future<void> _loadTags() async {
+    final tags = await DatabaseService.instance.fetchTagsForCurrentUser(
+      scope: TagCatalogScope.plan,
+    );
+    if (!mounted) return;
+    setState(() {
+      _tags = tags;
+      _loading = false;
+    });
+  }
+
+  String _tagKey(Tag tag) {
+    final pb = tag.pbRecordId?.trim();
+    if (pb != null && pb.isNotEmpty) return pb;
+    return tag.tagId.toString();
+  }
+
+  Future<void> _toggle(Tag tag) async {
+    final key = _tagKey(tag);
+    setState(() {
+      if (_selected.contains(key)) {
+        _selected.remove(key);
+      } else {
+        _selected.add(key);
+      }
+    });
+    await widget.onSave(_selected);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final title = loc == 'ru'
+        ? 'Теги с фиксированным временем'
+        : 'Fixed-time tags';
+    final subtitle = loc == 'ru'
+        ? 'Планы с этими тегами не сдвигаются другими карточками.'
+        : 'Plans with these tags are not pushed by other cards.';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.lock_clock_outlined),
+          title: Text(title),
+          subtitle: Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          )
+        else if (_tags.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              loc == 'ru' ? 'Нет тегов' : 'No tags',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          )
+        else
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final tag in _tags)
+                FilterChip(
+                  label: Text(tag.name),
+                  selected: _selected.contains(_tagKey(tag)),
+                  onSelected: (_) => unawaited(_toggle(tag)),
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
 /// Bottom sheet: local timeline hour range (0–23) for the Planning grid.
 class _PlanningTimelineBoundsSheet extends StatefulWidget {
   const _PlanningTimelineBoundsSheet({
@@ -6374,11 +6671,14 @@ class _PlanningTimelineBoundsSheetState
 
 enum _TimelineResizeEdge { top, bottom }
 
+enum _TimelinePointerGesturePhase { idle, tapCandidate, draggingMove }
+
 /// Invisible move/resize gesture zones for proportional timeline plan blocks.
 class _TimelinePlanInteractionBlock extends StatefulWidget {
   const _TimelinePlanInteractionBlock({
     required this.canMove,
     required this.canResize,
+    required this.bulkSelectMode,
     required this.resizeHandlePx,
     required this.child,
     required this.isInteracting,
@@ -6399,6 +6699,7 @@ class _TimelinePlanInteractionBlock extends StatefulWidget {
 
   final bool canMove;
   final bool canResize;
+  final bool bulkSelectMode;
   final double resizeHandlePx;
   final bool isInteracting;
   final double? blockHeightPx;
@@ -6425,15 +6726,19 @@ class _TimelinePlanInteractionBlockState
     extends State<_TimelinePlanInteractionBlock> {
   double _moveAccumulatedDy = 0;
   bool _resizing = false;
-  bool _suppressBodyTap = false;
   bool _bodyDragActive = false;
   int? _activePointer;
+  _TimelinePointerGesturePhase _gesturePhase = _TimelinePointerGesturePhase.idle;
+  double _pendingGrabOffsetCanvasPx = 0;
+  Offset? _pointerDownGlobal;
 
   bool get _immediateBodyDrag =>
       kIsWeb ||
       defaultTargetPlatform == TargetPlatform.windows ||
       defaultTargetPlatform == TargetPlatform.macOS ||
       defaultTargetPlatform == TargetPlatform.linux;
+
+  double get _dragThresholdPx => planTimeViewDragMovementThresholdPx();
 
   double get _resizeZoneInset {
     final h = widget.blockHeightPx ?? widget.resizeHandlePx * 2;
@@ -6443,11 +6748,68 @@ class _TimelinePlanInteractionBlockState
     return widget.resizeHandlePx;
   }
 
-  void _endBodyDragSession() {
+  void _resetMoveGesture() {
+    _gesturePhase = _TimelinePointerGesturePhase.idle;
     _bodyDragActive = false;
-    Future<void>.delayed(const Duration(milliseconds: 250), () {
-      if (mounted) setState(() => _suppressBodyTap = false);
-    });
+    _moveAccumulatedDy = 0;
+    _pointerDownGlobal = null;
+    _activePointer = null;
+  }
+
+  void _maybeStartDragFromPending() {
+    if (_gesturePhase != _TimelinePointerGesturePhase.tapCandidate) return;
+    if (_bodyDragActive) return;
+    _gesturePhase = _TimelinePointerGesturePhase.draggingMove;
+    _bodyDragActive = true;
+    if (kDebugMode) {
+      debugPrint('[TIME_VIEW_DRAG_STARTED_AFTER_THRESHOLD]');
+    }
+    widget.onMovePointerDown?.call();
+    widget.onVerticalDragStart?.call(_pendingGrabOffsetCanvasPx);
+  }
+
+  void _onPointerMoveUpdate(Offset globalPosition, double deltaDy) {
+    if (_gesturePhase == _TimelinePointerGesturePhase.tapCandidate) {
+      final down = _pointerDownGlobal;
+      if (down != null) {
+        final moved = (globalPosition - down).distance;
+        if (moved >= _dragThresholdPx) {
+          _maybeStartDragFromPending();
+        }
+      }
+    }
+    if (!_bodyDragActive) return;
+    _moveAccumulatedDy += deltaDy;
+    widget.onVerticalDragUpdate?.call(
+      _moveAccumulatedDy,
+      globalPosition.dy,
+    );
+  }
+
+  void _finishPointerGesture() {
+    if (_gesturePhase == _TimelinePointerGesturePhase.tapCandidate) {
+      if (widget.bulkSelectMode) {
+        if (kDebugMode) {
+          debugPrint('[TIME_VIEW_BULK_TOGGLE_SELECTION]');
+        }
+      } else if (kDebugMode) {
+        debugPrint('[TIME_VIEW_TAP_OPEN_EDIT]');
+      }
+      widget.onBodyTap?.call();
+      _resetMoveGesture();
+      return;
+    }
+    if (_bodyDragActive) {
+      widget.onVerticalDragEnd?.call();
+    }
+    _resetMoveGesture();
+  }
+
+  void _cancelPointerGesture() {
+    if (_bodyDragActive) {
+      widget.onVerticalDragCancel?.call();
+    }
+    _resetMoveGesture();
   }
 
   Widget _moveZone() {
@@ -6466,79 +6828,62 @@ class _TimelinePlanInteractionBlockState
             ? Listener(
                 behavior: HitTestBehavior.translucent,
                 onPointerDown: (e) {
-                  widget.onMovePointerDown?.call();
-                  _suppressBodyTap = true;
-                  _bodyDragActive = true;
-                  _moveAccumulatedDy = 0;
+                  _resetMoveGesture();
+                  _gesturePhase = _TimelinePointerGesturePhase.tapCandidate;
+                  _pendingGrabOffsetCanvasPx = inset + e.localPosition.dy;
+                  _pointerDownGlobal = e.position;
                   _activePointer = e.pointer;
-                  widget.onVerticalDragStart?.call(
-                    inset + e.localPosition.dy,
-                  );
                 },
                 onPointerMove: (e) {
-                  if (!_bodyDragActive || _activePointer != e.pointer) return;
-                  _moveAccumulatedDy += e.delta.dy;
-                  widget.onVerticalDragUpdate?.call(
-                    _moveAccumulatedDy,
-                    e.position.dy,
-                  );
+                  if (_activePointer != e.pointer) return;
+                  _onPointerMoveUpdate(e.position, e.delta.dy);
                 },
                 onPointerUp: (e) {
-                  if (!_bodyDragActive || _activePointer != e.pointer) return;
-                  widget.onVerticalDragEnd?.call();
-                  _endBodyDragSession();
-                  _activePointer = null;
+                  if (_activePointer != e.pointer) return;
+                  _finishPointerGesture();
                 },
                 onPointerCancel: (e) {
-                  if (!_bodyDragActive || _activePointer != e.pointer) return;
-                  widget.onVerticalDragCancel?.call();
-                  _endBodyDragSession();
-                  _activePointer = null;
+                  if (_activePointer != e.pointer) return;
+                  _cancelPointerGesture();
                 },
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: widget.onBodyTap == null
-                      ? null
-                      : () {
-                          if (_suppressBodyTap || _bodyDragActive) return;
-                          widget.onBodyTap!();
-                        },
-                  child: const SizedBox.expand(),
-                ),
+                child: const SizedBox.expand(),
               )
             : GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: widget.onBodyTap == null
-            ? null
-            : () {
-                if (_suppressBodyTap || _bodyDragActive) return;
-                widget.onBodyTap!();
-              },
-        onLongPressStart: (details) {
-                _suppressBodyTap = true;
-                _bodyDragActive = true;
-                _moveAccumulatedDy = 0;
-                widget.onMovePointerDown?.call();
-                widget.onVerticalDragStart?.call(
-                  inset + details.localPosition.dy,
-                );
-              },
-        onLongPressMoveUpdate: (details) {
-                widget.onVerticalDragUpdate?.call(
-                  details.offsetFromOrigin.dy,
-                  details.globalPosition.dy,
-                );
-              },
-        onLongPressEnd: (_) {
-                widget.onVerticalDragEnd?.call();
-                _endBodyDragSession();
-              },
-        onLongPressCancel: () {
-                widget.onVerticalDragCancel?.call();
-                _endBodyDragSession();
-              },
-        child: const SizedBox.expand(),
-      ),
+                behavior: HitTestBehavior.translucent,
+                onTap: widget.onBodyTap,
+                onLongPressStart: (details) {
+                  _resetMoveGesture();
+                  _gesturePhase = _TimelinePointerGesturePhase.tapCandidate;
+                  _pendingGrabOffsetCanvasPx =
+                      inset + details.localPosition.dy;
+                  _pointerDownGlobal = details.globalPosition;
+                },
+                onLongPressMoveUpdate: (details) {
+                  if (_gesturePhase == _TimelinePointerGesturePhase.tapCandidate) {
+                    final down = _pointerDownGlobal;
+                    if (down != null &&
+                        (details.globalPosition - down).distance >=
+                            _dragThresholdPx) {
+                      _maybeStartDragFromPending();
+                    }
+                  }
+                  if (!_bodyDragActive) return;
+                  widget.onVerticalDragUpdate?.call(
+                    details.offsetFromOrigin.dy,
+                    details.globalPosition.dy,
+                  );
+                },
+                onLongPressEnd: (_) {
+                  if (_bodyDragActive) {
+                    widget.onVerticalDragEnd?.call();
+                  }
+                  _resetMoveGesture();
+                },
+                onLongPressCancel: () {
+                  _cancelPointerGesture();
+                },
+                child: const SizedBox.expand(),
+              ),
       ),
     );
     return zone;
@@ -6556,8 +6901,10 @@ class _TimelinePlanInteractionBlockState
           ? () {
               setState(() {
                 _resizing = true;
-                _suppressBodyTap = true;
               });
+              if (kDebugMode) {
+                debugPrint('[TIME_VIEW_RESIZE_STARTED_FROM_ZONE]');
+              }
               widget.onResizeStart?.call(
                 isTop ? _TimelineResizeEdge.top : _TimelineResizeEdge.bottom,
               );
@@ -6572,14 +6919,12 @@ class _TimelinePlanInteractionBlockState
           ? () {
               setState(() => _resizing = false);
               widget.onResizeEnd?.call();
-              _endBodyDragSession();
             }
           : null,
       onResizeCancel: widget.canResize
           ? () {
               setState(() => _resizing = false);
               widget.onResizeCancel?.call();
-              _endBodyDragSession();
             }
           : null,
       scheme: scheme,

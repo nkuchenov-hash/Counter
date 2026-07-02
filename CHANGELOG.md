@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-02] - P0 Time View interaction + duration fidelity [shipped]
+
+* **`lib/features/planning/plan_time_view_layout.dart` / `lib/core/widgets/plan_card.dart`:** [shipped] Scheduled slot height = `duration × rubberPxPerMinute` (min 38px for 10m); card shell fills slot (`timelineFillHeight`); content density derived from slot height only.
+* **`lib/features/planning/planning_view.dart` / `plan_time_gesture_contract.dart`:** [shipped] Pointer gesture state machine (tap opens edit / bulk toggle; drag after 8px desktop / 12px touch threshold); pointer-anchored preview; dragged ids excluded from collision layout during preview; bulk group drag with relative offsets.
+* **`lib/data/plan_time_sequential_cascade.dart` / `time_view_fixed_time_policy.dart`:** [shipped] `computeTimeViewInsertionCascade` with fixed-time barriers; local prefs `time_view_fixed_tag_ids_v1` + Planning settings “Fixed-time tags” chips.
+* **`test/plan_time_*`:** [shipped] Duration fidelity, gesture contract, fixed-time policy, bulk drag regression tests.
+
 ## [2026-07-02] - P0 edit Save local-first reliability [shipped]
 
 * **`lib/features/shared/shared_widgets.dart` — `EditSheetAutosaveGate` / `_commitSave` / `_save`:** [shipped] Explicit Save uses `flush(force: true)` with latest draft; empty title / missing times show localized warnings; stopped Timeline edits apply optimistic UI before overlap warning; recurrence scope dismiss no longer rolls back local state after Save.

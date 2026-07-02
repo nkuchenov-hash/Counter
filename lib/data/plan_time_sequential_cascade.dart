@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' show Offset;
 
+import 'package:counter/core/widgets/plan_time_task_card.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter/foundation.dart';
 
@@ -30,9 +31,9 @@ int planWallDurationMinutesForCascade(
   if (start == null) return 30;
   final end = task.endDateTime;
   if (end != null && !end.isBefore(start)) {
-    return math.max(5, end.difference(start).inMinutes);
+    return math.max(kPlanTimeMinDurationMinutes, end.difference(start).inMinutes);
   }
-  return math.max(5, resolveDurationMinutes(task.tags));
+  return math.max(kPlanTimeMinDurationMinutes, resolveDurationMinutes(task.tags));
 }
 
 int _planCascadeSortCompare(PlanningTask a, PlanningTask b) {
@@ -647,4 +648,323 @@ bool scheduledPlansHaveWallOverlap(
     prevEnd = start.add(Duration(minutes: durMin));
   }
   return false;
+}
+
+enum TimeViewInsertionMode { targetCard, emptyCanvas, bulkGroup }
+
+/// Result of [computeTimeViewInsertionCascade] (preview + commit share shape).
+class TimeViewInsertionCascadeResult {
+  const TimeViewInsertionCascadeResult({
+    required this.accepted,
+    this.blockedReason,
+    this.patches = const [],
+    this.previewRows = const [],
+    this.shiftedPlanIds = const {},
+    this.blockedByFixedPlanId,
+    this.draggedStartWall,
+    this.draggedEndWall,
+  });
+
+  final bool accepted;
+  final String? blockedReason;
+  final List<PlanTimeSequentialCascadePatch> patches;
+  final List<PlanningTask> previewRows;
+  final Set<String> shiftedPlanIds;
+  final String? blockedByFixedPlanId;
+  final DateTime? draggedStartWall;
+  final DateTime? draggedEndWall;
+}
+
+/// Cascade explicit list order with optional fixed-time barriers.
+List<PlanningTask>? cascadeScheduledPlansForExplicitTimeViewOrderWithBarriers({
+  required List<PlanningTask> explicitOrder,
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+  TimeViewInsertionIntent? targetIntent,
+  Set<String> fixedPlanIds = const {},
+  Set<String> draggedPlanIds = const {},
+}) {
+  if (explicitOrder.isEmpty) return const [];
+
+  final scheduled = explicitOrder.where((t) => t.startTime != null).toList();
+  if (scheduled.isEmpty) return List<PlanningTask>.from(explicitOrder);
+
+  final cascadedById = <String, PlanningTask>{};
+  DateTime? prevEnd;
+
+  for (final task in scheduled) {
+    final id = task.planRowIdForBackend;
+    final durMin = planWallDurationMinutesForCascade(
+      task,
+      resolveDurationMinutes: resolveDurationMinutes,
+    );
+    var newStart = task.startTime!;
+    DateTime? newEnd =
+        task.endDateTime ?? newStart.add(Duration(minutes: durMin));
+
+    if (targetIntent != null && id == targetIntent.draggedPlanId) {
+      final sched = computeTimeViewTargetDropSchedule(
+        targetStartWall: targetIntent.targetStartWall,
+        targetEndWall: targetIntent.targetEndWall,
+        draggedDurationMinutes: targetIntent.draggedDurationMinutes,
+        insertBefore: targetIntent.insertBefore,
+        draggedHadEnd: targetIntent.draggedHadEnd,
+      );
+      newStart = sched.startWall;
+      newEnd = sched.endWall ?? newStart.add(Duration(minutes: durMin));
+    } else if (prevEnd != null && newStart.isBefore(prevEnd)) {
+      if (fixedPlanIds.contains(id) && !draggedPlanIds.contains(id)) {
+        logTimeDropGuard(
+          'TIME_VIEW_INSERTION_BLOCKED_BY_FIXED_TIME plan=$id',
+        );
+        return null;
+      }
+      newStart = DateTime(
+        newStart.year,
+        newStart.month,
+        newStart.day,
+        prevEnd.hour,
+        prevEnd.minute,
+        prevEnd.second,
+        prevEnd.millisecond,
+        prevEnd.microsecond,
+      );
+      newEnd = newStart.add(Duration(minutes: durMin));
+    }
+
+    final updated = task.copyWith(
+      startTime: newStart,
+      endDateTime: newEnd,
+      clearEnd: false,
+    );
+    cascadedById[id] = updated;
+    prevEnd = newEnd;
+  }
+
+  final out = explicitOrder
+      .map((t) => cascadedById[t.planRowIdForBackend] ?? t)
+      .toList(growable: false);
+
+  if (scheduledPlansHaveWallOverlap(
+    out.where((t) => t.startTime != null).toList(),
+    resolveDurationMinutes: resolveDurationMinutes,
+  )) {
+    logTimeDropGuard('TIME_VIEW_INSERTION_NO_OVERLAP_VERIFIED failed');
+    return null;
+  }
+
+  return out;
+}
+
+/// Pure scheduling for Time View drag insert / bulk move with fixed barriers.
+TimeViewInsertionCascadeResult computeTimeViewInsertionCascade({
+  required List<PlanningTask> scheduledTasks,
+  required Set<String> draggedPlanIds,
+  required String primaryDraggedPlanId,
+  required Set<String> fixedPlanIds,
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+  TimeViewInsertionIntent? targetIntent,
+  DateTime? emptyCanvasStartWall,
+  bool emptyCanvasHadEnd = false,
+  int? emptyCanvasDurationMin,
+  Map<String, int>? bulkRelativeOffsetMinutes,
+}) {
+  if (kDebugMode) {
+    debugPrint(
+      '[TIME_VIEW_INSERTION_CASCADE_STARTED] dragged=${draggedPlanIds.length} '
+      'fixed=${fixedPlanIds.length}',
+    );
+  }
+
+  List<PlanningTask> working = List<PlanningTask>.from(scheduledTasks);
+
+  if (targetIntent != null) {
+    final ordered = buildExplicitOrderForTargetInsert(
+      scheduled: working,
+      draggedPlanId: targetIntent.draggedPlanId,
+      targetPlanId: targetIntent.targetPlanId,
+      insertBefore: targetIntent.insertBefore,
+    );
+    final cascaded = cascadeScheduledPlansForExplicitTimeViewOrderWithBarriers(
+      explicitOrder: ordered,
+      resolveDurationMinutes: resolveDurationMinutes,
+      targetIntent: targetIntent,
+      fixedPlanIds: fixedPlanIds,
+      draggedPlanIds: draggedPlanIds,
+    );
+    if (cascaded == null) {
+      String? blockedId;
+      for (final id in fixedPlanIds) {
+        if (!draggedPlanIds.contains(id)) {
+          blockedId = id;
+          break;
+        }
+      }
+      return TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'fixedBarrier',
+        blockedByFixedPlanId: blockedId,
+      );
+    }
+    final patches = diffSequentialCascadePatches(scheduledTasks, cascaded);
+    final shifted = patches.map((p) => p.task.planRowIdForBackend).toSet();
+    if (shifted.isNotEmpty && kDebugMode) {
+      debugPrint('[TIME_VIEW_INSERTION_SHIFTED_CHAIN] count=${shifted.length}');
+    }
+    final dragged = cascaded.firstWhere(
+      (t) => t.planRowIdForBackend == targetIntent.draggedPlanId,
+    );
+    return TimeViewInsertionCascadeResult(
+      accepted: true,
+      patches: patches,
+      previewRows: cascaded,
+      shiftedPlanIds: shifted,
+      draggedStartWall: dragged.startTime,
+      draggedEndWall: dragged.endDateTime,
+    );
+  }
+
+  if (emptyCanvasStartWall != null && draggedPlanIds.isNotEmpty) {
+    final primaryId = primaryDraggedPlanId;
+    final durById = <String, int>{};
+    for (final id in draggedPlanIds) {
+      PlanningTask? match;
+      for (final t in working) {
+        if (t.planRowIdForBackend == id) {
+          match = t;
+          break;
+        }
+      }
+      if (match == null) continue;
+      durById[id] = emptyCanvasDurationMin ??
+          planWallDurationMinutesForCascade(
+            match,
+            resolveDurationMinutes: resolveDurationMinutes,
+          );
+    }
+
+    working = working.map((t) {
+      final id = t.planRowIdForBackend;
+      if (!draggedPlanIds.contains(id)) return t;
+      final offset = bulkRelativeOffsetMinutes?[id] ?? 0;
+      final start = emptyCanvasStartWall.add(Duration(minutes: offset));
+      final dur = durById[id] ??
+          planWallDurationMinutesForCascade(
+            t,
+            resolveDurationMinutes: resolveDurationMinutes,
+          );
+      final end = emptyCanvasHadEnd || t.endDateTime != null
+          ? start.add(Duration(minutes: dur))
+          : null;
+      return t.copyWith(
+        startTime: start,
+        endDateTime: end,
+        clearEnd: end == null,
+      );
+    }).toList(growable: false);
+
+    final sorted = working.where((t) => t.startTime != null).toList()
+      ..sort(_planCascadeSortCompare);
+    final cascaded = cascadeScheduledPlansForTimeViewDayWithBarriers(
+      sorted,
+      resolveDurationMinutes: resolveDurationMinutes,
+      fixedPlanIds: fixedPlanIds,
+      draggedPlanIds: draggedPlanIds,
+    );
+    if (cascaded == null) {
+      return const TimeViewInsertionCascadeResult(
+        accepted: false,
+        blockedReason: 'fixedBarrier',
+      );
+    }
+    final merged = _mergeCascadeIntoFullList(working, cascaded);
+    final patches = diffSequentialCascadePatches(scheduledTasks, merged);
+    final shifted = patches.map((p) => p.task.planRowIdForBackend).toSet();
+    PlanningTask? primary;
+    for (final t in merged) {
+      if (t.planRowIdForBackend == primaryId) {
+        primary = t;
+        break;
+      }
+    }
+    return TimeViewInsertionCascadeResult(
+      accepted: true,
+      patches: patches,
+      previewRows: merged,
+      shiftedPlanIds: shifted,
+      draggedStartWall: primary?.startTime,
+      draggedEndWall: primary?.endDateTime,
+    );
+  }
+
+  return const TimeViewInsertionCascadeResult(
+    accepted: false,
+    blockedReason: 'missingIntent',
+  );
+}
+
+List<PlanningTask> _mergeCascadeIntoFullList(
+  List<PlanningTask> original,
+  List<PlanningTask> cascadedScheduled,
+) {
+  final byId = {for (final t in cascadedScheduled) t.planRowIdForBackend: t};
+  return original
+      .map((t) => byId[t.planRowIdForBackend] ?? t)
+      .toList(growable: false);
+}
+
+/// Start-time sort cascade with fixed barriers (flexible cards shift; fixed block).
+List<PlanningTask>? cascadeScheduledPlansForTimeViewDayWithBarriers(
+  List<PlanningTask> tasks, {
+  required int Function(List<Tag> tags) resolveDurationMinutes,
+  Set<String> fixedPlanIds = const {},
+  Set<String> draggedPlanIds = const {},
+}) {
+  if (tasks.isEmpty) return const [];
+
+  final scheduled = tasks.where((t) => t.startTime != null).toList()
+    ..sort(_planCascadeSortCompare);
+
+  if (scheduled.isEmpty) return List<PlanningTask>.from(tasks);
+
+  final cascadedById = <String, PlanningTask>{};
+  DateTime? prevEnd;
+
+  for (final task in scheduled) {
+    final id = task.planRowIdForBackend;
+    final origStart = task.startTime!;
+    final durMin = planWallDurationMinutesForCascade(
+      task,
+      resolveDurationMinutes: resolveDurationMinutes,
+    );
+    var newStart = origStart;
+    if (prevEnd != null && newStart.isBefore(prevEnd)) {
+      if (fixedPlanIds.contains(id) && !draggedPlanIds.contains(id)) {
+        logTimeDropGuard(
+          'TIME_VIEW_INSERTION_BLOCKED_BY_FIXED_TIME plan=$id',
+        );
+        return null;
+      }
+      newStart = DateTime(
+        origStart.year,
+        origStart.month,
+        origStart.day,
+        prevEnd.hour,
+        prevEnd.minute,
+        prevEnd.second,
+        prevEnd.millisecond,
+        prevEnd.microsecond,
+      );
+    }
+    final newEnd = newStart.add(Duration(minutes: durMin));
+    cascadedById[id] = task.copyWith(
+      startTime: newStart,
+      endDateTime: newEnd,
+      clearEnd: false,
+    );
+    prevEnd = newEnd;
+  }
+
+  return tasks
+      .map((t) => cascadedById[t.planRowIdForBackend] ?? t)
+      .toList(growable: false);
 }
