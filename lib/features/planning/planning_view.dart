@@ -52,6 +52,18 @@ import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/time/plan_time_labels.dart';
 import 'package:counter/core/widgets/plan_card.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
+import 'package:counter/features/planning/settings/default_plan_category_search.dart';
+import 'package:counter/features/planning/settings/default_plan_timezone_search.dart';
+import 'package:counter/features/planning/settings/plan_record_link_settings.dart';
+import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
+import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
+import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
+import 'package:counter/features/planning/time_view/time_view_fixed_time_settings.dart';
+import 'package:counter/features/planning/time_view/time_view_interaction_block.dart';
+import 'package:counter/features/planning/widgets/plan_card_reorder_settle.dart';
+import 'package:counter/features/planning/widgets/planning_day_card_list_keep_alive.dart';
+import 'package:counter/features/planning/widgets/planning_menu_overlay.dart';
+
 
 /// Scheduled Time View canvas only (`_buildProportionalDayTimelineCanvas`).
 const _kPlanningTimeViewCanvasColor = Color(0xFFD0D5DD);
@@ -506,7 +518,7 @@ class _PlanningPageState extends State<PlanningPage>
 
   /// Top/bottom edge resize (Time mode); local preview until release.
   String? _timelineResizePlanKey;
-  _TimelineResizeEdge? _timelineResizeEdge;
+  TimelineResizeEdge? _timelineResizeEdge;
   double _timelineResizeOriginTopPx = 0;
   double _timelineResizeOriginHeightPx = 0;
   int _timelineResizeOriginStartMin = 0;
@@ -1147,7 +1159,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
                         onPressed: () async {
                           final picked = await showSearch<String?>(
                             context: context,
-                            delegate: _DefaultPlanTimezoneSearchDelegate(
+                            delegate: DefaultPlanTimezoneSearchDelegate(
                               loc: loc,
                               options: tz_settings.kCategoryDefaultTimezoneOptions,
                             ),
@@ -1295,13 +1307,13 @@ DatabaseService.instance.persistPlanningTaskOrder(
             }
 
             Future<void> pickCategory() async {
-              final picked = await showSearch<_DefaultPlanCategoryOption?>(
+              final picked = await showSearch<DefaultPlanCategoryOption?>(
                 context: context,
-                delegate: _DefaultPlanCategorySearchDelegate(
+                delegate: DefaultPlanCategorySearchDelegate(
                   loc: loc,
                   options: [
                     for (final p in pairs)
-                      _DefaultPlanCategoryOption(id: p.id, path: p.path),
+                      DefaultPlanCategoryOption(id: p.id, path: p.path),
                   ],
                 ),
               );
@@ -1529,7 +1541,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-            child: _PlanningTimelineBoundsSheet(
+            child: PlanningTimelineBoundsSheet(
               initialStart: _timelineHourStart,
               initialEnd: _timelineHourEnd,
               onBoundsChanged: _onPlanningTimelineBoundsChanged,
@@ -1542,7 +1554,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _PlanningNoTagsSettingsBlock(
+                  PlanningNoTagsSettingsBlock(
                     initialVisible: _noTagsChipVisible,
                     initialColorHex: _noTagsColorHex,
                     onApply: (visible, colorHex) async {
@@ -1558,9 +1570,9 @@ DatabaseService.instance.persistPlanningTaskOrder(
                     },
                   ),
                   const Divider(height: 1),
-                  const _PlanRecordLinkSuggestionSettingsBlock(),
+                  const PlanRecordLinkSuggestionSettingsBlock(),
                   const Divider(height: 24),
-                  _TimeViewFixedTagsSettingsBlock(
+                  TimeViewFixedTagsSettingsBlock(
                     initialSelectedIds: _timeViewFixedTagIds,
                     onSave: (ids) async {
                       await TimeViewFixedTagPrefs.save(ids);
@@ -2143,7 +2155,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
 
     entry = OverlayEntry(
       builder: (ctx) {
-        return _SemicirclePlanningMenuOverlay(
+        return SemicirclePlanningMenuOverlay(
           anchorCenter: anchorCenter,
           onDismiss: dismiss,
           onEdit: () {
@@ -3186,7 +3198,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
   }
 
   void _beginTimelineResize({
-    required _TimelineResizeEdge edge,
+    required TimelineResizeEdge edge,
     required PlanningTask task,
     required String planKey,
     required double originTopPx,
@@ -3242,7 +3254,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
     var startMin = _timelineResizeOriginStartMin;
     var endMin = _timelineResizeOriginEndMin;
 
-    if (edge == _TimelineResizeEdge.top) {
+    if (edge == TimelineResizeEdge.top) {
       final fixedEndMin = _timelineResizeOriginEndMin;
       final maxTopForDur = grid.yForMinutesFromRangeStart(
         math.max(0, fixedEndMin - minDur).toDouble(),
@@ -3291,10 +3303,10 @@ DatabaseService.instance.persistPlanningTaskOrder(
     );
     _logTimeResizePreview(
       planId: _timelineResizeTask?.planRowIdForBackend ?? '-',
-      edge: edge == _TimelineResizeEdge.top ? 'top' : 'bottom',
+      edge: edge == TimelineResizeEdge.top ? 'top' : 'bottom',
       pointerY: previewTop + previewHeight,
       minute: grid.minutesFromY(previewTop + previewHeight).round(),
-      snapped: edge == _TimelineResizeEdge.top ? startMin : endMin,
+      snapped: edge == TimelineResizeEdge.top ? startMin : endMin,
       newStart: newStartWall,
       newEnd: newEndWall,
       durationMin: endMin - startMin,
@@ -4374,7 +4386,7 @@ DatabaseService.instance.notifyPlanningRefresh();
     Widget card, {
     bool timelineEmbedded = false,
   }) {
-    final wrapped = _PlanCardReorderSettle(
+    final wrapped = PlanCardReorderSettle(
       animate: _planReorderSettleKeys.contains(planKey),
       child: card,
     );
@@ -4942,7 +4954,7 @@ DatabaseService.instance.notifyPlanningRefresh();
             padding: const EdgeInsets.symmetric(
               horizontal: _kTimelineBlockHorizontalPadPx,
             ),
-            child: _TimelinePlanInteractionBlock(
+            child: TimelinePlanInteractionBlock(
               canMove: canMove,
               canResize: canResize,
               bulkSelectMode: _planSelectMode,
@@ -5600,7 +5612,7 @@ DatabaseService.instance.notifyPlanningRefresh();
           .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
       if (_sortMode == _PlanSortMode.time) {
         return RepaintBoundary(
-          child: _PlanningDayCardListKeepAlive(
+          child: PlanningDayCardListKeepAlive(
             child: AbsorbPointer(
               child: _buildHourGridView(tasks, planActualByPbId),
             ),
@@ -5608,7 +5620,7 @@ DatabaseService.instance.notifyPlanningRefresh();
         );
       }
       return RepaintBoundary(
-        child: _PlanningDayCardListKeepAlive(
+        child: PlanningDayCardListKeepAlive(
           child: _buildFrozenPlanCardList(tasks, scheme, wallDay),
         ),
       );
@@ -6008,1265 +6020,3 @@ DatabaseService.instance.notifyPlanningRefresh();
 }
 
 /// Keeps offscreen plan day bodies alive in [PageView] (P0P render warm).
-class _PlanningDayCardListKeepAlive extends StatefulWidget {
-  const _PlanningDayCardListKeepAlive({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_PlanningDayCardListKeepAlive> createState() =>
-      _PlanningDayCardListKeepAliveState();
-}
-
-class _PlanningDayCardListKeepAliveState extends State<_PlanningDayCardListKeepAlive>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.child;
-  }
-}
-
-/// Expanding semi-circle FAB menu: primary at [anchorCenter], three satellites with labels.
-class _SemicirclePlanningMenuOverlay extends StatefulWidget {
-  const _SemicirclePlanningMenuOverlay({
-    required this.anchorCenter,
-    required this.onDismiss,
-    required this.onEdit,
-    required this.onSelect,
-    required this.onDelete,
-  });
-
-  final Offset anchorCenter;
-  final VoidCallback onDismiss;
-  final VoidCallback onEdit;
-  final VoidCallback onSelect;
-  final VoidCallback onDelete;
-
-  @override
-  State<_SemicirclePlanningMenuOverlay> createState() =>
-      _SemicirclePlanningMenuOverlayState();
-}
-
-class _SemicirclePlanningMenuOverlayState
-    extends State<_SemicirclePlanningMenuOverlay>
-    with SingleTickerProviderStateMixin {
-  static const double _canvas = 300;
-
-  /// Match planning card menu control (44) so the close hub covers the tap target.
-  static const double _hub = 44;
-  static const double _orbit = 100;
-  static const double _satellite = 60;
-
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 340),
-    );
-    unawaited(_controller.forward());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      HapticFeedback.mediumImpact();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  /// Polar offsets from hub center: standard math angle from +X (east), CCW.
-  /// Flutter Y grows downward, so Y uses `-sin` for a visual CCW arc.
-  /// Arc to the **left** of the hub uses angles π, 2π/3, 4π/3 (straight left, up-left, down-left).
-  Offset _orbitOffsetLeftArc(double radians) {
-    return Offset(math.cos(radians) * _orbit, -math.sin(radians) * _orbit);
-  }
-
-  Widget _labeledAction({
-    required int index,
-    required Offset offsetFromHub,
-    required IconData icon,
-    required String label,
-    required Color background,
-    required Color foreground,
-    required VoidCallback onTap,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    final delayed = CurvedAnimation(
-      parent: _controller,
-      curve: Interval(
-        index * 0.11,
-        0.65 + index * 0.12,
-        curve: Curves.easeOutBack,
-      ),
-    );
-    return Positioned(
-      left: _canvas / 2 + offsetFromHub.dx - _satellite / 2,
-      top: _canvas / 2 + offsetFromHub.dy - _satellite / 2 - 22,
-      child: FadeTransition(
-        opacity: delayed,
-        child: ScaleTransition(
-          scale: delayed,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Material(
-                elevation: 4,
-                color: background,
-                shape: const CircleBorder(),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: onTap,
-                  child: SizedBox(
-                    width: _satellite,
-                    height: _satellite,
-                    child: Icon(icon, color: foreground, size: 30),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 96),
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                    height: 1.1,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final loc = currentLocale.value;
-
-    // Hub center must align exactly with the menu button center (no clamp — that broke anchoring).
-    final stackLeft = widget.anchorCenter.dx - _canvas / 2;
-    final stackTop = widget.anchorCenter.dy - _canvas / 2;
-
-    final hubAnim = CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0, 0.45, curve: Curves.easeOutCubic),
-    );
-
-    return Material(
-      color: Colors.transparent,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: widget.onDismiss,
-              child: ColoredBox(color: scheme.scrim.withValues(alpha: 0.36)),
-            ),
-          ),
-          Positioned(
-            left: stackLeft,
-            top: stackTop,
-            width: _canvas,
-            height: _canvas,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Left semicircle: up-left → Edit, mid-left → Select, down-left → Delete (thumb-friendly).
-                _labeledAction(
-                  index: 0,
-                  offsetFromHub: _orbitOffsetLeftArc(2 * math.pi / 3),
-                  icon: Icons.edit_rounded,
-                  label: t(loc, 'plan_sheet_edit'),
-                  background: scheme.primaryContainer,
-                  foreground: scheme.onPrimaryContainer,
-                  onTap: widget.onEdit,
-                ),
-                _labeledAction(
-                  index: 1,
-                  offsetFromHub: _orbitOffsetLeftArc(math.pi),
-                  icon: Icons.checklist_rounded,
-                  label: t(loc, 'plan_sheet_select'),
-                  background: scheme.secondaryContainer,
-                  foreground: scheme.onSecondaryContainer,
-                  onTap: widget.onSelect,
-                ),
-                _labeledAction(
-                  index: 2,
-                  offsetFromHub: _orbitOffsetLeftArc(4 * math.pi / 3),
-                  icon: Icons.delete_outline_rounded,
-                  label: t(loc, 'plan_sheet_delete'),
-                  background: scheme.errorContainer,
-                  foreground: scheme.onErrorContainer,
-                  onTap: widget.onDelete,
-                ),
-                Positioned(
-                  left: _canvas / 2 - _hub / 2,
-                  top: _canvas / 2 - _hub / 2,
-                  child: FadeTransition(
-                    opacity: hubAnim,
-                    child: ScaleTransition(
-                      scale: hubAnim,
-                      child: Tooltip(
-                        message: t(loc, 'plan_radial_close'),
-                        child: Material(
-                          elevation: 6,
-                          color: scheme.primary,
-                          shape: const CircleBorder(),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: widget.onDismiss,
-                            child: SizedBox(
-                              width: _hub,
-                              height: _hub,
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: scheme.onPrimary,
-                                size: 26,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Record-to-plan suggestion prefs (Planning settings sheet only).
-///
-/// Owns UI state so toggles rebuild inside the modal; reads/writes
-/// [plans_record_link_suggestions_enabled] and [plans_record_link_suggestion_mode].
-class _PlanRecordLinkSuggestionSettingsBlock extends StatefulWidget {
-  const _PlanRecordLinkSuggestionSettingsBlock();
-
-  @override
-  State<_PlanRecordLinkSuggestionSettingsBlock> createState() =>
-      _PlanRecordLinkSuggestionSettingsBlockState();
-}
-
-class _PlanRecordLinkSuggestionSettingsBlockState
-    extends State<_PlanRecordLinkSuggestionSettingsBlock> {
-  static const String _prefsEnabled = 'plans_record_link_suggestions_enabled';
-  static const String _prefsMode = 'plans_record_link_suggestion_mode';
-  static const String _modeAsk = 'ask';
-  static const String _modeAuto = 'auto';
-
-  bool _enabled = true;
-  String _mode = _modeAsk;
-
-  @override
-  void initState() {
-    super.initState();
-    unawaited(_loadFromPrefs());
-  }
-
-  Future<void> _loadFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final enabled = prefs.getBool(_prefsEnabled) ?? true;
-      final raw = prefs.getString(_prefsMode);
-      final mode = raw == _modeAuto ? _modeAuto : _modeAsk;
-      if (!mounted) return;
-      setState(() {
-        _enabled = enabled;
-        _mode = mode;
-      });
-    } catch (_) {}
-  }
-
-  Future<void> _persist({bool? enabled, String? mode}) async {
-    final nextEnabled = enabled ?? _enabled;
-    final nextMode = mode != null
-        ? (mode == _modeAuto ? _modeAuto : _modeAsk)
-        : _mode;
-    setState(() {
-      _enabled = nextEnabled;
-      _mode = nextMode;
-    });
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_prefsEnabled, nextEnabled);
-      await prefs.setString(_prefsMode, nextMode);
-    } catch (_) {}
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = currentLocale.value;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _enabled,
-          title: Text(t(loc, 'record_link_suggestions_title')),
-          subtitle: Text(
-            t(loc, 'record_link_suggestions_subtitle'),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          onChanged: (value) => unawaited(_persist(enabled: value)),
-        ),
-        if (_enabled) ...[
-          const SizedBox(height: 8),
-          SegmentedButton<String>(
-            segments: [
-              ButtonSegment<String>(
-                value: _modeAsk,
-                label: Text(t(loc, 'record_link_suggestion_mode_ask')),
-              ),
-              ButtonSegment<String>(
-                value: _modeAuto,
-                label: Text(t(loc, 'record_link_suggestion_mode_auto')),
-              ),
-            ],
-            selected: {_mode},
-            onSelectionChanged: (next) {
-              if (next.isEmpty) return;
-              unawaited(_persist(mode: next.first));
-            },
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// “No Tags” synthetic chip: visibility + B/W presets (Planning settings sheet only).
-class _PlanningNoTagsSettingsBlock extends StatefulWidget {
-  const _PlanningNoTagsSettingsBlock({
-    required this.initialVisible,
-    required this.initialColorHex,
-    required this.onApply,
-  });
-
-  final bool initialVisible;
-  final String initialColorHex;
-  final Future<void> Function(bool visible, String colorHex) onApply;
-
-  @override
-  State<_PlanningNoTagsSettingsBlock> createState() =>
-      _PlanningNoTagsSettingsBlockState();
-}
-
-class _PlanningNoTagsSettingsBlockState
-    extends State<_PlanningNoTagsSettingsBlock> {
-  static const List<String> _presets = <String>[
-    '#000000',
-    '#FFFFFF',
-    '#9E9E9E',
-    '#F44336',
-    '#2196F3',
-    '#4CAF50',
-    '#FF9800',
-  ];
-
-  late bool _visible;
-  late String _colorHex;
-
-  @override
-  void initState() {
-    super.initState();
-    _visible = widget.initialVisible;
-    _colorHex = widget.initialColorHex;
-  }
-
-  Future<void> _persist() async {
-    await widget.onApply(_visible, _colorHex);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = currentLocale.value;
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(t(loc, 'plan_filter_no_tags')),
-            subtitle: Text(t(loc, 'category_visibility_toggle')),
-            value: _visible,
-            onChanged: (v) {
-              setState(() => _visible = v);
-              unawaited(_persist());
-            },
-          ),
-          Text(
-            t(loc, 'category_color'),
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final h in _presets)
-                GestureDetector(
-                  onTap: () {
-                    setState(() => _colorHex = h);
-                    unawaited(_persist());
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: parseTagHexColor(h),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _colorHex == h
-                            ? scheme.primary
-                            : (h == '#FFFFFF'
-                                  ? scheme.outline
-                                  : Colors.transparent),
-                        width: _colorHex == h ? 3 : 1,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DefaultPlanCategoryOption {
-  const _DefaultPlanCategoryOption({required this.id, required this.path});
-
-  final int id;
-  final String path;
-
-  String get name {
-    final parts = path.split('>');
-    return parts.isEmpty ? path.trim() : parts.last.trim();
-  }
-}
-
-class _DefaultPlanCategorySearchDelegate
-    extends SearchDelegate<_DefaultPlanCategoryOption?> {
-  _DefaultPlanCategorySearchDelegate({required this.loc, required this.options})
-    : super(searchFieldLabel: t(loc, 'plan_default_time_search_category'));
-
-  final String loc;
-  final List<_DefaultPlanCategoryOption> options;
-
-  @override
-  List<Widget>? buildActions(BuildContext context) {
-    return [
-      if (query.isNotEmpty)
-        IconButton(
-          icon: const Icon(Icons.clear_rounded),
-          onPressed: () => query = '',
-        ),
-    ];
-  }
-
-  @override
-  Widget? buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back_rounded),
-      onPressed: () => close(context, null),
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) => _buildMatches(context);
-
-  @override
-  Widget buildSuggestions(BuildContext context) => _buildMatches(context);
-
-  Widget _buildMatches(BuildContext context) {
-    final q = query.trim().toLowerCase();
-    final matches = q.isEmpty
-        ? options
-        : options.where((o) {
-            return o.path.toLowerCase().contains(q) ||
-                o.name.toLowerCase().contains(q);
-          }).toList();
-    if (matches.isEmpty) {
-      return Center(child: Text(t(loc, 'plan_default_time_search_category')));
-    }
-    return ListView.separated(
-      itemCount: matches.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final option = matches[index];
-        return ListTile(
-          title: Text(option.path),
-          onTap: () => close(context, option),
-        );
-      },
-    );
-  }
-}
-
-class _DefaultPlanTimezoneSearchDelegate extends SearchDelegate<String?> {
-  _DefaultPlanTimezoneSearchDelegate({
-    required this.loc,
-    required this.options,
-  }) : super(searchFieldLabel: t(loc, 'plan_default_time_tz_search'));
-
-  final String loc;
-  final List<tz_settings.CategoryDefaultTimezoneOption> options;
-
-  @override
-  List<Widget>? buildActions(BuildContext context) {
-    return [
-      if (query.isNotEmpty)
-        IconButton(
-          icon: const Icon(Icons.clear_rounded),
-          onPressed: () => query = '',
-        ),
-    ];
-  }
-
-  @override
-  Widget? buildLeading(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.arrow_back_rounded),
-      onPressed: () => close(context, null),
-    );
-  }
-
-  @override
-  Widget buildResults(BuildContext context) => _buildMatches(context);
-
-  @override
-  Widget buildSuggestions(BuildContext context) => _buildMatches(context);
-
-  Widget _buildMatches(BuildContext context) {
-    final q = query.trim().toLowerCase();
-    final matches = q.isEmpty
-        ? options
-        : options.where((o) {
-            return o.searchLabel.toLowerCase().contains(q) ||
-                o.ianaId.toLowerCase().contains(q) ||
-                o.shortLabel.toLowerCase().contains(q);
-          }).toList();
-    if (matches.isEmpty) {
-      return Center(child: Text(t(loc, 'plan_default_time_tz_search')));
-    }
-    return ListView.separated(
-      itemCount: matches.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final option = matches[index];
-        return ListTile(
-          title: Text(option.searchLabel),
-          subtitle: Text(option.ianaId),
-          trailing: Text(option.shortLabel),
-          onTap: () => close(context, option.ianaId),
-        );
-      },
-    );
-  }
-}
-
-/// Local Time View setting: tags whose plans block cascade shifts.
-class _TimeViewFixedTagsSettingsBlock extends StatefulWidget {
-  const _TimeViewFixedTagsSettingsBlock({
-    required this.initialSelectedIds,
-    required this.onSave,
-  });
-
-  final Set<String> initialSelectedIds;
-  final Future<void> Function(Set<String> ids) onSave;
-
-  @override
-  State<_TimeViewFixedTagsSettingsBlock> createState() =>
-      _TimeViewFixedTagsSettingsBlockState();
-}
-
-class _TimeViewFixedTagsSettingsBlockState
-    extends State<_TimeViewFixedTagsSettingsBlock> {
-  late Set<String> _selected;
-  List<Tag> _tags = const [];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = Set<String>.from(widget.initialSelectedIds);
-    unawaited(_loadTags());
-  }
-
-  Future<void> _loadTags() async {
-    final tags = await DatabaseService.instance.fetchTagsForCurrentUser(
-      scope: TagCatalogScope.plan,
-    );
-    if (!mounted) return;
-    setState(() {
-      _tags = tags;
-      _loading = false;
-    });
-  }
-
-  String _tagKey(Tag tag) {
-    final pb = tag.pbRecordId?.trim();
-    if (pb != null && pb.isNotEmpty) return pb;
-    return tag.tagId.toString();
-  }
-
-  Future<void> _toggle(Tag tag) async {
-    final key = _tagKey(tag);
-    setState(() {
-      if (_selected.contains(key)) {
-        _selected.remove(key);
-      } else {
-        _selected.add(key);
-      }
-    });
-    await widget.onSave(_selected);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = currentLocale.value;
-    final title = loc == 'ru'
-        ? 'Теги с фиксированным временем'
-        : 'Fixed-time tags';
-    final subtitle = loc == 'ru'
-        ? 'Планы с этими тегами не сдвигаются другими карточками.'
-        : 'Plans with these tags are not pushed by other cards.';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.lock_clock_outlined),
-          title: Text(title),
-          subtitle: Text(
-            subtitle,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-        if (_loading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          )
-        else if (_tags.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              loc == 'ru' ? 'Нет тегов' : 'No tags',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          )
-        else
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              for (final tag in _tags)
-                FilterChip(
-                  label: Text(tag.name),
-                  selected: _selected.contains(_tagKey(tag)),
-                  onSelected: (_) => unawaited(_toggle(tag)),
-                ),
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-/// Bottom sheet: local timeline hour range (0–23) for the Planning grid.
-class _PlanningTimelineBoundsSheet extends StatefulWidget {
-  const _PlanningTimelineBoundsSheet({
-    required this.initialStart,
-    required this.initialEnd,
-    required this.onBoundsChanged,
-    required this.title,
-    required this.helper,
-    required this.valueSummaryBuilder,
-    required this.prevDayMarker,
-    required this.nextDayMarker,
-    this.header,
-  });
-
-  final int initialStart;
-  final int initialEnd;
-  final void Function(int start, int end) onBoundsChanged;
-  final String title;
-  final String helper;
-  final String Function(int start, int end) valueSummaryBuilder;
-  final String prevDayMarker;
-  final String nextDayMarker;
-  final Widget? header;
-
-  @override
-  State<_PlanningTimelineBoundsSheet> createState() =>
-      _PlanningTimelineBoundsSheetState();
-}
-
-class _PlanningTimelineBoundsSheetState
-    extends State<_PlanningTimelineBoundsSheet> {
-  late RangeValues _range;
-
-  @override
-  void initState() {
-    super.initState();
-    final range = PlanningSheetTimelinePrefs.normalizeExtendedRange(
-      widget.initialStart,
-      widget.initialEnd,
-    );
-    _range = RangeValues(range.start.toDouble(), range.end.toDouble());
-  }
-
-  void _commit(RangeValues values) {
-    var start = values.start.round();
-    var end = values.end.round();
-    final normalized = PlanningSheetTimelinePrefs.normalizeExtendedRange(
-      start,
-      end,
-    );
-    setState(() {
-      _range = RangeValues(
-        normalized.start.toDouble(),
-        normalized.end.toDouble(),
-      );
-    });
-    widget.onBoundsChanged(normalized.start, normalized.end);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final start = _range.start.round();
-    final end = _range.end.round();
-    final summary = widget.valueSummaryBuilder(start, end);
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.header != null) widget.header!,
-          if (widget.header != null) const Divider(height: 1),
-          Text(
-            widget.title,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            widget.helper,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            summary,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          RangeSlider(
-            values: _range,
-            min: PlanningSheetTimelinePrefs.extendedMin.toDouble(),
-            max: PlanningSheetTimelinePrefs.extendedMax.toDouble(),
-            divisions: PlanningSheetTimelinePrefs.rangeSliderDivisions,
-            labels: RangeLabels(
-              PlanningSheetTimelinePrefs.formatExtendedHourClock(start) +
-                  (start < 0 ? ' ${widget.prevDayMarker}' : ''),
-              PlanningSheetTimelinePrefs.formatExtendedHourClock(end) +
-                  (end > 24 ? ' ${widget.nextDayMarker}' : ''),
-            ),
-            onChanged: _commit,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-enum _TimelineResizeEdge { top, bottom }
-
-enum _TimelinePointerGesturePhase { idle, tapCandidate, draggingMove }
-
-/// Invisible move/resize gesture zones for proportional timeline plan blocks.
-class _TimelinePlanInteractionBlock extends StatefulWidget {
-  const _TimelinePlanInteractionBlock({
-    required this.canMove,
-    required this.canResize,
-    required this.bulkSelectMode,
-    required this.resizeHandlePx,
-    required this.child,
-    required this.isInteracting,
-    this.blockHeightPx,
-    this.controlsLeftInset = 0,
-    this.controlsRightInset = 0,
-    this.onBodyTap,
-    this.onVerticalDragStart,
-    this.onVerticalDragUpdate,
-    this.onVerticalDragEnd,
-    this.onVerticalDragCancel,
-    this.onMovePointerDown,
-    this.onResizeStart,
-    this.onResizeUpdate,
-    this.onResizeEnd,
-    this.onResizeCancel,
-  });
-
-  final bool canMove;
-  final bool canResize;
-  final bool bulkSelectMode;
-  final double resizeHandlePx;
-  final bool isInteracting;
-  final double? blockHeightPx;
-  final Widget child;
-  final double controlsLeftInset;
-  final double controlsRightInset;
-  final VoidCallback? onBodyTap;
-  final void Function(double fingerGrabOffsetCanvasPx)? onVerticalDragStart;
-  final void Function(double deltaPx, double globalDy)? onVerticalDragUpdate;
-  final VoidCallback? onVerticalDragEnd;
-  final VoidCallback? onVerticalDragCancel;
-  final VoidCallback? onMovePointerDown;
-  final void Function(_TimelineResizeEdge edge)? onResizeStart;
-  final void Function(double deltaPx, double globalDy)? onResizeUpdate;
-  final VoidCallback? onResizeEnd;
-  final VoidCallback? onResizeCancel;
-
-  @override
-  State<_TimelinePlanInteractionBlock> createState() =>
-      _TimelinePlanInteractionBlockState();
-}
-
-class _TimelinePlanInteractionBlockState
-    extends State<_TimelinePlanInteractionBlock> {
-  double _moveAccumulatedDy = 0;
-  bool _resizing = false;
-  bool _bodyDragActive = false;
-  int? _activePointer;
-  _TimelinePointerGesturePhase _gesturePhase = _TimelinePointerGesturePhase.idle;
-  double _pendingGrabOffsetCanvasPx = 0;
-  Offset? _pointerDownGlobal;
-
-  bool get _immediateBodyDrag =>
-      kIsWeb ||
-      defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.linux;
-
-  double get _dragThresholdPx => planTimeViewDragMovementThresholdPx();
-
-  double get _resizeZoneInset {
-    final h = widget.blockHeightPx ?? widget.resizeHandlePx * 2;
-    if (h < 48) {
-      return math.max(6.0, (h - 6) / 2);
-    }
-    return widget.resizeHandlePx;
-  }
-
-  void _resetMoveGesture() {
-    _gesturePhase = _TimelinePointerGesturePhase.idle;
-    _bodyDragActive = false;
-    _moveAccumulatedDy = 0;
-    _pointerDownGlobal = null;
-    _activePointer = null;
-  }
-
-  void _maybeStartDragFromPending() {
-    if (_gesturePhase != _TimelinePointerGesturePhase.tapCandidate) return;
-    if (_bodyDragActive) return;
-    _gesturePhase = _TimelinePointerGesturePhase.draggingMove;
-    _bodyDragActive = true;
-    if (kDebugMode) {
-      debugPrint('[TIME_VIEW_DRAG_STARTED_AFTER_THRESHOLD]');
-    }
-    widget.onMovePointerDown?.call();
-    widget.onVerticalDragStart?.call(_pendingGrabOffsetCanvasPx);
-  }
-
-  void _onPointerMoveUpdate(Offset globalPosition, double deltaDy) {
-    if (_gesturePhase == _TimelinePointerGesturePhase.tapCandidate) {
-      final down = _pointerDownGlobal;
-      if (down != null) {
-        final moved = (globalPosition - down).distance;
-        if (moved >= _dragThresholdPx) {
-          _maybeStartDragFromPending();
-        }
-      }
-    }
-    if (!_bodyDragActive) return;
-    _moveAccumulatedDy += deltaDy;
-    widget.onVerticalDragUpdate?.call(
-      _moveAccumulatedDy,
-      globalPosition.dy,
-    );
-  }
-
-  void _finishPointerGesture() {
-    if (_gesturePhase == _TimelinePointerGesturePhase.tapCandidate) {
-      if (widget.bulkSelectMode) {
-        if (kDebugMode) {
-          debugPrint('[TIME_VIEW_BULK_TOGGLE_SELECTION]');
-        }
-      } else if (kDebugMode) {
-        debugPrint('[TIME_VIEW_TAP_OPEN_EDIT]');
-      }
-      widget.onBodyTap?.call();
-      _resetMoveGesture();
-      return;
-    }
-    if (_bodyDragActive) {
-      widget.onVerticalDragEnd?.call();
-    }
-    _resetMoveGesture();
-  }
-
-  void _cancelPointerGesture() {
-    if (_bodyDragActive) {
-      widget.onVerticalDragCancel?.call();
-    }
-    _resetMoveGesture();
-  }
-
-  Widget _moveZone() {
-    if (!widget.canMove) return const SizedBox.shrink();
-    final inset = widget.canResize ? _resizeZoneInset : 0.0;
-    final zone = Positioned(
-      top: inset,
-      bottom: inset,
-      left: widget.controlsLeftInset,
-      right: widget.controlsRightInset,
-      child: MouseRegion(
-        cursor: _bodyDragActive
-            ? SystemMouseCursors.grabbing
-            : SystemMouseCursors.grab,
-        child: _immediateBodyDrag
-            ? Listener(
-                behavior: HitTestBehavior.translucent,
-                onPointerDown: (e) {
-                  _resetMoveGesture();
-                  _gesturePhase = _TimelinePointerGesturePhase.tapCandidate;
-                  _pendingGrabOffsetCanvasPx = inset + e.localPosition.dy;
-                  _pointerDownGlobal = e.position;
-                  _activePointer = e.pointer;
-                },
-                onPointerMove: (e) {
-                  if (_activePointer != e.pointer) return;
-                  _onPointerMoveUpdate(e.position, e.delta.dy);
-                },
-                onPointerUp: (e) {
-                  if (_activePointer != e.pointer) return;
-                  _finishPointerGesture();
-                },
-                onPointerCancel: (e) {
-                  if (_activePointer != e.pointer) return;
-                  _cancelPointerGesture();
-                },
-                child: const SizedBox.expand(),
-              )
-            : GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: widget.onBodyTap,
-                onLongPressStart: (details) {
-                  _resetMoveGesture();
-                  _gesturePhase = _TimelinePointerGesturePhase.tapCandidate;
-                  _pendingGrabOffsetCanvasPx =
-                      inset + details.localPosition.dy;
-                  _pointerDownGlobal = details.globalPosition;
-                },
-                onLongPressMoveUpdate: (details) {
-                  if (_gesturePhase == _TimelinePointerGesturePhase.tapCandidate) {
-                    final down = _pointerDownGlobal;
-                    if (down != null &&
-                        (details.globalPosition - down).distance >=
-                            _dragThresholdPx) {
-                      _maybeStartDragFromPending();
-                    }
-                  }
-                  if (!_bodyDragActive) return;
-                  widget.onVerticalDragUpdate?.call(
-                    details.offsetFromOrigin.dy,
-                    details.globalPosition.dy,
-                  );
-                },
-                onLongPressEnd: (_) {
-                  if (_bodyDragActive) {
-                    widget.onVerticalDragEnd?.call();
-                  }
-                  _resetMoveGesture();
-                },
-                onLongPressCancel: () {
-                  _cancelPointerGesture();
-                },
-                child: const SizedBox.expand(),
-              ),
-      ),
-    );
-    return zone;
-  }
-
-  Widget _resizeEdge({
-    required bool isTop,
-    required ColorScheme scheme,
-  }) {
-    return _TimelineResizeEdgeHandle(
-      isTop: isTop,
-      height: _resizeZoneInset,
-      active: _resizing || widget.isInteracting,
-      onResizeStart: widget.canResize
-          ? () {
-              setState(() {
-                _resizing = true;
-              });
-              if (kDebugMode) {
-                debugPrint('[TIME_VIEW_RESIZE_STARTED_FROM_ZONE]');
-              }
-              widget.onResizeStart?.call(
-                isTop ? _TimelineResizeEdge.top : _TimelineResizeEdge.bottom,
-              );
-            }
-          : null,
-      onResizeUpdate: widget.canResize
-          ? (delta, globalDy) {
-              widget.onResizeUpdate?.call(delta, globalDy);
-            }
-          : null,
-      onResizeEnd: widget.canResize
-          ? () {
-              setState(() => _resizing = false);
-              widget.onResizeEnd?.call();
-            }
-          : null,
-      onResizeCancel: widget.canResize
-          ? () {
-              setState(() => _resizing = false);
-              widget.onResizeCancel?.call();
-            }
-          : null,
-      scheme: scheme,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!widget.canMove && !widget.canResize) return widget.child;
-    final scheme = Theme.of(context).colorScheme;
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        widget.child,
-        _moveZone(),
-        if (widget.canResize)
-          Positioned(
-            top: 0,
-            left: widget.controlsLeftInset,
-            right: widget.controlsRightInset,
-            child: _resizeEdge(isTop: true, scheme: scheme),
-          ),
-        if (widget.canResize)
-          Positioned(
-            bottom: 0,
-            left: widget.controlsLeftInset,
-            right: widget.controlsRightInset,
-            child: _resizeEdge(isTop: false, scheme: scheme),
-          ),
-      ],
-    );
-  }
-}
-
-class _TimelineResizeEdgeHandle extends StatefulWidget {
-  const _TimelineResizeEdgeHandle({
-    required this.isTop,
-    required this.height,
-    required this.active,
-    required this.scheme,
-    this.onResizeStart,
-    this.onResizeUpdate,
-    this.onResizeEnd,
-    this.onResizeCancel,
-  });
-
-  final bool isTop;
-  final double height;
-  final bool active;
-  final ColorScheme scheme;
-  final VoidCallback? onResizeStart;
-  final void Function(double deltaPx, double globalDy)? onResizeUpdate;
-  final VoidCallback? onResizeEnd;
-  final VoidCallback? onResizeCancel;
-
-  @override
-  State<_TimelineResizeEdgeHandle> createState() =>
-      _TimelineResizeEdgeHandleState();
-}
-
-class _TimelineResizeEdgeHandleState extends State<_TimelineResizeEdgeHandle> {
-  bool _hover = false;
-  bool _dragging = false;
-  double _accumulatedDy = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = widget.scheme;
-    final showHairline = _hover || _dragging;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      cursor: SystemMouseCursors.resizeUpDown,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onVerticalDragStart: (_) {
-          _accumulatedDy = 0;
-          setState(() => _dragging = true);
-          widget.onResizeStart?.call();
-        },
-        onVerticalDragUpdate: (details) {
-          _accumulatedDy += details.delta.dy;
-          widget.onResizeUpdate?.call(
-            _accumulatedDy,
-            details.globalPosition.dy,
-          );
-        },
-        onVerticalDragEnd: (_) {
-          setState(() => _dragging = false);
-          widget.onResizeEnd?.call();
-        },
-        onVerticalDragCancel: () {
-          setState(() => _dragging = false);
-          widget.onResizeCancel?.call();
-        },
-        child: SizedBox(
-          height: widget.height,
-          width: double.infinity,
-          child: showHairline
-              ? Stack(
-                  alignment: widget.isTop
-                      ? Alignment.topCenter
-                      : Alignment.bottomCenter,
-                  children: [
-                    Container(
-                      height: 2,
-                      margin: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.38),
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(
-                        top: widget.isTop ? 4 : 0,
-                        bottom: widget.isTop ? 0 : 4,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(
-                          3,
-                          (_) => Container(
-                            width: 4,
-                            height: 4,
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            decoration: BoxDecoration(
-                              color: scheme.primary.withValues(alpha: 0.5),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : null,
-        ),
-      ),
-    );
-  }
-}
-
-/// One-shot slide settle when a completed card is allowed to reorder.
-class _PlanCardReorderSettle extends StatefulWidget {
-  const _PlanCardReorderSettle({
-    required this.animate,
-    required this.child,
-  });
-
-  final bool animate;
-  final Widget child;
-
-  @override
-  State<_PlanCardReorderSettle> createState() => _PlanCardReorderSettleState();
-}
-
-class _PlanCardReorderSettleState extends State<_PlanCardReorderSettle>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<Offset> _slide;
-  bool _wasAnimating = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 280),
-    );
-    _slide = Tween<Offset>(
-      begin: const Offset(0, -0.035),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-    if (widget.animate) {
-      _wasAnimating = true;
-      _controller.forward();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _PlanCardReorderSettle oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!oldWidget.animate && widget.animate) {
-      _wasAnimating = true;
-      _controller.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_wasAnimating && !widget.animate) return widget.child;
-    return SlideTransition(position: _slide, child: widget.child);
-  }
-}
