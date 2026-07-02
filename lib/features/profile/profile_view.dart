@@ -1,359 +1,31 @@
 import 'dart:async';
 
 import 'package:counter/core/app_build_info.dart';
-import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/core/app_snackbar.dart';
-import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/shell_adaptive.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/core/widgets/timezone_quick_picker.dart';
-import 'package:counter/data/auth_bridge.dart';
 import 'package:counter/data/database_service.dart';
-import 'package:counter/data/models.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/features/profile/desktop_voice_settings_desktop.dart';
 import 'package:counter/features/profile/desktop_voice_settings_section.dart';
 import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
 import 'package:counter/l10n/app_locales.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:counter/services/notification_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:counter/core/widgets/app_loading.dart';
+import 'package:counter/features/profile/settings/account_settings_section.dart';
+import 'package:counter/features/profile/settings/notification_settings_section.dart';
+import 'package:counter/features/profile/settings/security_settings_section.dart';
+
 
 // ---------------------------------------------------------------------------
 // PROFILE FEATURE — UI_ISOLATION (§7). All strings via t() from dictionary.
 // No hardcoded UI text. No direct DB writes (use DatabaseService).
 // ---------------------------------------------------------------------------
 
-/// OS notification permission + local plan reminders (Android / iOS).
-class _ProfileNotificationsSection extends StatefulWidget {
-  const _ProfileNotificationsSection({this.embedded = false});
-
-  final bool embedded;
-
-  @override
-  State<_ProfileNotificationsSection> createState() =>
-      _ProfileNotificationsSectionState();
-}
-
-class _ProfileNotificationsSectionState
-    extends State<_ProfileNotificationsSection> {
-  Future<bool?>? _statusFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _statusFuture = _loadAndroidNotificationEnabled();
-  }
-
-  Future<bool?> _loadAndroidNotificationEnabled() async {
-    if (kIsWeb) return null;
-    try {
-      final plugin = FlutterLocalNotificationsPlugin();
-      final android = plugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      return android?.areNotificationsEnabled();
-    } catch (_) {
-      return null;
-    }
-  }
-
-  void _refreshStatus() {
-    setState(() {
-      _statusFuture = _loadAndroidNotificationEnabled();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = currentLocale.value;
-    final theme = Theme.of(context);
-    if (kIsWeb) {
-      return Text(
-        t(loc, 'profile_notifications_web_hint'),
-        style: theme.textTheme.bodyMedium,
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (!widget.embedded) ...[
-          Text(
-            t(loc, 'profile_notifications_section'),
-            style: theme.textTheme.titleSmall,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            t(loc, 'profile_notifications_subtitle'),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-        FutureBuilder<bool?>(
-          future: _statusFuture,
-          builder: (context, snap) {
-            final v = snap.data;
-            final line = v == null
-                ? t(loc, 'notif_status_unknown')
-                : (v
-                      ? t(loc, 'notif_status_allowed')
-                      : t(loc, 'notif_status_denied'));
-            return Text(line, style: theme.textTheme.bodyMedium);
-          },
-        ),
-        const SizedBox(height: 12),
-        AppButton.secondary(
-          label: t(loc, 'profile_notifications_request_button'),
-          icon: Icons.notifications_active_outlined,
-          onPressed: () {
-            unawaited(
-              NotificationService.instance.requestPermissionsIfNeeded(),
-            );
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) _refreshStatus();
-            });
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// Security (Profile): biometric app-lock toggle. Hidden unless this device can really authenticate.
-class _SecuritySection extends StatefulWidget {
-  const _SecuritySection({this.onSaved, this.embedded = false});
-
-  final VoidCallback? onSaved;
-  final bool embedded;
-
-  @override
-  State<_SecuritySection> createState() => _SecuritySectionState();
-}
-
-class _SecuritySectionState extends State<_SecuritySection> {
-  late final Future<bool> _capabilityFuture = AuthBridge.canUseBiometricAuth();
-  bool _sendingPasswordReset = false;
-
-  String _mapPasswordResetError(Object error) {
-    if (error is AuthBridgeException && error.statusCode == 429) {
-      return t(currentLocale.value, 'auth_too_many_attempts');
-    }
-    return t(currentLocale.value, 'profile_password_reset_send_failed');
-  }
-
-  Future<void> _sendPasswordReset(String email) async {
-    if (_sendingPasswordReset) return;
-    setState(() => _sendingPasswordReset = true);
-    try {
-      final result = await AuthBridge.requestPasswordReset(email);
-      if (!mounted) return;
-      switch (result) {
-        case PasswordResetRequestResult.sent:
-          AppSnack.show(t(currentLocale.value, 'profile_password_reset_sent'));
-          break;
-        case PasswordResetRequestResult.notFound:
-          AppSnack.show(
-            t(currentLocale.value, 'profile_password_reset_send_failed'),
-            error: true,
-          );
-          break;
-      }
-    } catch (e) {
-      if (mounted) {
-        AppSnack.show(_mapPasswordResetError(e), error: true);
-      }
-    } finally {
-      if (mounted) setState(() => _sendingPasswordReset = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final loc = currentLocale.value;
-    final theme = Theme.of(context);
-    final accountEmail = AuthBridge.currentAuthEmail?.trim() ?? '';
-    final hasEmail = accountEmail.isNotEmpty;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (!widget.embedded) ...[
-          Text(t(loc, 'security_section'), style: theme.textTheme.titleSmall),
-          const SizedBox(height: 4),
-          Text(
-            t(loc, 'profile_password_reset_subtitle'),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-        if (!hasEmail) ...[
-          const SizedBox(height: 8),
-          Text(
-            t(loc, 'profile_password_reset_no_email'),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.error,
-            ),
-          ),
-        ],
-        const SizedBox(height: 12),
-        AppButton.secondary(
-          label: _sendingPasswordReset
-              ? t(loc, 'profile_password_reset_sending')
-              : t(loc, 'profile_password_reset_send_button'),
-          icon: Icons.mark_email_read_outlined,
-          onPressed: hasEmail && !_sendingPasswordReset
-              ? () => unawaited(_sendPasswordReset(accountEmail))
-              : null,
-        ),
-        if (!kIsWeb) ...[
-          const SizedBox(height: 8),
-          FutureBuilder<bool>(
-            future: _capabilityFuture,
-            builder: (context, snap) {
-              if (snap.data != true) return const SizedBox.shrink();
-              final s = DatabaseService.instance.settings;
-              return SwitchListTile(
-                value: s.biometricEnabled,
-                onChanged: (bool value) async {
-                  try {
-                    if (value) {
-                      final unlocked = await AuthBridge.authenticateAppLock(
-                        localizedReason: t(
-                          currentLocale.value,
-                          'vault_locked_subtitle',
-                        ),
-                      );
-                      if (!unlocked) return;
-                    }
-                    final ok = await DatabaseService.instance.saveSettings(
-                      s.copyWith(biometricEnabled: value),
-                    );
-                    if (ok) {
-                      if (value) await AuthBridge.markAppUnlockSuccessful();
-                      widget.onSaved?.call();
-                      AppSnack.saved();
-                    } else {
-                      AppSnack.failed();
-                    }
-                  } catch (_) {
-                    AppSnack.failed();
-                  }
-                },
-                title: Text(t(currentLocale.value, 'biometric_lock')),
-                subtitle: Text(
-                  t(currentLocale.value, 'biometric_lock_subtitle'),
-                ),
-                secondary: const Icon(Icons.fingerprint_rounded),
-                contentPadding: EdgeInsets.zero,
-              );
-            },
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// Account: current user + Logout in one row (PocketBase-hydrated identity).
-class _AccountSecuritySection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return StreamBuilder<UserSettings>(
-      stream: DatabaseService.instance.userSettingsStream,
-      initialData: DatabaseService.instance.settings,
-      builder: (context, snap) {
-        final settings = snap.data ?? DatabaseService.instance.settings;
-        final label = ProfileServiceExtension.resolveProfileDisplayLabelFor(
-          settings: settings,
-        );
-        final hydrated = DatabaseService.instance.profileHydratedFromPb;
-        final subtitle = label.isNotEmpty
-            ? label
-            : (hydrated
-                  ? (AuthBridge.currentAuthEmail ?? '—')
-                  : t(currentLocale.value, 'profile_hydration_error_title'));
-        final loc = currentLocale.value;
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    style: theme.textTheme.bodyLarge,
-                    children: [
-                      TextSpan(text: '${t(loc, 'signed_in_as')} '),
-                      TextSpan(
-                        text: subtitle,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: () => _logout(context),
-                icon: Icon(Icons.logout_rounded, color: scheme.error, size: 20),
-                label: Text(
-                  t(loc, 'log_out'),
-                  style: TextStyle(
-                    color: scheme.error,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _logout(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) navigator.pop(context);
-    var showSlowSnackBar = true;
-    Future.delayed(const Duration(seconds: 1), () {
-      if (showSlowSnackBar) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'logging_out'))),
-        );
-      }
-    });
-    try {
-      await AuthBridge.signOut();
-      await OAuthSession.instance.signOut();
-    } catch (_) {
-      showSlowSnackBar = false;
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(t(currentLocale.value, 'sign_out_failed'))),
-        );
-      }
-    } finally {
-      showSlowSnackBar = false;
-      try {
-        DatabaseService.instance.clearLocalStateOnSignOut();
-        DatabaseService.instance.onSignOut?.call();
-      } catch (_) {}
-    }
-  }
-}
 
 /// Profile tab: Language and Timezone. Auto-saves on change.
 class ProfilePage extends StatefulWidget {
@@ -639,9 +311,9 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _AccountSecuritySection(),
+                AccountSecuritySection(),
                 const SizedBox(height: 8),
-                _SecuritySection(onSaved: widget.onSaved, embedded: true),
+                SecuritySection(onSaved: widget.onSaved, embedded: true),
               ],
             ),
           ),
@@ -655,7 +327,7 @@ class _ProfilePageState extends State<ProfilePage> {
           AppSettingsTab.notifications => AppSettingsSectionCard(
             title: t(locale, 'profile_notifications_section'),
             subtitle: t(locale, 'profile_notifications_subtitle'),
-            child: _ProfileNotificationsSection(embedded: true),
+            child: ProfileNotificationsSection(embedded: true),
           ),
           AppSettingsTab.appearance => AppSettingsSectionCard(
             title: t(locale, 'appearance'),
@@ -687,16 +359,16 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _AccountSecuritySection(),
+              AccountSecuritySection(),
               const SizedBox(height: 8),
-              _SecuritySection(onSaved: widget.onSaved, embedded: true),
+              SecuritySection(onSaved: widget.onSaved, embedded: true),
             ],
           ),
         ),
         AppSettingsSectionCard(
           title: t(locale, 'profile_notifications_section'),
           subtitle: kIsWeb ? null : t(locale, 'profile_notifications_subtitle'),
-          child: _ProfileNotificationsSection(embedded: true),
+          child: ProfileNotificationsSection(embedded: true),
         ),
         DesktopVoiceSettingsSection(
           onHotkeyChanged: widget.onDesktopVoiceHotkeyChanged,
