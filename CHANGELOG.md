@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-02] - P0-SAFE structure decomposition pass acceptance [accepted]
+
+* **Commits `54b9b54..5a30b33` (final `5a30b33`):** Manual smoke **accepted by user** — Plans→Time View opens; tap/edit basically OK; Time View drag/bulk mechanics acceptable for baseline; edit sheet works; Profile/settings not visibly broken.
+
 ## [2026-07-02] - P0-SAFE structure decomposition [shipped]
 
 * **`lib/features/planning/`:** [shipped] Tail widgets extracted from `planning_view.dart` (7272→6022 lines): `time_view/time_view_interaction_block.dart`, `time_view_drag_state.dart`, `time_view_fixed_time_settings.dart`, `settings/*`, `widgets/*`; behavior unchanged; Time View tests green.
