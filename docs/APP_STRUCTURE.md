@@ -230,7 +230,9 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `omni_date_time_picker_dialog.dart` | Unified date+time picker |
 | `compact_nav_controls.dart` | Compact segmented controls |
 | `chip_component.dart` | `TagChip`, `CategoryChip`, tag quick-pick strip |
-| `plan_time_task_card.dart` | Plan/list/time card |
+| `plan_time_task_card.dart` | Plan/list/time card (re-exports `plan_card/*` metrics) |
+| `plan_card/plan_card_metrics.dart` | Time View card height constants, `PlanCardSurface`, duration→px helpers |
+| `plan_card/plan_time_card_density.dart` | `PlanTimeCardVisualDensity` bands + footer/progress visibility helpers |
 | `plan_card.dart` | `PlanCard` wrapper |
 | `life_card.dart` | Card foundation for Component Lab |
 | `day_content_strip.dart` | Day content pager strip |
@@ -246,16 +248,16 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
 | `timeline/` | `timeline_view.dart` | `TimelineSwipeWrapper`, `TimelinePage`; list/stats sub-tabs |
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
-| `planning/` | `planning_view.dart`, `plan_time_view_layout.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart` | Plans tab, time view layout, recurrence scope dialog, bulk edit, smart add |
+| `planning/` | `planning_view.dart`, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`** (interaction block, drag state, fixed-time settings), **`settings/`** (timeline bounds, record-link, no-tags, default category/TZ search), **`widgets/`** (menu overlay, keep-alive, reorder settle) | Plans tab, Time View canvas + gestures, settings sheets, bulk edit, smart add |
 | `lists/` | `lists_view.dart` | Lists/backlog tab |
 | `calendar/` | `calendar_view.dart` | Calendar tab |
 | `categories/` | `category_list_view.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart` | Category manager (More menu) |
-| `profile/` | `profile_view.dart`, `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart`, `desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart` | Profile & tag settings, timezone, desktop voice settings (Windows) |
+| `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart`, `desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart` | Profile & tag settings, timezone, desktop voice settings (Windows) |
 | `dev/` | `component_lab_view.dart`, `component_lab_cards_demo.dart` | Admin-only Component Lab |
 | `wear/` | `wear_timer_screen.dart`, `wear_main_wrapper.dart`, `wear_platform.dart`, `wear_runtime.dart` | Wear OS companion |
-| `shared/` | `shared_widgets.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_command_panel.dart` | Activity edit sheets, Omni-Picker entry, mobile/web voice sheet, desktop Price Reporter voice UI |
+| `shared/` | `shared_widgets.dart` (barrel), `activity_detail_sheet.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `empty_state_placeholder.dart`, **`edit_sheet/`** (autosave gate, time helpers/picker, checklist, repeat RRULE helpers, quill toolbar, parallel record panels), `offline_sync_status_bar.dart`, `voice_input_sheet.dart`, `voice_capture_config.dart`, `desktop_voice_widget.dart`, `desktop_voice_capsule.dart`, `desktop_voice_command_panel.dart` | Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI |
 
-**Key symbols:** `ActivityDetailSheet` and `showAppDateTimePicker` live in `features/shared/shared_widgets.dart`.
+**Key symbols:** `ActivityDetailSheet` router → `features/shared/activity_detail_sheet.dart`; `PlanningTaskEditSheet` / `TimelineRecordSheetContent` in dedicated files; `showAppDateTimePicker` / `EditSheetAutosaveGate` in `features/shared/edit_sheet/`; re-exported via `shared_widgets.dart`.
 
 ### 3.5 `lib/l10n/`
 
@@ -308,6 +310,40 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `auth.request_password_reset.pb.js` | Password-reset request hook |
 
 Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain code does not import these; behavior is documented in `docs/POCKETBASE_MANIFEST.md`.
+
+### 3.4.1 Structure refactor modules (2026-07-02)
+
+Explicit manifest entries for `architecture_guard.ps1 -Strict`:
+
+| File | Role |
+| :--- | :--- |
+| `planning/time_view/time_view_interaction_block.dart` | Time View card pointer/drag/resize zones |
+| `planning/time_view/time_view_drag_state.dart` | `TimelineResizeEdge`, gesture phase enums |
+| `planning/time_view/time_view_fixed_time_settings.dart` | Fixed-time tag chip settings block |
+| `planning/settings/planning_timeline_bounds_sheet.dart` | Visible hour range slider sheet |
+| `planning/settings/plan_record_link_settings.dart` | Record→plan suggestion prefs |
+| `planning/settings/planning_no_tags_settings.dart` | Synthetic “No Tags” chip prefs |
+| `planning/settings/default_plan_category_search.dart` | Default plan category search delegate |
+| `planning/settings/default_plan_timezone_search.dart` | Default plan TZ search delegate |
+| `planning/widgets/planning_menu_overlay.dart` | Semicircle plan card radial menu |
+| `planning/widgets/planning_day_card_list_keep_alive.dart` | List keep-alive wrapper |
+| `planning/widgets/plan_card_reorder_settle.dart` | Done-card reorder slide settle |
+| `profile/settings/account_settings_section.dart` | Signed-in identity + logout row |
+| `profile/settings/notification_settings_section.dart` | OS notification permission block |
+| `profile/settings/security_settings_section.dart` | Password reset + biometric lock |
+| `shared/activity_detail_sheet.dart` | Edit sheet router (`ActivityDetailKind`) |
+| `shared/planning_task_edit_sheet.dart` | Plan/list task edit sheet |
+| `shared/timeline_record_edit_sheet.dart` | Timeline record edit sheet |
+| `shared/empty_state_placeholder.dart` | Shared empty-state placeholder |
+| `shared/offline_sync_status_bar.dart` | O1 offline/sync tap-to-retry banner |
+| `shared/edit_sheet/sheet_autosave_gate.dart` | Debounced edit-sheet autosave gate |
+| `shared/edit_sheet/sheet_time_helpers.dart` | UTC/display time format helpers |
+| `shared/edit_sheet/sheet_time_picker.dart` | `showAppDateTimePicker`, `AppEditSheetTimeButton` |
+| `shared/edit_sheet/checklist_helpers.dart` | Checklist row sync/partition helpers |
+| `shared/edit_sheet/plan_repeat_helpers.dart` | RRULE ↔ UI repeat preset helpers |
+| `shared/edit_sheet/quill_link_launcher.dart` | Quill note external URL launcher |
+| `shared/edit_sheet/quill_toolbar_config.dart` | Planning edit Quill toolbar config |
+| `shared/edit_sheet/parallel_record_panels.dart` | Backlog sub-items + parallel child panels |
 
 ---
 

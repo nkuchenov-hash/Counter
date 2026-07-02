@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-02] - P0-SAFE structure decomposition [shipped]
+
+* **`lib/features/planning/`:** [shipped] Tail widgets extracted from `planning_view.dart` (7272→6022 lines): `time_view/time_view_interaction_block.dart`, `time_view_drag_state.dart`, `time_view_fixed_time_settings.dart`, `settings/*`, `widgets/*`; behavior unchanged; Time View tests green.
+* **`lib/features/shared/`:** [shipped] `shared_widgets.dart` → 16-line barrel; `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `activity_detail_sheet.dart`, `edit_sheet/*`, `empty_state_placeholder.dart`, `offline_sync_status_bar.dart`; autosave/recurrence scope preserved.
+* **`lib/core/widgets/plan_card/`:** [shipped] `plan_card_metrics.dart`, `plan_time_card_density.dart` extracted from `plan_time_task_card.dart`; re-exported for existing imports.
+* **`lib/features/profile/settings/`:** [shipped] Account, notification, security sections split from `profile_view.dart` (870→542 lines).
+* **`docs/reports/STRUCTURE_DECOMPOSITION_AUDIT_2026-07-02.md`:** [shipped] Audit + stage map; Brain `plan_service`/`record_service` intentionally untouched.
+
 ## [2026-07-02] - P0 Time View interaction + duration fidelity [shipped]
 
 * **`lib/features/planning/plan_time_view_layout.dart` / `lib/core/widgets/plan_card.dart`:** [shipped] Scheduled slot height = `duration × rubberPxPerMinute` (min 38px for 10m); card shell fills slot (`timelineFillHeight`); content density derived from slot height only.
