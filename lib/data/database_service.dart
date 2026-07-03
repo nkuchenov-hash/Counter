@@ -40,6 +40,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 part 'profile_service.dart';
+part 'plans/plan_projection_types.dart';
+part 'plans/plan_recurrence_helpers.dart';
+part 'plans/plan_time_cascade_helpers.dart';
+part 'plans/plan_tags_helpers.dart';
+part 'plans/plan_cache_helpers.dart';
+part 'plans/plan_outbox_helpers.dart';
 part 'plan_service.dart';
 part 'record_service.dart';
 part 'category_service.dart';

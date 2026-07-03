@@ -330,4 +330,4 @@ Defined once foundation is solid.
 - **Targets:** Android, iOS, Web, Windows, macOS, Linux, Wear OS
 - **Stack:** Flutter
 - **Analyzer:** 11 info-only issues (0 errors, 0 warnings) after June 2026 hygiene pass
-- **Architecture:** Iron Laws honored. God Object split complete. **O1 offline-first ✅** (records + plans/lists). Velocity track: V1 → F1/F2.
+- **Architecture:** Iron Laws honored. God Object split complete. **Pass 4A (2026-07-03):** `plan_service.dart` coordinator + `lib/data/plans/*` part files (−1339 lines in coordinator; record/category/profile not split). **O1 offline-first ✅** (records + plans/lists). Velocity track: V1 → F1/F2.

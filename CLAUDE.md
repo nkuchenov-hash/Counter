@@ -55,7 +55,7 @@ SharedPreferences mutation queues + global sync indicator. Retriable network/aut
 | **Connectivity → drain** | `lib/data/local_sync/sync_manager.dart` | `SyncManager.instance.attachIfNeeded` — calls `flushPendingLocalMutations` when online |
 | **Flush all outboxes** | `lib/data/db_core.dart` | `DbCoreExtension.flushPendingLocalMutations` — records then plans; resumes auth if `authStore.isValid` |
 | **Flush record queue** | `lib/data/record_service.dart` | `RecordServiceExtension.flushPendingRecordMutations` |
-| **Flush plan/list queue** | `lib/data/plan_service.dart` | `PlanServiceExtension.flushPendingPlanMutations` (alias: `flushPendingPlanCreates`) |
+| **Flush plan/list queue** | `lib/data/plans/plan_outbox_helpers.dart` | `PlanOutboxSyncExtension.flushPendingPlanMutations` (alias: `flushPendingPlanCreates`) |
 | **Boot / resume flush** | `lib/data/db_core.dart` | `loadInitialData` → `_loadInner` ends with `flushPendingLocalMutations`; lifecycle `onResumed` same |
 | **Offline / sync banner** | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` — tap → `flushPendingLocalMutations`; labels via `offline_sync_*` in `dictionary.dart` |
 | Record offline enqueue (start) | `lib/data/record_service.dart` | `_enqueueHighlanderStartMutation`, `_highlanderPrimaryServerSync` |
@@ -148,11 +148,11 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Plan / planning task CRUD (full) | `lib/data/plan_service.dart` | `PlanServiceExtension` — addPlan, updatePlanningTask, deletePlanningTask, bulkUpdatePlans |
 | Backlog / list items fetch | `lib/data/plan_service.dart` | `DatabaseService.fetchBacklogPlans` (extension) |
 | Plan stream / optimistic cache | `lib/data/plan_service.dart` | `DatabaseService.planningStream` / `applyOptimisticPlanningTask` (extension) |
-| Plan rrule expansion | `lib/data/plan_service.dart` | `DatabaseService.expandRecurringPlans` (extension) |
+| Plan rrule expansion | `lib/data/plans/plan_recurrence_helpers.dart` | `DatabaseService.expandRecurringPlans` (`PlanRecurrenceExtension`) |
 | Plan alarm scheduling | `lib/data/plan_service.dart` | `DatabaseService._requestPlanAlarmReschedule` (extension) |
 | AI task parse | `lib/data/plan_service.dart` | `DatabaseService.parseTaskViaAiBackend` / `parsePlanningItemsViaAiBackend` (extension) |
-| Plan link scoring (title similarity) | `lib/data/plan_service.dart` | `PlanServiceExtension.titleSimilarityForPlanLink` (static) |
-| Plan wall-estimate seconds | `lib/data/plan_service.dart` | `PlanServiceExtension.planningWallEstimateSeconds` (static) |
+| Plan link scoring (title similarity) | `lib/data/plans/plan_cache_helpers.dart` | `titlePlanLinkScore`, `titleSimilarityForPlanLink` (top-level) |
+| Plan wall-estimate seconds | `lib/data/plans/plan_time_cascade_helpers.dart` | `planningWallEstimateSeconds` (top-level) |
 | Plan / planning task done-toggle | `lib/features/planning/planning_page.dart` | `_PlanningPageState._toggleDone` |
 | List done-toggle (optimistic; rollback only on hard failure) | `lib/features/lists/lists_view.dart` | `_ListsPageState._onListToggleDone` → `updatePlanningTask(isDone:)` (queues offline) |
 | Tag link to plan | `lib/data/plan_service.dart` | `DatabaseService._syncPlanTagsPocket` (extension) |
@@ -305,7 +305,7 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 - **Offline drain:** `flushPendingLocalMutations` on login (`loadInitialData`), reconnect (`SyncManager`), app resume, and tap-to-retry (`OfflineSyncStatusBar`). 401/403 sets `offlineSync.authPaused` until `resumeAfterAuthIfNeeded` + valid session.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). All domain logic lives in `part of` files as named extensions: V5.1 profile/tag → `profile_service.dart`; V5.2 plan → `plan_service.dart`; V5.3 record → `record_service.dart`; V5.4 category → `category_service.dart`; V5.5 bootstrap/lifecycle → `db_core.dart`. Add bootstrap/lifecycle code to `db_core.dart`, category-domain to `category_service.dart`, record-domain to `record_service.dart`, plan-domain to `plan_service.dart`, profile/tag to `profile_service.dart`, everything else to `database_service.dart`.
+- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). Domain logic lives in `part of` files: V5.1 profile/tag → `profile_service.dart`; V5.2 plan coordinator → `plan_service.dart` + `plans/*` helpers (Pass 4A); V5.3 record → `record_service.dart`; V5.4 category → `category_service.dart`; V5.5 bootstrap/lifecycle → `db_core.dart`.
 
 ---
 

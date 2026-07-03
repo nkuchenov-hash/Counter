@@ -34,7 +34,8 @@
 | :--- | :--- |
 | Загрузка при старте, сессия | `lib/data/db_core.dart` |
 | Записи (старт/стоп/таймлайн) | `lib/data/record_service.dart` |
-| Планы и списки | `lib/data/plan_service.dart` |
+| Планы и списки (координатор) | `lib/data/plan_service.dart` |
+| Планы — Time View projection, recurrence, cascade, tags, cache, outbox | `lib/data/plans/*.dart` *(part of database_service)* |
 | Категории | `lib/data/category_service.dart` |
 | Профиль, теги, часовой пояс | `lib/data/profile_service.dart` |
 | URL и имена коллекций PB | `lib/data/pb_config.dart` |

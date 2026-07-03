@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Structure refactor pass 4A plan service [shipped]
+
+* **`lib/data/plans/`:** [shipped] Pass 4A safe Brain split: six `part of database_service.dart` files — `plan_projection_types.dart`, `plan_recurrence_helpers.dart`, `plan_time_cascade_helpers.dart`, `plan_tags_helpers.dart`, `plan_cache_helpers.dart`, `plan_outbox_helpers.dart`; named extensions `PlanRecurrenceExtension`, `PlanTimeCascadeExtension`, `PlanTagsExtension`, `PlanCacheProjectionExtension`, `PlanOutboxSyncExtension`, `PlanTimeModeProjection`.
+* **`lib/data/plan_service.dart`:** [shipped] Coordinator retained (`PlanServiceExtension`, streams, CRUD, shared wall-time helpers); 6457→5118 lines (−1339).
+* **`lib/features/planning/planning_page.dart`:** [shipped] `PlanServiceExtension.planningWallEstimateSeconds` → top-level `planningWallEstimateSeconds`.
+* **Failed tooling removed:** [shipped] deleted `scripts/pass4_brain_split.py`, `scripts/pass4_split_fast.py`.
+* **Brain record/category/profile:** [skipped] untouched.
+* **Verification:** strict `architecture_guard` 0 violations; `flutter analyze` 0 errors; `flutter test` 248/248; web + APK green.
+
 ## [2026-07-03] - Structure refactor pass 3B [shipped]
 
 * **`lib/features/lists/`:** [shipped] Pass 3 follow-up: `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`; `lists_view.dart` 1685→1091; coordinator owns state only.

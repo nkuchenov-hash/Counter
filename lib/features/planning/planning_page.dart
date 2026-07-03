@@ -1619,7 +1619,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
   }) {
     final pbId = DatabaseService.pocketRelationIdOrNull(task.pocketRecordId);
     final tracked = pbId != null ? (planActualByPbId[pbId] ?? 0) : 0;
-    final estimate = PlanServiceExtension.planningWallEstimateSeconds(task);
+    final estimate = planningWallEstimateSeconds(task);
     return PlanCard(
       task: task,
       planTrackedSeconds: tracked,
@@ -2152,8 +2152,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
             return PlanCardRenderDto(
               task: task,
               planTrackedSeconds: pbId != null ? (planActual[pbId] ?? 0) : 0,
-              planEstimatedSeconds:
-                  PlanServiceExtension.planningWallEstimateSeconds(task),
+              planEstimatedSeconds: planningWallEstimateSeconds(task),
               displayIsDone: task.isDone,
               showPlay: !task.isDone,
               highlightAsRunning: false,
