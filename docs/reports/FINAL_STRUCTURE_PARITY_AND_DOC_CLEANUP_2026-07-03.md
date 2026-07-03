@@ -10,7 +10,7 @@ Architecture-only pass. **No production Dart behavior changed.** No app source f
 | :--- | :--- | :--- |
 | **Baseline** (start of pass) | `19d794a` | 589 |
 | **After cleanup** (pre-commit) | `19d794a` | 553 (−36) |
-| **Final** (after commit) | `e52e364` | 554 (+1 new report) |
+| **Final** (after commit) | `5360d71` | 554 (+1 new report) |
 
 ---
 
