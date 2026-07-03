@@ -40,8 +40,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - Feature status, shipped work, accepted work, or "what is already built": read `CHANGELOG.md` and `docs/ROADMAP.md`.
 - UX behavior, tap/save/delete/loading/offline/swipe contracts: read `docs/UX_CONTRACT.md`.
 - Runtime architecture, optimistic UI, performance, time rules, and PocketBase relation contracts: read `docs/ARCHITECTURE.md`.
-
-If `CHATGPT_PROMPT_WRITING_RULES_FOR_COUNTER.md` exists, read it only as meta-context for prompt style. Do not treat it as app law, do not copy it wholesale, and do not list it as a governing document for Codex.
+- Project Knowledge upload list (14 docs, ≤25): read `docs/PROJECT_KNOWLEDGE_PACK.md`.
 
 ## Architecture Boundaries
 

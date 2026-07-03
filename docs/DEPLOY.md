@@ -106,3 +106,54 @@ git push origin main
 
 - `Archive/root_cleanup_backup/f.ps1` — commit + push only (no analyze/build)
 - `lib/deploy.ps1` — Firebase hosting (not used for GitHub Pages)
+
+---
+
+## Windows desktop release
+
+**Normal user path:** one installer — **`CounterSetup.exe`**. No Visual Studio, Flutter SDK, or manual Release-folder copying on the target PC.
+
+### Build installer (developer machine)
+
+1. `flutter pub get`
+2. `flutter test test/voice_command_parser_test.dart`
+3. `flutter build windows --release --dart-define=DESKTOP_VOICE_COMMAND=true`
+4. *(Recommended)* `powershell -ExecutionPolicy Bypass -File installer\windows\build_stt_helper_en.ps1`
+5. `powershell -ExecutionPolicy Bypass -File installer\windows\prepare_stt_payload.ps1`
+6. Compile Inno Setup (`installer/windows/counter.iss`)
+7. Output: **`installer/windows/output/CounterSetup.exe`**
+
+**Visual Studio C++ / ATL / MFC** is only required for local `flutter build windows`, not for running the installed app.
+
+### CI path
+
+1. GitHub Actions → **Windows desktop build (manual)** ([`.github/workflows/windows-desktop-build.yml`](../.github/workflows/windows-desktop-build.yml))
+2. Download **`CounterSetup`** artifact
+3. Run **`CounterSetup.exe`**
+
+### After installation
+
+- **Start Menu:** Counter
+- **Install folder:** `%LOCALAPPDATA%\Programs\Counter`
+- **STT helper:** `%LOCALAPPDATA%\Programs\Counter\stt_helper\counter_stt_helper.exe` + bundled `whisper-tiny` model (local offline engine)
+- **Tray:** closing the main window hides Counter to the system tray (hotkey stays alive)
+- **Uninstall:** Windows Settings → Apps
+
+### Desktop voice (Windows)
+
+| Piece | Role |
+| :--- | :--- |
+| Global hotkey (default **Ctrl+Shift+Space**) | Opens voice widget without restoring main window |
+| `counter_stt_helper.exe` | Local GOLOS HTTP sidecar on `127.0.0.1:8765` |
+| `voice_command_parser.dart` | Deterministic Price Reporter command parse |
+| `DatabaseService.writeRecord` | Optimistic Highlander record start (unchanged Brain path) |
+
+Settings → **Desktop Voice** tab (wide layout ≥900px). Stored in local SharedPreferences per device, not PocketBase profile.
+
+**Smoke test:** hotkey → say **`Price Reporter AGE SOLUTIONS ADD MOD`** → running Timeline record with correct category path.
+
+Unsigned builds may trigger SmartScreen — **More info → Run anyway** for trusted local/CI builds.
+
+### Debug fallback (engineers only)
+
+Download artifact **`counter-windows-release-debug-<run_number>`** (not `CounterSetup`), extract, run `counter.exe` **inside** the folder with all DLLs and `data/`. Do not move only `counter.exe` out of the folder.

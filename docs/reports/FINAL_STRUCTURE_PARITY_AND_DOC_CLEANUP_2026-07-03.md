@@ -33,7 +33,7 @@ Architecture-only pass. **No production Dart behavior changed.** No app source f
 | `docs/reports/REFACTOR_SUMMARY.md` | Supabase-era refactor notes; app uses PocketBase |
 | `docs/reports/WEB_DEPLOYMENT_SUMMARY.md` | Firebase-era deploy; superseded by `docs/DEPLOY.md` |
 | `docs/reports/ENTRANCE_BUILD.md` | One-off build notes; no current workflow |
-| `docs/reports/VISUAL_AUDIT_328_RECORDS.md` | Point-in-time visual audit; decisions in `AUDIT_NOTES.md` / ROADMAP |
+| `docs/reports/VISUAL_AUDIT_328_RECORDS.md` | Point-in-time visual audit; decisions in `ROADMAP.md` |
 | `docs/reports/FIXES_SURGICAL_AND_COLLISION.md` | Surgical fix log; shipped fixes recorded in `CHANGELOG.md` |
 | `docs/reports/HYBRID_CLOUD.md` | Obsolete hybrid-cloud experiment |
 | `docs/reports/AUTH_SETUP.md` | Supabase/Yandex OAuth setup; auth is PocketBase (`POCKETBASE_MANIFEST.md`) |
@@ -89,41 +89,46 @@ All passes: strict guard green, analyze 0 errors, tests 248/248 at ship time. De
 
 ---
 
-## Canonical docs kept
+## Canonical docs kept (Project Knowledge pack — 14 upload docs)
+
+See **`docs/PROJECT_KNOWLEDGE_PACK.md`** for the current upload checklist (≤25 limit).
 
 | Doc | Topic |
 | :--- | :--- |
+| `AGENTS.md` | Codex / agent routing |
+| `CLAUDE.md` | AI navigation map |
+| `CHANGELOG.md` | Shipped history |
 | `docs/APP_STRUCTURE.md` | Concise structure map |
-| `docs/APP_STRUCTURE_DETAILED.md` | Bilingual per-file guide (regenerated) |
-| `docs/APP_STRUCTURE_EXPLAINED_RU.md` | Russian short guide |
+| `docs/APP_STRUCTURE_DETAILED.md` | Bilingual per-file guide |
 | `docs/ARCHITECTURE.md` | Iron Laws, data flow |
 | `docs/UX_CONTRACT.md` | Interaction behavior |
 | `docs/DATA_MAP.md` | Field names, business IDs |
 | `docs/POCKETBASE_MANIFEST.md` | PB collections, relations |
 | `docs/DESIGN_SYSTEM.md` | Design system contract |
-| `docs/DEPLOY.md` | Deploy workflow |
+| `docs/reports/DESIGN_SYSTEM_INVENTORY.md` | Component inventory |
+| `docs/DEPLOY.md` | Web deploy + Windows installer |
 | `docs/ROADMAP.md` | Status and priorities |
-| `CHANGELOG.md` | Shipped history |
-| `AGENTS.md` | Codex / agent instructions |
-| `CLAUDE.md` | AI navigation map |
-| `docs/AI_CONTEXT.md` | Pointer to governing docs |
-
-### Reports kept
-
-| Report | Reason |
-| :--- | :--- |
-| `docs/reports/AUDIT_NOTES.md` | Referenced by `ROADMAP.md`; unique April 2026 audit findings |
-| `docs/reports/DESIGN_SYSTEM_INVENTORY.md` | Component inventory for V7 migration |
-| `docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md` | Scan methodology snapshot |
-| `docs/reports/REPO_CLEANUP_NON_PROJECT_FILES_2026-07-03.md` | Junk cleanup record |
 | `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` | This file |
 
-### Other docs kept
+### Repo-only docs (not in Project Knowledge pack)
 
 | Path | Reason |
 | :--- | :--- |
-| `docs/website/*` | Product/marketing copy for web deploy |
-| Root `README.md`, `CHATGPT_PROMPT_WRITING_RULES_FOR_COUNTER.md` | Project readme / meta prompt rules |
+| `docs/PROJECT_KNOWLEDGE_PACK.md` | Upload checklist only |
+| `README.md` | GitHub intro |
+| `docs/website/*` | Marketing / website copy |
+
+### Removed in knowledge pack pass (2026-07-03, after parity)
+
+| Path | Merge target / reason |
+| :--- | :--- |
+| `docs/AI_CONTEXT.md` | Laws in `ARCHITECTURE.md`, `UX_CONTRACT.md`, `CLAUDE.md` |
+| `docs/APP_STRUCTURE_EXPLAINED_RU.md` | Covered by bilingual `APP_STRUCTURE_DETAILED.md` |
+| `docs/DESKTOP_WINDOWS_ARTIFACT.md` | Merged into `docs/DEPLOY.md` |
+| `docs/WINDOWS_INSTALLER.md` | Merged into `docs/DEPLOY.md` |
+| `docs/reports/AUDIT_NOTES.md` | Decisions in `ROADMAP.md` + `CHANGELOG.md` |
+| `docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md` | Superseded by this report |
+| `docs/reports/REPO_CLEANUP_NON_PROJECT_FILES_2026-07-03.md` | Superseded by this report |
 
 ---
 
@@ -155,10 +160,9 @@ Searched tracked files for deleted report/script stems. Fixed in:
 - `CLAUDE.md`
 - `docs/ROADMAP.md`
 - `docs/APP_STRUCTURE.md`
-- `docs/AI_CONTEXT.md`
-- `docs/reports/DESIGN_SYSTEM_INVENTORY.md`
-- `docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`
-- `docs/reports/REPO_CLEANUP_NON_PROJECT_FILES_2026-07-03.md`
+- `docs/DEPLOY.md`
+- `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`
+- `docs/PROJECT_KNOWLEDGE_PACK.md`
 
 `CHANGELOG.md` retains historical mentions of deleted reports (journal entries — intentional).
 

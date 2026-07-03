@@ -11,15 +11,16 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 | File | Purpose |
 | :--- | :--- |
 | `docs/ROADMAP.md` | Current plan — phases, bugs, component work. **Read this first before suggesting any structural changes.** |
-| `docs/reports/AUDIT_NOTES.md` | Full April 2026 audit findings that produced the roadmap. |
 | `docs/APP_STRUCTURE.md` | Physical directory map and module interaction rules. |
 | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual EN/RU file-by-file guide (regen: `scripts/manual/generate_app_structure_detailed.py`). |
 | `docs/ARCHITECTURE.md` | Iron Laws (incl. **PERFORMANCE_KILL_SWITCH_LAW**), core contracts, data flow. Authoritative technical reference. |
 | `docs/POCKETBASE_MANIFEST.md` | PocketBase URL, collection names, relation fields. |
 | `docs/DATA_MAP.md` | Field names and business IDs (`user_id`, `record_id`, etc.). |
 | `docs/UX_CONTRACT.md` | Behavior contract: taps, save/edit/delete, loading/empty/error, offline, optimistic UI, **performance & responsiveness (P0V)**. |
-| `docs/AI_CONTEXT.md` | AI/Cursor pointer: deploy, shipped laws, **Performance Kill Switch emergency protocol**. |
+| `docs/DEPLOY.md` | GitHub Pages deploy, PocketBase auth admin, Windows installer. |
 | `docs/DESIGN_SYSTEM.md` | Figma → Flutter mapping, tokens, canonical component categories, and forbidden local UI rule. |
+| `AGENTS.md` | Compact Codex/agent routing at repo root. |
+| `docs/PROJECT_KNOWLEDGE_PACK.md` | Upload checklist (14-doc pack, ≤25 limit) — not architecture law. |
 
 ---
 
@@ -199,7 +200,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Day cache | `lib/data/cache/day_snapshot_window.dart` | Warm day snapshot window |
 | Render cache | `lib/data/cache/render_snapshot.dart`, `rendered_day_body_cache.dart` | Rendered day-body cache |
 | Structure guard | `scripts/audit/architecture_guard.ps1` | `-Strict` enforces `docs/APP_STRUCTURE.md` |
-| Structure guide (RU) | `docs/APP_STRUCTURE_EXPLAINED_RU.md` | Nick-facing “where to edit” |
+| Structure guide (RU) | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual EN/RU per-file guide |
 | Plan dup trace | `lib/core/plan_dup_trace.dart` | Duplicate plan trace |
 | Warm snapshot data | `lib/data/warm_day_window.dart` | WarmSnapshotWindow |
 | Rendered body cache | `lib/data/rendered_day_body_cache.dart` | Day-body LRU |
@@ -326,4 +327,4 @@ At the end of any session where code was shipped (committed and verified clean b
 ---
 
 ## Doc sync reminder
-Maintain a running list of every governing doc modified during the session. At session end, print the full list. Do not rely on memory of what was last edited. Current governing docs are committed in this repository. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `docs/AI_CONTEXT.md`, `CHANGELOG.md`, `CLAUDE.md`.
+Maintain a running list of every governing doc modified during the session. At session end, print the full list. Do not rely on memory of what was last edited. Current governing docs are committed in this repository. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`.

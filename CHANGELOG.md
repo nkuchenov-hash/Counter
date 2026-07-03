@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Project Knowledge pack cleanup [shipped]
+
+* **`docs/PROJECT_KNOWLEDGE_PACK.md`:** [shipped] 14-doc upload checklist (≤25 limit); excluded repo-only docs listed.
+* **Deleted:** [shipped] `AI_CONTEXT.md`, `APP_STRUCTURE_EXPLAINED_RU.md`, `DESKTOP_WINDOWS_ARTIFACT.md`, `WINDOWS_INSTALLER.md`, `AUDIT_NOTES.md`, `FILE_STRUCTURE_SCAN_2026-07-03.md`, `REPO_CLEANUP_NON_PROJECT_FILES_2026-07-03.md`.
+* **Merged:** [shipped] Windows installer + artifact docs → `docs/DEPLOY.md` § Windows desktop release.
+* **`AGENTS.md`**, **`CLAUDE.md`**, **`docs/ROADMAP.md`**, **`docs/APP_STRUCTURE.md`**, **`FINAL_STRUCTURE_PARITY` report:** [shipped] Broken links fixed; pack list updated.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated after doc deletions.
+* **Production code:** [skipped] docs-only pass; `update.ps1` not run.
+
 ## [2026-07-03] - Remove external sync wording from docs [shipped]
 
 * **`CLAUDE.md`:** [shipped] Doc sync reminder — removed external sync instructions; neutral repo-local wording only.

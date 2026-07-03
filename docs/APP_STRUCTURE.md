@@ -15,7 +15,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
 | **Strict architecture guard** | Green (0 violations) |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — bilingual EN/RU per tracked file |
-| **Scan report** | [`docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`](reports/FILE_STRUCTURE_SCAN_2026-07-03.md) |
+| **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
 | **Final parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
 
 Regenerate the detailed guide after large tree changes:
@@ -484,13 +484,13 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | :--- | :--- |
 | `docs/APP_STRUCTURE.md` | This file — concise canonical structure |
 | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual file-by-file guide (EN/RU) |
-| `docs/APP_STRUCTURE_EXPLAINED_RU.md` | Short Russian practical map for Nick |
+| `docs/PROJECT_KNOWLEDGE_PACK.md` | Upload checklist for Project Knowledge (not architecture law) |
 | `docs/ARCHITECTURE.md` | Data flow, iron laws, optimistic UI, performance |
 | `docs/DATA_MAP.md` | PocketBase field names and business IDs |
 | `docs/POCKETBASE_MANIFEST.md` | URLs, collections, server hooks |
 | `docs/UX_CONTRACT.md` | Tap/save/loading/offline behavior |
 | `docs/DESIGN_SYSTEM.md` | Figma → Flutter canonical components |
-| `docs/DEPLOY.md` | GitHub Pages deploy |
+| `docs/DEPLOY.md` | GitHub Pages deploy + Windows installer |
 | `docs/ROADMAP.md` | Current work plan |
 
 ---

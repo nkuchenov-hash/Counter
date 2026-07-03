@@ -1,8 +1,8 @@
 # Life OS — Roadmap
 
-**Single canonical plan.** Drawn from the April 2026 audit (`docs/reports/AUDIT_NOTES.md`). Updated 2026-06-09.
+**Single canonical plan.** Drawn from the April 2026 audit (findings captured in Phase 1 below). Updated 2026-06-09.
 
-> Other docs (`CLAUDE.md`, `docs/AI_CONTEXT.md`) link here — do not maintain a second roadmap copy.
+> Other docs (`CLAUDE.md`, `AGENTS.md`) link here — do not maintain a second roadmap copy.
 
 ---
 
@@ -47,7 +47,7 @@ Performance, responsiveness, and stability are sacred. Preload/cache/render expe
 | Console/logcat spam, invisible-plan projection storm | Gate verbose logs; stop hot-path full scans |
 | Memory/mounted-widget explosion | Kill mounted-window default; shrink boot work |
 
-**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `docs/AI_CONTEXT.md` · `CLAUDE.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`
+**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `CLAUDE.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`
 
 ### ~~O1 — Offline-first core reliability~~ ✅ (shipped 2026-06-09)
 
@@ -157,7 +157,7 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 | **A.1** | Compile baseline repair | ✅ |
 | **C** | Doc sync (APP_STRUCTURE, CLAUDE, audit) | ✅ |
 | **Lockdown** | Full-repo manifest + APP_STRUCTURE contract + `architecture_guard.ps1` | ✅ 2026-06-23 |
-| **Release structure** | Delete/migrate non-release files; strict guard; `APP_STRUCTURE_EXPLAINED_RU.md`; l10n SSOT | ✅ 2026-06-23 |
+| **Release structure** | Delete/migrate non-release files; strict guard; bilingual `APP_STRUCTURE_DETAILED.md`; l10n SSOT | ✅ 2026-06-23 |
 | **E.0 Blueprint** | Large-file split plan (executed as Pass 3–4D) | ✅ 2026-07-02 |
 | **E.0.5A Checkpoint** | Guard green + desktop voice/timezone baseline committed (`77e4afd`); APK + web deploy verified | ✅ 2026-07-02 |
 | **E.1 UI decomposition** | Pass 3 shell/planning/timeline/lists/shared/plan card + Pass 3B lists patch | ✅ 2026-07-03 |
@@ -170,7 +170,7 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 
 **Remaining:** 3 runtime test failures (`perf_shell_date_settle_test`, `widget_test` smoke, related perf harness). Not compile blockers.
 
-Reports: `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`, `docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`, `docs/reports/AUDIT_NOTES.md`, `docs/reports/REPO_CLEANUP_NON_PROJECT_FILES_2026-07-03.md`.
+Reports: `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`, `docs/PROJECT_KNOWLEDGE_PACK.md`.
 
 ---
 
@@ -301,7 +301,7 @@ Defined once foundation is solid.
 - ~~**Round 4a–4d** — `avoid_print` sweep: 17 deleted, 45 converted to `debugPrint`, 3 kept. Zero violations.~~
 
 ### ~~Phase 2 — Audit~~
-~~Full audit documented in `docs/reports/AUDIT_NOTES.md`.~~
+April 2026 audit findings are captured in Phase 1 below and `CHANGELOG.md` (no separate audit report file).
 
 ### ~~Phase 3a — Kill the duplicate edit sheet~~
 ~~`EditRecordSheet` deleted. All entry points route to `_TimelineRecordSheetContent`.~~

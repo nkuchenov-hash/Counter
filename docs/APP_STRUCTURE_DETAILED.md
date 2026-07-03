@@ -2,7 +2,7 @@
 
 Detailed bilingual (EN/RU) file guide for the Life OS / Counter repository.
 
-**Generated from tree scan at SHA `19d794a` (2026-07-03).**
+**Generated from tree scan at SHA `bc5cf7f` (2026-07-03).**
 
 Concise canonical map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md).
 
@@ -6615,23 +6615,6 @@ RU:
 
 ## docs/
 
-### `docs/AI_CONTEXT.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
 ### `docs/APP_STRUCTURE.md`
 
 EN:
@@ -6650,23 +6633,6 @@ RU:
 
 
 ### `docs/APP_STRUCTURE_DETAILED.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/APP_STRUCTURE_EXPLAINED_RU.md`
 
 EN:
 
@@ -6751,23 +6717,6 @@ RU:
 - **Как связано с общей логикой:** Должна совпадать с деревом файлов.
 
 
-### `docs/DESKTOP_WINDOWS_ARTIFACT.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
 ### `docs/POCKETBASE_MANIFEST.md`
 
 EN:
@@ -6819,40 +6768,6 @@ RU:
 - **Как связано с общей логикой:** Должна совпадать с деревом файлов.
 
 
-### `docs/WINDOWS_INSTALLER.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/AUDIT_NOTES.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
 ### `docs/reports/DESIGN_SYSTEM_INVENTORY.md`
 
 EN:
@@ -6870,24 +6785,7 @@ RU:
 - **Как связано с общей логикой:** Должна совпадать с деревом файлов.
 
 
-### `docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/REPO_CLEANUP_NON_PROJECT_FILES_2026-07-03.md`
+### `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`
 
 EN:
 
