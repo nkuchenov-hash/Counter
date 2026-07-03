@@ -33,7 +33,8 @@
 | Что | Файл |
 | :--- | :--- |
 | Загрузка при старте, сессия | `lib/data/db_core.dart` |
-| Записи (старт/стоп/таймлайн) | `lib/data/record_service.dart` |
+| Записи (старт/стоп/таймлайн) — координатор | `lib/data/record_service.dart` |
+| Записи — CRUD, optimistic, realtime, timeline VM, outbox, overlap | `lib/data/records/*.dart` *(part of database_service)* |
 | Планы и списки (координатор) | `lib/data/plan_service.dart` |
 | Планы — Time View projection, recurrence, cascade, tags, cache, outbox | `lib/data/plans/*.dart` *(part of database_service)* |
 | Категории | `lib/data/category_service.dart` |

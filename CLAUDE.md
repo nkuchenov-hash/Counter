@@ -54,12 +54,12 @@ SharedPreferences mutation queues + global sync indicator. Retriable network/aut
 | **Brain accessor** | `lib/data/database_service.dart` | `DatabaseService.instance.offlineSync` |
 | **Connectivity → drain** | `lib/data/local_sync/sync_manager.dart` | `SyncManager.instance.attachIfNeeded` — calls `flushPendingLocalMutations` when online |
 | **Flush all outboxes** | `lib/data/db_core.dart` | `DbCoreExtension.flushPendingLocalMutations` — records then plans; resumes auth if `authStore.isValid` |
-| **Flush record queue** | `lib/data/record_service.dart` | `RecordServiceExtension.flushPendingRecordMutations` |
+| **Flush record queue** | `lib/data/records/record_outbox_helpers.dart` | `RecordOutboxSyncExtension.flushPendingRecordMutations` |
 | **Flush plan/list queue** | `lib/data/plans/plan_outbox_helpers.dart` | `PlanOutboxSyncExtension.flushPendingPlanMutations` (alias: `flushPendingPlanCreates`) |
 | **Boot / resume flush** | `lib/data/db_core.dart` | `loadInitialData` → `_loadInner` ends with `flushPendingLocalMutations`; lifecycle `onResumed` same |
 | **Offline / sync banner** | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` — tap → `flushPendingLocalMutations`; labels via `offline_sync_*` in `dictionary.dart` |
-| Record offline enqueue (start) | `lib/data/record_service.dart` | `_enqueueHighlanderStartMutation`, `_highlanderPrimaryServerSync` |
-| Record offline enqueue (stop/edit/delete) | `lib/data/record_service.dart` | `_enqueueStopPatchMutation`, `_enqueueRecordUpdateMutation`, `_enqueueRecordDeleteMutation` |
+| Record offline enqueue (start) | `lib/data/records/record_outbox_helpers.dart` | `_enqueueHighlanderStartMutation`, `_highlanderPrimaryServerSync` |
+| Record offline enqueue (stop/edit/delete) | `lib/data/records/record_outbox_helpers.dart` | `_enqueueStopPatchMutation`, `_enqueueRecordUpdateMutation`, `_enqueueRecordDeleteMutation` |
 | Plan offline enqueue | `lib/data/plan_service.dart` | `_enqueuePlanCreateMutation`, `_enqueuePlanUpdateMutation`, `_enqueuePlanDeleteMutation` |
 
 ---
@@ -88,7 +88,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **Tag UI — pickers** | `lib/features/shared/chip_component.dart` | `TagQuickPickStrip`, `TagChip` |
 | **Tag UI in edit sheet** | `lib/features/shared/planning_task_edit_sheet.dart` | tag strip inside `PlanningTaskEditSheet` |
 | **PB config** | `lib/data/pb_config.dart` | `kPocketBaseUrl`, `PbCollections`, expand constants |
-| **PB — records** | `lib/data/record_service.dart` | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, `flushPendingRecordMutations`, realtime |
+| **PB — records** | `lib/data/records/record_crud.dart` + coordinator | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, `flushPendingRecordMutations`, realtime |
 | **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `deletePlanningTasksBulk`, `flushPendingPlanMutations`, `planningStream`, `_syncPlanTagsPocket` |
 | **Offline sync banner** | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` (top of shell `IndexedStack`) |
 | **PB — categories** | `lib/data/category_service.dart` | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
@@ -122,22 +122,22 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Profile desktop voice settings UI | `lib/features/profile/desktop_voice_settings_section.dart` | `DesktopVoiceSettingsSection` |
 | Desktop voice shell wiring | `lib/app_shell.dart` | `_toggleDesktopVoiceWidget`, `_desktopVoiceSubmitParsed`, `_initDesktopVoiceLayer` |
 | UI dispatch wrappers (shell-side, debounced) | `lib/app_shell.dart` | `_stopRecordByDocId` / `_deleteRecordByDocId` / `_startTaskFromInput` |
-| Start a record (user taps Start) | `lib/data/record_service.dart` | `DatabaseService.writeRecord` (extension) |
-| Stop a record (user taps Stop) | `lib/data/record_service.dart` | `DatabaseService.stopRecordByDocId` (extension) |
-| Update / edit a record | `lib/data/record_service.dart` | `DatabaseService.updateRecord` (extension) |
-| Delete a record | `lib/data/record_service.dart` | `DatabaseService.deleteRecordByDocId` (extension) |
-| Optimistic shadow — Start | `lib/data/record_service.dart` | `DatabaseService._startAtomicTaskSequenceApplyLocalPrimary` (extension) |
-| Optimistic shadow — Stop | `lib/data/record_service.dart` | `DatabaseService._applyOptimisticStopUiSnapshot` (extension) |
+| Start a record (user taps Start) | `lib/data/records/record_crud.dart` | `DatabaseService.writeRecord` (`RecordCrudExtension`) |
+| Stop a record (user taps Stop) | `lib/data/records/record_crud.dart` | `DatabaseService.stopRecordByDocId` (`RecordCrudExtension`) |
+| Update / edit a record | `lib/data/records/record_crud.dart` | `DatabaseService.updateRecord` (`RecordCrudExtension`) |
+| Delete a record | `lib/data/records/record_crud.dart` | `DatabaseService.deleteRecordByDocId` (`RecordCrudExtension`) |
+| Optimistic shadow — Start | `lib/data/records/record_overlap_helpers.dart` | `DatabaseService._startAtomicTaskSequenceApplyLocalPrimary` (`RecordOverlapExtension`) |
+| Optimistic shadow — Stop | `lib/data/records/record_optimistic.dart` | `DatabaseService._applyOptimisticStopUiSnapshot` (`RecordOptimisticExtension`) |
 | Offline queue — records | `lib/data/local_sync/record_mutation_outbox.dart` | `RecordMutationOutbox.enqueue` / `coalesceQueue` |
 | Offline queue — plans | `lib/data/local_sync/plan_mutation_outbox.dart` | `PlanMutationOutbox.enqueue` / `coalesceQueue` |
 | Flush pending mutations (all) | `lib/data/db_core.dart` | `DatabaseService.flushPendingLocalMutations` (extension) |
-| Flush pending records | `lib/data/record_service.dart` | `DatabaseService.flushPendingRecordMutations` (extension) |
+| Flush pending records | `lib/data/records/record_outbox_helpers.dart` | `DatabaseService.flushPendingRecordMutations` (`RecordOutboxSyncExtension`) |
 | Flush pending plans / lists | `lib/data/plan_service.dart` | `DatabaseService.flushPendingPlanMutations` (extension) |
 | Sync state / auth resume | `lib/data/local_sync/offline_sync_state.dart` | `OfflineSyncController` on `DatabaseService.offlineSync`; `resumeAfterAuthIfNeeded` |
 | Connectivity watcher | `lib/data/local_sync/sync_manager.dart` | `SyncManager.instance` |
 | Shell sync / offline banner | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` |
-| Singleton / stale-open detection | `lib/data/record_service.dart` | `_rowStartWallDayIsBeforeProjectedToday` / `_mergeSacredStaleOpenCandidates` (extension) |
-| Realtime subscribe handler | `lib/data/record_service.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` (extension) |
+| Singleton / stale-open detection | `lib/data/records/record_overlap_helpers.dart` | `_rowStartWallDayIsBeforeProjectedToday` / `_mergeSacredStaleOpenCandidates` (`RecordOverlapExtension`) |
+| Realtime subscribe handler | `lib/data/records/record_realtime.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` (`RecordRealtimeExtension`) |
 | Record cache mutation (atomic upsert) | `lib/data/record_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` (extension) |
 | ID resolution (legacy UUID → PB row id) | `lib/data/record_service.dart` | `DatabaseService._resolveRecordIdForStopOrDelete` (extension) |
 | Category smart-link / fuzzy match | `lib/data/category_service.dart` | `DatabaseService.findCategoryByFuzzyMatch` (extension) |
@@ -305,7 +305,7 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 - **Offline drain:** `flushPendingLocalMutations` on login (`loadInitialData`), reconnect (`SyncManager`), app resume, and tap-to-retry (`OfflineSyncStatusBar`). 401/403 sets `offlineSync.authPaused` until `resumeAfterAuthIfNeeded` + valid session.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). Domain logic lives in `part of` files: V5.1 profile/tag → `profile_service.dart`; V5.2 plan coordinator → `plan_service.dart` + `plans/*` helpers (Pass 4A); V5.3 record → `record_service.dart`; V5.4 category → `category_service.dart`; V5.5 bootstrap/lifecycle → `db_core.dart`.
+- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). Domain logic lives in `part of` files: V5.1 profile/tag → `profile_service.dart`; V5.2 plan coordinator → `plan_service.dart` + `plans/*` (Pass 4A); V5.3 record coordinator → `record_service.dart` + `records/*` (Pass 4B); V5.4 category → `category_service.dart`; V5.5 bootstrap/lifecycle → `db_core.dart`.
 
 ---
 

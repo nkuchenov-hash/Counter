@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Structure refactor pass 4B record service [shipped]
+
+* **`lib/data/records/`:** [shipped] Pass 4B safe Brain split: eight `part of database_service.dart` files — `record_crud.dart`, `record_optimistic.dart`, `record_realtime.dart`, `record_timeline_vm.dart`, `record_outbox_helpers.dart`, `record_overlap_helpers.dart`, `record_ghost_cleanup.dart`, `record_cache_helpers.dart`; named extensions `RecordCrudExtension`, `RecordOptimisticExtension`, `RecordRealtimeExtension`, `RecordTimelineVmExtension`, `RecordOutboxSyncExtension`, `RecordOverlapExtension`, `RecordGhostCleanupExtension`, `RecordCacheProjectionExtension`.
+* **`lib/data/record_service.dart`:** [shipped] Coordinator retained (`RecordServiceExtension`, fetch/upsert, start entry wrappers, shared streams); 4423→901 lines (−3522).
+* **Plan/category/profile Brain:** [skipped] untouched.
+* **Verification:** strict `architecture_guard` 0 violations; `flutter analyze` 0 errors; `flutter test` 248/248; web + APK green.
+
 ## [2026-07-03] - Structure refactor pass 4A plan service [shipped]
 
 * **`lib/data/plans/`:** [shipped] Pass 4A safe Brain split: six `part of database_service.dart` files — `plan_projection_types.dart`, `plan_recurrence_helpers.dart`, `plan_time_cascade_helpers.dart`, `plan_tags_helpers.dart`, `plan_cache_helpers.dart`, `plan_outbox_helpers.dart`; named extensions `PlanRecurrenceExtension`, `PlanTimeCascadeExtension`, `PlanTagsExtension`, `PlanCacheProjectionExtension`, `PlanOutboxSyncExtension`, `PlanTimeModeProjection`.

@@ -31,7 +31,7 @@ l10n      →  (self + langs)               ✓
 main/app_shell → all layers               ✓
 ```
 
-**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `plan_service.dart`, `plans/*`, `category_service.dart`, `profile_service.dart`).
+**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `profile_service.dart`).
 
 **Optimistic UI rule:** User mutations update local Brain cache first, notify UI, then sync PocketBase in the background (`database_service.dart` and its parts).
 
@@ -85,7 +85,15 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | :--- | :--- |
 | `database_service.dart` | Singleton root: shared state, streams, static helpers; `part` coordinator |
 | `db_core.dart` | Bootstrap: `loadInitialData`, PocketBase health, lifecycle, flush outboxes *(part)* |
-| `record_service.dart` | Records CRUD, optimistic start/stop, realtime *(part)* |
+| `record_service.dart` | Records coordinator: cache, fetch, upsert, start/stop entry, streams *(part)* |
+| `records/record_crud.dart` | Record CRUD, PATCH/DELETE network phases, `writeRecord` / `updateRecord` / `stopRecord` *(part)* |
+| `records/record_optimistic.dart` | Optimistic stop overlay, sacred handoff, pending-start map *(part)* |
+| `records/record_realtime.dart` | PocketBase records realtime subscribe/unsubscribe *(part)* |
+| `records/record_timeline_vm.dart` | Timeline day index, warm window, row VM builders *(part)* |
+| `records/record_outbox_helpers.dart` | Record mutation outbox enqueue/flush/replay, Highlander server phase *(part)* |
+| `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
+| `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
+| `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
 | `plan_service.dart` | Plans/lists coordinator: CRUD, streams, wall-time projection, alarms, AI parse *(part)* |
 | `plans/plan_projection_types.dart` | `TimeModeProjectedPlan`, `PlanTimeModeProjection` *(part)* |
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, exception-date parse helpers *(part)* |
