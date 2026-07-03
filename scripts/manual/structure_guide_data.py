@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
 
-from structure_ru_helpers import complete_all_ru_fields
+from structure_en_ru_adapt import (
+    adapt_folder_guide_ru,
+    has_banned_filler,
+    ru_field_ok,
+)
+
+# Side effect: registers curated folder RU blocks.
+import structure_folder_ru_curated  # noqa: F401
 
 # Each folder entry: what, why, inside, affects, when, delete, related
 FOLDERS: dict[str, dict[str, str]] = {
@@ -286,7 +293,7 @@ FOLDERS: dict[str, dict[str, str]] = {
         "related": "`update.ps1`, `docs/DEPLOY.md`.",
         "what_ru": "Папка автоматизации GitHub. Здесь workflow-файлы: один публикует web build на GitHub Pages после push, другой собирает Windows installer artifact.",
         "why_ru": "Это не экран приложения, а роботы сборки и публикации.",
-        "inside_ru": "`deploy.yml`, `windows-desktop-build.yml`, `copilot-instructions.md`.",
+        "inside_ru": "Workflow-файлы: `deploy.yml`, `windows-desktop-build.yml`, `copilot-instructions.md`.",
         "affects_ru": "Живой сайт и артефакт Windows installer.",
         "when_ru": "CI deploy упал, сайт не обновился, нет CounterSetup.exe в Actions.",
         "delete_ru": "Нет — если нужны GitHub Pages и Windows installer.",
@@ -983,6 +990,32 @@ BANNED_RU_PHRASES: tuple[str, ...] = (
     "В git, потому что нужен для",
     "Роль внутри",
     "Вспомогательный файл репозитория",
+    # Meaningless path-based filler (see structure_en_ru_adapt.BANNED_MEANINGLESS_RU_FILLER)
+    "Папка `",
+    "репозитория Life OS",
+    "Файлы здесь нужны для сборки, CI или сопровождения проекта",
+    "Tracked-файлы перечислены ниже",
+    "Tracked-файлы в",
+    "описаны ниже по одному",
+    "Workflow или сборка, связанная с этим путём",
+    "Сопровождение или сборка, связанная с",
+    "Код приложения в `",
+    "часть Flutter-приложения",
+    "Всё под `lib/` попадает",
+    "Dart-модули в",
+    "перечень файлов ниже",
+    "Поведение и UI модуля, названного в пути папки",
+    "Правки или баги в",
+    "Платформенная папка",
+    "native-обёртка",
+    "Native-конфиги",
+    "generated-файлы embedder",
+    "Platform-файл",
+    "Native/config-содержимое",
+    "Поддержка embedder-сборки",
+    "см. EN-блок",
+    "platform/config файл",
+    "NEEDS HUMAN DESCRIPTION",
 )
 
 
@@ -1192,10 +1225,35 @@ def _folder_ru_auto(key: str, en: dict[str, str]) -> dict[str, str]:
 
 
 def ensure_folder_ru(key: str, data: dict[str, str]) -> dict[str, str]:
+    """Merge curated + inline RU; fill gaps by adapting EN meaning (never path templates)."""
+    from structure_en_ru_adapt import EXACT_FOLDER_RU
+
+    k = key.replace("\\", "/").strip("/")
     merged = dict(data)
-    if not merged.get("what_ru"):
-        merged.update(_folder_ru_auto(key, data))
-    return complete_all_ru_fields(key, merged, file_mode=False)
+    if k in EXACT_FOLDER_RU:
+        for fk, fv in EXACT_FOLDER_RU[k].items():
+            if fv and not has_banned_filler(fv):
+                merged[fk] = fv
+    for suffix in (
+        "what_ru",
+        "why_ru",
+        "inside_ru",
+        "affects_ru",
+        "when_ru",
+        "delete_ru",
+        "related_ru",
+    ):
+        inline = data.get(suffix, "")
+        if inline and not has_banned_filler(inline) and not inline.startswith("NEEDS HUMAN"):
+            merged[suffix] = inline
+    adapted = adapt_folder_guide_ru(k, merged)
+    for fk, fv in adapted.items():
+        cur = merged.get(fk, "")
+        if (not cur or has_banned_filler(cur) or cur.startswith("NEEDS HUMAN")) and not fv.startswith(
+            "NEEDS HUMAN"
+        ):
+            merged[fk] = fv
+    return merged
 
 
 def infer_folder_guide(key: str) -> dict[str, str]:

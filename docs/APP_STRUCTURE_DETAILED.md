@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `4164311` on 2026-07-03.**
+**Generated at git SHA `9fb9414` on 2026-07-03.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -34,13 +34,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `.cursor/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `.cursor/`.
-- **Можно удалить?** Нет — часть репозитория.
-- **Связанные пути:** `.cursorrules` pointer at repo root.
+- **Что это за папка:** Правила Cursor IDE для этого repo — куда смотреть AI-ассистентам и какие архитектурные законы соблюдать.
+- **Зачем нужна:** Cursor подхватывает `.cursorrules` и файлы здесь, чтобы не предлагать запрещённые PocketBase/optimistic UI ходы.
+- **Что здесь лежит:** Файлы правил Cursor, включая `rules/flutter_expert.mdc`.
+- **На что влияет в приложении:** Подсказки AI в Cursor — не runtime приложения.
+- **Когда открывать:** AI предлагает refactor, ломающий Brain/UI split или main-thread law.
+- **Можно удалить?** Нет — Cursor root discovery ожидает rules здесь.
+- **Связанные пути:** `.cursorrules`, `docs/ARCHITECTURE.md`.
 
 ---
 
@@ -60,7 +60,7 @@ RU:
 
 - **Что это за папка:** Папка автоматизации GitHub. Здесь workflow-файлы: один публикует web build на GitHub Pages после push, другой собирает Windows installer artifact.
 - **Зачем нужна:** Это не экран приложения, а роботы сборки и публикации.
-- **Что здесь лежит:** Tracked-файлы в `.github/` — описаны ниже по одному.
+- **Что здесь лежит:** Workflow-файлы: `deploy.yml`, `windows-desktop-build.yml`, `copilot-instructions.md`.
 - **На что влияет в приложении:** Живой сайт и артефакт Windows installer.
 - **Когда открывать:** CI deploy упал, сайт не обновился, нет CounterSetup.exe в Actions.
 - **Можно удалить?** Нет — если нужны GitHub Pages и Windows installer.
@@ -82,12 +82,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Android-обёртка — Gradle, `AndroidManifest`, permissions (mic, notifications), launcher icons, Kotlin entry.
+- **Зачем нужна:** Flutter собирает устанавливаемый APK/AAB из native Android project.
+- **Что здесь лежит:** Gradle, manifest, Kotlin entry, иконки и splash в `res/`.
+- **На что влияет в приложении:** Сборка и установка только на Android (телефон, планшет, Wear).
+- **Когда открывать:** APK build fail, permission denied, package name, Gradle errors.
+- **Можно удалить?** Нет — если нужна поддержка Android APK.
 - **Связанные пути:** `android.ps1`, `.github/workflows/`.
 
 ---
@@ -106,12 +106,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `docs/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `docs/`.
-- **Можно удалить?** Нет — часть репозитория.
+- **Что это за папка:** Письменные правила проекта — architecture, DATA_MAP, design system, roadmap, deploy.
+- **Зачем нужна:** Owner и AI нужен источник «как должно работать» помимо кода.
+- **Что здесь лежит:** Governing specs, Project Knowledge pack list, reports, `docs/website/` copy.
+- **На что влияет в приложении:** Решения при разработке и AI context — не runtime binary.
+- **Когда открывать:** Любой structural/behavior вопрос; upload list в `PROJECT_KNOWLEDGE_PACK.md`.
+- **Можно удалить?** Нет — governing documentation.
 - **Связанные пути:** 14-doc Project Knowledge pack, `CHANGELOG.md`.
 
 ---
@@ -130,12 +130,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `installer/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `installer/`.
-- **Можно удалить?** Нет — часть репозитория.
+- **Что это за папка:** Сборка Windows-установщика `CounterSetup.exe` — упаковка Release build + STT helper + icons.
+- **Зачем нужна:** Flutter build — папка файлов; installer даёт один setup wizard пользователю.
+- **Что здесь лежит:** Inno Setup `counter.iss`, STT payload scripts, helper build.
+- **На что влияет в приложении:** Дистрибуция Windows через artifact GitHub Actions.
+- **Когда открывать:** Installer missing files, STT helper не bundled, SmartScreen packaging.
+- **Можно удалить?** Нет — пока нужен Windows installer distribution.
 - **Связанные пути:** `.github/workflows/windows-desktop-build.yml`, `docs/DEPLOY.md`.
 
 ---
@@ -154,13 +154,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `integration_test/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `integration_test/`.
-- **Можно удалить?** Нет — часть репозитория.
-- **Связанные пути:** `test/` unit tests.
+- **Что это за папка:** Integration-тесты Flutter на устройстве/эмуляторе — полные сценарии медленнее widget tests.
+- **Зачем нужна:** Ловят login shell, tab navigation и flows, которые unit-тесты не покрывают.
+- **Что здесь лежит:** Dart integration test drivers и сценарии.
+- **На что влияет в приложении:** CI/integration QA — не APK пользователю.
+- **Когда открывать:** Падает integration test или меняется shell navigation.
+- **Можно удалить?** Нет — если integration QA остаётся в pipeline.
+- **Связанные пути:** `test/`, `lib/shell/`.
 
 ---
 
@@ -178,12 +178,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** iOS-обёртка — Xcode project, Info.plist, assets, Flutter iOS embedder для iPhone/iPad.
+- **Зачем нужна:** Apple требует эту структуру для TestFlight и App Store.
+- **Что здесь лежит:** Xcode project, Info.plist, asset catalogs, Runner target.
+- **На что влияет в приложении:** Только iOS builds.
+- **Когда открывать:** iOS compile/signing, permissions, icons.
+- **Можно удалить?** Нет — если нужна сборка iOS.
 - **Связанные пути:** `lib/`, Flutter tooling.
 
 ---
@@ -208,7 +208,7 @@ RU:
 - **На что влияет в приложении:** Весь продукт на всех платформах.
 - **Когда открывать:** Любой баг UI, сохранение данных, offline, локализация.
 - **Можно удалить?** Нет — удаление уничтожает приложение.
-- **Связанные пути:** `pubspec.yaml`, `main.dart`, platform folders.
+- **Связанные пути:** `pubspec.yaml`, `main.dart`, platform-папки.
 
 ---
 
@@ -226,13 +226,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Linux: `linux/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Linux-версию из файлов под `linux/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `linux/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Linux — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Linux или native-проблема в `linux/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
-- **Связанные пути:** `windows/`, `macos/` sibling desktop folders.
+- **Что это за папка:** Linux desktop embedder — CMake-проект для сборки Counter на Linux через GTK runner.
+- **Зачем нужна:** Flutter нужны native runner sources для Linux desktop target.
+- **Что здесь лежит:** Корневой `CMakeLists.txt`, generated glue в `flutter/`, GTK entry в `runner/`.
+- **На что влияет в приложении:** Только Linux desktop builds — не Android/iOS/web.
+- **Когда открывать:** Падает Linux desktop compile, ошибки GTK runner.
+- **Можно удалить?** Нет — если нужна поддержка Linux desktop.
+- **Связанные пути:** `windows/`, `macos/` — sibling desktop folders.
 
 ---
 
@@ -250,13 +250,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
-- **Связанные пути:** `ios/` (mobile Apple) vs this desktop target.
+- **Что это за папка:** macOS desktop Flutter/Xcode project — собирает Counter `.app` на Apple Silicon/Intel Mac.
+- **Зачем нужна:** Apple desktop builds нуждаются в Xcode target, entitlements и Flutter macOS embedder.
+- **Что здесь лежит:** `Runner/`, generated configs в `Flutter/`, `Runner.xcodeproj`.
+- **На что влияет в приложении:** Только сборка и распространение macOS desktop `.app`.
+- **Когда открывать:** macOS signing, sandbox entitlements, menu bar, ошибки desktop build.
+- **Можно удалить?** Нет — если нужна поддержка macOS desktop.
+- **Связанные пути:** `ios/` (mobile Apple) vs этот desktop target.
 
 ---
 
@@ -274,13 +274,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `pb_hooks/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `pb_hooks/`.
-- **Можно удалить?** Нет — часть репозитория.
-- **Связанные пути:** `docs/POCKETBASE_MANIFEST.md`, `docs/DEPLOY.md` auth admin section.
+- **Что это за папка:** JS hooks для PocketBase на VPS — правила сервера, не код в телефоне.
+- **Зачем нужна:** Сервер проводит password reset и sanitize overlapping records.
+- **Что здесь лежит:** Два hook-файла (auth reset, record interval sanitize).
+- **На что влияет в приложении:** Forgot-password email на сервере; server-side cleanup пересекающихся running records.
+- **Когда открывать:** Password reset fail server-side; duplicate running records на сервере.
+- **Можно удалить?** Нет — production PocketBase ожидает hooks по manifest.
+- **Связанные пути:** `docs/POCKETBASE_MANIFEST.md`, `docs/DEPLOY.md` auth admin.
 
 ---
 
@@ -298,12 +298,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `scripts/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `scripts/`.
-- **Можно удалить?** Нет — часть репозитория.
+- **Что это за папка:** Скрипты dev/CI — deploy, audit guard, sync локалей, генерация structure doc, smoke desktop voice.
+- **Зачем нужна:** Повторяемые команды вместо ad-hoc notes.
+- **Что здесь лежит:** Папки скриптов: `audit/`, `manual/`, плюс `sync_locales.dart`.
+- **На что влияет в приложении:** Deploy, architecture guard и regeneration structure doc — не UI приложения.
+- **Когда открывать:** Deploy сайта, strict guard, regenerate structure map, voice smoke Windows.
+- **Можно удалить?** Нет — deploy/audit/doc workflows в repo.
 - **Связанные пути:** `update.ps1`, `docs/DEPLOY.md`, `docs/APP_STRUCTURE.md` §6.
 
 ---
@@ -322,13 +322,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `test/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `test/`.
-- **Можно удалить?** Нет — часть репозитория.
-- **Связанные пути:** Production files with matching names under `lib/`.
+- **Что это за папка:** Автотесты `flutter test` — регрессии без ручного UI.
+- **Зачем нужна:** Ловят voice parse, timezone, plan cards, perf contracts до релиза.
+- **Что здесь лежит:** Widget-, domain- и perf-тесты — файлы `*_test.dart` ниже.
+- **На что влияет в приложении:** CI quality gate — не в APK пользователю.
+- **Когда открывать:** Добавление/изменение поведения; падение CI.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связанные пути:** Production files под `lib/` с похожими именами.
 
 ---
 
@@ -346,12 +346,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Web: `web/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Web-версию из файлов под `web/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `web/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Web — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Web или native-проблема в `web/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Web-оболочка — `index.html`, PWA manifest, favicon/icons; base href `/Counter/` для GitHub Pages.
+- **Зачем нужна:** Браузер грузит Flutter web build; GitHub Pages живёт под `/Counter/`.
+- **Что здесь лежит:** Точка входа браузера, favicon, каталог `icons/`, `manifest.json`.
+- **На что влияет в приложении:** Публичный web-сайт: https://nkuchenov-hash.github.io/Counter/
+- **Когда открывать:** Blank page после deploy, wrong base href, missing icons.
+- **Можно удалить?** Нет — web deploy ломается.
 - **Связанные пути:** `docs/DEPLOY.md`, `.github/workflows/deploy.yml`.
 
 ---
@@ -370,13 +370,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Windows: `windows/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Windows-версию из файлов под `windows/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `windows/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Windows — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Windows или native-проблема в `windows/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
-- **Связанные пути:** `installer/windows/`, `docs/DEPLOY.md` Windows section.
+- **Что это за папка:** Windows desktop runner — native `.exe`, Flutter engine, desktop voice/tray/hotkey; связь с installer.
+- **Зачем нужна:** Desktop voice и `CounterSetup.exe` упаковка нуждаются в Windows embedder.
+- **Что здесь лежит:** CMake-проект, runner main, plugin registration, иконка `.ico`.
+- **На что влияет в приложении:** Windows desktop app и содержимое installer.
+- **Когда открывать:** Windows build fail, desktop voice/tray на уровне OS.
+- **Можно удалить?** Нет — если поддерживается Windows desktop.
+- **Связанные пути:** `installer/windows/`, `docs/DEPLOY.md`.
 
 ---
 
@@ -394,13 +394,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `.cursor/rules/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `.cursor/rules/`.
-- **Можно удалить?** Нет — часть репозитория.
-- **Связанные пути:** `.cursorrules` pointer at repo root.
+- **Что это за папка:** Markdown-правила для Cursor Agent: Flutter-архитектура, PocketBase, optimistic UI и запрет spam polling.
+- **Зачем нужна:** Always-applied rules для codegen в Cursor; дополняют governing docs.
+- **Что здесь лежит:** `flutter_expert.mdc` и другие rule-файлы.
+- **На что влияет в приложении:** Качество AI-патчей — не APK пользователю.
+- **Когда открывать:** Обновили архитектурный закон и нужно, чтобы AI его видел сразу.
+- **Можно удалить?** Нет — основной rule pack Cursor.
+- **Связанные пути:** `.cursorrules`, `docs/ARCHITECTURE.md`.
 
 ---
 
@@ -418,13 +418,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `.github/workflows/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `.github/workflows/`.
-- **Можно удалить?** Нет — часть репозитория.
-- **Связанные пути:** `docs/DEPLOY.md`, `update.ps1`.
+- **Что это за папка:** YAML workflow GitHub Actions — автоматическая сборка web и Windows installer после push.
+- **Зачем нужна:** Без них deploy на GitHub Pages и артеfact `CounterSetup.exe` не собираются на сервере GitHub.
+- **Что здесь лежит:** YAML workflows: `deploy.yml` (GitHub Pages) и `windows-desktop-build.yml` (installer).
+- **На что влияет в приложении:** Живой сайт `/Counter/` и Windows installer artifact в Actions.
+- **Когда открывать:** Deploy упал, сайт не обновился, нет exe в Actions artifacts.
+- **Можно удалить?** Нет — если нужны GitHub Pages и Windows installer.
+- **Связанные пути:** `update.ps1`, `docs/DEPLOY.md`.
 
 ---
 
@@ -442,12 +442,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app`: Android application module — the actual Counter APK target.
+- **Зачем нужна:** Нужна, потому что: Separates app config from root Gradle project settings.
+- **Что здесь лежит:** Здесь лежит: build.gradle, src/, google-services if present.
+- **На что влияет в приложении:** На продукт влияет так: Android build output APK/AAB.
+- **Когда открывать:** Открывать, когда: Gradle app module errors, package name, signing.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/` root Gradle.
 
 ---
@@ -466,12 +466,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/gradle/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/gradle/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/gradle/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/gradle`: Gradle wrapper and version catalog for Android builds.
+- **Зачем нужна:** Нужна, потому что: Pins Gradle version so builds are reproducible on CI and your PC.
+- **Что здесь лежит:** Здесь лежит: Wrapper jar/properties, plugin versions.
+- **На что влияет в приложении:** На продукт влияет так: Android build toolchain only.
+- **Когда открывать:** Открывать, когда: Gradle version mismatch errors.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/settings.gradle`.
 
 ---
@@ -490,13 +490,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Документация в `docs/reports/` — written specs, не runtime-код.
-- **Зачем нужна:** Текстовые правила и отчёты для owner и AI; приложение их не исполняет.
-- **Что здесь лежит:** Markdown-файлы с правилами и отчётами — список ниже.
-- **На что влияет в приложении:** Решения при разработке — не бинарник приложения.
-- **Когда открывать:** Нужно прочитать или обновить документацию по теме папки.
-- **Можно удалить?** Нет — governing или report документация.
-- **Связанные пути:** `CHANGELOG.md`, governing docs in `docs/`.
+- **Что это за папка:** Отчёты аудита, cleanup и design inventory — история решений, не governing law.
+- **Зачем нужна:** Фиксируют findings April 2026 audit, parity checks, design system inventory.
+- **Что здесь лежит:** Отчёты audit/cleanup: `AUDIT_NOTES.md`, `FINAL_*`, `DESIGN_SYSTEM_INVENTORY.md` и др.
+- **На что влияет в приложении:** Контекст для owner/AI — не runtime.
+- **Когда открывать:** Нужно понять, почему roadmap/guard rule существует.
+- **Можно удалить?** Нет — история cleanup и audit.
+- **Связанные пути:** `docs/ROADMAP.md`, `CHANGELOG.md`.
 
 ---
 
@@ -514,13 +514,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Документация в `docs/website/` — written specs, не runtime-код.
-- **Зачем нужна:** Текстовые правила и отчёты для owner и AI; приложение их не исполняет.
-- **Что здесь лежит:** Markdown-файлы с правилами и отчётами — список ниже.
-- **На что влияет в приложении:** Решения при разработке — не бинарник приложения.
-- **Когда открывать:** Нужно прочитать или обновить документацию по теме папки.
-- **Можно удалить?** Нет — governing или report документация.
-- **Связанные пути:** `docs/DEPLOY.md` GitHub Pages.
+- **Что это за папка:** Маркетинговые тексты будущего/текущего сайта — repo-only, не Project Knowledge pack.
+- **Зачем нужна:** Owner правит landing copy отдельно от governing 14-doc pack.
+- **Что здесь лежит:** Markdown страниц сайта и internal notes (repo-only).
+- **На что влияет в приложении:** Планирование публичного сайта — не Flutter binary.
+- **Когда открывать:** Обновление marketing copy или internal site notes.
+- **Можно удалить?** Нет — repo-only marketing copy.
+- **Связанные пути:** `docs/DEPLOY.md`, GitHub Pages.
 
 ---
 
@@ -538,12 +538,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `installer/windows/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `installer/windows/`.
-- **Можно удалить?** Нет — часть репозитория.
+- **Что это за папка:** Inno Setup и PowerShell для Windows setup `.exe` — копирование Release + speech helper.
+- **Зачем нужна:** Автоматизирует упаковку `flutter build windows` + GOLOS STT в install package.
+- **Что здесь лежит:** Inno Setup `counter.iss`, `prepare_stt_payload.ps1` и helper build scripts.
+- **На что влияет в приложении:** CI artifact `CounterSetup` и локальные installer builds.
+- **Когда открывать:** Installer build broken, STT missing после install.
+- **Можно удалить?** Нет — нужен для Windows installer.
 - **Связанные пути:** `flutter build windows`, GitHub Actions workflow.
 
 ---
@@ -562,12 +562,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Flutter/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Flutter/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Flutter/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Flutter`: Generated Flutter iOS embedding files.
+- **Зачем нужна:** Нужна, потому что: Flutter tool writes pod helpers and xcconfig here on build.
+- **Что здесь лежит:** Здесь лежит: Generated xcconfig, pod setup.
+- **На что влияет в приложении:** На продукт влияет так: iOS Flutter integration.
+- **Когда открывать:** Открывать, когда: Pod install / Flutter iOS build failures.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Podfile`.
 
 ---
@@ -586,12 +586,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner`: iOS app target — icons, storyboards, Info.plist for iPhone/iPad.
+- **Зачем нужна:** Нужна, потому что: Xcode builds the Flutter iOS app from this target.
+- **Что здесь лежит:** Здесь лежит: Assets, launch screen, native Swift/ObjC glue.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds.
+- **Когда открывать:** Открывать, когда: iOS permissions, icons, launch screen.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Flutter/`.
 
 ---
@@ -610,12 +610,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner.xcodeproj/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner.xcodeproj/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner.xcodeproj/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner.xcodeproj`: Xcode project file bundle for the iOS Counter app target.
+- **Зачем нужна:** Нужна, потому что: Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes, workspace metadata.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds only.
+- **Когда открывать:** Открывать, когда: Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Runner/`, `ios/Flutter/`.
 
 ---
@@ -634,12 +634,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner.xcworkspace/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner.xcworkspace/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner.xcworkspace/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner.xcworkspace`: Xcode workspace wrapping the iOS Runner project and CocoaPods.
+- **Зачем нужна:** Нужна, потому что: Developers open `.xcworkspace` (not `.xcodeproj` alone) after `pod install`.
+- **Что здесь лежит:** Здесь лежит: Workspace data linking Runner + Pods.
+- **На что влияет в приложении:** На продукт влияет так: Local iOS development and CI iOS builds using CocoaPods.
+- **Когда открывать:** Открывать, когда: Xcode says open workspace; Pod integration broken.
+- **Можно удалить?** Нет — required for iOS CocoaPods workflow.
 - **Связанные пути:** `ios/Podfile`, `ios/Runner.xcodeproj`.
 
 ---
@@ -658,12 +658,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/RunnerTests/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/RunnerTests/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/RunnerTests/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/RunnerTests`: Xcode unit test target for iOS Runner smoke tests.
+- **Зачем нужна:** Нужна, потому что: Apple project template includes a test target for native/iOS integration checks.
+- **Что здесь лежит:** Здесь лежит: `RunnerTests.swift` — minimal XCTest entry.
+- **На что влияет в приложении:** На продукт влияет так: iOS test target in Xcode — not the main Flutter `test/` suite.
+- **Когда открывать:** Открывать, когда: iOS native test failures in Xcode.
+- **Можно удалить?** Возможно — Flutter CI uses `flutter test`; keep for Xcode workflow.
 - **Связанные пути:** `test/` Flutter tests, `ios/Runner/`.
 
 ---
@@ -682,13 +682,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/` — часть Flutter-приложения (core).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/data/models.dart` (types only).
+- **Что это за папка:** Базовый слой: design system в коде, shared widgets, тема/цвета, time helpers, desktop voice, diagnostics.
+- **Зачем нужна:** Экраны не дублируют кнопки, date header и voice — общая foundation-база.
+- **Что здесь лежит:** `theme.dart`, каталог `core/widgets/`, `core/time/`, `core/services/` (desktop voice), diagnostics.
+- **На что влияет в приложении:** Внешний вид всех вкладок; desktop voice/tray; часы/timezone в header; perf debug flags.
+- **Когда открывать:** Миграция кнопок/карточек, неверный timezone header, сломан desktop voice, смена theme token.
+- **Можно удалить?** Нет — features импортируют foundation повсюду.
+- **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/data/models.dart`.
 
 ---
 
@@ -706,12 +706,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/data/` — часть Flutter-приложения (data).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/data/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `data`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** «Мозг» приложения — PocketBase I/O, локальный кэш, optimistic UI и offline outboxes.
+- **Зачем нужна:** Один набор правил save/load для Timeline, Plans, Lists и Categories; offline-safe.
+- **Что здесь лежит:** Координаторы `*_service.dart`, `database_service.dart` и `part`-модули в subfolders.
+- **На что влияет в приложении:** Записи Timeline, планы, списки, категории, теги, настройки профиля и offline queue.
+- **Когда открывать:** Неверные данные, failed save, rollback optimistic UI, offline banner, ошибки полей PB.
+- **Можно удалить?** Нет — UI не работает без мозга.
 - **Связанные пути:** `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `lib/features/`.
 
 ---
@@ -730,13 +730,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/` — часть Flutter-приложения (features).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связанные пути:** `lib/shell/` (navigation host), `lib/data/` (saves/loads).
+- **Что это за папка:** Видимые экраны — Timeline, Plans, Lists, Profile, Categories, auth, Wear, shared edit sheets.
+- **Зачем нужна:** Отделяет UI от PocketBase-мозга в `lib/data/`.
+- **Что здесь лежит:** Папка на tab/flow: `timeline/`, `planning/`, `lists/`, `shared/`, `profile/` и др.
+- **На что влияет в приложении:** Вся видимая часть приложения кроме platform wrappers.
+- **Когда открывать:** UI bug на вкладке, новый экран, edit sheet, voice sheet layout.
+- **Можно удалить?** Нет — удаление убирает весь UI продукта.
+- **Связанные пути:** `lib/shell/`, `lib/data/`.
 
 ---
 
@@ -754,13 +754,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/l10n/` — часть Flutter-приложения (l10n).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/l10n/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `l10n`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связанные пути:** `scripts/sync_locales.dart`, `lib/l10n/langs/HELP HOW TO UPDATE the languages`.
+- **Что это за папка:** Словарь переводов — подписи кнопок, ошибки, пункты меню на всех языках.
+- **Зачем нужна:** Смена языка в settings; весь текст через `t()` и locale maps.
+- **Что здесь лежит:** `dictionary.dart`, `langs/en.dart`, `langs/ru.dart`, partial other locales.
+- **На что влияет в приложении:** Все видимые строки UI.
+- **Когда открывать:** Missing translation key, неверный текст языка, новая UI label.
+- **Можно удалить?** Нет — без l10n сырые keys или crash.
+- **Связанные пути:** `scripts/sync_locales.dart`, HELP в `langs/`.
 
 ---
 
@@ -778,13 +778,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/services/` — часть Flutter-приложения (services).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/services/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `services`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связанные пути:** `lib/data/plan_service.dart` alarm reschedule requests.
+- **Что это за папка:** Сервисы устройства вне PocketBase — сейчас plan alarm notifications.
+- **Зачем нужна:** OS notifications вне brain; `lib/data/` без platform notification API.
+- **Что здесь лежит:** `notification_service.dart` — local notifications и plan alarm reschedule.
+- **На что влияет в приложении:** Напоминания по планам на phone/desktop.
+- **Когда открывать:** Plan alarm не срабатывает, permission notifications.
+- **Можно удалить?** Нет — plan alarms перестанут работать.
+- **Связанные пути:** `lib/data/plan_service.dart` alarm reschedule.
 
 ---
 
@@ -802,13 +802,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/shell/` — часть Flutter-приложения (shell).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/shell/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `shell`.
-- **Можно удалить?** Нет — нужен для работы приложения.
-- **Связанные пути:** `lib/app_shell.dart`, all `lib/features/*` tabs.
+- **Что это за папка:** Оболочка — нижние вкладки, desktop side nav, More menu, voice routing, edit modals, offline banner.
+- **Зачем нужна:** Связывает `main.dart` с feature pages и глобальным поведением (voice, sync banner).
+- **Что здесь лежит:** Dashboard scaffold, IndexedStack вкладок, More menu, voice submit routing.
+- **На что влияет в приложении:** Навигация, global header, voice commands между вкладками.
+- **Когда открывать:** Неверная вкладка, voice уходит не туда, edit sheet host, offline banner.
+- **Можно удалить?** Нет — навигация приложения рушится.
+- **Связанные пути:** `lib/app_shell.dart`, все `lib/features/*`.
 
 ---
 
@@ -826,12 +826,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Linux: `linux/flutter/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Linux-версию из файлов под `linux/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `linux/flutter/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Linux — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Linux или native-проблема в `linux/flutter/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `linux/flutter`: Flutter-generated Linux embedder glue — plugin registrant and CMake hooks.
+- **Зачем нужна:** Нужна, потому что: Flutter tool regenerates these when `pubspec.yaml` plugins change.
+- **Что здесь лежит:** Здесь лежит: `generated_plugin_registrant.*`, `generated_plugins.cmake`, child `CMakeLists.txt`.
+- **На что влияет в приложении:** На продукт влияет так: Linux desktop plugin registration at runtime.
+- **Когда открывать:** Открывать, когда: Linux build fails after adding/removing Flutter plugin.
+- **Можно удалить?** Нет — regenerated by Flutter; required for Linux build.
 - **Связанные пути:** `linux/CMakeLists.txt`, `flutter pub get`.
 
 ---
@@ -850,12 +850,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Linux: `linux/runner/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Linux-версию из файлов под `linux/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `linux/runner/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Linux — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Linux или native-проблема в `linux/runner/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `linux/runner`: Native Linux host for Flutter desktop on Linux.
+- **Зачем нужна:** Нужна, потому что: Linux desktop build needs GTK runner entry point.
+- **Что здесь лежит:** Здесь лежит: CMake runner sources.
+- **На что влияет в приложении:** На продукт влияет так: Linux desktop builds only.
+- **Когда открывать:** Открывать, когда: Linux desktop compile errors.
+- **Можно удалить?** Нет — если нужна поддержка Linux desktop.
 - **Связанные пути:** `linux/CMakeLists.txt`.
 
 ---
@@ -874,12 +874,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Flutter/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Flutter/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Flutter/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Flutter`: Generated Flutter macOS embedding configuration.
+- **Зачем нужна:** Нужна, потому что: Flutter writes pod/xcconfig glue for macOS builds.
+- **Что здесь лежит:** Здесь лежит: Generated configs.
+- **На что влияет в приложении:** На продукт влияет так: macOS Flutter integration.
+- **Когда открывать:** Открывать, когда: macOS Flutter build failures.
+- **Можно удалить?** Нет — required for macOS build.
 - **Связанные пути:** `macos/Runner/`.
 
 ---
@@ -898,12 +898,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner`: macOS app bundle target — menus, icons, entitlements.
+- **Зачем нужна:** Нужна, потому что: Apple requires Xcode target for macOS Flutter apps.
+- **Что здесь лежит:** Здесь лежит: Swift runner, assets, entitlements plist.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop builds.
+- **Когда открывать:** Открывать, когда: macOS signing, sandbox, menu bar.
+- **Можно удалить?** Нет — if macOS builds are kept.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -922,12 +922,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner.xcodeproj/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner.xcodeproj/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner.xcodeproj/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner.xcodeproj`: Xcode project for macOS desktop Counter `.app` target.
+- **Зачем нужна:** Нужна, потому что: macOS desktop builds compile through this Xcode project.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes for macOS Runner.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop distribution builds.
+- **Когда открывать:** Открывать, когда: macOS Xcode build/sign errors.
+- **Можно удалить?** Нет — нужен для сборки macOS desktop.
 - **Связанные пути:** `macos/Runner/`, `macos/Flutter/`.
 
 ---
@@ -946,12 +946,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner.xcworkspace/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner.xcworkspace/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner.xcworkspace/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner.xcworkspace`: Xcode workspace for macOS Counter desktop app.
+- **Зачем нужна:** Нужна, потому что: Opens Runner + Flutter macOS pods together in Xcode.
+- **Что здесь лежит:** Здесь лежит: Workspace contents and shared IDE checks.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop development in Xcode.
+- **Когда открывать:** Открывать, когда: Workspace won't open; CocoaPods integration on macOS.
+- **Можно удалить?** Нет — required for macOS Xcode workflow.
 - **Связанные пути:** `macos/Runner.xcodeproj`.
 
 ---
@@ -970,12 +970,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/RunnerTests/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/RunnerTests/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/RunnerTests/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/RunnerTests`: Xcode test target for macOS Runner.
+- **Зачем нужна:** Нужна, потому что: Template XCTest target for macOS native smoke checks.
+- **Что здесь лежит:** Здесь лежит: `RunnerTests.swift`.
+- **На что влияет в приложении:** На продукт влияет так: macOS Xcode test runs only.
+- **Когда открывать:** Открывать, когда: macOS native unit test failures.
+- **Можно удалить?** Возможно — основной QA — `flutter test`.
 - **Связанные пути:** `macos/Runner/`.
 
 ---
@@ -994,13 +994,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка скрипты: `scripts/audit/`.
-- **Зачем нужна:** Поддержка CI, deploy, audit или регрессионных проверок.
-- **Что здесь лежит:** Файлы перечислены ниже по одному.
-- **На что влияет в приложении:** Качество и workflow — не экраны приложения.
-- **Когда открывать:** Запуск workflow или падение CI.
-- **Можно удалить?** Нет — задокументированный workflow.
-- **Связанные пути:** `docs/APP_STRUCTURE.md`.
+- **Что это за папка:** Audit-скрипты — architecture guard и проверки структуры перед merge.
+- **Зачем нужна:** Блокируют forbidden imports, missing docs, drift от `APP_STRUCTURE.md`.
+- **Что здесь лежит:** `architecture_guard.ps1` и связанные audit helpers.
+- **На что влияет в приложении:** Качество repo — не экраны приложения.
+- **Когда открывать:** Перед merge или после перемещения файлов — `-Strict` guard.
+- **Можно удалить?** Нет — задокументированный audit workflow.
+- **Связанные пути:** `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`.
 
 ---
 
@@ -1018,12 +1018,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка скрипты: `scripts/manual/`.
-- **Зачем нужна:** Поддержка CI, deploy, audit или регрессионных проверок.
-- **Что здесь лежит:** Файлы перечислены ниже по одному.
-- **На что влияет в приложении:** Качество и workflow — не экраны приложения.
-- **Когда открывать:** Запуск workflow или падение CI.
-- **Можно удалить?** Нет — задокументированный workflow.
+- **Что это за папка:** Ручные dev-скрипты — deploy (`td.ps1`), генерация structure doc, locale sync, smoke tests.
+- **Зачем нужна:** Owner запускает их по `DEPLOY.md` и structure maintenance без запоминания длинных команд.
+- **Что здесь лежит:** `generate_app_structure_detailed.py`, `td.ps1`, export/billing utilities.
+- **На что влияет в приложении:** Deploy, регенерация docs и owner utilities — не runtime UI.
+- **Когда открывать:** Deploy сайта, regenerate APP_STRUCTURE_DETAILED, sync locales.
+- **Можно удалить?** Нет — задокументированные manual workflows.
 - **Связанные пути:** `update.ps1`, `docs/DEPLOY.md`.
 
 ---
@@ -1042,12 +1042,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Web: `web/icons/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Web-версию из файлов под `web/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `web/icons/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Web — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Web или native-проблема в `web/icons/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** PNG-иконки PWA/web — разные размеры для вкладки браузера и «Add to Home Screen».
+- **Зачем нужна:** Браузер и manifest ссылаются на эти PNG после `flutter build web`.
+- **Что здесь лежит:** Набор `Icon-*.png` для web manifest.
+- **На что влияет в приложении:** Иконка web-версии на GitHub Pages.
+- **Когда открывать:** Пропала иконка вкладки после web deploy.
+- **Можно удалить?** Нет — нужен для web-сборки.
 - **Связанные пути:** `web/manifest.json`, `web/index.html`.
 
 ---
@@ -1066,12 +1066,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Windows: `windows/flutter/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Windows-версию из файлов под `windows/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `windows/flutter/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Windows — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Windows или native-проблема в `windows/flutter/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `windows/flutter`: Flutter-generated Windows embedder glue — plugin registrant and CMake hooks.
+- **Зачем нужна:** Нужна, потому что: Native Windows plugins (tray, hotkey, voice overlay) register through this generated code.
+- **Что здесь лежит:** Здесь лежит: `generated_plugin_registrant.*`, `generated_plugins.cmake`.
+- **На что влияет в приложении:** На продукт влияет так: Windows desktop plugin registration — desktop voice/tray depend on it.
+- **Когда открывать:** Открывать, когда: Windows build fails after plugin change; desktop voice plugin missing.
+- **Можно удалить?** Нет — нужен для сборки Windows desktop.
 - **Связанные пути:** `windows/runner/`, `windows/CMakeLists.txt`.
 
 ---
@@ -1090,12 +1090,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Windows: `windows/runner/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Windows-версию из файлов под `windows/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `windows/runner/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Windows — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Windows или native-проблема в `windows/runner/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `windows/runner`: Native Windows host that launches the Flutter desktop window.
+- **Зачем нужна:** Нужна, потому что: Windows needs a C++ runner exe that embeds Flutter engine.
+- **Что здесь лежит:** Здесь лежит: main.cpp, window creation, plugin registrant.
+- **На что влияет в приложении:** На продукт влияет так: Windows desktop `.exe` and installer contents.
+- **Когда открывать:** Открывать, когда: Windows desktop won’t start, window title wrong.
+- **Можно удалить?** Нет — нужен для сборки Windows desktop.
 - **Связанные пути:** `installer/windows/`.
 
 ---
@@ -1114,12 +1114,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src`: Android app module source — manifest, resources, Kotlin entry.
+- **Зачем нужна:** Нужна, потому что: Gradle compiles this tree into the installable APK.
+- **Что здесь лежит:** Здесь лежит: Manifest, res/, kotlin/.
+- **На что влияет в приложении:** На продукт влияет так: Android APK contents and permissions.
+- **Когда открывать:** Открывать, когда: Permission denied, wrong app label, manifest merge errors.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/build.gradle`.
 
 ---
@@ -1138,12 +1138,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/gradle/wrapper/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/gradle/wrapper/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/gradle/wrapper/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/gradle/wrapper`: Gradle wrapper and version catalog for Android builds.
+- **Зачем нужна:** Нужна, потому что: Pins Gradle version so builds are reproducible on CI and your PC.
+- **Что здесь лежит:** Здесь лежит: Wrapper jar/properties, plugin versions.
+- **На что влияет в приложении:** На продукт влияет так: Android build toolchain only.
+- **Когда открывать:** Открывать, когда: Gradle version mismatch errors.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/settings.gradle`.
 
 ---
@@ -1162,13 +1162,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `installer/windows/scripts/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `installer/windows/scripts/`.
-- **Можно удалить?** Нет — часть репозитория.
-- **Связанные пути:** `installer/windows/prepare_stt_payload.ps1`, `counter.iss`.
+- **Что это за папка:** Вспомогательные PowerShell-скрипты установщика — захват WAV для речи Windows.
+- **Зачем нужна:** Windows speech и installer prep копируют эти scripts рядом с setup `.exe`.
+- **Что здесь лежит:** `win_speech_wav.ps1` и related helpers.
+- **На что влияет в приложении:** Поведение speech helper после установки на Windows.
+- **Когда открывать:** Installer missing speech script, WAV path broken.
+- **Можно удалить?** Нет — Windows installer packaging ожидает scripts.
+- **Связанные пути:** `prepare_stt_payload.ps1`, `counter.iss`.
 
 ---
 
@@ -1186,13 +1186,13 @@ EN:
 
 RU:
 
-- **Что это за папка:** Папка `installer/windows/stt_helper_build/` репозитория Life OS.
-- **Зачем нужна:** Файлы здесь нужны для сборки, CI или сопровождения проекта.
-- **Что здесь лежит:** Tracked-файлы перечислены ниже.
-- **На что влияет в приложении:** Workflow или сборка, связанная с этим путём.
-- **Когда открывать:** Сопровождение или сборка, связанная с `installer/windows/stt_helper_build/`.
-- **Можно удалить?** Нет — часть репозитория.
-- **Связанные пути:** `installer/windows/build_stt_helper_en.ps1`, `lib/core/services/desktop_stt_helper_service.dart`.
+- **Что это за папка:** Собранный `counter_stt_helper.exe` для bundling в installer.
+- **Зачем нужна:** Desktop voice на Windows использует GOLOS STT subprocess; installer должен ship exe.
+- **Что здесь лежит:** Pre-built или CI-built `counter_stt_helper.exe`.
+- **На что влияет в приложении:** Расшифровка desktop voice на Windows после установки.
+- **Когда открывать:** Voice в dev OK, но не в installed app; rebuild STT helper.
+- **Можно удалить?** Нет — без exe STT bundle неполный.
+- **Связанные пути:** `build_stt_helper_en.ps1`, `desktop_stt_helper_service.dart`.
 
 ---
 
@@ -1210,12 +1210,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner.xcodeproj/project.xcworkspace/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner.xcodeproj/project.xcworkspace/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner.xcodeproj/project.xcworkspace/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner.xcodeproj/project.xcworkspace`: Xcode project file bundle for the iOS Counter app target.
+- **Зачем нужна:** Нужна, потому что: Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes, workspace metadata.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds only.
+- **Когда открывать:** Открывать, когда: Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Runner/`, `ios/Flutter/`.
 
 ---
@@ -1234,12 +1234,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner.xcodeproj/xcshareddata/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner.xcodeproj/xcshareddata/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner.xcodeproj/xcshareddata/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner.xcodeproj/xcshareddata`: Xcode project file bundle for the iOS Counter app target.
+- **Зачем нужна:** Нужна, потому что: Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes, workspace metadata.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds only.
+- **Когда открывать:** Открывать, когда: Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Runner/`, `ios/Flutter/`.
 
 ---
@@ -1258,12 +1258,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner.xcworkspace/xcshareddata/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner.xcworkspace/xcshareddata/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner.xcworkspace/xcshareddata/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner.xcworkspace/xcshareddata`: Xcode workspace wrapping the iOS Runner project and CocoaPods.
+- **Зачем нужна:** Нужна, потому что: Developers open `.xcworkspace` (not `.xcodeproj` alone) after `pod install`.
+- **Что здесь лежит:** Здесь лежит: Workspace data linking Runner + Pods.
+- **На что влияет в приложении:** На продукт влияет так: Local iOS development and CI iOS builds using CocoaPods.
+- **Когда открывать:** Открывать, когда: Xcode says open workspace; Pod integration broken.
+- **Можно удалить?** Нет — required for iOS CocoaPods workflow.
 - **Связанные пути:** `ios/Podfile`, `ios/Runner.xcodeproj`.
 
 ---
@@ -1282,12 +1282,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner/Assets.xcassets/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner/Assets.xcassets/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner/Assets.xcassets/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner/Assets.xcassets`: iOS app target — icons, storyboards, Info.plist for iPhone/iPad.
+- **Зачем нужна:** Нужна, потому что: Xcode builds the Flutter iOS app from this target.
+- **Что здесь лежит:** Здесь лежит: Assets, launch screen, native Swift/ObjC glue.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds.
+- **Когда открывать:** Открывать, когда: iOS permissions, icons, launch screen.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Flutter/`.
 
 ---
@@ -1306,12 +1306,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner/Base.lproj/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner/Base.lproj/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner/Base.lproj/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner/Base.lproj`: iOS app target — icons, storyboards, Info.plist for iPhone/iPad.
+- **Зачем нужна:** Нужна, потому что: Xcode builds the Flutter iOS app from this target.
+- **Что здесь лежит:** Здесь лежит: Assets, launch screen, native Swift/ObjC glue.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds.
+- **Когда открывать:** Открывать, когда: iOS permissions, icons, launch screen.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Flutter/`.
 
 ---
@@ -1330,12 +1330,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/diagnostics/` — часть Flutter-приложения (core/diagnostics).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/diagnostics/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/diagnostics`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/diagnostics`: Debug-only logging helpers — startup, voice pipeline, duplicates.
+- **Зачем нужна:** Нужна, потому что: Structured logs for diagnosing perf and desktop voice without spamming release builds.
+- **Что здесь лежит:** Здесь лежит: Small log wrapper files gated by debug/profile flags.
+- **На что влияет в приложении:** На продукт влияет так: Developer diagnostics only.
+- **Когда открывать:** Открывать, когда: Tracing desktop voice steps or startup timing.
+- **Можно удалить?** Нет — used by debug/profile builds.
 - **Связанные пути:** `lib/core/performance/`.
 
 ---
@@ -1354,12 +1354,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/env/` — часть Flutter-приложения (core/env).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/env/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/env`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/env`: Compile-time environment template — copy to gitignored `env.dart` for local secrets/constants.
+- **Зачем нужна:** Нужна, потому что: Some build-time values must not be committed; example file documents the required shape.
+- **Что здесь лежит:** Здесь лежит: `env.dart.example` only in git; real `env.dart` is local.
+- **На что влияет в приложении:** На продукт влияет так: Developer local builds only if env constants are referenced.
+- **Когда открывать:** Открывать, когда: Setting up a new dev machine; adding compile-time constant.
+- **Можно удалить?** Нет — documents required env.dart structure.
 - **Связанные пути:** `.gitignore` entry for `lib/core/env/env.dart`.
 
 ---
@@ -1378,12 +1378,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/navigation/` — часть Flutter-приложения (core/navigation).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/navigation/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/navigation`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/navigation`: Root navigator key and desktop side-rail navigation helpers.
+- **Зачем нужна:** Нужна, потому что: Desktop voice overlay and hidden main window need a global navigator; side rail replaces bottom tabs on wide screens.
+- **Что здесь лежит:** Здесь лежит: `app_navigator.dart` (`appRootNavigatorKey`), `shell_side_navigation.dart`.
+- **На что влияет в приложении:** На продукт влияет так: Desktop/web layout (side nav) and overlay routing above tabs.
+- **Когда открывать:** Открывать, когда: Desktop overlay cannot push routes; side navigation breakpoint wrong.
+- **Можно удалить?** Нет — desktop layout and overlays break.
 - **Связанные пути:** `lib/shell/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.
 
 ---
@@ -1402,12 +1402,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/performance/` — часть Flutter-приложения (core/performance).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/performance/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/performance`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/performance`: Runtime feature flags and optional perf metrics — date strip, warm window, rebuild counters.
+- **Зачем нужна:** Нужна, потому что: Lets developers toggle expensive features or capture frame metrics without shipping debug code to all users.
+- **Что здесь лежит:** Здесь лежит: `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).
+- **На что влияет в приложении:** На продукт влияет так: Perf-sensitive paths: date paging, shell tab stack, diagnostic builds.
+- **Когда открывать:** Открывать, когда: Investigating jank, toggling warm-window kill switch, perf capture tests.
+- **Можно удалить?** Нет — perf tests and diagnostics reference these flags.
 - **Связанные пути:** `test/perf_*`, `lib/data/cache/`.
 
 ---
@@ -1426,12 +1426,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/services/` — часть Flutter-приложения (core/services).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/services/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/services`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/services`: Device services — speech-to-text, desktop voice, tray, hotkeys.
+- **Зачем нужна:** Нужна, потому что: Platform voice and tray behavior cannot live in PocketBase brain code.
+- **Что здесь лежит:** Здесь лежит: Many `desktop_voice_*.dart` modules plus STT helper subprocess client.
+- **На что влияет в приложении:** На продукт влияет так: Windows desktop voice, tray icon, global hotkey; mobile STT locale.
+- **Когда открывать:** Открывать, когда: Desktop voice not recording, hotkey dead, tray missing.
+- **Можно удалить?** Нет — desktop voice product feature.
 - **Связанные пути:** `lib/features/shared/desktop_voice_*.dart`.
 
 ---
@@ -1450,12 +1450,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/time/` — часть Flutter-приложения (core/time).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/time/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/time`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/time`: Wall-clock and timezone math shared by header, Plans Time View, and profile ‘today’ line.
+- **Зачем нужна:** Нужна, потому что: Time bucketing must follow profile timezone law — not device local time — across all tabs.
+- **Что здесь лежит:** Здесь лежит: `app_clock.dart`, `profile_timezone_catalog.dart`, `plan_time_visible_window.dart`, wall-clock formatters.
+- **На что влияет в приложении:** На продукт влияет так: Global header clock, Time View hour window (−3..27 h), timezone picker labels.
+- **Когда открывать:** Открывать, когда: Wrong ‘today’, header TZ label, Time View visible hours, DST label wrong.
+- **Можно удалить?** Нет — timeline and planning time display breaks.
 - **Связанные пути:** `lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`.
 
 ---
@@ -1474,12 +1474,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/widgets/` — часть Flutter-приложения (core/widgets).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/widgets/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/widgets`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/widgets`: Reusable UI building blocks (buttons, cards, headers, pickers) — the design system in code.
+- **Зачем нужна:** Нужна, потому что: One canonical button/card so Plans, Timeline, and Lists look consistent.
+- **Что здесь лежит:** Здесь лежит: `AppButton`, `PlanTimeTaskCard`, date header, timezone picker, chips.
+- **На что влияет в приложении:** На продукт влияет так: Every main tab and most sheets.
+- **Когда открывать:** Открывать, когда: Button style migration, plan card layout, date/time picker, loading/empty states.
+- **Можно удалить?** Нет — features depend on these widgets.
 - **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `lib/features/dev/component_lab_view.dart`.
 
 ---
@@ -1498,12 +1498,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/data/cache/` — часть Flutter-приложения (data/cache).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/data/cache/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `data/cache`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/data/cache`: Performance caches for fast date paging — warm day snapshots and rendered list bodies.
+- **Зачем нужна:** Нужна, потому что: Swiping Timeline/Plans days must stay smooth with large record/plan histories.
+- **Что здесь лежит:** Здесь лежит: `day_snapshot_window.dart`, `rendered_day_body_cache.dart`, `render_snapshot.dart`.
+- **На что влияет в приложении:** На продукт влияет так: Day swipe smoothness on Timeline and Planning; not user-visible data correctness.
+- **Когда открывать:** Открывать, когда: Jank swiping days, stale day content after edit, perf regression.
+- **Можно удалить?** Нет — paging becomes slow or glitchy.
 - **Связанные пути:** `lib/data/records/record_timeline_vm.dart`, `lib/core/performance/runtime_flags.dart`.
 
 ---
@@ -1522,12 +1522,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/data/categories/` — часть Flutter-приложения (data/categories).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/data/categories/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `data/categories`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/data/categories`: Category-management slice of the brain — tree, colors, matching names, and linking records to categories.
+- **Зачем нужна:** Нужна, потому что: Categories organize timeline time, plans, stats, and voice commands like “Price Reporter …”.
+- **Что здесь лежит:** Здесь лежит: Seven focused `part` files; each handles one category job (see file entries below).
+- **На что влияет в приложении:** На продукт влияет так: Category picker, category manager screen, record category on start/stop, plan category chips, stats by category.
+- **Когда открывать:** Открывать, когда: Categories missing, wrong color/icon, fuzzy match picks wrong client, records saved without category.
+- **Можно удалить?** Нет — category features stop working.
 - **Связанные пути:** `lib/data/category_service.dart`, `lib/features/categories/`.
 
 ---
@@ -1546,12 +1546,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/data/local_sync/` — часть Flutter-приложения (data/local_sync).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/data/local_sync/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `data/local_sync`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/data/local_sync`: Offline queue — remembers record/plan changes when the network or login fails, then retries later.
+- **Зачем нужна:** Нужна, потому что: Life OS promises tap-first UX; users must not lose starts/stops/edits on bad Wi‑Fi.
+- **Что здесь лежит:** Здесь лежит: SharedPreferences outboxes, pending-count state, connectivity listener to flush queues.
+- **На что влияет в приложении:** На продукт влияет так: Top offline/sync banner, background retry on reconnect, auth-paused state.
+- **Когда открывать:** Открывать, когда: “Pending sync” stuck, changes lost offline, banner tap does nothing.
+- **Можно удалить?** Нет — offline-first behavior is shipped product law.
 - **Связанные пути:** `lib/app_shell.dart` offline banner, `docs/UX_CONTRACT.md`.
 
 ---
@@ -1570,12 +1570,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/data/models/` — часть Flutter-приложения (data/models).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/data/models/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `data/models`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/data/models`: Plain data shapes (records, plans, categories, tags, profile) — no network code.
+- **Зачем нужна:** Нужна, потому что: Same field names everywhere; aligns with `docs/DATA_MAP.md` so UI and brain agree on what a “record” is.
+- **Что здесь лежит:** Здесь лежит: Dart classes like `TimelineRecord`, `PlanningTask`, `CategoryRule`, `Tag`.
+- **На что влияет в приложении:** На продукт влияет так: Every screen that displays or edits user data.
+- **Когда открывать:** Открывать, когда: Wrong date on timeline, parsing errors after PocketBase schema change.
+- **Можно удалить?** Нет — types are required across the app.
 - **Связанные пути:** `lib/data/models.dart` barrel, `docs/DATA_MAP.md`.
 
 ---
@@ -1594,12 +1594,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/data/plans/` — часть Flutter-приложения (data/plans).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/data/plans/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `data/plans`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/data/plans`: Plans and lists slice of the brain — scheduled tasks, backlog items, recurrence, tags on plans.
+- **Зачем нужна:** Нужна, потому что: Planning tab, Lists tab, and calendar rows all read/write the same `plans` table through these modules.
+- **Что здесь лежит:** Здесь лежит: Projection for Time View, RRULE expansion, tag sync, plan cache, offline plan outbox.
+- **На что влияет в приложении:** На продукт влияет так: Plans tab, Time View layout, Lists tab, plan edit sheets, plan alarms.
+- **Когда открывать:** Открывать, когда: Plans don’t save, recurrence wrong, Time View cards misplaced, list toggle offline.
+- **Можно удалить?** Нет — planning and lists break.
 - **Связанные пути:** `lib/data/plan_service.dart`, `lib/features/planning/`, `lib/features/lists/`.
 
 ---
@@ -1618,12 +1618,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/data/profile/` — часть Flutter-приложения (data/profile).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/data/profile/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `data/profile`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/data/profile`: User profile and tags slice of the brain — timezone, settings, tag catalog, admin flag.
+- **Зачем нужна:** Нужна, потому что: Wall-clock “today”, language, tag chips, and tag manager all depend on profile + tag rows in PocketBase.
+- **Что здесь лежит:** Здесь лежит: Profile hydration, settings PATCH, timezone math, tag CRUD, tag display prefs.
+- **На что влияет в приложении:** На продукт влияет так: Profile screen, tag settings, timezone header, Component Lab admin gate.
+- **Когда открывать:** Открывать, когда: Wrong “today” line, timezone not sticking, tags missing on cards, settings won’t save.
+- **Можно удалить?** Нет — profile and tags break.
 - **Связанные пути:** `lib/data/profile_service.dart`, `lib/features/profile/`.
 
 ---
@@ -1642,12 +1642,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/data/records/` — часть Flutter-приложения (data/records).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/data/records/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `data/records`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/data/records`: Timeline record slice of the brain — start/stop timer, edit history, realtime updates, offline queue.
+- **Зачем нужна:** Нужна, потому что: Timeline is the core time tracker; this folder splits record logic into readable modules.
+- **Что здесь лежит:** Здесь лежит: CRUD, optimistic UI, realtime subscription, timeline list builders, overlap/Highlander rules, outbox.
+- **На что влияет в приложении:** На продукт влияет так: Timeline tab, record edit sheet, Wear lite timer, voice “start record”.
+- **Когда открывать:** Открывать, когда: Timer won’t start/stop, wrong day bucket, duplicate running records, offline start fails.
+- **Можно удалить?** Нет — timeline tracking breaks.
 - **Связанные пути:** `lib/data/record_service.dart`, `lib/features/timeline/`.
 
 ---
@@ -1666,12 +1666,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/auth/` — часть Flutter-приложения (features/auth).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/auth/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/auth`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/auth`: Sign-in, registration, OAuth, and password-reset screens before the main app loads.
+- **Зачем нужна:** Нужна, потому что: Users must authenticate to PocketBase before Timeline/Plans data is available.
+- **Что здесь лежит:** Здесь лежит: `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart`.
+- **На что влияет в приложении:** На продукт влияет так: Login gate shown from `main.dart` when session invalid.
+- **Когда открывать:** Открывать, когда: OAuth redirect broken, login form, register flow, password reset UI.
+- **Можно удалить?** Нет — users cannot sign in.
 - **Связанные пути:** `lib/data/auth_bridge.dart`, `docs/DEPLOY.md` OAuth admin section.
 
 ---
@@ -1690,12 +1690,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/calendar/` — часть Flutter-приложения (features/calendar).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/calendar/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/calendar`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/calendar`: Calendar tab UI — month view of plans (when enabled in navigation).
+- **Зачем нужна:** Нужна, потому что: Alternative plan browsing by calendar month alongside Plans tab list/Time View.
+- **Что здесь лежит:** Здесь лежит: `calendar_view.dart`.
+- **На что влияет в приложении:** На продукт влияет так: Calendar tab in bottom/side navigation (when present in shell).
+- **Когда открывать:** Открывать, когда: Calendar month layout, plan dots on dates, calendar navigation.
+- **Можно удалить?** Возможно — if calendar tab removed from shell; keep while route exists.
 - **Связанные пути:** `lib/features/planning/`, plan card widgets in `core/widgets/`.
 
 ---
@@ -1714,12 +1714,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/categories/` — часть Flutter-приложения (features/categories).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/categories/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/categories`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/categories`: Category manager UI — tree, create/edit, visibility preferences.
+- **Зачем нужна:** Нужна, потому что: Users organize work/personal/client categories from More → Categories.
+- **Что здесь лежит:** Здесь лежит: List view, recursive tree picker, create dialog, visibility prefs.
+- **На что влияет в приложении:** На продукт влияет так: More → Categories; category pickers elsewhere call into these widgets.
+- **Когда открывать:** Открывать, когда: Create category, reorder, archive, pick category in tree dialog.
+- **Можно удалить?** Нет — category management UI gone.
 - **Связанные пути:** `lib/data/categories/`.
 
 ---
@@ -1738,12 +1738,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/dev/` — часть Flutter-приложения (features/dev).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/dev/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/dev`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/dev`: Admin-only Component Lab — design-system preview, not shown to normal users.
+- **Зачем нужна:** Нужна, потому что: Validates buttons/cards/chips against `docs/DESIGN_SYSTEM.md` before production migration.
+- **Что здесь лежит:** Здесь лежит: Component lab page and card demos.
+- **На что влияет в приложении:** На продукт влияет так: More menu only when `profiles.is_admin` is true.
+- **Когда открывать:** Открывать, когда: Design-system QA, V7 component acceptance.
+- **Можно удалить?** Возможно — safe for product runtime, but V7 work uses it; keep for admins.
 - **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
 
 ---
@@ -1762,12 +1762,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/lists/` — часть Flutter-приложения (features/lists).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/lists/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/lists`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/lists`: Lists tab UI — backlog/checklist tasks with filters, bulk select, export.
+- **Зачем нужна:** Нужна, потому что: Third productivity tab for non-scheduled list items (same `plans` table, backlog mode).
+- **Что здесь лежит:** Здесь лежит: Filters, cards, inline add, bulk bar, clipboard export.
+- **На что влияет в приложении:** На продукт влияет так: Lists tab (bottom nav index 3).
+- **Когда открывать:** Открывать, когда: List filters, checkbox done, bulk delete, export visible list as text.
+- **Можно удалить?** Нет — Lists tab disappears.
 - **Связанные пути:** `lib/data/plan_service.dart`.
 
 ---
@@ -1786,12 +1786,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/planning/` — часть Flutter-приложения (features/planning).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/planning/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/planning`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/planning`: Plans tab UI — day pager, plan list, Time View canvas, plan settings, bulk edit.
+- **Зачем нужна:** Нужна, потому что: This is what users see on the second bottom tab (Plans).
+- **Что здесь лежит:** Здесь лежит: Large `planning_page.dart` plus `time_view/`, `settings/`, `widgets/` subfolders.
+- **На что влияет в приложении:** На продукт влияет так: Plans tab only (plus calendar rows that reuse plan cards).
+- **Когда открывать:** Открывать, когда: Plan cards wrong, Time View drag broken, day swipe on Plans tab, play/start plan.
+- **Можно удалить?** Нет — Plans tab disappears.
 - **Связанные пути:** `lib/shell/` tab host, `lib/data/plan_service.dart`.
 
 ---
@@ -1810,12 +1810,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/profile/` — часть Flutter-приложения (features/profile).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/profile/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/profile`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/profile`: Profile and tag settings screens from the More menu.
+- **Зачем нужна:** Нужна, потому что: Account, timezone, language, tag manager, desktop voice settings (Windows).
+- **Что здесь лежит:** Здесь лежит: Profile view, settings sections, tag manager pages, desktop voice diagnostics.
+- **На что влияет в приложении:** На продукт влияет так: More → Profile, tag settings routes, desktop voice card.
+- **Когда открывать:** Открывать, когда: Login profile, change timezone, manage tags, desktop hotkey settings.
+- **Можно удалить?** Нет — profile/settings unavailable.
 - **Связанные пути:** `lib/data/profile/`, `lib/features/dev/` (admin only).
 
 ---
@@ -1834,12 +1834,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/shared/` — часть Flutter-приложения (features/shared).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/shared/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/shared`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/shared`: Shared edit sheets and voice UI used by Timeline, Plans, and Lists.
+- **Зачем нужна:** Нужна, потому что: One edit experience for plans and records — Omni date/time picker, tags, checklist, offline banner.
+- **Что здесь лежит:** Здесь лежит: Activity detail router, planning/record edit sheets, edit_sheet/* helpers, voice widgets.
+- **На что влияет в приложении:** На продукт влияет так: Any tap-to-edit on plans/records; mobile voice sheet; desktop voice panel.
+- **Когда открывать:** Открывать, когда: Edit sheet save, date picker, tags on plan, voice input sheet.
+- **Можно удалить?** Нет — edit flows break on all tabs.
 - **Связанные пути:** `lib/shell/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.
 
 ---
@@ -1858,12 +1858,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/stats/` — часть Flutter-приложения (features/stats).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/stats/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/stats`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/stats`: Productivity stats views embedded inside Timeline — hours by category, plan vs fact.
+- **Зачем нужна:** Нужна, потому что: Stats toggle on Timeline header switches list mode to analytics without a separate app area.
+- **Что здесь лежит:** Здесь лежит: `stats_view.dart`, `plan_vs_fact_tab.dart`.
+- **На что влияет в приложении:** На продукт влияет так: Timeline tab when user taps Stats segmented control.
+- **Когда открывать:** Открывать, когда: Stats totals wrong, plan-vs-fact chart, stats tab toggle.
+- **Можно удалить?** Нет — Timeline stats mode disappears.
 - **Связанные пути:** `lib/data/categories/category_stats.dart`, `lib/features/timeline/timeline_header_controls.dart`.
 
 ---
@@ -1882,12 +1882,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/timeline/` — часть Flutter-приложения (features/timeline).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/timeline/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/timeline`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/timeline`: Timeline tab UI — day pager, running/stopped record cards, stats entry.
+- **Зачем нужна:** Нужна, потому что: Primary time-tracking screen (first bottom tab).
+- **Что здесь лежит:** Здесь лежит: Swipe wrapper, day list, record cards, header controls (stats toggle, input).
+- **На что влияет в приложении:** На продукт влияет так: Timeline tab and embedded stats view.
+- **Когда открывать:** Открывать, когда: Records on wrong day, now-line, swipe between days, record card tap/edit.
+- **Можно удалить?** Нет — Timeline tab disappears.
 - **Связанные пути:** `lib/data/record_service.dart`, `ActivityDetailSheet`.
 
 ---
@@ -1906,12 +1906,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/wear/` — часть Flutter-приложения (features/wear).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/wear/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/wear`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/wear`: Wear OS watch companion — simplified timer screen on Android watches.
+- **Зачем нужна:** Нужна, потому что: Watch form factor needs a lite UI and `loadInitialDataWearLite` brain path.
+- **Что здесь лежит:** Здесь лежит: `wear_timer_screen.dart`, `wear_main_wrapper.dart`, platform channel shims.
+- **На что влияет в приложении:** На продукт влияет так: Wear OS APK companion only — not phone Timeline UI.
+- **Когда открывать:** Открывать, когда: Watch timer sync, Wear build entry, companion crashes on watch.
+- **Можно удалить?** Нет — если нужен Wear OS companion.
 - **Связанные пути:** `lib/data/db_core.dart` Wear lite load, `android/` Wear module if configured.
 
 ---
@@ -1930,12 +1930,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/l10n/langs/` — часть Flutter-приложения (l10n/langs).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/l10n/langs/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `l10n/langs`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/l10n/langs`: Per-language string maps for UI labels.
+- **Зачем нужна:** Нужна, потому что: Each locale file supplies translated text for dictionary keys.
+- **Что здесь лежит:** Здесь лежит: en.dart and ru.dart are canonical; others partial.
+- **На что влияет в приложении:** На продукт влияет так: All visible UI text when user switches language.
+- **Когда открывать:** Открывать, когда: Missing translation key, wrong language string.
+- **Можно удалить?** Нет — required for localization.
 - **Связанные пути:** `lib/l10n/dictionary.dart`, `scripts/sync_locales.dart`.
 
 ---
@@ -1954,12 +1954,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner.xcodeproj/project.xcworkspace/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner.xcodeproj/project.xcworkspace/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner.xcodeproj/project.xcworkspace/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner.xcodeproj/project.xcworkspace`: Xcode project for macOS desktop Counter `.app` target.
+- **Зачем нужна:** Нужна, потому что: macOS desktop builds compile through this Xcode project.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes for macOS Runner.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop distribution builds.
+- **Когда открывать:** Открывать, когда: macOS Xcode build/sign errors.
+- **Можно удалить?** Нет — нужен для сборки macOS desktop.
 - **Связанные пути:** `macos/Runner/`, `macos/Flutter/`.
 
 ---
@@ -1978,12 +1978,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner.xcodeproj/xcshareddata/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner.xcodeproj/xcshareddata/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner.xcodeproj/xcshareddata/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner.xcodeproj/xcshareddata`: Xcode project for macOS desktop Counter `.app` target.
+- **Зачем нужна:** Нужна, потому что: macOS desktop builds compile through this Xcode project.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes for macOS Runner.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop distribution builds.
+- **Когда открывать:** Открывать, когда: macOS Xcode build/sign errors.
+- **Можно удалить?** Нет — нужен для сборки macOS desktop.
 - **Связанные пути:** `macos/Runner/`, `macos/Flutter/`.
 
 ---
@@ -2002,12 +2002,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner.xcworkspace/xcshareddata/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner.xcworkspace/xcshareddata/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner.xcworkspace/xcshareddata/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner.xcworkspace/xcshareddata`: Xcode workspace for macOS Counter desktop app.
+- **Зачем нужна:** Нужна, потому что: Opens Runner + Flutter macOS pods together in Xcode.
+- **Что здесь лежит:** Здесь лежит: Workspace contents and shared IDE checks.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop development in Xcode.
+- **Когда открывать:** Открывать, когда: Workspace won't open; CocoaPods integration on macOS.
+- **Можно удалить?** Нет — required for macOS Xcode workflow.
 - **Связанные пути:** `macos/Runner.xcodeproj`.
 
 ---
@@ -2026,12 +2026,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner/Assets.xcassets/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner/Assets.xcassets/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner/Assets.xcassets/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner/Assets.xcassets`: macOS app bundle target — menus, icons, entitlements.
+- **Зачем нужна:** Нужна, потому что: Apple requires Xcode target for macOS Flutter apps.
+- **Что здесь лежит:** Здесь лежит: Swift runner, assets, entitlements plist.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop builds.
+- **Когда открывать:** Открывать, когда: macOS signing, sandbox, menu bar.
+- **Можно удалить?** Нет — if macOS builds are kept.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -2050,12 +2050,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner/Base.lproj/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner/Base.lproj/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner/Base.lproj/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner/Base.lproj`: macOS app bundle target — menus, icons, entitlements.
+- **Зачем нужна:** Нужна, потому что: Apple requires Xcode target for macOS Flutter apps.
+- **Что здесь лежит:** Здесь лежит: Swift runner, assets, entitlements plist.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop builds.
+- **Когда открывать:** Открывать, когда: macOS signing, sandbox, menu bar.
+- **Можно удалить?** Нет — if macOS builds are kept.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -2074,12 +2074,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner/Configs/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner/Configs/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner/Configs/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner/Configs`: macOS app bundle target — menus, icons, entitlements.
+- **Зачем нужна:** Нужна, потому что: Apple requires Xcode target for macOS Flutter apps.
+- **Что здесь лежит:** Здесь лежит: Swift runner, assets, entitlements plist.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop builds.
+- **Когда открывать:** Открывать, когда: macOS signing, sandbox, menu bar.
+- **Можно удалить?** Нет — if macOS builds are kept.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -2098,12 +2098,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Windows: `windows/runner/resources/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Windows-версию из файлов под `windows/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `windows/runner/resources/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Windows — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Windows или native-проблема в `windows/runner/resources/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `windows/runner/resources`: Native Windows host that launches the Flutter desktop window.
+- **Зачем нужна:** Нужна, потому что: Windows needs a C++ runner exe that embeds Flutter engine.
+- **Что здесь лежит:** Здесь лежит: main.cpp, window creation, plugin registrant.
+- **На что влияет в приложении:** На продукт влияет так: Windows desktop `.exe` and installer contents.
+- **Когда открывать:** Открывать, когда: Windows desktop won’t start, window title wrong.
+- **Можно удалить?** Нет — нужен для сборки Windows desktop.
 - **Связанные пути:** `installer/windows/`.
 
 ---
@@ -2122,12 +2122,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/debug/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/debug/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/debug/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/debug`: Android debug build variant manifest overrides.
+- **Зачем нужна:** Нужна, потому что: Debug APK may enable extra logging or different application id suffix.
+- **Что здесь лежит:** Здесь лежит: Debug `AndroidManifest.xml` merged into debug builds.
+- **На что влияет в приложении:** На продукт влияет так: Debug Android installs only — not release APK.
+- **Когда открывать:** Открывать, когда: Debug-only permission or manifest merge issue.
+- **Можно удалить?** Нет — нужен для debug-сборки Android.
 - **Связанные пути:** `android/app/src/main/AndroidManifest.xml`.
 
 ---
@@ -2146,12 +2146,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main`: Android app module source — manifest, resources, Kotlin entry.
+- **Зачем нужна:** Нужна, потому что: Gradle compiles this tree into the installable APK.
+- **Что здесь лежит:** Здесь лежит: Manifest, res/, kotlin/.
+- **На что влияет в приложении:** На продукт влияет так: Android APK contents and permissions.
+- **Когда открывать:** Открывать, когда: Permission denied, wrong app label, manifest merge errors.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/build.gradle`.
 
 ---
@@ -2170,12 +2170,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/profile/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/profile/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/profile/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/profile`: Android profile build variant manifest (performance profiling).
+- **Зачем нужна:** Нужна, потому что: Profile mode uses separate manifest merge for Flutter profile builds.
+- **Что здесь лежит:** Здесь лежит: Profile `AndroidManifest.xml`.
+- **На что влияет в приложении:** На продукт влияет так: Profile APK used for performance measurement.
+- **Когда открывать:** Открывать, когда: Profile build manifest merge errors.
+- **Можно удалить?** Нет — нужен для profile-сборки Android.
 - **Связанные пути:** `android/app/src/main/`.
 
 ---
@@ -2194,12 +2194,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata`: Xcode project file bundle for the iOS Counter app target.
+- **Зачем нужна:** Нужна, потому что: Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes, workspace metadata.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds only.
+- **Когда открывать:** Открывать, когда: Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Runner/`, `ios/Flutter/`.
 
 ---
@@ -2218,12 +2218,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner.xcodeproj/xcshareddata/xcschemes/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner.xcodeproj/xcshareddata/xcschemes/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner.xcodeproj/xcshareddata/xcschemes/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner.xcodeproj/xcshareddata/xcschemes`: Xcode project file bundle for the iOS Counter app target.
+- **Зачем нужна:** Нужна, потому что: Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes, workspace metadata.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds only.
+- **Когда открывать:** Открывать, когда: Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Runner/`, `ios/Flutter/`.
 
 ---
@@ -2242,12 +2242,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner/Assets.xcassets/AppIcon.appiconset/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner/Assets.xcassets/AppIcon.appiconset/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner/Assets.xcassets/AppIcon.appiconset/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner/Assets.xcassets/AppIcon.appiconset`: iOS app target — icons, storyboards, Info.plist for iPhone/iPad.
+- **Зачем нужна:** Нужна, потому что: Xcode builds the Flutter iOS app from this target.
+- **Что здесь лежит:** Здесь лежит: Assets, launch screen, native Swift/ObjC glue.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds.
+- **Когда открывать:** Открывать, когда: iOS permissions, icons, launch screen.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Flutter/`.
 
 ---
@@ -2266,12 +2266,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка iOS: `ios/Runner/Assets.xcassets/LaunchImage.imageset/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает iOS-версию из файлов под `ios/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `ios/Runner/Assets.xcassets/LaunchImage.imageset/`.
-- **На что влияет в приложении:** Только сборка и native-поведение iOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки iOS или native-проблема в `ios/Runner/Assets.xcassets/LaunchImage.imageset/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `ios/Runner/Assets.xcassets/LaunchImage.imageset`: iOS app target — icons, storyboards, Info.plist for iPhone/iPad.
+- **Зачем нужна:** Нужна, потому что: Xcode builds the Flutter iOS app from this target.
+- **Что здесь лежит:** Здесь лежит: Assets, launch screen, native Swift/ObjC glue.
+- **На что влияет в приложении:** На продукт влияет так: iOS App Store / TestFlight builds.
+- **Когда открывать:** Открывать, когда: iOS permissions, icons, launch screen.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Flutter/`.
 
 ---
@@ -2290,12 +2290,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/widgets/plan_card/` — часть Flutter-приложения (core/widgets/plan_card).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/widgets/plan_card/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/widgets/plan_card`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/widgets/plan_card`: Compatibility re-exports pointing to `plan_time_task_card/` canonical files.
+- **Зачем нужна:** Нужна, потому что: Older imports used `plan_card/` path during design-system migration.
+- **Что здесь лежит:** Здесь лежит: Thin export stubs only.
+- **На что влияет в приложении:** На продукт влияет так: Legacy import paths still resolving.
+- **Когда открывать:** Открывать, когда: Removing migration stubs after all imports updated.
+- **Можно удалить?** Возможно — after confirming no imports use `plan_card/` path.
 - **Связанные пути:** `lib/core/widgets/plan_time_task_card/`.
 
 ---
@@ -2314,12 +2314,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/core/widgets/plan_time_task_card/` — часть Flutter-приложения (core/widgets/plan_time_task_card).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/core/widgets/plan_time_task_card/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `core/widgets/plan_time_task_card`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/core/widgets/plan_time_task_card`: Plan task card visuals — list rows, Time View blocks, calendar rows (CardPlan design).
+- **Зачем нужна:** Нужна, потому что: Plans look the same in list mode, Time View, and calendar; play/checkbox/menu shared.
+- **Что здесь лежит:** Здесь лежит: Split modules: density, geometry, layouts, tags, progress, controls.
+- **На что влияет в приложении:** На продукт влияет так: Planning cards, Time View blocks, calendar plan rows.
+- **Когда открывать:** Открывать, когда: Card height, tag pills, play button, Time View density bands.
+- **Можно удалить?** Нет — plan UI breaks everywhere.
 - **Связанные пути:** `lib/features/planning/`, `plan_card_layouts.dart`.
 
 ---
@@ -2338,12 +2338,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/planning/settings/` — часть Flutter-приложения (features/planning/settings).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/planning/settings/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/planning/settings`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/planning/settings`: Planning settings sheets — visible hours, default category/timezone search.
+- **Зачем нужна:** Нужна, потому что: Time View and plan defaults need dedicated settings UI.
+- **Что здесь лежит:** Здесь лежит: Bounds slider, record→plan link prefs, no-tags chip settings.
+- **На что влияет в приложении:** На продукт влияет так: Plans → settings routes and Time View configuration.
+- **Когда открывать:** Открывать, когда: Visible hour range, default plan category/timezone search.
+- **Можно удалить?** Нет — plan settings unavailable.
 - **Связанные пути:** `time_view/time_view_settings_sheet.dart`.
 
 ---
@@ -2362,12 +2362,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/planning/time_view/` — часть Flutter-приложения (features/planning/time_view).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/planning/time_view/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/planning/time_view`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/planning/time_view`: Planning “Time View” — proportional day timeline with draggable plan blocks.
+- **Зачем нужна:** Нужна, потому что: Visual schedule mode: plans positioned by clock time, resize/drag, hour grid.
+- **Что здесь лежит:** Здесь лежит: Canvas, card layer, drag/resize controllers, settings sheet, search for default times.
+- **На что влияет в приложении:** На продукт влияет так: Time View sub-mode inside Plans tab.
+- **Когда открывать:** Открывать, когда: Cards overlap wrong, drag/resize jank, hour scale, fixed-time tags.
+- **Можно удалить?** Нет — Time View is a core Plans feature.
 - **Связанные пути:** `planning_page.dart`, `PlanTimeTaskCard` widgets in `core/widgets/`.
 
 ---
@@ -2386,12 +2386,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/planning/widgets/` — часть Flutter-приложения (features/planning/widgets).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/planning/widgets/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/planning/widgets`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/planning/widgets`: Smaller Planning tab widgets — filters, bulk bar, empty states, menus.
+- **Зачем нужна:** Нужна, потому что: Split from giant planning page for readability and guard compliance.
+- **Что здесь лежит:** Здесь лежит: Bulk selection bar, filter controls, quick-add strip, card menus.
+- **На что влияет в приложении:** На продукт влияет так: Plans tab list mode UI pieces.
+- **Когда открывать:** Открывать, когда: Bulk edit bar, plan card menu, empty state wrong.
+- **Можно удалить?** Нет — Plans tab UI breaks.
 - **Связанные пути:** `planning_page.dart`.
 
 ---
@@ -2410,12 +2410,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/profile/settings/` — часть Flutter-приложения (features/profile/settings).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/profile/settings/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/profile/settings`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/profile/settings`: Profile settings sections — account, notifications, security.
+- **Зачем нужна:** Нужна, потому что: Split settings page into focused sections for More → Settings.
+- **Что здесь лежит:** Здесь лежит: Logout row, notification permission, password reset, biometric lock.
+- **На что влияет в приложении:** На продукт влияет так: Settings routes from shell and profile.
+- **Когда открывать:** Открывать, когда: Logout, notification permission, password reset UI.
+- **Можно удалить?** Нет — settings sections missing.
 - **Связанные пути:** `lib/shell/settings_page.dart`.
 
 ---
@@ -2434,12 +2434,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Код приложения в `lib/features/shared/edit_sheet/` — часть Flutter-приложения (features/shared/edit_sheet).
-- **Зачем нужна:** Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.
-- **Что здесь лежит:** Dart-модули в `lib/features/shared/edit_sheet/` — перечень файлов ниже.
-- **На что влияет в приложении:** Поведение и UI модуля, названного в пути папки.
-- **Когда открывать:** Правки или баги в `features/shared/edit_sheet`.
-- **Можно удалить?** Нет — нужен для работы приложения.
+- **Что это за папка:** Сегмент `lib/features/shared/edit_sheet`: Helpers inside plan/record edit bottom sheets.
+- **Зачем нужна:** Нужна, потому что: Autosave, time picker, checklist, repeat rules shared between plan and record sheets.
+- **Что здесь лежит:** Здесь лежит: Omni picker entry, debounced autosave, RRULE helpers, Quill toolbar.
+- **На что влияет в приложении:** На продукт влияет так: Any edit sheet save, date/time change, checklist rows.
+- **Когда открывать:** Открывать, когда: Edit sheet autosave, date picker, repeat preset wrong.
+- **Можно удалить?** Нет — edit sheets break.
 - **Связанные пути:** `activity_detail_sheet.dart`.
 
 ---
@@ -2458,12 +2458,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata`: Xcode project for macOS desktop Counter `.app` target.
+- **Зачем нужна:** Нужна, потому что: macOS desktop builds compile through this Xcode project.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes for macOS Runner.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop distribution builds.
+- **Когда открывать:** Открывать, когда: macOS Xcode build/sign errors.
+- **Можно удалить?** Нет — нужен для сборки macOS desktop.
 - **Связанные пути:** `macos/Runner/`, `macos/Flutter/`.
 
 ---
@@ -2482,12 +2482,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner.xcodeproj/xcshareddata/xcschemes/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner.xcodeproj/xcshareddata/xcschemes/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner.xcodeproj/xcshareddata/xcschemes/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner.xcodeproj/xcshareddata/xcschemes`: Xcode project for macOS desktop Counter `.app` target.
+- **Зачем нужна:** Нужна, потому что: macOS desktop builds compile through this Xcode project.
+- **Что здесь лежит:** Здесь лежит: `project.pbxproj`, shared schemes for macOS Runner.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop distribution builds.
+- **Когда открывать:** Открывать, когда: macOS Xcode build/sign errors.
+- **Можно удалить?** Нет — нужен для сборки macOS desktop.
 - **Связанные пути:** `macos/Runner/`, `macos/Flutter/`.
 
 ---
@@ -2506,12 +2506,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка macOS: `macos/Runner/Assets.xcassets/AppIcon.appiconset/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает macOS-версию из файлов под `macos/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `macos/Runner/Assets.xcassets/AppIcon.appiconset/`.
-- **На что влияет в приложении:** Только сборка и native-поведение macOS — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки macOS или native-проблема в `macos/Runner/Assets.xcassets/AppIcon.appiconset/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `macos/Runner/Assets.xcassets/AppIcon.appiconset`: macOS app bundle target — menus, icons, entitlements.
+- **Зачем нужна:** Нужна, потому что: Apple requires Xcode target for macOS Flutter apps.
+- **Что здесь лежит:** Здесь лежит: Swift runner, assets, entitlements plist.
+- **На что влияет в приложении:** На продукт влияет так: macOS desktop builds.
+- **Когда открывать:** Открывать, когда: macOS signing, sandbox, menu bar.
+- **Можно удалить?** Нет — if macOS builds are kept.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -2530,12 +2530,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/kotlin/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/kotlin/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/kotlin/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/kotlin`: Kotlin entry point where Flutter attaches to Android.
+- **Зачем нужна:** Нужна, потому что: Android OS launches `MainActivity` which boots the Flutter engine.
+- **Что здесь лежит:** Здесь лежит: `MainActivity.kt` — minimal Flutter embedding.
+- **На что влияет в приложении:** На продукт влияет так: Android app startup only.
+- **Когда открывать:** Открывать, когда: Android crash on launch, deep link handling at native layer.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `AndroidManifest.xml`.
 
 ---
@@ -2554,12 +2554,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2578,12 +2578,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/kotlin/com/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/kotlin/com/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/kotlin/com/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/kotlin/com`: Kotlin entry point where Flutter attaches to Android.
+- **Зачем нужна:** Нужна, потому что: Android OS launches `MainActivity` which boots the Flutter engine.
+- **Что здесь лежит:** Здесь лежит: `MainActivity.kt` — minimal Flutter embedding.
+- **На что влияет в приложении:** На продукт влияет так: Android app startup only.
+- **Когда открывать:** Открывать, когда: Android crash on launch, deep link handling at native layer.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `AndroidManifest.xml`.
 
 ---
@@ -2602,12 +2602,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/drawable/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/drawable/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/drawable/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/drawable`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2626,12 +2626,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/drawable-v21/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/drawable-v21/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/drawable-v21/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/drawable-v21`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2650,12 +2650,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/mipmap-hdpi/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/mipmap-hdpi/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/mipmap-hdpi/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/mipmap-hdpi`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2674,12 +2674,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/mipmap-mdpi/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/mipmap-mdpi/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/mipmap-mdpi/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/mipmap-mdpi`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2698,12 +2698,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/mipmap-xhdpi/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/mipmap-xhdpi/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/mipmap-xhdpi/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/mipmap-xhdpi`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2722,12 +2722,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/mipmap-xxhdpi/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/mipmap-xxhdpi/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/mipmap-xxhdpi/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/mipmap-xxhdpi`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2746,12 +2746,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/mipmap-xxxhdpi/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/mipmap-xxxhdpi/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/mipmap-xxxhdpi/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/mipmap-xxxhdpi`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2770,12 +2770,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/values/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/values/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/values/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/values`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2794,12 +2794,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/res/values-night/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/res/values-night/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/res/values-night/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/res/values-night`: Android visual resources — splash background, themes, launcher icons.
+- **Зачем нужна:** Нужна, потому что: Android packages drawables and styles separately from Dart code.
+- **Что здесь лежит:** Здесь лежит: XML styles, splash drawable, mipmap icons.
+- **На что влияет в приложении:** На продукт влияет так: Splash screen and Android-native chrome only.
+- **Когда открывать:** Открывать, когда: Splash flash, theme colors on Android launch.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/app/`.
 
 ---
@@ -2818,12 +2818,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/kotlin/com/example/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/kotlin/com/example/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/kotlin/com/example/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/kotlin/com/example`: Kotlin entry point where Flutter attaches to Android.
+- **Зачем нужна:** Нужна, потому что: Android OS launches `MainActivity` which boots the Flutter engine.
+- **Что здесь лежит:** Здесь лежит: `MainActivity.kt` — minimal Flutter embedding.
+- **На что влияет в приложении:** На продукт влияет так: Android app startup only.
+- **Когда открывать:** Открывать, когда: Android crash on launch, deep link handling at native layer.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `AndroidManifest.xml`.
 
 ---
@@ -2842,12 +2842,12 @@ EN:
 
 RU:
 
-- **Что это за папка:** Платформенная папка Android: `android/app/src/main/kotlin/com/example/counter/` — native-обёртка и конфиги Flutter для этой платформы.
-- **Зачем нужна:** Flutter собирает Android-версию из файлов под `android/`; это не Dart-код экранов.
-- **Что здесь лежит:** Native-конфиги и generated-файлы embedder в `android/app/src/main/kotlin/com/example/counter/`.
-- **На что влияет в приложении:** Только сборка и native-поведение Android — не экраны в `lib/`.
-- **Когда открывать:** Ошибка сборки Android или native-проблема в `android/app/src/main/kotlin/com/example/counter/`.
-- **Можно удалить?** Нет — нужна для сборки платформы.
+- **Что это за папка:** Сегмент `android/app/src/main/kotlin/com/example/counter`: Kotlin entry point where Flutter attaches to Android.
+- **Зачем нужна:** Нужна, потому что: Android OS launches `MainActivity` which boots the Flutter engine.
+- **Что здесь лежит:** Здесь лежит: `MainActivity.kt` — minimal Flutter embedding.
+- **На что влияет в приложении:** На продукт влияет так: Android app startup only.
+- **Когда открывать:** Открывать, когда: Android crash on launch, deep link handling at native layer.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `AndroidManifest.xml`.
 
 ---
@@ -2869,13 +2869,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `flutter_expert.mdc` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `flutter_expert.mdc`.
-- **Содержимое:** Содержимое `flutter_expert.mdc` — открыть файл при правках.
-- **Обязанности:** Роль `flutter_expert.mdc` в модуле `.cursor/rules`.
+- **Что это:** Назначение файла: Authoritative Cursor AI rules — architecture iron laws for this repo.
+- **Зачем:** Нужен, потому что: Cursor agents must follow PocketBase, optimistic UI, and structure rules.
+- **Содержимое:** Содержит: Long-form expert rules referenced from `.cursorrules`.
+- **Обязанности:** Отвечает за: Bind AI edits to governing architecture.
 - **Когда открывать:** Когда ломается поведение, связанное с `flutter_expert.mdc`.
 - **Можно удалить?** Нет — конфигурация/инструмент репозитория.
-- **Связано с:** Связи файла `flutter_expert.mdc` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `.cursor` tooling.
 - **Слой:** Вспомогательный файл репозитория.
 
 
@@ -2900,7 +2900,7 @@ RU:
 - **Обязанности:** Совместимость: чтобы агент Cursor подхватил настоящие правила.
 - **Когда открывать:** Агент Cursor нарушает архитектуру — проверить pointer и открыть `flutter_expert.mdc`.
 - **Можно удалить?** Нет — Cursor ожидает rules в root или `.cursor/rules/`.
-- **Связано с:** Связи файла `.cursorrules` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: `.cursor/rules/flutter_expert.mdc`, `docs/ARCHITECTURE.md`.
 - **Слой:** Настройка IDE-агента — не приложение.
 
 
@@ -2919,13 +2919,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `copilot-instructions.md` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `copilot-instructions.md`.
-- **Содержимое:** Содержимое `copilot-instructions.md` — открыть файл при правках.
-- **Обязанности:** Роль `copilot-instructions.md` в модуле `.github`.
-- **Когда открывать:** Когда ломается поведение, связанное с `copilot-instructions.md`.
+- **Что это:** Краткие правила для GitHub Copilot внутри repo — главные ограничения проекта.
+- **Зачем:** Copilot видит architecture laws и не предлагает запрещённые PocketBase/Brain паттерны.
+- **Содержимое:** Markdown с iron rules, ссылками на governing docs.
+- **Обязанности:** Сжатый контекст для Copilot в GitHub UI.
+- **Когда открывать:** Copilot предлагает refactor, ломающий Brain/UI или optimistic UI.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** Связи файла `copilot-instructions.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `.github` tooling.
 - **Слой:** Сборка/деплой/сервер.
 
 
@@ -2944,14 +2944,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `deploy.yml` — platform/config файл.
-- **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
+- **Что это:** Workflow GitHub Actions для публикации web-версии. После push собирает Flutter web с base href `/Counter/` и выкладывает на GitHub Pages.
+- **Зачем:** Автоматизирует deploy сайта без ручного `update.ps1` на CI runner.
 - **Содержимое:** Исходник `deploy.yml`.
-- **Обязанности:** Роль `deploy.yml` в модуле `.github/workflows`.
-- **Когда открывать:** Когда ломается поведение, связанное с `deploy.yml`.
+- **Обязанности:** Собрать и опубликовать web build при push в main.
+- **Когда открывать:** Сайт не обновился после merge; проверка CI deploy log.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** Связи файла `deploy.yml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Сборка/деплой/сервер.
+- **Связано с:** Связан с: Role: CI web deploy
+- **Слой:** CI deploy — не runtime приложения.
 
 
 ### `.github/workflows/windows-desktop-build.yml`
@@ -2969,13 +2969,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `windows-desktop-build.yml` — platform/config файл.
+- **Что это:** Назначение файла: Source file `windows-desktop-build.yml` — CI Windows installer.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `windows-desktop-build.yml`.
-- **Обязанности:** Роль `windows-desktop-build.yml` в модуле `.github/workflows`.
+- **Обязанности:** Отвечает за: CI Windows installer
 - **Когда открывать:** Когда ломается поведение, связанное с `windows-desktop-build.yml`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** Связи файла `windows-desktop-build.yml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: CI Windows installer
 - **Слой:** Сборка/деплой/сервер.
 
 
@@ -3025,7 +3025,7 @@ RU:
 - **Обязанности:** Идентифицировать проект для Flutter CLI.
 - **Когда открывать:** CLI ругается на версию проекта; после обновления Flutter изменился `.metadata`.
 - **Можно удалить?** Нет — удалять только если Flutter пересоздаст файл и diff проверен.
-- **Связано с:** Связи файла `.metadata` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter CLI, `flutter pub get`, platform folders.
 - **Слой:** Метаданные Flutter — не код приложения.
 
 
@@ -3050,7 +3050,7 @@ RU:
 - **Обязанности:** Первый файл для Codex; ссылки на ARCHITECTURE и pack.
 - **Когда открывать:** Начало работы Codex/агента в репозитории.
 - **Можно удалить?** Нет — документ #1 Project Knowledge pack.
-- **Связано с:** Связи файла `AGENTS.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: `AGENT_NAVIGATION.md`, `docs/APP_STRUCTURE.md`, 14-doc pack.
 - **Слой:** Инструкции для AI — Project Knowledge.
 
 
@@ -3075,7 +3075,7 @@ RU:
 - **Обязанности:** Ориентация для AI; обновлять при переносе символов.
 - **Когда открывать:** Ищете, в каком файле живёт фича; начало AI-сессии.
 - **Можно удалить?** Нет — документ Project Knowledge pack.
-- **Связано с:** Связи файла `AGENT_NAVIGATION.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: `AGENTS.md`, `docs/ARCHITECTURE.md`, `CHANGELOG.md`, 14-doc pack.
 - **Слой:** Инструкции для AI — Project Knowledge.
 
 
@@ -3100,8 +3100,8 @@ RU:
 - **Обязанности:** Фиксировать проверенную работу; новые записи сверху.
 - **Когда открывать:** Проверка, исправляли ли баг или фичу раньше.
 - **Можно удалить?** Нет — история Project Knowledge pack.
-- **Связано с:** Связи файла `CHANGELOG.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** История — Project Knowledge.
+- **Связано с:** Связан с: Every structure/deploy report, `docs/ROADMAP.md`.
+- **Слой:** Вспомогательный файл репозитория.
 
 
 ### `README.md`
@@ -3150,7 +3150,7 @@ RU:
 - **Обязанности:** Политика статического анализа для CI и разработки.
 - **Когда открывать:** Добавление/отключение lint; analyzer ведёт себя неожиданно.
 - **Можно удалить?** Нет — CI и IDE зависят от него.
-- **Связано с:** Связи файла `analysis_options.yaml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: `flutter analyze`, CI, all Dart files under `lib/` and `test/`.
 - **Слой:** Конфиг analyzer — не runtime.
 
 
@@ -3169,13 +3169,13 @@ EN:
 
 RU:
 
-- **Что это:** Локальная сборка Android release APK — отдельный APK на каждый CPU (split per ABI) со штампом git commit в приложении.
-- **Зачем:** Короче, чем вручную писать `flutter build apk`; подставляет `GIT_COMMIT` и `BUILD_TIME` для экрана About.
+- **Что это:** Локальная сборка Android release APK — split per ABI со штампом git commit в About.
+- **Зачем:** Короче ручного `flutter build apk`; подставляет `GIT_COMMIT` и `BUILD_TIME`.
 - **Содержимое:** `flutter pub get` → `flutter build apk --release --split-per-abi` с dart-defines; при ошибке icon tree-shake — повтор с `--no-tree-shake-icons`; выводит размеры APK.
-- **Обязанности:** Собрать APK в `build/app/outputs/flutter-apk/` (для современных телефонов: `app-arm64-v8a-release.apk`).
-- **Когда открывать:** Тест release APK на Android-устройстве.
+- **Обязанности:** APK в `build/app/outputs/flutter-apk/` (`app-arm64-v8a-release.apk` для телефонов).
+- **Когда открывать:** Тест release APK на физическом Android.
 - **Можно удалить?** Нет — задокументированный путь локальной сборки Android.
-- **Связано с:** Связи файла `android.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: `android/` Gradle project, `lib/core/app_build_info.dart`.
 - **Слой:** Сборка Android — не runtime логика.
 
 
@@ -3194,13 +3194,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `.gitignore` — platform/config файл.
-- **Зачем:** Нужен для сборки `android` на платформе android.
-- **Содержимое:** Native/config-содержимое `.gitignore` в `android`.
-- **Обязанности:** Поддержка embedder-сборки для `android`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Git ignore rules for `android` — files not to commit.
+- **Зачем:** Нужен, потому что: Prevents build output and secrets from entering git history.
+- **Содержимое:** Содержит: Ignore patterns for this folder scope.
+- **Обязанности:** Отвечает за: Prevent accidental commit of generated files.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `.gitignore` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3219,14 +3219,14 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `build.gradle.kts` — Gradle-скрипт Android-сборки.
-- **Зачем:** Нужен для сборки `android/app` на платформе android.
-- **Содержимое:** Native/config-содержимое `build.gradle.kts` в `android/app`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Gradle build script for `android/app` — Android compile settings and plugins.
+- **Зачем:** Нужен, потому что: Gradle uses this to compile Kotlin/Java and bundle Flutter Android build.
+- **Содержимое:** Содержит: SDK versions, Flutter Gradle plugin hook, dependencies.
+- **Обязанности:** Отвечает за: Configure Android compile/target SDK, signing hooks.
+- **Когда открывать:** Открывать, когда: Gradle sync fails, SDK version errors.
 - **Можно удалить?** Нет — нужен для сборки Android.
-- **Связано с:** Связи файла `build.gradle.kts` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Android build config.
+- **Связано с:** Связан с: Flutter tooling, `AndroidManifest.xml`.
+- **Слой:** Платформенная обёртка Flutter.
 
 
 ### `android/app/google-services.json`
@@ -3244,13 +3244,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `google-services.json` — Gradle-скрипт Android-сборки.
-- **Зачем:** Нужен для сборки `android/app` на платформе android.
-- **Содержимое:** Native/config-содержимое `google-services.json` в `android/app`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Firebase/Google services config placeholder for Android Gradle plugin.
+- **Зачем:** Нужен, потому что: Some Gradle setups expect this file even if Firebase features are unused.
+- **Содержимое:** Содержит: JSON project ids (no secrets in repo copy).
+- **Обязанности:** Отвечает за: Satisfy Android Gradle google-services plugin if enabled.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `google-services.json` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3269,13 +3269,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `proguard-rules.pro` — platform/config файл.
-- **Зачем:** Нужен для сборки `android/app` на платформе android.
-- **Содержимое:** Native/config-содержимое `proguard-rules.pro` в `android/app`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: ProGuard keep rules for Android release minification.
+- **Зачем:** Нужен, потому что: R8/ProGuard must not strip Flutter/plugin classes needed at runtime.
+- **Содержимое:** Содержит: Keep rules for Flutter embedding.
+- **Обязанности:** Отвечает за: Prevent release APK crashes from over-shrinking.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `proguard-rules.pro` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3294,13 +3294,13 @@ EN:
 
 RU:
 
-- **Что это:** Манифест Android (debug/profile) — разрешения ОС, имя приложения и activity Flutter.
-- **Зачем:** Android читает XML при установке: mic, notifications, запуск приложения.
-- **Содержимое:** Теги `<uses-permission>`, имя приложения, intent filters.
-- **Обязанности:** Permissions ОС и deep links для этой build variant.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Android manifest (debug/profile) — declares permissions, app label, and Flutter activity.
+- **Зачем:** Нужен, потому что: Android reads XML at install/run to grant mic, notifications, and launch the app.
+- **Содержимое:** Содержит: `<uses-permission>`, application name, intent filters.
+- **Обязанности:** Отвечает за: Gate OS permissions and deep links for this build variant.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `AndroidManifest.xml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3319,13 +3319,13 @@ EN:
 
 RU:
 
-- **Что это:** Манифест Android (release/main) — разрешения ОС, имя приложения и activity Flutter.
-- **Зачем:** Android читает XML при установке: mic, notifications, запуск приложения.
-- **Содержимое:** Теги `<uses-permission>`, имя приложения, intent filters.
-- **Обязанности:** Permissions ОС и deep links для этой build variant.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Android manifest (release/main) — declares permissions, app label, and Flutter activity.
+- **Зачем:** Нужен, потому что: Android reads XML at install/run to grant mic, notifications, and launch the app.
+- **Содержимое:** Содержит: `<uses-permission>`, application name, intent filters.
+- **Обязанности:** Отвечает за: Gate OS permissions and deep links for this build variant.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `AndroidManifest.xml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3344,13 +3344,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `MainActivity.kt` — Kotlin-точка входа Flutter на Android.
-- **Зачем:** Нужен для сборки `android/app/src/main/kotlin/com/example/counter` на платформе android.
-- **Содержимое:** Native/config-содержимое `MainActivity.kt` в `android/app/src/main/kotlin/com/example/counter`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/kotlin/com/example/counter`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Минимальная Android-точка входа. Android запускает Activity, она поднимает Flutter engine и показывает Dart-UI.
+- **Зачем:** Без Activity APK не может показать Flutter интерфейс после tap по иконке.
+- **Содержимое:** Subclass `FlutterActivity` — несколько строк Kotlin.
+- **Обязанности:** Boot Flutter engine при старте приложения на Android.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `MainActivity.kt` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3369,13 +3369,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `launch_background.xml` — platform/config файл.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/drawable-v21` на платформе android.
-- **Содержимое:** Native/config-содержимое `launch_background.xml` в `android/app/src/main/res/drawable-v21`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/drawable-v21`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Drawable behind Flutter splash while engine loads on Android.
+- **Зачем:** Нужен, потому что: Avoids white flash before first Flutter frame.
+- **Содержимое:** Содержит: Layer-list XML referencing background color/image.
+- **Обязанности:** Отвечает за: Splash appearance on cold start.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `launch_background.xml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3394,13 +3394,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `launch_background.xml` — platform/config файл.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/drawable` на платформе android.
-- **Содержимое:** Native/config-содержимое `launch_background.xml` в `android/app/src/main/res/drawable`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/drawable`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** XML-фон стартового экрана Android — показывается до первого Flutter frame.
+- **Зачем:** Убирает белую вспышку при cold start пока Flutter рисует UI.
+- **Содержимое:** Layer-list drawable с цветом/картинкой splash.
+- **Обязанности:** Native splash до появления Flutter content.
+- **Когда открывать:** Белый flash при launch, wrong splash color на Android.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `launch_background.xml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3419,13 +3419,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `ic_launcher.png` — иконка приложения на home screen.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/mipmap-hdpi` на платформе android.
-- **Содержимое:** Native/config-содержимое `ic_launcher.png` в `android/app/src/main/res/mipmap-hdpi`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/mipmap-hdpi`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Launcher icon PNG for Android density `hdpi`.
+- **Зачем:** Нужен, потому что: Home screen icon must match pixel density of the device screen.
+- **Содержимое:** Содержит: Raster PNG icon asset.
+- **Обязанности:** Отвечает за: Display sharp icon on hdpi devices.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `ic_launcher.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3444,13 +3444,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `ic_launcher.png` — иконка приложения на home screen.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/mipmap-mdpi` на платформе android.
-- **Содержимое:** Native/config-содержимое `ic_launcher.png` в `android/app/src/main/res/mipmap-mdpi`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/mipmap-mdpi`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Launcher icon PNG for Android density `mdpi`.
+- **Зачем:** Нужен, потому что: Home screen icon must match pixel density of the device screen.
+- **Содержимое:** Содержит: Raster PNG icon asset.
+- **Обязанности:** Отвечает за: Display sharp icon on mdpi devices.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `ic_launcher.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3469,13 +3469,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `ic_launcher.png` — иконка приложения на home screen.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/mipmap-xhdpi` на платформе android.
-- **Содержимое:** Native/config-содержимое `ic_launcher.png` в `android/app/src/main/res/mipmap-xhdpi`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/mipmap-xhdpi`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Launcher icon PNG for Android density `xhdpi`.
+- **Зачем:** Нужен, потому что: Home screen icon must match pixel density of the device screen.
+- **Содержимое:** Содержит: Raster PNG icon asset.
+- **Обязанности:** Отвечает за: Display sharp icon on xhdpi devices.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `ic_launcher.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3494,13 +3494,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `ic_launcher.png` — иконка приложения на home screen.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/mipmap-xxhdpi` на платформе android.
-- **Содержимое:** Native/config-содержимое `ic_launcher.png` в `android/app/src/main/res/mipmap-xxhdpi`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/mipmap-xxhdpi`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Launcher icon PNG for Android density `xxhdpi`.
+- **Зачем:** Нужен, потому что: Home screen icon must match pixel density of the device screen.
+- **Содержимое:** Содержит: Raster PNG icon asset.
+- **Обязанности:** Отвечает за: Display sharp icon on xxhdpi devices.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `ic_launcher.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3519,13 +3519,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `ic_launcher.png` — иконка приложения на home screen.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/mipmap-xxxhdpi` на платформе android.
-- **Содержимое:** Native/config-содержимое `ic_launcher.png` в `android/app/src/main/res/mipmap-xxxhdpi`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/mipmap-xxxhdpi`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Launcher icon PNG for Android density `xxxhdpi`.
+- **Зачем:** Нужен, потому что: Home screen icon must match pixel density of the device screen.
+- **Содержимое:** Содержит: Raster PNG icon asset.
+- **Обязанности:** Отвечает за: Display sharp icon on xxxhdpi devices.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `ic_launcher.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3544,13 +3544,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `styles.xml` — XML-стили Android.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/values-night` на платформе android.
-- **Содержимое:** Native/config-содержимое `styles.xml` в `android/app/src/main/res/values-night`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/values-night`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Android `night` theme styles for launch window and normal UI chrome.
+- **Зачем:** Нужен, потому что: Native Android window uses XML themes before Flutter draws.
+- **Содержимое:** Содержит: Theme items for LaunchTheme and NormalTheme.
+- **Обязанности:** Отвечает за: Status bar and splash styling on Android.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `styles.xml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3569,13 +3569,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `styles.xml` — XML-стили Android.
-- **Зачем:** Нужен для сборки `android/app/src/main/res/values` на платформе android.
-- **Содержимое:** Native/config-содержимое `styles.xml` в `android/app/src/main/res/values`.
-- **Обязанности:** Поддержка embedder-сборки для `android/app/src/main/res/values`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Android `default` theme styles for launch window and normal UI chrome.
+- **Зачем:** Нужен, потому что: Native Android window uses XML themes before Flutter draws.
+- **Содержимое:** Содержит: Theme items for LaunchTheme and NormalTheme.
+- **Обязанности:** Отвечает за: Status bar and splash styling on Android.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `styles.xml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3594,13 +3594,13 @@ EN:
 
 RU:
 
-- **Что это:** Манифест Android (debug/profile) — разрешения ОС, имя приложения и activity Flutter.
-- **Зачем:** Android читает XML при установке: mic, notifications, запуск приложения.
-- **Содержимое:** Теги `<uses-permission>`, имя приложения, intent filters.
-- **Обязанности:** Permissions ОС и deep links для этой build variant.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Android manifest (debug/profile) — declares permissions, app label, and Flutter activity.
+- **Зачем:** Нужен, потому что: Android reads XML at install/run to grant mic, notifications, and launch the app.
+- **Содержимое:** Содержит: `<uses-permission>`, application name, intent filters.
+- **Обязанности:** Отвечает за: Gate OS permissions and deep links for this build variant.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `AndroidManifest.xml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3619,14 +3619,14 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `build.gradle.kts` — Gradle-скрипт Android-сборки.
-- **Зачем:** Нужен для сборки `android` на платформе android.
-- **Содержимое:** Native/config-содержимое `build.gradle.kts` в `android`.
-- **Обязанности:** Поддержка embedder-сборки для `android`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Gradle build script for `android` — Android compile settings and plugins.
+- **Зачем:** Нужен, потому что: Gradle uses this to compile Kotlin/Java and bundle Flutter Android build.
+- **Содержимое:** Содержит: SDK versions, Flutter Gradle plugin hook, dependencies.
+- **Обязанности:** Отвечает за: Configure Android compile/target SDK, signing hooks.
+- **Когда открывать:** Открывать, когда: Gradle sync fails, SDK version errors.
 - **Можно удалить?** Нет — нужен для сборки Android.
-- **Связано с:** Связи файла `build.gradle.kts` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Android build config.
+- **Связано с:** Связан с: Flutter tooling, `AndroidManifest.xml`.
+- **Слой:** Платформенная обёртка Flutter.
 
 
 ### `android/gradle.properties`
@@ -3644,13 +3644,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `gradle.properties` — Gradle-скрипт Android-сборки.
-- **Зачем:** Нужен для сборки `android` на платформе android.
-- **Содержимое:** Native/config-содержимое `gradle.properties` в `android`.
-- **Обязанности:** Поддержка embedder-сборки для `android`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Gradle `gradle.properties` — JVM/ AndroidX flags or local SDK path.
+- **Зачем:** Нужен, потому что: Gradle reads properties to locate Android SDK and tune build.
+- **Содержимое:** Содержит: Key=value lines (local SDK path often gitignored).
+- **Обязанности:** Отвечает за: Configure Gradle daemon and SDK location.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `gradle.properties` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3671,11 +3671,11 @@ RU:
 
 - **Что это:** Файл сборки android: `gradle-wrapper.properties` в `android/gradle/wrapper`.
 - **Зачем:** Нужен для сборки android; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `gradle-wrapper.properties` в `android/gradle/wrapper`.
+- **Содержимое:** Содержит: Native/config source for `android/gradle/wrapper` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder android.
 - **Когда открывать:** Ошибка сборки с `gradle-wrapper.properties`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `android/`.
+- **Связано с:** Связан с: `android/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3694,13 +3694,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл android: `settings.gradle.kts` — Gradle-скрипт Android-сборки.
-- **Зачем:** Нужен для сборки `android` на платформе android.
-- **Содержимое:** Native/config-содержимое `settings.gradle.kts` в `android`.
-- **Обязанности:** Поддержка embedder-сборки для `android`.
-- **Когда открывать:** Ошибка Gradle/Android-сборки или permission на устройстве.
+- **Что это:** Назначение файла: Gradle settings — declares included modules (`:app`).
+- **Зачем:** Нужен, потому что: Root Gradle project must list app module to compile APK.
+- **Содержимое:** Содержит: Module includes, plugin management.
+- **Обязанности:** Отвечает за: Wire Gradle multi-module Android project.
+- **Когда открывать:** Открывать, когда: Android APK build or permission issues.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `settings.gradle.kts` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `android` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -3719,14 +3719,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `APP_STRUCTURE.md` — правила и заметки по теме: APP STRUCTURE.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `APP STRUCTURE`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — Project Knowledge pack.
-- **Связано с:** Связи файла `APP_STRUCTURE.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Governing structure doc.
+- **Что это:** Назначение файла: Concise map of folders, layers, and import rules.
+- **Зачем:** Нужен, потому что: Quick answer to ‘where does X live?’ without reading the whole encyclopedia.
+- **Содержимое:** Содержит: Tables of lib/data, features, scripts; guard commands.
+- **Обязанности:** Отвечает за: Canonical structure contract for architecture guard.
+- **Когда открывать:** Открывать, когда: Finding module ownership; before moving files.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** Связан с: `APP_STRUCTURE_DETAILED.md`, `architecture_guard.ps1`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/APP_STRUCTURE_DETAILED.md`
@@ -3744,14 +3744,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `APP_STRUCTURE_DETAILED.md` — правила и заметки по теме: APP STRUCTURE DETAILED.
+- **Что это:** Назначение файла: Source file `APP_STRUCTURE_DETAILED.md` — Bilingual file-by-file guide (EN/RU).
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `APP_STRUCTURE_DETAILED.md`.
-- **Обязанности:** Ответы на вопросы по `APP STRUCTURE DETAILED`.
+- **Обязанности:** Отвечает за: Bilingual file-by-file guide (EN/RU)
 - **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** Связи файла `APP_STRUCTURE_DETAILED.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Связано с:** Связан с: Role: Bilingual file-by-file guide (EN/RU)
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/ARCHITECTURE.md`
@@ -3769,14 +3769,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `ARCHITECTURE.md` — правила и заметки по теме: ARCHITECTURE.
+- **Что это:** Назначение файла: Source file `ARCHITECTURE.md` — Data flow, iron laws, optimistic UI, performance.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `ARCHITECTURE.md`.
-- **Обязанности:** Ответы на вопросы по `ARCHITECTURE`.
+- **Обязанности:** Отвечает за: Data flow, iron laws, optimistic UI, performance
 - **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** Связи файла `ARCHITECTURE.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Связано с:** Связан с: Role: Data flow, iron laws, optimistic UI, performance
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/DATA_MAP.md`
@@ -3794,14 +3794,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `DATA_MAP.md` — правила и заметки по теме: DATA MAP.
+- **Что это:** Назначение файла: Source file `DATA_MAP.md` — PocketBase field names and business IDs.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `DATA_MAP.md`.
-- **Обязанности:** Ответы на вопросы по `DATA MAP`.
+- **Обязанности:** Отвечает за: PocketBase field names and business IDs
 - **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** Связи файла `DATA_MAP.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Связано с:** Связан с: Role: PocketBase field names and business IDs
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/DEPLOY.md`
@@ -3819,14 +3819,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `DEPLOY.md` — правила и заметки по теме: DEPLOY.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `DEPLOY`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — Project Knowledge pack.
-- **Связано с:** Связи файла `DEPLOY.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Deploy guide — Project Knowledge.
+- **Что это:** Назначение файла: How to publish the website and set up PocketBase auth/admin on the server.
+- **Зачем:** Нужен, потому что: Deploy and OAuth are easy to get wrong without step-by-step VPS notes.
+- **Содержимое:** Содержит: `update.ps1` flow, GitHub Pages, Windows installer section, OAuth admin checklist.
+- **Обязанности:** Отвечает за: Deploy + production auth configuration guide.
+- **Когда открывать:** Открывать, когда: Site not updating, OAuth broken, building Windows installer.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** Связан с: `.github/workflows/`, `update.ps1`, `installer/`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/DESIGN_SYSTEM.md`
@@ -3844,14 +3844,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `DESIGN_SYSTEM.md` — правила и заметки по теме: DESIGN SYSTEM.
+- **Что это:** Назначение файла: Source file `DESIGN_SYSTEM.md` — Figma → Flutter canonical components.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `DESIGN_SYSTEM.md`.
-- **Обязанности:** Ответы на вопросы по `DESIGN SYSTEM`.
+- **Обязанности:** Отвечает за: Figma → Flutter canonical components
 - **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** Связи файла `DESIGN_SYSTEM.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Связано с:** Связан с: Role: Figma → Flutter canonical components
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/POCKETBASE_MANIFEST.md`
@@ -3869,14 +3869,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `POCKETBASE_MANIFEST.md` — правила и заметки по теме: POCKETBASE MANIFEST.
+- **Что это:** Назначение файла: Source file `POCKETBASE_MANIFEST.md` — URLs, collections, server hooks.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `POCKETBASE_MANIFEST.md`.
-- **Обязанности:** Ответы на вопросы по `POCKETBASE MANIFEST`.
+- **Обязанности:** Отвечает за: URLs, collections, server hooks
 - **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** Связи файла `POCKETBASE_MANIFEST.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Связано с:** Связан с: Role: URLs, collections, server hooks
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/PROJECT_KNOWLEDGE_PACK.md`
@@ -3894,14 +3894,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `PROJECT_KNOWLEDGE_PACK.md` — правила и заметки по теме: PROJECT KNOWLEDGE PACK.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `PROJECT KNOWLEDGE PACK`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — upload checklist.
-- **Связано с:** Связи файла `PROJECT_KNOWLEDGE_PACK.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Meta checklist — repo-only.
+- **Что это:** Назначение файла: Checklist of exactly 14 docs to upload to Project Knowledge (not architecture law itself).
+- **Зачем:** Нужен, потому что: Owner limit of 25 uploaded docs — lists what to include/exclude.
+- **Содержимое:** Содержит: Upload list, excluded repo-only docs, removed-doc log.
+- **Обязанности:** Отвечает за: Upload manifest only.
+- **Когда открывать:** Открывать, когда: Refreshing AI project files.
+- **Можно удалить?** Нет — актуальный отчёт или чеклист.
+- **Связано с:** Связан с: 14-doc pack listed inside.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/ROADMAP.md`
@@ -3919,14 +3919,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `ROADMAP.md` — правила и заметки по теме: ROADMAP.
+- **Что это:** Назначение файла: Source file `ROADMAP.md` — Current work plan.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `ROADMAP.md`.
-- **Обязанности:** Ответы на вопросы по `ROADMAP`.
+- **Обязанности:** Отвечает за: Current work plan
 - **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** Связи файла `ROADMAP.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Связано с:** Связан с: Role: Current work plan
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/UX_CONTRACT.md`
@@ -3944,14 +3944,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `UX_CONTRACT.md` — правила и заметки по теме: UX CONTRACT.
+- **Что это:** Назначение файла: Source file `UX_CONTRACT.md` — Tap/save/loading/offline behavior.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `UX_CONTRACT.md`.
-- **Обязанности:** Ответы на вопросы по `UX CONTRACT`.
+- **Обязанности:** Отвечает за: Tap/save/loading/offline behavior
 - **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** Связи файла `UX_CONTRACT.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Связано с:** Связан с: Role: Tap/save/loading/offline behavior
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/reports/DESIGN_SYSTEM_INVENTORY.md`
@@ -3969,14 +3969,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `DESIGN_SYSTEM_INVENTORY.md` — правила и заметки по теме: DESIGN SYSTEM INVENTORY.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `DESIGN SYSTEM INVENTORY`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
+- **Что это:** Назначение файла: Documentation file `DESIGN_SYSTEM_INVENTORY.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `DESIGN SYSTEM INVENTORY`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `DESIGN_SYSTEM_INVENTORY.md`.
 - **Можно удалить?** Нет — governing-документация проекта.
-- **Связано с:** Связи файла `DESIGN_SYSTEM_INVENTORY.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`
@@ -3994,14 +3994,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` — правила и заметки по теме: FINAL STRUCTURE PARITY AND DOC CLEANUP 2026-07-03.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `FINAL STRUCTURE PARITY AND DOC CLEANUP 2026-07-03`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — current cleanup/structure report or upload checklist.
-- **Связано с:** Связи файла `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `FINAL STRUCTURE PARITY AND DOC CLEANUP 2026-07-03`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`.
+- **Можно удалить?** Нет — актуальный отчёт или чеклист.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/reports/FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`
@@ -4019,14 +4019,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md` — правила и заметки по теме: FULL REPO NECESSITY CLEANUP 2026-07-03.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `FULL REPO NECESSITY CLEANUP 2026-07-03`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — current cleanup/structure report or upload checklist.
-- **Связано с:** Связи файла `FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `FULL REPO NECESSITY CLEANUP 2026-07-03`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`.
+- **Можно удалить?** Нет — актуальный отчёт или чеклист.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/CONTENT_LIBRARY.md`
@@ -4044,14 +4044,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `CONTENT_LIBRARY.md` — правила и заметки по теме: CONTENT LIBRARY.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `CONTENT LIBRARY`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `CONTENT_LIBRARY.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `CONTENT_LIBRARY.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `CONTENT LIBRARY`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `CONTENT_LIBRARY.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/FEATURE_MATRIX.md`
@@ -4069,14 +4069,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `FEATURE_MATRIX.md` — правила и заметки по теме: FEATURE MATRIX.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `FEATURE MATRIX`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `FEATURE_MATRIX.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `FEATURE_MATRIX.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `FEATURE MATRIX`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `FEATURE_MATRIX.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/HOMEPAGE_WIREFRAME_V1.md`
@@ -4094,14 +4094,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `HOMEPAGE_WIREFRAME_V1.md` — правила и заметки по теме: HOMEPAGE WIREFRAME V1.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `HOMEPAGE WIREFRAME V1`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `HOMEPAGE_WIREFRAME_V1.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `HOMEPAGE_WIREFRAME_V1.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `HOMEPAGE WIREFRAME V1`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `HOMEPAGE_WIREFRAME_V1.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/INTERNAL_NOTES_NOT_FOR_SITE.md`
@@ -4119,14 +4119,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `INTERNAL_NOTES_NOT_FOR_SITE.md` — правила и заметки по теме: INTERNAL NOTES NOT FOR SITE.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `INTERNAL NOTES NOT FOR SITE`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `INTERNAL_NOTES_NOT_FOR_SITE.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `INTERNAL_NOTES_NOT_FOR_SITE.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `INTERNAL NOTES NOT FOR SITE`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `INTERNAL_NOTES_NOT_FOR_SITE.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/POSITIONING_V1.md`
@@ -4144,14 +4144,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `POSITIONING_V1.md` — правила и заметки по теме: POSITIONING V1.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `POSITIONING V1`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `POSITIONING_V1.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `POSITIONING_V1.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `POSITIONING V1`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `POSITIONING_V1.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/PRODUCT_INVENTORY.md`
@@ -4169,14 +4169,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `PRODUCT_INVENTORY.md` — правила и заметки по теме: PRODUCT INVENTORY.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `PRODUCT INVENTORY`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `PRODUCT_INVENTORY.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `PRODUCT_INVENTORY.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `PRODUCT INVENTORY`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `PRODUCT_INVENTORY.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/PUBLIC_COPY_DRAFTS.md`
@@ -4194,14 +4194,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `PUBLIC_COPY_DRAFTS.md` — правила и заметки по теме: PUBLIC COPY DRAFTS.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `PUBLIC COPY DRAFTS`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `PUBLIC_COPY_DRAFTS.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `PUBLIC_COPY_DRAFTS.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `PUBLIC COPY DRAFTS`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `PUBLIC_COPY_DRAFTS.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/SCREENSHOT_SHOTLIST.md`
@@ -4219,14 +4219,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `SCREENSHOT_SHOTLIST.md` — правила и заметки по теме: SCREENSHOT SHOTLIST.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `SCREENSHOT SHOTLIST`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `SCREENSHOT_SHOTLIST.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `SCREENSHOT_SHOTLIST.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `SCREENSHOT SHOTLIST`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `SCREENSHOT_SHOTLIST.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_CLAIMS_REVIEW.md`
@@ -4244,14 +4244,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `WEBSITE_CLAIMS_REVIEW.md` — правила и заметки по теме: WEBSITE CLAIMS REVIEW.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `WEBSITE CLAIMS REVIEW`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `WEBSITE_CLAIMS_REVIEW.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `WEBSITE_CLAIMS_REVIEW.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `WEBSITE CLAIMS REVIEW`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `WEBSITE_CLAIMS_REVIEW.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_IMPLEMENTATION_OPTIONS.md`
@@ -4269,14 +4269,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `WEBSITE_IMPLEMENTATION_OPTIONS.md` — правила и заметки по теме: WEBSITE IMPLEMENTATION OPTIONS.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `WEBSITE IMPLEMENTATION OPTIONS`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `WEBSITE_IMPLEMENTATION_OPTIONS.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `WEBSITE_IMPLEMENTATION_OPTIONS.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `WEBSITE IMPLEMENTATION OPTIONS`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `WEBSITE_IMPLEMENTATION_OPTIONS.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_PAGE_STRUCTURE.md`
@@ -4294,14 +4294,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `WEBSITE_PAGE_STRUCTURE.md` — правила и заметки по теме: WEBSITE PAGE STRUCTURE.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `WEBSITE PAGE STRUCTURE`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `WEBSITE_PAGE_STRUCTURE.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `WEBSITE_PAGE_STRUCTURE.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `WEBSITE PAGE STRUCTURE`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `WEBSITE_PAGE_STRUCTURE.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_TZ.md`
@@ -4319,14 +4319,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `WEBSITE_TZ.md` — правила и заметки по теме: WEBSITE TZ.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `WEBSITE TZ`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `WEBSITE_TZ.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `WEBSITE_TZ.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `WEBSITE TZ`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `WEBSITE_TZ.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_V1_SCOPE.md`
@@ -4344,14 +4344,14 @@ EN:
 
 RU:
 
-- **Что это:** Документ `WEBSITE_V1_SCOPE.md` — правила и заметки по теме: WEBSITE V1 SCOPE.
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `WEBSITE V1 SCOPE`.
-- **Когда открывать:** Нужна written-инструкция по теме файла.
-- **Можно удалить?** Нет — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Связано с:** Связи файла `WEBSITE_V1_SCOPE.md` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Документация.
+- **Что это:** Назначение файла: Documentation file `WEBSITE_V1_SCOPE.md` — explains part of project rules, deploy, or reports.
+- **Зачем:** Нужен, потому что: Human/AI readable spec; not executed by the app.
+- **Содержимое:** Содержит: Markdown sections for this topic.
+- **Обязанности:** Отвечает за: Answer questions about `WEBSITE V1 SCOPE`.
+- **Когда открывать:** Открывать, когда: Need written guidance for topic covered by `WEBSITE_V1_SCOPE.md`.
+- **Можно удалить?** Нет — маркетинговые тексты сайта.
+- **Связано с:** Связан с: Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `installer/windows/build_stt_helper_en.ps1`
@@ -4371,11 +4371,11 @@ RU:
 
 - **Что это:** Файл сборки installer: `build_stt_helper_en.ps1` в `installer/windows`.
 - **Зачем:** Нужен для сборки installer; без него возможны ошибки compile.
-- **Содержимое:** Содержимое `build_stt_helper_en.ps1` — открыть файл при правках.
+- **Содержимое:** Содержит: Native/config source for `installer/windows` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder installer.
 - **Когда открывать:** Ошибка сборки с `build_stt_helper_en.ps1`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** Папка `installer/`.
+- **Связано с:** Связан с: `installer/` platform folder, Flutter embedder.
 - **Слой:** Сборка/деплой/сервер.
 
 
@@ -4394,14 +4394,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `counter.iss` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `counter.iss`.
-- **Содержимое:** Содержимое `counter.iss` — открыть файл при правках.
-- **Обязанности:** Роль `counter.iss` в модуле `installer/windows`.
-- **Когда открывать:** Когда build или maintenance ссылается на `counter.iss`.
-- **Можно удалить?** Нет — required for Windows installer.
-- **Связано с:** Связи файла `counter.iss` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Windows installer config.
+- **Что это:** Назначение файла: Inno Setup script — recipe for building `CounterSetup.exe` installer.
+- **Зачем:** Нужен, потому что: Packages Flutter Windows build + STT helper + icons into one setup wizard.
+- **Содержимое:** Содержит: File copy rules, shortcuts, optional autostart task.
+- **Обязанности:** Отвечает за: Define installer steps and installed file layout.
+- **Когда открывать:** Открывать, когда: Installer missing files or wrong install path on Windows.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `prepare_stt_payload.ps1`, GitHub Actions workflow.
+- **Слой:** Сборка/деплой/сервер.
 
 
 ### `installer/windows/install-cpp-atl.ps1`
@@ -4421,11 +4421,11 @@ RU:
 
 - **Что это:** Файл сборки installer: `install-cpp-atl.ps1` в `installer/windows`.
 - **Зачем:** Нужен для сборки installer; без него возможны ошибки compile.
-- **Содержимое:** Содержимое `install-cpp-atl.ps1` — открыть файл при правках.
+- **Содержимое:** Содержит: Native/config source for `installer/windows` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder installer.
 - **Когда открывать:** Ошибка сборки с `install-cpp-atl.ps1`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** Папка `installer/`.
+- **Связано с:** Связан с: `installer/` platform folder, Flutter embedder.
 - **Слой:** Сборка/деплой/сервер.
 
 
@@ -4446,11 +4446,11 @@ RU:
 
 - **Что это:** Файл сборки installer: `prepare_stt_payload.ps1` в `installer/windows`.
 - **Зачем:** Нужен для сборки installer; без него возможны ошибки compile.
-- **Содержимое:** Содержимое `prepare_stt_payload.ps1` — открыть файл при правках.
+- **Содержимое:** Содержит: Native/config source for `installer/windows` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder installer.
 - **Когда открывать:** Ошибка сборки с `prepare_stt_payload.ps1`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** Папка `installer/`.
+- **Связано с:** Связан с: `installer/` platform folder, Flutter embedder.
 - **Слой:** Сборка/деплой/сервер.
 
 
@@ -4471,11 +4471,11 @@ RU:
 
 - **Что это:** Файл сборки installer: `win_speech_wav.ps1` в `installer/windows/scripts`.
 - **Зачем:** Нужен для сборки installer; без него возможны ошибки compile.
-- **Содержимое:** Содержимое `win_speech_wav.ps1` — открыть файл при правках.
+- **Содержимое:** Содержит: Native/config source for `installer/windows/scripts` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder installer.
 - **Когда открывать:** Ошибка сборки с `win_speech_wav.ps1`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** Папка `installer/`.
+- **Связано с:** Связан с: `installer/` platform folder, Flutter embedder.
 - **Слой:** Сборка/деплой/сервер.
 
 
@@ -4496,11 +4496,11 @@ RU:
 
 - **Что это:** Файл сборки installer: `counter_stt_helper.exe` в `installer/windows/stt_helper_build`.
 - **Зачем:** Нужен для сборки installer; без него возможны ошибки compile.
-- **Содержимое:** Содержимое `counter_stt_helper.exe` — открыть файл при правках.
+- **Содержимое:** Содержит: Native/config source for `installer/windows/stt_helper_build` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder installer.
 - **Когда открывать:** Ошибка сборки с `counter_stt_helper.exe`.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
-- **Связано с:** Папка `installer/`.
+- **Связано с:** Связан с: `installer/` platform folder, Flutter embedder.
 - **Слой:** Сборка/деплой/сервер.
 
 
@@ -4520,14 +4520,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `perf_date_swipe_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `perf_date_swipe_test.dart`.
-- **Содержимое:** Содержимое `perf_date_swipe_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `perf_date_swipe_test.dart` в модуле `integration_test`.
-- **Когда открывать:** Когда build или maintenance ссылается на `perf_date_swipe_test.dart`.
+- **Что это:** Назначение файла: Automated test `perf_date_swipe_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `perf_date_swipe_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `perf_date_swipe`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `perf_date_swipe_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `ios/.gitignore`
@@ -4545,13 +4545,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл ios: `.gitignore` — platform/config файл.
-- **Зачем:** Нужен для сборки `ios` на платформе ios.
-- **Содержимое:** Native/config-содержимое `.gitignore` в `ios`.
-- **Обязанности:** Поддержка embedder-сборки для `ios`.
+- **Что это:** Назначение файла: Git ignore rules for `ios` — files not to commit.
+- **Зачем:** Нужен, потому что: Prevents build output and secrets from entering git history.
+- **Содержимое:** Содержит: Ignore patterns for this folder scope.
+- **Обязанности:** Отвечает за: Prevent accidental commit of generated files.
 - **Когда открывать:** Когда ломается поведение, связанное с `.gitignore`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `.gitignore` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `ios` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4572,11 +4572,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `AppFrameworkInfo.plist` в `ios/Flutter`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `AppFrameworkInfo.plist` в `ios/Flutter`.
+- **Содержимое:** Содержит: Native/config source for `ios/Flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `AppFrameworkInfo.plist`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4597,11 +4597,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Debug.xcconfig` в `ios/Flutter`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Debug.xcconfig` в `ios/Flutter`.
+- **Содержимое:** Содержит: Native/config source for `ios/Flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Debug.xcconfig`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4622,11 +4622,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Release.xcconfig` в `ios/Flutter`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Release.xcconfig` в `ios/Flutter`.
+- **Содержимое:** Содержит: Native/config source for `ios/Flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Release.xcconfig`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4647,11 +4647,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `project.pbxproj` в `ios/Runner.xcodeproj`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `project.pbxproj` в `ios/Runner.xcodeproj`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner.xcodeproj` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `project.pbxproj`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4672,11 +4672,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `contents.xcworkspacedata` в `ios/Runner.xcodeproj/project.xcworkspace`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `contents.xcworkspacedata` в `ios/Runner.xcodeproj/project.xcworkspace`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner.xcodeproj/project.xcworkspace` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `contents.xcworkspacedata`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4697,11 +4697,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `IDEWorkspaceChecks.plist` в `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `IDEWorkspaceChecks.plist` в `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `IDEWorkspaceChecks.plist`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4722,11 +4722,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `WorkspaceSettings.xcsettings` в `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `WorkspaceSettings.xcsettings` в `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `WorkspaceSettings.xcsettings`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4747,11 +4747,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Runner.xcscheme` в `ios/Runner.xcodeproj/xcshareddata/xcschemes`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Runner.xcscheme` в `ios/Runner.xcodeproj/xcshareddata/xcschemes`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner.xcodeproj/xcshareddata/xcschemes` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Runner.xcscheme`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4772,11 +4772,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `contents.xcworkspacedata` в `ios/Runner.xcworkspace`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `contents.xcworkspacedata` в `ios/Runner.xcworkspace`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner.xcworkspace` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `contents.xcworkspacedata`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4797,11 +4797,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `IDEWorkspaceChecks.plist` в `ios/Runner.xcworkspace/xcshareddata`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `IDEWorkspaceChecks.plist` в `ios/Runner.xcworkspace/xcshareddata`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner.xcworkspace/xcshareddata` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `IDEWorkspaceChecks.plist`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4822,11 +4822,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `WorkspaceSettings.xcsettings` в `ios/Runner.xcworkspace/xcshareddata`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `WorkspaceSettings.xcsettings` в `ios/Runner.xcworkspace/xcshareddata`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner.xcworkspace/xcshareddata` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `WorkspaceSettings.xcsettings`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4847,11 +4847,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `AppDelegate.swift` в `ios/Runner`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `AppDelegate.swift` в `ios/Runner`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `AppDelegate.swift`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4872,11 +4872,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Contents.json` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Contents.json` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Contents.json`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4897,11 +4897,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-1024x1024@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-1024x1024@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-1024x1024@1x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4922,11 +4922,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-20x20@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-20x20@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-20x20@1x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4947,11 +4947,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-20x20@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-20x20@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-20x20@2x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4972,11 +4972,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-20x20@3x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-20x20@3x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-20x20@3x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -4997,11 +4997,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-29x29@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-29x29@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-29x29@1x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5022,11 +5022,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-29x29@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-29x29@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-29x29@2x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5047,11 +5047,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-29x29@3x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-29x29@3x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-29x29@3x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5072,11 +5072,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-40x40@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-40x40@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-40x40@1x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5097,11 +5097,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-40x40@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-40x40@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-40x40@2x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5122,11 +5122,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-40x40@3x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-40x40@3x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-40x40@3x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5147,11 +5147,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-60x60@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-60x60@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-60x60@2x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5172,11 +5172,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-60x60@3x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-60x60@3x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-60x60@3x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5197,11 +5197,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-76x76@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-76x76@1x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-76x76@1x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5222,11 +5222,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-76x76@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-76x76@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-76x76@2x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5247,11 +5247,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Icon-App-83.5x83.5@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Icon-App-83.5x83.5@2x.png` в `ios/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Icon-App-83.5x83.5@2x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5272,11 +5272,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Contents.json` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Contents.json` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/LaunchImage.imageset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Contents.json`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5297,11 +5297,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `LaunchImage.png` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `LaunchImage.png` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/LaunchImage.imageset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `LaunchImage.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5322,11 +5322,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `LaunchImage@2x.png` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `LaunchImage@2x.png` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/LaunchImage.imageset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `LaunchImage@2x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5347,11 +5347,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `LaunchImage@3x.png` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `LaunchImage@3x.png` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/LaunchImage.imageset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `LaunchImage@3x.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5372,11 +5372,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `README.md` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `README.md` в `ios/Runner/Assets.xcassets/LaunchImage.imageset`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Assets.xcassets/LaunchImage.imageset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `README.md`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5397,11 +5397,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `LaunchScreen.storyboard` в `ios/Runner/Base.lproj`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `LaunchScreen.storyboard` в `ios/Runner/Base.lproj`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Base.lproj` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `LaunchScreen.storyboard`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5422,11 +5422,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Main.storyboard` в `ios/Runner/Base.lproj`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Main.storyboard` в `ios/Runner/Base.lproj`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner/Base.lproj` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Main.storyboard`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5445,13 +5445,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл ios: `Info.plist` — platform/config файл.
-- **Зачем:** Нужен для сборки `ios/Runner` на платформе ios.
-- **Содержимое:** Native/config-содержимое `Info.plist` в `ios/Runner`.
-- **Обязанности:** Поддержка embedder-сборки для `ios/Runner`.
+- **Что это:** Назначение файла: iOS/macOS bundle Info.plist — permissions, bundle id, display name.
+- **Зачем:** Нужен, потому что: Apple OS reads plist for app metadata and permission prompts.
+- **Содержимое:** Содержит: CFBundle keys, usage descriptions (mic, etc.).
+- **Обязанности:** Отвечает за: App identity and iOS permission strings.
 - **Когда открывать:** Когда ломается поведение, связанное с `Info.plist`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `Info.plist` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `ios` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5472,11 +5472,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `Runner-Bridging-Header.h` в `ios/Runner`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Runner-Bridging-Header.h` в `ios/Runner`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `Runner-Bridging-Header.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5497,11 +5497,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `SceneDelegate.swift` в `ios/Runner`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `SceneDelegate.swift` в `ios/Runner`.
+- **Содержимое:** Содержит: Native/config source for `ios/Runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `SceneDelegate.swift`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5522,11 +5522,11 @@ RU:
 
 - **Что это:** Файл сборки ios: `RunnerTests.swift` в `ios/RunnerTests`.
 - **Зачем:** Нужен для сборки ios; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `RunnerTests.swift` в `ios/RunnerTests`.
+- **Содержимое:** Содержит: Native/config source for `ios/RunnerTests` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder ios.
 - **Когда открывать:** Ошибка сборки с `RunnerTests.swift`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `ios/`.
+- **Связано с:** Связан с: `ios/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -5545,13 +5545,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `app_shell.dart` — platform/config файл.
+- **Что это:** Назначение файла: Source file `app_shell.dart` — Re-exports `shell/life_os_dashboard.dart` (thin entry).
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `app_shell.dart`.
-- **Обязанности:** Роль `app_shell.dart` в модуле `lib`.
+- **Обязанности:** Отвечает за: Re-exports `shell/life_os_dashboard.dart` (thin entry)
 - **Когда открывать:** Когда ломается поведение, связанное с `app_shell.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_shell.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-exports `shell/life_os_dashboard.dart` (thin entry)
 - **Слой:** Вспомогательный файл репозитория.
 
 
@@ -5570,13 +5570,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `app_build_info.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Build metadata.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `app_build_info.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Build metadata.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Build metadata
 - **Когда открывать:** Когда ломается поведение, связанное с `app_build_info.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_build_info.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Build metadata
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5595,13 +5595,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `app_colors.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Color tokens.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `app_colors.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Color tokens.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Color tokens
 - **Когда открывать:** Когда ломается поведение, связанное с `app_colors.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_colors.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Color tokens
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5621,13 +5621,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `app_icons.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Canonical icon tokens (timezone family, shared glyphs).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `app_icons.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Canonical icon tokens (timezone family, shared glyphs).
+- **Содержимое:** Содержит: Dart utilities (`AppTimezoneIconKey`).
+- **Обязанности:** Отвечает за: Canonical icon tokens (timezone family, shared glyphs)
 - **Когда открывать:** Когда ломается поведение, связанное с `app_icons.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_icons.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Canonical icon tokens (timezone family, shared glyphs)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5647,13 +5647,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `app_snackbar.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — `AppSnack` toasts.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Утилиты (`AppSnack`).
-- **Обязанности:** Общая инфраструктура приложения: `AppSnack` toasts.
+- **Содержимое:** Содержит: Dart utilities (`AppSnack`).
+- **Обязанности:** Отвечает за: `AppSnack` toasts
 - **Когда открывать:** Когда ломается поведение, связанное с `app_snackbar.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_snackbar.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `AppSnack` toasts
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5672,13 +5672,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `category_color_palette.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Category tile palette.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `category_color_palette.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Category tile palette.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Category tile palette
 - **Когда открывать:** Когда ломается поведение, связанное с `category_color_palette.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `category_color_palette.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Category tile palette
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5697,13 +5697,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `constants.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — UI limits, global keys.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `constants.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: UI limits, global keys.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: UI limits, global keys
 - **Когда открывать:** Когда ломается поведение, связанное с `constants.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `constants.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: UI limits, global keys
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5722,13 +5722,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `date_pager_settle_gate.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Shared date `PageView` settle coordinator.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `date_pager_settle_gate.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Shared date `PageView` settle coordinator.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Shared date `PageView` settle coordinator
 - **Когда открывать:** Когда ломается поведение, связанное с `date_pager_settle_gate.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `date_pager_settle_gate.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Shared date `PageView` settle coordinator
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5748,13 +5748,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `date_swipe_physics.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Date swipe physics.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `date_swipe_physics.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Date swipe physics.
+- **Содержимое:** Содержит: Dart utilities (`LightDateSwipePhysics`, `FeatherDateSwipePhysics`).
+- **Обязанности:** Отвечает за: Date swipe physics
 - **Когда открывать:** Когда ломается поведение, связанное с `date_swipe_physics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `date_swipe_physics.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Date swipe physics
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5774,13 +5774,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_log.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (diagnostics) — `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Утилиты (`DesktopVoiceLog`).
-- **Обязанности:** Общая инфраструктура приложения: `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet).
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceLog`).
+- **Обязанности:** Отвечает за: `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet)
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_log.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5799,13 +5799,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_pipeline.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (diagnostics) — Desktop-voice pipeline step helpers built on `DesktopVoiceLog`.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_pipeline.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Desktop-voice pipeline step helpers built on `DesktopVoiceLog`.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Desktop-voice pipeline step helpers built on `DesktopVoiceLog`
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_pipeline.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_pipeline.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop-voice pipeline step helpers built on `DesktopVoiceLog`
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5824,13 +5824,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `plan_duplicate_log.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (diagnostics) — Plan duplicate detection logs.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `plan_duplicate_log.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Plan duplicate detection logs.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Plan duplicate detection logs
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_duplicate_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_duplicate_log.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Plan duplicate detection logs
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5849,13 +5849,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `platform_log.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (diagnostics) — Platform-specific log sinks.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `platform_log.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Platform-specific log sinks.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Platform-specific log sinks
 - **Когда открывать:** Когда ломается поведение, связанное с `platform_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `platform_log.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Platform-specific log sinks
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5874,13 +5874,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `runtime_log.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (diagnostics) — Uncaught error logging.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `runtime_log.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Uncaught error logging.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Uncaught error logging
 - **Когда открывать:** Когда ломается поведение, связанное с `runtime_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `runtime_log.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Uncaught error logging
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5899,13 +5899,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `startup_log.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (diagnostics) — Boot-phase structured logs.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `startup_log.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Boot-phase structured logs.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Boot-phase structured logs
 - **Когда открывать:** Когда ломается поведение, связанное с `startup_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `startup_log.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Boot-phase structured logs
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5924,13 +5924,13 @@ EN:
 
 RU:
 
-- **Что это:** example file `env.dart.example` в `lib/core/env` репозитория Life OS.
+- **Что это:** Назначение файла: example file `env.dart.example` in `lib/core/env` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/core/env` использует `env.dart.example` в сборке или workflow.
 - **Содержимое:** Открывать `env.dart.example` при правках в `lib/core/env`.
-- **Обязанности:** Роль `env.dart.example` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `env.dart.example` under `lib/core/env`.
 - **Когда открывать:** Когда ломается поведение, связанное с `env.dart.example`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `env.dart.example` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/core/env/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5949,13 +5949,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `link_scalar.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Plan link scalar helper.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `link_scalar.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Plan link scalar helper.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Plan link scalar helper
 - **Когда открывать:** Когда ломается поведение, связанное с `link_scalar.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `link_scalar.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Plan link scalar helper
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5974,13 +5974,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `app_navigator.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (navigation) — `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `app_navigator.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden
 - **Когда открывать:** Когда ломается поведение, связанное с `app_navigator.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_navigator.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -5999,13 +5999,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `shell_side_navigation.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (navigation) — Desktop/web side navigation rail.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `shell_side_navigation.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Desktop/web side navigation rail.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Desktop/web side navigation rail
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_side_navigation.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `shell_side_navigation.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop/web side navigation rail
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6025,13 +6025,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `rebuild_metrics.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (performance) — Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Утилиты (`RebuildMetrics`).
-- **Обязанности:** Общая инфраструктура приложения: Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated).
+- **Содержимое:** Содержит: Dart utilities (`RebuildMetrics`).
+- **Обязанности:** Отвечает за: Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated)
 - **Когда открывать:** Когда ломается поведение, связанное с `rebuild_metrics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `rebuild_metrics.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6050,13 +6050,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `runtime_flags.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (performance) — Feature kill switches (date strip, warm window, etc.).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `runtime_flags.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Feature kill switches (date strip, warm window, etc.).
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Feature kill switches (date strip, warm window, etc.)
 - **Когда открывать:** Когда ломается поведение, связанное с `runtime_flags.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `runtime_flags.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Feature kill switches (date strip, warm window, etc.)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6075,13 +6075,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `shell_flags.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (performance) — Shell tab stack behavior flags.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `shell_flags.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Shell tab stack behavior flags.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Shell tab stack behavior flags
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_flags.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `shell_flags.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Shell tab stack behavior flags
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6100,13 +6100,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `picker_entry_modes.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Platform-aware picker entry (keyboard vs touch).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `picker_entry_modes.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Platform-aware picker entry (keyboard vs touch).
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Platform-aware picker entry (keyboard vs touch)
 - **Когда открывать:** Когда ломается поведение, связанное с `picker_entry_modes.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `picker_entry_modes.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Platform-aware picker entry (keyboard vs touch)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6126,13 +6126,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `plan_category_lookup.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Category presentation lookup (shell-injected).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `plan_category_lookup.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Category presentation lookup (shell-injected).
+- **Содержимое:** Содержит: Dart utilities (`PlanCategoryPresentation`).
+- **Обязанности:** Отвечает за: Category presentation lookup (shell-injected)
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_category_lookup.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_category_lookup.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Category presentation lookup (shell-injected)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6151,13 +6151,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_hotkey_codec.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Desktop hotkey string encode/decode.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_hotkey_codec.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Desktop hotkey string encode/decode.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Desktop hotkey string encode/decode
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_hotkey_codec.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_hotkey_codec.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop hotkey string encode/decode
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6177,13 +6177,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_stt_diagnostics.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — STT helper diagnostics markers.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_stt_diagnostics.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: STT helper diagnostics markers.
+- **Содержимое:** Содержит: Dart utilities (`DesktopSttDiagnostics`).
+- **Обязанности:** Отвечает за: STT helper diagnostics markers
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_diagnostics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_stt_diagnostics.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: STT helper diagnostics markers
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6203,13 +6203,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_stt_helper_service.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Desktop GOLOS STT helper subprocess and HTTP transcribe.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_stt_helper_service.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Desktop GOLOS STT helper subprocess and HTTP transcribe.
+- **Содержимое:** Содержит: Dart utilities (`DesktopSttHelperService`).
+- **Обязанности:** Отвечает за: Desktop GOLOS STT helper subprocess and HTTP transcribe
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_helper_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_stt_helper_service.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop GOLOS STT helper subprocess and HTTP transcribe
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6228,13 +6228,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_tray_service.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — System tray entry (conditional export).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_tray_service.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: System tray entry (conditional export).
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: System tray entry (conditional export)
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_tray_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_tray_service.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: System tray entry (conditional export)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6254,13 +6254,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_tray_service_io.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Windows tray implementation.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_tray_service_io.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Windows tray implementation.
+- **Содержимое:** Содержит: Dart utilities (`_DesktopTrayListener`).
+- **Обязанности:** Отвечает за: Windows tray implementation
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_tray_service_io.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_tray_service_io.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Windows tray implementation
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6279,13 +6279,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_tray_service_stub.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Non-desktop tray stub.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_tray_service_stub.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Non-desktop tray stub.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Non-desktop tray stub
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_tray_service_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_tray_service_stub.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Non-desktop tray stub
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6304,13 +6304,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_acceptance_bridge.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Acceptance-test hooks for desktop voice.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_acceptance_bridge.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Acceptance-test hooks for desktop voice.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Acceptance-test hooks for desktop voice
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_acceptance_bridge.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_acceptance_bridge.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Acceptance-test hooks for desktop voice
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6330,13 +6330,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_attempt_log.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Persisted voice attempt history for profile UI.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_attempt_log.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Persisted voice attempt history for profile UI.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceAttemptStatus`, `DesktopVoiceAttempt`, `DesktopVoiceAttemptLog`).
+- **Обязанности:** Отвечает за: Persisted voice attempt history for profile UI
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_attempt_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_attempt_log.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Persisted voice attempt history for profile UI
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6356,13 +6356,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_audio_capture.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Mic capture for desktop voice.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_audio_capture.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Mic capture for desktop voice.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceAudioCapture`).
+- **Обязанности:** Отвечает за: Mic capture for desktop voice
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_audio_capture.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_audio_capture.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Mic capture for desktop voice
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6382,13 +6382,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_benchmark_service.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Desktop voice benchmark harness.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_benchmark_service.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Desktop voice benchmark harness.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceBenchmarkService`).
+- **Обязанности:** Отвечает за: Desktop voice benchmark harness
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_benchmark_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_benchmark_service.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop voice benchmark harness
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6408,13 +6408,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_command_normalize.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Transcript normalization before parse/submit.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_command_normalize.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Transcript normalization before parse/submit.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceNormalizedCommand`).
+- **Обязанности:** Отвечает за: Transcript normalization before parse/submit
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_command_normalize.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_command_normalize.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Transcript normalization before parse/submit
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6433,13 +6433,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_confirmation.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Start/stop voice confirmation copy.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_confirmation.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Start/stop voice confirmation copy.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Start/stop voice confirmation copy
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_confirmation.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_confirmation.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Start/stop voice confirmation copy
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6459,13 +6459,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_engine.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Desktop voice engine lifecycle.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_engine.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Desktop voice engine lifecycle.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceEngineId`, `DesktopVoiceEngineBenchmark`).
+- **Обязанности:** Отвечает за: Desktop voice engine lifecycle
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_engine.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_engine.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop voice engine lifecycle
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6485,13 +6485,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_hotkey.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Global desktop voice hotkey coordinator.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_hotkey.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Global desktop voice hotkey coordinator.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceHotkeyAction`).
+- **Обязанности:** Отвечает за: Global desktop voice hotkey coordinator
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_hotkey.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_hotkey.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Global desktop voice hotkey coordinator
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6510,13 +6510,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_hotkey_io.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Windows hotkey registration.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_hotkey_io.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Windows hotkey registration.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Windows hotkey registration
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_hotkey_io.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_hotkey_io.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Windows hotkey registration
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6535,13 +6535,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_hotkey_markers.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Hotkey self-test / acceptance markers.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_hotkey_markers.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Hotkey self-test / acceptance markers.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Hotkey self-test / acceptance markers
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_hotkey_markers.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_hotkey_markers.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Hotkey self-test / acceptance markers
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6560,13 +6560,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_hotkey_stub.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Non-desktop hotkey stub.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_hotkey_stub.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Non-desktop hotkey stub.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Non-desktop hotkey stub
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_hotkey_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_hotkey_stub.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Non-desktop hotkey stub
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6585,13 +6585,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_native_overlay.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Native overlay channel bridge.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_native_overlay.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Native overlay channel bridge.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Native overlay channel bridge
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_native_overlay.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_native_overlay.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Native overlay channel bridge
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6610,13 +6610,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_overlay_bridge.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Overlay ↔ Flutter bridge.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_overlay_bridge.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Overlay ↔ Flutter bridge.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Overlay ↔ Flutter bridge
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_bridge.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_overlay_bridge.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Overlay ↔ Flutter bridge
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6635,13 +6635,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_overlay_host.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Overlay host conditional export.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_overlay_host.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Overlay host conditional export.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Overlay host conditional export
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_host.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_overlay_host.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Overlay host conditional export
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6660,13 +6660,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_overlay_host_io.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Windows overlay host.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_overlay_host_io.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Windows overlay host.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Windows overlay host
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_host_io.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_overlay_host_io.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Windows overlay host
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6685,13 +6685,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_overlay_host_stub.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Non-desktop overlay host stub.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_overlay_host_stub.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Non-desktop overlay host stub.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Non-desktop overlay host stub
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_host_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_overlay_host_stub.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Non-desktop overlay host stub
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6710,13 +6710,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_overlay_service.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Native overlay state machine.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_overlay_service.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Native overlay state machine.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Native overlay state machine
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_overlay_service.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Native overlay state machine
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6736,13 +6736,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_recognizer.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Desktop voice recognizer interface.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_recognizer.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Desktop voice recognizer interface.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceRecognitionResult`).
+- **Обязанности:** Отвечает за: Desktop voice recognizer interface
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognizer.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_recognizer.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop voice recognizer interface
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6761,13 +6761,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_recognizer_factory.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Platform recognizer factory.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_recognizer_factory.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Platform recognizer factory.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Platform recognizer factory
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognizer_factory.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_recognizer_factory.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Platform recognizer factory
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6787,13 +6787,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_recognizer_io.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Windows recognizer implementation.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_recognizer_io.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Windows recognizer implementation.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceRecognizerGolosHelper`).
+- **Обязанности:** Отвечает за: Windows recognizer implementation
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognizer_io.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_recognizer_io.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Windows recognizer implementation
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6813,13 +6813,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_recognizer_stub.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Non-desktop recognizer stub.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_recognizer_stub.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Non-desktop recognizer stub.
+- **Содержимое:** Содержит: Dart utilities (`_DesktopVoiceRecognizerUnsupported`).
+- **Обязанности:** Отвечает за: Non-desktop recognizer stub
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognizer_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_recognizer_stub.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Non-desktop recognizer stub
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6839,13 +6839,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_record_submit.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Parsed voice command → `writeRecord` bridge.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_record_submit.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Parsed voice command → `writeRecord` bridge.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`).
+- **Обязанности:** Отвечает за: Parsed voice command → `writeRecord` bridge
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_record_submit.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_record_submit.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Parsed voice command → `writeRecord` bridge
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6865,13 +6865,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_settings.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Local desktop voice prefs (SharedPreferences).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_settings.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Local desktop voice prefs (SharedPreferences).
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceHotkeyConfig`, `DesktopVoiceSettings`).
+- **Обязанности:** Отвечает за: Local desktop voice prefs (SharedPreferences)
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_settings.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Local desktop voice prefs (SharedPreferences)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6890,13 +6890,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_smoke_bridge.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Smoke-test hooks for desktop voice.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_smoke_bridge.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Smoke-test hooks for desktop voice.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Smoke-test hooks for desktop voice
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_smoke_bridge.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_smoke_bridge.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Smoke-test hooks for desktop voice
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6916,13 +6916,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_user_error.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Friendly desktop voice error mapping.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_user_error.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Friendly desktop voice error mapping.
+- **Содержимое:** Содержит: Dart utilities (`DesktopVoiceErrorStage`, `DesktopVoiceUserError`).
+- **Обязанности:** Отвечает за: Friendly desktop voice error mapping
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_user_error.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_user_error.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Friendly desktop voice error mapping
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6941,13 +6941,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_voice_window_flags.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Desktop window visibility flags.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_voice_window_flags.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Desktop window visibility flags.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Desktop window visibility flags
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_window_flags.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_window_flags.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop window visibility flags
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6967,13 +6967,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `desktop_win_speech_service.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Windows speech platform adapter.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `desktop_win_speech_service.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Windows speech platform adapter.
+- **Содержимое:** Содержит: Dart utilities (`DesktopWinSpeechService`).
+- **Обязанности:** Отвечает за: Windows speech platform adapter
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_win_speech_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_win_speech_service.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Windows speech platform adapter
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -6992,13 +6992,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `pcm_audio_utils.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — PCM/WAV audio helpers for desktop STT.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `pcm_audio_utils.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: PCM/WAV audio helpers for desktop STT.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: PCM/WAV audio helpers for desktop STT
 - **Когда открывать:** Когда ломается поведение, связанное с `pcm_audio_utils.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `pcm_audio_utils.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: PCM/WAV audio helpers for desktop STT
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7017,13 +7017,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `speech_engine_handle.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — Speech-to-text engine lifecycle.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `speech_engine_handle.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Speech-to-text engine lifecycle.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Speech-to-text engine lifecycle
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_engine_handle.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `speech_engine_handle.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Speech-to-text engine lifecycle
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7042,13 +7042,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `speech_listen_locale.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (services) — STT locale resolution.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `speech_listen_locale.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: STT locale resolution.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: STT locale resolution
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_listen_locale.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `speech_listen_locale.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: STT locale resolution
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7067,13 +7067,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `shell_adaptive.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Side vs bottom navigation breakpoint.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `shell_adaptive.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Side vs bottom navigation breakpoint.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Side vs bottom navigation breakpoint
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_adaptive.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `shell_adaptive.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Side vs bottom navigation breakpoint
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7093,13 +7093,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `shell_layout_state.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — `ShellLayoutController` / FAB clearance.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `shell_layout_state.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: `ShellLayoutController` / FAB clearance.
+- **Содержимое:** Содержит: Dart utilities (`ShellLayoutController`, `ShellLayoutScope`).
+- **Обязанности:** Отвечает за: `ShellLayoutController` / FAB clearance
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_layout_state.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `shell_layout_state.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `ShellLayoutController` / FAB clearance
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7118,13 +7118,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `tag_contrast.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Tag foreground/background contrast.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `tag_contrast.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Tag foreground/background contrast.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Tag foreground/background contrast
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_contrast.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `tag_contrast.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Tag foreground/background contrast
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7143,13 +7143,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `theme.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — `ThemeData`, density, input decoration.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `theme.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: `ThemeData`, density, input decoration.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: `ThemeData`, density, input decoration
 - **Когда открывать:** Когда ломается поведение, связанное с `theme.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `theme.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `ThemeData`, density, input decoration
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7169,13 +7169,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `app_clock.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (time) — Injectable wall clock + timezone label.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `app_clock.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Injectable wall clock + timezone label.
+- **Содержимое:** Содержит: Dart utilities (`WallNowFn`, `AppClock`).
+- **Обязанности:** Отвечает за: Injectable wall clock + timezone label
 - **Когда открывать:** Когда ломается поведение, связанное с `app_clock.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_clock.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Injectable wall clock + timezone label
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7195,13 +7195,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `category_timezone_options.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (time) — Per-category timezone option list.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `category_timezone_options.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Per-category timezone option list.
+- **Содержимое:** Содержит: Dart utilities (`CategoryDefaultTimezoneOption`).
+- **Обязанности:** Отвечает за: Per-category timezone option list
 - **Когда открывать:** Когда ломается поведение, связанное с `category_timezone_options.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `category_timezone_options.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Per-category timezone option list
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7220,13 +7220,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `plan_time_labels.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (time) — Plan time label formatting.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `plan_time_labels.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Plan time label formatting.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Plan time label formatting
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_labels.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_time_labels.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Plan time label formatting
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7245,13 +7245,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `plan_time_visible_window.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (time) — Extended Time View day window math (−3..27 h).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `plan_time_visible_window.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Extended Time View day window math (−3..27 h).
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Extended Time View day window math (−3..27 h)
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_visible_window.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_time_visible_window.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Extended Time View day window math (−3..27 h)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7271,13 +7271,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `profile_timezone_actions.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (time) — Injectable profile timezone read/write hooks (`ProfileTimezoneActions`).
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `profile_timezone_actions.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Injectable profile timezone read/write hooks (`ProfileTimezoneActions`).
+- **Содержимое:** Содержит: Dart utilities (`ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`).
+- **Обязанности:** Отвечает за: Injectable profile timezone read/write hooks (`ProfileTimezoneActions`)
 - **Когда открывать:** Когда ломается поведение, связанное с `profile_timezone_actions.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `profile_timezone_actions.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Injectable profile timezone read/write hooks (`ProfileTimezoneActions`)
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7297,13 +7297,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `profile_timezone_catalog.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (time) — Canonical profile timezone catalog, IANA IDs, DST labels.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `profile_timezone_catalog.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Canonical profile timezone catalog, IANA IDs, DST labels.
+- **Содержимое:** Содержит: Dart utilities (`ProfileTimezoneCatalogEntry`).
+- **Обязанности:** Отвечает за: Canonical profile timezone catalog, IANA IDs, DST labels
 - **Когда открывать:** Когда ломается поведение, связанное с `profile_timezone_catalog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `profile_timezone_catalog.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Canonical profile timezone catalog, IANA IDs, DST labels
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7322,13 +7322,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `wall_clock.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (time) — Wall-clock formatting helpers.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `wall_clock.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Wall-clock formatting helpers.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Wall-clock formatting helpers
 - **Когда открывать:** Когда ломается поведение, связанное с `wall_clock.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `wall_clock.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Wall-clock formatting helpers
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7347,13 +7347,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `url_strategy_stub.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Web URL strategy conditional import.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `url_strategy_stub.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Web URL strategy conditional import.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Web URL strategy conditional import
 - **Когда открывать:** Когда ломается поведение, связанное с `url_strategy_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `url_strategy_stub.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Web URL strategy conditional import
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7372,13 +7372,13 @@ EN:
 
 RU:
 
-- **Что это:** Foundation-код `web_redirect.dart` — тема, время, voice или диагностика.
+- **Что это:** Назначение файла: Foundation helper (core) — Production web OAuth redirect URI helper.
 - **Зачем:** Общий код: тема, время, voice — не один экран.
-- **Содержимое:** Содержимое `web_redirect.dart` — открыть файл при правках.
-- **Обязанности:** Общая инфраструктура приложения: Production web OAuth redirect URI helper.
+- **Содержимое:** Содержит: Dart utilities (implementation details in the source file).
+- **Обязанности:** Отвечает за: Production web OAuth redirect URI helper
 - **Когда открывать:** Когда ломается поведение, связанное с `web_redirect.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `web_redirect.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Production web OAuth redirect URI helper
 - **Слой:** Foundation — тема, время, voice, диагностика.
 
 
@@ -7400,11 +7400,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Live clock chip.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `app_bar_live_clock.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Live clock chip.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppBarLiveClock`, `_AppBarLiveClockState`).
+- **Обязанности:** Отвечает за: Live clock chip
 - **Когда открывать:** Когда ломается поведение, связанное с `app_bar_live_clock.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_bar_live_clock.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Live clock chip
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7426,11 +7426,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `AppButton`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `app_button.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика: `AppButton`.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppButtonVariant`, `AppButtonSize`, `AppButton`).
+- **Обязанности:** Отвечает за: `AppButton`
 - **Когда открывать:** Когда ломается поведение, связанное с `app_button.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Роль: `AppButton`
+- **Связано с:** Связан с: Role: `AppButton`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7452,11 +7452,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `AppIconButton`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `app_icon_button.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: `AppIconButton`.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppIconButtonVariant`, `AppIconButtonSize`, `AppIconButton`).
+- **Обязанности:** Отвечает за: `AppIconButton`
 - **Когда открывать:** Когда ломается поведение, связанное с `app_icon_button.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_icon_button.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `AppIconButton`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7478,11 +7478,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `AppLoading`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `app_loading.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика: `AppLoading`.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppLoadingSize`, `AppLoading`).
+- **Обязанности:** Отвечает за: `AppLoading`
 - **Когда открывать:** Когда ломается поведение, связанное с `app_loading.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_loading.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `AppLoading`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7504,11 +7504,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Mic level visualization bars for voice UI.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `app_mic_level_bars.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Mic level visualization bars for voice UI.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppMicLevelBars`).
+- **Обязанности:** Отвечает за: Mic level visualization bars for voice UI
 - **Когда открывать:** Когда ломается поведение, связанное с `app_mic_level_bars.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_mic_level_bars.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Mic level visualization bars for voice UI
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7530,11 +7530,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `app_settings_layout.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`).
+- **Обязанности:** Отвечает за: `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers
 - **Когда открывать:** Когда ломается поведение, связанное с `app_settings_layout.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_settings_layout.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7556,11 +7556,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `AppErrorState`, `AppEmptyState`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `app_state_views.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: `AppErrorState`, `AppEmptyState`.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppErrorState`, `AppEmptyState`).
+- **Обязанности:** Отвечает за: `AppErrorState`, `AppEmptyState`
 - **Когда открывать:** Когда ломается поведение, связанное с `app_state_views.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_state_views.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `AppErrorState`, `AppEmptyState`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7582,11 +7582,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Canonical solid timezone icon family.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `app_timezone_icon.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Canonical solid timezone icon family.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppTimezoneIcon`, `_AppTimezoneIconPainter`).
+- **Обязанности:** Отвечает за: Canonical solid timezone icon family
 - **Когда открывать:** Когда ломается поведение, связанное с `app_timezone_icon.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_timezone_icon.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Canonical solid timezone icon family
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7608,11 +7608,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `TagChip`, `CategoryChip`, tag quick-pick strip.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `chip_component.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: `TagChip`, `CategoryChip`, tag quick-pick strip.
+- **Содержимое:** Содержит: Canonical Flutter widget (`CategoryBreadcrumb`, `CategoryChipVariant`, `CategoryChip`).
+- **Обязанности:** Отвечает за: `TagChip`, `CategoryChip`, tag quick-pick strip
 - **Когда открывать:** Когда ломается поведение, связанное с `chip_component.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `chip_component.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `TagChip`, `CategoryChip`, tag quick-pick strip
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7634,11 +7634,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Compact segmented controls.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `compact_nav_controls.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Compact segmented controls.
+- **Содержимое:** Содержит: Canonical Flutter widget (`AppCompactSegmentLabel`, `AppCompactTextTab`).
+- **Обязанности:** Отвечает за: Compact segmented controls
 - **Когда открывать:** Когда ломается поведение, связанное с `compact_nav_controls.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `compact_nav_controls.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Compact segmented controls
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7659,11 +7659,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `showConfirmDialog`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `confirm_dialog.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: `showConfirmDialog`.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: `showConfirmDialog`
 - **Когда открывать:** Когда ломается поведение, связанное с `confirm_dialog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `confirm_dialog.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `showConfirmDialog`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7685,11 +7685,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Day content pager strip.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `day_content_strip.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Day content pager strip.
+- **Содержимое:** Содержит: Canonical Flutter widget (`EagerDayItemBuilder`, `EagerDayContentStripController`, `EagerDayContentStrip`, `_EagerDayContentStripState`).
+- **Обязанности:** Отвечает за: Day content pager strip
 - **Когда открывать:** Когда ломается поведение, связанное с `day_content_strip.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `day_content_strip.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Day content pager strip
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7710,11 +7710,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Mounted day window.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `day_window.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Mounted day window.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Mounted day window
 - **Когда открывать:** Когда ломается поведение, связанное с `day_window.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `day_window.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Mounted day window
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7736,11 +7736,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Date/time header strip.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `global_app_header.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Date/time header strip.
+- **Содержимое:** Содержит: Canonical Flutter widget (`GlobalAppHeader`).
+- **Обязанности:** Отвечает за: Date/time header strip
 - **Когда открывать:** Когда ломается поведение, связанное с `global_app_header.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `global_app_header.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Date/time header strip
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7762,11 +7762,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Optional lazy shell tab stack.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `lazy_indexed_stack.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Optional lazy shell tab stack.
+- **Содержимое:** Содержит: Canonical Flutter widget (`LazyIndexedStack`, `_LazyIndexedStackState`).
+- **Обязанности:** Отвечает за: Optional lazy shell tab stack
 - **Когда открывать:** Когда ломается поведение, связанное с `lazy_indexed_stack.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `lazy_indexed_stack.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Optional lazy shell tab stack
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7788,11 +7788,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Card foundation for Component Lab.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `life_card.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Card foundation for Component Lab.
+- **Содержимое:** Содержит: Canonical Flutter widget (`LifeCardState`, `LifeCardDensity`, `AppTaskCardType`, `LifeCard`).
+- **Обязанности:** Отвечает за: Card foundation for Component Lab
 - **Когда открывать:** Когда ломается поведение, связанное с `life_card.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `life_card.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Card foundation for Component Lab
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7814,11 +7814,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Desktop/web drag scroll.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `mouse_drag_scroll_behavior.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Desktop/web drag scroll.
+- **Содержимое:** Содержит: Canonical Flutter widget (`MouseDragScrollBehavior`).
+- **Обязанности:** Отвечает за: Desktop/web drag scroll
 - **Когда открывать:** Когда ломается поведение, связанное с `mouse_drag_scroll_behavior.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `mouse_drag_scroll_behavior.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Desktop/web drag scroll
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7840,11 +7840,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Unified date+time picker.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `omni_date_time_picker_dialog.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Unified date+time picker.
+- **Содержимое:** Содержит: Canonical Flutter widget (`_OmniDateTimePickerDialog`, `_OmniDateTimePickerDialogState`).
+- **Обязанности:** Отвечает за: Unified date+time picker
 - **Когда открывать:** Когда ломается поведение, связанное с `omni_date_time_picker_dialog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `omni_date_time_picker_dialog.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Unified date+time picker
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7866,11 +7866,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `PlanCard` wrapper.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Виджет (`PlanCard`).
-- **Обязанности:** Общий UI-компонент: `PlanCard` wrapper.
+- **Содержимое:** Содержит: Canonical Flutter widget (`PlanCard`).
+- **Обязанности:** Отвечает за: `PlanCard` wrapper
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `PlanCard` wrapper
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7891,11 +7891,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_controls.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_controls.dart`
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_controls.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_controls.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_controls.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7916,11 +7916,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_geometry.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_geometry.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_geometry.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7941,11 +7941,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_metrics.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_metrics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_metrics.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7966,11 +7966,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_sections.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_sections.dart`
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_sections.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_sections.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_sections.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -7991,11 +7991,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_density.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_time_card_density.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_density.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_density.dart`
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_card_density.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_time_card_density.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_density.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8016,11 +8016,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Public `PlanTimeTaskCard` widget.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_time_task_card.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Public `PlanTimeTaskCard` widget.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Public `PlanTimeTaskCard` widget
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_task_card.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_time_task_card.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Public `PlanTimeTaskCard` widget
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8042,11 +8042,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_controls.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (`PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_controls.dart`
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_controls.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_controls.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8068,11 +8068,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Density bands + measure helpers.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_density.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Density bands + measure helpers.
+- **Содержимое:** Содержит: Canonical Flutter widget (`PlanTimeCardVisualDensity`).
+- **Обязанности:** Отвечает за: Density bands + measure helpers
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_density.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Density bands + measure helpers
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8093,11 +8093,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_geometry.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_geometry.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8119,11 +8119,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Time View CardPlan layout variants.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_layouts.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Time View CardPlan layout variants.
+- **Содержимое:** Содержит: Canonical Flutter widget (`TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`).
+- **Обязанности:** Отвечает за: Time View CardPlan layout variants
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_layouts.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Time View CardPlan layout variants
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8145,11 +8145,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_metrics.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (`PlanTimeTaskCardDensity`, `PlanCardSurface`).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_metrics.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8171,11 +8171,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Progress/invariant card shells.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_progress.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Progress/invariant card shells.
+- **Содержимое:** Содержит: Canonical Flutter widget (`PlanCardProgressSlot`, `PlanCardInvariantBody`).
+- **Обязанности:** Отвечает за: Progress/invariant card shells
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_progress.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Progress/invariant card shells
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8197,11 +8197,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_sections.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
+- **Содержимое:** Содержит: Canonical Flutter widget (`PlanCardTagsRow`, `PlanCardTimeText`, `PlanCardFooterRow`, `PlanCardWatermark`).
+- **Обязанности:** Отвечает за: Re-export stub → `plan_time_task_card/plan_card_sections.dart`
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_sections.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Re-export stub → `plan_time_task_card/plan_card_sections.dart`
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8223,11 +8223,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Time View tag row/stack/pill widgets.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_card_tags.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Time View tag row/stack/pill widgets.
+- **Содержимое:** Содержит: Canonical Flutter widget (`TimeViewTagsRow`, `TimeViewTagStack`, `TimeViewCompactTagPill`).
+- **Обязанности:** Отвечает за: Time View tag row/stack/pill widgets
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_card_tags.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Time View tag row/stack/pill widgets
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8249,11 +8249,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Public `PlanTimeTaskCard` widget.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `plan_time_task_card.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Public `PlanTimeTaskCard` widget.
+- **Содержимое:** Содержит: Canonical Flutter widget (`PlanTimeTaskCard`, `_PlanTimeTaskCardState`).
+- **Обязанности:** Отвечает за: Public `PlanTimeTaskCard` widget
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_time_task_card.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Public `PlanTimeTaskCard` widget
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8275,11 +8275,11 @@ RU:
 
 - **Что это:** Общий виджет design system — Tag display mode inherited widget.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `tag_display_mode_scope.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: Tag display mode inherited widget.
+- **Содержимое:** Содержит: Canonical Flutter widget (`TagDisplayModeScope`).
+- **Обязанности:** Отвечает за: Tag display mode inherited widget
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_display_mode_scope.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `tag_display_mode_scope.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Tag display mode inherited widget
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8301,11 +8301,11 @@ RU:
 
 - **Что это:** Общий виджет design system — `HeaderTimezoneQuickSwitcher`, profile timezone quick picker.
 - **Зачем:** Один стиль кнопок/карточек на всех вкладках.
-- **Содержимое:** Содержимое `timezone_quick_picker.dart` — открыть файл при правках.
-- **Обязанности:** Общий UI-компонент: `HeaderTimezoneQuickSwitcher`, profile timezone quick picker.
+- **Содержимое:** Содержит: Canonical Flutter widget (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`).
+- **Обязанности:** Отвечает за: `HeaderTimezoneQuickSwitcher`, profile timezone quick picker
 - **Когда открывать:** Когда ломается поведение, связанное с `timezone_quick_picker.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `timezone_quick_picker.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `HeaderTimezoneQuickSwitcher`, profile timezone quick picker
 - **Слой:** Общий UI-виджет design system.
 
 
@@ -8325,14 +8325,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `auth_bridge.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Session check, OAuth routing.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `auth_bridge.dart`.
-- **Обязанности:** Зона ответственности brain: Session check, OAuth routing.
+- **Содержимое:** Содержит: Dart code (`OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`).
+- **Обязанности:** Отвечает за: Session check, OAuth routing
 - **Когда открывать:** Когда ломается поведение, связанное с `auth_bridge.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Session check, OAuth routing
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Session check, OAuth routing
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/cache/day_snapshot_window.dart`
@@ -8351,13 +8351,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `day_snapshot_window.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Rolling warm day snapshots for date paging.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `day_snapshot_window.dart`.
-- **Обязанности:** Зона ответственности brain: Rolling warm day snapshots for date paging.
+- **Содержимое:** Содержит: Dart code (`TimelineDaySnapshot`, `PlansDaySnapshot`, `WarmSnapshotWindow`).
+- **Обязанности:** Отвечает за: Rolling warm day snapshots for date paging
 - **Когда открывать:** Когда ломается поведение, связанное с `day_snapshot_window.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Rolling warm day snapshots for date paging
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Rolling warm day snapshots for date paging
 - **Слой:** Brain — кэш производительности.
 
 
@@ -8377,13 +8377,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `render_snapshot.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Render snapshot helpers for day strips.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `render_snapshot.dart`.
-- **Обязанности:** Зона ответственности brain: Render snapshot helpers for day strips.
+- **Содержимое:** Содержит: Dart code (`PlanCardRenderDto`, `PlansDayRenderSnapshot`, `TimelineCardRenderDto`, `TimelineDayRenderSnapshot`).
+- **Обязанности:** Отвечает за: Render snapshot helpers for day strips
 - **Когда открывать:** Когда ломается поведение, связанное с `render_snapshot.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Render snapshot helpers for day strips
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Render snapshot helpers for day strips
 - **Слой:** Brain — кэш производительности.
 
 
@@ -8403,13 +8403,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `rendered_day_body_cache.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Rendered day-body LRU cache.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `rendered_day_body_cache.dart`.
-- **Обязанности:** Зона ответственности brain: Rendered day-body LRU cache.
+- **Содержимое:** Содержит: Dart code (`TimelineDayBodyEntry`, `PlansDayBodyEntry`).
+- **Обязанности:** Отвечает за: Rendered day-body LRU cache
 - **Когда открывать:** Когда ломается поведение, связанное с `rendered_day_body_cache.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Rendered day-body LRU cache
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Rendered day-body LRU cache
 - **Слой:** Brain — кэш производительности.
 
 
@@ -8436,7 +8436,7 @@ RU:
 - **Когда открывать:** Категории не появляются или не обновляются после правок.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Экран категорий, старт записи, карточки планов.
-- **Слой:** Brain — `part` of `database_service.dart` (cache/load).
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/categories/category_crud.dart`
@@ -8462,7 +8462,7 @@ RU:
 - **Когда открывать:** Категория не сохраняется или не архивируется.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI категорий.
-- **Слой:** Brain — `part` of `database_service.dart` (network writes).
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/categories/category_default_time.dart`
@@ -8488,7 +8488,7 @@ RU:
 - **Когда открывать:** Время по умолчанию не подставляется в новый план.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Создание/редактирование планов, Time View.
-- **Слой:** Brain — `part` of `database_service.dart` (category schedule defaults).
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/categories/category_lookup.dart`
@@ -8513,8 +8513,8 @@ RU:
 - **Обязанности:** Выбрать лучшую категорию по тексту.
 - **Когда открывать:** Голос или автоподбор выбрал не ту категорию.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `category_lookup.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Brain — `part` of `database_service.dart` (search/match).
+- **Связано с:** Связан с: Voice parser, smart plan input, record start, category pickers.
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/categories/category_record_bridge.dart`
@@ -8540,7 +8540,7 @@ RU:
 - **Когда открывать:** Запись без категории или ошибка stop/delete по id.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Timeline, edit sheet, hooks на сервере.
-- **Слой:** Brain — `part` of `database_service.dart` (record↔category bridge).
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/categories/category_stats.dart`
@@ -8565,8 +8565,8 @@ RU:
 - **Обязанности:** Длительность за день/период по ветке категории.
 - **Когда открывать:** Неверные часы в статистике по категории.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `category_stats.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Brain — `part` of `database_service.dart` (read-only aggregation).
+- **Связано с:** Связан с: `lib/features/stats/`, Timeline stats tab.
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/categories/category_tree.dart`
@@ -8592,7 +8592,7 @@ RU:
 - **Когда открывать:** Неверный порядок или путь категории в UI.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Picker категорий, статистика.
-- **Слой:** Brain — `part` of `database_service.dart` (tree structure).
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/category_fuzzy_match.dart`
@@ -8610,14 +8610,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `category_fuzzy_match.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Category name scoring.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `category_fuzzy_match.dart`.
-- **Обязанности:** Зона ответственности brain: Category name scoring.
+- **Содержимое:** Содержит: Dart code (implementation details in the source file).
+- **Обязанности:** Отвечает за: Category name scoring
 - **Когда открывать:** Когда ломается поведение, связанное с `category_fuzzy_match.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Category name scoring
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Category name scoring
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/category_service.dart`
@@ -8642,7 +8642,7 @@ RU:
 - **Обязанности:** Координатор домена: Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers
 - **Слой:** Brain — координатор домена.
 
 
@@ -8668,7 +8668,7 @@ RU:
 - **Обязанности:** Маршрутизация к domain-файлам brain.
 - **Когда открывать:** Когда ломается поведение, связанное с `database_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Singleton root: shared state, streams, static helpers; `part` coordinator
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Singleton root: shared state, streams, static helpers; `part` coordinator
 - **Слой:** Brain — координатор домена.
 
 
@@ -8688,14 +8688,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `db_core.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Bootstrap: `loadInitialData`, PocketBase health, lifecycle, flush outboxes.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `db_core.dart`.
-- **Обязанности:** Зона ответственности brain: Bootstrap: `loadInitialData`, PocketBase health, lifecycle, flush outboxes.
+- **Содержимое:** Содержит: Dart code (`DbCoreExtension`).
+- **Обязанности:** Отвечает за: Bootstrap: `loadInitialData`, PocketBase health, lifecycle, flush outboxes
 - **Когда открывать:** Когда ломается поведение, связанное с `db_core.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Bootstrap: `loadInitialData`, PocketBase health, lifecycle, flush outboxes
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Bootstrap: `loadInitialData`, PocketBase health, lifecycle, flush outboxes
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/local_sync/offline_sync_state.dart`
@@ -8714,13 +8714,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `offline_sync_state.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Tracks pending sync count and “auth paused” for the top banner.
 - **Зачем:** Часть brain для offline sync и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `offline_sync_state.dart`.
+- **Содержимое:** Содержит: `OfflineSyncController`: pendingCount, isSyncing, authPaused.
 - **Обязанности:** Зона ответственности: Pending count, syncing, auth-paused UI state.
 - **Когда открывать:** Когда ломается поведение, связанное с `offline_sync_state.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; offline-баннер in shell, reconnect flush; Роль: Pending count, syncing, auth-paused UI state
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; Role: Pending count, syncing, auth-paused UI state
 - **Слой:** Brain — офлайн-очередь.
 
 
@@ -8739,13 +8739,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_create_outbox.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Legacy re-export file — points importers to `plan_mutation_outbox.dart`.
 - **Зачем:** Часть brain для offline sync и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_create_outbox.dart`.
+- **Содержимое:** Содержит: Single export line only — no logic.
 - **Обязанности:** Зона ответственности: Re-export of `plan_mutation_outbox.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_create_outbox.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; offline-баннер in shell, reconnect flush; Роль: Re-export of `plan_mutation_outbox.dart`
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; Role: Re-export of `plan_mutation_outbox.dart`
 - **Слой:** Brain — офлайн-очередь.
 
 
@@ -8764,13 +8764,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_mutation_outbox.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Remembers plan/list create/update/delete when offline.
 - **Зачем:** Часть brain для offline sync и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_mutation_outbox.dart`.
+- **Содержимое:** Содержит: SharedPreferences queue for plan mutations.
 - **Обязанности:** Зона ответственности: Offline queue: plan/list create/update/delete.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_mutation_outbox.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; offline-баннер in shell, reconnect flush; Роль: Offline queue: plan/list create/update/delete
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; Role: Offline queue: plan/list create/update/delete
 - **Слой:** Brain — офлайн-очередь.
 
 
@@ -8789,13 +8789,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_mutation_outbox.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Remembers record start/stop/edit/delete when the network fails.
 - **Зачем:** Часть brain для offline sync и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_mutation_outbox.dart`.
+- **Содержимое:** Содержит: SharedPreferences queue for record mutations; coalesces duplicate ops.
 - **Обязанности:** Зона ответственности: Offline queue: record start/stop/update/delete.
 - **Когда открывать:** Когда ломается поведение, связанное с `record_mutation_outbox.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; offline-баннер in shell, reconnect flush; Роль: Offline queue: record start/stop/update/delete
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; Role: Offline queue: record start/stop/update/delete
 - **Слой:** Brain — офлайн-очередь.
 
 
@@ -8815,13 +8815,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `sync_manager.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Watches network connectivity and triggers queue flush on reconnect.
 - **Зачем:** Часть brain для offline sync и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `sync_manager.dart`.
+- **Содержимое:** Содержит: Connectivity listener → `flushPendingLocalMutations`.
 - **Обязанности:** Зона ответственности: Connectivity / resume → flush trigger.
 - **Когда открывать:** Когда ломается поведение, связанное с `sync_manager.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; offline-баннер in shell, reconnect flush; Роль: Connectivity / resume → flush trigger
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Offline banner in shell, reconnect flush; Role: Connectivity / resume → flush trigger
 - **Слой:** Brain — офлайн-очередь.
 
 
@@ -8846,7 +8846,7 @@ RU:
 - **Обязанности:** Экспорт моделей.
 - **Когда открывать:** Когда ломается поведение, связанное с `models.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: `part` declarations; export surface for all model types
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: `part` declarations; export surface for all model types
 - **Слой:** Модели данных — без HTTP.
 
 
@@ -8866,13 +8866,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `_shared.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Shared helper functions used by multiple data model classes.
 - **Зачем:** Часть brain для data models и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `_shared.dart`.
+- **Содержимое:** Содержит: Small pure helpers — no PocketBase calls.
 - **Обязанности:** Зона ответственности: Shared model helpers.
 - **Когда открывать:** Когда ломается поведение, связанное с `_shared.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Shared model helpers
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Shared model helpers
 - **Слой:** Модели данных — без HTTP.
 
 
@@ -8892,13 +8892,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `category.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Defines `CategoryRule` — name, color, icon, parent, PocketBase ids.
 - **Зачем:** Часть brain для data models и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `category.dart`.
+- **Содержимое:** Содержит: `CategoryRule` with stable hash for category business id.
 - **Обязанности:** Зона ответственности: `CategoryRule`.
 - **Когда открывать:** Когда ломается поведение, связанное с `category.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: `CategoryRule`
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: `CategoryRule`
 - **Слой:** Модели данных — без HTTP.
 
 
@@ -8918,13 +8918,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `planning.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Defines `PlanningTask` — scheduled plans and backlog list rows.
 - **Зачем:** Часть brain для data models и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `planning.dart`.
+- **Содержимое:** Содержит: Plan fields: time, done flag, recurrence, tags.
 - **Обязанности:** Зона ответственности: `PlanningTask`.
 - **Когда открывать:** Когда ломается поведение, связанное с `planning.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: `PlanningTask`
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: `PlanningTask`
 - **Слой:** Модели данных — без HTTP.
 
 
@@ -8944,13 +8944,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `profile.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Defines the shape of user settings (`UserSettings`) — timezone, language, admin flag.
 - **Зачем:** Часть brain для data models и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `profile.dart`.
+- **Содержимое:** Содержит: `UserSettings` class and profile field parsers.
 - **Обязанности:** Зона ответственности: `UserSettings`, profile fields.
 - **Когда открывать:** Когда ломается поведение, связанное с `profile.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: `UserSettings`, profile fields
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: `UserSettings`, profile fields
 - **Слой:** Модели данных — без HTTP.
 
 
@@ -8970,13 +8970,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Defines `TimelineRecord` — start/stop times, status, category, date key.
 - **Зачем:** Часть brain для data models и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record.dart`.
+- **Содержимое:** Содержит: UTC storage, profile-timezone date key bucketing.
 - **Обязанности:** Зона ответственности: `TimelineRecord`.
 - **Когда открывать:** Когда ломается поведение, связанное с `record.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: `TimelineRecord`
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: `TimelineRecord`
 - **Слой:** Модели данных — без HTTP.
 
 
@@ -8996,13 +8996,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `stats.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Defines aggregated stats numbers for Timeline stats tab.
 - **Зачем:** Часть brain для data models и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `stats.dart`.
+- **Содержимое:** Содержит: Stats aggregate structs.
 - **Обязанности:** Зона ответственности: Stats aggregates.
 - **Когда открывать:** Когда ломается поведение, связанное с `stats.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Stats aggregates
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Stats aggregates
 - **Слой:** Модели данных — без HTTP.
 
 
@@ -9022,13 +9022,13 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `tag.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Defines `Tag` and `TagCatalogScope` for plan vs list tag domains.
 - **Зачем:** Часть brain для data models и PocketBase.
-- **Содержимое:** Dart-код (`Tag`).
+- **Содержимое:** Содержит: Tag name, color, default duration minutes.
 - **Обязанности:** Зона ответственности: `Tag`, `TagCatalogScope`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: `Tag`, `TagCatalogScope`
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: `Tag`, `TagCatalogScope`
 - **Слой:** Модели данных — без HTTP.
 
 
@@ -9047,14 +9047,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `pb_config.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — PocketBase URL, collection names, expand constants.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `pb_config.dart`.
-- **Обязанности:** Зона ответственности brain: PocketBase URL, collection names, expand constants.
+- **Содержимое:** Содержит: Dart code (implementation details in the source file).
+- **Обязанности:** Отвечает за: PocketBase URL, collection names, expand constants
 - **Когда открывать:** Когда ломается поведение, связанное с `pb_config.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: PocketBase URL, collection names, expand constants
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: PocketBase URL, collection names, expand constants
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/plan_service.dart`
@@ -9079,7 +9079,7 @@ RU:
 - **Обязанности:** Координатор домена: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms, AI parse.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms, AI parse
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Plans/lists coordinator: CRUD, streams, wall-time projection, alarms, AI parse
 - **Слой:** Brain — координатор домена.
 
 
@@ -9099,14 +9099,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_time_sequential_cascade.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Plan time sequential layout math + `computeTimeViewInsertionCascade`.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_time_sequential_cascade.dart`.
-- **Обязанности:** Зона ответственности brain: Plan time sequential layout math + `computeTimeViewInsertionCascade`.
+- **Содержимое:** Содержит: Dart code (`PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`).
+- **Обязанности:** Отвечает за: Plan time sequential layout math + `computeTimeViewInsertionCascade`
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_sequential_cascade.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Plan time sequential layout math + `computeTimeViewInsertionCascade`
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Plan time sequential layout math + `computeTimeViewInsertionCascade`
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/plans/plan_cache_helpers.dart`
@@ -9125,14 +9125,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_cache_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Maintains the local plan list clean and scores title similarity for smart linking.
 - **Зачем:** Часть brain для plans and lists и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_cache_helpers.dart`.
+- **Содержимое:** Содержит: Plan dedupe/scrub, title link scoring heuristics.
 - **Обязанности:** Зона ответственности: Plan dedupe/scrub, title link scoring heuristics.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Plans, вкладка Lists, Time View; Роль: Plan dedupe/scrub, title link scoring heuristics
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; Role: Plan dedupe/scrub, title link scoring heuristics
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/plans/plan_outbox_helpers.dart`
@@ -9151,14 +9151,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_outbox_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Queues plan/list edits when offline and flushes when connection returns.
 - **Зачем:** Часть brain для plans and lists и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_outbox_helpers.dart`.
+- **Содержимое:** Содержит: Plan mutation outbox enqueue/flush/replay.
 - **Обязанности:** Зона ответственности: Plan mutation outbox enqueue/flush/replay.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Plans, вкладка Lists, Time View; Роль: Plan mutation outbox enqueue/flush/replay
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; Role: Plan mutation outbox enqueue/flush/replay
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/plans/plan_projection_types.dart`
@@ -9177,14 +9177,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_projection_types.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Data shapes for how a plan looks on the clock in Time View.
 - **Зачем:** Часть brain для plans and lists и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_projection_types.dart`.
+- **Содержимое:** Содержит: `TimeModeProjectedPlan`, timezone-aware projection types.
 - **Обязанности:** Зона ответственности: `TimeModeProjectedPlan`, `PlanTimeModeProjection`.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Plans, вкладка Lists, Time View; Роль: `TimeModeProjectedPlan`, `PlanTimeModeProjection`
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; Role: `TimeModeProjectedPlan`, `PlanTimeModeProjection`
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/plans/plan_recurrence_helpers.dart`
@@ -9203,14 +9203,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_recurrence_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Expands repeating plans (daily/weekly RRULE) into visible day rows.
 - **Зачем:** Часть brain для plans and lists и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_recurrence_helpers.dart`.
+- **Содержимое:** Содержит: RRULE JIT expansion, exception dates, virtual occurrence handling.
 - **Обязанности:** Зона ответственности: RRULE JIT expansion, exception-date parse helpers.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Plans, вкладка Lists, Time View; Роль: RRULE JIT expansion, exception-date parse helpers
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; Role: RRULE JIT expansion, exception-date parse helpers
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/plans/plan_tags_helpers.dart`
@@ -9229,14 +9229,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_tags_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Syncs tag chips on plan cards with PocketBase `tags_link` relations.
 - **Зачем:** Часть brain для plans and lists и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_tags_helpers.dart`.
+- **Содержимое:** Содержит: Tag catalog fetch, PB link sync for plans/lists.
 - **Обязанности:** Зона ответственности: Plan/list tag catalog fetch + PB `tags_link` sync.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Plans, вкладка Lists, Time View; Роль: Plan/list tag catalog fetch + PB `tags_link` sync
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; Role: Plan/list tag catalog fetch + PB `tags_link` sync
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/plans/plan_time_cascade_helpers.dart`
@@ -9255,14 +9255,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `plan_time_cascade_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Calculates where plan blocks sit vertically in Time View when times overlap.
 - **Зачем:** Часть brain для plans and lists и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `plan_time_cascade_helpers.dart`.
+- **Содержимое:** Содержит: Time View cascade layout, duration constants, wall-time estimates.
 - **Обязанности:** Зона ответственности: Time View cascade, duration consts, `planningWallEstimateSeconds`.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Plans, вкладка Lists, Time View; Роль: Time View cascade, duration consts, `planningWallEstimateSeconds`
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; Role: Time View cascade, duration consts, `planningWallEstimateSeconds`
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/price_reporter_client_match.dart`
@@ -9281,14 +9281,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `price_reporter_client_match.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Price Reporter client-category token guard for voice parse.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `price_reporter_client_match.dart`.
-- **Обязанности:** Зона ответственности brain: Price Reporter client-category token guard for voice parse.
+- **Содержимое:** Содержит: Dart code (`PriceReporterAliasEntry`, `PriceReporterClientMatchResult`, `PriceReporterCategoryNode`).
+- **Обязанности:** Отвечает за: Price Reporter client-category token guard for voice parse
 - **Когда открывать:** Когда ломается поведение, связанное с `price_reporter_client_match.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Price Reporter client-category token guard for voice parse
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Price Reporter client-category token guard for voice parse
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile/profile_admin.dart`
@@ -9306,14 +9306,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `profile_admin.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Reads whether your account is admin (Component Lab gate).
 - **Зачем:** Часть brain для profile and tags и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `profile_admin.dart`.
+- **Содержимое:** Содержит: Parses `profiles.is_admin` during hydration — never written by normal UI.
 - **Обязанности:** Зона ответственности: Admin bool parse helper for hydration.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: Admin bool parse helper for hydration
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: Admin bool parse helper for hydration
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile/profile_cache_helpers.dart`
@@ -9332,14 +9332,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `profile_cache_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Mirrors profile settings to device storage for faster next launch.
 - **Зачем:** Часть brain для profile and tags и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `profile_cache_helpers.dart`.
+- **Содержимое:** Содержит: SharedPreferences mirror/hydrate for profile settings.
 - **Обязанности:** Зона ответственности: Device prefs mirror/hydrate for profile settings.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: Device prefs mirror/hydrate for profile settings
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: Device prefs mirror/hydrate for profile settings
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile/profile_hydration.dart`
@@ -9358,14 +9358,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `profile_hydration.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Downloads your profile from PocketBase when the app starts or after login.
 - **Зачем:** Часть brain для profile and tags и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `profile_hydration.dart`.
+- **Содержимое:** Содержит: Profile fetch lifecycle, PB map apply, retry on failure.
 - **Обязанности:** Зона ответственности: Profile fetch/hydration lifecycle, PB map apply, retry.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: Profile fetch/hydration lifecycle, PB map apply, retry
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: Profile fetch/hydration lifecycle, PB map apply, retry
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile/profile_preferences.dart`
@@ -9384,14 +9384,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `profile_preferences.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Reloads data region when profile preferences change.
 - **Зачем:** Часть brain для profile and tags и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `profile_preferences.dart`.
+- **Содержимое:** Содержит: Data region reload hook after preference change.
 - **Обязанности:** Зона ответственности: Data region reload hook.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: Data region reload hook
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: Data region reload hook
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile/profile_settings.dart`
@@ -9410,14 +9410,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `profile_settings.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Saves profile preference changes back to PocketBase.
 - **Зачем:** Часть brain для profile and tags и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `profile_settings.dart`.
+- **Содержимое:** Содержит: Profile PATCH, diff fields, locale sync after save.
 - **Обязанности:** Зона ответственности: Profile PATCH/save, diff fields, locale sync.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: Profile PATCH/save, diff fields, locale sync
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: Profile PATCH/save, diff fields, locale sync
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile/profile_timezone.dart`
@@ -9436,14 +9436,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `profile_timezone.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Calculates “today” and wall-clock labels using your profile timezone.
 - **Зачем:** Часть brain для profile and tags и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `profile_timezone.dart`.
+- **Содержимое:** Содержит: Timezone normalize/offset, projected today, TZ writes.
 - **Обязанности:** Зона ответственности: Timezone normalize/offset, projected today, TZ writes.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: Timezone normalize/offset, projected today, TZ writes
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: Timezone normalize/offset, projected today, TZ writes
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile/tag_catalog.dart`
@@ -9462,14 +9462,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `tag_catalog.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Loads and edits the tag list (plan tags and list tags) in PocketBase.
 - **Зачем:** Часть brain для profile and tags и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `tag_catalog.dart`.
+- **Содержимое:** Содержит: Tag CRUD, sort order, PocketBase `tags_link` id resolution.
 - **Обязанности:** Зона ответственности: Tag catalog fetch/CRUD, sort order, PB `tags_link` id resolution.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: Tag catalog fetch/CRUD, sort order, PB `tags_link` id resolution
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: Tag catalog fetch/CRUD, sort order, PB `tags_link` id resolution
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile/tag_display_settings.dart`
@@ -9488,14 +9488,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `tag_display_settings.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Stores how tag chips appear on list cards (hidden, compact, etc.).
 - **Зачем:** Часть brain для profile and tags и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `tag_display_settings.dart`.
+- **Содержимое:** Содержит: List tag strip visibility prefs, display-mode merge.
 - **Обязанности:** Зона ответственности: List tag strip visibility prefs, display-mode prefs merge.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: List tag strip visibility prefs, display-mode prefs merge
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: List tag strip visibility prefs, display-mode prefs merge
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/profile_service.dart`
@@ -9520,7 +9520,7 @@ RU:
 - **Обязанности:** Координатор домена: Profile coordinator: shared Brain state, display label resolver.
 - **Когда открывать:** Когда ломается поведение, связанное с `profile_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Profile, tag manager, header timezone; Роль: Profile coordinator: shared Brain state, display label resolver
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Profile, tag manager, header timezone; Role: Profile coordinator: shared Brain state, display label resolver
 - **Слой:** Brain — координатор домена.
 
 
@@ -9546,7 +9546,7 @@ RU:
 - **Обязанности:** Координатор домена: Records coordinator: cache, fetch, upsert, start/stop entry, streams.
 - **Когда открывать:** Когда ломается поведение, связанное с `record_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Records coordinator: cache, fetch, upsert, start/stop entry, streams
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Records coordinator: cache, fetch, upsert, start/stop entry, streams
 - **Слой:** Brain — координатор домена.
 
 
@@ -9566,14 +9566,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_cache_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Filters and streams the in-memory record list for Timeline display.
 - **Зачем:** Часть brain для timeline records и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_cache_helpers.dart`.
+- **Содержимое:** Содержит: `recordsStream`, per-day filter, display-time helpers.
 - **Обязанности:** Зона ответственности: Per-day filter, `recordsStream`, display-time helpers.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Timeline, edit sheet, Wear; Роль: Per-day filter, `recordsStream`, display-time helpers
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; Role: Per-day filter, `recordsStream`, display-time helpers
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/records/record_crud.dart`
@@ -9592,14 +9592,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_crud.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Sends timeline record start, stop, edit, and delete to PocketBase.
 - **Зачем:** Часть brain для timeline records и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_crud.dart`.
+- **Содержимое:** Содержит: POST/PATCH/DELETE for the `records` table; `writeRecord`, `stopRecord`, `updateRecord`.
 - **Обязанности:** Зона ответственности: Record CRUD, PATCH/DELETE network phases, `writeRecord` / `updateRecord` / `stopRecord`.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Timeline, edit sheet, Wear; Роль: Record CRUD, PATCH/DELETE network phases, `writeRecord` / `updateRecord` / `stopRecord`
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; Role: Record CRUD, PATCH/DELETE network phases, `writeRecord` / `updateRecord` / `stopRecord`
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/records/record_ghost_cleanup.dart`
@@ -9618,14 +9618,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_ghost_cleanup.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Removes dead record rows from local cache after server 404.
 - **Зачем:** Часть brain для timeline records и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_ghost_cleanup.dart`.
+- **Содержимое:** Содержит: 404 dead-letter prune against live cache.
 - **Обязанности:** Зона ответственности: 404 deadletter prune against live cache.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Timeline, edit sheet, Wear; Роль: 404 deadletter prune against live cache
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; Role: 404 deadletter prune against live cache
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/records/record_optimistic.dart`
@@ -9644,14 +9644,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_optimistic.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Shows timer start/stop on screen immediately — before PocketBase confirms.
 - **Зачем:** Часть brain для timeline records и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_optimistic.dart`.
+- **Содержимое:** Содержит: Shadow state maps, optimistic stop overlay, pending-start handoff.
 - **Обязанности:** Зона ответственности: Optimistic stop overlay, sacred handoff, pending-start map.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Timeline, edit sheet, Wear; Роль: Optimistic stop overlay, sacred handoff, pending-start map
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; Role: Optimistic stop overlay, sacred handoff, pending-start map
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/records/record_outbox_helpers.dart`
@@ -9670,14 +9670,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_outbox_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Queues record changes when offline and replays them when back online.
 - **Зачем:** Часть brain для timeline records и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_outbox_helpers.dart`.
+- **Содержимое:** Содержит: Record mutation outbox enqueue, flush, Highlander server sync phase.
 - **Обязанности:** Зона ответственности: Record mutation outbox enqueue/flush/replay, Highlander server phase.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Timeline, edit sheet, Wear; Роль: Record mutation outbox enqueue/flush/replay, Highlander server phase
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; Role: Record mutation outbox enqueue/flush/replay, Highlander server phase
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/records/record_overlap_helpers.dart`
@@ -9696,14 +9696,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_overlap_helpers.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Ensures only one running record at a time (Highlander rule).
 - **Зачем:** Часть brain для timeline records и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_overlap_helpers.dart`.
+- **Содержимое:** Содержит: Singleton reconcile, overlap probes, local apply before server.
 - **Обязанности:** Зона ответственности: Highlander local apply, singleton reconcile, overlap probes.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Timeline, edit sheet, Wear; Роль: Highlander local apply, singleton reconcile, overlap probes
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; Role: Highlander local apply, singleton reconcile, overlap probes
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/records/record_realtime.dart`
@@ -9722,14 +9722,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_realtime.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Listens for live record changes from PocketBase on the server.
 - **Зачем:** Часть brain для timeline records и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_realtime.dart`.
+- **Содержимое:** Содержит: Realtime subscription connect/disconnect, event merge into cache.
 - **Обязанности:** Зона ответственности: PocketBase records realtime subscribe/unsubscribe.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Timeline, edit sheet, Wear; Роль: PocketBase records realtime subscribe/unsubscribe
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; Role: PocketBase records realtime subscribe/unsubscribe
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/records/record_timeline_vm.dart`
@@ -9748,14 +9748,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `record_timeline_vm.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Prepares which record rows appear on each Timeline day page.
 - **Зачем:** Часть brain для timeline records и PocketBase.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `record_timeline_vm.dart`.
+- **Содержимое:** Содержит: Day index, warm window, row view-model builders for Timeline cards.
 - **Обязанности:** Зона ответственности: Timeline day index, warm window, row VM builders.
 - **Когда открывать:** Timeline: старт/стоп, правка, офлайн, дубликат running.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; вкладка Timeline, edit sheet, Wear; Роль: Timeline day index, warm window, row VM builders
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Timeline tab, edit sheet, Wear; Role: Timeline day index, warm window, row VM builders
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/recurrence_edit_scope.dart`
@@ -9774,14 +9774,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `recurrence_edit_scope.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — `RecurrenceEditScope` enum for recurring plan edit/delete scope.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `recurrence_edit_scope.dart`.
-- **Обязанности:** Зона ответственности brain: `RecurrenceEditScope` enum for recurring plan edit/delete scope.
+- **Содержимое:** Содержит: Dart code (`RecurrenceEditScope`).
+- **Обязанности:** Отвечает за: `RecurrenceEditScope` enum for recurring plan edit/delete scope
 - **Когда открывать:** Когда ломается поведение, связанное с `recurrence_edit_scope.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: `RecurrenceEditScope` enum for recurring plan edit/delete scope
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: `RecurrenceEditScope` enum for recurring plan edit/delete scope
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/smart_input_parser.dart`
@@ -9800,14 +9800,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `smart_input_parser.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Natural-language plan/list parse (client + AI backend hook).
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `smart_input_parser.dart`.
-- **Обязанности:** Зона ответственности brain: Natural-language plan/list parse (client + AI backend hook).
+- **Содержимое:** Содержит: Dart code (`SmartTimeParseResult`, `SmartTimeRangeParseResult`).
+- **Обязанности:** Отвечает за: Natural-language plan/list parse (client + AI backend hook)
 - **Когда открывать:** Когда ломается поведение, связанное с `smart_input_parser.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Natural-language plan/list parse (client + AI backend hook)
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Natural-language plan/list parse (client + AI backend hook)
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/time_view_fixed_time_policy.dart`
@@ -9826,14 +9826,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `time_view_fixed_time_policy.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Local prefs `time_view_fixed_tag_ids_v1`.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `time_view_fixed_time_policy.dart`.
-- **Обязанности:** Зона ответственности brain: Local prefs `time_view_fixed_tag_ids_v1`; `isPlanFixedInTimeView` (schema gap: no PB sync yet).
+- **Содержимое:** Содержит: Dart code (`TimeViewFixedTagPrefs`).
+- **Обязанности:** Отвечает за: Local prefs `time_view_fixed_tag_ids_v1`; `isPlanFixedInTimeView` (schema gap: no PB sync yet)
 - **Когда открывать:** Когда ломается поведение, связанное с `time_view_fixed_time_policy.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Local prefs `time_view_fixed_tag_ids_v1`; `isPlanFixedInTimeView` (schema gap: no PB sync yet)
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Local prefs `time_view_fixed_tag_ids_v1`; `isPlanFixedInTimeView` (schema gap: no PB sync yet)
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/voice_audio_stub.dart`
@@ -9851,14 +9851,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `voice_audio_stub.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Non-web voice audio stub.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `voice_audio_stub.dart`.
-- **Обязанности:** Зона ответственности brain: Non-web voice audio stub.
+- **Содержимое:** Содержит: Dart code (implementation details in the source file).
+- **Обязанности:** Отвечает за: Non-web voice audio stub
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_audio_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Non-web voice audio stub
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Non-web voice audio stub
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/voice_audio_web.dart`
@@ -9876,14 +9876,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `voice_audio_web.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Web voice audio implementation.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `voice_audio_web.dart`.
-- **Обязанности:** Зона ответственности brain: Web voice audio implementation.
+- **Содержимое:** Содержит: Dart code (implementation details in the source file).
+- **Обязанности:** Отвечает за: Web voice audio implementation
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_audio_web.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Web voice audio implementation
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Web voice audio implementation
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/voice_command_parser.dart`
@@ -9902,14 +9902,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `voice_command_parser.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`).
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `voice_command_parser.dart`.
-- **Обязанности:** Зона ответственности brain: Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`).
+- **Содержимое:** Содержит: Dart code (`VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`).
+- **Обязанности:** Отвечает за: Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`)
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_command_parser.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`)
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`)
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/web_history.dart`
@@ -9927,14 +9927,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `web_history.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Web history API conditional export.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `web_history.dart`.
-- **Обязанности:** Зона ответственности brain: Web history API conditional export.
+- **Содержимое:** Содержит: Dart code (implementation details in the source file).
+- **Обязанности:** Отвечает за: Web history API conditional export
 - **Когда открывать:** Когда ломается поведение, связанное с `web_history.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Web history API conditional export
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Web history API conditional export
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/web_history_stub.dart`
@@ -9952,14 +9952,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `web_history_stub.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Non-web history stub.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `web_history_stub.dart`.
-- **Обязанности:** Зона ответственности brain: Non-web history stub.
+- **Содержимое:** Содержит: Dart code (implementation details in the source file).
+- **Обязанности:** Отвечает за: Non-web history stub
 - **Когда открывать:** Когда ломается поведение, связанное с `web_history_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Non-web history stub
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Non-web history stub
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/data/web_history_web.dart`
@@ -9977,14 +9977,14 @@ EN:
 
 RU:
 
-- **Что это:** Brain-модуль `web_history_web.dart` — PocketBase и локальный кэш.
+- **Что это:** Назначение файла: Brain support file — Web history implementation.
 - **Зачем:** Общая логика PocketBase для нескольких вкладок.
-- **Содержимое:** Dart-код: классы, extensions и helpers в `web_history_web.dart`.
-- **Обязанности:** Зона ответственности brain: Web history implementation.
+- **Содержимое:** Содержит: Dart code (implementation details in the source file).
+- **Обязанности:** Отвечает за: Web history implementation
 - **Когда открывать:** Когда ломается поведение, связанное с `web_history_web.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** UI вызывает через `DatabaseService.instance`; Роль: Web history implementation
-- **Слой:** Brain module — `part` file merged into `database_service.dart`.
+- **Связано с:** Связан с: UI calls via `DatabaseService.instance`; Role: Web history implementation
+- **Слой:** Brain — модуль `part` в `database_service.dart`.
 
 
 ### `lib/features/auth/auth_screen.dart`
@@ -10003,13 +10003,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `auth_screen.dart` в `lib/features/auth` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `auth_screen.dart` in `lib/features/auth` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/auth` использует `auth_screen.dart` в сборке или workflow.
 - **Содержимое:** Открывать `auth_screen.dart` при правках в `lib/features/auth`.
-- **Обязанности:** Роль `auth_screen.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `auth_screen.dart` under `lib/features/auth`.
 - **Когда открывать:** Когда ломается поведение, связанное с `auth_screen.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `auth_screen.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/auth/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (auth).
 
 
@@ -10029,13 +10029,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `auth_view.dart` в `lib/features/auth` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `auth_view.dart` in `lib/features/auth` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/auth` использует `auth_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `auth_view.dart` при правках в `lib/features/auth`.
-- **Обязанности:** Роль `auth_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `auth_view.dart` under `lib/features/auth`.
 - **Когда открывать:** Когда ломается поведение, связанное с `auth_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `auth_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/auth/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (auth).
 
 
@@ -10055,13 +10055,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `oauth_session.dart` в `lib/features/auth` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `oauth_session.dart` in `lib/features/auth` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/auth` использует `oauth_session.dart` в сборке или workflow.
 - **Содержимое:** Открывать `oauth_session.dart` при правках в `lib/features/auth`.
-- **Обязанности:** Роль `oauth_session.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `oauth_session.dart` under `lib/features/auth`.
 - **Когда открывать:** Когда ломается поведение, связанное с `oauth_session.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `oauth_session.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/auth/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (auth).
 
 
@@ -10081,13 +10081,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `calendar_view.dart` в `lib/features/calendar` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `calendar_view.dart` in `lib/features/calendar` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/calendar` использует `calendar_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `calendar_view.dart` при правках в `lib/features/calendar`.
-- **Обязанности:** Роль `calendar_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `calendar_view.dart` under `lib/features/calendar`.
 - **Когда открывать:** Когда ломается поведение, связанное с `calendar_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `calendar_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/calendar/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (calendar).
 
 
@@ -10107,13 +10107,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `category_list_view.dart` в `lib/features/categories` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `category_list_view.dart` in `lib/features/categories` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/categories` использует `category_list_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `category_list_view.dart` при правках в `lib/features/categories`.
-- **Обязанности:** Роль `category_list_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `category_list_view.dart` under `lib/features/categories`.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_list_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `category_list_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/categories/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (categories).
 
 
@@ -10133,13 +10133,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `category_recursive_tree.dart` в `lib/features/categories` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `category_recursive_tree.dart` in `lib/features/categories` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/categories` использует `category_recursive_tree.dart` в сборке или workflow.
 - **Содержимое:** Открывать `category_recursive_tree.dart` при правках в `lib/features/categories`.
-- **Обязанности:** Роль `category_recursive_tree.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `category_recursive_tree.dart` under `lib/features/categories`.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_recursive_tree.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `category_recursive_tree.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/categories/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (categories).
 
 
@@ -10159,13 +10159,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `category_visibility_prefs.dart` в `lib/features/categories` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `category_visibility_prefs.dart` in `lib/features/categories` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/categories` использует `category_visibility_prefs.dart` в сборке или workflow.
 - **Содержимое:** Открывать `category_visibility_prefs.dart` при правках в `lib/features/categories`.
-- **Обязанности:** Роль `category_visibility_prefs.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `category_visibility_prefs.dart` under `lib/features/categories`.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_visibility_prefs.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `category_visibility_prefs.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/categories/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (categories).
 
 
@@ -10185,13 +10185,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `create_category_dialog.dart` в `lib/features/categories` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `create_category_dialog.dart` in `lib/features/categories` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/categories` использует `create_category_dialog.dart` в сборке или workflow.
 - **Содержимое:** Открывать `create_category_dialog.dart` при правках в `lib/features/categories`.
-- **Обязанности:** Роль `create_category_dialog.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `create_category_dialog.dart` under `lib/features/categories`.
 - **Когда открывать:** Когда ломается поведение, связанное с `create_category_dialog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `create_category_dialog.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/categories/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (categories).
 
 
@@ -10211,13 +10211,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `component_lab_cards_demo.dart` в `lib/features/dev` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `component_lab_cards_demo.dart` in `lib/features/dev` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/dev` использует `component_lab_cards_demo.dart` в сборке или workflow.
 - **Содержимое:** Открывать `component_lab_cards_demo.dart` при правках в `lib/features/dev`.
-- **Обязанности:** Роль `component_lab_cards_demo.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `component_lab_cards_demo.dart` under `lib/features/dev`.
 - **Когда открывать:** Когда ломается поведение, связанное с `component_lab_cards_demo.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `component_lab_cards_demo.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/dev/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (dev).
 
 
@@ -10237,13 +10237,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `component_lab_view.dart` в `lib/features/dev` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `component_lab_view.dart` in `lib/features/dev` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/dev` использует `component_lab_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `component_lab_view.dart` при правках в `lib/features/dev`.
-- **Обязанности:** Роль `component_lab_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `component_lab_view.dart` under `lib/features/dev`.
 - **Когда открывать:** Когда ломается поведение, связанное с `component_lab_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `component_lab_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/dev/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (dev).
 
 
@@ -10263,13 +10263,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `lists_bulk_actions.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Lists tab (fourth bottom tab): Select-mode header + bulk action bottom bar.
 - **Зачем:** Пользователь видит это на Lists tab (fourth bottom tab).
-- **Содержимое:** Содержимое `lists_bulk_actions.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Select-mode header + bulk action bottom bar.
+- **Содержимое:** Содержит: Flutter widgets (`ListsBulkSelectModeBar`, `ListsBulkBottomBar`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Select-mode header + bulk action bottom bar
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Lists (shell index 3); Роль: Select-mode header + bulk action bottom bar
+- **Связано с:** Связан с: Lists tab (shell index 3); Role: Select-mode header + bulk action bottom bar
 - **Слой:** UI — экран/виджет (lists).
 
 
@@ -10289,13 +10289,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `lists_card.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Lists tab (fourth bottom tab): , filter chips, semicircle menu.
 - **Зачем:** Пользователь видит это на Lists tab (fourth bottom tab).
-- **Содержимое:** Содержимое `lists_card.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: `BacklogPlanCard`, filter chips, semicircle menu.
+- **Содержимое:** Содержит: Flutter widgets (`ListsQuadraticChip`, `BacklogPlanCard`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: `BacklogPlanCard`, filter chips, semicircle menu
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Lists (shell index 3); Роль: `BacklogPlanCard`, filter chips, semicircle menu
+- **Связано с:** Связан с: Lists tab (shell index 3); Role: `BacklogPlanCard`, filter chips, semicircle menu
 - **Слой:** UI — экран/виджет (lists).
 
 
@@ -10315,13 +10315,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `lists_empty_state.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Lists tab (fourth bottom tab): Loading / filtered / no-category empty panels.
 - **Зачем:** Пользователь видит это на Lists tab (fourth bottom tab).
-- **Содержимое:** Содержимое `lists_empty_state.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Loading / filtered / no-category empty panels.
+- **Содержимое:** Содержит: Flutter widgets (`ListsNoCategoryEmptyPanel`, `ListsFilteredEmptyPanel`, `ListsLoadingPanel`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Loading / filtered / no-category empty panels
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Lists (shell index 3); Роль: Loading / filtered / no-category empty panels
+- **Связано с:** Связан с: Lists tab (shell index 3); Role: Loading / filtered / no-category empty panels
 - **Слой:** UI — экран/виджет (lists).
 
 
@@ -10340,13 +10340,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `lists_export.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Lists tab (fourth bottom tab): Export visible list as clipboard text.
 - **Зачем:** Пользователь видит это на Lists tab (fourth bottom tab).
-- **Содержимое:** Содержимое `lists_export.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Export visible list as clipboard text.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Export visible list as clipboard text
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Lists (shell index 3); Роль: Export visible list as clipboard text
+- **Связано с:** Связан с: Lists tab (shell index 3); Role: Export visible list as clipboard text
 - **Слой:** UI — экран/виджет (lists).
 
 
@@ -10366,13 +10366,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `lists_filters.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Lists tab (fourth bottom tab): Tag/category filter chips, chip bar, settings sheet.
 - **Зачем:** Пользователь видит это на Lists tab (fourth bottom tab).
-- **Содержимое:** Содержимое `lists_filters.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Tag/category filter chips, chip bar, settings sheet.
+- **Содержимое:** Содержит: Flutter widgets (`ListsTagFilterChip`, `ListsCategoryChipBar`, `ListsTagFilterBar`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Tag/category filter chips, chip bar, settings sheet
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Lists (shell index 3); Роль: Tag/category filter chips, chip bar, settings sheet
+- **Связано с:** Связан с: Lists tab (shell index 3); Role: Tag/category filter chips, chip bar, settings sheet
 - **Слой:** UI — экран/виджет (lists).
 
 
@@ -10392,13 +10392,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `lists_inline_add.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Lists tab (fourth bottom tab): Inline quick-add input row.
 - **Зачем:** Пользователь видит это на Lists tab (fourth bottom tab).
-- **Содержимое:** Содержимое `lists_inline_add.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Inline quick-add input row.
+- **Содержимое:** Содержит: Flutter widgets (`ListsInlineAddRow`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Inline quick-add input row
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Lists (shell index 3); Роль: Inline quick-add input row
+- **Связано с:** Связан с: Lists tab (shell index 3); Role: Inline quick-add input row
 - **Слой:** UI — экран/виджет (lists).
 
 
@@ -10418,13 +10418,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `lists_view.dart` в `lib/features/lists` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `lists_view.dart` in `lib/features/lists` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/lists` использует `lists_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `lists_view.dart` при правках в `lib/features/lists`.
-- **Обязанности:** Роль `lists_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `lists_view.dart` under `lib/features/lists`.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `lists_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/lists/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (lists).
 
 
@@ -10444,13 +10444,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `bulk_planning_edit_sheet.dart` в `lib/features/planning` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `bulk_planning_edit_sheet.dart` in `lib/features/planning` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/planning` использует `bulk_planning_edit_sheet.dart` в сборке или workflow.
 - **Содержимое:** Открывать `bulk_planning_edit_sheet.dart` при правках в `lib/features/planning`.
-- **Обязанности:** Роль `bulk_planning_edit_sheet.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `bulk_planning_edit_sheet.dart` under `lib/features/planning`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `bulk_planning_edit_sheet.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/planning/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10469,13 +10469,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `plan_time_gesture_contract.dart` в `lib/features/planning` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `plan_time_gesture_contract.dart` in `lib/features/planning` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/planning` использует `plan_time_gesture_contract.dart` в сборке или workflow.
 - **Содержимое:** Открывать `plan_time_gesture_contract.dart` при правках в `lib/features/planning`.
-- **Обязанности:** Роль `plan_time_gesture_contract.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `plan_time_gesture_contract.dart` under `lib/features/planning`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_time_gesture_contract.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/planning/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10495,13 +10495,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `plan_time_view_layout.dart` в `lib/features/planning` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `plan_time_view_layout.dart` in `lib/features/planning` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/planning` использует `plan_time_view_layout.dart` в сборке или workflow.
 - **Содержимое:** Открывать `plan_time_view_layout.dart` при правках в `lib/features/planning`.
-- **Обязанности:** Роль `plan_time_view_layout.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `plan_time_view_layout.dart` under `lib/features/planning`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_time_view_layout.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/planning/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10521,13 +10521,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `planning_day_start_prefs.dart` в `lib/features/planning` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `planning_day_start_prefs.dart` in `lib/features/planning` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/planning` использует `planning_day_start_prefs.dart` в сборке или workflow.
 - **Содержимое:** Открывать `planning_day_start_prefs.dart` при правках в `lib/features/planning`.
-- **Обязанности:** Роль `planning_day_start_prefs.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `planning_day_start_prefs.dart` under `lib/features/planning`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `planning_day_start_prefs.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/planning/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10547,13 +10547,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_page.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Time View state machine + day body.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_page.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Time View state machine + day body; further split needs UX/product scope.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningPage`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Time View state machine + day body; further split needs UX/product scope
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Time View state machine + day body; further split needs UX/product scope
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Time View state machine + day body; further split needs UX/product scope
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10573,13 +10573,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_page_shell.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): date pager.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_page_shell.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: `PlanningSwipeWrapper` date pager.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningSwipeWrapper`, `_PlanningSwipeWrapperState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: `PlanningSwipeWrapper` date pager
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: `PlanningSwipeWrapper` date pager
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: `PlanningSwipeWrapper` date pager
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10599,13 +10599,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_sort_mode.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): + persist index helpers.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_sort_mode.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: `PlanSortMode` + persist index helpers.
+- **Содержимое:** Содержит: Flutter widgets (`PlanSortMode`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: `PlanSortMode` + persist index helpers
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: `PlanSortMode` + persist index helpers
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: `PlanSortMode` + persist index helpers
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10624,13 +10624,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `planning_view.dart` в `lib/features/planning` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `planning_view.dart` in `lib/features/planning` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/planning` использует `planning_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `planning_view.dart` при правках в `lib/features/planning`.
-- **Обязанности:** Роль `planning_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `planning_view.dart` under `lib/features/planning`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `planning_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/planning/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10649,13 +10649,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `recurrence_scope_dialog.dart` в `lib/features/planning` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `recurrence_scope_dialog.dart` in `lib/features/planning` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/planning` использует `recurrence_scope_dialog.dart` в сборке или workflow.
 - **Содержимое:** Открывать `recurrence_scope_dialog.dart` при правках в `lib/features/planning`.
-- **Обязанности:** Роль `recurrence_scope_dialog.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `recurrence_scope_dialog.dart` under `lib/features/planning`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `recurrence_scope_dialog.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/planning/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10675,13 +10675,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `default_plan_category_search.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Default plan category search delegate.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `default_plan_category_search.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Default plan category search delegate.
+- **Содержимое:** Содержит: Flutter widgets (`DefaultPlanCategorySearchDelegate`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Default plan category search delegate
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Default plan category search delegate
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Default plan category search delegate
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10700,13 +10700,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `default_plan_timezone_search.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Default plan TZ search delegate.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `default_plan_timezone_search.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Default plan TZ search delegate.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Default plan TZ search delegate
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Default plan TZ search delegate
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Default plan TZ search delegate
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10726,13 +10726,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_record_link_settings.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Record→plan suggestion prefs.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `plan_record_link_settings.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Record→plan suggestion prefs.
+- **Содержимое:** Содержит: Flutter widgets (`PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Record→plan suggestion prefs
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Record→plan suggestion prefs
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Record→plan suggestion prefs
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10752,13 +10752,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_no_tags_settings.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Synthetic “No Tags” chip prefs.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_no_tags_settings.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Synthetic “No Tags” chip prefs.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningNoTagsSettingsBlock`, `PlanningNoTagsSettingsBlockState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Synthetic “No Tags” chip prefs
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Synthetic “No Tags” chip prefs
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Synthetic “No Tags” chip prefs
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10778,13 +10778,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_timeline_bounds_sheet.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Visible hour range slider sheet.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_timeline_bounds_sheet.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Visible hour range slider sheet.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Visible hour range slider sheet
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Visible hour range slider sheet
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Visible hour range slider sheet
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10804,13 +10804,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `smart_plan_sheet.dart` в `lib/features/planning` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `smart_plan_sheet.dart` in `lib/features/planning` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/planning` использует `smart_plan_sheet.dart` в сборке или workflow.
 - **Содержимое:** Открывать `smart_plan_sheet.dart` при правках в `lib/features/planning`.
-- **Обязанности:** Роль `smart_plan_sheet.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `smart_plan_sheet.dart` under `lib/features/planning`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `smart_plan_sheet.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/planning/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10830,13 +10830,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_time_view.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Time View composition, cascade, edge scroll.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_time_view.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Time View composition, cascade, edge scroll.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewPlanningTimeView`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Time View composition, cascade, edge scroll
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Time View composition, cascade, edge scroll
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Time View composition, cascade, edge scroll
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10856,13 +10856,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_time_view_coordinator.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Time View state fields.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_time_view_coordinator.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Time View state fields.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewCoordinator`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Time View state fields
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Time View state fields
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Time View state fields
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10881,13 +10881,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_time_view_host.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): callback surface.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_time_view_host.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: `PlanningTimeViewHost` callback surface.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: `PlanningTimeViewHost` callback surface
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: `PlanningTimeViewHost` callback surface
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: `PlanningTimeViewHost` callback surface
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10907,13 +10907,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_canvas.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Proportional day timeline canvas.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_canvas.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Proportional day timeline canvas.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewTimeViewCanvas`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Proportional day timeline canvas
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Proportional day timeline canvas
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Proportional day timeline canvas
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10933,13 +10933,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_card_layer.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Scheduled card stack layer.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_card_layer.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Scheduled card stack layer.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewTimeViewCardLayer`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Scheduled card stack layer
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Scheduled card stack layer
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Scheduled card stack layer
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10959,13 +10959,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_drag_controller.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Vertical drag state/helpers.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_drag_controller.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Vertical drag state/helpers.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewTimeViewDragController`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Vertical drag state/helpers
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Vertical drag state/helpers
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Vertical drag state/helpers
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -10985,13 +10985,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_drag_state.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): , gesture phase enums.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_drag_state.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: `TimelineResizeEdge`, gesture phase enums.
+- **Содержимое:** Содержит: Flutter widgets (`TimelineResizeEdge`, `TimelinePointerGesturePhase`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: `TimelineResizeEdge`, gesture phase enums
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: `TimelineResizeEdge`, gesture phase enums
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: `TimelineResizeEdge`, gesture phase enums
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11011,13 +11011,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_drop_preview.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Drop intent / cascade preview.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_drop_preview.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Drop intent / cascade preview.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewTimeViewDropPreview`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Drop intent / cascade preview
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Drop intent / cascade preview
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Drop intent / cascade preview
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11037,13 +11037,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_fixed_time_settings.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Fixed-time tag chip settings block.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_fixed_time_settings.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Fixed-time tag chip settings block.
+- **Содержимое:** Содержит: Flutter widgets (`TimeViewFixedTagsSettingsBlock`, `TimeViewFixedTagsSettingsBlockState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Fixed-time tag chip settings block
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Fixed-time tag chip settings block
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Fixed-time tag chip settings block
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11063,13 +11063,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_hour_grid.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Hour grid + unscheduled strip.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_hour_grid.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Hour grid + unscheduled strip.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewTimeViewHourGrid`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Hour grid + unscheduled strip
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Hour grid + unscheduled strip
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Hour grid + unscheduled strip
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11089,13 +11089,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_interaction_block.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Time View card pointer/drag/resize zones.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_interaction_block.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Time View card pointer/drag/resize zones.
+- **Содержимое:** Содержит: Flutter widgets (`TimelinePlanInteractionBlock`, `TimelinePlanInteractionBlockState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Time View card pointer/drag/resize zones
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Time View card pointer/drag/resize zones
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Time View card pointer/drag/resize zones
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11115,13 +11115,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_resize_controller.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Edge resize state/helpers.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_resize_controller.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Edge resize state/helpers.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewTimeViewResizeController`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Edge resize state/helpers
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Edge resize state/helpers
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Edge resize state/helpers
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11141,13 +11141,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_search_delegate.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Category default-time search UI.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_search_delegate.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Category default-time search UI.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewTimeViewSearchDelegate`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Category default-time search UI
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Category default-time search UI
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Category default-time search UI
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11167,13 +11167,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `time_view_settings_sheet.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Time View settings + default plan times.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `time_view_settings_sheet.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Time View settings + default plan times.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTimeViewTimeViewSettingsSheet`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Time View settings + default plan times
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Time View settings + default plan times
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Time View settings + default plan times
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11193,13 +11193,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_card_reorder_settle.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Done-card reorder slide settle.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `plan_card_reorder_settle.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Done-card reorder slide settle.
+- **Содержимое:** Содержит: Flutter widgets (`PlanCardReorderSettle`, `PlanCardReorderSettleState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Done-card reorder slide settle
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Done-card reorder slide settle
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Done-card reorder slide settle
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11219,13 +11219,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_bulk_bar.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Bulk selection bottom bar.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_bulk_bar.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Bulk selection bottom bar.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningBulkBottomBar`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Bulk selection bottom bar
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Bulk selection bottom bar
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Bulk selection bottom bar
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11245,13 +11245,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_day_card_list_keep_alive.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): List keep-alive wrapper.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_day_card_list_keep_alive.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: List keep-alive wrapper.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningDayCardListKeepAliveState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: List keep-alive wrapper
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: List keep-alive wrapper
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: List keep-alive wrapper
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11271,13 +11271,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_empty_states.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Planning empty-state widgets.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_empty_states.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Planning empty-state widgets.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningDayEmptyState`, `PlanningFrozenListEmptyState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Planning empty-state widgets
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Planning empty-state widgets
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Planning empty-state widgets
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11297,13 +11297,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_filter_controls.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Sort-mode segmented control.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_filter_controls.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Sort-mode segmented control.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningSortModeBar`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Sort-mode segmented control
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Sort-mode segmented control
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Sort-mode segmented control
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11322,13 +11322,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_list_helpers.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Reorder list proxy decorator.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_list_helpers.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Reorder list proxy decorator.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Reorder list proxy decorator
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Reorder list proxy decorator
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Reorder list proxy decorator
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11348,13 +11348,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_menu_overlay.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Semicircle plan card radial menu.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_menu_overlay.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Semicircle plan card radial menu.
+- **Содержимое:** Содержит: Flutter widgets (`SemicirclePlanningMenuOverlay`, `SemicirclePlanningMenuOverlayState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Semicircle plan card radial menu
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Semicircle plan card radial menu
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Semicircle plan card radial menu
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11374,13 +11374,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_quick_add_strip.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Plans tab (second bottom tab): Quick-add tag strip above inline task field.
 - **Зачем:** Пользователь видит это на Plans tab (second bottom tab).
-- **Содержимое:** Содержимое `planning_quick_add_strip.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Quick-add tag strip above inline task field.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningQuickAddTagStrip`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Quick-add tag strip above inline task field
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Plans (shell index 1); Роль: Quick-add tag strip above inline task field
+- **Связано с:** Связан с: Plans tab (shell index 1); Role: Quick-add tag strip above inline task field
 - **Слой:** UI — экран/виджет (planning).
 
 
@@ -11400,13 +11400,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `desktop_voice_attempt_dialog.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `desktop_voice_attempt_dialog.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `desktop_voice_attempt_dialog.dart` в сборке или workflow.
 - **Содержимое:** Открывать `desktop_voice_attempt_dialog.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `desktop_voice_attempt_dialog.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `desktop_voice_attempt_dialog.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_attempt_dialog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_attempt_dialog.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11426,13 +11426,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `desktop_voice_settings_desktop.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `desktop_voice_settings_desktop.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `desktop_voice_settings_desktop.dart` в сборке или workflow.
 - **Содержимое:** Открывать `desktop_voice_settings_desktop.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `desktop_voice_settings_desktop.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `desktop_voice_settings_desktop.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings_desktop.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_settings_desktop.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11452,13 +11452,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `desktop_voice_settings_section.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `desktop_voice_settings_section.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `desktop_voice_settings_section.dart` в сборке или workflow.
 - **Содержимое:** Открывать `desktop_voice_settings_section.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `desktop_voice_settings_section.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `desktop_voice_settings_section.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_settings_section.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11478,13 +11478,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `profile_view.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `profile_view.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `profile_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `profile_view.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `profile_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `profile_view.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `profile_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `profile_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11504,13 +11504,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `account_settings_section.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for More → Profile and settings: Signed-in identity + logout row.
 - **Зачем:** Пользователь видит это на More → Profile and settings.
-- **Содержимое:** Содержимое `account_settings_section.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Signed-in identity + logout row.
+- **Содержимое:** Содержит: Flutter widgets (`AccountSecuritySection`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Signed-in identity + logout row
 - **Когда открывать:** Когда ломается поведение, связанное с `account_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `account_settings_section.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Signed-in identity + logout row
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11530,13 +11530,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `notification_settings_section.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for More → Profile and settings: OS notification permission block.
 - **Зачем:** Пользователь видит это на More → Profile and settings.
-- **Содержимое:** Содержимое `notification_settings_section.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: OS notification permission block.
+- **Содержимое:** Содержит: Flutter widgets (`ProfileNotificationsSection`, `ProfileNotificationsSectionState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: OS notification permission block
 - **Когда открывать:** Когда ломается поведение, связанное с `notification_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `notification_settings_section.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: OS notification permission block
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11556,13 +11556,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `security_settings_section.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for More → Profile and settings: Password reset + biometric lock.
 - **Зачем:** Пользователь видит это на More → Profile and settings.
-- **Содержимое:** Содержимое `security_settings_section.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Password reset + biometric lock.
+- **Содержимое:** Содержит: Flutter widgets (`SecuritySection`, `SecuritySectionState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Password reset + biometric lock
 - **Когда открывать:** Когда ломается поведение, связанное с `security_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `security_settings_section.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Password reset + biometric lock
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11581,13 +11581,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `settings_page.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for More → Profile and settings: Language/TZ settings page (shell route).
 - **Зачем:** Пользователь видит это на More → Profile and settings.
-- **Содержимое:** Содержимое `settings_page.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Language/TZ settings page (shell route).
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Language/TZ settings page (shell route)
 - **Когда открывать:** Когда ломается поведение, связанное с `settings_page.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `settings_page.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Language/TZ settings page (shell route)
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11607,13 +11607,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `tag_default_duration_settings_view.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `tag_default_duration_settings_view.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `tag_default_duration_settings_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `tag_default_duration_settings_view.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `tag_default_duration_settings_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `tag_default_duration_settings_view.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_default_duration_settings_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `tag_default_duration_settings_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11633,13 +11633,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `tag_manager_page.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `tag_manager_page.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `tag_manager_page.dart` в сборке или workflow.
 - **Содержимое:** Открывать `tag_manager_page.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `tag_manager_page.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `tag_manager_page.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_manager_page.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `tag_manager_page.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11659,13 +11659,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `tag_settings_hub.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `tag_settings_hub.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `tag_settings_hub.dart` в сборке или workflow.
 - **Содержимое:** Открывать `tag_settings_hub.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `tag_settings_hub.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `tag_settings_hub.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_settings_hub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `tag_settings_hub.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11685,13 +11685,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `tag_settings_view.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `tag_settings_view.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `tag_settings_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `tag_settings_view.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `tag_settings_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `tag_settings_view.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_settings_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `tag_settings_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11711,13 +11711,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `timezone_settings.dart` в `lib/features/profile` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `timezone_settings.dart` in `lib/features/profile` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/profile` использует `timezone_settings.dart` в сборке или workflow.
 - **Содержимое:** Открывать `timezone_settings.dart` при правках в `lib/features/profile`.
-- **Обязанности:** Роль `timezone_settings.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `timezone_settings.dart` under `lib/features/profile`.
 - **Когда открывать:** Когда ломается поведение, связанное с `timezone_settings.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `timezone_settings.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/profile/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (profile).
 
 
@@ -11737,13 +11737,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `activity_detail_sheet.dart` — Kotlin-точка входа Flutter на Android.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Edit sheet router (`ActivityDetailKind`).
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `activity_detail_sheet.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Edit sheet router (`ActivityDetailKind`).
+- **Содержимое:** Содержит: Flutter widgets (`ActivityDetailKind`, `ActivityDetailSheet`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Edit sheet router (`ActivityDetailKind`)
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `activity_detail_sheet.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Edit sheet router (`ActivityDetailKind`)
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11763,13 +11763,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `desktop_voice_capsule.dart` в `lib/features/shared` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `desktop_voice_capsule.dart` in `lib/features/shared` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/shared` использует `desktop_voice_capsule.dart` в сборке или workflow.
 - **Содержимое:** Открывать `desktop_voice_capsule.dart` при правках в `lib/features/shared`.
-- **Обязанности:** Роль `desktop_voice_capsule.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `desktop_voice_capsule.dart` under `lib/features/shared`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_capsule.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/shared/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11789,13 +11789,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `desktop_voice_command_panel.dart` в `lib/features/shared` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `desktop_voice_command_panel.dart` in `lib/features/shared` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/shared` использует `desktop_voice_command_panel.dart` в сборке или workflow.
 - **Содержимое:** Открывать `desktop_voice_command_panel.dart` при правках в `lib/features/shared`.
-- **Обязанности:** Роль `desktop_voice_command_panel.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `desktop_voice_command_panel.dart` under `lib/features/shared`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_command_panel.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/shared/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11815,13 +11815,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `desktop_voice_widget.dart` в `lib/features/shared` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `desktop_voice_widget.dart` in `lib/features/shared` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/shared` использует `desktop_voice_widget.dart` в сборке или workflow.
 - **Содержимое:** Открывать `desktop_voice_widget.dart` при правках в `lib/features/shared`.
-- **Обязанности:** Роль `desktop_voice_widget.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `desktop_voice_widget.dart` under `lib/features/shared`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `desktop_voice_widget.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/shared/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11840,13 +11840,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `checklist_helpers.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Checklist row sync/partition helpers.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `checklist_helpers.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Checklist row sync/partition helpers.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Checklist row sync/partition helpers
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `checklist_helpers.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Checklist row sync/partition helpers
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11866,13 +11866,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `parallel_record_panels.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Backlog sub-items + parallel child panels.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `parallel_record_panels.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Backlog sub-items + parallel child panels.
+- **Содержимое:** Содержит: Flutter widgets (`BacklogSubItemsPanel`, `BacklogSubItemsPanelState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Backlog sub-items + parallel child panels
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `parallel_record_panels.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Backlog sub-items + parallel child panels
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11891,13 +11891,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_repeat_helpers.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: RRULE ↔ UI repeat preset helpers.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `plan_repeat_helpers.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: RRULE ↔ UI repeat preset helpers.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: RRULE ↔ UI repeat preset helpers
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_repeat_helpers.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: RRULE ↔ UI repeat preset helpers
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11916,13 +11916,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `quill_link_launcher.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Quill note external URL launcher.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `quill_link_launcher.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Quill note external URL launcher.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Quill note external URL launcher
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `quill_link_launcher.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Quill note external URL launcher
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11941,13 +11941,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `quill_toolbar_config.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Planning edit Quill toolbar config.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `quill_toolbar_config.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Planning edit Quill toolbar config.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Planning edit Quill toolbar config
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `quill_toolbar_config.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Planning edit Quill toolbar config
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11967,13 +11967,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `sheet_autosave_gate.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Debounced edit-sheet autosave gate.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `sheet_autosave_gate.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Debounced edit-sheet autosave gate.
+- **Содержимое:** Содержит: Flutter widgets (`EditSheetAutosaveGate`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Debounced edit-sheet autosave gate
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `sheet_autosave_gate.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Debounced edit-sheet autosave gate
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -11992,13 +11992,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `sheet_time_helpers.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: UTC/display time format helpers.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `sheet_time_helpers.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: UTC/display time format helpers.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: UTC/display time format helpers
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `sheet_time_helpers.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: UTC/display time format helpers
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12018,13 +12018,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `sheet_time_picker.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: , `AppEditSheetTimeButton.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `sheet_time_picker.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: `showAppDateTimePicker`, `AppEditSheetTimeButton`.
+- **Содержимое:** Содержит: Flutter widgets (`AppEditSheetTimeButton`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: `showAppDateTimePicker`, `AppEditSheetTimeButton`
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `sheet_time_picker.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `showAppDateTimePicker`, `AppEditSheetTimeButton`
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12043,13 +12043,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `empty_state_placeholder.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Shared empty-state placeholder.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `empty_state_placeholder.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Shared empty-state placeholder.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Shared empty-state placeholder
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `empty_state_placeholder.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Shared empty-state placeholder
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12069,13 +12069,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `offline_sync_status_bar.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: O1 offline/sync tap-to-retry banner.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `offline_sync_status_bar.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: O1 offline/sync tap-to-retry banner.
+- **Содержимое:** Содержит: Flutter widgets (`OfflineSyncStatusBar`, `OfflineSyncStatusBarState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: O1 offline/sync tap-to-retry banner
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `offline_sync_status_bar.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: O1 offline/sync tap-to-retry banner
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12095,13 +12095,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_task_edit_sheet.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Plan/list task edit sheet.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `planning_task_edit_sheet.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Plan/list task edit sheet.
+- **Содержимое:** Содержит: Flutter widgets (`PlanningTaskEditSheetState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Plan/list task edit sheet
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `planning_task_edit_sheet.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Plan/list task edit sheet
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12120,13 +12120,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `profile_hydration_status_bar.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Profile hydration error banner.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `profile_hydration_status_bar.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Profile hydration error banner.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Profile hydration error banner
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `profile_hydration_status_bar.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Profile hydration error banner
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12145,13 +12145,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `shared_widgets.dart` в `lib/features/shared` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `shared_widgets.dart` in `lib/features/shared` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/shared` использует `shared_widgets.dart` в сборке или workflow.
 - **Содержимое:** Открывать `shared_widgets.dart` при правках в `lib/features/shared`.
-- **Обязанности:** Роль `shared_widgets.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `shared_widgets.dart` under `lib/features/shared`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `shared_widgets.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/shared/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12171,13 +12171,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `timeline_record_edit_sheet.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for edit sheets and voice UI on every tab: Timeline record edit sheet.
 - **Зачем:** Пользователь видит это на edit sheets and voice UI on every tab.
-- **Содержимое:** Содержимое `timeline_record_edit_sheet.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Timeline record edit sheet.
+- **Содержимое:** Содержит: Flutter widgets (`TimelineRecordSheetContentState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Timeline record edit sheet
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `timeline_record_edit_sheet.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Timeline record edit sheet
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12197,13 +12197,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `voice_capture_config.dart` в `lib/features/shared` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `voice_capture_config.dart` in `lib/features/shared` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/shared` использует `voice_capture_config.dart` в сборке или workflow.
 - **Содержимое:** Открывать `voice_capture_config.dart` при правках в `lib/features/shared`.
-- **Обязанности:** Роль `voice_capture_config.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `voice_capture_config.dart` under `lib/features/shared`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `voice_capture_config.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/shared/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12223,13 +12223,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `voice_input_sheet.dart` в `lib/features/shared` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `voice_input_sheet.dart` in `lib/features/shared` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/shared` использует `voice_input_sheet.dart` в сборке или workflow.
 - **Содержимое:** Открывать `voice_input_sheet.dart` при правках в `lib/features/shared`.
-- **Обязанности:** Роль `voice_input_sheet.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `voice_input_sheet.dart` under `lib/features/shared`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `voice_input_sheet.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/shared/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (shared).
 
 
@@ -12249,13 +12249,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `plan_vs_fact_tab.dart` в `lib/features/stats` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `plan_vs_fact_tab.dart` in `lib/features/stats` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/stats` использует `plan_vs_fact_tab.dart` в сборке или workflow.
 - **Содержимое:** Открывать `plan_vs_fact_tab.dart` при правках в `lib/features/stats`.
-- **Обязанности:** Роль `plan_vs_fact_tab.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `plan_vs_fact_tab.dart` under `lib/features/stats`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_vs_fact_tab.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `plan_vs_fact_tab.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/stats/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (stats).
 
 
@@ -12275,13 +12275,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `stats_view.dart` в `lib/features/stats` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `stats_view.dart` in `lib/features/stats` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/stats` использует `stats_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `stats_view.dart` при правках в `lib/features/stats`.
-- **Обязанности:** Роль `stats_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `stats_view.dart` under `lib/features/stats`.
 - **Когда открывать:** Когда ломается поведение, связанное с `stats_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `stats_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/stats/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (stats).
 
 
@@ -12301,13 +12301,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `timeline_day_page.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Timeline tab (first bottom tab): , lazy record list.
 - **Зачем:** Пользователь видит это на Timeline tab (first bottom tab).
-- **Содержимое:** Содержимое `timeline_day_page.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: `TimelineDayCardList`, lazy record list.
+- **Содержимое:** Содержит: Flutter widgets (`TimelineDayCardList`, `TimelineDayCardListState`, `TimelineLazyRecordList`, `TimelineLazyRecordListState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: `TimelineDayCardList`, lazy record list
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Timeline (shell index 0); Роль: `TimelineDayCardList`, lazy record list
+- **Связано с:** Связан с: Timeline tab (shell index 0); Role: `TimelineDayCardList`, lazy record list
 - **Слой:** UI — экран/виджет (timeline).
 
 
@@ -12327,13 +12327,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `timeline_header_controls.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Timeline tab (first bottom tab): List/stats segmented control + record input row.
 - **Зачем:** Пользователь видит это на Timeline tab (first bottom tab).
-- **Содержимое:** Содержимое `timeline_header_controls.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: List/stats segmented control + record input row.
+- **Содержимое:** Содержит: Flutter widgets (`TimelineHeaderControls`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: List/stats segmented control + record input row
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Timeline (shell index 0); Роль: List/stats segmented control + record input row
+- **Связано с:** Связан с: Timeline tab (shell index 0); Role: List/stats segmented control + record input row
 - **Слой:** UI — экран/виджет (timeline).
 
 
@@ -12352,13 +12352,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `timeline_helpers.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Timeline tab (first bottom tab): Shared timeline time/duration helpers.
 - **Зачем:** Пользователь видит это на Timeline tab (first bottom tab).
-- **Содержимое:** Содержимое `timeline_helpers.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: Shared timeline time/duration helpers.
+- **Содержимое:** Содержит: Flutter widgets (implementation details in the source file) implementing the visible behavior.
+- **Обязанности:** Отвечает за: Shared timeline time/duration helpers
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Timeline (shell index 0); Роль: Shared timeline time/duration helpers
+- **Связано с:** Связан с: Timeline tab (shell index 0); Role: Shared timeline time/duration helpers
 - **Слой:** UI — экран/виджет (timeline).
 
 
@@ -12378,13 +12378,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `timeline_record_card.dart` — platform/config файл.
+- **Что это:** Назначение файла: UI code for Timeline tab (first bottom tab): .
 - **Зачем:** Пользователь видит это на Timeline tab (first bottom tab).
-- **Содержимое:** Содержимое `timeline_record_card.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика экрана: `TimelineRecordCard`.
+- **Содержимое:** Содержит: Flutter widgets (`TimelineRecordCard`, `TimelineRecordCardState`) implementing the visible behavior.
+- **Обязанности:** Отвечает за: `TimelineRecordCard`
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** вкладка Timeline (shell index 0); Роль: `TimelineRecordCard`
+- **Связано с:** Связан с: Timeline tab (shell index 0); Role: `TimelineRecordCard`
 - **Слой:** UI — экран/виджет (timeline).
 
 
@@ -12404,13 +12404,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `timeline_view.dart` в `lib/features/timeline` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `timeline_view.dart` in `lib/features/timeline` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/timeline` использует `timeline_view.dart` в сборке или workflow.
 - **Содержимое:** Открывать `timeline_view.dart` при правках в `lib/features/timeline`.
-- **Обязанности:** Роль `timeline_view.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `timeline_view.dart` under `lib/features/timeline`.
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `timeline_view.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/timeline/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (timeline).
 
 
@@ -12430,13 +12430,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `wear_main_wrapper.dart` в `lib/features/wear` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `wear_main_wrapper.dart` in `lib/features/wear` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/wear` использует `wear_main_wrapper.dart` в сборке или workflow.
 - **Содержимое:** Открывать `wear_main_wrapper.dart` при правках в `lib/features/wear`.
-- **Обязанности:** Роль `wear_main_wrapper.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `wear_main_wrapper.dart` under `lib/features/wear`.
 - **Когда открывать:** Когда ломается поведение, связанное с `wear_main_wrapper.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `wear_main_wrapper.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/wear/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (wear).
 
 
@@ -12456,13 +12456,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `wear_platform.dart` в `lib/features/wear` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `wear_platform.dart` in `lib/features/wear` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/wear` использует `wear_platform.dart` в сборке или workflow.
 - **Содержимое:** Открывать `wear_platform.dart` при правках в `lib/features/wear`.
-- **Обязанности:** Роль `wear_platform.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `wear_platform.dart` under `lib/features/wear`.
 - **Когда открывать:** Когда ломается поведение, связанное с `wear_platform.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `wear_platform.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/wear/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (wear).
 
 
@@ -12481,13 +12481,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `wear_runtime.dart` в `lib/features/wear` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `wear_runtime.dart` in `lib/features/wear` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/wear` использует `wear_runtime.dart` в сборке или workflow.
 - **Содержимое:** Открывать `wear_runtime.dart` при правках в `lib/features/wear`.
-- **Обязанности:** Роль `wear_runtime.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `wear_runtime.dart` under `lib/features/wear`.
 - **Когда открывать:** Когда ломается поведение, связанное с `wear_runtime.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `wear_runtime.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/wear/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (wear).
 
 
@@ -12507,13 +12507,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `wear_timer_screen.dart` в `lib/features/wear` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `wear_timer_screen.dart` in `lib/features/wear` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/features/wear` использует `wear_timer_screen.dart` в сборке или workflow.
 - **Содержимое:** Открывать `wear_timer_screen.dart` при правках в `lib/features/wear`.
-- **Обязанности:** Роль `wear_timer_screen.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `wear_timer_screen.dart` under `lib/features/wear`.
 - **Когда открывать:** Когда ломается поведение, связанное с `wear_timer_screen.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `wear_timer_screen.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/features/wear/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** UI — экран/виджет (wear).
 
 
@@ -12532,13 +12532,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `app_locales.dart` — platform/config файл.
+- **Что это:** Назначение файла: Source file `app_locales.dart` — Supported locale codes and labels.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `app_locales.dart`.
-- **Обязанности:** Роль `app_locales.dart` в модуле `lib/l10n`.
+- **Обязанности:** Отвечает за: Supported locale codes and labels
 - **Когда открывать:** Когда ломается поведение, связанное с `app_locales.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `app_locales.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Supported locale codes and labels
 - **Слой:** Локализация — строки UI.
 
 
@@ -12557,13 +12557,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `category_db_display.dart` — platform/config файл.
+- **Что это:** Назначение файла: Source file `category_db_display.dart` — Localized category name display.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `category_db_display.dart`.
-- **Обязанности:** Роль `category_db_display.dart` в модуле `lib/l10n`.
+- **Обязанности:** Отвечает за: Localized category name display
 - **Когда открывать:** Когда ломается поведение, связанное с `category_db_display.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `category_db_display.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Localized category name display
 - **Слой:** Локализация — строки UI.
 
 
@@ -12582,13 +12582,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `dictionary.dart` — platform/config файл.
+- **Что это:** Назначение файла: Source file `dictionary.dart` — Assembles locale maps.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `dictionary.dart`.
-- **Обязанности:** Роль `dictionary.dart` в модуле `lib/l10n`.
+- **Обязанности:** Отвечает за: Assembles locale maps
 - **Когда открывать:** Когда ломается поведение, связанное с `dictionary.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `dictionary.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Assembles locale maps; exports `t()` and `currentLocale`
 - **Слой:** Локализация — строки UI.
 
 
@@ -12607,13 +12607,13 @@ EN:
 
 RU:
 
-- **Что это:** text file `HELP HOW TO UPDATE the languages` в `lib/l10n/langs` репозитория Life OS.
+- **Что это:** Назначение файла: text file `HELP HOW TO UPDATE the languages` in `lib/l10n/langs` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/l10n/langs` использует `HELP HOW TO UPDATE the languages` в сборке или workflow.
 - **Содержимое:** Открывать `HELP HOW TO UPDATE the languages` при правках в `lib/l10n/langs`.
-- **Обязанности:** Роль `HELP HOW TO UPDATE the languages` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `HELP HOW TO UPDATE the languages` under `lib/l10n/langs`.
 - **Когда открывать:** Когда ломается поведение, связанное с `HELP HOW TO UPDATE the languages`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `HELP HOW TO UPDATE the languages` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Локализация — строки UI.
 
 
@@ -12632,13 +12632,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `ar.dart` в `lib/l10n/langs` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `ar.dart` in `lib/l10n/langs` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/l10n/langs` использует `ar.dart` в сборке или workflow.
 - **Содержимое:** Открывать `ar.dart` при правках в `lib/l10n/langs`.
-- **Обязанности:** Роль `ar.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `ar.dart` under `lib/l10n/langs`.
 - **Когда открывать:** Когда ломается поведение, связанное с `ar.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `ar.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Локализация — строки UI.
 
 
@@ -12657,13 +12657,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `de.dart` в `lib/l10n/langs` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `de.dart` in `lib/l10n/langs` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/l10n/langs` использует `de.dart` в сборке или workflow.
 - **Содержимое:** Открывать `de.dart` при правках в `lib/l10n/langs`.
-- **Обязанности:** Роль `de.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `de.dart` under `lib/l10n/langs`.
 - **Когда открывать:** Когда ломается поведение, связанное с `de.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `de.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Локализация — строки UI.
 
 
@@ -12684,11 +12684,11 @@ RU:
 
 - **Что это:** Английские строки UI — мастер-копия ключей.
 - **Зачем:** Все подписи начинаются с ключей здесь.
-- **Содержимое:** Содержимое `en.dart` — открыть файл при правках.
+- **Содержимое:** Содержит: `kEnL10n` map of key → English text.
 - **Обязанности:** Канонический EN; править перед sync_locales.
 - **Когда открывать:** Когда ломается поведение, связанное с `en.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `en.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: **Canonical English** (`kEnL10n`) — SSOT for EN keys
 - **Слой:** Локализация — строки UI.
 
 
@@ -12707,13 +12707,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `es.dart` в `lib/l10n/langs` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `es.dart` in `lib/l10n/langs` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/l10n/langs` использует `es.dart` в сборке или workflow.
 - **Содержимое:** Открывать `es.dart` при правках в `lib/l10n/langs`.
-- **Обязанности:** Роль `es.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `es.dart` under `lib/l10n/langs`.
 - **Когда открывать:** Когда ломается поведение, связанное с `es.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `es.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Локализация — строки UI.
 
 
@@ -12732,13 +12732,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `fr.dart` в `lib/l10n/langs` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `fr.dart` in `lib/l10n/langs` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/l10n/langs` использует `fr.dart` в сборке или workflow.
 - **Содержимое:** Открывать `fr.dart` при правках в `lib/l10n/langs`.
-- **Обязанности:** Роль `fr.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `fr.dart` under `lib/l10n/langs`.
 - **Когда открывать:** Когда ломается поведение, связанное с `fr.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `fr.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Локализация — строки UI.
 
 
@@ -12757,13 +12757,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `it.dart` в `lib/l10n/langs` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `it.dart` in `lib/l10n/langs` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/l10n/langs` использует `it.dart` в сборке или workflow.
 - **Содержимое:** Открывать `it.dart` при правках в `lib/l10n/langs`.
-- **Обязанности:** Роль `it.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `it.dart` under `lib/l10n/langs`.
 - **Когда открывать:** Когда ломается поведение, связанное с `it.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `it.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Локализация — строки UI.
 
 
@@ -12782,13 +12782,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `ko.dart` в `lib/l10n/langs` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `ko.dart` in `lib/l10n/langs` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/l10n/langs` использует `ko.dart` в сборке или workflow.
 - **Содержимое:** Открывать `ko.dart` при правках в `lib/l10n/langs`.
-- **Обязанности:** Роль `ko.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `ko.dart` under `lib/l10n/langs`.
 - **Когда открывать:** Когда ломается поведение, связанное с `ko.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `ko.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Локализация — строки UI.
 
 
@@ -12809,11 +12809,11 @@ RU:
 
 - **Что это:** Русские строки интерфейса.
 - **Зачем:** RU локаль берёт текст отсюда.
-- **Содержимое:** Содержимое `ru.dart` — открыть файл при правках.
+- **Содержимое:** Содержит: `kRuL10n` map of key → Russian text.
 - **Обязанности:** Канонический RU.
 - **Когда открывать:** Когда ломается поведение, связанное с `ru.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `ru.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: **Canonical Russian** (`kRuL10n`) — SSOT for RU keys
 - **Слой:** Локализация — строки UI.
 
 
@@ -12832,13 +12832,13 @@ EN:
 
 RU:
 
-- **Что это:** Dart source `zh.dart` в `lib/l10n/langs` репозитория Life OS.
+- **Что это:** Назначение файла: Dart source `zh.dart` in `lib/l10n/langs` for the Life OS repository.
 - **Зачем:** Файл в git, потому что `lib/l10n/langs` использует `zh.dart` в сборке или workflow.
 - **Содержимое:** Открывать `zh.dart` при правках в `lib/l10n/langs`.
-- **Обязанности:** Роль `zh.dart` описана в секции папки выше.
+- **Обязанности:** Отвечает за: Fulfill the documented role of `zh.dart` under `lib/l10n/langs`.
 - **Когда открывать:** Когда ломается поведение, связанное с `zh.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `zh.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Folder `lib/l10n/langs/`, `docs/APP_STRUCTURE.md`.
 - **Слой:** Локализация — строки UI.
 
 
@@ -12858,13 +12858,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `main.dart` — platform/config файл.
+- **Что это:** Назначение файла: Source file `main.dart` — `runApp`, PocketBase bootstrap, auth gate, Wear entry, locale init, shell injection.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `main.dart`.
-- **Обязанности:** Роль `main.dart` в модуле `lib`.
+- **Обязанности:** Отвечает за: `runApp`, PocketBase bootstrap, auth gate, Wear entry, locale init, shell injection
 - **Когда открывать:** Когда ломается поведение, связанное с `main.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `main.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: `runApp`, PocketBase bootstrap, auth gate, Wear entry, locale init, shell injection
 - **Слой:** Вспомогательный файл репозитория.
 
 
@@ -12884,13 +12884,13 @@ EN:
 
 RU:
 
-- **Что это:** Файл `notification_service.dart` — platform/config файл.
+- **Что это:** Назначение файла: Source file `notification_service.dart` — Local notifications and plan alarms.
 - **Зачем:** Описан в APP_STRUCTURE.md; нужен для текущего поведения.
 - **Содержимое:** Исходник `notification_service.dart`.
-- **Обязанности:** Роль `notification_service.dart` в модуле `lib/services`.
+- **Обязанности:** Отвечает за: Local notifications and plan alarms
 - **Когда открывать:** Когда ломается поведение, связанное с `notification_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** Связи файла `notification_service.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Role: Local notifications and plan alarms
 - **Слой:** Сервис устройства (уведомления).
 
 
@@ -12912,11 +12912,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Shell dashboard entry (see §3.1.1).
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `life_os_dashboard.dart` — открыть файл при правках.
-- **Обязанности:** Роль `life_os_dashboard.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (`ShellDashboardBase`).
+- **Обязанности:** Отвечает за: Shell dashboard entry (see §3.1.1)
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Shell dashboard entry (see §3.1.1)
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Shell dashboard entry (see §3.1.1)
 - **Слой:** Shell — навигация приложения.
 
 
@@ -12938,11 +12938,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Profile hydration failure banner.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `profile_hydration_status_bar.dart` — открыть файл при правках.
-- **Обязанности:** Роль `profile_hydration_status_bar.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (`ProfileHydrationStatusBar`).
+- **Обязанности:** Отвечает за: Profile hydration failure banner
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Profile hydration failure banner
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Profile hydration failure banner
 - **Слой:** Shell — навигация приложения.
 
 
@@ -12964,11 +12964,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Language/TZ settings page (shell route).
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `settings_page.dart` — открыть файл при правках.
-- **Обязанности:** Роль `settings_page.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (`SettingsPage`, `SettingsPageState`).
+- **Обязанности:** Отвечает за: Language/TZ settings page (shell route)
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Language/TZ settings page (shell route)
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Language/TZ settings page (shell route)
 - **Слой:** Shell — навигация приложения.
 
 
@@ -12990,11 +12990,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Shell core logic.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `shell_core.dart` — открыть файл при правках.
-- **Обязанности:** Роль `shell_core.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (`ShellCoreLogic`).
+- **Обязанности:** Отвечает за: Shell core logic
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Shell core logic
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Shell core logic
 - **Слой:** Shell — навигация приложения.
 
 
@@ -13016,11 +13016,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Edit sheet hosts.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `shell_edit_hosts.dart` — открыть файл при правках.
-- **Обязанности:** Роль `shell_edit_hosts.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (`ShellEditHosts`).
+- **Обязанности:** Отвечает за: Edit sheet hosts
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Edit sheet hosts
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Edit sheet hosts
 - **Слой:** Shell — навигация приложения.
 
 
@@ -13042,11 +13042,11 @@ RU:
 
 - **Что это:** Оболочка приложения — More menu.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `shell_more_menu.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика: More menu.
+- **Содержимое:** Содержит: Shell mixin or widget (`ShellMoreMenu`).
+- **Обязанности:** Отвечает за: More menu
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: More menu
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: More menu
 - **Слой:** Shell — навигация приложения.
 
 
@@ -13068,11 +13068,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Offline banner slot.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `shell_offline_banner.dart` — открыть файл при правках.
-- **Обязанности:** Роль `shell_offline_banner.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (`ShellTopStatusBars`).
+- **Обязанности:** Отвечает за: Offline banner slot
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: offline-баннер slot
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Offline banner slot
 - **Слой:** Shell — навигация приложения.
 
 
@@ -13093,11 +13093,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Shell shared helpers.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `shell_shared.dart` — открыть файл при правках.
-- **Обязанности:** Роль `shell_shared.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (implementation details in the source file).
+- **Обязанности:** Отвечает за: Shell shared helpers
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Shell shared helpers
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Shell shared helpers
 - **Слой:** Shell — навигация приложения.
 
 
@@ -13119,11 +13119,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Desktop/web side navigation rail.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `shell_side_navigation.dart` — открыть файл при правках.
-- **Обязанности:** Роль `shell_side_navigation.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (`ShellSideNavigation`, `ShellSideNavItem`).
+- **Обязанности:** Отвечает за: Desktop/web side navigation rail
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Desktop/web side navigation rail
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Desktop/web side navigation rail
 - **Слой:** Shell — навигация приложения.
 
 
@@ -13145,11 +13145,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Tab host builders.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `shell_tab_host.dart` — открыть файл при правках.
-- **Обязанности:** Роль `shell_tab_host.dart` в модуле `lib/shell`.
+- **Содержимое:** Содержит: Shell mixin or widget (`ShellTabHost`).
+- **Обязанности:** Отвечает за: Tab host builders
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Tab host builders
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Tab host builders
 - **Слой:** Shell — навигация приложения.
 
 
@@ -13171,11 +13171,11 @@ RU:
 
 - **Что это:** Оболочка приложения — Voice routing.
 - **Зачем:** Связывает вкладки, voice, edit sheets, offline banner.
-- **Содержимое:** Содержимое `shell_voice_routing.dart` — открыть файл при правках.
-- **Обязанности:** UI-логика: Voice routing.
+- **Содержимое:** Содержит: Shell mixin or widget (`ShellVoiceRouting`).
+- **Обязанности:** Отвечает за: Voice routing
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
-- **Связано с:** все основные вкладки, `app_shell.dart`; Роль: Voice routing
+- **Связано с:** Связан с: All main tabs, `app_shell.dart`; Role: Voice routing
 - **Слой:** Shell — навигация приложения.
 
 
@@ -13194,13 +13194,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл linux: `.gitignore` — platform/config файл.
-- **Зачем:** Нужен для сборки `linux` на платформе linux.
-- **Содержимое:** Native/config-содержимое `.gitignore` в `linux`.
-- **Обязанности:** Поддержка embedder-сборки для `linux`.
+- **Что это:** Назначение файла: Git ignore rules for `linux` — files not to commit.
+- **Зачем:** Нужен, потому что: Prevents build output and secrets from entering git history.
+- **Содержимое:** Содержит: Ignore patterns for this folder scope.
+- **Обязанности:** Отвечает за: Prevent accidental commit of generated files.
 - **Когда открывать:** Когда ломается поведение, связанное с `.gitignore`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `.gitignore` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `linux` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13219,13 +13219,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл linux: `CMakeLists.txt` — platform/config файл.
-- **Зачем:** Нужен для сборки `linux` на платформе linux.
-- **Содержимое:** Native/config-содержимое `CMakeLists.txt` в `linux`.
-- **Обязанности:** Поддержка embedder-сборки для `linux`.
+- **Что это:** Назначение файла: CMake build script for `linux` — builds the Flutter `linux` native runner.
+- **Зачем:** Нужен, потому что: Native linux desktop compile links Flutter engine via this CMake file in `linux`.
+- **Содержимое:** Содержит: CMake targets, source file list, Flutter embedder link rules.
+- **Обязанности:** Отвечает за: Produce native binary pieces for `linux` embedder.
 - **Когда открывать:** Когда ломается поведение, связанное с `CMakeLists.txt`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `CMakeLists.txt` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `linux` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13244,13 +13244,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл linux: `CMakeLists.txt` — platform/config файл.
-- **Зачем:** Нужен для сборки `linux/flutter` на платформе linux.
-- **Содержимое:** Native/config-содержимое `CMakeLists.txt` в `linux/flutter`.
-- **Обязанности:** Поддержка embedder-сборки для `linux/flutter`.
+- **Что это:** Назначение файла: CMake build script for `linux/flutter` — builds the Flutter `linux` native runner.
+- **Зачем:** Нужен, потому что: Native linux desktop compile links Flutter engine via this CMake file in `linux/flutter`.
+- **Содержимое:** Содержит: CMake targets, source file list, Flutter embedder link rules.
+- **Обязанности:** Отвечает за: Produce native binary pieces for `linux/flutter` embedder.
 - **Когда открывать:** Когда ломается поведение, связанное с `CMakeLists.txt`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `CMakeLists.txt` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `linux` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13271,11 +13271,11 @@ RU:
 
 - **Что это:** Файл сборки linux: `generated_plugin_registrant.cc` в `linux/flutter`.
 - **Зачем:** Нужен для сборки linux; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `generated_plugin_registrant.cc` в `linux/flutter`.
+- **Содержимое:** Содержит: Native/config source for `linux/flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder linux.
 - **Когда открывать:** Ошибка сборки с `generated_plugin_registrant.cc`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `linux/`.
+- **Связано с:** Связан с: `linux/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13296,11 +13296,11 @@ RU:
 
 - **Что это:** Файл сборки linux: `generated_plugin_registrant.h` в `linux/flutter`.
 - **Зачем:** Нужен для сборки linux; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `generated_plugin_registrant.h` в `linux/flutter`.
+- **Содержимое:** Содержит: Native/config source for `linux/flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder linux.
 - **Когда открывать:** Ошибка сборки с `generated_plugin_registrant.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `linux/`.
+- **Связано с:** Связан с: `linux/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13321,11 +13321,11 @@ RU:
 
 - **Что это:** Файл сборки linux: `generated_plugins.cmake` в `linux/flutter`.
 - **Зачем:** Нужен для сборки linux; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `generated_plugins.cmake` в `linux/flutter`.
+- **Содержимое:** Содержит: Native/config source for `linux/flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder linux.
 - **Когда открывать:** Ошибка сборки с `generated_plugins.cmake`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `linux/`.
+- **Связано с:** Связан с: `linux/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13344,13 +13344,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл linux: `CMakeLists.txt` — platform/config файл.
-- **Зачем:** Нужен для сборки `linux/runner` на платформе linux.
-- **Содержимое:** Native/config-содержимое `CMakeLists.txt` в `linux/runner`.
-- **Обязанности:** Поддержка embedder-сборки для `linux/runner`.
+- **Что это:** Назначение файла: CMake build script for `linux/runner` — builds the Flutter `linux` native runner.
+- **Зачем:** Нужен, потому что: Native linux desktop compile links Flutter engine via this CMake file in `linux/runner`.
+- **Содержимое:** Содержит: CMake targets, source file list, Flutter embedder link rules.
+- **Обязанности:** Отвечает за: Produce native binary pieces for `linux/runner` embedder.
 - **Когда открывать:** Когда ломается поведение, связанное с `CMakeLists.txt`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `CMakeLists.txt` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `linux` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13371,11 +13371,11 @@ RU:
 
 - **Что это:** Файл сборки linux: `main.cc` в `linux/runner`.
 - **Зачем:** Нужен для сборки linux; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `main.cc` в `linux/runner`.
+- **Содержимое:** Содержит: Native/config source for `linux/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder linux.
 - **Когда открывать:** Ошибка сборки с `main.cc`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `linux/`.
+- **Связано с:** Связан с: `linux/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13396,11 +13396,11 @@ RU:
 
 - **Что это:** Файл сборки linux: `my_application.cc` в `linux/runner`.
 - **Зачем:** Нужен для сборки linux; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `my_application.cc` в `linux/runner`.
+- **Содержимое:** Содержит: Native/config source for `linux/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder linux.
 - **Когда открывать:** Ошибка сборки с `my_application.cc`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `linux/`.
+- **Связано с:** Связан с: `linux/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13421,11 +13421,11 @@ RU:
 
 - **Что это:** Файл сборки linux: `my_application.h` в `linux/runner`.
 - **Зачем:** Нужен для сборки linux; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `my_application.h` в `linux/runner`.
+- **Содержимое:** Содержит: Native/config source for `linux/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder linux.
 - **Когда открывать:** Ошибка сборки с `my_application.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `linux/`.
+- **Связано с:** Связан с: `linux/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13444,13 +13444,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл macos: `.gitignore` — platform/config файл.
-- **Зачем:** Нужен для сборки `macos` на платформе macos.
-- **Содержимое:** Native/config-содержимое `.gitignore` в `macos`.
-- **Обязанности:** Поддержка embedder-сборки для `macos`.
+- **Что это:** Назначение файла: Git ignore rules for `macos` — files not to commit.
+- **Зачем:** Нужен, потому что: Prevents build output and secrets from entering git history.
+- **Содержимое:** Содержит: Ignore patterns for this folder scope.
+- **Обязанности:** Отвечает за: Prevent accidental commit of generated files.
 - **Когда открывать:** Когда ломается поведение, связанное с `.gitignore`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `.gitignore` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `macos` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13471,11 +13471,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `Flutter-Debug.xcconfig` в `macos/Flutter`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Flutter-Debug.xcconfig` в `macos/Flutter`.
+- **Содержимое:** Содержит: Native/config source for `macos/Flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `Flutter-Debug.xcconfig`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13496,11 +13496,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `Flutter-Release.xcconfig` в `macos/Flutter`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Flutter-Release.xcconfig` в `macos/Flutter`.
+- **Содержимое:** Содержит: Native/config source for `macos/Flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `Flutter-Release.xcconfig`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13521,11 +13521,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `GeneratedPluginRegistrant.swift` в `macos/Flutter`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `GeneratedPluginRegistrant.swift` в `macos/Flutter`.
+- **Содержимое:** Содержит: Native/config source for `macos/Flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `GeneratedPluginRegistrant.swift`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13546,11 +13546,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `project.pbxproj` в `macos/Runner.xcodeproj`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `project.pbxproj` в `macos/Runner.xcodeproj`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner.xcodeproj` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `project.pbxproj`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13571,11 +13571,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `IDEWorkspaceChecks.plist` в `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `IDEWorkspaceChecks.plist` в `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `IDEWorkspaceChecks.plist`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13596,11 +13596,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `Runner.xcscheme` в `macos/Runner.xcodeproj/xcshareddata/xcschemes`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Runner.xcscheme` в `macos/Runner.xcodeproj/xcshareddata/xcschemes`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner.xcodeproj/xcshareddata/xcschemes` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `Runner.xcscheme`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13621,11 +13621,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `contents.xcworkspacedata` в `macos/Runner.xcworkspace`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `contents.xcworkspacedata` в `macos/Runner.xcworkspace`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner.xcworkspace` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `contents.xcworkspacedata`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13646,11 +13646,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `IDEWorkspaceChecks.plist` в `macos/Runner.xcworkspace/xcshareddata`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `IDEWorkspaceChecks.plist` в `macos/Runner.xcworkspace/xcshareddata`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner.xcworkspace/xcshareddata` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `IDEWorkspaceChecks.plist`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13671,11 +13671,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `AppDelegate.swift` в `macos/Runner`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `AppDelegate.swift` в `macos/Runner`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `AppDelegate.swift`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13696,11 +13696,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `Contents.json` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Contents.json` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `Contents.json`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13721,11 +13721,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `app_icon_1024.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `app_icon_1024.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `app_icon_1024.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13746,11 +13746,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `app_icon_128.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `app_icon_128.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `app_icon_128.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13771,11 +13771,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `app_icon_16.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `app_icon_16.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `app_icon_16.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13796,11 +13796,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `app_icon_256.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `app_icon_256.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `app_icon_256.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13821,11 +13821,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `app_icon_32.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `app_icon_32.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `app_icon_32.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13846,11 +13846,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `app_icon_512.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `app_icon_512.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `app_icon_512.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13871,11 +13871,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `app_icon_64.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `app_icon_64.png` в `macos/Runner/Assets.xcassets/AppIcon.appiconset`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Assets.xcassets/AppIcon.appiconset` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `app_icon_64.png`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13896,11 +13896,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `MainMenu.xib` в `macos/Runner/Base.lproj`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `MainMenu.xib` в `macos/Runner/Base.lproj`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Base.lproj` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `MainMenu.xib`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13921,11 +13921,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `AppInfo.xcconfig` в `macos/Runner/Configs`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `AppInfo.xcconfig` в `macos/Runner/Configs`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Configs` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `AppInfo.xcconfig`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13946,11 +13946,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `Debug.xcconfig` в `macos/Runner/Configs`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Debug.xcconfig` в `macos/Runner/Configs`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Configs` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `Debug.xcconfig`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13971,11 +13971,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `Release.xcconfig` в `macos/Runner/Configs`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Release.xcconfig` в `macos/Runner/Configs`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Configs` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `Release.xcconfig`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -13996,11 +13996,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `Warnings.xcconfig` в `macos/Runner/Configs`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Warnings.xcconfig` в `macos/Runner/Configs`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner/Configs` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `Warnings.xcconfig`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -14021,11 +14021,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `DebugProfile.entitlements` в `macos/Runner`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `DebugProfile.entitlements` в `macos/Runner`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `DebugProfile.entitlements`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -14044,13 +14044,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл macos: `Info.plist` — platform/config файл.
-- **Зачем:** Нужен для сборки `macos/Runner` на платформе macos.
-- **Содержимое:** Native/config-содержимое `Info.plist` в `macos/Runner`.
-- **Обязанности:** Поддержка embedder-сборки для `macos/Runner`.
+- **Что это:** Назначение файла: iOS/macOS bundle Info.plist — permissions, bundle id, display name.
+- **Зачем:** Нужен, потому что: Apple OS reads plist for app metadata and permission prompts.
+- **Содержимое:** Содержит: CFBundle keys, usage descriptions (mic, etc.).
+- **Обязанности:** Отвечает за: App identity and iOS permission strings.
 - **Когда открывать:** Когда ломается поведение, связанное с `Info.plist`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `Info.plist` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `macos` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -14071,11 +14071,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `MainFlutterWindow.swift` в `macos/Runner`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `MainFlutterWindow.swift` в `macos/Runner`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `MainFlutterWindow.swift`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -14096,11 +14096,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `Release.entitlements` в `macos/Runner`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Release.entitlements` в `macos/Runner`.
+- **Содержимое:** Содержит: Native/config source for `macos/Runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `Release.entitlements`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -14121,11 +14121,11 @@ RU:
 
 - **Что это:** Файл сборки macos: `RunnerTests.swift` в `macos/RunnerTests`.
 - **Зачем:** Нужен для сборки macos; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `RunnerTests.swift` в `macos/RunnerTests`.
+- **Содержимое:** Содержит: Native/config source for `macos/RunnerTests` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder macos.
 - **Когда открывать:** Ошибка сборки с `RunnerTests.swift`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `macos/`.
+- **Связано с:** Связан с: `macos/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -14144,14 +14144,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `auth.request_password_reset.pb.js` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `auth.request_password_reset.pb.js`.
-- **Содержимое:** Содержимое `auth.request_password_reset.pb.js` — открыть файл при правках.
-- **Обязанности:** Роль `auth.request_password_reset.pb.js` в модуле `pb_hooks`.
-- **Когда открывать:** Когда build или maintenance ссылается на `auth.request_password_reset.pb.js`.
-- **Можно удалить?** Нет — production PocketBase deployment.
-- **Связано с:** Связи файла `auth.request_password_reset.pb.js` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Server hook — not in app binary.
+- **Что это:** Назначение файла: PocketBase server hook `auth.request_password_reset` — runs on VPS when specific API events fire.
+- **Зачем:** Нужен, потому что: Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Содержимое:** Содержит: JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Обязанности:** Отвечает за: Server-side logic for `auth.request_password_reset` (see `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Открывать, когда: Server behavior differs from app expectations for auth/records.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: PocketBase Admin, Flutter auth/records client.
+- **Слой:** Сборка/деплой/сервер.
 
 
 ### `pb_hooks/records.interval_sanitize.pb.js`
@@ -14169,14 +14169,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `records.interval_sanitize.pb.js` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `records.interval_sanitize.pb.js`.
-- **Содержимое:** Содержимое `records.interval_sanitize.pb.js` — открыть файл при правках.
-- **Обязанности:** Роль `records.interval_sanitize.pb.js` в модуле `pb_hooks`.
-- **Когда открывать:** Когда build или maintenance ссылается на `records.interval_sanitize.pb.js`.
-- **Можно удалить?** Нет — production PocketBase deployment.
-- **Связано с:** Связи файла `records.interval_sanitize.pb.js` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Server hook — not in app binary.
+- **Что это:** Назначение файла: PocketBase server hook `records.interval_sanitize` — runs on VPS when specific API events fire.
+- **Зачем:** Нужен, потому что: Some rules (password reset email, overlapping records) must be enforced server-side.
+- **Содержимое:** Содержит: JavaScript hook handler copied to PocketBase `pb_hooks/` on server.
+- **Обязанности:** Отвечает за: Server-side logic for `records.interval_sanitize` (see `docs/POCKETBASE_MANIFEST.md`).
+- **Когда открывать:** Открывать, когда: Server behavior differs from app expectations for auth/records.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: PocketBase Admin, Flutter auth/records client.
+- **Слой:** Сборка/деплой/сервер.
 
 
 ### `pubspec.lock`
@@ -14225,7 +14225,7 @@ RU:
 - **Обязанности:** Объявить package `counter`, версию и все библиотеки.
 - **Когда открывать:** Добавление пакета, смена версии приложения, новые assets.
 - **Можно удалить?** Нет — без него сборка невозможна.
-- **Связано с:** Связи файла `pubspec.yaml` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: `pubspec.lock`, `flutter pub get`, all Dart imports.
 - **Слой:** Манифест сборки — нужен на всех платформах.
 
 
@@ -14244,14 +14244,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `architecture_guard.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `architecture_guard.ps1`.
-- **Содержимое:** Содержимое `architecture_guard.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `architecture_guard.ps1` в модуле `scripts/audit`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — required for audit workflow.
-- **Связано с:** Связи файла `architecture_guard.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Audit script.
+- **Что это:** Назначение файла: Checks repo structure rules — forbidden imports, required docs, large-file warnings.
+- **Зачем:** Нужен, потому что: Prevents accidental architecture breaks during refactors.
+- **Содержимое:** Содержит: PowerShell rules matching `docs/APP_STRUCTURE.md`.
+- **Обязанности:** Отвечает за: Exit non-zero in `-Strict` mode on violations.
+- **Когда открывать:** Открывать, когда: Before merge; after moving files.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `docs/APP_STRUCTURE.md`, CI optional.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/check_no_preparing_ui.ps1`
@@ -14269,14 +14269,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `check_no_preparing_ui.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `check_no_preparing_ui.ps1`.
-- **Содержимое:** Содержимое `check_no_preparing_ui.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `check_no_preparing_ui.ps1` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `check_no_preparing_ui.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `check_no_preparing_ui.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `check_no_preparing_ui.ps1`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `check_no_preparing_ui.ps1` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/export_price_reporter_timesheet.dart`
@@ -14294,14 +14294,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `export_price_reporter_timesheet.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `export_price_reporter_timesheet.dart`.
-- **Содержимое:** Содержимое `export_price_reporter_timesheet.dart` — открыть файл при правках.
-- **Обязанности:** Роль `export_price_reporter_timesheet.dart` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
+- **Что это:** Назначение файла: Manual export of Price Reporter timeline records to CSV for owner billing/reporting.
+- **Зачем:** Нужен, потому что: Internal business reporting — not an in-app user feature.
+- **Содержимое:** Содержит: Read-only PocketBase queries + CSV writer to `exports/`.
+- **Обязанности:** Отвечает за: Generate timesheet CSV for configured date range.
+- **Когда открывать:** Открывать, когда: Owner runs monthly Price Reporter billing export.
 - **Можно удалить?** Возможно — manual owner utility; keep unless export no longer used.
-- **Связано с:** Связи файла `export_price_reporter_timesheet.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Manual owner script — not shipped in app.
+- **Связано с:** Связан с: `docs/website/INTERNAL_NOTES_NOT_FOR_SITE.md`, `exports/` folder.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/generate_app_structure_detailed.py`
@@ -14319,14 +14319,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `generate_app_structure_detailed.py` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `generate_app_structure_detailed.py`.
-- **Содержимое:** Содержимое `generate_app_structure_detailed.py` — открыть файл при правках.
-- **Обязанности:** Роль `generate_app_structure_detailed.py` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — required for structure doc generation.
-- **Связано с:** Связи файла `generate_app_structure_detailed.py` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Doc generation script.
+- **Что это:** Назначение файла: Builds this document (`APP_STRUCTURE_DETAILED.md`) from git file list + role map.
+- **Зачем:** Нужен, потому что: Maintains owner-readable structure guide in sync with repo after changes.
+- **Содержимое:** Содержит: Python generator + curated folder/file descriptions.
+- **Обязанности:** Отвечает за: Regenerate detailed structure encyclopedia.
+- **Когда открывать:** Открывать, когда: After adding/removing tracked files; after editing structure docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `docs/APP_STRUCTURE.md`, `structure_guide_data.py`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/run_desktop_voice_acceptance.ps1`
@@ -14344,14 +14344,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `run_desktop_voice_acceptance.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `run_desktop_voice_acceptance.ps1`.
-- **Содержимое:** Содержимое `run_desktop_voice_acceptance.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `run_desktop_voice_acceptance.ps1` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `run_desktop_voice_acceptance.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `run_desktop_voice_acceptance.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `run_desktop_voice_acceptance.ps1`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `run_desktop_voice_acceptance.ps1` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/smoke_desktop_hotkey.ps1`
@@ -14369,14 +14369,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `smoke_desktop_hotkey.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `smoke_desktop_hotkey.ps1`.
-- **Содержимое:** Содержимое `smoke_desktop_hotkey.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `smoke_desktop_hotkey.ps1` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `smoke_desktop_hotkey.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `smoke_desktop_hotkey.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `smoke_desktop_hotkey.ps1`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `smoke_desktop_hotkey.ps1` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/smoke_desktop_voice_helper_failure.ps1`
@@ -14394,14 +14394,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `smoke_desktop_voice_helper_failure.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `smoke_desktop_voice_helper_failure.ps1`.
-- **Содержимое:** Содержимое `smoke_desktop_voice_helper_failure.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `smoke_desktop_voice_helper_failure.ps1` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `smoke_desktop_voice_helper_failure.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `smoke_desktop_voice_helper_failure.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `smoke_desktop_voice_helper_failure.ps1`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `smoke_desktop_voice_helper_failure.ps1` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/smoke_desktop_voice_helper_selftest.ps1`
@@ -14419,14 +14419,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `smoke_desktop_voice_helper_selftest.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `smoke_desktop_voice_helper_selftest.ps1`.
-- **Содержимое:** Содержимое `smoke_desktop_voice_helper_selftest.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `smoke_desktop_voice_helper_selftest.ps1` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `smoke_desktop_voice_helper_selftest.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `smoke_desktop_voice_helper_selftest.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `smoke_desktop_voice_helper_selftest.ps1`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `smoke_desktop_voice_helper_selftest.ps1` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/smoke_desktop_voice_recording_first.ps1`
@@ -14444,14 +14444,89 @@ EN:
 
 RU:
 
-- **Что это:** Файл `smoke_desktop_voice_recording_first.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `smoke_desktop_voice_recording_first.ps1`.
-- **Содержимое:** Содержимое `smoke_desktop_voice_recording_first.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `smoke_desktop_voice_recording_first.ps1` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `smoke_desktop_voice_recording_first.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `smoke_desktop_voice_recording_first.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `smoke_desktop_voice_recording_first.ps1`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `smoke_desktop_voice_recording_first.ps1` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
+
+
+### `scripts/manual/structure_en_ru_adapt.py`
+
+EN:
+
+- **What this is:** Developer script `structure_en_ru_adapt.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `structure_en_ru_adapt.py`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `structure_en_ru_adapt.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Назначение файла: Developer script `structure_en_ru_adapt.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `structure_en_ru_adapt.py`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `structure_en_ru_adapt.py` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
+
+
+### `scripts/manual/structure_file_ru_curated.py`
+
+EN:
+
+- **What this is:** Developer script `structure_file_ru_curated.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `structure_file_ru_curated.py`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `structure_file_ru_curated.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Назначение файла: Developer script `structure_file_ru_curated.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `structure_file_ru_curated.py`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `structure_file_ru_curated.py` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
+
+
+### `scripts/manual/structure_folder_ru_curated.py`
+
+EN:
+
+- **What this is:** Developer script `structure_folder_ru_curated.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `structure_folder_ru_curated.py`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `structure_folder_ru_curated.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Назначение файла: Developer script `structure_folder_ru_curated.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `structure_folder_ru_curated.py`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `structure_folder_ru_curated.py` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/structure_guide_data.py`
@@ -14469,14 +14544,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `structure_guide_data.py` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `structure_guide_data.py`.
-- **Содержимое:** Содержимое `structure_guide_data.py` — открыть файл при правках.
-- **Обязанности:** Роль `structure_guide_data.py` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `structure_guide_data.py` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `structure_guide_data.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `structure_guide_data.py`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `structure_guide_data.py` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/structure_role_guides.py`
@@ -14494,14 +14569,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `structure_role_guides.py` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `structure_role_guides.py`.
-- **Содержимое:** Содержимое `structure_role_guides.py` — открыть файл при правках.
-- **Обязанности:** Роль `structure_role_guides.py` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `structure_role_guides.py` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `structure_role_guides.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `structure_role_guides.py`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `structure_role_guides.py` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/structure_root_guides.py`
@@ -14519,14 +14594,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `structure_root_guides.py` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `structure_root_guides.py`.
-- **Содержимое:** Содержимое `structure_root_guides.py` — открыть файл при правках.
-- **Обязанности:** Роль `structure_root_guides.py` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `structure_root_guides.py` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `structure_root_guides.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `structure_root_guides.py`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `structure_root_guides.py` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/structure_ru_helpers.py`
@@ -14544,14 +14619,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `structure_ru_helpers.py` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `structure_ru_helpers.py`.
-- **Содержимое:** Содержимое `structure_ru_helpers.py` — открыть файл при правках.
-- **Обязанности:** Роль `structure_ru_helpers.py` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `structure_ru_helpers.py` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `structure_ru_helpers.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `structure_ru_helpers.py`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `structure_ru_helpers.py` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/structure_scan.ps1`
@@ -14569,14 +14644,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `structure_scan.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `structure_scan.ps1`.
-- **Содержимое:** Содержимое `structure_scan.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `structure_scan.ps1` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `structure_scan.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `structure_scan.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `structure_scan.ps1`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `structure_scan.ps1` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/td`
@@ -14594,14 +14669,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `td` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `td`.
-- **Содержимое:** Содержимое `td` — открыть файл при правках.
-- **Обязанности:** Роль `td` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `td` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `td` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `td`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `td` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/manual/td.ps1`
@@ -14619,14 +14694,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `td.ps1` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `td.ps1`.
-- **Содержимое:** Содержимое `td.ps1` — открыть файл при правках.
-- **Обязанности:** Роль `td.ps1` в модуле `scripts/manual`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — part of documented dev workflow unless cleanup report removed it.
-- **Связано с:** Связи файла `td.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Developer script.
+- **Что это:** Назначение файла: Developer script `td.ps1` — run manually for maintenance, smoke test, or deploy helper.
+- **Зачем:** Нужен, потому что: Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **Содержимое:** Содержит: PowerShell, Python, or Dart commands for `td.ps1`.
+- **Обязанности:** Отвечает за: See script header comments for exact behavior.
+- **Когда открывать:** Открывать, когда: When workflow documented for `td.ps1` is needed.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `scripts/sync_locales.dart`
@@ -14645,14 +14720,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `sync_locales.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `sync_locales.dart`.
-- **Содержимое:** Содержимое `sync_locales.dart` — открыть файл при правках.
-- **Обязанности:** Роль `sync_locales.dart` в модуле `scripts`.
-- **Когда открывать:** Запуск workflow из `docs/DEPLOY.md` или audit перед merge.
-- **Можно удалить?** Нет — locale SSOT workflow.
-- **Связано с:** Связи файла `sync_locales.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Locale maintenance script.
+- **Что это:** Назначение файла: Copies translation keys from English/Russian source files into other locale files.
+- **Зачем:** Нужен, потому что: Synchronizes `lib/l10n/langs/*.dart` when dictionary keys are added.
+- **Содержимое:** Содержит: Dart script scanning dictionary keys.
+- **Обязанности:** Отвечает за: Run after editing `en.dart` / `ru.dart`.
+- **Когда открывать:** Открывать, когда: Missing translation key in non-EN/RU locale.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** Связан с: `lib/l10n/langs/HELP HOW TO UPDATE the languages`.
+- **Слой:** Скрипт разработки/CI.
 
 
 ### `test/app_hotkey_keycaps_test.dart`
@@ -14671,14 +14746,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `app_hotkey_keycaps_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `app_hotkey_keycaps_test.dart`.
-- **Содержимое:** Содержимое `app_hotkey_keycaps_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `app_hotkey_keycaps_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `app_hotkey_keycaps_test.dart`.
+- **Что это:** Назначение файла: Automated test `app_hotkey_keycaps_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `app_hotkey_keycaps_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `app_hotkey_keycaps`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `app_hotkey_keycaps_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/app_timezone_icon_test.dart`
@@ -14697,14 +14772,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `app_timezone_icon_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `app_timezone_icon_test.dart`.
-- **Содержимое:** Содержимое `app_timezone_icon_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `app_timezone_icon_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `app_timezone_icon_test.dart`.
+- **Что это:** Назначение файла: Automated test `app_timezone_icon_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `app_timezone_icon_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `app_timezone_icon`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `app_timezone_icon_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_attempt_dialog_test.dart`
@@ -14723,14 +14798,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_attempt_dialog_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_attempt_dialog_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_attempt_dialog_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_attempt_dialog_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_attempt_dialog_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_attempt_dialog_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_attempt_dialog_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_attempt_dialog`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_attempt_dialog_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_attempt_log_test.dart`
@@ -14749,14 +14824,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_attempt_log_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_attempt_log_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_attempt_log_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_attempt_log_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_attempt_log_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_attempt_log_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_attempt_log_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_attempt_log`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_attempt_log_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_command_acceptance_test.dart`
@@ -14775,14 +14850,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_command_acceptance_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_command_acceptance_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_command_acceptance_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_command_acceptance_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_command_acceptance_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_command_acceptance_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_command_acceptance_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_command_acceptance`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_command_acceptance_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_helper_failure_test.dart`
@@ -14801,14 +14876,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_helper_failure_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_helper_failure_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_helper_failure_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_helper_failure_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_helper_failure_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_helper_failure_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_helper_failure_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_helper_failure`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_helper_failure_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_hotkey_self_acceptance_test.dart`
@@ -14827,14 +14902,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_hotkey_self_acceptance_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_hotkey_self_acceptance_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_hotkey_self_acceptance_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_hotkey_self_acceptance_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_hotkey_self_acceptance_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_hotkey_self_acceptance_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_hotkey_self_acceptance_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_hotkey_self_acceptance`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_hotkey_self_acceptance_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_hotkey_state_machine_test.dart`
@@ -14853,14 +14928,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_hotkey_state_machine_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_hotkey_state_machine_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_hotkey_state_machine_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_hotkey_state_machine_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_hotkey_state_machine_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_hotkey_state_machine_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_hotkey_state_machine_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_hotkey_state_machine`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_hotkey_state_machine_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_laredo_multi_scope_test.dart`
@@ -14879,14 +14954,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_laredo_multi_scope_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_laredo_multi_scope_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_laredo_multi_scope_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_laredo_multi_scope_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_laredo_multi_scope_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_laredo_multi_scope_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_laredo_multi_scope_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_laredo_multi_scope`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_laredo_multi_scope_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_mic_peak_visibility_test.dart`
@@ -14905,14 +14980,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_mic_peak_visibility_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_mic_peak_visibility_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_mic_peak_visibility_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_mic_peak_visibility_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_mic_peak_visibility_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_mic_peak_visibility_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_mic_peak_visibility_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_mic_peak_visibility`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_mic_peak_visibility_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_no_preparing_ui_test.dart`
@@ -14931,14 +15006,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_no_preparing_ui_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_no_preparing_ui_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_no_preparing_ui_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_no_preparing_ui_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_no_preparing_ui_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_no_preparing_ui_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_no_preparing_ui_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_no_preparing_ui`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_no_preparing_ui_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_overlay_state_test.dart`
@@ -14957,14 +15032,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_overlay_state_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_overlay_state_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_overlay_state_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_overlay_state_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_overlay_state_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_overlay_state_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_overlay_state_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_overlay_state`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_overlay_state_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_production_submit_test.dart`
@@ -14983,14 +15058,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_production_submit_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_production_submit_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_production_submit_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_production_submit_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_production_submit_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_production_submit_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_production_submit_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_production_submit`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_production_submit_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_settings_mic_layout_test.dart`
@@ -15009,14 +15084,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_settings_mic_layout_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_settings_mic_layout_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_settings_mic_layout_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_settings_mic_layout_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_settings_mic_layout_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_settings_mic_layout_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: _TestMicrophoneCard, main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_settings_mic_layout_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_settings_mic_layout`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_settings_mic_layout_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_user_error_test.dart`
@@ -15035,14 +15110,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_user_error_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_user_error_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_user_error_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_user_error_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_user_error_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_user_error_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_user_error_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_user_error`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_user_error_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/desktop_voice_widget_e2e_test.dart`
@@ -15061,14 +15136,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `desktop_voice_widget_e2e_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `desktop_voice_widget_e2e_test.dart`.
-- **Содержимое:** Содержимое `desktop_voice_widget_e2e_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `desktop_voice_widget_e2e_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `desktop_voice_widget_e2e_test.dart`.
+- **Что это:** Назначение файла: Automated test `desktop_voice_widget_e2e_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: _E2EOutcome, main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `desktop_voice_widget_e2e_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `desktop_voice_widget_e2e`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `desktop_voice_widget_e2e_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/edit_sheet_autosave_test.dart`
@@ -15087,14 +15162,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `edit_sheet_autosave_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `edit_sheet_autosave_test.dart`.
-- **Содержимое:** Содержимое `edit_sheet_autosave_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `edit_sheet_autosave_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `edit_sheet_autosave_test.dart`.
+- **Что это:** Назначение файла: Automated test `edit_sheet_autosave_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `edit_sheet_autosave_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `edit_sheet_autosave`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `edit_sheet_autosave_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/outbox_coalesce_regression_test.dart`
@@ -15113,14 +15188,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `outbox_coalesce_regression_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `outbox_coalesce_regression_test.dart`.
-- **Содержимое:** Содержимое `outbox_coalesce_regression_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `outbox_coalesce_regression_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `outbox_coalesce_regression_test.dart`.
+- **Что это:** Назначение файла: Automated test `outbox_coalesce_regression_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `outbox_coalesce_regression_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `outbox_coalesce_regression`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `outbox_coalesce_regression_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/perf_date_swipe_diag_test.dart`
@@ -15139,14 +15214,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `perf_date_swipe_diag_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `perf_date_swipe_diag_test.dart`.
-- **Содержимое:** Содержимое `perf_date_swipe_diag_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `perf_date_swipe_diag_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `perf_date_swipe_diag_test.dart`.
+- **Что это:** Назначение файла: Automated test `perf_date_swipe_diag_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `perf_date_swipe_diag_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `perf_date_swipe_diag`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `perf_date_swipe_diag_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/perf_shell_date_settle_test.dart`
@@ -15165,14 +15240,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `perf_shell_date_settle_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `perf_shell_date_settle_test.dart`.
-- **Содержимое:** Содержимое `perf_shell_date_settle_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `perf_shell_date_settle_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `perf_shell_date_settle_test.dart`.
+- **Что это:** Назначение файла: Automated test `perf_shell_date_settle_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: _ShellDateHarness, _ShellDateHarnessState, main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `perf_shell_date_settle_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `perf_shell_date_settle`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `perf_shell_date_settle_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_recurrence_scope_test.dart`
@@ -15191,14 +15266,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_recurrence_scope_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_recurrence_scope_test.dart`.
-- **Содержимое:** Содержимое `plan_recurrence_scope_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_recurrence_scope_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_recurrence_scope_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_recurrence_scope_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_recurrence_scope_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_recurrence_scope`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_recurrence_scope_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_bulk_drag_test.dart`
@@ -15217,14 +15292,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_bulk_drag_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_bulk_drag_test.dart`.
-- **Содержимое:** Содержимое `plan_time_bulk_drag_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_bulk_drag_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_bulk_drag_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_bulk_drag_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_bulk_drag_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_bulk_drag`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_bulk_drag_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_drag_gesture_contract_test.dart`
@@ -15243,14 +15318,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_drag_gesture_contract_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_drag_gesture_contract_test.dart`.
-- **Содержимое:** Содержимое `plan_time_drag_gesture_contract_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_drag_gesture_contract_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_drag_gesture_contract_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_drag_gesture_contract_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_drag_gesture_contract_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_drag_gesture_contract`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_drag_gesture_contract_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_duration_fidelity_test.dart`
@@ -15269,14 +15344,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_duration_fidelity_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_duration_fidelity_test.dart`.
-- **Содержимое:** Содержимое `plan_time_duration_fidelity_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_duration_fidelity_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_duration_fidelity_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_duration_fidelity_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_duration_fidelity_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_duration_fidelity`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_duration_fidelity_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_fixed_time_policy_test.dart`
@@ -15295,14 +15370,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_fixed_time_policy_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_fixed_time_policy_test.dart`.
-- **Содержимое:** Содержимое `plan_time_fixed_time_policy_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_fixed_time_policy_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_fixed_time_policy_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_fixed_time_policy_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_fixed_time_policy_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_fixed_time_policy`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_fixed_time_policy_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_sequential_cascade_test.dart`
@@ -15321,14 +15396,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_sequential_cascade_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_sequential_cascade_test.dart`.
-- **Содержимое:** Содержимое `plan_time_sequential_cascade_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_sequential_cascade_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_sequential_cascade_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_sequential_cascade_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_sequential_cascade_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_sequential_cascade`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_sequential_cascade_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_target_drop_test.dart`
@@ -15347,14 +15422,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_target_drop_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_target_drop_test.dart`.
-- **Содержимое:** Содержимое `plan_time_target_drop_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_target_drop_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_target_drop_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_target_drop_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_target_drop_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_target_drop`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_target_drop_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_timezone_projection_test.dart`
@@ -15373,14 +15448,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_timezone_projection_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_timezone_projection_test.dart`.
-- **Содержимое:** Содержимое `plan_time_timezone_projection_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_timezone_projection_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_timezone_projection_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_timezone_projection_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_timezone_projection_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_timezone_projection`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_timezone_projection_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_view_layout_test.dart`
@@ -15399,14 +15474,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_view_layout_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_view_layout_test.dart`.
-- **Содержимое:** Содержимое `plan_time_view_layout_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_view_layout_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_view_layout_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_view_layout_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_view_layout_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_view_layout`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_view_layout_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/plan_time_visible_window_test.dart`
@@ -15425,14 +15500,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `plan_time_visible_window_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `plan_time_visible_window_test.dart`.
-- **Содержимое:** Содержимое `plan_time_visible_window_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `plan_time_visible_window_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `plan_time_visible_window_test.dart`.
+- **Что это:** Назначение файла: Automated test `plan_time_visible_window_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `plan_time_visible_window_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `plan_time_visible_window`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `plan_time_visible_window_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/planning_duplicate_plan_guard_test.dart`
@@ -15451,14 +15526,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_duplicate_plan_guard_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `planning_duplicate_plan_guard_test.dart`.
-- **Содержимое:** Содержимое `planning_duplicate_plan_guard_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `planning_duplicate_plan_guard_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `planning_duplicate_plan_guard_test.dart`.
+- **Что это:** Назначение файла: Automated test `planning_duplicate_plan_guard_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `planning_duplicate_plan_guard_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `planning_duplicate_plan_guard`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `planning_duplicate_plan_guard_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/planning_realtime_stream_lifecycle_test.dart`
@@ -15477,14 +15552,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `planning_realtime_stream_lifecycle_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `planning_realtime_stream_lifecycle_test.dart`.
-- **Содержимое:** Содержимое `planning_realtime_stream_lifecycle_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `planning_realtime_stream_lifecycle_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `planning_realtime_stream_lifecycle_test.dart`.
+- **Что это:** Назначение файла: Automated test `planning_realtime_stream_lifecycle_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `planning_realtime_stream_lifecycle_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `planning_realtime_stream_lifecycle`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `planning_realtime_stream_lifecycle_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/profile_timezone_catalog_test.dart`
@@ -15503,14 +15578,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `profile_timezone_catalog_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `profile_timezone_catalog_test.dart`.
-- **Содержимое:** Содержимое `profile_timezone_catalog_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `profile_timezone_catalog_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `profile_timezone_catalog_test.dart`.
+- **Что это:** Назначение файла: Automated test `profile_timezone_catalog_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `profile_timezone_catalog_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `profile_timezone_catalog`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `profile_timezone_catalog_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/smart_input_parser_test.dart`
@@ -15529,14 +15604,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `smart_input_parser_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `smart_input_parser_test.dart`.
-- **Содержимое:** Содержимое `smart_input_parser_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `smart_input_parser_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `smart_input_parser_test.dart`.
+- **Что это:** Назначение файла: Automated test `smart_input_parser_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `smart_input_parser_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `smart_input_parser`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `smart_input_parser_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/timezone_quick_picker_test.dart`
@@ -15555,14 +15630,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `timezone_quick_picker_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `timezone_quick_picker_test.dart`.
-- **Содержимое:** Содержимое `timezone_quick_picker_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `timezone_quick_picker_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `timezone_quick_picker_test.dart`.
+- **Что это:** Назначение файла: Automated test `timezone_quick_picker_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `timezone_quick_picker_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `timezone_quick_picker`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `timezone_quick_picker_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/voice_command_parser_test.dart`
@@ -15581,14 +15656,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `voice_command_parser_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `voice_command_parser_test.dart`.
-- **Содержимое:** Содержимое `voice_command_parser_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `voice_command_parser_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `voice_command_parser_test.dart`.
+- **Что это:** Назначение файла: Automated test `voice_command_parser_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `voice_command_parser_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `voice_command_parser`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `voice_command_parser_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `test/widget_test.dart`
@@ -15607,14 +15682,14 @@ EN:
 
 RU:
 
-- **Что это:** Файл `widget_test.dart` — platform/config файл.
-- **Зачем:** Нужен для workflow или сборки, связанной с `widget_test.dart`.
-- **Содержимое:** Содержимое `widget_test.dart` — открыть файл при правках.
-- **Обязанности:** Роль `widget_test.dart` в модуле `test`.
-- **Когда открывать:** Падение CI или правка кода рядом с `widget_test.dart`.
+- **Что это:** Назначение файла: Automated test `widget_test` — verifies behavior without manual tapping.
+- **Зачем:** Нужен, потому что: Prevents regressions when related production code changes.
+- **Содержимое:** Содержит: Test cases (symbols: main).
+- **Обязанности:** Отвечает за: Assert expected behavior for `widget_test` scenario.
+- **Когда открывать:** Открывать, когда: CI failure or changing code near `widget`.
 - **Можно удалить?** Нет — нужен для тестов.
-- **Связано с:** Связи файла `widget_test.dart` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Автотест — не в APK пользователю.
+- **Связано с:** Связан с: Matching files under `lib/` with similar name.
+- **Слой:** Test — не попадает к пользователю.
 
 
 ### `update.ps1`
@@ -15638,7 +15713,7 @@ RU:
 - **Обязанности:** Точка входа для деплоя сайта на GitHub Pages.
 - **Когда открывать:** Нужно опубликовать сайт после проверенных изменений.
 - **Можно удалить?** Нет — задокументированный deploy workflow.
-- **Связано с:** Связи файла `update.ps1` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `web/index.html`.
 - **Слой:** Deploy-скрипт — не runtime приложения.
 
 
@@ -15657,13 +15732,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл web: `favicon.png` — platform/config файл.
-- **Зачем:** Нужен для сборки `web` на платформе web.
-- **Содержимое:** Native/config-содержимое `favicon.png` в `web`.
-- **Обязанности:** Поддержка embedder-сборки для `web`.
-- **Когда открывать:** Пустая web-страница после deploy или неверный base href.
+- **Что это:** Назначение файла: Small browser tab icon for the web build.
+- **Зачем:** Нужен, потому что: Shown in browser tab and bookmarks for `/Counter/` site.
+- **Содержимое:** Содержит: PNG favicon asset.
+- **Обязанности:** Отвечает за: Web branding in browser chrome.
+- **Когда открывать:** Открывать, когда: Web deploy blank page, icons, base href.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `favicon.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `web` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15682,13 +15757,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл web: `Icon-192.png` — platform/config файл.
-- **Зачем:** Нужен для сборки `web/icons` на платформе web.
-- **Содержимое:** Native/config-содержимое `Icon-192.png` в `web/icons`.
-- **Обязанности:** Поддержка embedder-сборки для `web/icons`.
-- **Когда открывать:** Пустая web-страница после deploy или неверный base href.
+- **Что это:** Назначение файла: Web/PWA icon (192px) for add-to-home-screen.
+- **Зачем:** Нужен, потому что: Browsers pick closest icon size for install banner.
+- **Содержимое:** Содержит: PNG at fixed square size.
+- **Обязанности:** Отвечает за: Icon at 192px for PWA.
+- **Когда открывать:** Открывать, когда: Web deploy blank page, icons, base href.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `Icon-192.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `web` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15707,13 +15782,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл web: `Icon-512.png` — platform/config файл.
-- **Зачем:** Нужен для сборки `web/icons` на платформе web.
-- **Содержимое:** Native/config-содержимое `Icon-512.png` в `web/icons`.
-- **Обязанности:** Поддержка embedder-сборки для `web/icons`.
-- **Когда открывать:** Пустая web-страница после deploy или неверный base href.
+- **Что это:** Назначение файла: Web/PWA icon (512px) for add-to-home-screen.
+- **Зачем:** Нужен, потому что: Browsers pick closest icon size for install banner.
+- **Содержимое:** Содержит: PNG at fixed square size.
+- **Обязанности:** Отвечает за: Icon at 512px for PWA.
+- **Когда открывать:** Открывать, когда: Web deploy blank page, icons, base href.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `Icon-512.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `web` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15732,13 +15807,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл web: `Icon-maskable-192.png` — platform/config файл.
-- **Зачем:** Нужен для сборки `web/icons` на платформе web.
-- **Содержимое:** Native/config-содержимое `Icon-maskable-192.png` в `web/icons`.
-- **Обязанности:** Поддержка embedder-сборки для `web/icons`.
-- **Когда открывать:** Пустая web-страница после deploy или неверный base href.
+- **Что это:** Назначение файла: Web/PWA icon (maskable-192px) for add-to-home-screen.
+- **Зачем:** Нужен, потому что: Browsers pick closest icon size for install banner.
+- **Содержимое:** Содержит: PNG at fixed square size.
+- **Обязанности:** Отвечает за: Icon at maskable-192px for PWA.
+- **Когда открывать:** Открывать, когда: Web deploy blank page, icons, base href.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `Icon-maskable-192.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `web` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15757,13 +15832,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл web: `Icon-maskable-512.png` — platform/config файл.
-- **Зачем:** Нужен для сборки `web/icons` на платформе web.
-- **Содержимое:** Native/config-содержимое `Icon-maskable-512.png` в `web/icons`.
-- **Обязанности:** Поддержка embedder-сборки для `web/icons`.
-- **Когда открывать:** Пустая web-страница после deploy или неверный base href.
+- **Что это:** Назначение файла: Web/PWA icon (maskable-512px) for add-to-home-screen.
+- **Зачем:** Нужен, потому что: Browsers pick closest icon size for install banner.
+- **Содержимое:** Содержит: PNG at fixed square size.
+- **Обязанности:** Отвечает за: Icon at maskable-512px for PWA.
+- **Когда открывать:** Открывать, когда: Web deploy blank page, icons, base href.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `Icon-maskable-512.png` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `web` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15782,14 +15857,14 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл web: `index.html` — platform/config файл.
-- **Зачем:** Нужен для сборки `web` на платформе web.
-- **Содержимое:** Native/config-содержимое `index.html` в `web`.
-- **Обязанности:** Поддержка embedder-сборки для `web`.
-- **Когда открывать:** Пустая web-страница после deploy или неверный base href.
+- **Что это:** Назначение файла: Web page shell that loads the compiled Flutter web app.
+- **Зачем:** Нужен, потому что: Browser needs an HTML entry with base href for GitHub Pages `/Counter/`.
+- **Содержимое:** Содержит: Script tags bootstrapping `flutter.js`, base href.
+- **Обязанности:** Отвечает за: Start Flutter web engine in browser.
+- **Когда открывать:** Открывать, когда: Blank web page after deploy.
 - **Можно удалить?** Нет — нужен для web-сборки.
-- **Связано с:** Связи файла `index.html` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
-- **Слой:** Web platform entry.
+- **Связано с:** Связан с: `flutter build web`, `docs/DEPLOY.md`.
+- **Слой:** Платформенная обёртка Flutter.
 
 
 ### `web/manifest.json`
@@ -15807,13 +15882,13 @@ EN:
 
 RU:
 
-- **Что это:** Web app manifest — имя, theme color и иконки PWA.
-- **Зачем:** Браузер использует manifest для install prompt и темы вкладки.
-- **Содержимое:** JSON с icons и display mode.
-- **Обязанности:** PWA-метаданные для GitHub Pages.
-- **Когда открывать:** Пустая web-страница после deploy или неверный base href.
+- **Что это:** Назначение файла: Web app manifest — name, theme color, icon paths for PWA.
+- **Зачем:** Нужен, потому что: Browsers use manifest for install prompt and tab theming.
+- **Содержимое:** Содержит: JSON with icons array and display mode.
+- **Обязанности:** Отвечает за: PWA metadata for GitHub Pages site.
+- **Когда открывать:** Открывать, когда: Web deploy blank page, icons, base href.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `manifest.json` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `web` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15832,13 +15907,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл windows: `.gitignore` — platform/config файл.
-- **Зачем:** Нужен для сборки `windows` на платформе windows.
-- **Содержимое:** Native/config-содержимое `.gitignore` в `windows`.
-- **Обязанности:** Поддержка embedder-сборки для `windows`.
+- **Что это:** Назначение файла: Git ignore rules for `windows` — files not to commit.
+- **Зачем:** Нужен, потому что: Prevents build output and secrets from entering git history.
+- **Содержимое:** Содержит: Ignore patterns for this folder scope.
+- **Обязанности:** Отвечает за: Prevent accidental commit of generated files.
 - **Когда открывать:** Когда ломается поведение, связанное с `.gitignore`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `.gitignore` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `windows` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15857,13 +15932,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл windows: `CMakeLists.txt` — platform/config файл.
-- **Зачем:** Нужен для сборки `windows` на платформе windows.
-- **Содержимое:** Native/config-содержимое `CMakeLists.txt` в `windows`.
-- **Обязанности:** Поддержка embedder-сборки для `windows`.
+- **Что это:** Назначение файла: CMake build script for `windows` — builds the Flutter `windows` native runner.
+- **Зачем:** Нужен, потому что: Native windows desktop compile links Flutter engine via this CMake file in `windows`.
+- **Содержимое:** Содержит: CMake targets, source file list, Flutter embedder link rules.
+- **Обязанности:** Отвечает за: Produce native binary pieces for `windows` embedder.
 - **Когда открывать:** Когда ломается поведение, связанное с `CMakeLists.txt`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `CMakeLists.txt` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `windows` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15882,13 +15957,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл windows: `CMakeLists.txt` — platform/config файл.
-- **Зачем:** Нужен для сборки `windows/flutter` на платформе windows.
-- **Содержимое:** Native/config-содержимое `CMakeLists.txt` в `windows/flutter`.
-- **Обязанности:** Поддержка embedder-сборки для `windows/flutter`.
+- **Что это:** Назначение файла: CMake build script for `windows/flutter` — builds the Flutter `windows` native runner.
+- **Зачем:** Нужен, потому что: Native windows desktop compile links Flutter engine via this CMake file in `windows/flutter`.
+- **Содержимое:** Содержит: CMake targets, source file list, Flutter embedder link rules.
+- **Обязанности:** Отвечает за: Produce native binary pieces for `windows/flutter` embedder.
 - **Когда открывать:** Когда ломается поведение, связанное с `CMakeLists.txt`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `CMakeLists.txt` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `windows` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15909,11 +15984,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `generated_plugin_registrant.cc` в `windows/flutter`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `generated_plugin_registrant.cc` в `windows/flutter`.
+- **Содержимое:** Содержит: Native/config source for `windows/flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `generated_plugin_registrant.cc`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15934,11 +16009,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `generated_plugin_registrant.h` в `windows/flutter`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `generated_plugin_registrant.h` в `windows/flutter`.
+- **Содержимое:** Содержит: Native/config source for `windows/flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `generated_plugin_registrant.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15959,11 +16034,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `generated_plugins.cmake` в `windows/flutter`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `generated_plugins.cmake` в `windows/flutter`.
+- **Содержимое:** Содержит: Native/config source for `windows/flutter` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `generated_plugins.cmake`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -15982,13 +16057,13 @@ EN:
 
 RU:
 
-- **Что это:** Platform-файл windows: `CMakeLists.txt` — platform/config файл.
-- **Зачем:** Нужен для сборки `windows/runner` на платформе windows.
-- **Содержимое:** Native/config-содержимое `CMakeLists.txt` в `windows/runner`.
-- **Обязанности:** Поддержка embedder-сборки для `windows/runner`.
+- **Что это:** Назначение файла: CMake build script for `windows/runner` — builds the Flutter `windows` native runner.
+- **Зачем:** Нужен, потому что: Native windows desktop compile links Flutter engine via this CMake file in `windows/runner`.
+- **Содержимое:** Содержит: CMake targets, source file list, Flutter embedder link rules.
+- **Обязанности:** Отвечает за: Produce native binary pieces for `windows/runner` embedder.
 - **Когда открывать:** Когда ломается поведение, связанное с `CMakeLists.txt`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Связи файла `CMakeLists.txt` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`.
+- **Связано с:** Связан с: Flutter `windows` tooling.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16009,11 +16084,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `Runner.rc` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `Runner.rc` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `Runner.rc`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16034,11 +16109,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `desktop_voice_native_overlay.cpp` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `desktop_voice_native_overlay.cpp` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `desktop_voice_native_overlay.cpp`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16059,11 +16134,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `desktop_voice_native_overlay.h` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `desktop_voice_native_overlay.h` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `desktop_voice_native_overlay.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16084,11 +16159,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `flutter_window.cpp` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `flutter_window.cpp` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `flutter_window.cpp`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16109,11 +16184,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `flutter_window.h` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `flutter_window.h` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `flutter_window.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16134,11 +16209,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `main.cpp` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `main.cpp` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `main.cpp`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16159,11 +16234,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `resource.h` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `resource.h` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `resource.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16184,11 +16259,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `app_icon.ico` в `windows/runner/resources`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `app_icon.ico` в `windows/runner/resources`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner/resources` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `app_icon.ico`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16209,11 +16284,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `runner.exe.manifest` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `runner.exe.manifest` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `runner.exe.manifest`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16234,11 +16309,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `utils.cpp` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `utils.cpp` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `utils.cpp`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16259,11 +16334,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `utils.h` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `utils.h` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `utils.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16284,11 +16359,11 @@ RU:
 
 - **Что это:** Файл сборки windows: `win32_window.cpp` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `win32_window.cpp` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `win32_window.cpp`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 
 
@@ -16309,10 +16384,10 @@ RU:
 
 - **Что это:** Файл сборки windows: `win32_window.h` в `windows/runner`.
 - **Зачем:** Нужен для сборки windows; без него возможны ошибки compile.
-- **Содержимое:** Native/config-содержимое `win32_window.h` в `windows/runner`.
+- **Содержимое:** Содержит: Native/config source for `windows/runner` (open file only when build errors cite it).
 - **Обязанности:** Поддержка embedder windows.
 - **Когда открывать:** Ошибка сборки с `win32_window.h`.
 - **Можно удалить?** Нет — нужен для сборки платформы.
-- **Связано с:** Папка `windows/`.
+- **Связано с:** Связан с: `windows/` platform folder, Flutter embedder.
 - **Слой:** Платформенная обёртка Flutter.
 

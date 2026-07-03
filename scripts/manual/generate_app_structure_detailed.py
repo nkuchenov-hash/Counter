@@ -20,9 +20,16 @@ from structure_guide_data import (
     infer_folder_guide,
     platform_file_description,
 )
+from structure_en_ru_adapt import (
+    adapt_file_guide_ru,
+    BANNED_MEANINGLESS_RU_FILLER,
+    has_banned_filler,
+    ru_field_ok,
+)
+from structure_file_ru_curated import FILE_RU_CURATED
 from structure_role_guides import humanize_guide
 from structure_root_guides import ROOT_FILE_GUIDES
-from structure_ru_helpers import complete_all_ru_fields, looks_english_prose
+from structure_ru_helpers import cyrillic_count, delete_en_to_ru, looks_english_prose
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "docs" / "APP_STRUCTURE_DETAILED.md"
@@ -352,7 +359,12 @@ def layer_for(path: str) -> tuple[str, str]:
     if p.startswith("scripts/"):
         return ("Developer/CI script — run manually or in pipeline.", "Скрипт разработки/CI.")
     if p.startswith("docs/"):
-        return ("Documentation — explains rules, not runtime code.", "Документация.")
+        if "Project Knowledge" in p or "Governing" in p:
+            return (
+                "Documentation — explains rules, not runtime code.",
+                "Governing doc — Project Knowledge pack.",
+            )
+        return ("Documentation — explains rules, not runtime code.", "Документация — правила, не runtime.")
     if p.startswith((".github/", "installer/", "pb_hooks/")):
         return ("Build/deploy/server configuration.", "Сборка/деплой/сервер.")
     if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/")):
@@ -802,46 +814,58 @@ def file_guide_from_dict(data: dict[str, str]) -> FileGuide:
 
 
 def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
-    """Ensure every RU field is filled with Russian prose — never EN copy."""
-    d = complete_all_ru_fields(
-        path,
-        {
-            "what": g.what,
-            "why": g.why,
-            "contains": g.contains,
-            "responsibilities": g.responsibilities,
-            "when": g.when,
-            "delete": g.delete,
-            "connected": g.connected,
-            "layer": g.layer,
-            "what_ru": g.what_ru,
-            "why_ru": g.why_ru,
-            "contains_ru": g.contains_ru,
-            "responsibilities_ru": g.responsibilities_ru,
-            "when_ru": g.when_ru,
-            "delete_ru": g.delete_ru,
-            "connected_ru": g.connected_ru,
-            "layer_ru": g.layer_ru,
-        },
-        file_mode=True,
-    )
+    """Merge curated RU + EN-adapted RU; reject meaningless filler."""
+    en = {
+        "what": g.what,
+        "why": g.why,
+        "contains": g.contains,
+        "responsibilities": g.responsibilities,
+        "when": g.when,
+        "delete": g.delete,
+        "connected": g.connected,
+        "layer": g.layer,
+    }
+    existing = {
+        "what_ru": g.what_ru,
+        "why_ru": g.why_ru,
+        "contains_ru": g.contains_ru,
+        "responsibilities_ru": g.responsibilities_ru,
+        "when_ru": g.when_ru,
+        "delete_ru": g.delete_ru,
+        "connected_ru": g.connected_ru,
+        "layer_ru": g.layer_ru,
+    }
+    curated = FILE_RU_CURATED.get(path, {})
+    adapted = adapt_file_guide_ru(path, en)
+    _, layer_fallback = layer_for(path)
+    when_en, when_fallback = when_for(path)
+    del_en, del_fallback = delete_for(path)
+
+    def pick(ru_key: str, fallback: str = "") -> str:
+        for src in (curated.get(ru_key), existing.get(ru_key), adapted.get(ru_key), fallback):
+            if src and ru_field_ok(src) and not has_banned_filler(src) and not str(src).startswith(
+                "NEEDS HUMAN"
+            ):
+                return src
+        return fallback or adapted.get(ru_key) or curated.get(ru_key) or existing.get(ru_key) or ""
+
     return FileGuide(
-        what=d["what"],
-        why=d["why"],
-        contains=d["contains"],
-        responsibilities=d["responsibilities"],
-        when=d["when"],
-        delete=d["delete"],
-        connected=d["connected"],
-        layer=d["layer"],
-        what_ru=d["what_ru"],
-        why_ru=d["why_ru"],
-        contains_ru=d["contains_ru"],
-        responsibilities_ru=d["responsibilities_ru"],
-        when_ru=d["when_ru"],
-        delete_ru=d["delete_ru"],
-        connected_ru=d["connected_ru"],
-        layer_ru=d["layer_ru"],
+        what=g.what,
+        why=g.why,
+        contains=g.contains,
+        responsibilities=g.responsibilities,
+        when=g.when,
+        delete=g.delete,
+        connected=g.connected,
+        layer=g.layer,
+        what_ru=pick("what_ru"),
+        why_ru=pick("why_ru"),
+        contains_ru=pick("contains_ru"),
+        responsibilities_ru=pick("responsibilities_ru"),
+        when_ru=pick("when_ru", when_fallback),
+        delete_ru=pick("delete_ru", del_fallback),
+        connected_ru=pick("connected_ru"),
+        layer_ru=pick("layer_ru", layer_fallback),
     )
 
 
@@ -1066,7 +1090,13 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
             elif in_ru:
                 en_prefix = en_by_ru.get(prefix)
                 en_val = section_en.get(en_prefix, "") if en_prefix else ""
-                if val == en_val and en_val:
+                path_like = val.startswith("`") or val.startswith("http") or "@" in val
+                skip_en_copy = prefix in (
+                    "- **Что здесь лежит:**",
+                    "- **Связанные пути:**",
+                    "- **Связано с:**",
+                ) and path_like
+                if val == en_val and en_val and not skip_en_copy:
                     issues.append(f"RU copies EN in {section_title}: {line[:100]}")
                 if line.startswith("- **Можно удалить?**") and (
                     val.startswith("No —") or val.startswith("Maybe —")
@@ -1077,7 +1107,8 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                     "- **Слой:**",
                     "- **Связанные пути:**",
                     "- **Содержимое:**",
-                )
+                    "- **Что здесь лежит:**",
+                ) or (cyrillic_count(val) >= 6 and "`" in val)
                 if not skip_prose and looks_english_prose(val):
                     if len(val) > 35:
                         issues.append(f"English prose in RU block ({section_title}): {line[:100]}")
@@ -1092,6 +1123,39 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
         )
     if len(paths) != len(set(paths)):
         issues.append("Duplicate file paths in output")
+
+    folder_whats_ru: list[str] = []
+    file_whats_ru: list[str] = []
+    in_ru_block = False
+    for line in text.splitlines():
+        if line.strip() == "RU:":
+            in_ru_block = True
+        elif line.strip() == "EN:" or line.startswith("## Folder:") or line.startswith("### `"):
+            if line.startswith("## Folder:") or line.startswith("### `"):
+                in_ru_block = False
+            elif line.strip() == "EN:":
+                in_ru_block = False
+        if in_ru_block:
+            for bad in BANNED_MEANINGLESS_RU_FILLER:
+                if bad in line:
+                    issues.append(f"Banned RU filler '{bad}' in: {line[:120]}")
+                    break
+            if line.startswith("- **Что это за папка:**"):
+                folder_whats_ru.append(line.split(":", 1)[1].strip())
+            if line.startswith("- **Что это:**"):
+                file_whats_ru.append(line.split(":", 1)[1].strip())
+            if "NEEDS HUMAN DESCRIPTION" in line:
+                issues.append(f"Missing human RU: {line[:120]}")
+
+    for label, vals in (("folder", folder_whats_ru), ("file", file_whats_ru)):
+        counts = Counter(vals)
+        dupes = [(v, c) for v, c in counts.items() if c > 3 and len(v) < 120]
+        if dupes:
+            issues.append(
+                f"Duplicate RU 'Что это' ({label}, >3): "
+                + "; ".join(f"{c}x {v[:50]}" for v, c in dupes[:6])
+            )
+
     return issues
 
 

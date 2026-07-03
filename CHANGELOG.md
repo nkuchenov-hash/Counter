@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Replace RU filler with real structure explanations [shipped]
+
+* **`scripts/manual/structure_en_ru_adapt.py`:** [shipped] EN→RU adaptation from guide meaning; `BANNED_MEANINGLESS_RU_FILLER` quality gate; fails on `NEEDS HUMAN DESCRIPTION`.
+* **`scripts/manual/structure_folder_ru_curated.py`**, **`structure_file_ru_curated.py`:** [shipped] Curated meaningful RU for mandatory folders/files (`.github/`, `lib/*`, platform, `deploy.yml`, `MainActivity.kt`, `launch_background.xml`, `android.ps1`).
+* **`generate_app_structure_detailed.py`**, **`structure_guide_data.py`:** [shipped] Removed path-template RU; semantic checks for banned filler, duplicate RU, NEEDS HUMAN markers.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated with owner-readable RU adapted from EN (not `Папка … Life OS` / `native-обёртка` filler).
+
 ## [2026-07-03] - Root/tooling structure guide humanization [shipped]
 
 * **`scripts/manual/structure_ru_helpers.py`:** [shipped] New `complete_all_ru_fields()` + `delete_en_to_ru()` — always fills folder/file `*_ru` fields; removes EN→RU copy and `No —` in RU delete lines.
