@@ -16,7 +16,7 @@
 * **`scripts/manual/generate_app_structure_detailed.py`:** [shipped] `ru_line_value()` fixes empty-field detection (markdown `**` false positive); quality gate fails on empty required RU prefixes + `Fulfill`/`Source file`/`Role:`/`required for current app behavior`; platform paths before role lookup; no English APP_STRUCTURE role in RU `Связано с`.
 * **`scripts/manual/structure_ru_class_adapters.py`:** [shipped] `.cursor/`, `pb_hooks/`, `env.dart.example`, `.pb.js` adapters; Cyrillic-heavy platform RU (Gradle, ProGuard, Info.plist, CMake, web assets); `_is_generic_en()` strips generic EN before RU merge.
 * **`scripts/manual/structure_role_guides.py`:** [shipped] Per-file `UI-модуль` feature RU; `lib/services/`, `lib/app_shell.dart`, `lib/main.dart`, `lib/l10n/` humanize blocks.
-* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated at HEAD SHA `115b483` — 0 empty RU fields, 0 `NEEDS HUMAN DESCRIPTION`, 0 generic EN wrappers in RU, quality gate OK.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated — 0 empty RU fields, 0 `NEEDS HUMAN DESCRIPTION`, 0 generic EN wrappers in RU, quality gate OK; header SHA stamped at generation (`fa4fcea` tree, commit `108065e`).
 
 ## [2026-07-03] - Ban generic RU wrappers in structure guide [shipped]
 
