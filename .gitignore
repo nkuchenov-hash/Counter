@@ -29,6 +29,7 @@ lib/core/env/env.dart
 # Local audit exports/reports (never commit user data)
 tools/exports/
 tools/reports/
+docs/reports/_*.tmp
 
 # Perf test capture outputs (written by test/perf_*.dart at repo root)
 *_perf_capture.txt

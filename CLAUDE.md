@@ -13,6 +13,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 | `docs/ROADMAP.md` | Current plan — phases, bugs, component work. **Read this first before suggesting any structural changes.** |
 | `docs/reports/AUDIT_NOTES.md` | Full April 2026 audit findings that produced the roadmap. |
 | `docs/APP_STRUCTURE.md` | Physical directory map and module interaction rules. |
+| `docs/APP_STRUCTURE_DETAILED.md` | Bilingual EN/RU file-by-file guide (regen: `scripts/manual/generate_app_structure_detailed.py`). |
 | `docs/ARCHITECTURE.md` | Iron Laws (incl. **PERFORMANCE_KILL_SWITCH_LAW**), core contracts, data flow. Authoritative technical reference. |
 | `docs/POCKETBASE_MANIFEST.md` | PocketBase URL, collection names, relation fields. |
 | `docs/DATA_MAP.md` | Field names and business IDs (`user_id`, `record_id`, etc.). |

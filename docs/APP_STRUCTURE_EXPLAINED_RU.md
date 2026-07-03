@@ -1,6 +1,8 @@
 # Life OS — где что лежит (для Ника)
 
-Короткий практический гид. Полная карта — в `docs/APP_STRUCTURE.md`. Схема БД — в `docs/DATA_MAP.md`.
+Короткий практический гид. Полная карта — в `docs/APP_STRUCTURE.md`. **Подробный справочник по каждому файлу (EN/RU)** — `docs/APP_STRUCTURE_DETAILED.md`. Схема БД — в `docs/DATA_MAP.md`.
+
+**Статус (2026-07-03):** декомпозиция UI (Pass 3B) и Brain (Pass 4A–4D) завершена. SHA `d7e7c12`.
 
 ---
 

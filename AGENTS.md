@@ -28,8 +28,8 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - Correctness and performance regressions outrank design, feature, preload, cache, or cleanup work.
 - Active foundation tracks are V3/V7: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and admin-only Component Lab.
 - Feature work is paused unless explicitly requested or required by the current task.
-- Structure cleanup is governed by `docs/APP_STRUCTURE.md` and the cleanup/lockdown reports; do not perform opportunistic architecture moves.
-- Large-file splits follow `docs/reports/LARGE_FILE_SPLIT_BLUEPRINT_2026-07-02.md` (Stage E); one domain per pass; E1 starts with `profile_service` split only after strict guard is green.
+- Structure cleanup is governed by `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, and the cleanup/lockdown reports; do not perform opportunistic architecture moves.
+- Brain/UI structure decomposition (Passes 3–4D) is **complete** as of 2026-07-03 (`d7e7c12`). Further splits need explicit product scope — see `docs/APP_STRUCTURE.md` §7.
 
 ## Task-Specific Document Routing
 
@@ -47,7 +47,7 @@ If `CHATGPT_PROMPT_WRITING_RULES_FOR_COUNTER.md` exists, read it only as meta-co
 
 - `lib/main.dart` and `lib/app_shell.dart` own boot, shell, auth gate, global wiring, and navigation.
 - `lib/data/` is the Brain. It owns PocketBase I/O, domain models, in-memory cache, optimistic state, and offline outboxes.
-- `lib/data/database_service.dart` is the Brain root. Domain logic lives in its `part of` files: `db_core.dart`, `record_service.dart`, `plan_service.dart`, `category_service.dart`, and `profile_service.dart`.
+- `lib/data/database_service.dart` is the Brain root. Domain logic lives in its `part of` files: `db_core.dart`; coordinators `record_service.dart`, `plan_service.dart`, `category_service.dart`, `profile_service.dart`; and focused parts under `records/*`, `plans/*`, `categories/*`, `profile/*`.
 - `lib/data/` must not import `lib/features/`.
 - `lib/core/` owns theme, tokens, shared widgets, time helpers, diagnostics, and performance flags. It must not import feature UI or `database_service.dart` except where the documented structure explicitly allows model-only types.
 - `lib/features/` owns screens, sheets, and feature-specific layout. It composes Brain APIs and canonical core/shared widgets.

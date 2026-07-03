@@ -6,6 +6,26 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 ---
 
+## 0. Current status (2026-07-03)
+
+| Item | Value |
+| :--- | :--- |
+| **Structure baseline SHA** | `d7e7c12` (Pass 4D deployed) |
+| **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
+| **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
+| **Strict architecture guard** | Green (0 violations) |
+| **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — bilingual EN/RU per tracked file |
+| **Scan report** | [`docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`](reports/FILE_STRUCTURE_SCAN_2026-07-03.md) |
+
+Regenerate the detailed guide after large tree changes:
+
+```powershell
+python scripts/manual/generate_app_structure_detailed.py
+.\scripts\manual\structure_scan.ps1
+```
+
+---
+
 ## 1. Layer model
 
 | Layer | Path | Owns | May import | Must NOT import |
@@ -425,7 +445,7 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_menu_overlay.dart` | Semicircle plan card radial menu |
 | `planning/widgets/planning_day_card_list_keep_alive.dart` | List keep-alive wrapper |
 | `planning/widgets/plan_card_reorder_settle.dart` | Done-card reorder slide settle |
-| `planning/planning_page.dart` | `PlanningPage` + day body state (~2.6k lines; coordinator delegates Time View) |
+| `planning/planning_page.dart` | `PlanningPage` + day body state (~2.4k lines; coordinator delegates Time View) |
 | `planning/planning_page_shell.dart` | `PlanningSwipeWrapper` date pager |
 | `planning/planning_sort_mode.dart` | `PlanSortMode` + persist index helpers |
 | `planning/widgets/planning_bulk_bar.dart` | Bulk selection bottom bar |
@@ -459,7 +479,9 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 
 | Document | Purpose |
 | :--- | :--- |
-| `docs/APP_STRUCTURE.md` | This file — physical geography |
+| `docs/APP_STRUCTURE.md` | This file — concise canonical structure |
+| `docs/APP_STRUCTURE_DETAILED.md` | Bilingual file-by-file guide (EN/RU) |
+| `docs/APP_STRUCTURE_EXPLAINED_RU.md` | Short Russian practical map for Nick |
 | `docs/ARCHITECTURE.md` | Data flow, iron laws, optimistic UI, performance |
 | `docs/DATA_MAP.md` | PocketBase field names and business IDs |
 | `docs/POCKETBASE_MANIFEST.md` | URLs, collections, server hooks |
@@ -477,4 +499,28 @@ Run from repo root:
 ```powershell
 .\scripts\audit\architecture_guard.ps1           # warnings, exit 0
 .\scripts\audit\architecture_guard.ps1 -Strict   # fail on any violation
+.\scripts\manual\structure_scan.ps1              # optional tree snapshot to docs/reports/
 ```
+
+---
+
+## 7. Do not split further without product reason
+
+| Area | Why leave as-is |
+| :--- | :--- |
+| `plan_service.dart` coordinator | Shared plan cache, streams, wall-time reprojection, CRUD entry — tightly coupled |
+| `planning_page.dart` | Time View state machine + day body; further split needs UX/product scope |
+| `database_service.dart` root | Singleton host only (~720 lines); domain logic already in `part` files |
+| `record_service.dart` / `category_service.dart` / `profile_service.dart` coordinators | Cross-domain static bridges and shared Brain state |
+| Platform folders (`android/`, `ios/`, …) | Flutter-generated runners — not product logic |
+| One-off `scripts/pass3_*`, `scripts/extract_*` | Historical extraction tooling; do not re-run blindly |
+
+Pass 4 regex/line Brain split scripts (`pass4_brain_split.py`, `pass4_split_fast.py`) were **removed** after a failed attempt. Use symbol-aware batches only (see Pass 4A–4D reports).
+
+---
+
+## 8. Next product priorities (not structure)
+
+From `docs/ROADMAP.md` — active velocity track is **V3 UX_CONTRACT / V7 Design System** (canonical components, Component Lab). Feature work (F2B plan category filter, list pin schema, etc.) remains paused unless explicitly requested.
+
+---

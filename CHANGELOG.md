@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - File structure scan and APP_STRUCTURE docs [shipped]
+
+* **`docs/APP_STRUCTURE.md`:** [shipped] §0 current status (SHA `d7e7c12`, Pass 3B + 4A–4D complete), link to detailed guide, §7–§8 split guard + product priorities; fixed `planning_page.dart` line estimate.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] New bilingual EN/RU file-by-file guide for all tracked `lib/**/*.dart`, tests, scripts, docs (generated via `scripts/manual/generate_app_structure_detailed.py`).
+* **`docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`:** [shipped] Full scan method, counts, compact tree, stale-doc fixes.
+* **`scripts/manual/structure_scan.ps1`**, **`scripts/manual/generate_app_structure_detailed.py`:** [shipped] Documented regen helpers; ephemeral outputs gitignored (`docs/reports/_*.tmp`).
+* **`AGENTS.md`**, **`docs/APP_STRUCTURE_EXPLAINED_RU.md`:** [shipped] Brain decomposition complete; pointer to detailed guide.
+* **Production code:** [skipped] docs-only pass.
+
 ## [2026-07-03] - Structure refactor pass 4D profile service [shipped]
 
 * **`lib/data/profile/`:** [shipped] Pass 4D safe Brain split: eight `part of database_service.dart` files — `profile_hydration.dart`, `profile_settings.dart`, `profile_timezone.dart`, `profile_cache_helpers.dart`, `profile_preferences.dart`, `profile_admin.dart`, `tag_catalog.dart`, `tag_display_settings.dart`; named extensions `ProfileHydrationExtension`, `ProfileSettingsExtension`, `ProfileTimezoneExtension`, `ProfileCacheExtension`, `ProfilePreferencesExtension`, `TagCatalogExtension`, `TagDisplaySettingsExtension`.
