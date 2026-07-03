@@ -373,6 +373,8 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `pb_hooks/` | PocketBase server hooks (JS) | Deploy next to PocketBase binary on VPS |
 | `design/` | Figma/reference assets | Design reference PNG/SVG |
 | `build/` | Flutter build output | **Gitignored** — must not be tracked |
+| `exports/` | Price Reporter / audit script output | **Gitignored** — local CSV/XLSX only |
+| `tools/` | Sample data + migration helpers | `sample_data/` tracked; `tools/exports/` gitignored |
 | `.dart_tool/` | Dart/Flutter tool cache | **Gitignored** — must not be tracked |
 | `update.ps1` | Deploy wrapper | Calls `scripts/manual/td.ps1` |
 | `.github/workflows/deploy.yml` | CI web deploy | Push `main` → `gh-pages` |

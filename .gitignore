@@ -28,6 +28,7 @@ lib/core/env/env.dart
 
 # Local audit exports/reports (never commit user data)
 tools/exports/
+exports/
 tools/reports/
 docs/reports/_*.tmp
 

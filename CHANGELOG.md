@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Repo cleanup non-project files [shipped]
+
+* **Local junk removed:** [shipped] `docs/reports/_*.tmp`, Android JVM `hs_err_`/`replay_` logs, `scripts/__pycache__/`, root `*_perf_capture.txt` captures (gitignored).
+* **`exports/`:** [shipped] Removed 4 accidentally tracked Price Reporter audit CSV/XLSX artifacts; added `exports/` to `.gitignore` (script output stays local).
+* **Production code:** [skipped] docs/hygiene only.
+
 ## [2026-07-03] - File structure scan and APP_STRUCTURE docs [shipped]
 
 * **`docs/APP_STRUCTURE.md`:** [shipped] §0 current status (SHA `d7e7c12`, Pass 3B + 4A–4D complete), link to detailed guide, §7–§8 split guard + product priorities; fixed `planning_page.dart` line estimate.
