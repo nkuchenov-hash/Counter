@@ -5,7 +5,7 @@ Scan-and-delete pass: every tracked file must justify existence. **No production
 | | SHA | Tracked files |
 |---|---:|---:|
 | **Baseline** | `b4206b4` | 548 |
-| **Final** | *(commit SHA below)* | 524 (−24) |
+| **Final** | `4846c15` | 525 (−23 net: −24 deleted + 1 new report) |
 
 ---
 

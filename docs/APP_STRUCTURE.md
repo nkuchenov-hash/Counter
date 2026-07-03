@@ -10,7 +10,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 | Item | Value |
 | :--- | :--- |
-| **Structure baseline SHA** | `5360d71` (final parity pass) |
+| **Structure baseline SHA** | `4846c15` (full repo necessity cleanup) |
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
 | **Strict architecture guard** | Green (0 violations) |
