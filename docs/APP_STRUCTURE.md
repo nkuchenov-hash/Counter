@@ -254,7 +254,8 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `plan_time_task_card/plan_card_density.dart` | Visual density bands, measure/gesture inset helpers |
 | `plan_time_task_card/plan_card_geometry.dart` | Figma geometry, vertical spacing, visual tokens |
 | `plan_time_task_card/plan_card_controls.dart` | Checkbox/play/menu/title rail, body tap shell, control rail |
-| `plan_time_task_card/plan_card_sections.dart` | Tags, time text, footer, watermark |
+| `plan_time_task_card/plan_card_sections.dart` | Time text, footer, watermark |
+| `plan_time_task_card/plan_card_tags.dart` | Time View tag row/stack/pill widgets |
 | `plan_time_task_card/plan_card_progress.dart` | Progress slot, invariant body, rail shell |
 | `plan_time_task_card/plan_card_layouts.dart` | Time View CardPlan density layout variants |
 | `plan_card/plan_card_metrics.dart` | Re-export stub → `plan_time_task_card/plan_card_metrics.dart` |
@@ -275,10 +276,10 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | Folder | Files | Role |
 | :--- | :--- | :--- |
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
-| `timeline/` | `timeline_view.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart` | `TimelineSwipeWrapper`, `TimelinePage`; day list + record cards |
+| `timeline/` | `timeline_view.dart`, `timeline_header_controls.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart` | `TimelineSwipeWrapper`, `TimelinePage`; header controls + day list + record cards |
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
 | `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit |
-| `lists/` | `lists_view.dart`, `lists_card.dart`, `lists_export.dart` | Lists/backlog tab coordinator + card widgets + export helper |
+| `lists/` | `lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`, `lists_card.dart`, `lists_export.dart` | Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export |
 | `calendar/` | `calendar_view.dart` | Calendar tab |
 | `categories/` | `category_list_view.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart` | Category manager (More menu) |
 | `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart`, `desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart` | Profile & tag settings, timezone, desktop voice settings (Windows) |
@@ -355,9 +356,14 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `planning/time_view/time_view_drop_preview.dart` | Drop intent / cascade preview |
 | `planning/time_view/time_view_settings_sheet.dart` | Time View settings + default plan times |
 | `planning/time_view/time_view_search_delegate.dart` | Category default-time search UI |
+| `timeline/timeline_header_controls.dart` | List/stats segmented control + record input row |
 | `timeline/timeline_day_page.dart` | `TimelineDayCardList`, lazy record list |
 | `timeline/timeline_record_card.dart` | `TimelineRecordCard` |
 | `timeline/timeline_helpers.dart` | Shared timeline time/duration helpers |
+| `lists/lists_filters.dart` | Tag/category filter chips, chip bar, settings sheet |
+| `lists/lists_bulk_actions.dart` | Select-mode header + bulk action bottom bar |
+| `lists/lists_inline_add.dart` | Inline quick-add input row |
+| `lists/lists_empty_state.dart` | Loading / filtered / no-category empty panels |
 | `lists/lists_card.dart` | `BacklogPlanCard`, filter chips, semicircle menu |
 | `lists/lists_export.dart` | Export visible list as clipboard text |
 | `shell/life_os_dashboard.dart` | Shell dashboard entry (see §3.1.1) |
@@ -368,6 +374,7 @@ Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain co
 | `shell/shell_voice_routing.dart` | Voice routing *(part)* |
 | `shell/shell_offline_banner.dart` | Offline banner slot |
 | `shell/shell_shared.dart` | Shell shared helpers *(part)* |
+| `plan_time_task_card/plan_card_tags.dart` | Time View tag row/stack/pill widgets |
 | `plan_time_task_card/plan_card_layouts.dart` | Time View CardPlan layout variants |
 | `plan_time_task_card/plan_card_progress.dart` | Progress/invariant card shells |
 | `plan_time_task_card/plan_card_density.dart` | Density bands + measure helpers |
@@ -389,12 +396,13 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_menu_overlay.dart` | Semicircle plan card radial menu |
 | `planning/widgets/planning_day_card_list_keep_alive.dart` | List keep-alive wrapper |
 | `planning/widgets/plan_card_reorder_settle.dart` | Done-card reorder slide settle |
-| `planning/planning_page.dart` | `PlanningPage` + day body state (~2.4k lines; coordinator delegates Time View) |
+| `planning/planning_page.dart` | `PlanningPage` + day body state (~2.6k lines; coordinator delegates Time View) |
 | `planning/planning_page_shell.dart` | `PlanningSwipeWrapper` date pager |
 | `planning/planning_sort_mode.dart` | `PlanSortMode` + persist index helpers |
 | `planning/widgets/planning_bulk_bar.dart` | Bulk selection bottom bar |
 | `planning/widgets/planning_filter_controls.dart` | Sort-mode segmented control |
 | `planning/widgets/planning_empty_states.dart` | Planning empty-state widgets |
+| `planning/widgets/planning_quick_add_strip.dart` | Quick-add tag strip above inline task field |
 | `planning/widgets/planning_list_helpers.dart` | Reorder list proxy decorator |
 | `profile/settings/settings_page.dart` | Language/TZ settings page (shell route) |
 | `shared/profile_hydration_status_bar.dart` | Profile hydration error banner |

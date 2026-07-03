@@ -111,11 +111,11 @@
 
 | Задача | Открыть |
 | :--- | :--- |
-| **Карточка плана / списка** | `lib/core/widgets/plan_time_task_card/` (пакет), `lib/core/widgets/plan_card.dart` |
+| **Карточка плана / списка** | `lib/core/widgets/plan_time_task_card/` (пакет, incl. `plan_card_tags.dart`), `lib/core/widgets/plan_card.dart` |
 | **Time View (режим времени на Plans)** | `lib/features/planning/plan_time_view_layout.dart`, `lib/features/planning/planning_view.dart`, настройка «Длительность дня» — `planning_day_start_prefs.dart` + `lib/core/time/plan_time_visible_window.dart` |
 | **Вкладка Plans** | `lib/features/planning/planning_view.dart` |
-| **Timeline** | `lib/features/timeline/timeline_view.dart` |
-| **Lists** | `lib/features/lists/lists_view.dart` |
+| **Timeline** | `lib/features/timeline/timeline_view.dart`, `timeline_header_controls.dart` |
+| **Lists** | `lib/features/lists/lists_view.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart` |
 | **Calendar** | `lib/features/calendar/calendar_view.dart` |
 | **Категории** | `lib/features/categories/category_list_view.dart`, `create_category_dialog.dart` |
 | **Профиль** | `lib/features/profile/profile_view.dart` |

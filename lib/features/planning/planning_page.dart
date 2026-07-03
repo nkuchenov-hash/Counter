@@ -80,6 +80,7 @@ import 'package:counter/features/planning/widgets/planning_bulk_bar.dart';
 import 'package:counter/features/planning/widgets/planning_empty_states.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
 import 'package:counter/features/planning/widgets/planning_list_helpers.dart';
+import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart';
 
 
 class PlanningPage extends StatefulWidget {
@@ -707,35 +708,6 @@ DatabaseService.instance.persistPlanningTaskOrder(
     setState(() => _quickAddAvailableTags = List<Tag>.from(previousUiOrder));
     AppSnack.failed();
   }
-
-  Widget _buildQuickAddTagStrip(ColorScheme scheme) {
-    final loc = currentLocale.value;
-    if (_quickAddTagsLoading && _quickAddAvailableTags.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    if (_quickAddAvailableTags.isEmpty) {
-      return Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: TextButton(
-          onPressed: _openTagManagerFromQuickAdd,
-          child: Text(t(loc, 'plan_quick_add_no_tags')),
-        ),
-      );
-    }
-    final canReorder = _quickAddAvailableTags.length >= 2;
-    return TagQuickPickStrip(
-      tags: _quickAddAvailableTags,
-      selected: _creationSelectedTags,
-      onToggle: _toggleCreationTag,
-      fallbackColor: scheme.primary,
-      variant: CategoryChipVariant.largePicker,
-      externalSelectionRing: true,
-      onReorder: canReorder ? _onPlanningQuickBarReorder : null,
-    );
-  }
-
-
-
 
 
 
@@ -2532,7 +2504,17 @@ DatabaseService.instance.persistPlanningTaskOrder(
                   Expanded(
                     child: SizedBox(
                       height: 40,
-                      child: _buildQuickAddTagStrip(scheme),
+                      child: PlanningQuickAddTagStrip(
+                        scheme: scheme,
+                        tagsLoading: _quickAddTagsLoading,
+                        availableTags: _quickAddAvailableTags,
+                        selectedTags: _creationSelectedTags,
+                        onToggleTag: _toggleCreationTag,
+                        onOpenTagManager: _openTagManagerFromQuickAdd,
+                        onReorder: _quickAddAvailableTags.length >= 2
+                            ? _onPlanningQuickBarReorder
+                            : null,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),

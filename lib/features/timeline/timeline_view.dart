@@ -11,11 +11,9 @@ import 'package:counter/core/widgets/day_content_strip.dart';
 import 'package:counter/core/widgets/day_window.dart';
 import 'package:counter/core/performance/rebuild_metrics.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
-import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/features/stats/stats_view.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -25,6 +23,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import 'package:counter/features/timeline/timeline_helpers.dart';
 import 'package:counter/features/timeline/timeline_day_page.dart';
+import 'package:counter/features/timeline/timeline_header_controls.dart';
 // ---------------------------------------------------------------------------
 // TIMELINE FEATURE вЂ” UI_ISOLATION (В§7). PLANETARY TIME PROTOCOL (В§5). ACTIVE_STATUS_LAW (В§2).
 // All strings via t() from dictionary. Timeline **day** keys use profile wall-calendar via DatabaseService ([DATA_MAP] В§8).
@@ -525,107 +524,17 @@ class _TimelinePageState extends State<TimelinePage> {
         top: false,
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: SizedBox(
-                height: kAppCompactControlHeight,
-                child: SegmentedButton<bool>(
-                  showSelectedIcon: false,
-                  style: appCompactSegmentedButtonStyle(
-                    context,
-                    segmentWidth: 112,
-                  ),
-                  segments: [
-                    ButtonSegment(
-                      value: false,
-                      icon: const Icon(Icons.list_rounded),
-                      label: AppCompactSegmentLabel(
-                        text: t(currentLocale.value, 'list'),
-                      ),
-                    ),
-                    ButtonSegment(
-                      value: true,
-                      icon: const Icon(Icons.bar_chart_rounded),
-                      label: AppCompactSegmentLabel(
-                        text: t(currentLocale.value, 'stats'),
-                      ),
-                    ),
-                  ],
-                  selected: {widget.showStatsView},
-                  onSelectionChanged: (Set<bool> sel) {
-                    if (sel.isEmpty) return;
-                    widget.onShowStatsViewChanged(sel.first);
-                  },
-                ),
-              ),
+            TimelineHeaderControls(
+              showStatsView: widget.showStatsView,
+              visibleDate: _visibleDate,
+              visibleIsFuture: _visibleIsFuture,
+              titleController: widget.titleController,
+              titleFocus: widget.titleFocus,
+              onShowStatsViewChanged: widget.onShowStatsViewChanged,
+              onStart: widget.onStart,
+              onPlan: widget.onPlan,
+              onNewTaskForPastDate: widget.onNewTaskForPastDate,
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: widget.titleController,
-                      focusNode: widget.titleFocus,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) {
-                        if (_visibleIsFuture) {
-                          widget.onPlan();
-                        } else if (_isToday(_visibleDate)) {
-                          widget.onStart();
-                        } else {
-                          widget.onNewTaskForPastDate();
-                        }
-                      },
-                      decoration: InputDecoration(
-                        hintText: t(
-                          currentLocale.value,
-                          'input_placeholder_record',
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Builder(
-                    builder: (context) {
-                      final projectedToday = _localToday();
-                      final isToday =
-                          _visibleDate.year == projectedToday.year &&
-                          _visibleDate.month == projectedToday.month &&
-                          _visibleDate.day == projectedToday.day;
-                      final isFuture = _visibleIsFuture;
-                      return FilledButton.icon(
-                        onPressed: () {
-                          if (isFuture) {
-                            widget.onPlan();
-                          } else if (isToday) {
-                            widget.onStart();
-                          } else {
-                            widget.onNewTaskForPastDate();
-                          }
-                        },
-                        icon: Icon(
-                          isFuture
-                              ? Icons.event_rounded
-                              : isToday
-                              ? Icons.play_arrow_rounded
-                              : Icons.add_task_rounded,
-                        ),
-                        label: Text(
-                          isFuture
-                              ? t(currentLocale.value, 'plan')
-                              : isToday
-                              ? t(currentLocale.value, 'start_timer')
-                              : t(currentLocale.value, 'new_record_btn'),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Divider(height: 1),
             Expanded(
               child: kUseMountedDayStrip &&
                       widget.mountedWindow != null &&

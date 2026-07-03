@@ -11,13 +11,22 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Structure refactor pass 3B [shipped]
+
+* **`lib/features/lists/`:** [shipped] Pass 3 follow-up: `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`; `lists_view.dart` 1685→1091; coordinator owns state only.
+* **`lib/features/timeline/timeline_header_controls.dart`:** [shipped] List/stats segmented control + record input row extracted from `timeline_view.dart` (713→624).
+* **`lib/core/widgets/plan_time_task_card/plan_card_tags.dart`:** [shipped] Time View tag row/stack/pill widgets moved out of `plan_card_layouts.dart`.
+* **`lib/features/planning/widgets/planning_quick_add_strip.dart`:** [shipped] Quick-add tag strip extracted from `planning_page.dart` (2650→2632).
+* **Brain services:** [skipped] unchanged.
+* **Verification:** strict `architecture_guard` 0 violations; `flutter analyze` 0 errors; `flutter test` 248/248; web + APK green.
+
 ## [2026-07-03] - Structure refactor pass 3 [shipped]
 
 * **`lib/features/planning/time_view/`:** [shipped] Time View extracted from `planning_page.dart` (5287→2650): `planning_time_view.dart`, `time_view_canvas.dart`, `time_view_hour_grid.dart`, `time_view_card_layer.dart`, drag/resize/drop/settings/search modules; `PlanningTimeViewHost` + `PlanningTimeViewCoordinator`; gesture/cascade unchanged.
 * **`lib/shell/`:** [shipped] `app_shell.dart` → 2-line re-export; `life_os_dashboard.dart` + part mixins (`shell_core`, `shell_tab_host`, `shell_edit_hosts`, `shell_more_menu`, `shell_voice_routing`); side nav/profile bar/settings moved; tab order/voice/sync unchanged.
 * **`lib/core/widgets/plan_time_task_card/`:** [shipped] Package normalized: widget 433 lines + `plan_card_layouts.dart`, `plan_card_progress.dart`, `plan_card_density.dart`; compatibility barrel at `plan_time_task_card.dart`.
-* **`lib/features/timeline/`:** [shipped] `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart`; `timeline_view.dart` 1129→713.
-* **`lib/features/lists/`:** [shipped] `lists_card.dart`, `lists_export.dart`; `lists_view.dart` 2036→1685.
+* **`lib/features/timeline/`:** [shipped] `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart`, `timeline_header_controls.dart`; `timeline_view.dart` 1129→624 (Pass 3+3B).
+* **`lib/features/lists/`:** [shipped] `lists_card.dart`, `lists_export.dart`, `lists_filters.dart`, `lists_bulk_actions.dart`, `lists_inline_add.dart`, `lists_empty_state.dart`; `lists_view.dart` 2036→1091 (Pass 3+3B).
 * **Brain services:** [skipped] `plan_service`/`record_service`/`category_service`/`profile_service` untouched.
 * **Verification:** strict `architecture_guard` 0 violations; `flutter analyze` 0 errors; `flutter test` 248/248; web + APK green.
 

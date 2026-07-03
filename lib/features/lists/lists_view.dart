@@ -24,6 +24,10 @@ import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/features/lists/lists_card.dart';
 import 'package:counter/features/lists/lists_export.dart';
+import 'package:counter/features/lists/lists_bulk_actions.dart';
+import 'package:counter/features/lists/lists_empty_state.dart';
+import 'package:counter/features/lists/lists_filters.dart';
+import 'package:counter/features/lists/lists_inline_add.dart';
 
 /// Backlog screen: grouped headers by category path, Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
@@ -213,41 +217,14 @@ class _ListsPageState extends State<ListsPage>
     List<PlanningTask> display,
   ) {
     if (_selectedListKeys.isEmpty) return null;
-    final loc = currentLocale.value;
-    return SafeArea(
-      child: Material(
-        elevation: 6,
-        color: scheme.surfaceContainerHigh,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  t(
-                    loc,
-                    'selected_count',
-                  ).replaceFirst('%s', '${_selectedListKeys.length}'),
-                  style: Theme.of(context).textTheme.labelLarge,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              IconButton(
-                tooltip: t(loc, 'edit'),
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () => _openListsBulkEditFirst(display),
-              ),
-              IconButton(
-                tooltip: t(loc, 'delete'),
-                icon: Icon(Icons.delete_outline_rounded, color: scheme.error),
-                onPressed: () => unawaited(_listsBulkDelete(display)),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return ListsBulkBottomBar(
+      locale: currentLocale.value,
+      selectedCount: _selectedListKeys.length,
+      onEdit: () => _openListsBulkEditFirst(display),
+      onDelete: () => unawaited(_listsBulkDelete(display)),
     );
   }
+
 
   void _listsVisibilityListener() {
     if (!mounted) return;
@@ -569,357 +546,28 @@ class _ListsPageState extends State<ListsPage>
     _scrollChipBarToStart();
   }
 
-  /// Manual chip picker: tree of [CategoryRule] — accordion (one branch open per level).
-  Widget _buildManualCategoryTreeTile(
-    CategoryRule r,
-    Set<int> sel,
-    Set<int> expandedIds,
-    void Function(int id) onToggleExpand,
-    void Function(void Function()) setModal, {
-    int depth = 0,
-  }) {
-    if (CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) {
-      return const SizedBox.shrink();
-    }
-    final rawKids = r.children ?? const <CategoryRule>[];
-    final kids = rawKids
-        .where((c) => !CategoryVisibilityPrefs.isHiddenOrAncestor(c.id))
-        .toList();
-    final titleName = categoryRawName(r.id);
-    final depthPad = EdgeInsetsDirectional.only(start: depth * 20.0);
-    void toggleSel(bool? v) {
-      setModal(() {
-        if (v == true) {
-          sel.add(r.id);
-        } else {
-          sel.remove(r.id);
-        }
-      });
-    }
-
-    if (kids.isEmpty) {
-      return Padding(
-        padding: depthPad,
-        child: CheckboxListTile(
-          value: sel.contains(r.id),
-          onChanged: toggleSel,
-          title: Text(titleName),
-          controlAffinity: ListTileControlAffinity.leading,
-          dense: true,
-        ),
-      );
-    }
-    final expanded = expandedIds.contains(r.id);
-    return Padding(
-      padding: depthPad,
-      child: ExpansionTile(
-        key: ValueKey<int>(r.id),
-        initiallyExpanded: expanded,
-        onExpansionChanged: (open) {
-          if (open) {
-            onToggleExpand(r.id);
-          } else {
-            setModal(() => expandedIds.remove(r.id));
-          }
-        },
-        tilePadding: const EdgeInsets.symmetric(horizontal: 4),
-        title: Row(
-          children: [
-            Checkbox(value: sel.contains(r.id), onChanged: toggleSel),
-            Expanded(
-              child: Text(
-                titleName,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ),
-          ],
-        ),
-        children: [
-          for (final c in kids)
-            _buildManualCategoryTreeTile(
-              c,
-              sel,
-              expandedIds,
-              onToggleExpand,
-              setModal,
-              depth: depth + 1,
-            ),
-        ],
-      ),
-    );
-  }
-
-  void _toggleManualTreeExpand(
-    int id,
-    void Function(void Function()) setModal,
-    Set<int> expandedIds,
-  ) {
-    setModal(() {
-      if (expandedIds.contains(id)) {
-        expandedIds.remove(id);
-        return;
-      }
-      final spine = DatabaseService.instance.categoryPathFromRootToLocalId(id);
-      final ancestors = spine.length > 1
-          ? spine.take(spine.length - 1).toSet()
-          : <int>{};
-      expandedIds
-        ..clear()
-        ..addAll({...ancestors, id});
-    });
-  }
-
-  Widget _buildListTagFilterChip({
-    required String label,
-    required bool selected,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: selected
-                ? scheme.primary.withValues(alpha: 0.42)
-                : color.withValues(alpha: 0.22),
-            border: Border.all(
-              color: selected ? scheme.primary : color,
-              width: selected ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: selected ? scheme.onPrimary : scheme.onSurface,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Future<void> _openChipBarSettingsSheet() async {
-    final loc = currentLocale.value;
-    final db = DatabaseService.instance;
-    var mode = _chipMode;
-    final sel = Set<int>.from(_pinnedChipIds);
-    final expandedManualTreeIds = <int>{};
-    await showModalBottomSheet<void>(
+    await showListsChipBarSettingsSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModal) {
-            var completionDraft = DatabaseService
-                .instance
-                .settings
-                .listCompletionBehavior
-                .trim()
-                .toLowerCase();
-            if (completionDraft != 'stay' &&
-                completionDraft != 'bottom' &&
-                completionDraft != 'hide' &&
-                completionDraft != 'archive') {
-              completionDraft = 'hide';
-            }
-            var showTagsDraft =
-                DatabaseService.instance.settings.showListTagsOnCards;
-            final manualListHeight = (MediaQuery.sizeOf(ctx).height * 0.45)
-                .clamp(200.0, 520.0);
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewInsetsOf(ctx).bottom,
-              ),
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                      child: Text(
-                        t(loc, 'lists_chip_bar_sheet_title'),
-                        style: Theme.of(ctx).textTheme.titleLarge,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: SegmentedButton<String>(
-                        segments: [
-                          ButtonSegment<String>(
-                            value: 'frequent',
-                            label: Text(t(loc, 'lists_chip_mode_frequent')),
-                          ),
-                          ButtonSegment<String>(
-                            value: 'manual',
-                            label: Text(t(loc, 'lists_chip_mode_manual')),
-                          ),
-                        ],
-                        emptySelectionAllowed: false,
-                        showSelectedIcon: false,
-                        selected: {mode},
-                        onSelectionChanged: (Set<String> next) {
-                          if (next.isEmpty) return;
-                          setModal(() => mode = next.first);
-                        },
-                      ),
-                    ),
-                    if (mode == 'manual')
-                      SizedBox(
-                        height: manualListHeight,
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          children: [
-                            for (final r in db.rules)
-                              _buildManualCategoryTreeTile(
-                                r,
-                                sel,
-                                expandedManualTreeIds,
-                                (id) => _toggleManualTreeExpand(
-                                  id,
-                                  setModal,
-                                  expandedManualTreeIds,
-                                ),
-                                setModal,
-                              ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: DropdownButtonFormField<String>(
-                        initialValue: completionDraft,
-                        decoration: InputDecoration(
-                          labelText: t(loc, 'lists_completion_title'),
-                          border: const OutlineInputBorder(),
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                            value: 'stay',
-                            child: Text(t(loc, 'lists_completion_stay')),
-                          ),
-                          DropdownMenuItem(
-                            value: 'bottom',
-                            child: Text(t(loc, 'lists_completion_bottom')),
-                          ),
-                          DropdownMenuItem(
-                            value: 'hide',
-                            child: Text(t(loc, 'lists_completion_hide')),
-                          ),
-                          DropdownMenuItem(
-                            value: 'archive',
-                            child: Text(t(loc, 'lists_completion_archive')),
-                          ),
-                        ],
-                        onChanged: (v) {
-                          if (v == null) return;
-                          setModal(() => completionDraft = v);
-                        },
-                      ),
-                    ),
-                    SwitchListTile(
-                      title: Text(t(loc, 'lists_show_list_tags')),
-                      value: showTagsDraft,
-                      onChanged: (v) => setModal(() => showTagsDraft = v),
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.copy_rounded),
-                      title: Text(t(loc, 'lists_export_text')),
-                      onTap: () {
-                        Navigator.of(ctx).pop();
-                        final flat = _listsApplyCompletionLayout(
-                          _displayFlat,
-                          completionDraft,
-                        );
-                        unawaited(exportVisibleListAsText(
-                          context: context,
-                          locale: loc,
-                          visible: flat,
-                        ));
-                      },
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.label_outline_rounded),
-                      title: Text(t(loc, 'lists_manage_tags')),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () {
-                        Navigator.of(ctx).pop();
-                        unawaited(
-                          Navigator.of(context).push<void>(
-                            MaterialPageRoute<void>(
-                              builder: (c) => Scaffold(
-                                appBar: AppBar(
-                                  title: Text(t(loc, 'lists_manage_tags')),
-                                ),
-                                body: const TagManagerPage(
-                                  pocketTagDomain: 'list',
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: FilledButton(
-                        onPressed: () {
-                          Navigator.of(ctx).pop();
-                          final nextPinned = _sanitizeIntCategoryIds(
-                            sel.toList(),
-                          );
-                          setState(() {
-                            _chipMode = mode;
-                            if (mode == 'manual') {
-                              _pinnedChipIds = nextPinned;
-                            }
-                          });
-                          unawaited(_persistChipMode(mode));
-                          unawaited(
-                            DatabaseService.instance.persistShowListTagsOnCards(
-                              showTagsDraft,
-                            ),
-                          );
-                          unawaited(
-                            DatabaseService.instance.saveSettings(
-                              DatabaseService.instance.settings.copyWith(
-                                listCompletionBehavior: completionDraft,
-                              ),
-                            ),
-                          );
-                          if (mode == 'manual') {
-                            unawaited(_persistPinnedChipIds(_pinnedChipIds));
-                            final fid = _filterCategoryId;
-                            if (fid != null && !_pinnedChipIds.contains(fid)) {
-                              _onFilterChanged(null);
-                            }
-                          }
-                          unawaited(_reload());
-                        },
-                        child: Text(t(loc, 'save')),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
+      locale: currentLocale.value,
+      initialChipMode: _chipMode,
+      initialPinnedChipIds: _pinnedChipIds,
+      filterCategoryId: _filterCategoryId,
+      displayFlat: _displayFlat,
+      applyCompletionLayout: _listsApplyCompletionLayout,
+      sanitizeCategoryIds: _sanitizeIntCategoryIds,
+      persistChipMode: _persistChipMode,
+      persistPinnedChipIds: _persistPinnedChipIds,
+      onSaved: (mode, pinned) {
+        setState(() {
+          _chipMode = mode;
+          if (mode == 'manual') {
+            _pinnedChipIds = pinned;
+          }
+        });
       },
+      reload: _reload,
+      onFilterChanged: _onFilterChanged,
     );
   }
 
@@ -1260,81 +908,28 @@ class _ListsPageState extends State<ListsPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    if (_listsSelectMode) ...[
-                      Material(
-                        color: theme.colorScheme.surface,
-                        elevation: 0,
-                        surfaceTintColor: theme.colorScheme.surfaceTint,
-                        child: SizedBox(
-                          height: kGlobalCompactHeaderHeight,
-                          child: Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.close_rounded),
-                                onPressed: _exitListsSelectMode,
-                                tooltip: t(loc, 'plan_exit_select'),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  t(loc, 'plan_select_mode'),
-                                  style: theme.textTheme.titleMedium,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              if (filterId != null && flat.isNotEmpty)
-                                TextButton(
-                                  style: TextButton.styleFrom(
-                                    visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                    ),
-                                  ),
-                                  onPressed: () =>
-                                      _toggleSelectAllVisibleLists(flat),
-                                  child: Text(
-                                    _allVisibleListsSelected(flat)
-                                        ? t(loc, 'plan_deselect_visible')
-                                        : t(loc, 'plan_select_all'),
-                                  ),
-                                ),
-                            ],
+                    if (_listsSelectMode)
+                      ListsBulkSelectModeBar(
+                        locale: loc,
+                        filterCategoryId: filterId,
+                        visibleFlat: flat,
+                        allVisibleSelected: _allVisibleListsSelected(flat),
+                        onExitSelectMode: _exitListsSelectMode,
+                        onToggleSelectAllVisible: () =>
+                            _toggleSelectAllVisibleLists(flat),
+                      )
+                    else
+                      ListsFilterToolbarRow(
+                        locale: loc,
+                        showExport: filterId != null,
+                        onExport: () => unawaited(
+                          exportVisibleListAsText(
+                            context: context,
+                            locale: loc,
+                            visible: forGrouping,
                           ),
                         ),
-                      ),
-                      Divider(
-                        height: 1,
-                        color: theme.colorScheme.outlineVariant,
-                      ),
-                    ] else
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            if (filterId != null)
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                tooltip: t(loc, 'lists_export_text'),
-                                onPressed: () => unawaited(
-                                  exportVisibleListAsText(
-                                    context: context,
-                                    locale: loc,
-                                    visible: forGrouping,
-                                  ),
-                                ),
-                                icon: const Icon(Icons.copy_rounded),
-                              ),
-                            IconButton(
-                              visualDensity: VisualDensity.compact,
-                              tooltip: t(
-                                loc,
-                                'lists_chip_bar_settings_tooltip',
-                              ),
-                              onPressed: _openChipBarSettingsSheet,
-                              icon: const Icon(Icons.settings_rounded),
-                            ),
-                          ],
-                        ),
+                        onOpenSettings: _openChipBarSettingsSheet,
                       ),
                     Expanded(
                       child: Column(
@@ -1342,232 +937,43 @@ class _ListsPageState extends State<ListsPage>
                         children: [
                           SizedBox(
                             height: 48,
-                            child: _chipMode == 'manual' && chipIds.length > 1
-                                ? ReorderableListView.builder(
-                                    scrollController: _chipBarScrollController,
-                                    scrollDirection: Axis.horizontal,
-                                    buildDefaultDragHandles: false,
-                                    shrinkWrap: true,
-                                    physics: const ClampingScrollPhysics(),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 4,
-                                    ),
-                                    itemCount: chipIds.length,
-                                    onReorder: (oldI, newI) =>
-                                        _onManualChipReorder(
-                                          chipIds,
-                                          oldI,
-                                          newI,
-                                        ),
-                                    itemBuilder: (ctx, idx) {
-                                      final id = chipIds[idx];
-                                      return ReorderableDelayedDragStartListener(
-                                        key: ValueKey<int>(id),
-                                        index: idx,
-                                        child: Padding(
-                                          padding:
-                                              const EdgeInsetsDirectional.only(
-                                                end: 8,
-                                              ),
-                                          child: ListsQuadraticChip(
-                                            label: categoryRawName(id),
-                                            categoryColor:
-                                                listsCategoryAccentColor(id),
-                                            selected: filterId == id,
-                                            onTap: () {
-                                              if (filterId == id) {
-                                                _onFilterChanged(null);
-                                              } else {
-                                                _onFilterChanged(id);
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : ListView(
-                                    controller: _chipBarScrollController,
-                                    scrollDirection: Axis.horizontal,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                    children: [
-                                      for (final id in chipIds)
-                                        Padding(
-                                          padding:
-                                              const EdgeInsetsDirectional.only(
-                                                end: 8,
-                                              ),
-                                          child: ListsQuadraticChip(
-                                            label: categoryRawName(id),
-                                            categoryColor:
-                                                listsCategoryAccentColor(id),
-                                            selected: filterId == id,
-                                            onTap: () {
-                                              if (filterId == id) {
-                                                _onFilterChanged(null);
-                                              } else {
-                                                _onFilterChanged(id);
-                                              }
-                                            },
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                            child: ListsCategoryChipBar(
+                              chipIds: chipIds,
+                              chipMode: _chipMode,
+                              filterCategoryId: filterId,
+                              scrollController: _chipBarScrollController,
+                              onFilterChanged: _onFilterChanged,
+                              onManualChipReorder: (oldI, newI) =>
+                                  _onManualChipReorder(chipIds, oldI, newI),
+                            ),
                           ),
                           if (filterId != null &&
                               _tagsForFilterBar().isNotEmpty)
-                            SizedBox(
-                              height: 44,
-                              child: ListView(
-                                controller: _tagFilterScrollController,
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 4,
-                                ),
-                                children: [
-                                  if (!hasActiveTagFilter)
-                                    Padding(
-                                      padding: const EdgeInsetsDirectional.only(
-                                        end: 8,
-                                      ),
-                                      child: _buildListTagFilterChip(
-                                        label: t(loc, 'lists_filter_tag_all'),
-                                        selected: _filterTagPbId == null,
-                                        color: theme.colorScheme.outline,
-                                        onTap: () => _onTagFilterChanged(null),
-                                      ),
-                                    ),
-                                  for (final tag in _tagsForFilterBar())
-                                    Padding(
-                                      padding: const EdgeInsetsDirectional.only(
-                                        end: 8,
-                                      ),
-                                      child: _buildListTagFilterChip(
-                                        label: tag.name.trim().isNotEmpty
-                                            ? tag.name.trim()
-                                            : '#${tag.tagId}',
-                                        selected:
-                                            (_filterTagPbId ?? '') ==
-                                            (tag.pbRecordId ?? '').trim(),
-                                        color:
-                                            parseTagHexColor(tag.color) ??
-                                            theme.colorScheme.primary,
-                                        onTap: () {
-                                          final id = (tag.pbRecordId ?? '')
-                                              .trim();
-                                          if (id.isEmpty) return;
-                                          if (_filterTagPbId == id) {
-                                            _onTagFilterChanged(null);
-                                          } else {
-                                            _onTagFilterChanged(id);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  if (hasActiveTagFilter)
-                                    Padding(
-                                      padding: const EdgeInsetsDirectional.only(
-                                        end: 8,
-                                      ),
-                                      child: _buildListTagFilterChip(
-                                        label: t(loc, 'lists_filter_tag_all'),
-                                        selected: _filterTagPbId == null,
-                                        color: theme.colorScheme.outline,
-                                        onTap: () => _onTagFilterChanged(null),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                            ListsTagFilterBar(
+                              locale: loc,
+                              tags: _tagsForFilterBar(),
+                              filterTagPbId: _filterTagPbId,
+                              hasActiveTagFilter: hasActiveTagFilter,
+                              scrollController: _tagFilterScrollController,
+                              onTagFilterChanged: _onTagFilterChanged,
                             ),
                           if (filterId != null)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _inlineController,
-                                      focusNode: _inlineFocus,
-                                      textInputAction: TextInputAction.done,
-                                      decoration: InputDecoration(
-                                        hintText: t(
-                                          loc,
-                                          'input_placeholder_list',
-                                        ),
-                                        isDense: true,
-                                        border: InputBorder.none,
-                                        enabledBorder: UnderlineInputBorder(
-                                          borderSide: BorderSide(
-                                            color: theme.colorScheme.outline
-                                                .withValues(alpha: 0.45),
-                                          ),
-                                        ),
-                                        focusedBorder: UnderlineInputBorder(
-                                          borderSide: BorderSide(
-                                            color: theme.colorScheme.primary,
-                                            width: 2,
-                                          ),
-                                        ),
-                                      ),
-                                      onSubmitted: (_) => _submitInline(),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  FilledButton.icon(
-                                    onPressed: _submitInline,
-                                    icon: const Icon(Icons.add_rounded),
-                                    label: Text(t(loc, 'add')),
-                                  ),
-                                ],
-                              ),
+                            ListsInlineAddRow(
+                              locale: loc,
+                              controller: _inlineController,
+                              focusNode: _inlineFocus,
+                              onSubmit: _submitInline,
                             ),
                           Expanded(
                             child: filterId == null
-                                ? ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    children: [
-                                      SizedBox(
-                                        height:
-                                            MediaQuery.sizeOf(context).height *
-                                            0.25,
-                                      ),
-                                      AppEmptyState(
-                                        message: t(
-                                          loc,
-                                          'lists_no_category_chosen',
-                                        ),
-                                        icon: Icons.category_outlined,
-                                      ),
-                                    ],
-                                  )
+                                ? ListsNoCategoryEmptyPanel(locale: loc)
                                 : _loading
-                                ? const AppLoading()
+                                ? const ListsLoadingPanel()
                                 : RefreshIndicator(
                                     onRefresh: _reload,
                                     child: listBodyEmpty
-                                        ? ListView(
-                                            physics:
-                                                const AlwaysScrollableScrollPhysics(),
-                                            children: [
-                                              SizedBox(
-                                                height:
-                                                    MediaQuery.sizeOf(
-                                                      context,
-                                                    ).height *
-                                                    0.25,
-                                              ),
-                                              AppEmptyState(
-                                                message: t(loc, 'lists_empty'),
-                                                icon: Icons.inbox_outlined,
-                                              ),
-                                            ],
+                                        ? ListsFilteredEmptyPanel(
+                                            locale: loc,
                                           )
                                         : CustomScrollView(
                                             physics:
