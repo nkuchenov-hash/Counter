@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Structure refactor pass 4C category service [shipped]
+
+* **`lib/data/categories/`:** [shipped] Pass 4C safe Brain split: seven `part of database_service.dart` files — `category_cache_helpers.dart`, `category_tree.dart`, `category_lookup.dart`, `category_crud.dart`, `category_stats.dart`, `category_record_bridge.dart`, `category_default_time.dart`; named extensions `CategoryCacheExtension`, `CategoryTreeExtension`, `CategoryLookupExtension`, `CategoryCrudExtension`, `CategoryStatsExtension`, `CategoryRecordBridgeExtension`, `CategoryDefaultTimeExtension`.
+* **`lib/data/category_service.dart`:** [shipped] Coordinator retained (`CategoryServiceExtension` static bridge helpers: `_flattenNocoRecord`, `recordsTablePk`, `_parseDateTimeUtc`, stats duration statics, `_rowInt`); 3287→466 lines (−2821).
+* **Plan/record/profile Brain:** [skipped] untouched.
+* **Verification:** strict `architecture_guard` 0 violations; `flutter analyze` 0 errors; `flutter test` 248/248; web + APK green.
+
 ## [2026-07-03] - Structure refactor pass 4B record service [shipped]
 
 * **`lib/data/records/`:** [shipped] Pass 4B safe Brain split: eight `part of database_service.dart` files — `record_crud.dart`, `record_optimistic.dart`, `record_realtime.dart`, `record_timeline_vm.dart`, `record_outbox_helpers.dart`, `record_overlap_helpers.dart`, `record_ghost_cleanup.dart`, `record_cache_helpers.dart`; named extensions `RecordCrudExtension`, `RecordOptimisticExtension`, `RecordRealtimeExtension`, `RecordTimelineVmExtension`, `RecordOutboxSyncExtension`, `RecordOverlapExtension`, `RecordGhostCleanupExtension`, `RecordCacheProjectionExtension`.

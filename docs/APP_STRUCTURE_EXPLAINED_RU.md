@@ -37,7 +37,8 @@
 | Записи — CRUD, optimistic, realtime, timeline VM, outbox, overlap | `lib/data/records/*.dart` *(part of database_service)* |
 | Планы и списки (координатор) | `lib/data/plan_service.dart` |
 | Планы — Time View projection, recurrence, cascade, tags, cache, outbox | `lib/data/plans/*.dart` *(part of database_service)* |
-| Категории | `lib/data/category_service.dart` |
+| Категории — координатор | `lib/data/category_service.dart` |
+| Категории — cache, tree, lookup, CRUD, stats, record bridge, default time | `lib/data/categories/*.dart` *(part of database_service)* |
 | Профиль, теги, часовой пояс | `lib/data/profile_service.dart` |
 | URL и имена коллекций PB | `lib/data/pb_config.dart` |
 | Офлайн-очередь | `lib/data/local_sync/` |

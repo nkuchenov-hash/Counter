@@ -56,6 +56,13 @@ part 'records/record_overlap_helpers.dart';
 part 'records/record_ghost_cleanup.dart';
 part 'records/record_cache_helpers.dart';
 part 'record_service.dart';
+part 'categories/category_crud.dart';
+part 'categories/category_tree.dart';
+part 'categories/category_lookup.dart';
+part 'categories/category_stats.dart';
+part 'categories/category_record_bridge.dart';
+part 'categories/category_default_time.dart';
+part 'categories/category_cache_helpers.dart';
 part 'category_service.dart';
 part 'db_core.dart';
 

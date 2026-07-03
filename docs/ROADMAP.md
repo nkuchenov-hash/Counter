@@ -315,7 +315,7 @@ Defined once foundation is solid.
 - ~~`profile_service.dart` (~666 lines) extracted.~~
 - ~~`plan_service.dart` (~2,803 lines) extracted.~~
 - ~~`record_service.dart` (~2,407 lines) extracted.~~
-- ~~`category_service.dart` (~3,158 lines) extracted.~~
+- ~~`category_service.dart` (~3,158 lines) extracted.~~ **Pass 4C (2026-07-03):** coordinator + `lib/data/categories/*` (−2821 lines in coordinator).
 - ~~`db_core.dart` (~418 lines) extracted.~~
 - ~~`database_service.dart` reduced to ~720 lines.~~
 
@@ -330,4 +330,4 @@ Defined once foundation is solid.
 - **Targets:** Android, iOS, Web, Windows, macOS, Linux, Wear OS
 - **Stack:** Flutter
 - **Analyzer:** 11 info-only issues (0 errors, 0 warnings) after June 2026 hygiene pass
-- **Architecture:** Iron Laws honored. God Object split complete. **Pass 4A (2026-07-03):** `plan_service.dart` + `lib/data/plans/*`. **Pass 4B (2026-07-03):** `record_service.dart` + `lib/data/records/*` (−3522 lines in coordinator). **O1 offline-first ✅**. Velocity track: V1 → F1/F2.
+- **Architecture:** Iron Laws honored. God Object split complete. **Pass 4A (2026-07-03):** `plan_service.dart` + `lib/data/plans/*`. **Pass 4B (2026-07-03):** `record_service.dart` + `lib/data/records/*` (−3522 lines in coordinator). **Pass 4C (2026-07-03):** `category_service.dart` + `lib/data/categories/*` (−2821 lines in coordinator). **O1 offline-first ✅**. Velocity track: V1 → F1/F2.

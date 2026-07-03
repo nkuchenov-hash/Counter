@@ -91,7 +91,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **PB — records** | `lib/data/records/record_crud.dart` + coordinator | `writeRecord`, `stopRecordByDocId`, `updateRecord`, `patchRecord`, `deleteRecordByDocId`, `flushPendingRecordMutations`, realtime |
 | **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `deletePlanningTasksBulk`, `flushPendingPlanMutations`, `planningStream`, `_syncPlanTagsPocket` |
 | **Offline sync banner** | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` (top of shell `IndexedStack`) |
-| **PB — categories** | `lib/data/category_service.dart` | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
+| **PB — categories** | `lib/data/categories/category_crud.dart` + `category_lookup.dart` + coordinator | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
 | **PB — tags** | `lib/data/profile_service.dart` | (same as tag data row above) |
 | **PB — auth / bootstrap** | `lib/data/auth_bridge.dart`, `lib/data/db_core.dart` | session, `ensurePocketBaseReady`, `loadInitialData`, `flushPendingLocalMutations` |
 | **Date/time header strip** | `lib/core/widgets/global_app_header.dart` | `GlobalAppHeader` + `AppBarLiveClock` |
@@ -140,10 +140,10 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Realtime subscribe handler | `lib/data/records/record_realtime.dart` | `DatabaseService._onPbRecordsSubscriptionEvent` (`RecordRealtimeExtension`) |
 | Record cache mutation (atomic upsert) | `lib/data/record_service.dart` | `DatabaseService._upsertFlatRecordFromPbModel` (extension) |
 | ID resolution (legacy UUID → PB row id) | `lib/data/record_service.dart` | `DatabaseService._resolveRecordIdForStopOrDelete` (extension) |
-| Category smart-link / fuzzy match | `lib/data/category_service.dart` | `DatabaseService.findCategoryByFuzzyMatch` (extension) |
-| Category create | `lib/data/category_service.dart` | `DatabaseService.addNestedCategory` (extension) |
-| Category update | `lib/data/category_service.dart` | `DatabaseService.updateCategory` (extension) |
-| Category → PB row ID mapping (cold-start) | `lib/data/category_service.dart` | `DatabaseService._mapCategoryIdToLinkForPb` (extension) |
+| Category smart-link / fuzzy match | `lib/data/categories/category_lookup.dart` | `DatabaseService.findCategoryByFuzzyMatch` (`CategoryLookupExtension`) |
+| Category create | `lib/data/categories/category_crud.dart` | `DatabaseService.addNestedCategory` (`CategoryCrudExtension`) |
+| Category update | `lib/data/categories/category_crud.dart` | `DatabaseService.updateCategory` (`CategoryCrudExtension`) |
+| Category → PB row ID mapping (cold-start) | `lib/data/categories/category_record_bridge.dart` | `DatabaseService._normalizeRecordCategoryFieldsForPbApi` (`CategoryRecordBridgeExtension`) |
 | Plan / planning task write | `lib/data/plan_service.dart` | `DatabaseService.addPlanningTask` (extension) |
 | Plan / planning task CRUD (full) | `lib/data/plan_service.dart` | `PlanServiceExtension` — addPlan, updatePlanningTask, deletePlanningTask, bulkUpdatePlans |
 | Backlog / list items fetch | `lib/data/plan_service.dart` | `DatabaseService.fetchBacklogPlans` (extension) |
@@ -305,7 +305,7 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 - **Offline drain:** `flushPendingLocalMutations` on login (`loadInitialData`), reconnect (`SyncManager`), app resume, and tap-to-retry (`OfflineSyncStatusBar`). 401/403 sets `offlineSync.authPaused` until `resumeAfterAuthIfNeeded` + valid session.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). Domain logic lives in `part of` files: V5.1 profile/tag → `profile_service.dart`; V5.2 plan coordinator → `plan_service.dart` + `plans/*` (Pass 4A); V5.3 record coordinator → `record_service.dart` + `records/*` (Pass 4B); V5.4 category → `category_service.dart`; V5.5 bootstrap/lifecycle → `db_core.dart`.
+- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). Domain logic lives in `part of` files: V5.1 profile/tag → `profile_service.dart`; V5.2 plan coordinator → `plan_service.dart` + `plans/*` (Pass 4A); V5.3 record coordinator → `record_service.dart` + `records/*` (Pass 4B); V5.4 category coordinator → `category_service.dart` + `categories/*` (Pass 4C); V5.5 bootstrap/lifecycle → `db_core.dart`.
 
 ---
 

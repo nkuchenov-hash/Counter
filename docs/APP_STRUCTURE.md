@@ -31,7 +31,7 @@ l10n      →  (self + langs)               ✓
 main/app_shell → all layers               ✓
 ```
 
-**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `profile_service.dart`).
+**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `categories/*`, `profile_service.dart`).
 
 **Optimistic UI rule:** User mutations update local Brain cache first, notify UI, then sync PocketBase in the background (`database_service.dart` and its parts).
 
@@ -101,7 +101,14 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `plans/plan_tags_helpers.dart` | Plan/list tag catalog fetch + PB `tags_link` sync *(part)* |
 | `plans/plan_cache_helpers.dart` | Plan dedupe/scrub, title link scoring heuristics *(part)* |
 | `plans/plan_outbox_helpers.dart` | Plan mutation outbox enqueue/flush/replay *(part)* |
-| `category_service.dart` | Category CRUD, fuzzy match *(part)* |
+| `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
+| `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
+| `categories/category_tree.dart` | Category hierarchy build/sort, parent/child, subtree record ids *(part)* |
+| `categories/category_lookup.dart` | Fuzzy/smart match, path resolution, business id ↔ PB id *(part)* |
+| `categories/category_crud.dart` | Category create/update/archive, PB payloads, ordering writes *(part)* |
+| `categories/category_stats.dart` | Category-scoped stats aggregation, duration rollups *(part)* |
+| `categories/category_record_bridge.dart` | Record/category relation repair, REST id resolution, ghost purge *(part)* |
+| `categories/category_default_time.dart` | `default_plan_time` read/write, inherited schedule lookup *(part)* |
 | `profile_service.dart` | Profile, timezone, tags catalog *(part)* |
 | `models.dart` | `part` declarations; export surface for all model types |
 | `models/_shared.dart` | Shared model helpers *(part)* |
