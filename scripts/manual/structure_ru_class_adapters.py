@@ -46,6 +46,13 @@ BANNED_ENGLISH_IN_RU: tuple[str, ...] = (
     "App Store / TestFlight",
     "wrong app label",
     "manifest merge",
+    "required for native/web builds",
+    "Android APK build or permission issues",
+    "if Windows desktop is supported",
+    "safe for app",
+    "used by debug/profile builds",
+    "documents required env.dart structure",
+    "features depend on these widgets",
 )
 
 # Generic platform/installer RU wrappers — must never ship.
@@ -61,7 +68,18 @@ BANNED_GENERIC_PLATFORM_WRAPPERS: tuple[str, ...] = (
     "Нужен для сборки `",
 )
 
-BANNED_GENERIC_RU_WRAPPERS: tuple[str, ...] = BANNED_GENERIC_PLATFORM_WRAPPERS + (
+BANNED_GENERIC_DOC_WRAPPERS: tuple[str, ...] = (
+    "Markdown-документ",
+    "правила и заметки по теме",
+    "Ответы на вопросы по",
+    "Нужна written-инструкция",
+    "Markdown-секции по этой теме",
+)
+
+BANNED_GENERIC_RU_WRAPPERS: tuple[str, ...] = (
+    BANNED_GENERIC_PLATFORM_WRAPPERS
+    + BANNED_GENERIC_DOC_WRAPPERS
+    + (
     "Подмодуль `",
     " в Flutter-приложении Counter.",
     "Код под `lib/",
@@ -78,6 +96,7 @@ BANNED_GENERIC_RU_WRAPPERS: tuple[str, ...] = BANNED_GENERIC_PLATFORM_WRAPPERS +
     "Build или maintenance ссылается на `",
     "См. также:",
     "Native/config файлы для `",
+    )
 )
 
 GENERIC_EN_MARKERS: tuple[str, ...] = (
@@ -995,68 +1014,12 @@ def _main_activity_field(field: str, en_val: str, en: dict[str, str]) -> str | N
 
 
 def _governing_doc_field(p: str, name: str, field: str, en_val: str, en: dict[str, str]) -> str | None:
-    docs = {
-        "app_structure.md": {
-            "what": "Краткая карта структуры repo — папки, слои, import rules, команды guard.",
-            "why": "Быстрый ответ «где живёт X» без чтения всей encyclopedia.",
-            "contains": "Таблицы `lib/data`, features, scripts; команды architecture guard.",
-            "responsibilities": "Канонический structure contract для guard и AI.",
-            "when": "Ищете ownership модуля; перед переносом файлов.",
-            "connected": "`APP_STRUCTURE_DETAILED.md`, `architecture_guard.ps1`.",
-            "layer": "Governing structure doc — Project Knowledge pack.",
-        },
-        "architecture.md": {
-            "what": "Iron Laws проекта — optimistic UI, Brain/UI split, PocketBase rules, main-thread law.",
-            "why": "Авторитетный технический контракт для owner и AI.",
-            "contains": "Правила data flow, offline, singleton record, performance.",
-            "responsibilities": "Ответ на «как система обязана работать».",
-            "when": "Спор об architecture; перед refactor Brain или UI.",
-            "connected": "`docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`.",
-            "layer": "Governing architecture doc — Project Knowledge pack.",
-        },
-        "data_map.md": {
-            "what": "Словарь полей PocketBase — имена колонок, business IDs, relation fields.",
-            "why": "Brain и UI должны использовать одни имена полей при POST/PATCH.",
-            "contains": "Таблицы records, plans, categories, tags, profiles.",
-            "responsibilities": "SSOT имён полей — не выдумывать alternate names.",
-            "when": "Ошибка parse поля PB; добавление нового поля в schema.",
-            "connected": "`docs/POCKETBASE_MANIFEST.md`, `lib/data/models/`.",
-            "layer": "Governing data doc — Project Knowledge pack.",
-        },
-        "design_system.md": {
-            "what": "Design system контракт — Figma → Flutter mapping, canonical components.",
-            "why": "Запрещает локальные копии кнопок/карточек в feature screens.",
-            "contains": "Token categories, `AppButton`, `AppIconButton`, forbidden local UI.",
-            "responsibilities": "Правила V7 component migration и Component Lab acceptance.",
-            "when": "Миграция UI на canonical widgets; pixel QA.",
-            "connected": "`lib/core/widgets/`, Component Lab.",
-            "layer": "Governing design doc — Project Knowledge pack.",
-        },
-        "deploy.md": {
-            "what": "Пошаговый deploy — GitHub Pages, PocketBase auth admin, Windows installer.",
-            "why": "Deploy и OAuth легко сломать без VPS checklist.",
-            "contains": "`update.ps1`, GitHub Pages flow, Windows installer, OAuth admin steps.",
-            "responsibilities": "Инструкция публикации сайта и production auth.",
-            "when": "Сайт не обновился; OAuth broken; сборка installer.",
-            "connected": "`.github/workflows/`, `update.ps1`, `installer/`.",
-            "layer": "Deploy guide — Project Knowledge pack.",
-        },
-    }
-    key = name.lower()
-    m = docs.get(key)
-    if not m:
-        topic = name.replace(".md", "").replace("_", " ")
-        m = {
-            "what": f"Markdown-документ `{name}` — правила и заметки по теме «{topic}».",
-            "why": "Читается owner и AI; не исполняется приложением.",
-            "contains": "Markdown-секции по этой теме.",
-            "responsibilities": f"Ответы на вопросы по `{topic}`.",
-            "when": f"Нужна written-инструкция по `{topic}`.",
-            "connected": "`docs/PROJECT_KNOWLEDGE_PACK.md`.",
-            "layer": "Документация — не runtime.",
-        }
-    v = m.get(field)
-    return v if v and ru_prose_ok(v, min_cyrillic=6) else None
+    from structure_doc_file_guides import doc_file_ru_field
+
+    ru = doc_file_ru_field(p, name, field, en_val, en)
+    if ru:
+        return ru
+    return None
 
 
 def _dart_file_field(p: str, field: str, en_val: str, en: dict[str, str]) -> str | None:

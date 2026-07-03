@@ -91,6 +91,11 @@ def _translate_delete_tail_ru(tail: str) -> str:
         ("Cursor root discovery expects this file or equivalent config", "Cursor ищет rules в root"),
         ("documented local Android build path", "задокументированный путь локальной сборки Android"),
         ("documented deploy workflow", "задокументированный deploy workflow"),
+        ("safe for app; keep for Cursor workflow", "безопасно для app; оставить для Cursor workflow"),
+        ("if Windows desktop is supported", "если поддерживается Windows desktop"),
+        ("used by debug/profile builds", "используется debug/profile builds"),
+        ("documents required env.dart structure", "описывает требуемую структуру env.dart"),
+        ("features depend on these widgets", "features зависят от этих widgets"),
     )
     out = tail
     for en, ru in repl:
@@ -218,7 +223,7 @@ def translate_file_field_ru(path: str, field: str, en_val: str) -> str:
             ("History — Project Knowledge", "История — Project Knowledge"),
             ("Flutter tooling metadata — not app runtime", "Метаданные Flutter — не runtime"),
             ("Static analysis config — not app runtime", "Конfig analyzer — не runtime"),
-            ("Platform wrapper — required for native/web builds", "Platform-обёртка Flutter"),
+            ("Platform wrapper — required for native/web builds", "Платформенная обёртка Flutter — не Dart UI"),
             ("Build/deploy/server configuration", "Сборка/деплой/сервер"),
             ("Documentation", "Документация"),
             ("Test — not shipped to users", "Автотест — не в APK пользователю"),
@@ -311,17 +316,14 @@ def translate_file_field_ru(path: str, field: str, en_val: str) -> str:
             return f"Связи файла `{name}` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`."
         return out
 
-    if field in ("what", "why", "contains", "responsibilities"):
-        if field == "what" and p.startswith("docs/"):
-            topic = name.replace(".md", "").replace("_", " ")
-            return f"Документ `{name}` — правила и заметки по теме: {topic}."
-        if field == "why" and p.startswith("docs/"):
-            return "Читается owner и AI; не исполняется приложением."
-        if field == "contains" and p.startswith("docs/"):
-            return "Markdown-секции по этой теме."
-        if field == "responsibilities" and p.startswith("docs/"):
-            topic = name.replace(".md", "").replace("_", " ")
-            return f"Ответы на вопросы по `{topic}`."
+    if field in ("what", "why", "contains", "responsibilities", "when", "connected", "layer"):
+        if p.startswith("docs/") and name.endswith(".md"):
+            from structure_doc_file_guides import doc_file_ru_field
+
+            doc_ru = doc_file_ru_field(p, name, field, en_val, {"delete": en_val})
+            if doc_ru:
+                return doc_ru
+            return ""
         if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/", "installer/")):
             from structure_platform_file_guides import platform_file_ru_field
 

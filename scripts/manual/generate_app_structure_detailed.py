@@ -26,7 +26,7 @@ from structure_en_ru_adapt import (
     has_banned_filler,
     ru_field_ok,
 )
-from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_GENERIC_RU_WRAPPERS, BANNED_GENERIC_PLATFORM_WRAPPERS, BANNED_SEMI_RUSSIAN_WRAPPERS
+from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_GENERIC_RU_WRAPPERS, BANNED_GENERIC_PLATFORM_WRAPPERS, BANNED_GENERIC_DOC_WRAPPERS, BANNED_SEMI_RUSSIAN_WRAPPERS, has_semi_russian_or_english_leak
 from structure_file_ru_curated import FILE_RU_CURATED
 from structure_role_guides import humanize_guide
 from structure_root_guides import ROOT_FILE_GUIDES
@@ -68,11 +68,18 @@ BANNED_EN_WRAPPER_IN_RU: tuple[str, ...] = (
     "required for current app behavior",
 )
 
-BANNED_EN_IN_RU: tuple[str, ...] = BANNED_EN_WRAPPER_IN_RU + BANNED_GENERIC_PLATFORM_WRAPPERS + (
+BANNED_EN_IN_RU: tuple[str, ...] = BANNED_EN_WRAPPER_IN_RU + BANNED_GENERIC_PLATFORM_WRAPPERS + BANNED_GENERIC_DOC_WRAPPERS + (
     "implementation details in the source file",
     "required for ",
     "if macOS builds are kept",
     "required for iOS CocoaPods workflow",
+    "required for native/web builds",
+    "Android APK build or permission issues",
+    "if Windows desktop is supported",
+    "safe for app",
+    "used by debug/profile builds",
+    "documents required env.dart structure",
+    "features depend on these widgets",
 )
 TABLE_ROW_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|")
 FEATURE_FOLDER_ROW_RE = re.compile(r"^\|\s*`([^`]+)/`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*$")
@@ -505,7 +512,7 @@ def layer_for(path: str) -> tuple[str, str]:
     if p.startswith((".github/", "installer/", "pb_hooks/")):
         return ("Build/deploy/server configuration.", "Сборка/деплой/сервер.")
     if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/")):
-        return ("Platform wrapper — required for native/web builds.", "Платформенная обёртка Flutter.")
+        return ("Platform wrapper — required for native/web builds.", "Платформенная обёртка Flutter — не Dart UI.")
     return ("Repository support file.", "Вспомогательный файл репозитория.")
 
 
@@ -646,7 +653,10 @@ def when_for(path: str) -> tuple[str, str]:
             "Правила проекта и деплой — не runtime.",
         )
     if p.startswith("android/") or name == "android.ps1":
-        return ("Android APK build or permission issues.", "Сборка/permissions Android.")
+        return (
+            "Android APK build or permission issues.",
+            "Сборка Android APK или ошибки permissions ОС.",
+        )
     if p.startswith("web/"):
         return ("Web deploy blank page, icons, base href.", "Web deploy.")
     return (
@@ -1043,6 +1053,8 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
             if not src or str(src).startswith("NEEDS HUMAN") or has_banned_filler(src):
                 continue
             src_s = str(src)
+            if has_semi_russian_or_english_leak(src_s):
+                continue
             plat_path = path.replace("\\", "/").startswith(
                 ("android/", "ios/", "web/", "windows/", "linux/", "macos/", "installer/")
             )
@@ -1129,6 +1141,32 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str], exports: list
         return CATEGORY_GUIDES[path]
     if path in ROOT_FILES_LEGACY:
         return ROOT_FILES_LEGACY[path]
+    if path.startswith("docs/") and path.endswith(".md"):
+        from structure_doc_file_guides import doc_path_guide
+
+        dg = doc_path_guide(path)
+        if dg:
+            del_en, del_ru = delete_for(path)
+            when_en, when_ru = when_for(path)
+            _, layer_fallback_ru = layer_for(path)
+            return FileGuide(
+                what=dg["what"],
+                why=dg["why"],
+                contains=dg["contains"],
+                responsibilities=dg["responsibilities"],
+                when=dg.get("when", when_en),
+                delete=del_en,
+                connected=dg.get("connected", "`docs/PROJECT_KNOWLEDGE_PACK.md`."),
+                layer=dg.get("layer", "Documentation."),
+                what_ru=dg.get("what_ru", ""),
+                why_ru=dg.get("why_ru", ""),
+                contains_ru=dg.get("contains_ru", ""),
+                responsibilities_ru=dg.get("responsibilities_ru", ""),
+                when_ru=dg.get("when_ru", when_ru),
+                delete_ru=del_ru,
+                connected_ru=dg.get("connected_ru", ""),
+                layer_ru=dg.get("layer_ru", layer_fallback_ru),
+            )
     if path in DOC_FILES:
         return DOC_FILES[path]
     if path.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/", ".github/", "installer/", "pb_hooks/", ".cursor/")):
@@ -1138,18 +1176,6 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str], exports: list
         return guide_from_role(path, role, syms, exports)
     if path.startswith("scripts/"):
         return script_guide(path)
-    if path.startswith("docs/"):
-        doc_name = Path(path).name
-        return FileGuide(
-            what=f"Documentation file `{doc_name}` — explains part of project rules, deploy, or reports.",
-            why="Human/AI readable spec; not executed by the app.",
-            contains="Markdown sections for this topic.",
-            responsibilities=f"Answer questions about `{doc_name.replace('.md', '').replace('_', ' ')}`.",
-            when=f"Need written guidance for topic covered by `{doc_name}`.",
-            delete=delete_for(path)[0],
-            connected="Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.",
-            layer="Documentation.",
-        )
     if path.startswith("test/") or path.startswith("integration_test/"):
         return test_guide(path, syms)
     # lib/**/*.dart without APP_STRUCTURE row — still use humanize, never generic last-resort
@@ -1425,6 +1451,7 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                 + BANNED_SEMI_RUSSIAN_WRAPPERS
                 + BANNED_ENGLISH_IN_RU
                 + BANNED_GENERIC_RU_WRAPPERS
+                + BANNED_GENERIC_DOC_WRAPPERS
             ):
                 if bad in val_part:
                     issues.append(f"Banned RU filler '{bad}' in: {line[:120]}")

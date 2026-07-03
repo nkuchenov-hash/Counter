@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Ban generic doc file wrappers in APP_STRUCTURE_DETAILED [shipped]
+
+* **`scripts/manual/structure_doc_file_guides.py`:** [shipped] Curated EN+RU for all `docs/*.md`, `docs/reports/*`, `docs/website/*` — ROADMAP, UX_CONTRACT, POCKETBASE_MANIFEST, PROJECT_KNOWLEDGE_PACK, APP_STRUCTURE_DETAILED, website matrix/wireframe/scope, etc.
+* **`scripts/manual/generate_app_structure_detailed.py`:** [shipped] `build_guide()` routes `docs/` through doc guides first; quality gate bans `Markdown-документ`, doc generic triples, and listed EN leftovers in RU; `pick()` skips `has_semi_russian_or_english_leak`.
+* **`scripts/manual/structure_ru_class_adapters.py`**, **`structure_ru_helpers.py`:** [shipped] `BANNED_GENERIC_DOC_WRAPPERS`; `_governing_doc_field` delegates to doc guides; `delete_en_to_ru()` tails for Cursor/env/widgets phrases.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated — 0 generic doc wrappers, 0 listed EN leftovers in RU blocks.
+
 ## [2026-07-03] - Ban generic platform file wrappers in APP_STRUCTURE_DETAILED [shipped]
 
 * **`scripts/manual/structure_platform_file_guides.py`:** [shipped] New Tier C platform/installer guides — exact paths (main.cpp, CMakeLists, STT scripts, xcconfig, pbxproj, app_icon.ico) + extension heuristics; names Gradle/Xcode/CMake/Inno Setup tool + artifact + break-if-deleted.

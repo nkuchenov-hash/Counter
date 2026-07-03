@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `ebfd0f4` on 2026-07-03.**
+**Generated at git SHA `5dc9b6c` on 2026-07-03.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -39,7 +39,7 @@ RU:
 - **Что здесь лежит:** Файлы правил Cursor, включая `rules/flutter_expert.mdc`.
 - **На что влияет в приложении:** Подсказки AI в Cursor — не runtime приложения.
 - **Когда открывать:** AI предлагает refactor, ломающий Brain/UI split или main-thread law.
-- **Можно удалить?** Возможно — safe for app; keep for Cursor workflow.
+- **Можно удалить?** Возможно — безопасно для app; оставить для Cursor workflow.
 - **Связанные пути:** `.cursorrules`, `docs/ARCHITECTURE.md`.
 
 ---
@@ -375,7 +375,7 @@ RU:
 - **Что здесь лежит:** CMake-проект, runner main, plugin registration, иконка `.ico`.
 - **На что влияет в приложении:** Windows desktop app и содержимое installer.
 - **Когда открывать:** Windows build fail, desktop voice/tray на уровне OS.
-- **Можно удалить?** Нет — if Windows desktop is supported.
+- **Можно удалить?** Нет — если поддерживается Windows desktop.
 - **Связанные пути:** `installer/windows/`, `docs/DEPLOY.md`.
 
 ---
@@ -399,7 +399,7 @@ RU:
 - **Что здесь лежит:** `flutter_expert.mdc` и другие rule-файлы.
 - **На что влияет в приложении:** Качество AI-патчей — не APK пользователю.
 - **Когда открывать:** Обновили архитектурный закон и нужно, чтобы AI его видел сразу.
-- **Можно удалить?** Возможно — safe for app; keep for Cursor workflow.
+- **Можно удалить?** Возможно — безопасно для app; оставить для Cursor workflow.
 - **Связанные пути:** `.cursorrules`, `docs/ARCHITECTURE.md`.
 
 ---
@@ -1335,7 +1335,7 @@ RU:
 - **Что здесь лежит:** Небольшие log wrapper, включаемые debug/profile flags.
 - **На что влияет в приложении:** Только диагностика разработчика — не UI пользователя.
 - **Когда открывать:** Трассировка шагов desktop voice или startup timing.
-- **Можно удалить?** Нет — used by debug/profile builds.
+- **Можно удалить?** Нет — используется debug/profile builds.
 - **Связанные пути:** `lib/core/performance/`.
 
 ---
@@ -1359,7 +1359,7 @@ RU:
 - **Что здесь лежит:** В git только `env.dart.example`; настоящий `env.dart` локальный.
 - **На что влияет в приложении:** Только локальные dev builds, если используются env constants.
 - **Когда открывать:** Настройка новой dev-машины; добавление compile-time constant.
-- **Можно удалить?** Нет — documents required env.dart structure.
+- **Можно удалить?** Нет — описывает требуемую структуру env.dart.
 - **Связанные пути:** `.gitignore` entry для `lib/core/env/env.dart`.
 
 ---
@@ -1479,7 +1479,7 @@ RU:
 - **Что здесь лежит:** `AppButton`, `PlanTimeTaskCard`, date header, timezone picker, chips.
 - **На что влияет в приложении:** Все главные вкладки и большинство sheets.
 - **Когда открывать:** Миграция стиля кнопок, layout карточек, date/time picker, loading/empty states.
-- **Можно удалить?** Нет — features depend on these widgets.
+- **Можно удалить?** Нет — features зависят от этих widgets.
 - **Связанные пути:** `docs/DESIGN_SYSTEM.md`, Component Lab.
 
 ---
@@ -3201,7 +3201,7 @@ RU:
 - **Когда открывать:** Случайно добавили результат сборки `android/` в git.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/app/build.gradle.kts`
@@ -3251,7 +3251,7 @@ RU:
 - **Когда открывать:** Gradle ищет google-services.json при sync/build.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/app/proguard-rules.pro`
@@ -3276,7 +3276,7 @@ RU:
 - **Когда открывать:** Release APK падает после включения minify/shrink.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/app/src/debug/AndroidManifest.xml`
@@ -3348,7 +3348,7 @@ RU:
 - **Зачем:** Без этой Activity APK не может открыть Flutter интерфейс после tap по иконке.
 - **Содержимое:** Subclass `FlutterActivity` — несколько строк Kotlin.
 - **Обязанности:** Запуск Flutter engine при старте Counter на Android.
-- **Когда открывать:** Android APK build or permission issues.
+- **Когда открывать:** Сборка Android APK или ошибки permissions ОС.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** `AndroidManifest.xml`, Flutter Android embedding.
 - **Слой:** Android entry point — не Dart business logic.
@@ -3426,7 +3426,7 @@ RU:
 - **Когда открывать:** Размытая или неверная иконка на home screen Android.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** `AndroidManifest.xml` application icon.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/app/src/main/res/mipmap-mdpi/ic_launcher.png`
@@ -3451,7 +3451,7 @@ RU:
 - **Когда открывать:** Размытая или неверная иконка на home screen Android.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/app/src/main/res/mipmap-xhdpi/ic_launcher.png`
@@ -3476,7 +3476,7 @@ RU:
 - **Когда открывать:** Размытая или неверная иконка на home screen Android.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png`
@@ -3501,7 +3501,7 @@ RU:
 - **Когда открывать:** Размытая или неверная иконка на home screen Android.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png`
@@ -3526,7 +3526,7 @@ RU:
 - **Когда открывать:** Размытая или неверная иконка на home screen Android.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/app/src/main/res/values-night/styles.xml`
@@ -3601,7 +3601,7 @@ RU:
 - **Когда открывать:** Permission denied на устройстве, неверное имя app, intent filters.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/build.gradle.kts`
@@ -3648,10 +3648,10 @@ RU:
 - **Зачем:** Gradle читает defaults отсюда до сборки `:app` module.
 - **Содержимое:** Строки key=value; часто local SDK path в gitignore.
 - **Обязанности:** Общие Gradle/Android build settings для Counter.
-- **Когда открывать:** Android APK build or permission issues.
+- **Когда открывать:** Сборка Android APK или ошибки permissions ОС.
 - **Можно удалить?** Нет — без него не соберётся Android APK.
 - **Связано с:** Flutter `android` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `android/gradle/wrapper/gradle-wrapper.properties`
@@ -3708,14 +3708,14 @@ RU:
 
 EN:
 
-- **What this is:** Concise map of folders, layers, and import rules.
-- **Why needed:** Quick answer to ‘where does X live?’ without reading the whole encyclopedia.
-- **What it contains:** Tables of lib/data, features, scripts; guard commands.
-- **Responsibilities:** Canonical structure contract for architecture guard.
-- **When to open:** Finding module ownership; before moving files.
-- **Can it be deleted?** No — Project Knowledge pack.
+- **What this is:** Concise map of folders, layers, import rules, and guard commands.
+- **Why needed:** Quick answer to ‘where does X live?’ without reading the full encyclopedia.
+- **What it contains:** Tables of `lib/data`, features, scripts; architecture guard entry points.
+- **Responsibilities:** Canonical structure contract referenced by guard and AI assistants.
+- **When to open:** Finding module ownership; before moving or renaming files.
+- **Can it be deleted?** No — governing/current documentation.
 - **Connected to:** `APP_STRUCTURE_DETAILED.md`, `architecture_guard.ps1`.
-- **Layer / owner:** Governing structure doc.
+- **Layer / owner:** Governing structure doc — Project Knowledge pack.
 
 RU:
 
@@ -3725,7 +3725,7 @@ RU:
 - **Обязанности:** Канонический structure contract для guard и AI.
 - **Когда открывать:** Ищете ownership модуля; перед переносом файлов.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `APP_STRUCTURE_DETAILED.md`, `architecture_guard.ps1`.
+- **Связано с:** `docs/APP_STRUCTURE_DETAILED.md`, `scripts/audit/architecture_guard.ps1`.
 - **Слой:** Документация — правила, не runtime.
 
 
@@ -3733,39 +3733,39 @@ RU:
 
 EN:
 
-- **What this is:** Source file `APP_STRUCTURE_DETAILED.md` — Bilingual file-by-file guide (EN/RU).
-- **Why needed:** Part of `docs`; see `docs/APP_STRUCTURE.md` for ownership.
-- **What it contains:** Implementation in `APP_STRUCTURE_DETAILED.md` (implementation in source).
-- **Responsibilities:** Bilingual file-by-file guide (EN/RU)
-- **When to open:** Understanding project rules, deploy steps, or structure — not runtime debugging.
+- **What this is:** Full owner-readable encyclopedia of every tracked folder and file (EN + RU), generated from the repo tree.
+- **Why needed:** Source text for the HTML owner map and deep onboarding; complements the concise `APP_STRUCTURE.md`.
+- **What it contains:** Per-path EN/RU blocks: what, why, contains, responsibilities, when, delete, connected, layer.
+- **Responsibilities:** Explain every tracked path in plain language for owner and AI; regenerate after tree changes.
+- **When to open:** Onboarding, auditing repo necessity, or checking what a path does before editing.
 - **Can it be deleted?** No — governing/current documentation.
-- **Connected to:** APP_STRUCTURE role: Bilingual file-by-file guide (EN/RU)
-- **Layer / owner:** Documentation — explains rules, not runtime code.
+- **Connected to:** `generate_app_structure_detailed.py`, `APP_STRUCTURE.md`, `PROJECT_KNOWLEDGE_PACK.md`.
+- **Layer / owner:** Generated structure encyclopedia — Project Knowledge pack.
 
 RU:
 
-- **Что это:** Markdown-документ `app_structure_detailed.md` — правила и заметки по теме «app structure detailed».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `app structure detailed`.
-- **Когда открывать:** Нужна written-инструкция по `app structure detailed`.
+- **Что это:** Полная owner-readable encyclopedia каждой tracked папки и файла (EN+RU), генерируется из дерева repo.
+- **Зачем:** Источник для HTML owner map и глубокого onboarding; дополняет краткий `APP_STRUCTURE.md`.
+- **Содержимое:** Блоки EN/RU на каждый путь: что, зачем, содержимое, обязанности, когда открывать, удаление, связи, слой.
+- **Обязанности:** Объяснить каждый tracked путь plain language для owner и AI; перегенерировать после изменений дерева.
+- **Когда открывать:** Onboarding, audit «нужен ли файл», проверка роли пути перед правкой.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`
-- **Слой:** Документация — не runtime.
+- **Связано с:** `scripts/manual/generate_app_structure_detailed.py`, `docs/APP_STRUCTURE.md`.
+- **Слой:** Сгенерированная structure encyclopedia — Project Knowledge pack.
 
 
 ### `docs/ARCHITECTURE.md`
 
 EN:
 
-- **What this is:** Source file `ARCHITECTURE.md` — Data flow, iron laws, optimistic UI, performance.
-- **Why needed:** Part of `docs`; see `docs/APP_STRUCTURE.md` for ownership.
-- **What it contains:** Implementation in `ARCHITECTURE.md` (implementation in source).
-- **Responsibilities:** Data flow, iron laws, optimistic UI, performance
-- **When to open:** Understanding project rules, deploy steps, or structure — not runtime debugging.
+- **What this is:** Iron Laws — optimistic UI, Brain/UI split, PocketBase rules, main-thread and performance kill-switch law.
+- **Why needed:** Authoritative technical contract for how the system must behave under load and offline.
+- **What it contains:** Data flow, offline outboxes, singleton running record, anti-spam polling, performance law.
+- **Responsibilities:** Answer ‘how must the app work?’ before refactors or new Brain/UI patterns.
+- **When to open:** Architecture disputes, performance regressions, or optimistic UI violations.
 - **Can it be deleted?** No — governing/current documentation.
-- **Connected to:** APP_STRUCTURE role: Data flow, iron laws, optimistic UI, performance
-- **Layer / owner:** Documentation — explains rules, not runtime code.
+- **Connected to:** `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/UX_CONTRACT.md`.
+- **Layer / owner:** Governing architecture doc — Project Knowledge pack.
 
 RU:
 
@@ -3775,7 +3775,7 @@ RU:
 - **Обязанности:** Ответ на «как система обязана работать».
 - **Когда открывать:** Спор об architecture; перед refactor Brain или UI.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`
+- **Связано с:** `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/UX_CONTRACT.md`.
 - **Слой:** Документация — правила, не runtime.
 
 
@@ -3783,14 +3783,14 @@ RU:
 
 EN:
 
-- **What this is:** Source file `DATA_MAP.md` — PocketBase field names and business IDs.
-- **Why needed:** Part of `docs`; see `docs/APP_STRUCTURE.md` for ownership.
-- **What it contains:** Implementation in `DATA_MAP.md` (implementation in source).
-- **Responsibilities:** PocketBase field names and business IDs
-- **When to open:** Understanding project rules, deploy steps, or structure — not runtime debugging.
+- **What this is:** Field dictionary for PocketBase — column names, business IDs, relation fields.
+- **Why needed:** Brain and UI must POST/PATCH the same field names; prevents invented alternate keys.
+- **What it contains:** Tables for records, plans, categories, tags, profiles and relation semantics.
+- **Responsibilities:** Single source of truth for field names aligned with `lib/data/models/`.
+- **When to open:** Parse errors on PB fields; adding or renaming a schema field.
 - **Can it be deleted?** No — governing/current documentation.
-- **Connected to:** APP_STRUCTURE role: PocketBase field names and business IDs
-- **Layer / owner:** Documentation — explains rules, not runtime code.
+- **Connected to:** `docs/POCKETBASE_MANIFEST.md`, `lib/data/models/`.
+- **Layer / owner:** Governing data doc — Project Knowledge pack.
 
 RU:
 
@@ -3800,7 +3800,7 @@ RU:
 - **Обязанности:** SSOT имён полей — не выдумывать alternate names.
 - **Когда открывать:** Ошибка parse поля PB; добавление нового поля в schema.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`
+- **Связано с:** `docs/POCKETBASE_MANIFEST.md`, `lib/data/models/`.
 - **Слой:** Документация — правила, не runtime.
 
 
@@ -3808,24 +3808,24 @@ RU:
 
 EN:
 
-- **What this is:** How to publish the website and set up PocketBase auth/admin on the server.
-- **Why needed:** Deploy and OAuth are easy to get wrong without step-by-step VPS notes.
-- **What it contains:** `update.ps1` flow, GitHub Pages, Windows installer section, OAuth admin checklist.
-- **Responsibilities:** Deploy + production auth configuration guide.
-- **When to open:** Site not updating, OAuth broken, building Windows installer.
-- **Can it be deleted?** No — Project Knowledge pack.
-- **Connected to:** `.github/workflows/`, `update.ps1`, `installer/`.
-- **Layer / owner:** Deploy guide — Project Knowledge.
+- **What this is:** Step-by-step deploy — GitHub Pages web app, PocketBase auth admin, Windows installer.
+- **Why needed:** Deploy and OAuth break easily without VPS checklist and `update.ps1` order.
+- **What it contains:** `update.ps1`, GitHub Pages base href, Windows installer, OAuth admin steps.
+- **Responsibilities:** Publish site and configure production auth without guessing server steps.
+- **When to open:** Site not updating after merge; OAuth broken; building `CounterSetup.exe`.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `.github/workflows/`, `update.ps1`, `installer/windows/`.
+- **Layer / owner:** Deploy guide — Project Knowledge pack.
 
 RU:
 
 - **Что это:** Пошаговый deploy — GitHub Pages, PocketBase auth admin, Windows installer.
 - **Зачем:** Deploy и OAuth легко сломать без VPS checklist.
-- **Содержимое:** `update.ps1`, GitHub Pages flow, Windows installer, OAuth admin steps.
+- **Содержимое:** `update.ps1`, GitHub Pages base href, Windows installer, шаги OAuth admin.
 - **Обязанности:** Инструкция публикации сайта и production auth.
 - **Когда открывать:** Сайт не обновился; OAuth broken; сборка installer.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `.github/workflows/`, `update.ps1`, `installer/`.
+- **Связано с:** `.github/workflows/`, `update.ps1`, `installer/windows/`.
 - **Слой:** Документация — правила, не runtime.
 
 
@@ -3833,24 +3833,24 @@ RU:
 
 EN:
 
-- **What this is:** Source file `DESIGN_SYSTEM.md` — Figma → Flutter canonical components.
-- **Why needed:** Part of `docs`; see `docs/APP_STRUCTURE.md` for ownership.
-- **What it contains:** Implementation in `DESIGN_SYSTEM.md` (implementation in source).
-- **Responsibilities:** Figma → Flutter canonical components
-- **When to open:** Understanding project rules, deploy steps, or structure — not runtime debugging.
+- **What this is:** Design system contract — Figma → Flutter mapping and canonical shared components.
+- **Why needed:** Forbids local copies of buttons/cards in feature screens; V7 migration target.
+- **What it contains:** Token categories, `AppButton`, `AppIconButton`, forbidden raw Material in features.
+- **Responsibilities:** Rules for Component Lab acceptance and production UI migration.
+- **When to open:** Migrating UI to canonical widgets; pixel QA against Figma.
 - **Can it be deleted?** No — governing/current documentation.
-- **Connected to:** APP_STRUCTURE role: Figma → Flutter canonical components
-- **Layer / owner:** Documentation — explains rules, not runtime code.
+- **Connected to:** `lib/core/widgets/`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`, Component Lab.
+- **Layer / owner:** Governing design doc — Project Knowledge pack.
 
 RU:
 
 - **Что это:** Design system контракт — Figma → Flutter mapping, canonical components.
 - **Зачем:** Запрещает локальные копии кнопок/карточек в feature screens.
-- **Содержимое:** Token categories, `AppButton`, `AppIconButton`, forbidden local UI.
+- **Содержимое:** Token categories, `AppButton`, `AppIconButton`, запрет raw Material в features.
 - **Обязанности:** Правила V7 component migration и Component Lab acceptance.
 - **Когда открывать:** Миграция UI на canonical widgets; pixel QA.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`
+- **Связано с:** `lib/core/widgets/`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`, Component Lab.
 - **Слой:** Документация — правила, не runtime.
 
 
@@ -3858,500 +3858,500 @@ RU:
 
 EN:
 
-- **What this is:** Source file `POCKETBASE_MANIFEST.md` — URLs, collections, server hooks.
-- **Why needed:** Part of `docs`; see `docs/APP_STRUCTURE.md` for ownership.
-- **What it contains:** Implementation in `POCKETBASE_MANIFEST.md` (implementation in source).
-- **Responsibilities:** URLs, collections, server hooks
-- **When to open:** Understanding project rules, deploy steps, or structure — not runtime debugging.
+- **What this is:** Production PocketBase law — base URL, collections, auth, relations, expand paths, hooks, server rules.
+- **Why needed:** Client Brain must not invent URL shapes, relation payloads, or hook behavior.
+- **What it contains:** Collection table, auth id law, API routes, `pb_hooks/` deployment notes, rule intent.
+- **Responsibilities:** Single manifest for how Counter talks to PocketBase in production.
+- **When to open:** PB 401/403, wrong expand, hook deploy, or schema mismatch with `DATA_MAP.md`.
 - **Can it be deleted?** No — governing/current documentation.
-- **Connected to:** APP_STRUCTURE role: URLs, collections, server hooks
-- **Layer / owner:** Documentation — explains rules, not runtime code.
+- **Connected to:** `lib/data/pb_config.dart`, `docs/DATA_MAP.md`, `pb_hooks/`.
+- **Layer / owner:** Governing PocketBase doc — Project Knowledge pack.
 
 RU:
 
-- **Что это:** Markdown-документ `pocketbase_manifest.md` — правила и заметки по теме «pocketbase manifest».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `pocketbase manifest`.
-- **Когда открывать:** Нужна written-инструкция по `pocketbase manifest`.
+- **Что это:** Закон production PocketBase — collections, URLs, auth/providers, hooks, ожидания сервера и факты schema/deploy.
+- **Зачем:** Brain не должен выдумывать URL shapes, relation payloads или поведение hooks на VPS.
+- **Содержимое:** Таблица collections, auth id law, API routes, deploy `pb_hooks/`, intent API rules.
+- **Обязанности:** Единый manifest: как Counter общается с PocketBase в production.
+- **Когда открывать:** PB 401/403, неверный expand, deploy hook, расхождение schema с `DATA_MAP.md`.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`
-- **Слой:** Документация — не runtime.
+- **Связано с:** `lib/data/pb_config.dart`, `docs/DATA_MAP.md`, `pb_hooks/`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/PROJECT_KNOWLEDGE_PACK.md`
 
 EN:
 
-- **What this is:** Checklist of exactly 14 docs to upload to Project Knowledge (not architecture law itself).
-- **Why needed:** Owner limit of 25 uploaded docs — lists what to include/exclude.
-- **What it contains:** Upload list, excluded repo-only docs, removed-doc log.
-- **Responsibilities:** Upload manifest only.
-- **When to open:** Refreshing AI project files.
-- **Can it be deleted?** No — upload checklist.
-- **Connected to:** 14-doc pack listed inside.
-- **Layer / owner:** Meta checklist — repo-only.
+- **What this is:** Upload checklist for Claude Project Knowledge — which 14 docs to attach, which stay repo-only.
+- **Why needed:** Owner limit (~25 uploads); this file is meta — not architecture law itself.
+- **What it contains:** Included pack list, excluded repo-only docs, removed-doc log.
+- **Responsibilities:** Tell owner/AI what to upload without duplicating governing docs incorrectly.
+- **When to open:** Refreshing Claude Project files or arguing which doc is authoritative.
+- **Can it be deleted?** No — current cleanup/structure report or upload checklist.
+- **Connected to:** The 14 governing docs listed inside; `docs/APP_STRUCTURE.md`.
+- **Layer / owner:** Meta checklist — repo-only, not uploaded as law.
 
 RU:
 
-- **Что это:** Markdown-документ `project_knowledge_pack.md` — правила и заметки по теме «project knowledge pack».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `project knowledge pack`.
-- **Когда открывать:** Нужна written-инструкция по `project knowledge pack`.
+- **Что это:** Чеклист upload для AI Project Knowledge: какие docs загружать, какие остаются только в repo.
+- **Зачем:** Лимит upload у owner (~25 файлов); это meta-чеклист, а не architecture law.
+- **Содержимое:** Список 14 docs для upload, excluded repo-only, log удалённых docs.
+- **Обязанности:** Сказать owner/AI что uploadить — без путаницы governing docs и repo-only.
+- **Когда открывать:** Обновление Project Knowledge или спор «какой doc канонический».
 - **Можно удалить?** Нет — актуальный отчёт или чеклист.
-- **Связано с:** 14-doc pack listed inside.
-- **Слой:** Документация — не runtime.
+- **Связано с:** 14 governing docs внутри файла; `docs/APP_STRUCTURE.md`.
+- **Слой:** Meta-чеклист — repo-only, не architecture law.
 
 
 ### `docs/ROADMAP.md`
 
 EN:
 
-- **What this is:** Source file `ROADMAP.md` — Current work plan.
-- **Why needed:** Part of `docs`; see `docs/APP_STRUCTURE.md` for ownership.
-- **What it contains:** Implementation in `ROADMAP.md` (implementation in source).
-- **Responsibilities:** Current work plan
-- **When to open:** Understanding project rules, deploy steps, or structure — not runtime debugging.
+- **What this is:** Current work plan — shipped/WIP priorities, V3/V7 focus, paused feature scope, what to do next.
+- **Why needed:** Single canonical plan so AI and owner do not maintain a second roadmap elsewhere.
+- **What it contains:** Correctness vs velocity tracks, phase status, O1/V1/F1 shipped notes, active V3/V7 scope.
+- **Responsibilities:** Prioritize bugs and compounding tidy work before new feature scope.
+- **When to open:** Before planning new feature work or choosing the next session goal.
 - **Can it be deleted?** No — governing/current documentation.
-- **Connected to:** APP_STRUCTURE role: Current work plan
-- **Layer / owner:** Documentation — explains rules, not runtime code.
+- **Connected to:** `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, `docs/ARCHITECTURE.md`.
+- **Layer / owner:** Governing plan doc — Project Knowledge pack.
 
 RU:
 
-- **Что это:** Markdown-документ `roadmap.md` — правила и заметки по теме «roadmap».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `roadmap`.
-- **Когда открывать:** Нужна written-инструкция по `roadmap`.
+- **Что это:** Текущий план работ: shipped/WIP приоритеты, фокус V3/V7, paused feature scope и что делать дальше.
+- **Зачем:** Единый canonical plan — чтобы AI и owner не вели второй roadmap в других файлах.
+- **Содержимое:** Correctness vs velocity tracks, статусы фаз, shipped O1/V1/F1, активный scope V3/V7.
+- **Обязанности:** Приоритизировать bugs и compounding tidy work перед новым feature scope.
+- **Когда открывать:** Перед планированием новой feature work или выбором цели следующей сессии.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, `docs/ARCHITECTURE.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/UX_CONTRACT.md`
 
 EN:
 
-- **What this is:** Source file `UX_CONTRACT.md` — Tap/save/loading/offline behavior.
-- **Why needed:** Part of `docs`; see `docs/APP_STRUCTURE.md` for ownership.
-- **What it contains:** Implementation in `UX_CONTRACT.md` (implementation in source).
-- **Responsibilities:** Tap/save/loading/offline behavior
-- **When to open:** Understanding project rules, deploy steps, or structure — not runtime debugging.
+- **What this is:** Tap-first UX rules — save/loading/offline behavior, optimistic UI, banners, user-visible contracts.
+- **Why needed:** Behavioral source beside `ARCHITECTURE.md`; screens must follow before inventing new patterns.
+- **What it contains:** 100ms feedback, shadow state, debounced errors, empty/loading/offline, sheet close rules.
+- **Responsibilities:** Define how taps, saves, and sync banners must feel to the user.
+- **When to open:** Before changing interaction flows, edit sheets, or offline banner behavior.
 - **Can it be deleted?** No — governing/current documentation.
-- **Connected to:** APP_STRUCTURE role: Tap/save/loading/offline behavior
-- **Layer / owner:** Documentation — explains rules, not runtime code.
+- **Connected to:** `docs/ARCHITECTURE.md`, `lib/app_shell.dart` offline bar, `docs/DESIGN_SYSTEM.md`.
+- **Layer / owner:** Governing UX doc — Project Knowledge pack.
 
 RU:
 
-- **Что это:** Markdown-документ `ux_contract.md` — правила и заметки по теме «ux contract».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `ux contract`.
-- **Когда открывать:** Нужна written-инструкция по `ux contract`.
+- **Что это:** Tap-first UX rules: save/loading/offline, optimistic UI, banners и контракты поведения для пользователя.
+- **Зачем:** Behavioral source рядом с `ARCHITECTURE.md`; экраны обязаны следовать до новых паттернов.
+- **Содержимое:** 100ms feedback, shadow state, debounced errors, empty/loading/offline, правила sheet close.
+- **Обязанности:** Как taps, saves и sync banners должны ощущаться пользователю.
+- **Когда открывать:** Перед изменением interaction flows, edit sheets или offline banner.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** `docs/`, `docs/APP_STRUCTURE.md`
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/ARCHITECTURE.md`, offline bar в `app_shell.dart`, `docs/DESIGN_SYSTEM.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/reports/DESIGN_SYSTEM_INVENTORY.md`
 
 EN:
 
-- **What this is:** Documentation file `DESIGN_SYSTEM_INVENTORY.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `DESIGN SYSTEM INVENTORY`.
-- **When to open:** Need written guidance for topic covered by `DESIGN_SYSTEM_INVENTORY.md`.
+- **What this is:** Audit inventory of raw vs canonical UI — what feature screens still use forbidden local widgets.
+- **Why needed:** V7 migration needs a scoped list before replacing buttons/cards screen by screen.
+- **What it contains:** Classification legend, per-screen raw `FilledButton`/`IconButton` counts, migration status.
+- **Responsibilities:** Track design-system debt; pair with Component Lab acceptance.
+- **When to open:** Planning V7 UI migration or verifying a screen is canonical-compliant.
 - **Can it be deleted?** No — governing/current documentation.
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/DESIGN_SYSTEM.md`, `lib/features/dev/component_lab_view.dart`.
+- **Layer / owner:** Repo-only audit report — not Project Knowledge pack.
 
 RU:
 
-- **Что это:** Markdown-документ `design_system_inventory.md` — правила и заметки по теме «design system inventory».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `design system inventory`.
-- **Когда открывать:** Нужна written-инструкция по `design system inventory`.
+- **Что это:** Audit inventory raw vs canonical UI — какие feature screens ещё используют forbidden local widgets.
+- **Зачем:** V7 migration нужен scoped list перед заменой buttons/cards по экранам.
+- **Содержимое:** Classification legend, per-screen counts raw buttons, статус migration.
+- **Обязанности:** Отслеживать design-system debt; в паре с Component Lab acceptance.
+- **Когда открывать:** Планирование V7 UI migration или проверка canonical-compliance экрана.
 - **Можно удалить?** Нет — governing документация.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/DESIGN_SYSTEM.md`, `lib/features/dev/component_lab_view.dart`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`
 
 EN:
 
-- **What this is:** Documentation file `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `FINAL STRUCTURE PARITY AND DOC CLEANUP 2026-07-03`.
-- **When to open:** Need written guidance for topic covered by `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`.
+- **What this is:** Session report — structure parity fixes and APP_STRUCTURE_DETAILED doc cleanup acceptance criteria.
+- **Why needed:** Records what was verified fixed so later sessions do not re-debate the same doc gates.
+- **What it contains:** Before/after notes, quality gate checklist, paths touched in generator scripts.
+- **Responsibilities:** Historical evidence for 2026-07-03 structure/doc cleanup arc.
+- **When to open:** Checking why a doc quality rule exists or what ‘accepted’ meant that day.
 - **Can it be deleted?** No — current cleanup/structure report or upload checklist.
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/APP_STRUCTURE_DETAILED.md`, `generate_app_structure_detailed.py`.
+- **Layer / owner:** Repo-only session report.
 
 RU:
 
-- **Что это:** Markdown-документ `final_structure_parity_and_doc_cleanup_2026-07-03.md` — правила и заметки по теме «final structure parity and doc cleanup 2026-07-03».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `final structure parity and doc cleanup 2026-07-03`.
-- **Когда открывать:** Нужна written-инструкция по `final structure parity and doc cleanup 2026-07-03`.
+- **Что это:** Отчёт сессии — structure parity fixes и критерии приёмки cleanup `APP_STRUCTURE_DETAILED`.
+- **Зачем:** Фиксирует что уже verified fixed — чтобы следующие сессии не спорили о тех же doc gates.
+- **Содержимое:** Before/after notes, checklist quality gate, пути в generator scripts.
+- **Обязанности:** Историческое evidence для arc structure/doc cleanup 2026-07-03.
+- **Когда открывать:** Проверка почему существует doc quality rule или что значило «accepted» в тот день.
 - **Можно удалить?** Нет — актуальный отчёт или чеклист.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/APP_STRUCTURE_DETAILED.md`, `generate_app_structure_detailed.py`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/reports/FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`
 
 EN:
 
-- **What this is:** Documentation file `FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `FULL REPO NECESSITY CLEANUP 2026-07-03`.
-- **When to open:** Need written guidance for topic covered by `FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`.
+- **What this is:** Full-repo necessity audit — which tracked paths are required vs optional hygiene.
+- **Why needed:** Supports deleting or ignoring dead files without breaking build, deploy, or governing docs.
+- **What it contains:** Tier labels, platform vs app vs docs classification, cleanup recommendations.
+- **Responsibilities:** Answer ‘can we delete this folder?’ with evidence, not guesswork.
+- **When to open:** Repo bloat debate, pre-commit cleanup, or onboarding ‘what is safe to ignore’.
 - **Can it be deleted?** No — current cleanup/structure report or upload checklist.
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/APP_STRUCTURE_DETAILED.md`, `docs/APP_STRUCTURE.md`.
+- **Layer / owner:** Repo-only audit report.
 
 RU:
 
-- **Что это:** Markdown-документ `full_repo_necessity_cleanup_2026-07-03.md` — правила и заметки по теме «full repo necessity cleanup 2026-07-03».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `full repo necessity cleanup 2026-07-03`.
-- **Когда открывать:** Нужна written-инструкция по `full repo necessity cleanup 2026-07-03`.
+- **Что это:** Full-repo necessity audit — какие tracked paths обязательны vs optional hygiene.
+- **Зачем:** Помогает удалять dead files без поломки build, deploy или governing docs.
+- **Содержимое:** Tier labels, классификация platform vs app vs docs, рекомендации cleanup.
+- **Обязанности:** Ответ «можно ли удалить эту папку?» с evidence, не guesswork.
+- **Когда открывать:** Спор о repo bloat, pre-commit cleanup, onboarding «что safe ignore».
 - **Можно удалить?** Нет — актуальный отчёт или чеклист.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/APP_STRUCTURE_DETAILED.md`, `docs/APP_STRUCTURE.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/CONTENT_LIBRARY.md`
 
 EN:
 
-- **What this is:** Documentation file `CONTENT_LIBRARY.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `CONTENT LIBRARY`.
-- **When to open:** Need written guidance for topic covered by `CONTENT_LIBRARY.md`.
+- **What this is:** Website content library — reusable EN/RU blocks for CMS, designers, and copywriters.
+- **Why needed:** Ensures product names, positioning, and feature blurbs stay consistent across pages.
+- **What it contains:** Product names table, positioning statements, feature one-liners, FAQ snippets.
+- **Responsibilities:** Source blocks for `PUBLIC_COPY_DRAFTS.md` and future static site pages.
+- **When to open:** Writing or translating marketing copy; avoiding duplicate phrasing across pages.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/PUBLIC_COPY_DRAFTS.md`, `docs/website/FEATURE_MATRIX.md`.
+- **Layer / owner:** Repo-only marketing content — not Project Knowledge pack.
 
 RU:
 
-- **Что это:** Markdown-документ `content_library.md` — правила и заметки по теме «content library».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `content library`.
-- **Когда открывать:** Нужна written-инструкция по `content library`.
+- **Что это:** Content library сайта — переиспользуемые EN/RU блоки для CMS, designers и copywriters.
+- **Зачем:** Держит product names, positioning и feature blurbs согласованными между страницами.
+- **Содержимое:** Таблица product names, positioning statements, feature one-liners, FAQ snippets.
+- **Обязанности:** Source blocks для `PUBLIC_COPY_DRAFTS.md` и будущих static pages.
+- **Когда открывать:** Написание/перевод marketing copy; избежание duplicate phrasing между страницами.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/PUBLIC_COPY_DRAFTS.md`, `docs/website/FEATURE_MATRIX.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/FEATURE_MATRIX.md`
 
 EN:
 
-- **What this is:** Documentation file `FEATURE_MATRIX.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `FEATURE MATRIX`.
-- **When to open:** Need written guidance for topic covered by `FEATURE_MATRIX.md`.
+- **What this is:** Website feature matrix — which product capabilities appear on v1 site vs deferred.
+- **Why needed:** Prevents over-promising on landing pages; aligns with `WEBSITE_V1_SCOPE.md`.
+- **What it contains:** Tier tables (hero / soft / excluded), platform and honesty flags per feature.
+- **Responsibilities:** Gate marketing claims against real shipped app behavior.
+- **When to open:** Choosing hero screenshots or writing Features page bullets.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/WEBSITE_V1_SCOPE.md`, `docs/website/WEBSITE_CLAIMS_REVIEW.md`.
+- **Layer / owner:** Repo-only marketing planning.
 
 RU:
 
-- **Что это:** Markdown-документ `feature_matrix.md` — правила и заметки по теме «feature matrix».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `feature matrix`.
-- **Когда открывать:** Нужна written-инструкция по `feature matrix`.
+- **Что это:** Feature matrix сайта — какие capabilities продукта на v1 site vs deferred.
+- **Зачем:** Не over-promise на landing; согласован с `WEBSITE_V1_SCOPE.md`.
+- **Содержимое:** Tier tables (hero / soft / excluded), platform и honesty flags по feature.
+- **Обязанности:** Gate marketing claims против реального shipped behavior приложения.
+- **Когда открывать:** Выбор hero screenshots или bullets для Features page.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/WEBSITE_V1_SCOPE.md`, `docs/website/WEBSITE_CLAIMS_REVIEW.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/HOMEPAGE_WIREFRAME_V1.md`
 
 EN:
 
-- **What this is:** Documentation file `HOMEPAGE_WIREFRAME_V1.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `HOMEPAGE WIREFRAME V1`.
-- **When to open:** Need written guidance for topic covered by `HOMEPAGE_WIREFRAME_V1.md`.
+- **What this is:** Homepage wireframe v1 — section order, hero, feature strips, FAQ teaser, primary CTA.
+- **Why needed:** Static v1 landing must fit one scroll story before pixel implementation.
+- **What it contains:** ASCII/block layout notes, CTA placement, screenshot slots.
+- **Responsibilities:** Blueprint for `/` or `/index.html` marketing shell beside Flutter web app.
+- **When to open:** Designing or implementing the public homepage layout.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/WEBSITE_PAGE_STRUCTURE.md`, `docs/website/SCREENSHOT_SHOTLIST.md`.
+- **Layer / owner:** Repo-only marketing wireframe.
 
 RU:
 
-- **Что это:** Markdown-документ `homepage_wireframe_v1.md` — правила и заметки по теме «homepage wireframe v1».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `homepage wireframe v1`.
-- **Когда открывать:** Нужна written-инструкция по `homepage wireframe v1`.
+- **Что это:** Homepage wireframe v1 — порядок секций, hero, feature strips, FAQ teaser, primary CTA.
+- **Зачем:** Static v1 landing должен уложиться в one scroll story до pixel implementation.
+- **Содержимое:** ASCII/block layout notes, placement CTA, слоты screenshots.
+- **Обязанности:** Blueprint для marketing shell `/` рядом с Flutter web app.
+- **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/WEBSITE_PAGE_STRUCTURE.md`, `docs/website/SCREENSHOT_SHOTLIST.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/INTERNAL_NOTES_NOT_FOR_SITE.md`
 
 EN:
 
-- **What this is:** Documentation file `INTERNAL_NOTES_NOT_FOR_SITE.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `INTERNAL NOTES NOT FOR SITE`.
-- **When to open:** Need written guidance for topic covered by `INTERNAL_NOTES_NOT_FOR_SITE.md`.
+- **What this is:** Internal website notes — strategy and risks not for public copy.
+- **Why needed:** Separates honest internal debate from visitor-facing drafts.
+- **What it contains:** Open questions, competitor notes, defer lists, tone guardrails.
+- **Responsibilities:** Owner-only context; must not be pasted into live site verbatim.
+- **When to open:** Deciding positioning trade-offs without polluting public drafts.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/POSITIONING_V1.md`, `exports/` if present.
+- **Layer / owner:** Repo-only internal notes.
 
 RU:
 
-- **Что это:** Markdown-документ `internal_notes_not_for_site.md` — правила и заметки по теме «internal notes not for site».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `internal notes not for site`.
-- **Когда открывать:** Нужна written-инструкция по `internal notes not for site`.
+- **Что это:** Internal notes по сайту — strategy и risks не для public copy.
+- **Зачем:** Отделяет honest internal debate от visitor-facing drafts.
+- **Содержимое:** Открытые вопросы, заметки о конкурентах, defer lists, tone guardrails.
+- **Обязанности:** Owner-only context; нельзя paste verbatim на live site.
+- **Когда открывать:** Trade-offs positioning без загрязнения public drafts.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/POSITIONING_V1.md`, `exports/` если есть.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/POSITIONING_V1.md`
 
 EN:
 
-- **What this is:** Documentation file `POSITIONING_V1.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `POSITIONING V1`.
-- **When to open:** Need written guidance for topic covered by `POSITIONING_V1.md`.
+- **What this is:** Website positioning v1 — promise, audience, differentiation vs generic time trackers.
+- **Why needed:** Hero and meta description must say one clear sentence, not feature soup.
+- **What it contains:** Headline options, anti-patterns, traveler/offline angles.
+- **Responsibilities:** Anchor all v1 public copy to the same product promise.
+- **When to open:** Rewriting hero, tagline, or social preview text.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/CONTENT_LIBRARY.md`, `docs/website/PUBLIC_COPY_DRAFTS.md`.
+- **Layer / owner:** Repo-only marketing positioning.
 
 RU:
 
-- **Что это:** Markdown-документ `positioning_v1.md` — правила и заметки по теме «positioning v1».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `positioning v1`.
-- **Когда открывать:** Нужна written-инструкция по `positioning v1`.
+- **Что это:** Positioning v1 сайта — promise, audience, отличие от обычных time trackers.
+- **Зачем:** Hero и meta description должны давать one clear sentence, не feature soup.
+- **Содержимое:** Варианты headline, anti-patterns, traveler/offline angles.
+- **Обязанности:** Якорь всего v1 public copy на одном product promise.
+- **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/CONTENT_LIBRARY.md`, `docs/website/PUBLIC_COPY_DRAFTS.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/PRODUCT_INVENTORY.md`
 
 EN:
 
-- **What this is:** Documentation file `PRODUCT_INVENTORY.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `PRODUCT INVENTORY`.
-- **When to open:** Need written guidance for topic covered by `PRODUCT_INVENTORY.md`.
+- **What this is:** Product inventory for website — shipped surfaces mapped to marketing names.
+- **Why needed:** Copywriters need accurate feature names tied to real tabs and flows.
+- **What it contains:** Tab index map, feature aliases, screenshot-friendly labels.
+- **Responsibilities:** Prevent website from inventing features the app does not ship.
+- **When to open:** Naming Features page sections or tour captions.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/APP_STRUCTURE.md`, `docs/website/FEATURE_MATRIX.md`.
+- **Layer / owner:** Repo-only product/marketing bridge.
 
 RU:
 
-- **Что это:** Markdown-документ `product_inventory.md` — правила и заметки по теме «product inventory».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `product inventory`.
-- **Когда открывать:** Нужна written-инструкция по `product inventory`.
+- **Что это:** Product inventory для сайта — shipped surfaces с marketing names.
+- **Зачем:** Copywriters нужны accurate feature names, привязанные к real tabs и flows.
+- **Содержимое:** Tab index map, feature aliases, подписи для screenshots.
+- **Обязанности:** Не дать сайту invent features, которых нет в shipped app.
+- **Когда открывать:** Naming секций Features page или tour captions.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/APP_STRUCTURE.md`, `docs/website/FEATURE_MATRIX.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/PUBLIC_COPY_DRAFTS.md`
 
 EN:
 
-- **What this is:** Documentation file `PUBLIC_COPY_DRAFTS.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `PUBLIC COPY DRAFTS`.
-- **When to open:** Need written guidance for topic covered by `PUBLIC_COPY_DRAFTS.md`.
+- **What this is:** Public copy drafts — polished EN/RU visitor text ready for static pages.
+- **Why needed:** Separates draft polish from internal notes and content library atoms.
+- **What it contains:** Page-ready paragraphs, FAQ answers, CTA strings.
+- **Responsibilities:** Candidate text for GitHub Pages marketing shell — review before publish.
+- **When to open:** Implementing HTML pages or reviewing tone before deploy.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/CONTENT_LIBRARY.md`, `docs/website/WEBSITE_CLAIMS_REVIEW.md`.
+- **Layer / owner:** Repo-only public copy drafts.
 
 RU:
 
-- **Что это:** Markdown-документ `public_copy_drafts.md` — правила и заметки по теме «public copy drafts».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `public copy drafts`.
-- **Когда открывать:** Нужна written-инструкция по `public copy drafts`.
+- **Что это:** Черновики public copy — polished EN/RU visitor text для static pages.
+- **Зачем:** Отделяет draft polish от internal notes и atoms content library.
+- **Содержимое:** Готовые абзацы страниц, FAQ answers, CTA strings.
+- **Обязанности:** Candidate text для marketing shell GitHub Pages — review перед publish.
+- **Когда открывать:** Implementation HTML pages или review tone перед deploy.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/CONTENT_LIBRARY.md`, `docs/website/WEBSITE_CLAIMS_REVIEW.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/SCREENSHOT_SHOTLIST.md`
 
 EN:
 
-- **What this is:** Documentation file `SCREENSHOT_SHOTLIST.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `SCREENSHOT SHOTLIST`.
-- **When to open:** Need written guidance for topic covered by `SCREENSHOT_SHOTLIST.md`.
+- **What this is:** Screenshot shotlist — six curated captures, captions, and honesty notes for v1 tour.
+- **Why needed:** Tour page quality depends on planned shots, not random emulator grabs.
+- **What it contains:** Per-shot route, device density, caption EN/RU, soft-claim warnings.
+- **Responsibilities:** Define which UI states must be captured before website launch.
+- **When to open:** Preparing `/tour` gallery or marketing assets export.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/HOMEPAGE_WIREFRAME_V1.md`, `docs/website/WEBSITE_V1_SCOPE.md`.
+- **Layer / owner:** Repo-only marketing asset plan.
 
 RU:
 
-- **Что это:** Markdown-документ `screenshot_shotlist.md` — правила и заметки по теме «screenshot shotlist».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `screenshot shotlist`.
-- **Когда открывать:** Нужна written-инструкция по `screenshot shotlist`.
+- **Что это:** Screenshot shotlist — шесть curated captures, captions и honesty notes для v1 tour.
+- **Зачем:** Tour page quality зависит от planned shots, не random emulator grabs.
+- **Содержимое:** Per-shot route, device density, caption EN/RU, предупреждения soft-claim.
+- **Обязанности:** Какие UI states capture перед website launch.
+- **Когда открывать:** Подготовка gallery `/tour` или export marketing assets.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/HOMEPAGE_WIREFRAME_V1.md`, `docs/website/WEBSITE_V1_SCOPE.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_CLAIMS_REVIEW.md`
 
 EN:
 
-- **What this is:** Documentation file `WEBSITE_CLAIMS_REVIEW.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `WEBSITE CLAIMS REVIEW`.
-- **When to open:** Need written guidance for topic covered by `WEBSITE_CLAIMS_REVIEW.md`.
+- **What this is:** Website claims review — fact-check marketing statements against shipped app behavior.
+- **Why needed:** Prevents false promises (auto-save, drag Time View, store badges) on public pages.
+- **What it contains:** Claim / evidence / verdict table, red-line exclusions for v1.
+- **Responsibilities:** Legal-honest gate before any copy goes live.
+- **When to open:** Editing hero, FAQ, or Features page; before approving deploy.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/FEATURE_MATRIX.md`, `docs/UX_CONTRACT.md`.
+- **Layer / owner:** Repo-only claims audit.
 
 RU:
 
-- **Что это:** Markdown-документ `website_claims_review.md` — правила и заметки по теме «website claims review».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `website claims review`.
-- **Когда открывать:** Нужна written-инструкция по `website claims review`.
+- **Что это:** Claims review сайта — fact-check marketing statements против shipped app behavior.
+- **Зачем:** Предотвращает false promises (auto-save, drag Time View, store badges) на public pages.
+- **Содержимое:** Таблица claim / evidence / verdict, red-line exclusions для v1.
+- **Обязанности:** Legal-honest gate перед publish любого copy.
+- **Когда открывать:** Правка hero, FAQ или Features page; перед approve deploy.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/FEATURE_MATRIX.md`, `docs/UX_CONTRACT.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_IMPLEMENTATION_OPTIONS.md`
 
 EN:
 
-- **What this is:** Documentation file `WEBSITE_IMPLEMENTATION_OPTIONS.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `WEBSITE IMPLEMENTATION OPTIONS`.
-- **When to open:** Need written guidance for topic covered by `WEBSITE_IMPLEMENTATION_OPTIONS.md`.
+- **What this is:** Website implementation options — static HTML vs generator vs Flutter-adjacent trade-offs.
+- **Why needed:** Marketing site must not break `/Counter/` Flutter web deploy path.
+- **What it contains:** Pros/cons tables, GitHub Pages constraints, base href notes.
+- **Responsibilities:** Choose build approach for v1 without forking app release pipeline.
+- **When to open:** Starting website code or arguing static vs integrated hosting.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/DEPLOY.md`, `docs/website/WEBSITE_V1_SCOPE.md`.
+- **Layer / owner:** Repo-only implementation planning.
 
 RU:
 
-- **Что это:** Markdown-документ `website_implementation_options.md` — правила и заметки по теме «website implementation options».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `website implementation options`.
-- **Когда открывать:** Нужна written-инструкция по `website implementation options`.
+- **Что это:** Варианты реализации сайта — static HTML, generator или Flutter-adjacent подходы.
+- **Зачем:** Marketing site не должен ломать deploy path Flutter web `/Counter/`.
+- **Содержимое:** Pros/cons tables, ограничения GitHub Pages, notes base href.
+- **Обязанности:** Выбор build approach для v1 без fork app release pipeline.
+- **Когда открывать:** Старт website code или спор static vs integrated hosting.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/DEPLOY.md`, `docs/website/WEBSITE_V1_SCOPE.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_PAGE_STRUCTURE.md`
 
 EN:
 
-- **What this is:** Documentation file `WEBSITE_PAGE_STRUCTURE.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `WEBSITE PAGE STRUCTURE`.
-- **When to open:** Need written guidance for topic covered by `WEBSITE_PAGE_STRUCTURE.md`.
+- **What this is:** Website page structure — v2+ full sitemap reference (routes, nav, page purposes).
+- **Why needed:** v1 uses fewer pages; this doc holds the longer information architecture target.
+- **What it contains:** Route list, nav hierarchy, deferred pages beyond v1 scope.
+- **Responsibilities:** Future expansion map — do not treat every route as v1 commitment.
+- **When to open:** Planning v2 SEO split or additional marketing routes.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/WEBSITE_V1_SCOPE.md`, `docs/website/HOMEPAGE_WIREFRAME_V1.md`.
+- **Layer / owner:** Repo-only IA reference.
 
 RU:
 
-- **Что это:** Markdown-документ `website_page_structure.md` — правила и заметки по теме «website page structure».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `website page structure`.
-- **Когда открывать:** Нужна written-инструкция по `website page structure`.
+- **Что это:** Page structure сайта — v2+ full sitemap reference (routes, nav, purposes страниц).
+- **Зачем:** v1 использует меньше pages; здесь longer information architecture target.
+- **Содержимое:** Список routes, nav hierarchy, отложенные pages beyond v1 scope.
+- **Обязанности:** Future expansion map — не каждый route = v1 commitment.
+- **Когда открывать:** Планирование v2 SEO split или дополнительных marketing routes.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/WEBSITE_V1_SCOPE.md`, `docs/website/HOMEPAGE_WIREFRAME_V1.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_TZ.md`
 
 EN:
 
-- **What this is:** Documentation file `WEBSITE_TZ.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `WEBSITE TZ`.
-- **When to open:** Need written guidance for topic covered by `WEBSITE_TZ.md`.
+- **What this is:** Website TZ (technical brief) — timezone and legal copy requirements for public pages.
+- **Why needed:** FAQ must honestly explain profile timezone vs device time without legal overreach.
+- **What it contains:** Timezone FAQ bullets, privacy tone, RU summary section rules for v1.
+- **Responsibilities:** Keep legal/timezone messaging aligned with real app settings UX.
+- **When to open:** Writing FAQ, privacy footer, or RU summary blocks on Home.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/PUBLIC_COPY_DRAFTS.md`, profile timezone in app.
+- **Layer / owner:** Repo-only legal/timezone copy brief.
 
 RU:
 
-- **Что это:** Markdown-документ `website_tz.md` — правила и заметки по теме «website tz».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `website tz`.
-- **Когда открывать:** Нужна written-инструкция по `website tz`.
+- **Что это:** TZ сайта (technical brief) — timezone и legal copy requirements для public pages.
+- **Зачем:** FAQ должен honestly explain profile timezone vs device time без legal overreach.
+- **Содержимое:** Timezone FAQ bullets, privacy tone, правила RU summary section для v1.
+- **Обязанности:** Legal/timezone messaging согласован с real app settings UX.
+- **Когда открывать:** Правила проекта и деплой — не runtime.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/PUBLIC_COPY_DRAFTS.md`, profile timezone в app.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `docs/website/WEBSITE_V1_SCOPE.md`
 
 EN:
 
-- **What this is:** Documentation file `WEBSITE_V1_SCOPE.md` — explains part of project rules, deploy, or reports.
-- **Why needed:** Human/AI readable spec; not executed by the app.
-- **What it contains:** Markdown sections for this topic.
-- **Responsibilities:** Answer questions about `WEBSITE V1 SCOPE`.
-- **When to open:** Need written guidance for topic covered by `WEBSITE_V1_SCOPE.md`.
+- **What this is:** Website v1 scope — max five static pages, hero features, excluded roadmap/store claims.
+- **Why needed:** Ship one convincing landing before building a product encyclopedia site.
+- **What it contains:** Included/deferred page tables, messaging tiers, CTA to live web app.
+- **Responsibilities:** Cap v1 work; supersedes page list only for implementation, not IA ideas.
+- **When to open:** Cutting scope, choosing hero features, or rejecting new page requests.
 - **Can it be deleted?** No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).
-- **Connected to:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Layer / owner:** Documentation.
+- **Connected to:** `docs/website/WEBSITE_PAGE_STRUCTURE.md`, `docs/website/FEATURE_MATRIX.md`.
+- **Layer / owner:** Repo-only v1 scope contract.
 
 RU:
 
-- **Что это:** Markdown-документ `website_v1_scope.md` — правила и заметки по теме «website v1 scope».
-- **Зачем:** Читается owner и AI; не исполняется приложением.
-- **Содержимое:** Markdown-секции по этой теме.
-- **Обязанности:** Ответы на вопросы по `website v1 scope`.
-- **Когда открывать:** Нужна written-инструкция по `website v1 scope`.
+- **Что это:** Website v1 scope — максимум пять static pages, hero features, excluded roadmap/store claims.
+- **Зачем:** Сначала один убедительный landing, потом encyclopedia site о продукте.
+- **Содержимое:** Included/deferred page tables, messaging tiers, CTA к live web app.
+- **Обязанности:** Cap v1 work; supersedes page list только для implementation.
+- **Когда открывать:** Cutting scope, выбор hero features или reject new page requests.
 - **Можно удалить?** Нет — маркетинговые тексты сайта.
-- **Связано с:** Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.
-- **Слой:** Документация — не runtime.
+- **Связано с:** `docs/website/WEBSITE_PAGE_STRUCTURE.md`, `docs/website/FEATURE_MATRIX.md`.
+- **Слой:** Документация — правила, не runtime.
 
 
 ### `installer/windows/build_stt_helper_en.ps1`
@@ -4552,7 +4552,7 @@ RU:
 - **Когда открывать:** Случайно добавили результат сборки `ios/` в git.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** Flutter `ios` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Flutter/AppFrameworkInfo.plist`
@@ -4902,7 +4902,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-1024x1024@1x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png`
@@ -4927,7 +4927,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-20x20@1x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png`
@@ -4952,7 +4952,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-20x20@2x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png`
@@ -4977,7 +4977,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-20x20@3x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png`
@@ -5002,7 +5002,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-29x29@1x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png`
@@ -5027,7 +5027,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-29x29@2x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png`
@@ -5052,7 +5052,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-29x29@3x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png`
@@ -5077,7 +5077,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-40x40@1x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png`
@@ -5102,7 +5102,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-40x40@2x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png`
@@ -5127,7 +5127,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-40x40@3x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png`
@@ -5152,7 +5152,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-60x60@2x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png`
@@ -5177,7 +5177,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-60x60@3x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png`
@@ -5202,7 +5202,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-76x76@1x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png`
@@ -5227,7 +5227,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-76x76@2x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png`
@@ -5252,7 +5252,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-app-83.5x83.5@2x.png`.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json`
@@ -5452,7 +5452,7 @@ RU:
 - **Когда открывать:** Неверное имя app или permission prompt на iOS.
 - **Можно удалить?** Нет — без него не соберётся iOS IPA/TestFlight build.
 - **Связано с:** `ios/Runner/`, Xcode-проект.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `ios/Runner/Runner-Bridging-Header.h`
@@ -13225,7 +13225,7 @@ RU:
 - **Когда открывать:** Случайно добавили результат сборки `linux/` в git.
 - **Можно удалить?** Нет — без него не соберётся Linux desktop binary.
 - **Связано с:** Flutter `linux` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `linux/CMakeLists.txt`
@@ -13250,7 +13250,7 @@ RU:
 - **Когда открывать:** linux desktop build падает на configure/link; installer не получит рабочий runner.
 - **Можно удалить?** Нет — без него не соберётся Linux desktop binary.
 - **Связано с:** Flutter `linux` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `linux/flutter/CMakeLists.txt`
@@ -13300,7 +13300,7 @@ RU:
 - **Когда открывать:** Plugin missing после `flutter pub get` / clean build.
 - **Можно удалить?** Нет — без него не соберётся Linux desktop binary.
 - **Связано с:** `linux/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `linux/flutter/generated_plugin_registrant.h`
@@ -13325,7 +13325,7 @@ RU:
 - **Когда открывать:** Plugin missing после `flutter pub get` / clean build.
 - **Можно удалить?** Нет — без него не соберётся Linux desktop binary.
 - **Связано с:** `linux/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `linux/flutter/generated_plugins.cmake`
@@ -13375,7 +13375,7 @@ RU:
 - **Когда открывать:** When behavior tied to `CMakeLists.txt` breaks or you need to change its documented role.
 - **Можно удалить?** Нет — без него не соберётся Linux desktop binary.
 - **Связано с:** Flutter `linux` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `linux/runner/main.cc`
@@ -13475,7 +13475,7 @@ RU:
 - **Когда открывать:** Случайно добавили результат сборки `macos/` в git.
 - **Можно удалить?** Нет — без него не соберётся macOS `.app` bundle.
 - **Связано с:** Flutter `macos` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `macos/Flutter/Flutter-Debug.xcconfig`
@@ -14075,7 +14075,7 @@ RU:
 - **Когда открывать:** Неверное имя app или permission prompt на macOS.
 - **Можно удалить?** Нет — без него не соберётся macOS `.app` bundle.
 - **Связано с:** `macos/Runner/`, Xcode-проект.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `macos/Runner/MainFlutterWindow.swift`
@@ -14474,6 +14474,31 @@ RU:
 - **Содержимое:** Команды PowerShell/Python/Dart в `smoke_desktop_voice_recording_first.ps1`.
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `smoke_desktop_voice_recording_first.ps1` по инструкции в repo docs.
+- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Слой:** Dev/CI script — не runtime приложения.
+
+
+### `scripts/manual/structure_doc_file_guides.py`
+
+EN:
+
+- **What this is:** Developer script `structure_doc_file_guides.py` — run manually for maintenance, smoke test, or deploy helper.
+- **Why needed:** Automates a repeatable task documented in repo notes or `DEPLOY.md`.
+- **What it contains:** PowerShell, Python, or Dart commands for `structure_doc_file_guides.py`.
+- **Responsibilities:** See script header comments for exact behavior.
+- **When to open:** When workflow documented for `structure_doc_file_guides.py` is needed.
+- **Can it be deleted?** No — part of documented dev workflow unless cleanup report removed it.
+- **Connected to:** `scripts/manual/`, `docs/DEPLOY.md`.
+- **Layer / owner:** Developer script.
+
+RU:
+
+- **Что это:** Dev/CI скрипт `structure_doc_file_guides.py` — повторяемая команда из repo docs.
+- **Зачем:** Автоматизирует deploy, audit или maintenance без ad-hoc notes.
+- **Содержимое:** Команды PowerShell/Python/Dart в `structure_doc_file_guides.py`.
+- **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
+- **Когда открывать:** Owner или CI запускает `structure_doc_file_guides.py` по инструкции в repo docs.
 - **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
 - **Связано с:** `scripts/manual/`, `docs/DEPLOY.md`.
 - **Слой:** Dev/CI script — не runtime приложения.
@@ -15864,7 +15889,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `favicon.png`.
 - **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
 - **Связано с:** Flutter `web` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `web/icons/Icon-192.png`
@@ -15889,7 +15914,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-192.png`.
 - **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
 - **Связано с:** Flutter `web` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `web/icons/Icon-512.png`
@@ -15914,7 +15939,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-512.png`.
 - **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
 - **Связано с:** Flutter `web` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `web/icons/Icon-maskable-192.png`
@@ -15939,7 +15964,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-maskable-192.png`.
 - **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
 - **Связано с:** Flutter `web` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `web/icons/Icon-maskable-512.png`
@@ -15964,7 +15989,7 @@ RU:
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-maskable-512.png`.
 - **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
 - **Связано с:** Flutter `web` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `web/index.html`
@@ -15989,7 +16014,7 @@ RU:
 - **Когда открывать:** Пустая страница после web deploy.
 - **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
 - **Связано с:** `flutter build web`, `docs/DEPLOY.md`.
-- **Слой:** Платформенная обёртка Flutter.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `web/manifest.json`
@@ -16014,7 +16039,7 @@ RU:
 - **Когда открывать:** PWA install prompt или theme color неверны на web.
 - **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
 - **Связано с:** Flutter `web` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `windows/.gitignore`
@@ -16039,7 +16064,7 @@ RU:
 - **Когда открывать:** Случайно добавили результат сборки `windows/` в git.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** Flutter `windows` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `windows/CMakeLists.txt`
@@ -16064,7 +16089,7 @@ RU:
 - **Когда открывать:** windows desktop build падает на configure/link; installer не получит рабочий runner.
 - **Можно удалить?** Нет — без него `flutter build windows` не соберёт `.exe`.
 - **Связано с:** Flutter `windows` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `windows/flutter/CMakeLists.txt`
@@ -16114,7 +16139,7 @@ RU:
 - **Когда открывать:** Plugin missing после `flutter pub get` / clean build.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** `windows/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `windows/flutter/generated_plugin_registrant.h`
@@ -16139,7 +16164,7 @@ RU:
 - **Когда открывать:** Plugin missing после `flutter pub get` / clean build.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** `windows/` platform folder, Flutter embedder.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `windows/flutter/generated_plugins.cmake`
@@ -16189,7 +16214,7 @@ RU:
 - **Когда открывать:** When behavior tied to `CMakeLists.txt` breaks or you need to change its documented role.
 - **Можно удалить?** Нет — без него не соберётся Windows `.exe`/runner.
 - **Связано с:** Flutter `windows` tooling.
-- **Слой:** Platform wrapper — required for native/web builds.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
 
 
 ### `windows/runner/Runner.rc`
