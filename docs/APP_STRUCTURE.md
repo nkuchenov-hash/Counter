@@ -31,7 +31,7 @@ l10n      →  (self + langs)               ✓
 main/app_shell → all layers               ✓
 ```
 
-**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `categories/*`, `profile_service.dart`).
+**Brain rule:** `lib/data/database_service.dart` is the only file that performs HTTP/PocketBase calls. Domain logic lives in `part of` extensions (`db_core.dart`, `record_service.dart`, `records/*`, `plan_service.dart`, `plans/*`, `category_service.dart`, `categories/*`, `profile_service.dart`, `profile/*`).
 
 **Optimistic UI rule:** User mutations update local Brain cache first, notify UI, then sync PocketBase in the background (`database_service.dart` and its parts).
 
@@ -109,7 +109,15 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `categories/category_stats.dart` | Category-scoped stats aggregation, duration rollups *(part)* |
 | `categories/category_record_bridge.dart` | Record/category relation repair, REST id resolution, ghost purge *(part)* |
 | `categories/category_default_time.dart` | `default_plan_time` read/write, inherited schedule lookup *(part)* |
-| `profile_service.dart` | Profile, timezone, tags catalog *(part)* |
+| `profile_service.dart` | Profile coordinator: shared Brain state, display label resolver *(part)* |
+| `profile/profile_hydration.dart` | Profile fetch/hydration lifecycle, PB map apply, retry *(part)* |
+| `profile/profile_settings.dart` | Profile PATCH/save, diff fields, locale sync *(part)* |
+| `profile/profile_timezone.dart` | Timezone normalize/offset, projected today, TZ writes *(part)* |
+| `profile/profile_cache_helpers.dart` | Device prefs mirror/hydrate for profile settings *(part)* |
+| `profile/profile_preferences.dart` | Data region reload hook *(part)* |
+| `profile/profile_admin.dart` | Admin bool parse helper for hydration *(part)* |
+| `profile/tag_catalog.dart` | Tag catalog fetch/CRUD, sort order, PB `tags_link` id resolution *(part)* |
+| `profile/tag_display_settings.dart` | List tag strip visibility prefs, display-mode prefs merge *(part)* |
 | `models.dart` | `part` declarations; export surface for all model types |
 | `models/_shared.dart` | Shared model helpers *(part)* |
 | `models/profile.dart` | `UserSettings`, profile fields *(part)* |

@@ -39,7 +39,9 @@
 | Планы — Time View projection, recurrence, cascade, tags, cache, outbox | `lib/data/plans/*.dart` *(part of database_service)* |
 | Категории — координатор | `lib/data/category_service.dart` |
 | Категории — cache, tree, lookup, CRUD, stats, record bridge, default time | `lib/data/categories/*.dart` *(part of database_service)* |
-| Профиль, теги, часовой пояс | `lib/data/profile_service.dart` |
+| Профиль — координатор | `lib/data/profile_service.dart` |
+| Профиль — hydration, settings, timezone, cache, preferences, admin | `lib/data/profile/profile_*.dart` *(part of database_service)* |
+| Теги — каталог и настройки отображения | `lib/data/profile/tag_catalog.dart`, `tag_display_settings.dart` *(part of database_service)* |
 | URL и имена коллекций PB | `lib/data/pb_config.dart` |
 | Офлайн-очередь | `lib/data/local_sync/` |
 | Модели данных | `lib/data/models/` + `lib/data/models.dart` |

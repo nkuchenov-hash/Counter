@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Structure refactor pass 4D profile service [shipped]
+
+* **`lib/data/profile/`:** [shipped] Pass 4D safe Brain split: eight `part of database_service.dart` files — `profile_hydration.dart`, `profile_settings.dart`, `profile_timezone.dart`, `profile_cache_helpers.dart`, `profile_preferences.dart`, `profile_admin.dart`, `tag_catalog.dart`, `tag_display_settings.dart`; named extensions `ProfileHydrationExtension`, `ProfileSettingsExtension`, `ProfileTimezoneExtension`, `ProfileCacheExtension`, `ProfilePreferencesExtension`, `TagCatalogExtension`, `TagDisplaySettingsExtension`.
+* **`lib/data/profile_service.dart`:** [shipped] Coordinator retained (`ProfileServiceExtension` shared Brain state + `resolveProfileDisplayLabelFor`); 1022→75 lines (−947).
+* **Plan/record/category Brain:** [skipped] untouched.
+* **Verification:** strict `architecture_guard` 0 violations; `flutter analyze` 0 errors; `flutter test` 248/248; web + APK green.
+
 ## [2026-07-03] - Structure refactor pass 4C category service [shipped]
 
 * **`lib/data/categories/`:** [shipped] Pass 4C safe Brain split: seven `part of database_service.dart` files — `category_cache_helpers.dart`, `category_tree.dart`, `category_lookup.dart`, `category_crud.dart`, `category_stats.dart`, `category_record_bridge.dart`, `category_default_time.dart`; named extensions `CategoryCacheExtension`, `CategoryTreeExtension`, `CategoryLookupExtension`, `CategoryCrudExtension`, `CategoryStatsExtension`, `CategoryRecordBridgeExtension`, `CategoryDefaultTimeExtension`.

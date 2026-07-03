@@ -80,7 +80,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **Category create** | `lib/features/categories/create_category_dialog.dart` | dialog; calls `DatabaseService.addNestedCategory` |
 | **Category edit** | `lib/features/categories/category_list_view.dart` | `CategoryEditorSheet`, `_showCategoryEditorSheet`; appearance quick sheet `_showCategoryAppearanceSheet` |
 | **Category tree picker** | `lib/features/categories/category_recursive_tree.dart` | `showCategoryTreePicker` |
-| **Tag data (Brain)** | `lib/data/profile_service.dart` | `fetchTagsForCurrentUser`, `createTagForCurrentUser`, `patchTagForCurrentUser`, `deleteTagByPocketRecordId`, `notifyTagsCatalogChanged` |
+| **Tag data (Brain)** | `lib/data/profile/tag_catalog.dart` | `fetchTagsForCurrentUser`, `createTagForCurrentUser`, `patchTagForCurrentUser`, `deleteTagByPocketRecordId`, `notifyTagsCatalogChanged` |
 | **Tag model** | `lib/data/models/tag.dart` | `Tag`, `TagCatalogScope` |
 | **Tag UI — manager** | `lib/features/profile/tag_manager_page.dart` | `TagManagerPage` (`pocketTagDomain: 'plan'` or `'list'`) |
 | **Tag UI — display prefs** | `lib/features/profile/tag_settings_view.dart` | `tag_display_mode` on profile |
@@ -92,7 +92,7 @@ Short routing map for Cursor / AI. Symbols in backticks.
 | **PB — plans & lists** | `lib/data/plan_service.dart` | `fetchPlans`, `fetchBacklogPlans`, `addPlanningTask`, `updatePlanningTask`, `deletePlanningTask`, `deletePlanningTasksBulk`, `flushPendingPlanMutations`, `planningStream`, `_syncPlanTagsPocket` |
 | **Offline sync banner** | `lib/features/shared/offline_sync_status_bar.dart` | `OfflineSyncStatusBar` (top of shell `IndexedStack`) |
 | **PB — categories** | `lib/data/categories/category_crud.dart` + `category_lookup.dart` + coordinator | `addNestedCategory`, `updateCategory`, `findCategoryByFuzzyMatch` |
-| **PB — tags** | `lib/data/profile_service.dart` | (same as tag data row above) |
+| **PB — tags** | `lib/data/profile/tag_catalog.dart` | (same as tag data row above) |
 | **PB — auth / bootstrap** | `lib/data/auth_bridge.dart`, `lib/data/db_core.dart` | session, `ensurePocketBaseReady`, `loadInitialData`, `flushPendingLocalMutations` |
 | **Date/time header strip** | `lib/core/widgets/global_app_header.dart` | `GlobalAppHeader` + `AppBarLiveClock` |
 | **Per-screen header chrome** | `lib/features/timeline/timeline_view.dart` | List/stats `SegmentedButton` + day PageView chrome **inlined** (removed orphan `timeline_widgets.dart` in Stage A) |
@@ -163,16 +163,16 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 | Voice input → planning task submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitPlanning` |
 | Voice input → backlog submission | `lib/app_shell.dart` | `_LifeOSDashboardState._voiceSubmitBacklog` |
 | Auth / session bootstrap | `lib/data/auth_bridge.dart` | `AuthBridge.checkSession` |
-| Profile timezone resolution | `lib/data/profile_service.dart` | `DatabaseService.getProjectedToday` (extension) |
-| Profile settings getter | `lib/data/profile_service.dart` | `DatabaseService.settings` (extension) |
-| Save user settings | `lib/data/profile_service.dart` | `DatabaseService.saveSettings` (extension) |
-| Update timezone | `lib/data/profile_service.dart` | `DatabaseService.updateTimeZone` (extension) |
-| Fetch tags (current user) | `lib/data/profile_service.dart` | `DatabaseService.fetchTagsForCurrentUser` (extension) |
-| Tag create | `lib/data/profile_service.dart` | `DatabaseService.createTagForCurrentUser` (extension) |
-| Tag delete | `lib/data/profile_service.dart` | `DatabaseService.deleteTagByPocketRecordId` (extension) |
-| Tag update | `lib/data/profile_service.dart` | `DatabaseService.patchTagForCurrentUser` (extension) |
-| Tag stream notification | `lib/data/profile_service.dart` | `DatabaseService.notifyTagsCatalogChanged` / `tagsCatalogUpdated` (extension) |
-| Get / fetch user profile | `lib/data/profile_service.dart` | `DatabaseService.getUserProfile` (extension) |
+| Profile timezone resolution | `lib/data/profile/profile_timezone.dart` | `DatabaseService.getProjectedToday` (`ProfileTimezoneExtension`) |
+| Profile settings getter | `lib/data/profile_service.dart` | `DatabaseService.settings` (`ProfileServiceExtension`) |
+| Save user settings | `lib/data/profile/profile_settings.dart` | `DatabaseService.saveSettings` (`ProfileSettingsExtension`) |
+| Update timezone | `lib/data/profile/profile_timezone.dart` | `DatabaseService.updateTimeZone` (`ProfileTimezoneExtension`) |
+| Fetch tags (current user) | `lib/data/profile/tag_catalog.dart` | `DatabaseService.fetchTagsForCurrentUser` (`TagCatalogExtension`) |
+| Tag create | `lib/data/profile/tag_catalog.dart` | `DatabaseService.createTagForCurrentUser` (`TagCatalogExtension`) |
+| Tag delete | `lib/data/profile/tag_catalog.dart` | `DatabaseService.deleteTagByPocketRecordId` (`TagCatalogExtension`) |
+| Tag update | `lib/data/profile/tag_catalog.dart` | `DatabaseService.patchTagForCurrentUser` (`TagCatalogExtension`) |
+| Tag stream notification | `lib/data/profile/tag_catalog.dart` | `DatabaseService.notifyTagsCatalogChanged` / `tagsCatalogUpdated` (`TagCatalogExtension`) |
+| Get / fetch user profile | `lib/data/profile/profile_hydration.dart` | `DatabaseService.getUserProfile` (`ProfileHydrationExtension`) |
 | PocketBase init / health check | `lib/data/db_core.dart` | `DbCoreExtension.ensurePocketBaseReady` |
 | Realtime reconnect bridge | `lib/data/db_core.dart` | `DbCoreExtension.ensureRecordsRealtimeBridge` |
 | Sign-out / state clear | `lib/data/db_core.dart` | `DbCoreExtension.clearLocalStateOnSignOut` |
@@ -305,7 +305,7 @@ O1 offline-first, V1, and F1 Lists are **shipped** (`docs/ROADMAP.md`). F2A and 
 - **Offline drain:** `flushPendingLocalMutations` on login (`loadInitialData`), reconnect (`SyncManager`), app resume, and tap-to-retry (`OfflineSyncStatusBar`). 401/403 sets `offlineSync.authPaused` until `resumeAfterAuthIfNeeded` + valid session.
 - **Storage is UTC.** Profile `timezone_offset` / `preferred_timezone` drive wall-clock grouping.
 - **Every query filters by current user** via `user_id`.
-- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). Domain logic lives in `part of` files: V5.1 profile/tag → `profile_service.dart`; V5.2 plan coordinator → `plan_service.dart` + `plans/*` (Pass 4A); V5.3 record coordinator → `record_service.dart` + `records/*` (Pass 4B); V5.4 category coordinator → `category_service.dart` + `categories/*` (Pass 4C); V5.5 bootstrap/lifecycle → `db_core.dart`.
+- **God Object split complete:** `database_service.dart` started at ~10,000 lines and is now ~720 lines (the root singleton — shared state, streams, static helpers). Domain logic lives in `part of` files: V5.1 profile coordinator → `profile_service.dart` + `profile/*` (Pass 4D); V5.2 plan coordinator → `plan_service.dart` + `plans/*` (Pass 4A); V5.3 record coordinator → `record_service.dart` + `records/*` (Pass 4B); V5.4 category coordinator → `category_service.dart` + `categories/*` (Pass 4C); V5.5 bootstrap/lifecycle → `db_core.dart`.
 
 ---
 

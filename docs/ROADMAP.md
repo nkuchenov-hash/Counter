@@ -330,4 +330,4 @@ Defined once foundation is solid.
 - **Targets:** Android, iOS, Web, Windows, macOS, Linux, Wear OS
 - **Stack:** Flutter
 - **Analyzer:** 11 info-only issues (0 errors, 0 warnings) after June 2026 hygiene pass
-- **Architecture:** Iron Laws honored. God Object split complete. **Pass 4A (2026-07-03):** `plan_service.dart` + `lib/data/plans/*`. **Pass 4B (2026-07-03):** `record_service.dart` + `lib/data/records/*` (−3522 lines in coordinator). **Pass 4C (2026-07-03):** `category_service.dart` + `lib/data/categories/*` (−2821 lines in coordinator). **O1 offline-first ✅**. Velocity track: V1 → F1/F2.
+- **Architecture:** Iron Laws honored. God Object split complete. **Pass 4A (2026-07-03):** `plan_service.dart` + `lib/data/plans/*`. **Pass 4B (2026-07-03):** `record_service.dart` + `lib/data/records/*` (−3522 lines in coordinator). **Pass 4C (2026-07-03):** `category_service.dart` + `lib/data/categories/*` (−2821 lines in coordinator). **Pass 4D (2026-07-03):** `profile_service.dart` + `lib/data/profile/*` (−947 lines in coordinator). **O1 offline-first ✅**. Velocity track: V1 → F1/F2.

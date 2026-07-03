@@ -39,6 +39,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+part 'profile/profile_timezone.dart';
+part 'profile/profile_hydration.dart';
+part 'profile/profile_cache_helpers.dart';
+part 'profile/profile_preferences.dart';
+part 'profile/profile_admin.dart';
+part 'profile/tag_catalog.dart';
+part 'profile/tag_display_settings.dart';
+part 'profile/profile_settings.dart';
 part 'profile_service.dart';
 part 'plans/plan_projection_types.dart';
 part 'plans/plan_recurrence_helpers.dart';
