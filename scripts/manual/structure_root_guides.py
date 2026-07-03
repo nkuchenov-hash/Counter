@@ -111,7 +111,7 @@ ROOT_FILE_GUIDES: dict[str, dict[str, str]] = {
         "responsibilities_ru": "Собрать APK в `build/app/outputs/flutter-apk/` (для современных телефонов: `app-arm64-v8a-release.apk`).",
         "when_ru": "Тест release APK на Android-устройстве.",
         "delete_ru": "Нет — задокументированный путь локальной сборки Android.",
-        "connected_ru": "Папка `android/`, `lib/core/app_build_info.dart`.",
+        "connected_ru": "`android/`, `lib/core/app_build_info.dart`.",
         "layer_ru": "Сборка Android — не runtime логика.",
     },
     ".cursorrules": {

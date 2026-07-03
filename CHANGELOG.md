@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Ban generic RU wrappers in structure guide [shipped]
+
+* **`scripts/manual/structure_ru_class_adapters.py`:** [shipped] `BANNED_GENERIC_RU_WRAPPERS`; removed `Подмодуль`/`Файл … в каталоге`/`См. также:` fallbacks; `_cmake_file_field`, `_platform_native_file_field`; `_dart_file_field` uses `humanize_guide` RU.
+* **`scripts/manual/structure_folder_ru_lib.py`:** [shipped] App-specific curated RU for all remaining `lib/**` folders (`time_view`, `plan_time_task_card`, brain slices, platform subfolders).
+* **`scripts/manual/structure_role_guides.py`**, **`structure_en_ru_adapt.py`**, **`structure_guide_data.py`:** [shipped] Stricter RU merge (no `NEEDS` in output); `ensure_folder_ru` always fills fields; quality gate fails on any `NEEDS HUMAN DESCRIPTION`.
+* **`generate_app_structure_detailed.py`:** [shipped] `finalize_file_guide` prefers humanize RU; banned generic patterns in RU scan; duplicate empty-`what_ru` guard.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated — 0 old/new generic wrappers, 0 `NEEDS HUMAN DESCRIPTION`, quality gate OK.
+
 ## [2026-07-03] - Remove semi-Russian wrappers from structure guide [shipped]
 
 * **`scripts/manual/structure_ru_class_adapters.py`:** [shipped] Class-based RU adapters (Android/iOS/platform/lib/docs/tests); `sanitize_ru_prose()`; banned semi-Russian wrapper quality gate; generic file fallback (no `Назначение файла:` / `Сегмент` prefixes).

@@ -8,6 +8,7 @@ from structure_ru_class_adapters import (
     folder_class_field,
     has_semi_russian_or_english_leak,
     sanitize_ru_prose,
+    BANNED_GENERIC_RU_WRAPPERS,
 )
 
 # Banned meaningless RU filler (quality gate + generation guard).
@@ -42,7 +43,7 @@ BANNED_MEANINGLESS_RU_FILLER: tuple[str, ...] = (
     "Роль `",
     " в модуле `",
     "Связи файла `",
-)
+) + BANNED_GENERIC_RU_WRAPPERS
 
 FIELD_KEYS = ("what", "why", "inside", "affects", "when", "delete", "related")
 FILE_FIELD_KEYS = (
@@ -278,7 +279,7 @@ def adapt_folder_field_ru(key: str, field: str, en_val: str) -> str:
     adapted = sanitize_ru_prose(_phrase_translate(en_val))
     if ru_field_ok(adapted, min_cyrillic=6):
         return adapted
-    return f"NEEDS HUMAN DESCRIPTION ({k}/{field})"
+    return ""
 
 
 def adapt_folder_guide_ru(key: str, en: dict[str, str]) -> dict[str, str]:
@@ -300,7 +301,7 @@ def adapt_file_field_ru(path: str, field: str, en_val: str, en_guide: dict[str, 
     adapted = sanitize_ru_prose(_phrase_translate(en_val))
     if ru_field_ok(adapted, min_cyrillic=6) and not has_banned_filler(adapted):
         return adapted
-    return f"NEEDS HUMAN DESCRIPTION ({path}/{field})"
+    return ""
 
 
 def adapt_file_guide_ru(path: str, en: dict[str, str]) -> dict[str, str]:

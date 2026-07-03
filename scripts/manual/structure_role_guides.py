@@ -212,21 +212,34 @@ def _sym_line(syms: list[str]) -> str:
 
 
 def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple[str, str, str]], area: str) -> dict[str, str]:
+    from structure_en_ru_adapt import _phrase_translate
+    from structure_ru_class_adapters import sanitize_ru_prose
+
     stem = Path(path).stem
     what, why, contains = part_map.get(stem, (
         f"Brain module for {area} — {role.split(';')[0].strip().lower()}.",
         f"Part of the app brain that keeps {area} consistent with PocketBase.",
         f"Dart code ({_sym_line(syms)}).",
     ))
+    role_line = role.split(";")[0].strip()
+    what_ru = sanitize_ru_prose(_phrase_translate(what))
+    why_ru = sanitize_ru_prose(_phrase_translate(why))
+    contains_ru = sanitize_ru_prose(_phrase_translate(contains))
+    if sum(1 for c in what_ru if "\u0400" <= c <= "\u04FF") < 8:
+        what_ru = f"Модуль brain для {area} — файл `{stem}`."
+    if sum(1 for c in why_ru if "\u0400" <= c <= "\u04FF") < 8:
+        why_ru = f"Держит {area} согласованным с PocketBase и UI."
+    if sum(1 for c in contains_ru if "\u0400" <= c <= "\u04FF") < 4:
+        contains_ru = f"Dart-код ({_sym_line(syms)})."
     return {
         "what": what,
         "why": why,
         "contains": contains,
-        "responsibilities": role.split(";")[0].strip(),
-        "what_ru": f"Brain-модуль ({area}): {role.split(';')[0].strip()}.",
-        "why_ru": f"Часть brain для {area} и PocketBase.",
-        "contains_ru": f"Dart-код ({_sym_line(syms)}).",
-        "responsibilities_ru": f"Зона ответственности: {role.split(';')[0].strip()}.",
+        "responsibilities": role_line,
+        "what_ru": what_ru,
+        "why_ru": why_ru,
+        "contains_ru": contains_ru,
+        "responsibilities_ru": f"Реализует в коде: {role_line}.",
     }
 
 
@@ -307,10 +320,10 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "why": f"Users interact with this when using {screen}.",
             "contains": f"Flutter widgets ({sym}) implementing the visible behavior.",
             "responsibilities": role_clean,
-            "what_ru": f"UI для {screen}: {role_short}.",
-            "why_ru": f"Пользователь видит это на {screen}.",
+            "what_ru": f"Код интерфейса экрана ({screen}) — {role_short}.",
+            "why_ru": f"Пользователь видит это, когда открывает {screen}.",
             "contains_ru": f"Flutter-виджеты ({sym}).",
-            "responsibilities_ru": f"UI-логика: {role_clean}.",
+            "responsibilities_ru": f"Реализует в UI: {role_clean}.",
         }
 
     if p.startswith("lib/shell/"):
@@ -320,10 +333,10 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "why": "Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.",
             "contains": f"Shell mixin or widget ({sym}).",
             "responsibilities": role_clean,
-            "what_ru": f"Оболочка приложения — {role_short}.",
-            "why_ru": "Связывает вкладки, voice, edit sheets, offline banner.",
-            "contains_ru": f"Shell mixin/виджет ({sym}).",
-            "responsibilities_ru": f"UI-логика: {role_clean}.",
+            "what_ru": f"Оболочка приложения (shell) — {role_short}.",
+            "why_ru": "Связывает вкладки, voice, edit sheets и offline banner.",
+            "contains_ru": f"Shell mixin или виджет ({sym}).",
+            "responsibilities_ru": f"Реализует в shell: {role_clean}.",
         }
 
     if p.startswith("lib/core/widgets/"):
@@ -334,9 +347,9 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "contains": f"Canonical Flutter widget ({sym}).",
             "responsibilities": role_clean,
             "what_ru": f"Общий виджет design system — {role_short}.",
-            "why_ru": "Один стиль кнопок/карточек на всех вкладках.",
-            "contains_ru": f"Виджет ({sym}).",
-            "responsibilities_ru": f"UI-логика: {role_clean}.",
+            "why_ru": "Один стиль кнопок и карточек на Plans, Timeline и Lists.",
+            "contains_ru": f"Канонический Flutter-виджет ({sym}).",
+            "responsibilities_ru": f"Реализует в UI: {role_clean}.",
         }
 
     if p.startswith("lib/core/"):
@@ -347,10 +360,10 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "why": "Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.",
             "contains": f"Dart utilities ({sym}).",
             "responsibilities": role_clean,
-            "what_ru": f"Foundation-код ({sub}) — {role_short}.",
-            "why_ru": "Общий код: тема, время, voice — не один экран.",
-            "contains_ru": f"Утилиты ({sym}).",
-            "responsibilities_ru": f"Foundation-логика: {role_clean}.",
+            "what_ru": f"Базовый слой приложения, модуль `{sub}` — {role_short}.",
+            "why_ru": "Общий код вне одного экрана: тема, время, voice, diagnostics.",
+            "contains_ru": f"Dart-утилиты ({sym}).",
+            "responsibilities_ru": f"Реализует foundation-логику: {role_clean}.",
         }
 
     if p.startswith("lib/l10n/"):
@@ -362,8 +375,8 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
                 "responsibilities": "Canonical English SSOT; edit here before running locale sync.",
                 "what_ru": "Английские строки UI — мастер-копия ключей.",
                 "why_ru": "Все подписи начинаются с ключей здесь.",
-                "contains_ru": "Map `kEnL10n`.",
-                "responsibilities_ru": "Канонический EN; править перед sync_locales.",
+                "contains_ru": "Карта ключей `kEnL10n` для английских подписей.",
+                "responsibilities_ru": "Канонический английский SSOT; править перед sync_locales.",
             }
         if p.endswith("langs/ru.dart"):
             return {
@@ -373,8 +386,8 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
                 "responsibilities": "Canonical Russian SSOT alongside English.",
                 "what_ru": "Русские строки интерфейса.",
                 "why_ru": "RU локаль берёт текст отсюда.",
-                "contains_ru": "Map `kRuL10n`.",
-                "responsibilities_ru": "Канонический RU.",
+                "contains_ru": "Карта ключей `kRuL10n` для русских подписей.",
+                "responsibilities_ru": "Канонический русский SSOT рядом с English.",
             }
         if "/langs/" in p:
             lang = Path(p).stem
@@ -396,10 +409,10 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "why": "Shared PocketBase/auth/parse logic used by multiple tabs.",
             "contains": f"Dart code ({sym}).",
             "responsibilities": role_clean,
-            "what_ru": f"Brain — {role_short}.",
-            "why_ru": "Общая логика PocketBase для нескольких вкладок.",
-            "contains_ru": f"Dart ({sym}).",
-            "responsibilities_ru": f"Brain-логика: {role_clean}.",
+            "what_ru": f"Вспомогательный модуль brain — {role_short}.",
+            "why_ru": "Общая логика PocketBase и auth для нескольких вкладок.",
+            "contains_ru": f"Dart-код ({sym}).",
+            "responsibilities_ru": f"Реализует в brain: {role_clean}.",
         }
 
     return None

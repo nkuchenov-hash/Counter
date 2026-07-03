@@ -26,7 +26,7 @@ from structure_en_ru_adapt import (
     has_banned_filler,
     ru_field_ok,
 )
-from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_SEMI_RUSSIAN_WRAPPERS
+from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_GENERIC_RU_WRAPPERS, BANNED_SEMI_RUSSIAN_WRAPPERS
 from structure_file_ru_curated import FILE_RU_CURATED
 from structure_role_guides import humanize_guide
 from structure_root_guides import ROOT_FILE_GUIDES
@@ -574,9 +574,9 @@ def guide_from_role(path: str, role: str, syms: list[str]) -> FileGuide:
         connected=conn_en,
         layer=layer_en,
         what_ru=f"Файл `{Path(path).name}` — {role_short}.",
-        why_ru="Описан в APP_STRUCTURE.md; нужен для текущего поведения.",
-        contains_ru=f"Исходник `{Path(path).name}`.",
-        responsibilities_ru=role_short,
+        why_ru="",
+        contains_ru="",
+        responsibilities_ru="",
         when_ru=when_ru,
         delete_ru=del_ru,
         connected_ru=conn_ru,
@@ -716,7 +716,7 @@ def platform_guide(path: str) -> FileGuide:
         responsibilities_ru=f"Поддержка embedder {plat}.",
         when_ru=f"Ошибка сборки с `{name}`.",
         delete_ru=del_ru,
-        connected_ru=f"Папка `{plat}/`.",
+        connected_ru=f"`{plat}/`, Flutter embedder.",
         layer_ru=layer_ru,
     )
 
@@ -843,7 +843,8 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
     del_en, del_fallback = delete_for(path)
 
     def pick(ru_key: str, fallback: str = "") -> str:
-        for src in (curated.get(ru_key), adapted.get(ru_key), fallback):
+        en_key = ru_key.replace("_ru", "")
+        for src in (curated.get(ru_key), existing.get(ru_key), adapted.get(ru_key), fallback):
             if (
                 src
                 and not str(src).startswith("NEEDS HUMAN")
@@ -851,10 +852,18 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
                 and not has_banned_filler(src)
             ):
                 return src
-        for src in (curated.get(ru_key), adapted.get(ru_key), fallback):
-            if src and str(src).startswith("NEEDS HUMAN"):
-                return src
-        return fallback or curated.get(ru_key) or adapted.get(ru_key) or ""
+        en_val = en.get(en_key, "")
+        if en_val:
+            from structure_en_ru_adapt import _phrase_translate
+            from structure_ru_class_adapters import sanitize_ru_prose
+
+            tr = sanitize_ru_prose(_phrase_translate(en_val))
+            if tr and ru_field_ok(tr) and not has_banned_filler(tr):
+                return tr
+        tail = fallback or existing.get(ru_key) or curated.get(ru_key) or ""
+        if tail and not str(tail).startswith("NEEDS HUMAN"):
+            return tail
+        return ""
 
     return FileGuide(
         what=g.what,
@@ -955,13 +964,13 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
         delete=del_en,
         connected=f"Folder `{parent}/`, `docs/APP_STRUCTURE.md`.",
         layer=layer_en,
-        what_ru=f"{kind} `{name}` в `{parent}` репозитория Life OS.",
-        why_ru=f"Файл в git, потому что `{parent}` использует `{name}` в сборке или workflow.",
-        contains_ru=f"Открывать `{name}` при правках в `{parent}`.",
-        responsibilities_ru=f"Роль `{name}` описана в секции папки выше.",
+        what_ru="",
+        why_ru="",
+        contains_ru="",
+        responsibilities_ru="",
         when_ru=when_ru,
         delete_ru=del_ru,
-        connected_ru=f"Папка `{parent}/`, `docs/APP_STRUCTURE.md`.",
+        connected_ru=f"`{parent}/`, `docs/APP_STRUCTURE.md`.",
         layer_ru=layer_ru,
     )
 
@@ -1150,6 +1159,7 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                 BANNED_MEANINGLESS_RU_FILLER
                 + BANNED_SEMI_RUSSIAN_WRAPPERS
                 + BANNED_ENGLISH_IN_RU
+                + BANNED_GENERIC_RU_WRAPPERS
             ):
                 if bad in val_part:
                     issues.append(f"Banned RU filler '{bad}' in: {line[:120]}")
@@ -1160,9 +1170,9 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                 file_whats_ru.append(line.split(":", 1)[1].strip())
 
     needs_count = text.count("NEEDS HUMAN DESCRIPTION")
-    if needs_count > 30:
+    if needs_count > 0:
         issues.append(
-            f"Too many NEEDS HUMAN DESCRIPTION entries: {needs_count} (class adapters incomplete)"
+            f"NEEDS HUMAN DESCRIPTION entries remain: {needs_count} (class adapters incomplete)"
         )
 
     for label, vals in (("folder", folder_whats_ru), ("file", file_whats_ru)):

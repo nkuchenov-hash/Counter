@@ -9,7 +9,7 @@ from structure_en_ru_adapt import (
     has_banned_filler,
     ru_field_ok,
 )
-from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_SEMI_RUSSIAN_WRAPPERS
+from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_GENERIC_RU_WRAPPERS, BANNED_SEMI_RUSSIAN_WRAPPERS
 
 # Side effect: registers curated folder RU blocks.
 import structure_folder_ru_curated  # noqa: F401
@@ -1016,7 +1016,7 @@ BANNED_RU_PHRASES: tuple[str, ...] = (
     "Поддержка embedder-сборки",
     "см. EN-блок",
     "platform/config файл",
-) + BANNED_SEMI_RUSSIAN_WRAPPERS + BANNED_ENGLISH_IN_RU
+) + BANNED_SEMI_RUSSIAN_WRAPPERS + BANNED_ENGLISH_IN_RU + BANNED_GENERIC_RU_WRAPPERS
 
 
 def synthesize_folder_guide(key: str) -> dict[str, str]:
@@ -1250,8 +1250,59 @@ def ensure_folder_ru(key: str, data: dict[str, str]) -> dict[str, str]:
     adapted = adapt_folder_guide_ru(k, merged)
     for fk, fv in adapted.items():
         cur = merged.get(fk, "")
-        if not cur or has_banned_filler(cur) or cur.startswith("NEEDS HUMAN"):
+        if fv and not fv.startswith("NEEDS HUMAN") and (
+            not cur or has_banned_filler(cur) or cur.startswith("NEEDS HUMAN")
+        ):
             merged[fk] = fv
+        elif (not cur or cur.startswith("NEEDS HUMAN")) and not fv:
+            en_key = fk.replace("_ru", "")
+            en_val = data.get(en_key, merged.get(en_key, ""))
+            if en_val and fk != "related_ru":
+                from structure_en_ru_adapt import _phrase_translate
+                from structure_ru_class_adapters import sanitize_ru_prose
+
+                tr = sanitize_ru_prose(_phrase_translate(en_val))
+                if tr and not has_banned_filler(tr):
+                    merged[fk] = tr
+    for suffix in (
+        "what_ru",
+        "why_ru",
+        "inside_ru",
+        "affects_ru",
+        "when_ru",
+        "delete_ru",
+        "related_ru",
+    ):
+        if merged.get(suffix):
+            continue
+        en_key = suffix.replace("_ru", "")
+        en_val = merged.get(en_key, data.get(en_key, ""))
+        if not en_val:
+            continue
+        if suffix == "delete_ru":
+            from structure_ru_helpers import delete_en_to_ru
+
+            merged[suffix] = delete_en_to_ru(en_val)
+        elif suffix == "related_ru":
+            merged[suffix] = en_val
+        else:
+            from structure_en_ru_adapt import _phrase_translate
+            from structure_ru_class_adapters import sanitize_ru_prose
+
+            tr = sanitize_ru_prose(_phrase_translate(en_val))
+            if tr and not has_banned_filler(tr):
+                merged[suffix] = tr
+    for suffix in (
+        "what_ru",
+        "why_ru",
+        "inside_ru",
+        "affects_ru",
+        "when_ru",
+        "delete_ru",
+        "related_ru",
+    ):
+        if suffix not in merged:
+            merged[suffix] = ""
     return merged
 
 

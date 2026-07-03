@@ -705,3 +705,32 @@ register_folder_ru(
         "related_ru": "`test/perf_*`, `lib/data/cache/`.",
     },
 )
+
+register_folder_ru(
+    "android/app/src/debug",
+    {
+        "what_ru": "Override Android manifest для debug variant — отдельные permissions и merge rules.",
+        "why_ru": "Debug APK может включать extra logging или другой application id suffix.",
+        "inside_ru": "Debug `AndroidManifest.xml`, merge только в debug builds.",
+        "affects_ru": "Только debug Android installs — не release APK.",
+        "when_ru": "Проблемы permissions или слияния manifest только в debug-сборке.",
+        "delete_ru": "Нет — нужен для Android debug builds.",
+        "related_ru": "`android/app/src/main/AndroidManifest.xml`.",
+    },
+)
+
+register_folder_ru(
+    "android/app/src/profile",
+    {
+        "what_ru": "Manifest Android profile variant — сборка для performance profiling.",
+        "why_ru": "Profile mode использует отдельный manifest merge для Flutter profile builds.",
+        "inside_ru": "Profile `AndroidManifest.xml`.",
+        "affects_ru": "Profile APK для измерения производительности.",
+        "when_ru": "Ошибки merge manifest при profile build.",
+        "delete_ru": "Нет — нужен для Flutter profile Android builds.",
+        "related_ru": "`android/app/src/main/`.",
+    },
+)
+
+# App-specific RU for remaining lib/** folders (no generic path wrappers).
+import structure_folder_ru_lib  # noqa: F401,E402
