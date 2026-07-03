@@ -1,0 +1,404 @@
+"""Russian field completion — never copy English into RU sections."""
+
+from __future__ import annotations
+
+import re
+from typing import Any
+
+# Minimum Cyrillic letters for a RU field to count as Russian prose.
+_MIN_CYRILLIC = 8
+
+
+def cyrillic_count(text: str) -> int:
+    return sum(1 for c in text if "\u0400" <= c <= "\u04FF")
+
+
+def looks_english_prose(text: str) -> bool:
+    """True when text lacks enough Cyrillic for a RU field (code paths may stay Latin)."""
+    if not text:
+        return False
+    if cyrillic_count(text) >= _MIN_CYRILLIC:
+        return False
+    letters = [c for c in text if c.isalpha()]
+    if not letters:
+        return False
+    latin = sum(1 for c in letters if ord(c) < 128)
+    return latin / len(letters) > 0.7
+
+
+def delete_en_to_ru(text: str) -> str:
+    t = text.strip()
+    if t.startswith("No —"):
+        rest = t[4:].strip()
+        return "Нет — " + _translate_delete_tail_ru(rest)
+    if t.startswith("Maybe —"):
+        rest = t[7:].strip()
+        return "Возможно — " + _translate_delete_tail_ru(rest)
+    if t.startswith("Нет —") or t.startswith("Возможно —"):
+        return t
+    return "Нет — " + _translate_delete_tail_ru(t)
+
+
+def _translate_delete_tail_ru(tail: str) -> str:
+    repl = (
+        ("required for app runtime", "нужен для работы приложения"),
+        ("required for tests", "нужен для тестов"),
+        ("required for Android build", "нужен для сборки Android"),
+        ("required for iOS build", "нужен для сборки iOS"),
+        ("required for web build", "нужен для web-сборки"),
+        ("required for Windows desktop build", "нужен для сборки Windows desktop"),
+        ("required for macOS desktop build", "нужен для сборки macOS desktop"),
+        ("required for Linux desktop build", "нужен для сборки Linux desktop"),
+        ("required for build/deploy/platform tooling", "нужен для сборки/деплоя платформы"),
+        ("required for build/deploy/audit workflows documented in repo", "нужен для audit/deploy workflow в репозитории"),
+        ("required for CI/deploy", "нужен для CI и деплоя"),
+        ("required for integration testing", "нужен для integration-тестов"),
+        ("required for tests", "нужен для тестов"),
+        ("required for Apple platform branding", "нужен для иконки/branding Apple"),
+        ("required for Apple runner launch UX", "нужен для splash/launch на Apple"),
+        ("required for macOS Xcode build", "нужен для сборки Xcode macOS"),
+        ("required for Windows desktop branding", "нужен для иконки Windows .exe"),
+        ("required while Android entry lives here", "нужен пока MainActivity здесь"),
+        ("required for Android debug builds", "нужен для debug-сборки Android"),
+        ("required for Flutter profile Android builds", "нужен для profile-сборки Android"),
+        ("part of Xcode project structure", "часть структуры Xcode-проекта"),
+        ("governing/current documentation", "governing-документация проекта"),
+        ("governing or report documentation", "governing-документация или отчёт"),
+        ("repo hygiene and safety", "гигиена и безопасность репозитория"),
+        ("repo hygiene", "гигиена репозитория"),
+        ("Project Knowledge pack doc", "документ Project Knowledge pack"),
+        ("Project Knowledge pack", "Project Knowledge pack"),
+        ("if Android APK support is required", "если нужна поддержка Android APK"),
+        ("if iOS builds are required", "если нужна сборка iOS"),
+        ("if Linux desktop support is kept", "если нужна поддержка Linux desktop"),
+        ("if macOS desktop support is kept", "если нужна поддержка macOS desktop"),
+        ("if Wear OS support is required", "если нужен Wear OS companion"),
+        ("if Wear OS companion is a supported target", "если нужен Wear OS companion"),
+        ("if GitHub Pages deploy and Windows installer artifacts are required", "если нужны GitHub Pages и Windows installer"),
+        ("while Windows installer distribution is needed", "пока нужен Windows installer"),
+        ("production PocketBase expects these hooks per manifest", "production PocketBase ожидает эти hooks"),
+        ("unless cleanup report says otherwise", "если отчёт cleanup не сказал иное"),
+        ("unless Flutter safely regenerates it and you verify the diff; normally keep tracked", "удалять только если Flutter пересоздаст и diff проверен"),
+        ("primary QA is `flutter test`", "основной QA — `flutter test`"),
+        ("Cursor root discovery expects this file or equivalent config", "Cursor ищет rules в root"),
+        ("documented local Android build path", "задокументированный путь локальной сборки Android"),
+        ("documented deploy workflow", "задокументированный deploy workflow"),
+    )
+    out = tail
+    for en, ru in repl:
+        out = out.replace(en, ru)
+    return out
+
+
+def translate_folder_field_ru(key: str, field: str, en_val: str, ctx: dict[str, str]) -> str:
+    """Produce Russian folder field text from English source."""
+    k = key.replace("\\", "/").strip("/")
+    top = k.split("/")[0] if k else ""
+    plat_ru = {
+        "android": "Android",
+        "ios": "iOS",
+        "web": "Web",
+        "windows": "Windows",
+        "linux": "Linux",
+        "macos": "macOS",
+    }.get(top, "")
+
+    if field == "delete":
+        return delete_en_to_ru(en_val)
+
+    if field == "related":
+        # Paths stay; wrap if pure English sentence
+        if looks_english_prose(en_val):
+            return en_val.replace("root platform folder", "корневая platform-папка")
+        return en_val
+
+    if field == "inside":
+        if plat_ru:
+            return f"Native-конфиги, generated-файлы embedder или ресурсы для `{k}/` (список файлов ниже)."
+        if k.startswith("lib/"):
+            return f"Dart-модули и виджеты в `{k}/` — перечень в секциях файлов ниже."
+        if k.startswith("docs/"):
+            return "Markdown-файлы с правилами и отчётами — список ниже."
+        if k.startswith("scripts/"):
+            return "PowerShell, Python или Dart скрипты — список ниже."
+        if k.startswith("test/"):
+            return "Файлы `*_test.dart` для `flutter test` — список ниже."
+        return f"Tracked-файлы в `{k}/` — описаны ниже по одному."
+
+    if field == "affects":
+        if plat_ru:
+            return f"Только сборка и native-поведение {plat_ru} — не Dart-экраны в `lib/`."
+        if k == "lib":
+            return "Весь продукт на всех платформах."
+        if k.startswith("lib/"):
+            return "Поведение и UI модуля, названного в пути папки."
+        if k.startswith("docs/"):
+            return "Решения при разработке и AI-контекст — не runtime приложения."
+        if k.startswith("scripts/"):
+            return "Deploy, audit, генерация docs — не экраны приложения."
+        if k.startswith("test/"):
+            return "Качество CI — не попадает в APK пользователю."
+        if k == ".github":
+            return "Живой сайт GitHub Pages и артеfact Windows installer."
+        if k == "pb_hooks":
+            return "Поведение PocketBase на сервере (сброс пароля, overlap записей)."
+        return "Workflow или сборка, связанная с этим путём."
+
+    if field == "when":
+        if plat_ru:
+            return f"Ошибка сборки {plat_ru}, Gradle/Xcode/CMake, или проблема с `{k}/`."
+        if k.startswith("lib/"):
+            sub = k[4:] if k.startswith("lib/") else k
+            return f"Баг или доработка в `{sub}`."
+        if k.startswith("docs/"):
+            return "Нужно прочитать или обновить документацию по теме папки."
+        if k.startswith("scripts/"):
+            return "Запуск deploy, audit guard или regenerate structure doc."
+        if k.startswith("test/"):
+            return "Падение `flutter test` или изменение покрытого кода."
+        if k == ".github":
+            return "CI deploy упал, сайт не обновился, нет CounterSetup.exe в Actions."
+        if k == "lib":
+            return "Любой баг UI, сохранение данных, offline, локализация."
+        return f"Сопровождение или сборка, связанная с `{k}/`."
+
+    if field == "why":
+        if plat_ru:
+            return f"Flutter собирает {plat_ru} из файлов под `{top}/`; это не пользовательский UI."
+        if k.startswith("lib/"):
+            return "Код под `lib/` входит в каждую сборку приложения."
+        if k.startswith("docs/"):
+            return "Текстовые правила для owner и AI; приложение их не исполняет."
+        return en_val if cyrillic_count(en_val) >= _MIN_CYRILLIC else f"Файлы в `{k}/` нужны для workflow или сборки проекта."
+
+    if field == "what":
+        if plat_ru:
+            return f"Платформенная папка {plat_ru}: `{k}/` — native-обёртка Flutter."
+        if k.startswith("lib/"):
+            sub = k[4:]
+            return f"Часть Flutter-приложения: `{k}/` ({sub})."
+        if k.startswith("docs/"):
+            return f"Документация проекта в `{k}/`."
+        if k.startswith("scripts/"):
+            return f"Скрипты разработки и CI в `{k}/`."
+        if k.startswith("test/"):
+            return f"Автотесты Flutter в `{k}/`."
+        return f"Папка репозитория `{k}/`."
+
+    return en_val
+
+
+def translate_file_field_ru(path: str, field: str, en_val: str) -> str:
+    """Produce Russian file-entry field from English."""
+    p = path.replace("\\", "/")
+    name = p.split("/")[-1]
+    lower = name.lower()
+    parent = "/".join(p.split("/")[:-1]) or "."
+
+    if field == "delete":
+        return delete_en_to_ru(en_val)
+
+    if field == "layer":
+        repl = (
+            ("Repo hygiene — not app runtime", "Гигиена репозитория — не runtime"),
+            ("Build tooling — not app runtime", "Сборка — не runtime приложения"),
+            ("Deploy tooling — not app runtime", "Deploy — не runtime приложения"),
+            ("Agent instructions — Project Knowledge", "Инструкции для AI — Project Knowledge"),
+            ("History — Project Knowledge", "История — Project Knowledge"),
+            ("Flutter tooling metadata — not app runtime", "Метаданные Flutter — не runtime"),
+            ("Static analysis config — not app runtime", "Конfig analyzer — не runtime"),
+            ("Platform wrapper — required for native/web builds", "Platform-обёртка Flutter"),
+            ("Build/deploy/server configuration", "Сборка/деплой/сервер"),
+            ("Documentation", "Документация"),
+            ("Test — not shipped to users", "Автотест — не в APK пользователю"),
+            ("Brain —", "Brain —"),
+            ("UI —", "UI —"),
+        )
+        out = en_val
+        for en, ru in repl:
+            out = out.replace(en, ru)
+        return out
+
+    if field == "when":
+        if p.startswith("android/"):
+            return "Ошибка Gradle/Android-сборки или permission на устройстве."
+        if p.startswith("web/"):
+            return "Пустая web-страница после deploy или неверный base href."
+        if p.startswith("scripts/"):
+            return "Запуск workflow из `docs/DEPLOY.md` или audit перед merge."
+        if p.startswith("docs/"):
+            return "Нужна written-инструкция по теме файла."
+        if p.startswith("test/"):
+            return f"Падение CI или правка кода рядом с `{name}`."
+        if p.startswith("lib/"):
+            return f"Баг или доработка, связанная с `{name}`."
+        return f"Когда build или maintenance ссылается на `{name}`."
+
+    if lower == "manifest.json" and p.startswith("web/"):
+        if field == "what":
+            return "Web app manifest — имя, theme color и иконки PWA."
+        if field == "why":
+            return "Браузер использует manifest для install prompt и темы вкладки."
+        if field == "contains":
+            return "JSON с icons и display mode."
+        if field == "responsibilities":
+            return "PWA-метаданные для GitHub Pages."
+
+    if "androidmanifest" in name.lower():
+        variant = "debug/profile" if "debug" in p or "profile" in p else "release/main"
+        if field == "what":
+            return f"Манифест Android ({variant}) — разрешения ОС, имя приложения и activity Flutter."
+        if field == "why":
+            return "Android читает XML при установке: mic, notifications, запуск приложения."
+        if field == "contains":
+            return "Теги `<uses-permission>`, имя приложения, intent filters."
+        if field == "responsibilities":
+            return "Permissions ОС и deep links для этой build variant."
+
+    if p.startswith("lib/data/"):
+        if field == "what":
+            return f"Brain-модуль `{name}` — PocketBase и локальный кэш."
+        if field == "why":
+            return "Экраны читают данные через Brain, не напрямую через HTTP."
+        if field == "contains":
+            return f"Dart-код: классы, extensions и helpers в `{name}`."
+        if field == "responsibilities":
+            return f"Зона ответственности brain: {en_val}."
+    if p.startswith("lib/features/"):
+        if field == "responsibilities":
+            return f"UI-логика экрана: {en_val}."
+    if p.startswith("lib/core/widgets/"):
+        if field == "what":
+            return f"Канонический виджет design system — `{name}`."
+        if field == "responsibilities":
+            return f"Общий UI-компонент: {en_val}."
+    if p.startswith("lib/core/"):
+        if field == "what":
+            return f"Foundation-код `{name}` — тема, время, voice или диагностика."
+        if field == "responsibilities":
+            return f"Общая инфраструктура приложения: {en_val}."
+
+    if field == "connected":
+        repl = (
+            ("UI calls via", "UI вызывает через"),
+            ("Categories screen", "экран Categories"),
+            ("Timeline tab", "вкладка Timeline"),
+            ("Plans tab", "вкладка Plans"),
+            ("Lists tab", "вкладка Lists"),
+            ("All main tabs", "все основные вкладки"),
+            ("Offline banner", "offline-баннер"),
+            ("See `docs/APP_STRUCTURE.md`", "См. `docs/APP_STRUCTURE.md`"),
+            ("Role:", "Роль:"),
+            ("Flutter tooling", "Flutter tooling"),
+            ("Folder `", "Папка `"),
+            (" platform folder", " platform-папка"),
+        )
+        out = en_val
+        for en, ru in repl:
+            out = out.replace(en, ru)
+        if looks_english_prose(out):
+            return f"Связи файла `{name}` с другими модулями — см. EN-блок и `docs/APP_STRUCTURE.md`."
+        return out
+
+    if field in ("what", "why", "contains", "responsibilities"):
+        if field == "what" and p.startswith("docs/"):
+            topic = name.replace(".md", "").replace("_", " ")
+            return f"Документ `{name}` — правила и заметки по теме: {topic}."
+        if field == "why" and p.startswith("docs/"):
+            return "Читается owner и AI; не исполняется приложением."
+        if field == "contains" and p.startswith("docs/"):
+            return "Markdown-секции по этой теме."
+        if field == "responsibilities" and p.startswith("docs/"):
+            topic = name.replace(".md", "").replace("_", " ")
+            return f"Ответы на вопросы по `{topic}`."
+        if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/")):
+            if field == "what" and looks_english_prose(en_val):
+                plat = p.split("/")[0]
+                hint = _short_ru_hint(en_val, p)
+                return f"Platform-файл {plat}: `{name}` — {hint}."
+            if field == "why" and looks_english_prose(en_val):
+                return f"Нужен для сборки `{parent}` на платформе {p.split('/')[0]}."
+            if field == "contains" and looks_english_prose(en_val):
+                return f"Native/config-содержимое `{name}` в `{parent}`."
+            if field == "responsibilities" and looks_english_prose(en_val):
+                return f"Поддержка embedder-сборки для `{parent}`."
+        if field == "responsibilities" and looks_english_prose(en_val):
+            return f"Роль `{name}` в модуле `{parent}`."
+        if field == "what" and looks_english_prose(en_val):
+            hint = _short_ru_hint(en_val, p)
+            return f"Файл `{name}` — {hint}."
+        if field == "why" and looks_english_prose(en_val):
+            return f"Нужен для workflow или сборки, связанной с `{name}`."
+        if field == "contains" and looks_english_prose(en_val):
+            return f"Содержимое `{name}` — открыть файл при правках."
+        return en_val
+
+    return en_val
+
+
+def _short_ru_hint(en: str, path: str = "") -> str:
+    """One-line Russian gloss for platform/tooling EN (last resort)."""
+    low = en.lower()
+    p = path.replace("\\", "/")
+    fname = p.split("/")[-1].lower()
+    if fname == "manifest.json" and p.startswith("web/"):
+        return "PWA manifest — имя, иконки, theme color"
+    if "gradle" in low:
+        return "Gradle-скрипт Android-сборки"
+    if "manifest" in low and p.startswith("android/"):
+        return "Android manifest — permissions и activity"
+    if "kotlin" in low or "activity" in low:
+        return "Kotlin-точка входа Flutter на Android"
+    if "launcher icon" in low:
+        return "иконка приложения на home screen"
+    if "theme" in low or "styles" in low:
+        return "XML-стили Android"
+    if "workflow" in low:
+        return "GitHub Actions workflow"
+    if "documentation" in low:
+        return "markdown-документ"
+    return "platform/config файл"
+
+
+def complete_all_ru_fields(key: str, data: dict[str, str], *, file_mode: bool = False) -> dict[str, str]:
+    """Fill or fix all *_ru fields; never leave English copy in RU slots."""
+    out = dict(data)
+    if file_mode:
+        pairs = [
+            ("what", "what_ru"),
+            ("why", "why_ru"),
+            ("contains", "contains_ru"),
+            ("responsibilities", "responsibilities_ru"),
+            ("when", "when_ru"),
+            ("delete", "delete_ru"),
+            ("connected", "connected_ru"),
+            ("layer", "layer_ru"),
+        ]
+        translate = lambda f, v: translate_file_field_ru(key, f, v)
+    else:
+        pairs = [
+            ("what", "what_ru"),
+            ("why", "why_ru"),
+            ("inside", "inside_ru"),
+            ("affects", "affects_ru"),
+            ("when", "when_ru"),
+            ("delete", "delete_ru"),
+            ("related", "related_ru"),
+        ]
+        translate = lambda f, v: translate_folder_field_ru(key, f, v, out)
+
+    for en_k, ru_k in pairs:
+        en_v = out.get(en_k, "")
+        ru_v = out.get(ru_k, "")
+        needs = (
+            not ru_v
+            or ru_v == en_v
+            or (looks_english_prose(ru_v) and cyrillic_count(ru_v) < _MIN_CYRILLIC)
+            or (ru_k == "delete_ru" and ru_v.strip().startswith("No —"))
+        )
+        if needs and en_v:
+            out[ru_k] = translate(en_k, en_v)
+        elif ru_k == "delete_ru" and ru_v and ru_v.strip().startswith("No —"):
+            out[ru_k] = delete_en_to_ru(en_v or ru_v)
+
+    return out

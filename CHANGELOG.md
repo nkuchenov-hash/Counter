@@ -13,10 +13,12 @@
 
 ## [2026-07-03] - Root/tooling structure guide humanization [shipped]
 
+* **`scripts/manual/structure_ru_helpers.py`:** [shipped] New `complete_all_ru_fields()` + `delete_en_to_ru()` — always fills folder/file `*_ru` fields; removes EN→RU copy and `No —` in RU delete lines.
+* **`scripts/manual/generate_app_structure_detailed.py`:** [shipped] `finalize_file_guide()` before render; no EN fallback in RU blocks; quality gate fails on SHA mismatch, RU=EN copy, English delete prefix.
+* **`scripts/manual/structure_guide_data.py`**, **`structure_role_guides.py`:** [shipped] `ensure_folder_ru()` completes all RU keys even when `what_ru` exists; brain/UI `responsibilities_ru` wrappers.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated at git SHA `22b478c` (528 files); real RU for `lib/`, `.github/`, platform folders — not generic templates.
 * **`AGENT_NAVIGATION.md`:** [shipped] Renamed from legacy `CLAUDE.md` (no hard tool dependency on filename); AI navigation map unchanged in role.
-* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Curated EN+RU root file guides (`.gitignore`, `.metadata`, `pubspec.*`, `update.ps1`, `android.ps1`, etc.); full RU folder sections; banned generic EN/RU filler phrases.
-* **`scripts/manual/structure_root_guides.py`:** [shipped] New curated root file dictionary.
-* **`scripts/manual/generate_app_structure_detailed.py`**, **`structure_guide_data.py`:** [shipped] Stricter quality gate; `lib/` and `.github/` concrete RU; no `см. EN`.
+* **`scripts/manual/structure_root_guides.py`:** [shipped] Curated EN+RU root file dictionary (`.gitignore`, `.metadata`, `pubspec.*`, `update.ps1`, `android.ps1`, etc.).
 * **`.cursorrules`:** [kept] Root pointer to `.cursor/rules/flutter_expert.mdc` (Cursor discovery convention).
 * **`android.ps1`:** [kept] Documented APK build helper (`flutter build apk --split-per-abi` → `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`).
 * **Production code:** [skipped] no Dart behavior changes; HTML structure map not regenerated.

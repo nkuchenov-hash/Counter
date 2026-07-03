@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path, PurePosixPath
 
+from structure_ru_helpers import complete_all_ru_fields
+
 # Each folder entry: what, why, inside, affects, when, delete, related
 FOLDERS: dict[str, dict[str, str]] = {
     "lib": {
@@ -1140,60 +1142,60 @@ def _folder_ru_auto(key: str, en: dict[str, str]) -> dict[str, str]:
         return {
             "what_ru": f"Платформенная папка {plat_ru}: `{k}/` — native-обёртка и конфиги Flutter для этой платформы.",
             "why_ru": f"Flutter собирает {plat_ru}-версию из файлов под `{top}/`; это не Dart-код экранов.",
-            "inside_ru": en.get("inside", "Конфиги и native-файлы — см. список файлов ниже."),
-            "affects_ru": en.get("affects", f"Только сборка и поведение на {plat_ru}."),
-            "when_ru": en.get("when", f"Ошибка сборки {plat_ru} или native-проблема."),
-            "delete_ru": en.get("delete", "Нет — нужна для сборки платформы."),
-            "related_ru": en.get("related", f"`{top}/`, `docs/APP_STRUCTURE.md`."),
+            "inside_ru": f"Native-конфиги и generated-файлы embedder в `{k}/`.",
+            "affects_ru": f"Только сборка и native-поведение {plat_ru} — не экраны в `lib/`.",
+            "when_ru": f"Ошибка сборки {plat_ru} или native-проблема в `{k}/`.",
+            "delete_ru": "Нет — нужна для сборки платформы.",
+            "related_ru": f"`{top}/`, `docs/APP_STRUCTURE.md`.",
         }
     if k.startswith("lib/"):
         sub = k[4:] if k.startswith("lib/") else k
         return {
             "what_ru": f"Код приложения в `{k}/` — часть Flutter-приложения ({sub}).",
             "why_ru": "Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.",
-            "inside_ru": en.get("inside", "Dart-файлы — перечень ниже."),
-            "affects_ru": en.get("affects", "Поведение и UI, связанные с этим модулем."),
-            "when_ru": en.get("when", f"Правки или баги в `{sub}`."),
-            "delete_ru": en.get("delete", "Нет — нужен для работы приложения."),
-            "related_ru": en.get("related", "`lib/`, `docs/APP_STRUCTURE.md`."),
+            "inside_ru": f"Dart-модули в `{k}/` — перечень файлов ниже.",
+            "affects_ru": "Поведение и UI модуля, названного в пути папки.",
+            "when_ru": f"Правки или баги в `{sub}`.",
+            "delete_ru": "Нет — нужен для работы приложения.",
+            "related_ru": "`lib/`, `docs/APP_STRUCTURE.md`.",
         }
     if k.startswith("docs/"):
         return {
             "what_ru": f"Документация в `{k}/` — written specs, не runtime-код.",
             "why_ru": "Текстовые правила и отчёты для owner и AI; приложение их не исполняет.",
-            "inside_ru": en.get("inside", "Markdown-файлы ниже."),
+            "inside_ru": "Markdown-файлы с правилами и отчётами — список ниже.",
             "affects_ru": "Решения при разработке — не бинарник приложения.",
-            "when_ru": en.get("when", "Нужно прочитать правила по теме папки."),
-            "delete_ru": en.get("delete", "Нет — governing или report документация."),
-            "related_ru": en.get("related", "`docs/PROJECT_KNOWLEDGE_PACK.md`."),
+            "when_ru": "Нужно прочитать или обновить документацию по теме папки.",
+            "delete_ru": "Нет — governing или report документация.",
+            "related_ru": "`docs/PROJECT_KNOWLEDGE_PACK.md`.",
         }
     if k.startswith("scripts/") or k.startswith("test/"):
         kind = "скрипты" if k.startswith("scripts") else "автотесты"
         return {
             "what_ru": f"Папка {kind}: `{k}/`.",
             "why_ru": "Поддержка CI, deploy, audit или регрессионных проверок.",
-            "inside_ru": en.get("inside", "Файлы перечислены ниже."),
-            "affects_ru": en.get("affects", "Качество и workflow — не экраны приложения."),
-            "when_ru": en.get("when", "Запуск workflow или падение CI."),
-            "delete_ru": en.get("delete", "Нет — задокументированный workflow."),
-            "related_ru": en.get("related", "`docs/APP_STRUCTURE.md`."),
+            "inside_ru": "Файлы перечислены ниже по одному.",
+            "affects_ru": "Качество и workflow — не экраны приложения.",
+            "when_ru": "Запуск workflow или падение CI.",
+            "delete_ru": "Нет — задокументированный workflow.",
+            "related_ru": "`docs/APP_STRUCTURE.md`.",
         }
     return {
-        "what_ru": en.get("what", f"Папка `{k}/` репозитория Life OS."),
-        "why_ru": en.get("why", "Файлы здесь нужны для сборки, CI или сопровождения проекта."),
-        "inside_ru": en.get("inside", "Tracked-файлы перечислены ниже."),
-        "affects_ru": en.get("affects", "Workflow или сборка, связанная с этим путём."),
-        "when_ru": en.get("when", f"Работа с `{k}/`."),
-        "delete_ru": en.get("delete", "Нет — часть репозитория."),
-        "related_ru": en.get("related", "`docs/APP_STRUCTURE.md`."),
+        "what_ru": f"Папка `{k}/` репозитория Life OS.",
+        "why_ru": "Файлы здесь нужны для сборки, CI или сопровождения проекта.",
+        "inside_ru": "Tracked-файлы перечислены ниже.",
+        "affects_ru": "Workflow или сборка, связанная с этим путём.",
+        "when_ru": f"Сопровождение или сборка, связанная с `{k}/`.",
+        "delete_ru": "Нет — часть репозитория.",
+        "related_ru": "`docs/APP_STRUCTURE.md`.",
     }
 
 
 def ensure_folder_ru(key: str, data: dict[str, str]) -> dict[str, str]:
-    if data.get("what_ru"):
-        return data
-    ru = _folder_ru_auto(key, data)
-    return {**data, **ru}
+    merged = dict(data)
+    if not merged.get("what_ru"):
+        merged.update(_folder_ru_auto(key, data))
+    return complete_all_ru_fields(key, merged, file_mode=False)
 
 
 def infer_folder_guide(key: str) -> dict[str, str]:

@@ -22,6 +22,7 @@ from structure_guide_data import (
 )
 from structure_role_guides import humanize_guide
 from structure_root_guides import ROOT_FILE_GUIDES
+from structure_ru_helpers import complete_all_ru_fields, looks_english_prose
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "docs" / "APP_STRUCTURE_DETAILED.md"
@@ -625,13 +626,8 @@ def platform_guide(path: str) -> FileGuide:
             delete=del_en,
             connected=f"Flutter `{parent.split('/')[0] if parent else 'repo'}` tooling.",
             layer=layer_en,
-            what_ru=inferred["what"],
-            why_ru=inferred["why"],
-            contains_ru=inferred["contains"],
-            responsibilities_ru=inferred["responsibilities"],
             when_ru=when_ru,
             delete_ru=del_ru,
-            connected_ru=f"Flutter tooling для `{parent}`.",
             layer_ru=layer_ru,
         )
 
@@ -805,6 +801,50 @@ def file_guide_from_dict(data: dict[str, str]) -> FileGuide:
     )
 
 
+def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
+    """Ensure every RU field is filled with Russian prose — never EN copy."""
+    d = complete_all_ru_fields(
+        path,
+        {
+            "what": g.what,
+            "why": g.why,
+            "contains": g.contains,
+            "responsibilities": g.responsibilities,
+            "when": g.when,
+            "delete": g.delete,
+            "connected": g.connected,
+            "layer": g.layer,
+            "what_ru": g.what_ru,
+            "why_ru": g.why_ru,
+            "contains_ru": g.contains_ru,
+            "responsibilities_ru": g.responsibilities_ru,
+            "when_ru": g.when_ru,
+            "delete_ru": g.delete_ru,
+            "connected_ru": g.connected_ru,
+            "layer_ru": g.layer_ru,
+        },
+        file_mode=True,
+    )
+    return FileGuide(
+        what=d["what"],
+        why=d["why"],
+        contains=d["contains"],
+        responsibilities=d["responsibilities"],
+        when=d["when"],
+        delete=d["delete"],
+        connected=d["connected"],
+        layer=d["layer"],
+        what_ru=d["what_ru"],
+        why_ru=d["why_ru"],
+        contains_ru=d["contains_ru"],
+        responsibilities_ru=d["responsibilities_ru"],
+        when_ru=d["when_ru"],
+        delete_ru=d["delete_ru"],
+        connected_ru=d["connected_ru"],
+        layer_ru=d["layer_ru"],
+    )
+
+
 def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
     if path in ROOT_FILE_GUIDES:
         return file_guide_from_dict(ROOT_FILE_GUIDES[path])
@@ -840,7 +880,7 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
     name = Path(p).name
     parent = PurePosixPath(p).parent.as_posix()
     ext = Path(p).suffix.lower()
-    del_en, _ = delete_for(path)
+    del_en, del_ru = delete_for(path)
     layer_en, layer_ru = layer_for(path)
     when_en, when_ru = when_for(path)
     kind = {
@@ -889,7 +929,7 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
         contains_ru=f"Открывать `{name}` при правках в `{parent}`.",
         responsibilities_ru=f"Роль `{name}` описана в секции папки выше.",
         when_ru=when_ru,
-        delete_ru=del_en,
+        delete_ru=del_ru,
         connected_ru=f"Папка `{parent}/`, `docs/APP_STRUCTURE.md`.",
         layer_ru=layer_ru,
     )
@@ -910,13 +950,13 @@ def render_folder(dirpath: str) -> str:
         f"- **Can it be deleted?** {data['delete']}\n"
         f"- **Main related paths:** {data['related']}\n\n"
         f"RU:\n\n"
-        f"- **Что это за папка:** {data.get('what_ru', data['what'])}\n"
-        f"- **Зачем нужна:** {data.get('why_ru', data['why'])}\n"
-        f"- **Что здесь лежит:** {data.get('inside_ru', data['inside'])}\n"
-        f"- **На что влияет в приложении:** {data.get('affects_ru', data['affects'])}\n"
-        f"- **Когда открывать:** {data.get('when_ru', data['when'])}\n"
-        f"- **Можно удалить?** {data.get('delete_ru', data['delete'])}\n"
-        f"- **Связанные пути:** {data.get('related_ru', data['related'])}\n"
+        f"- **Что это за папка:** {data['what_ru']}\n"
+        f"- **Зачем нужна:** {data['why_ru']}\n"
+        f"- **Что здесь лежит:** {data['inside_ru']}\n"
+        f"- **На что влияет в приложении:** {data['affects_ru']}\n"
+        f"- **Когда открывать:** {data['when_ru']}\n"
+        f"- **Можно удалить?** {data['delete_ru']}\n"
+        f"- **Связанные пути:** {data['related_ru']}\n"
     )
 
 
@@ -934,21 +974,42 @@ def render_file(path: str, g: FileGuide, syms: list[str]) -> str:
         f"- **Connected to:** {g.connected}\n"
         f"- **Layer / owner:** {g.layer}\n\n"
         f"RU:\n\n"
-        f"- **Что это:** {g.what_ru or g.what}\n"
-        f"- **Зачем:** {g.why_ru or g.why}\n"
-        f"- **Содержимое:** {g.contains_ru or g.contains}\n"
-        f"- **Обязанности:** {g.responsibilities_ru or g.responsibilities}\n"
-        f"- **Когда открывать:** {g.when_ru or g.when}\n"
-        f"- **Можно удалить?** {g.delete_ru or g.delete}\n"
-        f"- **Связано с:** {g.connected_ru or g.connected}\n"
-        f"- **Слой:** {g.layer_ru or g.layer}\n"
+        f"- **Что это:** {g.what_ru}\n"
+        f"- **Зачем:** {g.why_ru}\n"
+        f"- **Содержимое:** {g.contains_ru}\n"
+        f"- **Обязанности:** {g.responsibilities_ru}\n"
+        f"- **Когда открывать:** {g.when_ru}\n"
+        f"- **Можно удалить?** {g.delete_ru}\n"
+        f"- **Связано с:** {g.connected_ru}\n"
+        f"- **Слой:** {g.layer_ru}\n"
     )
 
 
-def quality_check(text: str, paths: list[str]) -> list[str]:
+def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
     issues: list[str] = []
     whats: list[str] = []
     all_banned_en = BAD_PHRASES + BANNED_EN_PHRASES
+
+    if f"**Generated at git SHA `{expected_sha}`" not in text:
+        issues.append(f"SHA mismatch: header must contain `{expected_sha}`")
+
+    en_ru_pairs = (
+        ("- **What this folder is:**", "- **Что это за папка:**"),
+        ("- **Why it exists:**", "- **Зачем нужна:**"),
+        ("- **What lives here:**", "- **Что здесь лежит:**"),
+        ("- **What part of the app it affects:**", "- **На что влияет в приложении:**"),
+        ("- **When to open it:**", "- **Когда открывать:**"),
+        ("- **Can it be deleted?**", "- **Можно удалить?**"),
+        ("- **What this is:**", "- **Что это:**"),
+        ("- **Why needed:**", "- **Зачем:**"),
+        ("- **What it contains:**", "- **Содержимое:**"),
+        ("- **Responsibilities:**", "- **Обязанности:**"),
+        ("- **When to open:**", "- **Когда открывать:**"),
+        ("- **Connected to:**", "- **Связано с:**"),
+        ("- **Layer / owner:**", "- **Слой:**"),
+    )
+    en_by_ru = {ru: en for en, ru in en_ru_pairs}
+
     desc_prefixes = (
         "- **What this is:**",
         "- **Why needed:**",
@@ -969,10 +1030,25 @@ def quality_check(text: str, paths: list[str]) -> list[str]:
         "- **Обязанности:**",
         "- **На что влияет в приложении:**",
     )
-    ru_prefixes = ("- **Что", "- **Зачем", "- **Содержимое", "- **Обязанности", "- **На что")
+    ru_prefixes = ("- **Что", "- **Зачем", "- **Содержимое", "- **Обязанности", "- **На что", "- **Можно удалить", "- **Связано", "- **Слой", "- **Когда открывать")
+
+    section_en: dict[str, str] = {}
+    in_ru = False
+    section_title = ""
+
     for line in text.splitlines():
+        if line.startswith("## Folder:") or line.startswith("### `"):
+            section_en = {}
+            in_ru = False
+            section_title = line[:80]
+        elif line.strip() == "RU:":
+            in_ru = True
+        elif line.strip() == "EN:":
+            in_ru = False
+
         if line.startswith("- **What this is:**"):
             whats.append(line.split(":", 1)[1].strip())
+
         for prefix in desc_prefixes:
             if not line.startswith(prefix):
                 continue
@@ -985,7 +1061,28 @@ def quality_check(text: str, paths: list[str]) -> list[str]:
                     break
             if line.startswith("- **What this folder is:**") and val.startswith("Folder `"):
                 issues.append(f"Generic folder prefix in: {val[:90]}")
+            if not is_ru:
+                section_en[prefix] = val
+            elif in_ru:
+                en_prefix = en_by_ru.get(prefix)
+                en_val = section_en.get(en_prefix, "") if en_prefix else ""
+                if val == en_val and en_val:
+                    issues.append(f"RU copies EN in {section_title}: {line[:100]}")
+                if line.startswith("- **Можно удалить?**") and (
+                    val.startswith("No —") or val.startswith("Maybe —")
+                ):
+                    issues.append(f"English delete prefix in RU: {line[:100]}")
+                skip_prose = prefix in (
+                    "- **Связано с:**",
+                    "- **Слой:**",
+                    "- **Связанные пути:**",
+                    "- **Содержимое:**",
+                )
+                if not skip_prose and looks_english_prose(val):
+                    if len(val) > 35:
+                        issues.append(f"English prose in RU block ({section_title}): {line[:100]}")
             break
+
     counts = Counter(whats)
     dupes = [(w, c) for w, c in counts.items() if c > 2 and len(w) < 100]
     if dupes:
@@ -1016,25 +1113,30 @@ def main() -> None:
         "",
         "Owner-readable guide: every tracked folder and file in plain language (EN + RU).",
         "",
-        f"**Generated at git SHA `{sha()}` on {date.today().isoformat()}.**",
-        "",
-        "Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)",
-        "",
-        "Regenerate after tree changes:",
-        "",
-        "```powershell",
-        "python scripts/manual/generate_app_structure_detailed.py",
-        "```",
-        "",
-        "---",
-        "",
-        "## How to read this document",
-        "",
-        "Each **folder** section explains why that part of the repo exists. Each **file** section is unique — if two files did the same job, one of them would not belong in the repo.",
-        "",
-        "---",
-        "",
     ]
+    head_sha = sha()
+    lines.extend(
+        [
+            f"**Generated at git SHA `{head_sha}` on {date.today().isoformat()}.**",
+            "",
+            "Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)",
+            "",
+            "Regenerate after tree changes:",
+            "",
+            "```powershell",
+            "python scripts/manual/generate_app_structure_detailed.py",
+            "```",
+            "",
+            "---",
+            "",
+            "## How to read this document",
+            "",
+            "Each **folder** section explains why that part of the repo exists. Each **file** section is unique — if two files did the same job, one of them would not belong in the repo.",
+            "",
+            "---",
+            "",
+        ]
+    )
 
     # Folder sections (skip empty root duplicate)
     for folder in folder_order:
@@ -1053,13 +1155,13 @@ def main() -> None:
     what_samples: list[str] = []
     for path in all_files:
         syms = symbols(path)
-        g = build_guide(path, roles, syms)
+        g = finalize_file_guide(path, build_guide(path, roles, syms))
         what_samples.append(g.what)
         lines.append(render_file(path, g, syms))
         lines.append("")
 
     body = "\n".join(lines)
-    issues = quality_check(body, all_files)
+    issues = quality_check(body, all_files, head_sha)
     OUT.write_text(body, encoding="utf-8")
     print(f"Wrote {OUT} ({len(all_files)} files, {len(folder_order)} folders, {len(body.splitlines())} lines)")
     if issues:

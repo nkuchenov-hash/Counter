@@ -223,10 +223,10 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
         "why": why,
         "contains": contains,
         "responsibilities": role.split(";")[0].strip(),
-        "what_ru": what,  # generator can keep EN for complex parts; folder RU is separate
-        "why_ru": why,
-        "contains_ru": contains,
-        "responsibilities_ru": role.split(";")[0].strip(),
+        "what_ru": f"Brain-модуль ({area}): {role.split(';')[0].strip()}.",
+        "why_ru": f"Часть brain для {area} и PocketBase.",
+        "contains_ru": f"Dart-код ({_sym_line(syms)}).",
+        "responsibilities_ru": f"Зона ответственности: {role.split(';')[0].strip()}.",
     }
 
 
@@ -264,7 +264,7 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "what_ru": f"Главный координатор для {domain_label}.",
             "why_ru": "UI вызывает один вход; детали — в модулях subfolder.",
             "contains_ru": f"Extensions + `part` файлы для {domain}.",
-            "responsibilities_ru": role_clean.split(";")[0].strip(),
+            "responsibilities_ru": f"Координатор домена: {role_clean.split(';')[0].strip()}.",
         }
 
     if p.startswith("lib/data/records/"):
@@ -310,7 +310,7 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "what_ru": f"UI для {screen}: {role_short}.",
             "why_ru": f"Пользователь видит это на {screen}.",
             "contains_ru": f"Flutter-виджеты ({sym}).",
-            "responsibilities_ru": role_clean,
+            "responsibilities_ru": f"UI-логика: {role_clean}.",
         }
 
     if p.startswith("lib/shell/"):
@@ -323,7 +323,7 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "what_ru": f"Оболочка приложения — {role_short}.",
             "why_ru": "Связывает вкладки, voice, edit sheets, offline banner.",
             "contains_ru": f"Shell mixin/виджет ({sym}).",
-            "responsibilities_ru": role_clean,
+            "responsibilities_ru": f"UI-логика: {role_clean}.",
         }
 
     if p.startswith("lib/core/widgets/"):
@@ -336,7 +336,7 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "what_ru": f"Общий виджет design system — {role_short}.",
             "why_ru": "Один стиль кнопок/карточек на всех вкладках.",
             "contains_ru": f"Виджет ({sym}).",
-            "responsibilities_ru": role_clean,
+            "responsibilities_ru": f"UI-логика: {role_clean}.",
         }
 
     if p.startswith("lib/core/"):
@@ -347,10 +347,10 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "why": "Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.",
             "contains": f"Dart utilities ({sym}).",
             "responsibilities": role_clean,
-            "what_ru": f"Foundation ({sub}) — {role_short}.",
+            "what_ru": f"Foundation-код ({sub}) — {role_short}.",
             "why_ru": "Общий код: тема, время, voice — не один экран.",
             "contains_ru": f"Утилиты ({sym}).",
-            "responsibilities_ru": role_clean,
+            "responsibilities_ru": f"Foundation-логика: {role_clean}.",
         }
 
     if p.startswith("lib/l10n/"):
@@ -399,7 +399,7 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "what_ru": f"Brain — {role_short}.",
             "why_ru": "Общая логика PocketBase для нескольких вкладок.",
             "contains_ru": f"Dart ({sym}).",
-            "responsibilities_ru": role_clean,
+            "responsibilities_ru": f"Brain-логика: {role_clean}.",
         }
 
     return None
