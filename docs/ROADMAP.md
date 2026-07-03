@@ -147,9 +147,9 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 
 ## 🟢 Velocity Track
 
-### Codebase cleanup (2026-06-22 — 2026-06-23)
+### Codebase cleanup (2026-06-22 — 2026-07-03)
 
-**Status:** Stage A + A.1 + C complete. **Final release structure cleanup (2026-06-23)** complete. Architecture splits deferred.
+**Status:** Complete. UI decomposition (Pass 3/3B), Brain decomposition (Pass 4A–4D), repo junk cleanup, and final structure/doc parity pass shipped 2026-07-03.
 
 | Stage | Scope | Status |
 | :--- | :--- | :--- |
@@ -158,16 +158,19 @@ Low severity (defer): `auth_service.dart:134, 163` — non-deterministic UID fal
 | **C** | Doc sync (APP_STRUCTURE, CLAUDE, audit) | ✅ |
 | **Lockdown** | Full-repo manifest + APP_STRUCTURE contract + `architecture_guard.ps1` | ✅ 2026-06-23 |
 | **Release structure** | Delete/migrate non-release files; strict guard; `APP_STRUCTURE_EXPLAINED_RU.md`; l10n SSOT | ✅ 2026-06-23 |
-| **E.0 Blueprint** | Large-file split plan — `docs/reports/LARGE_FILE_SPLIT_BLUEPRINT_2026-07-02.md` | ✅ 2026-07-02 |
+| **E.0 Blueprint** | Large-file split plan (executed as Pass 3–4D) | ✅ 2026-07-02 |
 | **E.0.5A Checkpoint** | Guard green + desktop voice/timezone baseline committed (`77e4afd`); APK + web deploy verified | ✅ 2026-07-02 |
-| **E.1+ Implementation** | Split passes per blueprint (profile → sheets → plan card → …) | ⏸ next — not started |
+| **E.1 UI decomposition** | Pass 3 shell/planning/timeline/lists/shared/plan card + Pass 3B lists patch | ✅ 2026-07-03 |
+| **E.2 Brain decomposition** | Pass 4A–4D — `plans/*`, `records/*`, `categories/*`, `profile/*` | ✅ 2026-07-03 |
+| **Repo cleanup** | Non-project junk + accidental exports removed | ✅ 2026-07-03 |
+| **Final parity** | Tree/doc dedupe — `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` | ✅ 2026-07-03 |
 | **D** | Architecture guard **-Strict** in CI | ⏸ next |
 | **B** | Safe renames/moves (root barrels, Archive/, duplicate l10n) | ⏸ after D |
-| **E** | Justified large-file splits | ⏸ — **never by line count alone** |
+| **E** | Further large-file splits | ⏸ — **never by line count alone**; Pass 3–4D complete |
 
 **Remaining:** 3 runtime test failures (`perf_shell_date_settle_test`, `widget_test` smoke, related perf harness). Not compile blockers.
 
-Reports: `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`, `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md`.
+Reports: `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`, `docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`, `docs/reports/AUDIT_NOTES.md`, `docs/reports/REPO_CLEANUP_NON_PROJECT_FILES_2026-07-03.md`.
 
 ---
 

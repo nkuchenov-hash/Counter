@@ -28,7 +28,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - Correctness and performance regressions outrank design, feature, preload, cache, or cleanup work.
 - Active foundation tracks are V3/V7: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and admin-only Component Lab.
 - Feature work is paused unless explicitly requested or required by the current task.
-- Structure cleanup is governed by `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, and the cleanup/lockdown reports; do not perform opportunistic architecture moves.
+- Structure cleanup is governed by `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, and `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`; do not perform opportunistic architecture moves.
 - Brain/UI structure decomposition (Passes 3–4D) is **complete** as of 2026-07-03 (`d7e7c12`). Further splits need explicit product scope — see `docs/APP_STRUCTURE.md` §7.
 
 ## Task-Specific Document Routing
@@ -36,7 +36,7 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - PocketBase, schema, auth, records, plans, categories, tags: read `docs/DATA_MAP.md` and `docs/POCKETBASE_MANIFEST.md`.
 - UI components, design system, cards, buttons, chips, tabs, sheets, Component Lab: read `docs/DESIGN_SYSTEM.md` and `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
 - Deploy, build, release, GitHub Pages, OAuth/admin production setup: read `docs/DEPLOY.md`.
-- File structure, moves, import boundaries, architecture cleanup: read `docs/APP_STRUCTURE.md`, `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md`, and `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`.
+- File structure, moves, import boundaries, architecture cleanup: read `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, and `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`.
 - Feature status, shipped work, accepted work, or "what is already built": read `CHANGELOG.md` and `docs/ROADMAP.md`.
 - UX behavior, tap/save/delete/loading/offline/swipe contracts: read `docs/UX_CONTRACT.md`.
 - Runtime architecture, optimistic UI, performance, time rules, and PocketBase relation contracts: read `docs/ARCHITECTURE.md`.

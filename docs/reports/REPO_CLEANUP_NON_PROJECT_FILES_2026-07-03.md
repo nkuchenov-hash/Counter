@@ -61,10 +61,10 @@ Export script `scripts/manual/export_price_reporter_timesheet.dart` still writes
 
 | Path / group | Reason |
 | :--- | :--- |
-| `scripts/pass3_*`, `scripts/extract_*`, `scripts/split_planning_page.py` | Historical Pass 3 extraction tooling; documented in `APP_STRUCTURE.md` §7 |
+| `scripts/manual/structure_scan.ps1`, `scripts/manual/generate_app_structure_detailed.py` | Documented regen helpers |
 | `scripts/manual/structure_scan.ps1`, `generate_app_structure_detailed.py` | Current structure doc workflow |
 | `scripts/audit/architecture_guard.ps1`, `scripts/manual/td.ps1`, `scripts/sync_locales.dart` | Active CI/deploy/audit |
-| `docs/archive/*` | Intentional archived notes |
+| `docs/reports/*` (canonical subset) | Structure parity and audit reports — see `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` |
 | `docs/reports/*` (pass reports) | Historical decomposition audit trail |
 | `tools/sample_data/*.csv` | Migration/sample fixtures |
 | `run_desktop_voice_test.bat` | Tracked desktop voice test entry |
@@ -79,9 +79,9 @@ Export script `scripts/manual/export_price_reporter_timesheet.dart` still writes
 | :--- | :--- |
 | **None blocking** | All candidates either deleted (clear junk) or kept with documented reason |
 
-Optional future hygiene (not done in this pass):
+Optional future hygiene (not done in repo cleanup pass; **done in final parity pass 2026-07-03**):
 
-- Archive or delete historical `scripts/pass3_*` / `scripts/extract_*` if team agrees they are no longer reference-only (currently kept per `APP_STRUCTURE.md` §7).
+- ~~Archive or delete historical `scripts/pass3_*` / `scripts/extract_*`~~ — removed; see `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`.
 
 ---
 

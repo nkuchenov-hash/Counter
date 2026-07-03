@@ -2,7 +2,7 @@
 
 Detailed bilingual (EN/RU) file guide for the Life OS / Counter repository.
 
-**Generated from tree scan at SHA `d7e7c12` (2026-07-03).**
+**Generated from tree scan at SHA `19d794a` (2026-07-03).**
 
 Concise canonical map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md).
 
@@ -6270,142 +6270,6 @@ RU:
 - **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
 
 
-### `scripts/extract_app_shell_pass2.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/extract_offline_sync_bar.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/extract_plan_card_metrics.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/extract_plan_card_pass2.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/extract_planning_pass2.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/extract_planning_tail.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/extract_profile_sections.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/extract_shared_widgets.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
 ### `scripts/manual/COMPLETE_INSTALL.ps1`
 
 EN:
@@ -6499,6 +6363,23 @@ EN:
 - **Purpose:** Developer/CI script.
 - **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: main.
 - **Symbols:** `main`
+- **Does:** Not shipped in app binary.
+- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
+
+RU:
+
+- **Назначение:** Скрипт разработки/CI.
+- **Что внутри:** Аудит, деплой, синхронизация.
+- **Что делает:** Не входит в релизный бинарник.
+- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
+
+
+### `scripts/manual/generate_app_structure_detailed.py`
+
+EN:
+
+- **Purpose:** Developer/CI script.
+- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
 - **Does:** Not shipped in app binary.
 - **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
 
@@ -6646,6 +6527,23 @@ RU:
 - **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
 
 
+### `scripts/manual/structure_scan.ps1`
+
+EN:
+
+- **Purpose:** Developer/CI script.
+- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
+- **Does:** Not shipped in app binary.
+- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
+
+RU:
+
+- **Назначение:** Скрипт разработки/CI.
+- **Что внутри:** Аудит, деплой, синхронизация.
+- **Что делает:** Не входит в релизный бинарник.
+- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
+
+
 ### `scripts/manual/td`
 
 EN:
@@ -6681,142 +6579,6 @@ RU:
 
 
 ### `scripts/p0b_build_apk.ps1`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/pass3_extract_app_shell.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/pass3_extract_lists.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/pass3_extract_plan_card.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/pass3_extract_planning_time_view.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/pass3_extract_timeline.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/pass3_normalize_plan_card.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/pass3b_patch_lists_view.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/split_planning_page.py`
 
 EN:
 
@@ -6871,6 +6633,23 @@ RU:
 
 
 ### `docs/APP_STRUCTURE.md`
+
+EN:
+
+- **Purpose:** Project documentation.
+- **Contains:** Architecture, data map, reports. Symbols: (library).
+- **Does:** Governing specs for Brain/UI behavior.
+- **Connected to:** Must stay aligned with code tree (this file).
+
+RU:
+
+- **Назначение:** Документация проекта.
+- **Что внутри:** Контракты архитектуры и DATA_MAP.
+- **Что делает:** Источник правды для полей PB.
+- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
+
+
+### `docs/APP_STRUCTURE_DETAILED.md`
 
 EN:
 
@@ -7057,75 +6836,7 @@ RU:
 - **Как связано с общей логикой:** Должна совпадать с деревом файлов.
 
 
-### `docs/archive/LIFE_OS_CURSOR_PROMPT.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/archive/lib_notes_scratch.txt`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
 ### `docs/reports/AUDIT_NOTES.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/AUTH_SETUP.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/CODEBASE_CLEANUP_AUDIT_2026-06-22.md`
 
 EN:
 
@@ -7159,7 +6870,7 @@ RU:
 - **Как связано с общей логикой:** Должна совпадать с деревом файлов.
 
 
-### `docs/reports/ENTRANCE_BUILD.md`
+### `docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`
 
 EN:
 
@@ -7176,245 +6887,7 @@ RU:
 - **Как связано с общей логикой:** Должна совпадать с деревом файлов.
 
 
-### `docs/reports/FIXES_SURGICAL_AND_COLLISION.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/HYBRID_CLOUD.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/LARGE_FILE_SPLIT_BLUEPRINT_2026-07-02.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/REFACTOR_SUMMARY.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/STRUCTURE_DECOMPOSITION_AUDIT_2026-07-02.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/STRUCTURE_DECOMPOSITION_PASS3B_2026-07-03.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/STRUCTURE_DECOMPOSITION_PASS3_2026-07-03.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/STRUCTURE_DECOMPOSITION_PASS4A_PLAN_2026-07-03.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/STRUCTURE_DECOMPOSITION_PASS4B_RECORD_2026-07-03.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/STRUCTURE_DECOMPOSITION_PASS4C_CATEGORY_2026-07-03.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/STRUCTURE_DECOMPOSITION_PASS4D_PROFILE_2026-07-03.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/VISUAL_AUDIT_328_RECORDS.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/WEB_DEPLOYMENT_SUMMARY.md`
-
-EN:
-
-- **Purpose:** Project documentation.
-- **Contains:** Architecture, data map, reports. Symbols: (library).
-- **Does:** Governing specs for Brain/UI behavior.
-- **Connected to:** Must stay aligned with code tree (this file).
-
-RU:
-
-- **Назначение:** Документация проекта.
-- **Что внутри:** Контракты архитектуры и DATA_MAP.
-- **Что делает:** Источник правды для полей PB.
-- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
-
-
-### `docs/reports/_lockdown_inventory.csv`
+### `docs/reports/REPO_CLEANUP_NON_PROJECT_FILES_2026-07-03.md`
 
 EN:
 

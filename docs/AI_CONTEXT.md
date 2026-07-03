@@ -23,8 +23,7 @@ The nested `counter/counter/` layout was flattened in June 2026. The old outer F
 | `docs/POCKETBASE_MANIFEST.md` | PB collections, relations |
 | `docs/DEPLOY.md` | Website update / GitHub Pages |
 | `CLAUDE.md` | AI navigation map, symbols, drift notes |
-| `docs/reports/` | Archived audit and one-off reports |
-| `docs/archive/` | Archived prompts and legacy planning notes |
+| `docs/reports/` | Audit notes and structure parity reports (see `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`) |
 
 ---
 

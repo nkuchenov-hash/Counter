@@ -10,12 +10,13 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 | Item | Value |
 | :--- | :--- |
-| **Structure baseline SHA** | `d7e7c12` (Pass 4D deployed) |
+| **Structure baseline SHA** | `e52e364` (final parity pass) |
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
 | **Strict architecture guard** | Green (0 violations) |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — bilingual EN/RU per tracked file |
 | **Scan report** | [`docs/reports/FILE_STRUCTURE_SCAN_2026-07-03.md`](reports/FILE_STRUCTURE_SCAN_2026-07-03.md) |
+| **Final parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
 
 Regenerate the detailed guide after large tree changes:
 
@@ -515,9 +516,10 @@ Run from repo root:
 | `database_service.dart` root | Singleton host only (~720 lines); domain logic already in `part` files |
 | `record_service.dart` / `category_service.dart` / `profile_service.dart` coordinators | Cross-domain static bridges and shared Brain state |
 | Platform folders (`android/`, `ios/`, …) | Flutter-generated runners — not product logic |
-| One-off `scripts/pass3_*`, `scripts/extract_*` | Historical extraction tooling; do not re-run blindly |
 
-Pass 4 regex/line Brain split scripts (`pass4_brain_split.py`, `pass4_split_fast.py`) were **removed** after a failed attempt. Use symbol-aware batches only (see Pass 4A–4D reports).
+One-off Pass 3/Pass 2 extraction scripts (`scripts/pass3_*`, `scripts/extract_*`, `scripts/split_planning_page.py`) were **removed** 2026-07-03 after decomposition shipped. See `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md` for acceptance summary.
+
+Pass 4 regex/line Brain split scripts (`pass4_brain_split.py`, `pass4_split_fast.py`) were **removed** after a failed attempt. Pass 4A–4D used symbol-aware batches only.
 
 ---
 

@@ -146,7 +146,7 @@ Governing: `ARCHITECTURE.md`, `DATA_MAP.md`, `POCKETBASE_MANIFEST.md`, `UX_CONTR
 | No scan report / regen commands | **Added** this file + `structure_scan.ps1` + generator script |
 | Ephemeral scan `.tmp` files could be staged | **Added** `docs/reports/_*.tmp` to `.gitignore` |
 
-Intentionally **not** rewritten: historical decomposition reports (Pass 3/4A–4D), `LARGE_FILE_SPLIT_BLUEPRINT`, audit notes — they document past state correctly.
+Intentionally **not** rewritten in the 2026-07-03 scan (superseded by final parity pass): intermediate decomposition reports, blueprint, lockdown audit CSV — **removed** 2026-07-03; acceptance summary consolidated in `FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`.
 
 ---
 
@@ -155,7 +155,7 @@ Intentionally **not** rewritten: historical decomposition reports (Pass 3/4A–4
 | Group | Why |
 | :--- | :--- |
 | Deep `android/**`, `ios/**` Gradle/Xcode generated files | Platform boilerplate; folder-level note in detailed guide |
-| `scripts/pass3_*`, `scripts/extract_*`, `scripts/pass4_*` | One-off extraction history; listed in scripts section only |
+| `scripts/manual/structure_scan.ps1`, `generate_app_structure_detailed.py` | Documented regen helpers |
 | Untracked `build/`, `.dart_tool/` | Gitignored generated output |
 
 Every **tracked** `lib/**/*.dart` file has an entry in `docs/APP_STRUCTURE_DETAILED.md`.
@@ -164,11 +164,12 @@ Every **tracked** `lib/**/*.dart` file has an entry in `docs/APP_STRUCTURE_DETAI
 
 ## Conclusion
 
-**Docs now match the current tree** as of SHA `d7e7c12`:
+**Docs now match the current tree** as of the final parity pass (baseline SHA `19d794a`):
 
 - Concise map: `docs/APP_STRUCTURE.md`
-- Detailed bilingual guide: `docs/APP_STRUCTURE_DETAILED.md`
+- Detailed bilingual guide: `docs/APP_STRUCTURE_DETAILED.md` (regenerated after cleanup)
 - Russian short guide: `docs/APP_STRUCTURE_EXPLAINED_RU.md`
+- Final acceptance: `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`
 
 No production Dart files were modified. No files were moved or renamed.
 

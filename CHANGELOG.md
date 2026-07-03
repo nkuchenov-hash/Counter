@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Final structure parity and doc cleanup [shipped]
+
+* **`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`:** [shipped] Baseline `19d794a`; removed 20 superseded reports + 16 one-off extraction scripts; consolidated Pass 3–4D acceptance; parity checklist.
+* **Deleted docs:** [shipped] Supabase/Firebase-era reports, lockdown/blueprint/intermediate decomposition reports, `docs/archive/*` scratch.
+* **Deleted scripts:** [shipped] `scripts/pass3_*`, `scripts/extract_*`, `scripts/split_planning_page.py` — decomposition complete.
+* **`docs/APP_STRUCTURE.md`**, **`AGENTS.md`**, **`CLAUDE.md`**, **`docs/ROADMAP.md`**, **`docs/AI_CONTEXT.md`**, **`DESIGN_SYSTEM_INVENTORY.md`:** [shipped] Broken links fixed; §7 script note updated.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated (553 tracked files).
+* **Production code:** [skipped] docs/hygiene only; `update.ps1` not run.
+
 ## [2026-07-03] - Repo cleanup non-project files [shipped]
 
 * **Local junk removed:** [shipped] `docs/reports/_*.tmp`, Android JVM `hs_err_`/`replay_` logs, `scripts/__pycache__/`, root `*_perf_capture.txt` captures (gitignored).

@@ -185,7 +185,7 @@ Routing map for AI assistants: open these first instead of grepping. Update this
 
 ## P0 / performance layer (active architecture debt)
 
-**Not random garbage — active diagnostics + warm-cache for Timeline/Planning date paging (P0U track).** Consolidate later; do not delete while paging work is open. Full file list: `docs/APP_STRUCTURE.md` §5.3–5.4. Lockdown report: `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md`.
+**Not random garbage — active diagnostics + warm-cache for Timeline/Planning date paging (P0U track).** Consolidate later; do not delete while paging work is open. Full file list: `docs/APP_STRUCTURE.md` §5.3–5.4. Structure guard: `scripts/audit/architecture_guard.ps1 -Strict`.
 
 | Concept | File | Notes |
 | :--- | :--- | :--- |

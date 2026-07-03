@@ -398,4 +398,4 @@ Do not mass-replace these findings opportunistically. Migrate one component fami
 
 ## Structure lockdown note (2026-06-23)
 
-See `docs/reports/REPO_STRUCTURE_LOCKDOWN_2026-06-23.md` and `scripts/audit/architecture_guard.ps1`. Both canonical unwired components remain **KEEP** until V7 migration pass.
+See `docs/APP_STRUCTURE.md` and `scripts/audit/architecture_guard.ps1`. Both canonical unwired components remain **KEEP** until V7 migration pass.
