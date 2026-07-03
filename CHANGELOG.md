@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Remove external sync wording from docs [shipped]
+
+* **`CLAUDE.md`:** [shipped] Doc sync reminder — removed external sync instructions; neutral repo-local wording only.
+
 ## [2026-07-03] - Final structure parity and doc cleanup [shipped]
 
 * **`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`:** [shipped] Baseline `19d794a`; removed 20 superseded reports + 16 one-off extraction scripts; consolidated Pass 3–4D acceptance; parity checklist.

@@ -326,4 +326,4 @@ At the end of any session where code was shipped (committed and verified clean b
 ---
 
 ## Doc sync reminder
-Maintain a running list of every governing doc modified during the session. At session end, print the full list and remind the user to re-upload them to the Claude.ai Project. Do not rely on memory of what was last edited. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `docs/AI_CONTEXT.md`, `CHANGELOG.md`, `CLAUDE.md`.
+Maintain a running list of every governing doc modified during the session. At session end, print the full list. Do not rely on memory of what was last edited. Current governing docs are committed in this repository. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `docs/AI_CONTEXT.md`, `CHANGELOG.md`, `CLAUDE.md`.
