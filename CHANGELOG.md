@@ -11,6 +11,16 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Structure refactor pass 3 [shipped]
+
+* **`lib/features/planning/time_view/`:** [shipped] Time View extracted from `planning_page.dart` (5287→2650): `planning_time_view.dart`, `time_view_canvas.dart`, `time_view_hour_grid.dart`, `time_view_card_layer.dart`, drag/resize/drop/settings/search modules; `PlanningTimeViewHost` + `PlanningTimeViewCoordinator`; gesture/cascade unchanged.
+* **`lib/shell/`:** [shipped] `app_shell.dart` → 2-line re-export; `life_os_dashboard.dart` + part mixins (`shell_core`, `shell_tab_host`, `shell_edit_hosts`, `shell_more_menu`, `shell_voice_routing`); side nav/profile bar/settings moved; tab order/voice/sync unchanged.
+* **`lib/core/widgets/plan_time_task_card/`:** [shipped] Package normalized: widget 433 lines + `plan_card_layouts.dart`, `plan_card_progress.dart`, `plan_card_density.dart`; compatibility barrel at `plan_time_task_card.dart`.
+* **`lib/features/timeline/`:** [shipped] `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart`; `timeline_view.dart` 1129→713.
+* **`lib/features/lists/`:** [shipped] `lists_card.dart`, `lists_export.dart`; `lists_view.dart` 2036→1685.
+* **Brain services:** [skipped] `plan_service`/`record_service`/`category_service`/`profile_service` untouched.
+* **Verification:** strict `architecture_guard` 0 violations; `flutter analyze` 0 errors; `flutter test` 248/248; web + APK green.
+
 ## [2026-07-02] - Structure refactor pass 2 [shipped]
 
 * **`lib/features/planning/`:** [shipped] `planning_view.dart` → barrel; `planning_page.dart` (~5543) + `planning_page_shell.dart` (~292); sort/bulk/filter/empty/list-helper widgets extracted; Time View gesture state unchanged.

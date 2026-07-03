@@ -1,0 +1,738 @@
+part of 'life_os_dashboard.dart';
+
+mixin ShellVoiceRouting on ShellCoreLogic {
+  Future<void> refreshDesktopTrayMenu() async {
+    if (!DesktopTrayService.isSupported) return;
+    final loc = currentLocale.value;
+    await DesktopTrayService.refreshMenuLabels(
+      showCounter: t(loc, 'tray_show_counter'),
+      startVoice: t(loc, 'tray_start_voice'),
+      stopRecord: t(loc, 'tray_stop_record'),
+      settings: t(loc, 'tray_settings'),
+      exitCounter: t(loc, 'tray_exit_counter'),
+    );
+  }
+
+  Future<void> initDesktopVoiceLayer() async {
+    if (!DesktopVoiceHotkey.isSupportedPlatform) return;
+    await DesktopVoiceSettings.instance.loadIfNeeded();
+    if (!mounted) return;
+
+    if (await DesktopTrayService.shouldStartHidden()) {
+      unawaited(DesktopTrayService.hideMainWindow());
+    }
+
+    await DesktopTrayService.initialize(
+      onShowApp: () {
+        unawaited(DesktopTrayService.showMainWindow());
+        setShellPageIndex(0);
+        if (mounted) setState(() {});
+      },
+      onStartVoice: () => unawaited(toggleDesktopVoiceWidget()),
+      onStopRunningRecord: () => unawaited(stopAnyActiveTask()),
+      onOpenSettings: () {
+        unawaited(DesktopTrayService.showMainWindow());
+        setShellPageIndex(5);
+        if (mounted) setState(() {});
+      },
+      onExitApp: () async {
+        closeDesktopVoiceOverlayIfOpen();
+        await DesktopVoiceHotkey.detachGlobal();
+        await DesktopTrayService.dispose();
+        DesktopSttHelperService.instance.dispose();
+        if (Platform.isWindows) exit(0);
+      },
+    );
+    await refreshDesktopTrayMenu();
+    unawaited(DesktopTrayService.applyAutostartRegistry());
+
+    if (DesktopVoiceHotkey.isActive) {
+      final ok = await DesktopVoiceHotkey.attachGlobal(
+        onToggle: onDesktopVoiceHotkeyToggle,
+      );
+      DesktopVoiceHotkeyMarkers.logRegistration(ok: ok);
+      if (ok) {
+        DesktopSttHelperService.instance.prewarmRecognizerInBackground();
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_APP_READY');
+      }
+    } else {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_HOTKEY_SKIPPED',
+        'voice_inactive',
+      );
+    }
+  }
+
+  void onDesktopVoiceHotkeyToggle() {
+    unawaited(toggleDesktopVoiceWidget());
+  }
+
+  Future<bool> runDesktopVoiceAcceptanceCommand(String transcript) async {
+    final outcome = await DesktopVoiceRecordSubmit.submitTranscript(
+      categoryRules: List<CategoryRule>.from(rules),
+      transcript: transcript,
+      dateKey: timelineVoiceDateKey,
+      localeCode: currentLocale.value,
+      planetaryNow: DatabaseService.getPlanetaryNow,
+      writeRecord: (req) async {
+        return DatabaseService.instance.writeRecord(
+          req.dateKey,
+          req.title,
+          categoryId: req.categoryId,
+          explicitStartTime: req.explicitStartTime,
+          sourcePlanPocketRecordId: null,
+        );
+      },
+    );
+    if (outcome == null) return false;
+    unawaited(DesktopVoiceConfirmation.showRecordStarted(outcome.confirmationMessage));
+    timelineTasksRevision.value++;
+    final runningTitle = DatabaseService.instance.cachedPrimaryRunningTitle;
+    final expectedTitle = parseVoiceCommand(
+      rules: List<CategoryRule>.from(rules),
+      transcript: transcript,
+    ).recordTitle.trim();
+    final visible = runningTitle != null &&
+        runningTitle.trim().toLowerCase() == expectedTitle.toLowerCase();
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_TIMELINE_RECORD_VISIBLE_CHECK',
+      visible ? 'yes' : 'no',
+    );
+    return outcome.writeRecordCalled && visible;
+  }
+
+  Future<bool> reattachDesktopVoiceHotkey() async {
+    if (!mounted) return false;
+    await DesktopVoiceSettings.instance.loadIfNeeded();
+    if (!DesktopVoiceHotkey.isActive) {
+      await DesktopVoiceHotkey.detachGlobal();
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_DETACHED', 'voice_disabled');
+      if (mounted) setState(() {});
+      return true;
+    }
+    final ok = await DesktopVoiceHotkey.reattachGlobal(
+      onToggle: onDesktopVoiceHotkeyToggle,
+    );
+    DesktopVoiceHotkeyMarkers.logRegistration(
+      ok: ok,
+      error: ok
+          ? null
+          : DesktopVoiceSettings.instance.hotkeyRegistrationError,
+    );
+    if (ok) {
+      DesktopSttHelperService.instance.prewarmRecognizerInBackground();
+    }
+    if (mounted) setState(() {});
+    return ok;
+  }
+
+  Future<void> retryVoiceWriteNewTask(
+    String title,
+    int? cid,
+    String pathTag, {
+    String? sourcePlanPocketRecordId,
+  }) async {
+    try {
+      final now = DatabaseService.getPlanetaryNow();
+      final serverId = await DatabaseService.instance.writeRecord(
+        timelineVoiceDateKey,
+        title,
+        categoryId: cid,
+        explicitStartTime: now,
+        sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+      );
+      if (!mounted) return;
+      if (serverId == null || serverId.trim().isEmpty) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(
+            retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
+        );
+        return;
+      }
+      setState(() {
+        tasks.add(
+          Task(
+            title: title,
+            startTime: now,
+            endTime: null,
+            tags: [pathTag],
+            isActive: true,
+          ),
+        );
+        tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
+      });
+      await saveTasks();
+    } catch (e) {
+      debugPrint('UI ERROR: $e');
+      if (mounted) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(
+            retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: sourcePlanPocketRecordId,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> retryVoicePlanningTask(String rawText) async {
+    final ok = await DatabaseService.instance.addPlanningTaskFromVoiceText(
+      rawText: rawText,
+      wallDay: shellDateOnly(selectedDate),
+      categoryIdHint: effectiveCategoryId,
+    );
+    if (!mounted) return;
+    if (!ok) {
+      showSyncFailedSnackBar(
+        onRetry: () => unawaited(retryVoicePlanningTask(rawText)),
+      );
+    }
+  }
+
+  Future<void> retryVoiceBacklogTask(String rawText) async {
+    final ok = await DatabaseService.instance.addPlanningTaskFromVoiceText(
+      rawText: rawText,
+      wallDay: shellDateOnly(selectedDate),
+      categoryIdHint: effectiveCategoryId,
+      isBacklog: true,
+    );
+    if (!mounted) return;
+    if (!ok) {
+      showSyncFailedSnackBar(
+        onRetry: () => unawaited(retryVoiceBacklogTask(rawText)),
+      );
+    }
+  }
+
+  Future<bool> voiceSubmitTimeline(String recognized) async {
+    final title = recognized.trim();
+    if (title.isEmpty) return false;
+    unawaited(stopAnyActiveTask());
+    final now = DatabaseService.getPlanetaryNow();
+    final alreadyExists = tasks.any(
+      (t) =>
+          t.title == title &&
+          t.isActive &&
+          t.startTime.difference(now).inSeconds.abs() <= 2,
+    );
+    if (alreadyExists) return true;
+    final fuzzyMatch = DatabaseService.instance.findCategoryByFuzzyMatch(title);
+    final cid = fuzzyMatch?.id ?? effectiveCategoryId;
+    final pathTag = cid != null
+        ? DatabaseService.instance.getCategoryPath(cid)
+        : 'Life';
+    if (fuzzyMatch != null && mounted) {
+      final loc = currentLocale.value;
+      final pathUi = localizeCategoryBreadcrumbPath(fuzzyMatch.path, loc);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            t(
+              loc,
+              'mapped_to',
+            ).replaceFirst('%s', title).replaceFirst('%s', pathUi),
+          ),
+        ),
+      );
+    }
+    try {
+      final serverId = await DatabaseService.instance.writeRecord(
+        timelineVoiceDateKey,
+        title,
+        categoryId: cid,
+        explicitStartTime: now,
+        sourcePlanPocketRecordId: null,
+      );
+      if (!mounted) return false;
+      if (serverId == null || serverId.trim().isEmpty) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(
+            retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: null,
+            ),
+          ),
+        );
+        return false;
+      }
+      setState(() {
+        tasks.add(
+          Task(
+            title: title,
+            startTime: now,
+            endTime: null,
+            tags: [pathTag],
+            isActive: true,
+          ),
+        );
+        tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
+      });
+      unawaited(saveTasks());
+      if (mounted) {
+        unawaited(
+          deferSourcePlanLinkAfterFreeStart(
+            title: title,
+            dateKey: timelineVoiceDateKey,
+            recordBusinessId: serverId,
+          ),
+        );
+      }
+      return true;
+    } catch (e) {
+      debugPrint('UI ERROR: $e');
+      if (mounted) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(
+            retryVoiceWriteNewTask(
+              title,
+              cid,
+              pathTag,
+              sourcePlanPocketRecordId: null,
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<bool> voiceSubmitPlanning(String recognized) async {
+    final title = recognized.trim();
+    if (title.isEmpty) return false;
+    try {
+      final ok = await DatabaseService.instance.addPlanningTaskFromVoiceText(
+        rawText: recognized,
+        wallDay: shellDateOnly(selectedDate),
+        categoryIdHint: effectiveCategoryId,
+      );
+      if (!mounted) return false;
+      if (!ok) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(retryVoicePlanningTask(recognized)),
+        );
+      }
+      return ok;
+    } catch (e) {
+      debugPrint('UI ERROR: $e');
+      if (mounted) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(retryVoicePlanningTask(recognized)),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<bool> voiceSubmitBacklog(String recognized) async {
+    final title = recognized.trim();
+    if (title.isEmpty) return false;
+    try {
+      final ok = await DatabaseService.instance.addPlanningTaskFromVoiceText(
+        rawText: recognized,
+        wallDay: shellDateOnly(selectedDate),
+        categoryIdHint: effectiveCategoryId,
+        isBacklog: true,
+      );
+      if (!mounted) return false;
+      if (!ok) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(retryVoiceBacklogTask(recognized)),
+        );
+      }
+      return ok;
+    } catch (e) {
+      debugPrint('UI ERROR: $e');
+      if (mounted) {
+        showSyncFailedSnackBar(
+          onRetry: () => unawaited(retryVoiceBacklogTask(recognized)),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<void> ensureSpeechReady() async {
+    if (speechReady) return;
+    speech ??= stt.SpeechToText();
+    await initializeSpeechInstance();
+  }
+
+  Future<void> speechEngineHardReset() async {
+    if (!mounted) return;
+    try {
+      await speech?.stop();
+    } catch (_) {}
+    try {
+      await speech?.cancel();
+    } catch (_) {}
+    speech = stt.SpeechToText();
+    speechHandle?.speech = speech!;
+    speechReady = false;
+    speechLastInitError = null;
+    if (!mounted) return;
+    await initializeSpeechInstance();
+  }
+
+  Future<void> initializeSpeechInstance() async {
+    speechLastInitError = null;
+    try {
+      final available = await speech!.initialize(
+        onStatus: (s) => speechStatusCallback?.call(s),
+        onError: (e) {
+          final msg = e.errorMsg;
+          debugPrint('[STT] onError: $msg (permanent=${e.permanent})');
+          speechStatusCallback?.call('error:$msg');
+        },
+        debugLogging: false,
+      );
+      if (!mounted) return;
+      if (available) {
+        if (kIsWeb) {
+          // Web: never block ready state on [locales] (often 0 or 1 synthetic tag until post-listen).
+          unawaited(logSttLocalesBestEffortWeb());
+        } else {
+          try {
+            final locales = await speech!.locales();
+            final ids = <String>[
+              for (final l in locales) l.localeId.toString(),
+            ];
+            debugPrint(
+              '[STT] initialize OK; locales (${locales.length}): ${ids.join(", ")}',
+            );
+          } catch (e, st) {
+            debugPrint('[STT] locales() after init failed: $e\n$st');
+          }
+        }
+        setState(() {
+          speechReady = true;
+          speechLastInitError = null;
+        });
+      } else {
+        const msg = 'initialize() returned false';
+        speechLastInitError = msg;
+        debugPrint('[STT] $msg');
+        setState(() => speechReady = false);
+      }
+    } catch (e, st) {
+      debugPrint('[STT] initialize exception: $e\n$st');
+      speechLastInitError = e.toString();
+      if (!mounted) return;
+      setState(() => speechReady = false);
+    }
+  }
+
+  Future<void> logSttLocalesBestEffortWeb() async {
+    try {
+      final locales = await speech!.locales();
+      final ids = <String>[for (final l in locales) l.localeId.toString()];
+      debugPrint(
+        '[STT] Web init OK; locales async (${locales.length}): ${ids.join(", ")}',
+      );
+    } catch (e, st) {
+      debugPrint('[STT] Web locales() log failed: $e\n$st');
+    }
+  }
+
+  Future<String?> desktopVoiceSubmitParsed(VoiceCommandParseResult result) async {
+    final outcome = await DesktopVoiceRecordSubmit.submitParsed(
+      result: result,
+      dateKey: timelineVoiceDateKey,
+      localeCode: currentLocale.value,
+      planetaryNow: DatabaseService.getPlanetaryNow,
+      writeRecord: (req) async {
+        unawaited(stopAnyActiveTask());
+        try {
+          return await DatabaseService.instance.writeRecord(
+            req.dateKey,
+            req.title,
+            categoryId: req.categoryId,
+            explicitStartTime: req.explicitStartTime,
+            sourcePlanPocketRecordId: null,
+          );
+        } catch (e) {
+          DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_RESULT', 'error $e');
+          debugPrint('UI ERROR: $e');
+          if (mounted) {
+            final pathTag =
+                DatabaseService.instance.getCategoryPath(req.categoryId);
+            showSyncFailedSnackBar(
+              onRetry: () => unawaited(
+                retryVoiceWriteNewTask(
+                  req.title,
+                  req.categoryId,
+                  pathTag,
+                  sourcePlanPocketRecordId: null,
+                ),
+              ),
+            );
+          }
+          return null;
+        }
+      },
+    );
+    if (outcome == null) {
+      if (result.isSafeToStart && mounted) {
+        final cid = result.matchedLocalCategoryId;
+        final title = result.recordTitle.trim();
+        if (cid != null && title.isNotEmpty) {
+          final pathTag = DatabaseService.instance.getCategoryPath(cid);
+          showSyncFailedSnackBar(
+            onRetry: () => unawaited(
+              retryVoiceWriteNewTask(
+                title,
+                cid,
+                pathTag,
+                sourcePlanPocketRecordId: null,
+              ),
+            ),
+          );
+        }
+      }
+      return null;
+    }
+    if (!mounted) return outcome.serverId;
+    unawaited(DesktopVoiceConfirmation.showRecordStarted(outcome.confirmationMessage));
+    // Pipe-level confirmation that the hotkey-driven writeRecord produced a new
+    // task the user can see (closes the silent-success gap: serverId ok but no
+    // visible task in Timeline).
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_TASK_CREATED_VISIBLE',
+      'serverId=${outcome.serverId} title=${result.recordTitle.trim()}'
+      ' onTimelineTab=${shellPageIndex == 0}',
+    );
+    timelineTasksRevision.value++;
+    if (shellPageIndex == 0) {
+      final cid = result.matchedLocalCategoryId!;
+      final title = result.recordTitle.trim();
+      final pathTag = DatabaseService.instance.getCategoryPath(cid);
+      final now = DatabaseService.getPlanetaryNow();
+      setState(() {
+        tasks.add(
+          Task(
+            title: title,
+            startTime: now,
+            endTime: null,
+            tags: [pathTag],
+            isActive: true,
+          ),
+        );
+        tasks.sort((a, b) => a.startTime.compareTo(b.startTime));
+      });
+      unawaited(saveTasks());
+    }
+    return outcome.serverId;
+  }
+
+  Future<void> desktopVoiceUndoStop(String? recordDocId) async {
+    final id = recordDocId?.trim();
+    if (id == null || id.isEmpty) return;
+    unawaited(stopRecordByDocId(id));
+  }
+
+  void desktopVoiceHotkeyStopRunning(String runningId) {
+    final title = DatabaseService.instance.cachedPrimaryRunningTitle ?? '';
+    final loc = currentLocale.value;
+    final message = voiceCommandStopConfirmationMessage(
+      title: title,
+      localeCode: loc,
+    );
+
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_STOP_RUNNING', title);
+    closeDesktopVoiceOverlayIfOpen();
+
+    unawaited(DesktopVoiceConfirmation.showRecordStopped(message));
+    unawaited(
+      showDesktopVoiceStatusCapsule(
+        primaryLine: loc == 'ru' ? 'Остановлено' : 'Stopped',
+        secondaryLine: title.trim().isEmpty ? null : title.trim(),
+      ),
+    );
+    timelineTasksRevision.value++;
+
+    if (shellPageIndex == 0 && mounted) {
+      setState(() {
+        tasks.removeWhere((task) => task.isRunning);
+      });
+      unawaited(saveTasks());
+    }
+
+    unawaited(() async {
+      final ok = await DatabaseService.instance.stopRecordByDocId(runningId);
+      if (!ok) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STOP_RECORD_FAILED', title);
+        if (mounted) {
+          AppSnack.show(t(loc, 'desktop_voice_stop_failed'), error: true);
+        }
+      }
+      if (mounted) await stopAnyActiveTask();
+    }());
+  }
+
+  Future<void> toggleDesktopVoiceWidget() async {
+    try {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_RECEIVED');
+      if (!DesktopVoiceHotkey.isActive) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_BLOCKED', 'voice_inactive');
+        return;
+      }
+
+      final overlayOpen = isDesktopVoiceOverlayOpen;
+      final overlayListening = DesktopVoiceOverlayBridge.isListening;
+      final overlayPreparing = DesktopVoiceOverlayBridge.isPreparing;
+      final overlayProcessing = DesktopVoiceOverlayBridge.isProcessing;
+      final runningId = DatabaseService.instance.canonicalPrimaryRunningBusinessId;
+      final hasRunningRecord =
+          runningId != null && runningId.trim().isNotEmpty;
+
+      final action = resolveDesktopVoiceHotkeyAction(
+        overlayOpen: overlayOpen,
+        overlayListening: overlayListening,
+        overlayPreparing: overlayPreparing,
+        overlayProcessing: overlayProcessing,
+        hasRunningRecord: hasRunningRecord,
+      );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_ACTION_RESOLVED', '$action');
+
+      switch (action) {
+        case DesktopVoiceHotkeyAction.finishListening:
+          if (DesktopVoiceOverlayBridge.requestFinishListening()) {
+            DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_FINISH_LISTENING');
+          }
+          return;
+        case DesktopVoiceHotkeyAction.cancelOverlay:
+          if (overlayPreparing) {
+            DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_CANCEL_PREPARING');
+          }
+          if (DesktopVoiceOverlayBridge.requestCancel()) {
+            return;
+          }
+          closeDesktopVoiceOverlayIfOpen();
+          return;
+        case DesktopVoiceHotkeyAction.openOverlay:
+          if (hasRunningRecord) {
+            DesktopVoicePipeline.mark('DESKTOP_VOICE_RUNNING_RECORD_PRESERVED');
+          }
+          await openDesktopVoiceOverlay();
+          return;
+      }
+    } catch (e) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HOTKEY_ERROR_CAUGHT', '$e');
+    }
+  }
+
+  Future<void> openDesktopVoiceOverlay() async {
+    if (isDesktopVoiceOverlayOpen) return;
+
+    DesktopVoiceLog.instance.mark('hotkey_or_tray', 'received');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_SHOW_MAIN_WINDOW_SKIPPED');
+
+    final navCtx = appRootNavigatorKey.currentContext ?? context;
+    if (!mounted && appRootNavigatorKey.currentContext == null) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_BLOCKED', 'no_context');
+      return;
+    }
+
+    final opened = await showDesktopVoiceWidget(
+      context: navCtx,
+      categoryRules: List<CategoryRule>.from(rules),
+      onStartRecord: desktopVoiceSubmitParsed,
+      onUndoStop: desktopVoiceUndoStop,
+    );
+    if (!opened) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_OVERLAY_BLOCKED',
+        'overlay_unavailable',
+      );
+    }
+  }
+
+  Future<void> startVoiceInput() async {
+    if (!kIsWeb) {
+      final mic = await Permission.microphone.status;
+      if (!mic.isGranted) {
+        final res = await Permission.microphone.request();
+        if (!res.isGranted) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(t(currentLocale.value, 'microphone_permission')),
+            ),
+          );
+          return;
+        }
+      }
+    }
+    if (kIsWeb) {
+      debugPrint(
+        '[STT] Web: SpeechToText uses the browser Web Speech API (HTTPS + user gesture).',
+      );
+    }
+    await ensureSpeechReady();
+    if (!speechReady) {
+      if (!mounted) return;
+      final loc = currentLocale.value;
+      final detail = speechLastInitError?.trim();
+      final text = detail != null && detail.isNotEmpty
+          ? t(loc, 'speech_error_prefix').replaceFirst('%s', detail)
+          : t(loc, 'speech_unavailable');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+      return;
+    }
+
+    if (!mounted) return;
+    final Future<bool> Function(String) voiceSubmitIntent = shellPageIndex == 1
+        ? voiceSubmitPlanning
+        : shellPageIndex == 3
+        ? voiceSubmitBacklog
+        : voiceSubmitTimeline;
+    final voiceSuccessKey = shellPageIndex == 1 || shellPageIndex == 3
+        ? 'task_added_to_plan'
+        : 'record_synced';
+    final voicePrimaryKey = shellPageIndex == 1 || shellPageIndex == 3
+        ? 'add_task'
+        : 'start_task';
+    speechHandle ??= SpeechEngineHandle(speech!);
+    speechHandle!.speech = speech!;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) {
+        return VoiceInputSheet(
+          speechHandle: speechHandle!,
+          setSpeechStatusCallback: (cb) {
+            if (mounted) setState(() => speechStatusCallback = cb);
+          },
+          onSpeechEngineHardReset: speechEngineHardReset,
+          onListeningChanged: (listening) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => isVoiceListening = listening);
+            });
+          },
+          config: VoiceCaptureConfig(
+            submitIntent: voiceSubmitIntent,
+            successL10nKey: voiceSuccessKey,
+            primaryActionL10nKey: voicePrimaryKey,
+          ),
+        );
+      },
+    );
+    if (!mounted) return;
+    setState(() => speechStatusCallback = null);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => isVoiceListening = false);
+    });
+  }
+}

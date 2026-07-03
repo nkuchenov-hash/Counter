@@ -10,7 +10,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 | Layer | Path | Owns | May import | Must NOT import |
 | :--- | :--- | :--- | :--- | :--- |
-| **Entry** | `lib/main.dart`, `lib/app_shell.dart` | Boot, auth gate, shell navigation, cross-tab wiring | `data/`, `core/`, `features/`, `l10n/`, `services/` | — |
+| **Entry** | `lib/main.dart`, `lib/app_shell.dart`, `lib/shell/` | Boot, auth gate, shell navigation, cross-tab wiring | `data/`, `core/`, `features/`, `l10n/`, `services/` | — |
 | **Brain** | `lib/data/` | PocketBase I/O, in-memory cache, optimistic UI, offline outboxes, domain models | `core/` (utilities only), `services/` (device bridge), other `data/` | `features/` |
 | **Foundation** | `lib/core/` | Theme, tokens, shared widgets, time helpers, diagnostics, performance flags | `core/`, `data/models.dart` (types only) | `features/`, `data/database_service.dart` |
 | **UI modules** | `lib/features/` | Screens, sheets, feature-specific layout | `data/`, `core/`, `l10n/`, `features/shared/` | other features except via `shared/` or explicit shell routing |
@@ -57,9 +57,27 @@ These core abstractions stay free of Brain imports; `main.dart` and `app_shell.d
 | File | Role |
 | :--- | :--- |
 | `main.dart` | `runApp`, PocketBase bootstrap, auth gate, Wear entry, locale init, shell injection |
-| `app_shell.dart` | Bottom/side nav, tab `IndexedStack`, FAB/voice, offline banner, edit-sheet host, `TagDisplayModeScope` |
+| `app_shell.dart` | Re-exports `shell/life_os_dashboard.dart` (thin entry) |
 
 **Shell tabs (bottom nav index):** 0 Timeline · 1 Plans · 2 Calendar · 3 Lists · 4 More (Categories, Profile, admin Component Lab).
+
+### 3.1.1 `lib/shell/` — dashboard modules (Pass 3)
+
+| File | Role |
+| :--- | :--- |
+| `life_os_dashboard.dart` | `LifeOSDashboard`, `ShellDashboardState`, scaffold build |
+| `shell_core.dart` | Core shell logic mixin (date header, tasks load, nav) *(part)* |
+| `shell_tab_host.dart` | Tab `IndexedStack` builders *(part)* |
+| `shell_edit_hosts.dart` | Timeline/plan edit modal hosts *(part)* |
+| `shell_more_menu.dart` | More bottom sheet *(part)* |
+| `shell_voice_routing.dart` | Voice hotkey + submit routing *(part)* |
+| `shell_offline_banner.dart` | Offline sync banner column slot |
+| `shell_shared.dart` | Shell-local date helpers *(part)* |
+| `shell_side_navigation.dart` | Desktop/web side navigation rail |
+| `profile_hydration_status_bar.dart` | Profile hydration failure banner |
+| `settings_page.dart` | Language/TZ settings page (shell route) |
+
+Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `features/shared/profile_hydration_status_bar.dart`, `features/profile/settings/settings_page.dart`.
 
 ### 3.2 `lib/data/` — Brain & models
 
@@ -230,12 +248,20 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `omni_date_time_picker_dialog.dart` | Unified date+time picker |
 | `compact_nav_controls.dart` | Compact segmented controls |
 | `chip_component.dart` | `TagChip`, `CategoryChip`, tag quick-pick strip |
-| `plan_time_task_card.dart` | Plan/list/time card (re-exports `plan_card/*` metrics) |
-| `plan_card/plan_card_metrics.dart` | Time View card height constants, `PlanCardSurface`, duration→px helpers |
-| `plan_card/plan_time_card_density.dart` | Visual density bands + footer/progress visibility helpers |
-| `plan_card/plan_card_geometry.dart` | Figma geometry, vertical spacing, visual tokens |
-| `plan_card/plan_card_controls.dart` | Checkbox/play/menu/title rail widgets |
-| `plan_card/plan_card_sections.dart` | Tags, time text, footer, watermark |
+| `plan_time_task_card.dart` | Compatibility barrel → `plan_time_task_card/` package |
+| `plan_time_task_card/plan_time_task_card.dart` | Public `PlanTimeTaskCard` widget |
+| `plan_time_task_card/plan_card_metrics.dart` | Time View card height constants, `PlanCardSurface`, duration→px helpers |
+| `plan_time_task_card/plan_card_density.dart` | Visual density bands, measure/gesture inset helpers |
+| `plan_time_task_card/plan_card_geometry.dart` | Figma geometry, vertical spacing, visual tokens |
+| `plan_time_task_card/plan_card_controls.dart` | Checkbox/play/menu/title rail, body tap shell, control rail |
+| `plan_time_task_card/plan_card_sections.dart` | Tags, time text, footer, watermark |
+| `plan_time_task_card/plan_card_progress.dart` | Progress slot, invariant body, rail shell |
+| `plan_time_task_card/plan_card_layouts.dart` | Time View CardPlan density layout variants |
+| `plan_card/plan_card_metrics.dart` | Re-export stub → `plan_time_task_card/plan_card_metrics.dart` |
+| `plan_card/plan_time_card_density.dart` | Re-export stub → `plan_time_task_card/plan_card_density.dart` |
+| `plan_card/plan_card_geometry.dart` | Re-export stub → `plan_time_task_card/plan_card_geometry.dart` |
+| `plan_card/plan_card_controls.dart` | Re-export stub → `plan_time_task_card/plan_card_controls.dart` |
+| `plan_card/plan_card_sections.dart` | Re-export stub → `plan_time_task_card/plan_card_sections.dart` |
 | `plan_card.dart` | `PlanCard` wrapper |
 | `life_card.dart` | Card foundation for Component Lab |
 | `day_content_strip.dart` | Day content pager strip |
@@ -249,10 +275,10 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | Folder | Files | Role |
 | :--- | :--- | :--- |
 | `auth/` | `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart` | Sign-in, register, OAuth, password reset |
-| `timeline/` | `timeline_view.dart` | `TimelineSwipeWrapper`, `TimelinePage`; list/stats sub-tabs |
+| `timeline/` | `timeline_view.dart`, `timeline_day_page.dart`, `timeline_record_card.dart`, `timeline_helpers.dart` | `TimelineSwipeWrapper`, `TimelinePage`; day list + record cards |
 | `stats/` | `stats_view.dart`, `plan_vs_fact_tab.dart` | Productivity stats (embedded in Timeline) |
-| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** (bulk bar, filter controls, empty states, list helpers, menu overlay, keep-alive, reorder settle) | Plans tab: date pager shell + day page body, Time View, settings, bulk edit |
-| `lists/` | `lists_view.dart` | Lists/backlog tab |
+| `planning/` | `planning_view.dart` (barrel), **`planning_page.dart`**, **`planning_page_shell.dart`**, **`planning_sort_mode.dart`**, `plan_time_view_layout.dart`, `plan_time_gesture_contract.dart`, `planning_day_start_prefs.dart`, `bulk_planning_edit_sheet.dart`, `recurrence_scope_dialog.dart`, `smart_plan_sheet.dart`, **`time_view/`**, **`settings/`**, **`widgets/`** | Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit |
+| `lists/` | `lists_view.dart`, `lists_card.dart`, `lists_export.dart` | Lists/backlog tab coordinator + card widgets + export helper |
 | `calendar/` | `calendar_view.dart` | Calendar tab |
 | `categories/` | `category_list_view.dart`, `category_recursive_tree.dart`, `category_visibility_prefs.dart`, `create_category_dialog.dart` | Category manager (More menu) |
 | `profile/` | `profile_view.dart`, **`settings/`** (account, notification, security sections), `tag_manager_page.dart`, `tag_settings_hub.dart`, `tag_settings_view.dart`, `tag_default_duration_settings_view.dart`, `timezone_settings.dart`, `desktop_voice_settings_section.dart`, `desktop_voice_settings_desktop.dart`, `desktop_voice_attempt_dialog.dart` | Profile & tag settings, timezone, desktop voice settings (Windows) |
@@ -314,7 +340,39 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 
 Copy `pb_hooks/` beside the PocketBase executable on the server. Client Brain code does not import these; behavior is documented in `docs/POCKETBASE_MANIFEST.md`.
 
-### 3.4.1 Structure refactor modules (2026-07-02)
+### 3.4.1 Structure refactor modules (2026-07-02 — Pass 3 additions)
+
+| File | Role |
+| :--- | :--- |
+| `planning/time_view/planning_time_view_host.dart` | `PlanningTimeViewHost` callback surface |
+| `planning/time_view/planning_time_view_coordinator.dart` | Time View state fields |
+| `planning/time_view/planning_time_view.dart` | Time View composition, cascade, edge scroll |
+| `planning/time_view/time_view_canvas.dart` | Proportional day timeline canvas |
+| `planning/time_view/time_view_hour_grid.dart` | Hour grid + unscheduled strip |
+| `planning/time_view/time_view_card_layer.dart` | Scheduled card stack layer |
+| `planning/time_view/time_view_drag_controller.dart` | Vertical drag state/helpers |
+| `planning/time_view/time_view_resize_controller.dart` | Edge resize state/helpers |
+| `planning/time_view/time_view_drop_preview.dart` | Drop intent / cascade preview |
+| `planning/time_view/time_view_settings_sheet.dart` | Time View settings + default plan times |
+| `planning/time_view/time_view_search_delegate.dart` | Category default-time search UI |
+| `timeline/timeline_day_page.dart` | `TimelineDayCardList`, lazy record list |
+| `timeline/timeline_record_card.dart` | `TimelineRecordCard` |
+| `timeline/timeline_helpers.dart` | Shared timeline time/duration helpers |
+| `lists/lists_card.dart` | `BacklogPlanCard`, filter chips, semicircle menu |
+| `lists/lists_export.dart` | Export visible list as clipboard text |
+| `shell/life_os_dashboard.dart` | Shell dashboard entry (see §3.1.1) |
+| `shell/shell_core.dart` | Shell core logic *(part)* |
+| `shell/shell_tab_host.dart` | Tab host builders *(part)* |
+| `shell/shell_edit_hosts.dart` | Edit sheet hosts *(part)* |
+| `shell/shell_more_menu.dart` | More menu *(part)* |
+| `shell/shell_voice_routing.dart` | Voice routing *(part)* |
+| `shell/shell_offline_banner.dart` | Offline banner slot |
+| `shell/shell_shared.dart` | Shell shared helpers *(part)* |
+| `plan_time_task_card/plan_card_layouts.dart` | Time View CardPlan layout variants |
+| `plan_time_task_card/plan_card_progress.dart` | Progress/invariant card shells |
+| `plan_time_task_card/plan_card_density.dart` | Density bands + measure helpers |
+
+### 3.4.2 Structure refactor modules (2026-07-02 — Pass 1–2)
 
 Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 
@@ -331,7 +389,7 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_menu_overlay.dart` | Semicircle plan card radial menu |
 | `planning/widgets/planning_day_card_list_keep_alive.dart` | List keep-alive wrapper |
 | `planning/widgets/plan_card_reorder_settle.dart` | Done-card reorder slide settle |
-| `planning/planning_page.dart` | `PlanningPage` + day body state (~5.5k lines; Time View logic) |
+| `planning/planning_page.dart` | `PlanningPage` + day body state (~2.4k lines; coordinator delegates Time View) |
 | `planning/planning_page_shell.dart` | `PlanningSwipeWrapper` date pager |
 | `planning/planning_sort_mode.dart` | `PlanSortMode` + persist index helpers |
 | `planning/widgets/planning_bulk_bar.dart` | Bulk selection bottom bar |

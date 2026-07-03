@@ -6,7 +6,7 @@
 
 ## Где экраны
 
-Все вкладки собирает **`lib/app_shell.dart`**. Нижняя навигация:
+Все вкладки собирает **`lib/shell/life_os_dashboard.dart`** (тонкий вход — **`lib/app_shell.dart`**). Нижняя навигация:
 
 | Вкладка | Файл | Главный виджет |
 | :--- | :--- | :--- |
@@ -14,7 +14,7 @@
 | Plans (планы) | `lib/features/planning/planning_view.dart` | `PlanningSwipeWrapper` → `PlanningPage` |
 | Calendar (календарь) | `lib/features/calendar/calendar_view.dart` | `CalendarPage` |
 | Lists (списки) | `lib/features/lists/lists_view.dart` | `ListsPage` |
-| More (ещё) | `lib/app_shell.dart` | Категории, профиль, Component Lab (админ) |
+| More (ещё) | `lib/shell/shell_more_menu.dart` (part) | Категории, профиль, Component Lab (админ) |
 
 **Статистика** — внутри Timeline: `lib/features/stats/stats_view.dart`.
 
@@ -52,7 +52,7 @@
 **Переиспользуемые виджеты** — `lib/core/widgets/`:
 
 - Кнопки: `app_button.dart`, `app_icon_button.dart`
-- Карточка плана: `plan_time_task_card.dart`, `plan_card.dart`
+- Карточка плана: `plan_time_task_card/` (пакет), `plan_card.dart`
 - Чипы тегов/категорий: `chip_component.dart`
 - Шапка с датой: `global_app_header.dart`
 - Выбор даты/времени: `omni_date_time_picker_dialog.dart`
@@ -111,7 +111,7 @@
 
 | Задача | Открыть |
 | :--- | :--- |
-| **Карточка плана / списка** | `lib/core/widgets/plan_time_task_card.dart`, `lib/core/widgets/plan_card.dart` |
+| **Карточка плана / списка** | `lib/core/widgets/plan_time_task_card/` (пакет), `lib/core/widgets/plan_card.dart` |
 | **Time View (режим времени на Plans)** | `lib/features/planning/plan_time_view_layout.dart`, `lib/features/planning/planning_view.dart`, настройка «Длительность дня» — `planning_day_start_prefs.dart` + `lib/core/time/plan_time_visible_window.dart` |
 | **Вкладка Plans** | `lib/features/planning/planning_view.dart` |
 | **Timeline** | `lib/features/timeline/timeline_view.dart` |
@@ -124,7 +124,7 @@
 | **Поля БД / API** | `docs/DATA_MAP.md`, затем нужный `*_service.dart` в `lib/data/` |
 | **Деплой** | `update.ps1`, `docs/DEPLOY.md` |
 | **Тесты** | `test/` — например `smart_input_parser_test.dart`, `plan_time_view_layout_test.dart` |
-| **Навигация / FAB / голос** | `lib/app_shell.dart` |
+| **Навигация / FAB / голос** | `lib/shell/life_os_dashboard.dart`, `lib/shell/shell_voice_routing.dart` |
 | **Desktop Price Reporter (Windows)** | `lib/features/shared/desktop_voice_widget.dart`, `lib/core/services/desktop_voice_*.dart`, `lib/data/voice_command_parser.dart`, настройки — `lib/features/profile/desktop_voice_settings_section.dart` |
 | **Часовой пояс профиля** | `lib/core/widgets/timezone_quick_picker.dart`, каталог — `lib/core/time/profile_timezone_catalog.dart`, иконки — `lib/core/widgets/app_timezone_icon.dart`, сохранение — `lib/data/profile_service.dart` (`updateTimeZone`) |
 | **Старт приложения** | `lib/main.dart` |
