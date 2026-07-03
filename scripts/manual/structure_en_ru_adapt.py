@@ -292,14 +292,32 @@ def adapt_folder_guide_ru(key: str, en: dict[str, str]) -> dict[str, str]:
     return out
 
 
+def _platform_ru_ok(path: str, text: str) -> bool:
+    if not text or has_banned_filler(text):
+        return False
+    if ru_field_ok(text, min_cyrillic=6):
+        return True
+    p = path.replace("\\", "/")
+    if p.startswith(
+        ("android/", "ios/", "web/", "windows/", "linux/", "macos/", "installer/")
+    ):
+        if (
+            cyrillic_count(text) >= 4
+            or ("`" in text and len(text.strip()) >= 10)
+            or len(text.strip()) >= 22
+        ):
+            return True
+    return False
+
+
 def adapt_file_field_ru(path: str, field: str, en_val: str, en_guide: dict[str, str]) -> str:
     if field == "delete":
         return delete_en_to_ru(en_val)
     class_ru = file_class_field(path, field, en_val, en_guide)
-    if class_ru and ru_field_ok(class_ru, min_cyrillic=6):
+    if class_ru and _platform_ru_ok(path, class_ru):
         return class_ru
     adapted = sanitize_ru_prose(_phrase_translate(en_val))
-    if ru_field_ok(adapted, min_cyrillic=6) and not has_banned_filler(adapted):
+    if _platform_ru_ok(path, adapted) and not has_banned_filler(adapted):
         return adapted
     return ""
 

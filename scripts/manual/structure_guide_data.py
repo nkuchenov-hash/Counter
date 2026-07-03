@@ -1185,10 +1185,10 @@ def _folder_ru_auto(key: str, en: dict[str, str]) -> dict[str, str]:
     if k.startswith("lib/"):
         sub = k[4:] if k.startswith("lib/") else k
         return {
-            "what_ru": f"Код приложения в `{k}/` — часть Flutter-приложения ({sub}).",
-            "why_ru": "Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.",
-            "inside_ru": f"Dart-модули в `{k}/` — перечень файлов ниже.",
-            "affects_ru": "Поведение и UI модуля, названного в пути папки.",
+            "what_ru": f"Dart-модули `{k}/` — UI, Brain или shared код Counter.",
+            "why_ru": "Всё под `lib/` попадает в APK/web/desktop build и задаёт поведение продукта.",
+            "inside_ru": f"Файлы и подпапки `{k}/` — список ниже.",
+            "affects_ru": f"Экраны и data-flow, связанные с `{sub}`.",
             "when_ru": f"Правки или баги в `{sub}`.",
             "delete_ru": "Нет — нужен для работы приложения.",
             "related_ru": "`lib/`, `docs/APP_STRUCTURE.md`.",
@@ -1215,11 +1215,11 @@ def _folder_ru_auto(key: str, en: dict[str, str]) -> dict[str, str]:
             "related_ru": "`docs/APP_STRUCTURE.md`.",
         }
     return {
-        "what_ru": f"Папка `{k}/` репозитория Life OS.",
-        "why_ru": "Файлы здесь нужны для сборки, CI или сопровождения проекта.",
-        "inside_ru": "Tracked-файлы перечислены ниже.",
-        "affects_ru": "Workflow или сборка, связанная с этим путём.",
-        "when_ru": f"Сопровождение или сборка, связанная с `{k}/`.",
+        "what_ru": f"Служебная папка `{k}/` в репозитории Counter.",
+        "why_ru": "Поддерживает сборку, CI или сопровождение проекта.",
+        "inside_ru": "Файлы этой папки перечислены ниже.",
+        "affects_ru": "Workflow или tooling, связанный с этим путём.",
+        "when_ru": f"Сборка или maintenance затрагивает `{k}/`.",
         "delete_ru": "Нет — часть репозитория.",
         "related_ru": "`docs/APP_STRUCTURE.md`.",
     }
@@ -1408,6 +1408,66 @@ def platform_file_description(path: str) -> dict[str, str] | None:
             "why": "Root Gradle project must list app module to compile APK.",
             "contains": "Module includes, plugin management.",
             "responsibilities": "Wire Gradle multi-module Android project.",
+        }
+    if lower == "gradle-wrapper.properties":
+        return {
+            "what": "Gradle Wrapper properties — pins Gradle distribution URL and version for Android builds.",
+            "why": "CI and local machines must run the same Gradle version when building APK/AAB.",
+            "contains": "`distributionUrl`, `distributionSha256Sum` for the wrapper.",
+            "responsibilities": "Pin Gradle distribution for the entire `android/` tree.",
+        }
+    if lower == "main.cpp" and p.startswith("windows/runner"):
+        return {
+            "what": "Native C++ entry point for the Windows desktop app — creates Win32 window and boots Flutter.",
+            "why": "The Windows `.exe` starts here; without it Flutter desktop cannot show Counter UI.",
+            "contains": "`wWinMain`/`main`, window creation, `flutter::FlutterViewController` bootstrap.",
+            "responsibilities": "Cold-start Windows runner — Win32 host + Flutter engine.",
+        }
+    if lower == "project.pbxproj":
+        plat = "iOS" if p.startswith("ios/") else "macOS"
+        artifact = "IPA" if p.startswith("ios/") else "`.app` bundle"
+        return {
+            "what": f"Xcode project database for {plat} Runner — targets, build phases, signing, resources.",
+            "why": f"Xcode opens and builds {artifact} through this `project.pbxproj`.",
+            "contains": "PBX targets, file references, build settings, code signing configuration.",
+            "responsibilities": f"Describe {plat} Runner target and build pipeline for {artifact}.",
+        }
+    if lower.endswith(".xcconfig") and "/flutter/" in p.lower():
+        variant = "Debug" if "debug" in lower else "Release"
+        plat = p.split("/")[0]
+        return {
+            "what": f"Flutter {plat} `{variant}.xcconfig` — passes Flutter/CocoaPods settings into Xcode build.",
+            "why": f"Xcode reads xcconfig when compiling Runner {variant}; Flutter flags must flow into native build.",
+            "contains": f"#include generated Flutter settings and {variant} compiler flags.",
+            "responsibilities": f"Wire Flutter engine paths and flags into {plat} {variant} compile.",
+        }
+    if lower == "app_icon.ico":
+        return {
+            "what": "Windows runner ICO icon embedded in `.exe` and installer.",
+            "why": "Win32 resource compiler and Inno Setup use this for taskbar/Explorer/Start menu branding.",
+            "contains": "Multi-size ICO raster for Windows shell icons.",
+            "responsibilities": "Counter icon in taskbar, Explorer, Start menu, and setup wizard.",
+        }
+    if lower == "prepare_stt_payload.ps1":
+        return {
+            "what": "PowerShell script preparing STT payload before Windows installer build.",
+            "why": "Inno Setup expects helper exe, models, and runtime files copied into installer layout.",
+            "contains": "Steps copying/checking `counter_stt_helper.exe` and STT runtime payload.",
+            "responsibilities": "Prepare STT bundle for `counter.iss` before building setup.",
+        }
+    if lower == "build_stt_helper_en.ps1":
+        return {
+            "what": "PowerShell build script for English STT helper shipped in Windows installer.",
+            "why": "Desktop voice needs `counter_stt_helper.exe` in the setup package after install.",
+            "contains": "Commands building/copying STT helper into `stt_helper_build/`.",
+            "responsibilities": "Produce/update STT helper binary for installer payload.",
+        }
+    if lower == "counter_stt_helper.exe":
+        return {
+            "what": "Built STT helper binary bundled beside the installed Windows app.",
+            "why": "Desktop voice invokes this subprocess for transcription after setup install.",
+            "contains": "Compiled GOLOS STT helper executable (English).",
+            "responsibilities": "Speech transcription subprocess for installed desktop voice.",
         }
     if lower == "cmakelists.txt":
         plat = p.split("/")[0]

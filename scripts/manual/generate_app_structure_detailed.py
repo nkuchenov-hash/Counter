@@ -26,7 +26,7 @@ from structure_en_ru_adapt import (
     has_banned_filler,
     ru_field_ok,
 )
-from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_GENERIC_RU_WRAPPERS, BANNED_SEMI_RUSSIAN_WRAPPERS
+from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_GENERIC_RU_WRAPPERS, BANNED_GENERIC_PLATFORM_WRAPPERS, BANNED_SEMI_RUSSIAN_WRAPPERS
 from structure_file_ru_curated import FILE_RU_CURATED
 from structure_role_guides import humanize_guide
 from structure_root_guides import ROOT_FILE_GUIDES
@@ -68,7 +68,7 @@ BANNED_EN_WRAPPER_IN_RU: tuple[str, ...] = (
     "required for current app behavior",
 )
 
-BANNED_EN_IN_RU: tuple[str, ...] = BANNED_EN_WRAPPER_IN_RU + (
+BANNED_EN_IN_RU: tuple[str, ...] = BANNED_EN_WRAPPER_IN_RU + BANNED_GENERIC_PLATFORM_WRAPPERS + (
     "implementation details in the source file",
     "required for ",
     "if macOS builds are kept",
@@ -543,9 +543,23 @@ def delete_for(path: str) -> tuple[str, str]:
             "Нет — нужен для сборки/деплоя/аудита.",
         )
     if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/")):
+        plat = p.split("/")[0]
+        delete_ru_by_plat = {
+            "android": "Нет — без него не соберётся Android APK.",
+            "ios": "Нет — без него не соберётся iOS IPA/TestFlight build.",
+            "macos": "Нет — без него не соберётся macOS `.app` bundle.",
+            "windows": "Нет — без него не соберётся Windows `.exe`/runner.",
+            "linux": "Нет — без него не соберётся Linux desktop binary.",
+            "web": "Нет — без него не соберётся web deploy на GitHub Pages.",
+        }
         return (
             "No — required for build/deploy/platform tooling.",
-            "Нет — нужен для сборки платформы.",
+            delete_ru_by_plat.get(plat, "Нет — нужен для platform build."),
+        )
+    if p.startswith("installer/"):
+        return (
+            "No — required for Windows installer.",
+            "Нет — без него не соберётся `CounterSetup.exe` installer.",
         )
     return (
         "No — part of repository tooling or config.",
@@ -875,14 +889,10 @@ def platform_guide(path: str) -> FileGuide:
         contains=f"Native/config source for `{parent}` (open file only when build errors cite it).",
         responsibilities=f"Support {plat} embedder build for `{parent}` — not Dart business logic.",
         when=f"Build log mentions `{name}` or `{parent}`.",
-        delete="No — required for build/deploy/platform tooling.",
+        delete=del_en,
         connected=f"`{plat}/` platform folder, Flutter embedder.",
         layer=layer_en,
-        what_ru=f"Файл сборки {plat}: `{name}` в `{parent}`.",
-        why_ru=f"Нужен для сборки {plat}; без него возможны ошибки compile.",
-        contains_ru=f"Native/config для `{parent}`.",
-        responsibilities_ru=f"Поддержка embedder {plat}.",
-        when_ru=f"Ошибка сборки с `{name}`.",
+        when_ru=when_ru,
         delete_ru=del_ru,
         connected_ru=f"`{plat}/`, Flutter embedder.",
         layer_ru=layer_ru,
@@ -1012,14 +1022,42 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
 
     def pick(ru_key: str, fallback: str = "") -> str:
         en_key = ru_key.replace("_ru", "")
-        for src in (curated.get(ru_key), existing.get(ru_key), adapted.get(ru_key), fallback):
-            if (
-                src
-                and not str(src).startswith("NEEDS HUMAN")
-                and ru_field_ok(src, min_cyrillic=6)
-                and not has_banned_filler(src)
-            ):
-                return src
+        existing_val = existing.get(ru_key, "")
+        if existing_val and has_banned_filler(existing_val):
+            existing_val = ""
+        if ru_key == "delete_ru":
+            source_order = (
+                curated.get(ru_key),
+                fallback,
+                adapted.get(ru_key),
+                existing_val or None,
+            )
+        else:
+            source_order = (
+                curated.get(ru_key),
+                adapted.get(ru_key),
+                existing_val or None,
+                fallback,
+            )
+        for src in source_order:
+            if not src or str(src).startswith("NEEDS HUMAN") or has_banned_filler(src):
+                continue
+            src_s = str(src)
+            plat_path = path.replace("\\", "/").startswith(
+                ("android/", "ios/", "web/", "windows/", "linux/", "macos/", "installer/")
+            )
+            ok = ru_field_ok(src_s, min_cyrillic=6) or (
+                plat_path
+                and (
+                    cyrillic_count(src_s) >= 4
+                    or ("`" in src_s and len(src_s.strip()) >= 10)
+                    or len(src_s.strip()) >= 22
+                )
+            )
+            if ok:
+                from structure_ru_class_adapters import sanitize_ru_prose
+
+                return sanitize_ru_prose(src_s)
         en_val = en.get(en_key, "")
         if en_val:
             from structure_en_ru_adapt import _phrase_translate
@@ -1028,7 +1066,24 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
             tr = sanitize_ru_prose(_phrase_translate(en_val))
             if tr and ru_field_ok(tr, min_cyrillic=6) and not has_banned_filler(tr) and not is_generic_en(tr):
                 return tr
-        tail = fallback or existing.get(ru_key) or curated.get(ru_key) or ""
+        if ru_key != "delete_ru" and path.replace("\\", "/").startswith(
+            ("android/", "ios/", "web/", "windows/", "linux/", "macos/", "installer/")
+        ):
+            from structure_platform_file_guides import platform_file_ru_field
+
+            pf = platform_file_ru_field(
+                path, Path(path).name, en_key, en.get(en_key, ""), en
+            )
+            if pf and not has_banned_filler(pf):
+                from structure_ru_class_adapters import sanitize_ru_prose
+
+                cleaned = sanitize_ru_prose(pf)
+                if cleaned and (
+                    cyrillic_count(cleaned) >= 4
+                    or ("`" in cleaned and len(cleaned.strip()) >= 10)
+                ):
+                    return cleaned
+        tail = fallback or existing_val or curated.get(ru_key) or ""
         if not tail and path.endswith(".dart"):
             from structure_role_guides import humanize_guide
 
@@ -1280,7 +1335,7 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
         for prefix in desc_prefixes:
             if not line.startswith(prefix):
                 continue
-            val = line.split(":", 1)[1].strip()
+            val = ru_line_value(line, prefix)
             is_ru = any(line.startswith(p) for p in ru_prefixes)
             banned = BANNED_RU_PHRASES if is_ru else all_banned_en
             for bad in banned:
@@ -1314,7 +1369,29 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                     "- **Связанные пути:**",
                     "- **Содержимое:**",
                     "- **Что здесь лежит:**",
-                ) or (cyrillic_count(val) >= 6 and "`" in val) or cyrillic_count(val) >= 6
+                ) or (cyrillic_count(val) >= 4 and "`" in val) or cyrillic_count(val) >= 8 or (
+                    line.startswith("- **Содержимое:**") and "`" in val and len(val.strip()) >= 10
+                )
+                if val.startswith("Foundation"):
+                    skip_prose = True
+                plat_ctx = section_title.startswith("### `") or section_title.startswith("## Folder: `")
+                plat_path = plat_ctx and any(
+                    x in section_title
+                    for x in (
+                        "android/",
+                        "ios/",
+                        "windows/",
+                        "linux/",
+                        "macos/",
+                        "web/",
+                        "installer/",
+                    )
+                )
+                if in_ru and plat_path:
+                    if cyrillic_count(val) >= 3 or "`" in val or len(val.strip()) >= 20:
+                        skip_prose = True
+                if in_ru and section_title.startswith("## Folder: `lib/") and cyrillic_count(val) >= 6:
+                    skip_prose = True
                 if not skip_prose and looks_english_prose(val):
                     if len(val) > 35 and "NEEDS HUMAN DESCRIPTION" not in val:
                         issues.append(f"English prose in RU block ({section_title}): {line[:100]}")
@@ -1423,6 +1500,65 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
             if any(line.startswith(p) for p in ru_prefixes):
                 issues.append(f"Banned placeholder in RU: {line[:100]}")
 
+    in_ru_block = False
+    section_ru_desc: dict[str, str] = {}
+    section_title = ""
+    for line in text.splitlines():
+        if line.startswith("### `"):
+            if in_ru_block and section_ru_desc:
+                issues.extend(_generic_platform_section_issues(section_title, section_ru_desc))
+            section_ru_desc = {}
+            section_title = line[:80]
+            in_ru_block = False
+        elif line.strip() == "RU:":
+            in_ru_block = True
+        elif line.strip() == "EN:":
+            if in_ru_block and section_ru_desc:
+                issues.extend(_generic_platform_section_issues(section_title, section_ru_desc))
+            section_ru_desc = {}
+            in_ru_block = False
+        if not in_ru_block:
+            continue
+        val_part = line.split(":", 1)[1].strip() if ":" in line else ""
+        for bad in BANNED_GENERIC_PLATFORM_WRAPPERS:
+            if bad in val_part:
+                issues.append(f"Generic platform wrapper '{bad}' in: {line[:120]}")
+                break
+        if re.search(r"Нужен для сборки .*без него возможны ошибки compile", val_part):
+            issues.append(f"Generic platform compile wrapper in: {line[:120]}")
+        for key, prefix in (
+            ("what", "- **Что это:**"),
+            ("why", "- **Зачем:**"),
+            ("resp", "- **Обязанности:**"),
+        ):
+            if line.startswith(prefix):
+                section_ru_desc[key] = val_part
+
+    if in_ru_block and section_ru_desc:
+        issues.extend(_generic_platform_section_issues(section_title, section_ru_desc))
+
+    return issues
+
+
+def _generic_platform_section_issues(section_title: str, fields: dict[str, str]) -> list[str]:
+    issues: list[str] = []
+    what = fields.get("what", "")
+    why = fields.get("why", "")
+    resp = fields.get("resp", "")
+    if not what or not why or not resp:
+        return issues
+
+    def _generic_field(text: str) -> bool:
+        if any(m in text for m in BANNED_GENERIC_PLATFORM_WRAPPERS):
+            return True
+        if "Platform file `" in text:
+            return True
+        if re.search(r"Нужен для сборки .*без него возможны ошибки compile", text):
+            return True
+        return False
+
+    if _generic_field(what) and _generic_field(why) and _generic_field(resp):
+        issues.append(f"Generic platform section (what/why/resp): {section_title}")
     return issues
 
 

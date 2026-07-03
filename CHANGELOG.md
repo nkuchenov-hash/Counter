@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Ban generic platform file wrappers in APP_STRUCTURE_DETAILED [shipped]
+
+* **`scripts/manual/structure_platform_file_guides.py`:** [shipped] New Tier C platform/installer guides — exact paths (main.cpp, CMakeLists, STT scripts, xcconfig, pbxproj, app_icon.ico) + extension heuristics; names Gradle/Xcode/CMake/Inno Setup tool + artifact + break-if-deleted.
+* **`scripts/manual/generate_app_structure_detailed.py`:** [shipped] Removed generic RU from `platform_guide` fallback; `pick()` prefers adapted over stale existing; quality gate bans `Файл сборки`, embedder/config wrappers, generic what/why/resp triples; per-platform `delete_ru`.
+* **`scripts/manual/structure_ru_class_adapters.py`**, **`structure_file_ru_curated.py`**, **`structure_ru_helpers.py`**, **`structure_guide_data.py`:** [shipped] `BANNED_GENERIC_PLATFORM_WRAPPERS`; route platform paths through `platform_file_ru_field`; richer EN for key platform files.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated — 0 generic platform wrappers in RU, quality gate OK.
+
 ## [2026-07-03] - APP_STRUCTURE_DETAILED lib guides + RU quality gate hardening [shipped]
 
 * **`scripts/manual/structure_lib_file_guides.py`:** [shipped] New curated EN+RU for mandatory lib files (`planning_view.dart` barrel, `timeline_view.dart`, `voice_input_sheet.dart`, `app_build_info.dart`, `app_colors.dart`); `feature_file_guide()` + `describe_contains()` from symbols/exports (no `implementation details in the source file`).

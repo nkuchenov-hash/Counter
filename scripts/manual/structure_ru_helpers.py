@@ -322,17 +322,14 @@ def translate_file_field_ru(path: str, field: str, en_val: str) -> str:
         if field == "responsibilities" and p.startswith("docs/"):
             topic = name.replace(".md", "").replace("_", " ")
             return f"Ответы на вопросы по `{topic}`."
-        if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/")):
-            if field == "what" and looks_english_prose(en_val):
-                plat = p.split("/")[0]
-                hint = _short_ru_hint(en_val, p)
-                return f"Platform-файл {plat}: `{name}` — {hint}."
-            if field == "why" and looks_english_prose(en_val):
-                return f"Нужен для сборки `{parent}` на платформе {p.split('/')[0]}."
-            if field == "contains" and looks_english_prose(en_val):
-                return f"Native/config-содержимое `{name}` в `{parent}`."
-            if field == "responsibilities" and looks_english_prose(en_val):
-                return f"Поддержка embedder-сборки для `{parent}`."
+        if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/", "installer/")):
+            from structure_platform_file_guides import platform_file_ru_field
+
+            name = p.split("/")[-1]
+            plat_ru = platform_file_ru_field(p, name, field, en_val, {"delete": en_val})
+            if plat_ru:
+                return plat_ru
+            return ""
         if field == "responsibilities" and looks_english_prose(en_val):
             return f"Роль `{name}` в модуле `{parent}`."
         if field == "what" and looks_english_prose(en_val):

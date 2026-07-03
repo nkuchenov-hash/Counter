@@ -24,7 +24,6 @@ BANNED_ENGLISH_IN_RU: tuple[str, ...] = (
     "build output",
     "Flutter-generated",
     "Android application module",
-    "Xcode project",
     "Native Windows host",
     "Gradle build script",
     "Source file",
@@ -49,8 +48,20 @@ BANNED_ENGLISH_IN_RU: tuple[str, ...] = (
     "manifest merge",
 )
 
-# Generic RU wrappers introduced by fallback adapters — must never ship.
-BANNED_GENERIC_RU_WRAPPERS: tuple[str, ...] = (
+# Generic platform/installer RU wrappers — must never ship.
+BANNED_GENERIC_PLATFORM_WRAPPERS: tuple[str, ...] = (
+    "Файл сборки ",
+    "Native/config для",
+    "Native/config-содержимое",
+    "Поддержка embedder",
+    "Поддержка embedder-сборки",
+    "Ошибка сборки с",
+    "без него возможны ошибки compile",
+    "Platform-файл ",
+    "Нужен для сборки `",
+)
+
+BANNED_GENERIC_RU_WRAPPERS: tuple[str, ...] = BANNED_GENERIC_PLATFORM_WRAPPERS + (
     "Подмодуль `",
     " в Flutter-приложении Counter.",
     "Код под `lib/",
@@ -436,7 +447,7 @@ EXACT_EN_FIELD_RU: dict[str, str] = {
     "No — edit flows break on all tabs.": "Нет — edit flows сломаются на всех вкладках.",
     # iOS / macOS / linux / windows subfolders
     "Xcode project file bundle for the iOS Counter app target.": (
-        "Bundle Xcode project для iOS target Counter."
+        "Bundle Xcode-проекта для iOS target Counter."
     ),
     "Xcode opens this project to compile, sign, and archive the iOS IPA.": (
         "Xcode открывает этот project для compile, sign и archive iOS IPA."
@@ -445,7 +456,7 @@ EXACT_EN_FIELD_RU: dict[str, str] = {
         "`project.pbxproj`, shared schemes, workspace metadata."
     ),
     "Xcode project corruption, scheme changes, iOS signing settings.": (
-        "Повреждение Xcode project, смена scheme, настройки iOS signing."
+        "Повреждение Xcode-проекта, смена scheme, настройки iOS signing."
     ),
     "Xcode workspace wrapping the iOS Runner project and CocoaPods.": (
         "Xcode workspace, оборачивающий Runner и CocoaPods."
@@ -763,12 +774,27 @@ def file_class_field(path: str, field: str, en_val: str, en: dict[str, str]) -> 
         ru = _cmake_file_field(p, field, en_val, en)
     elif p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/")):
         ru = _platform_native_file_field(p, name, field, en_val, en)
+    elif p.startswith("installer/"):
+        ru = _platform_native_file_field(p, name, field, en_val, en)
     elif p.startswith("scripts/"):
         ru = _script_file_field(p, name, field, en_val, en)
 
     if ru:
         ru = sanitize_ru_prose(ru)
-        if ru_prose_ok(ru, min_cyrillic=6):
+        plat_prefix = p.startswith(
+            ("android/", "ios/", "web/", "windows/", "linux/", "macos/", "installer/")
+        )
+        from structure_en_ru_adapt import has_banned_filler as _banned_filler
+
+        if ru_prose_ok(ru, min_cyrillic=6) or (
+            plat_prefix
+            and (
+                cyrillic_count(ru) >= 4
+                or ("`" in ru and len(ru.strip()) >= 10)
+                or len(ru.strip()) >= 22
+            )
+            and not _banned_filler(ru)
+        ):
             return ru
 
     return _generic_file_field(p, name, field, en_val, en)
@@ -1159,7 +1185,7 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
             "contains": "Ключи CFBundle, usage descriptions (микрофон и др.).",
             "responsibilities": f"Идентичность app и permission strings на {plat_ru}.",
             "when": f"Неверное имя app или permission prompt на {plat_ru}.",
-            "connected": f"`{plat}/Runner/`, Xcode project.",
+            "connected": f"`{plat}/Runner/`, Xcode-проект.",
             "layer": f"{plat_ru} bundle metadata — не Dart.",
         }
     elif name == "gradle.properties":
@@ -1264,6 +1290,11 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
             "layer": "Server hook — не в бинарнике приложения.",
         }
     else:
+        from structure_platform_file_guides import platform_file_ru_field
+
+        ru = platform_file_ru_field(p, name, field, en_val, en)
+        if ru:
+            return ru
         return None
     v = m.get(field)
     return v if v and ru_prose_ok(v, min_cyrillic=6) else None
