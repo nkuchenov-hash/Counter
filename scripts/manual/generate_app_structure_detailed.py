@@ -1,36 +1,72 @@
 #!/usr/bin/env python3
-"""Generate docs/APP_STRUCTURE_DETAILED.md from tracked files + light symbol scan."""
+"""Generate owner-readable docs/APP_STRUCTURE_DETAILED.md — unique per file/folder."""
 
 from __future__ import annotations
 
 import re
 import subprocess
-from pathlib import Path
+import sys
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from datetime import date
+from pathlib import Path, PurePosixPath
+
+from structure_guide_data import (
+    BAD_PHRASES,
+    FOLDERS,
+    infer_folder_guide,
+    platform_file_description,
+)
+from structure_role_guides import humanize_guide
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "docs" / "APP_STRUCTURE_DETAILED.md"
-SHA = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, text=True).strip()
+APP_STRUCTURE = ROOT / "docs" / "APP_STRUCTURE.md"
 
 SYMBOL_RE = re.compile(
     r"^(?:class|enum|extension|mixin|typedef)\s+(\w+)|^void\s+main\s*\(",
     re.M,
 )
+TABLE_ROW_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|")
 
 
-def tracked(prefix: str = "") -> list[str]:
-    args = ["git", "ls-files"]
-    if prefix:
-        args.append(prefix)
-    out = subprocess.check_output(args, cwd=ROOT, text=True)
-    return [l.strip() for l in out.splitlines() if l.strip()]
+@dataclass
+class FileGuide:
+    what: str
+    why: str
+    contains: str
+    responsibilities: str
+    when: str
+    delete: str
+    connected: str
+    layer: str
+    what_ru: str = ""
+    why_ru: str = ""
+    contains_ru: str = ""
+    responsibilities_ru: str = ""
+    when_ru: str = ""
+    delete_ru: str = ""
+    connected_ru: str = ""
+    layer_ru: str = ""
+
+
+def tracked() -> list[str]:
+    out = subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True)
+    return sorted(l.strip().replace("\\", "/") for l in out.splitlines() if l.strip())
+
+
+def sha() -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, text=True
+    ).strip()
 
 
 def symbols(path: str) -> list[str]:
     p = ROOT / path
-    if not p.is_file():
+    if not p.is_file() or not path.endswith(".dart"):
         return []
     try:
-        text = p.read_text(encoding="utf-8")[:4000]
+        text = p.read_text(encoding="utf-8")[:6000]
     except OSError:
         return []
     found: list[str] = []
@@ -40,347 +76,1046 @@ def symbols(path: str) -> list[str]:
             found.append(name)
         if m.group(0).startswith("void main"):
             found.append("main")
-    return found[:6]
+    return found[:8]
 
 
-def purpose_en(path: str, syms: list[str]) -> tuple[str, str, str, str]:
-    sym = ", ".join(syms[:3]) if syms else "(library)"
+def clean_role(role: str) -> str:
+    r = role.strip()
+    r = re.sub(r"\s*\*\(part\)\*", "", r)
+    r = r.replace("*(part)*", "").strip()
+    return r
+
+
+def parse_app_structure_roles() -> dict[str, str]:
+    """Extract `path` → role from docs/APP_STRUCTURE.md tables."""
+    if not APP_STRUCTURE.is_file():
+        return {}
+    text = APP_STRUCTURE.read_text(encoding="utf-8")
+    roles: dict[str, str] = {}
+    prefix_stack: list[str] = []
+
+    section_prefix = {
+        "3.2": "lib/data/",
+        "3.3": "lib/core/",
+        "3.5": "lib/l10n/",
+        "3.6": "lib/services/",
+    }
+
+    current_prefix = ""
+
+    for line in text.splitlines():
+        if line.startswith("###"):
+            current_prefix = ""
+            for key, pref in section_prefix.items():
+                if key in line:
+                    current_prefix = pref
+                    break
+            if "3.4.1" in line or ("3.4" in line and "features" in line):
+                current_prefix = "lib/features/"
+            if "3.1.1" in line and "shell" in line:
+                current_prefix = "lib/shell/"
+            if "PocketBase hooks" in line:
+                current_prefix = "pb_hooks/"
+            continue
+
+        m = TABLE_ROW_RE.match(line.strip())
+        if not m:
+            continue
+        raw_path, role = m.group(1).strip(), clean_role(m.group(2))
+        if not role or role in ("Role", "File", "File / folder", "File / pattern"):
+            continue
+        if raw_path.startswith("lib/") or raw_path.startswith("pb_hooks/"):
+            full = raw_path
+        elif raw_path.startswith(("shell/", "core/")):
+            full = "lib/" + raw_path
+        elif "/" in raw_path or raw_path.endswith(".dart"):
+            if current_prefix:
+                full = current_prefix + raw_path.lstrip("/")
+            else:
+                full = raw_path
+        else:
+            continue
+        full = full.replace("\\", "/")
+        roles[full] = role
+        # basename alias for coordinators listed without folder
+        roles[Path(full).name] = role
+
+    # Hard-coded mandatory category files (ensure unique even if table drifts)
+    roles.setdefault(
+        "lib/data/categories/category_cache_helpers.dart",
+        "Category fetch from PocketBase, slug reservation, reload rules into memory after changes",
+    )
+    roles.setdefault(
+        "lib/data/categories/category_tree.dart",
+        "Parent/child category tree build, sort, path from root, subtree record id collection",
+    )
+    roles.setdefault(
+        "lib/data/categories/category_lookup.dart",
+        "Find/match categories by title words, business id, PocketBase row id, fuzzy voice match",
+    )
+    roles.setdefault(
+        "lib/data/categories/category_crud.dart",
+        "Create, update, archive, restore, reorder categories; PocketBase PATCH/POST payloads",
+    )
+    roles.setdefault(
+        "lib/data/categories/category_stats.dart",
+        "Sum record durations per category and subtree for stats screens",
+    )
+    roles.setdefault(
+        "lib/data/categories/category_record_bridge.dart",
+        "Link records to categories; resolve REST ids; repair missing category on save",
+    )
+    roles.setdefault(
+        "lib/data/categories/category_default_time.dart",
+        "Per-category default plan start time and timezone inheritance for new plans",
+    )
+    return roles
+
+
+CATEGORY_GUIDES: dict[str, FileGuide] = {
+    "lib/data/categories/category_cache_helpers.dart": FileGuide(
+        what="Loads your category list from PocketBase and refreshes the in-memory category tree after sync.",
+        why="Every screen that shows a category name, color, or picker needs an up-to-date list for the signed-in user.",
+        contains="Fetch/filter code for `categories` rows plus reload hooks used after edits.",
+        responsibilities="Download categories; rebuild local rules; handle backoff when PocketBase is unreachable.",
+        when="Categories missing after login, stale tree after edit, or empty picker when server has data.",
+        delete="No — required for app runtime.",
+        connected="Category manager UI, record start category, plan cards, `category_service.dart`.",
+        layer="Brain — `part` of `database_service.dart` (cache/load).",
+        what_ru="Загружает список категорий из PocketBase и обновляет дерево категорий в памяти.",
+        why_ru="Без актуального списка не работают picker, цвета и привязка записей к категориям.",
+        contains_ru="HTTP-загрузка категорий и пересборка локальных правил.",
+        responsibilities_ru="Скачать категории пользователя; обновить кэш после изменений.",
+        when_ru="Категории не появляются или не обновляются после правок.",
+        delete_ru="Нет — нужен для работы приложения.",
+        connected_ru="Экран категорий, старт записи, карточки планов.",
+        layer_ru="Brain — часть `database_service.dart`.",
+    ),
+    "lib/data/categories/category_tree.dart": FileGuide(
+        what="Builds the parent/child category tree and answers “path from root” questions.",
+        why="Categories are nested (clients under Price Reporter, etc.); the app must walk the tree for pickers and stats.",
+        contains="Tree walk/sort helpers, `CategoryRule` hierarchy operations, subtree id lists.",
+        responsibilities="Sort siblings; find node by PocketBase id; list all record ids under a branch.",
+        when="Wrong order in category list, breadcrumb path wrong, stats include wrong subtree.",
+        delete="No — required for app runtime.",
+        connected="Category tree picker, stats aggregation, voice category path.",
+        layer="Brain — `part` of `database_service.dart` (tree structure).",
+        what_ru="Строит дерево категорий «родитель → дочерние».",
+        why_ru="Нужен для вложенных категорий и хлебных крошек.",
+        contains_ru="Обход дерева, сортировка, поиск узла по id.",
+        responsibilities_ru="Путь от корня; список id поддерева для статистики.",
+        when_ru="Неверный порядок или путь категории в UI.",
+        delete_ru="Нет — нужен для работы приложения.",
+        connected_ru="Picker категорий, статистика.",
+        layer_ru="Brain — часть `database_service.dart`.",
+    ),
+    "lib/data/categories/category_lookup.dart": FileGuide(
+        what="Finds the best matching category when the user types, speaks, or only provides a partial name.",
+        why="Voice commands and smart input must map “Price Reporter Planning” to the right category without creating duplicates.",
+        contains="Fuzzy word match, deepest-match scoring, business-id ↔ PocketBase id resolution.",
+        responsibilities="Score titles against category names; pick deepest match; map legacy ids for saves.",
+        when="Voice picks wrong client, plan/record category wrong from title, fuzzy match too aggressive.",
+        delete="No — required for app runtime.",
+        connected="Voice parser, smart plan input, record start, category pickers.",
+        layer="Brain — `part` of `database_service.dart` (search/match).",
+        what_ru="Ищет категорию по названию, пути или голосовой фразе.",
+        why_ru="Нужен для голоса и умного ввода без дубликатов категорий.",
+        contains_ru="Fuzzy-match, scoring, сопоставление id.",
+        responsibilities_ru="Выбрать лучшую категорию по тексту.",
+        when_ru="Голос или автоподбор выбрал не ту категорию.",
+        delete_ru="Нет — нужен для работы приложения.",
+        connected_ru="Голос, smart input, picker.",
+        layer_ru="Brain — часть `database_service.dart`.",
+    ),
+    "lib/data/categories/category_crud.dart": FileGuide(
+        what="Creates, renames, archives, restores, and reorders categories on the server and in local cache.",
+        why="Category manager screen edits must persist to PocketBase and immediately update what Timeline/Plans show.",
+        contains="POST/PATCH payloads for `categories` collection, order fields, archive flags.",
+        responsibilities="Add nested category; update color/icon/name; archive/restore; write sibling order.",
+        when="Category save fails, archive doesn’t stick, drag-reorder not persisted.",
+        delete="No — required for app runtime.",
+        connected="`lib/features/categories/`, category manager sheets.",
+        layer="Brain — `part` of `database_service.dart` (network writes).",
+        what_ru="Создаёт и редактирует категории на сервере.",
+        why_ru="Экран категорий должен сохранять изменения в PocketBase.",
+        contains_ru="POST/PATCH для коллекции categories.",
+        responsibilities_ru="CRUD, архив, порядок sibling.",
+        when_ru="Категория не сохраняется или не архивируется.",
+        delete_ru="Нет — нужен для работы приложения.",
+        connected_ru="UI категорий.",
+        layer_ru="Brain — часть `database_service.dart`.",
+    ),
+    "lib/data/categories/category_stats.dart": FileGuide(
+        what="Adds up time spent per category (including child categories) for stats views.",
+        why="Stats tab shows hours per category; must include entire subtree, not only direct records.",
+        contains="Duration rollups filtered by category id set from subtree walk.",
+        responsibilities="Filter records by category subtree; sum seconds for day or range.",
+        when="Stats totals wrong for parent category, missing child hours.",
+        delete="No — required for app runtime.",
+        connected="`lib/features/stats/`, Timeline stats tab.",
+        layer="Brain — `part` of `database_service.dart` (read-only aggregation).",
+        what_ru="Считает длительность записей по категории и поддереву.",
+        why_ru="Нужен для вкладки статистики.",
+        contains_ru="Суммирование секунд по id поддерева.",
+        responsibilities_ru="Длительность за день/период по ветке категории.",
+        when_ru="Неверные часы в статистике по категории.",
+        delete_ru="Нет — нужен для работы приложения.",
+        connected_ru="Stats во Timeline.",
+        layer_ru="Brain — часть `database_service.dart`.",
+    ),
+    "lib/data/categories/category_record_bridge.dart": FileGuide(
+        what="Connects timeline records to the correct PocketBase category row when saving or fixing bad links.",
+        why="Records must store the 15-char PocketBase category id, not a stale UUID or wrong slug — or saves fail silently.",
+        contains="REST id resolution, record/category relation repair, ghost record cleanup hooks.",
+        responsibilities="Translate record id for PATCH; map category_link fields; purge dead cache rows.",
+        when="Record saves without category, stop/delete uses wrong id, 404 cleanup needed.",
+        delete="No — required for app runtime.",
+        connected="Record start/stop, edit sheet category field, PocketBase `records` hooks.",
+        layer="Brain — `part` of `database_service.dart` (record↔category bridge).",
+        what_ru="Связывает записи Timeline с правильной строкой категории в PocketBase.",
+        why_ru="Без этого записи сохраняются без категории или с неверным id.",
+        contains_ru="Разрешение REST id, починка relation полей.",
+        responsibilities_ru="Правильный category id при PATCH записи.",
+        when_ru="Запись без категории или ошибка stop/delete по id.",
+        delete_ru="Нет — нужен для работы приложения.",
+        connected_ru="Timeline, edit sheet, hooks на сервере.",
+        layer_ru="Brain — часть `database_service.dart`.",
+    ),
+    "lib/data/categories/category_default_time.dart": FileGuide(
+        what="Stores and applies each category’s default plan start time (e.g. Gym → 19:00).",
+        why="Creating a plan under a category should pre-fill sensible time without manual picking every time.",
+        contains="Validation for HH:MM, timezone option per category, inheritance when creating plans.",
+        responsibilities="Read/write `default_plan_time` fields; apply to new plan drafts; show short TZ label.",
+        when="Default time not applied on new plan, wrong timezone on category default, Time View search.",
+        delete="No — required for app runtime.",
+        connected="Plan create/edit sheets, Time View settings, category editor.",
+        layer="Brain — `part` of `database_service.dart` (category schedule defaults).",
+        what_ru="Задаёт время по умолчанию для планов в категории (например Gym → 19:00).",
+        why_ru="Новые планы должны получать разумное время автоматически.",
+        contains_ru="Валидация времени и timezone для категории.",
+        responsibilities_ru="Чтение/запись default_plan_time.",
+        when_ru="Время по умолчанию не подставляется в новый план.",
+        delete_ru="Нет — нужен для работы приложения.",
+        connected_ru="Создание/редактирование планов, Time View.",
+        layer_ru="Brain — часть `database_service.dart`.",
+    ),
+}
+
+
+def layer_for(path: str) -> tuple[str, str]:
     p = path.replace("\\", "/")
-
-    if p.startswith("lib/data/database_service.dart"):
+    if p.startswith("lib/data/"):
+        if p.endswith("_service.dart") or p == "lib/data/database_service.dart":
+            return (
+                "Brain coordinator — entry point for this domain inside `database_service.dart`.",
+                "Brain — координатор домена.",
+            )
+        if "/local_sync/" in p:
+            return ("Brain offline queue / sync state.", "Brain — офлайн-очередь.")
+        if "/models/" in p or p == "lib/data/models.dart":
+            return ("Data shape only — no network.", "Модели данных — без HTTP.")
+        if "/cache/" in p:
+            return ("Brain performance cache — faster date paging.", "Brain — кэш производительности.")
         return (
-            "Brain library root singleton and `part` host for all PocketBase I/O extensions.",
-            f"Shared Brain state, streams, static helpers; `part` declarations for domain extensions. Symbols: {sym}.",
-            "Owns HTTP/PocketBase access; coordinates optimistic cache and offline outboxes.",
-            "Imported by UI via `DatabaseService.instance`; domain logic lives in `part` files.",
+            "Brain module — `part` file merged into `database_service.dart`.",
+            "Brain — модуль `part` в `database_service.dart`.",
         )
-    if "/data/plans/" in p or p.endswith("plan_service.dart"):
+    if p.startswith("lib/features/"):
+        area = p.split("/")[2] if len(p.split("/")) > 2 else "feature"
         return (
-            "Plan/list domain Brain module (coordinator or part).",
-            f"Planning CRUD, Time View projection, recurrence, tags, outbox helpers. Symbols: {sym}.",
-            "Fetches/mutates `plans` rows, expands RRULE, queues offline plan mutations.",
-            "Used by Planning/Lists UI and shell voice routing through `DatabaseService`.",
-        )
-    if "/data/records/" in p or p.endswith("record_service.dart"):
-        return (
-            "Record/timeline domain Brain module (coordinator or part).",
-            f"Start/stop records, timeline VM, realtime, overlap/Highlander, outbox. Symbols: {sym}.",
-            "Maintains record cache, optimistic start/stop, PocketBase records I/O.",
-            "Timeline tab, edit sheets, Wear lite load path.",
-        )
-    if "/data/categories/" in p or p.endswith("category_service.dart"):
-        return (
-            "Category domain Brain module (coordinator or part).",
-            f"Category tree, fuzzy match, CRUD, stats bridge, default plan time. Symbols: {sym}.",
-            "Hydrates category rules, maps category_id/category_link for records/plans.",
-            "Categories screen, plan cards, record category picker, stats aggregation.",
-        )
-    if "/data/profile/" in p or p.endswith("profile_service.dart"):
-        return (
-            "Profile/tag catalog Brain module (coordinator or part).",
-            f"Profile hydration, settings PATCH, timezone, tag catalog CRUD. Symbols: {sym}.",
-            "Loads `profiles` row, projects wall-clock today, manages tag catalog cache.",
-            "Profile settings, tag manager, tag chips, timezone header picker.",
-        )
-    if p.startswith("lib/data/local_sync/"):
-        return (
-            "Offline mutation outbox or sync UI state.",
-            f"SharedPreferences queues + flush hooks. Symbols: {sym}.",
-            "Enqueues retriable PB failures; drives offline banner and reconnect drain.",
-            "Brain flush on boot/resume/reconnect; `_OfflineSyncStatusBar` in shell.",
-        )
-    if p.startswith("lib/data/models"):
-        return (
-            "Immutable data model or model barrel.",
-            f"DTOs aligned with `docs/DATA_MAP.md`. Symbols: {sym}.",
-            "Parse/serialize PocketBase fields; no UI imports.",
-            "Brain + UI read types via `package:counter/data/models.dart`.",
-        )
-    if p.startswith("lib/features/planning/time_view/"):
-        return (
-            "Planning Time View UI submodule.",
-            f"Canvas, drag/resize, card layer, settings. Symbols: {sym}.",
-            "Renders proportional day timeline and handles Time View gestures.",
-            "Composed by `planning_page.dart` / `PlanningTimeViewHost`.",
-        )
-    if p.startswith("lib/features/planning/"):
-        return (
-            "Plans tab UI module.",
-            f"Planning day pager, cards, settings, bulk edit. Symbols: {sym}.",
-            "Optimistic plan interactions; delegates persistence to Brain.",
-            "Shell tab index 1; uses canonical `PlanTimeTaskCard` / `AppButton`.",
-        )
-    if p.startswith("lib/features/timeline/"):
-        return (
-            "Timeline tab UI module.",
-            f"Day pager, record cards, header controls. Symbols: {sym}.",
-            "Displays running/stopped records for profile wall days.",
-            "Shell tab index 0; record edit via `ActivityDetailSheet`.",
-        )
-    if p.startswith("lib/features/lists/"):
-        return (
-            "Lists/backlog tab UI module.",
-            f"Filters, cards, bulk actions, export. Symbols: {sym}.",
-            "Backlog plan rows with list-domain tags; no play button on cards.",
-            "Shell tab index 3.",
-        )
-    if p.startswith("lib/features/categories/"):
-        return (
-            "Category manager UI.",
-            f"Tree picker, create/edit sheets, visibility prefs. Symbols: {sym}.",
-            "CRUD UI calling Brain category extensions.",
-            "More menu → Categories.",
-        )
-    if p.startswith("lib/features/profile/"):
-        return (
-            "Profile and tag settings UI.",
-            f"Account, timezone, tag manager, desktop voice settings. Symbols: {sym}.",
-            "Edits profile prefs and tag catalog through Brain profile modules.",
-            "More menu → Profile; admin Component Lab gated by `isAdmin`.",
-        )
-    if p.startswith("lib/features/shared/"):
-        return (
-            "Cross-feature shared UI.",
-            f"Edit sheets, voice widgets, offline banner. Symbols: {sym}.",
-            "Routes plan/record edits; hosts Omni-Picker and autosave gate.",
-            "Imported by Timeline, Planning, Lists, shell edit hosts.",
-        )
-    if p.startswith("lib/shell/"):
-        return (
-            "Application shell module.",
-            f"Tab host, voice routing, edit modals, side nav. Symbols: {sym}.",
-            "Wires bottom nav / desktop rail to feature pages.",
-            "`app_shell.dart` re-exports `life_os_dashboard.dart`.",
+            f"UI code for the {area} area of the app (what users see and tap).",
+            f"UI — экран/виджет ({area}).",
         )
     if p.startswith("lib/core/widgets/"):
         return (
-            "Canonical design-system widget.",
-            f"Reusable UI primitive per `docs/DESIGN_SYSTEM.md`. Symbols: {sym}.",
-            "Feature screens compose these instead of raw Material buttons.",
-            "Component Lab demonstrates mappings.",
-        )
-    if p.startswith("lib/core/services/"):
-        return (
-            "Core platform/voice service (no feature imports).",
-            f"Desktop voice/STT/tray/hotkey pipeline. Symbols: {sym}.",
-            "Bridges OS capabilities; record submit calls Brain via injected hooks.",
-            "Wired from `main.dart` / shell voice routing.",
+            "Shared visual widget — reused on multiple tabs.",
+            "Общий UI-виджет design system.",
         )
     if p.startswith("lib/core/"):
         return (
-            "Core foundation utility or widget.",
-            f"Theme, time, diagnostics, navigation helpers. Symbols: {sym}.",
-            "Shared non-feature code; must not import `features/` or Brain HTTP.",
-            "Used across UI modules and sometimes Brain (time helpers).",
+            "Foundation code — theme, time, voice services, diagnostics (not a full screen).",
+            "Foundation — тема, время, voice, диагностика.",
         )
+    if p.startswith("lib/shell/"):
+        return ("App shell — navigation and global wiring.", "Shell — навигация приложения.")
     if p.startswith("lib/l10n/"):
-        return (
-            "Localization catalog.",
-            f"Dictionary keys and locale maps. Symbols: {sym}.",
-            "Provides `t()` lookup for UI strings.",
-            "Features import `dictionary.dart`; EN/RU are canonical SSOT.",
-        )
+        return ("Translations and text keys.", "Локализация — строки UI.")
     if p.startswith("lib/services/"):
-        return (
-            "Device bridge service.",
-            f"Notifications/alarms without UI. Symbols: {sym}.",
-            "Schedules plan alarms; no PocketBase HTTP.",
-            "Brain requests reschedule via notification service.",
-        )
+        return ("Device service (notifications) — no PocketBase.", "Сервис устройства (уведомления).")
     if p.startswith("test/"):
-        return (
-            "Automated test.",
-            f"Widget/unit/regression coverage. Symbols: {sym}.",
-            "Guards domain/UI contracts (`flutter test`).",
-            "Maps to nearby production module by name.",
-        )
+        return ("Automated test — not shipped to users.", "Автотест.")
     if p.startswith("scripts/"):
+        return ("Developer/CI script — run manually or in pipeline.", "Скрипт разработки/CI.")
+    if p.startswith("docs/"):
+        return ("Documentation — explains rules, not runtime code.", "Документация.")
+    if p.startswith((".github/", "installer/", "pb_hooks/")):
+        return ("Build/deploy/server configuration.", "Сборка/деплой/сервер.")
+    if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/")):
+        return ("Platform wrapper — required for native/web builds.", "Платформенная обёртка Flutter.")
+    return ("Repository support file.", "Вспомогательный файл репозитория.")
+
+
+def delete_for(path: str) -> tuple[str, str]:
+    p = path.replace("\\", "/")
+    if p.startswith("lib/"):
         return (
-            "Developer/CI script.",
-            f"Audit, deploy, locale sync, or one-off maintenance. Symbols: {sym}.",
-            "Not shipped in app binary.",
-            "Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.",
+            "No — required for app runtime.",
+            "Нет — нужен для работы приложения.",
+        )
+    if p.startswith("test/") or p.startswith("integration_test/"):
+        return ("No — required for tests.", "Нет — нужен для тестов.")
+    if p in (
+        "scripts/manual/export_price_reporter_timesheet.dart",
+    ):
+        return (
+            "Maybe — manual owner billing export; keep unless you no longer run Price Reporter exports.",
+            "Возможно — ручной экспорт для биллинга; удалять только если не используете.",
         )
     if p.startswith("docs/"):
+        if "reports/FULL_" in p or "FINAL_" in p or p.endswith("PROJECT_KNOWLEDGE_PACK.md"):
+            return (
+                "No — current cleanup/structure report or upload checklist.",
+                "Нет — актуальный отчёт или чеклист.",
+            )
+        if "website/" in p:
+            return (
+                "No — intentionally maintained marketing copy (repo-only, not Project Knowledge pack).",
+                "Нет — маркетинговые тексты сайта.",
+            )
+        return ("No — governing/current documentation.", "Нет — governing документация.")
+    if p.startswith(("scripts/", "installer/", "pb_hooks/", ".github/")):
         return (
-            "Project documentation.",
-            f"Architecture, data map, reports. Symbols: {sym}.",
-            "Governing specs for Brain/UI behavior.",
-            "Must stay aligned with code tree (this file).",
-        )
-    if p.startswith("assets/"):
-        return (
-            "Bundled asset.",
-            f"Images/fonts referenced from `pubspec.yaml`. Symbols: {sym}.",
-            "Shipped with Flutter assets bundle.",
-            "Loaded via `AssetBundle` or theme.",
-        )
-    if p in ("pubspec.yaml", "analysis_options.yaml", "update.ps1", "README.md", "CHANGELOG.md", "CLAUDE.md", "AGENTS.md"):
-        return (
-            "Root project manifest or meta doc.",
-            f"Build/analyzer/deploy configuration or changelog. Symbols: {sym}.",
-            "Defines dependencies, lints, deploy entrypoints.",
-            "First stop for tooling and AI context.",
+            "No — required for build/deploy/audit workflows documented in repo.",
+            "Нет — нужен для сборки/деплоя/аудита.",
         )
     if p.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/")):
         return (
-            "Platform embedder/config.",
-            f"Native runner, manifest, or web shell. Symbols: {sym}.",
-            "Flutter tooling generates most files; app logic stays in `lib/`.",
-            "Build targets for mobile/desktop/web CI.",
-        )
-    if p.startswith(".github/"):
-        return (
-            "GitHub Actions workflow.",
-            f"CI deploy/build automation. Symbols: {sym}.",
-            "Pushes web to gh-pages; optional Windows installer.",
-            "Triggered from `main` or manual dispatch.",
+            "No — required for build/deploy/platform tooling.",
+            "Нет — нужен для сборки платформы.",
         )
     return (
-        "Project file.",
-        f"Supporting source or config. Symbols: {sym}.",
-        "See path prefix for ownership.",
-        "Cross-check `docs/APP_STRUCTURE.md` layer rules.",
+        "No — part of repository tooling or config.",
+        "Нет — конфигурация/инструмент репозитория.",
     )
 
 
-def purpose_ru(path: str) -> tuple[str, str, str, str]:
+def when_for(path: str) -> tuple[str, str]:
     p = path.replace("\\", "/")
-    if p.startswith("lib/data/"):
+    name = Path(p).name
+    if "category" in p and p.startswith("lib/data/categories/"):
         return (
-            "Модуль Brain (данные/PocketBase).",
-            "Логика домена, кэш, optimistic UI, outbox — см. англ. блок.",
-            "Единственный слой с HTTP к PocketBase (`database_service.dart` + parts).",
-            "UI вызывает через `DatabaseService.instance`.",
+            "Category data wrong: missing list, bad match, save/archive/reorder, default plan time.",
+            "Проблемы с категориями: список, match, сохранение, время по умолчанию.",
         )
-    if p.startswith("lib/features/"):
+    if p.startswith("lib/data/records/"):
         return (
-            "UI-модуль фичи.",
-            "Экраны/листы/шиты без прямого HTTP.",
-            "Optimistic UI через Brain; соблюдает `UX_CONTRACT`.",
-            "Подключается из shell или соседних shared-компонентов.",
+            "Timeline timer, record edit, offline start/stop, duplicate running record.",
+            "Timeline: старт/стоп, правка, офлайн, дубликат running.",
         )
-    if p.startswith("lib/core/"):
+    if p.startswith("lib/data/plans/"):
         return (
-            "Базовый слой (core).",
-            "Тема, виджеты DS, time/voice утилиты.",
-            "Не импортирует `features/` и Brain HTTP.",
-            "Переиспользуется UI и частично Brain.",
+            "Plan/list save, Time View layout, recurrence, tags on plans, offline queue.",
+            "Планы/списки: сохранение, Time View, повтор, теги.",
+        )
+    if p.startswith("lib/data/profile/"):
+        return (
+            "Profile settings, timezone, tags catalog, tag display prefs.",
+            "Профиль, timezone, теги.",
+        )
+    if p.startswith("lib/features/planning/time_view/"):
+        return (
+            "Time View visual schedule: drag, resize, hour grid, card placement.",
+            "Time View: перетаскивание, сетка часов, карточки.",
+        )
+    if p.startswith("lib/features/planning/"):
+        return (
+            "Plans tab: day swipe, plan cards, play/start plan, bulk edit.",
+            "Вкладка Plans: день, карточки, play.",
+        )
+    if p.startswith("lib/features/timeline/"):
+        return (
+            "Timeline tab: day list, record cards, stats toggle, date swipe.",
+            "Вкладка Timeline: записи, день, stats.",
+        )
+    if p.startswith("lib/features/lists/"):
+        return (
+            "Lists tab: filters, done checkbox, bulk actions, export.",
+            "Вкладка Lists: фильтры, done, экспорт.",
+        )
+    if p.startswith("lib/features/shared/"):
+        return (
+            "Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.",
+            "Шторка редактирования, picker, voice, offline banner.",
+        )
+    if p.startswith("lib/core/widgets/plan_time_task_card/"):
+        return (
+            "Plan card look/feel: height, tags, play button, Time View density.",
+            "Внешний вид карточки плана.",
         )
     if p.startswith("lib/shell/"):
         return (
-            "Оболочка приложения (shell).",
-            "Вкладки, voice routing, edit hosts.",
-            "Связывает main → features.",
-            "Re-export через `app_shell.dart`.",
+            "Bottom tabs, voice routing, edit modal host, offline banner slot.",
+            "Навигация, voice, edit host.",
         )
-    if p.startswith("test/"):
+    if p.startswith("scripts/audit/"):
         return (
-            "Автотест.",
-            "Покрытие регрессий домена/UI.",
-            "Запуск: `flutter test`.",
-            "Соответствует модулю по имени файла.",
+            "Before merge: run architecture guard to catch forbidden imports/layout drift.",
+            "Перед merge: architecture guard.",
         )
-    if p.startswith("scripts/"):
+    if p.endswith("td.ps1") or p == "update.ps1":
         return (
-            "Скрипт разработки/CI.",
-            "Аудит, деплой, синхронизация.",
-            "Не входит в релизный бинарник.",
-            "См. `docs/DEPLOY.md` для deploy-пути.",
+            "Publishing website to GitHub Pages (`docs/DEPLOY.md`).",
+            "Публикация сайта на GitHub Pages.",
+        )
+    if p.startswith("installer/"):
+        return (
+            "Building or fixing Windows `CounterSetup.exe` installer.",
+            "Сборка Windows installer.",
         )
     if p.startswith("docs/"):
         return (
-            "Документация проекта.",
-            "Контракты архитектуры и DATA_MAP.",
-            "Источник правды для полей PB.",
-            "Должна совпадать с деревом файлов.",
+            "Understanding project rules, deploy steps, or structure — not runtime debugging.",
+            "Правила проекта и деплой — не runtime.",
         )
+    if p.startswith("android/") or name == "android.ps1":
+        return ("Android APK build or permission issues.", "Сборка/permissions Android.")
+    if p.startswith("web/"):
+        return ("Web deploy blank page, icons, base href.", "Web deploy.")
     return (
-        "Файл проекта.",
-        "См. англ. блок Purpose/Contains.",
-        "Смотри префикс пути для владения.",
-        "Правила слоёв — `docs/APP_STRUCTURE.md`.",
+        f"When behavior tied to `{name}` breaks or you need to change its documented role.",
+        f"Когда ломается поведение, связанное с `{name}`.",
     )
 
 
-def entry(path: str) -> str:
-    syms = symbols(path) if path.endswith(".dart") else []
-    pe, ce, de, ce2 = purpose_en(path, syms)
-    pr, cr, dr, cr2 = purpose_ru(path)
-    sym_line = f"\n- **Symbols:** `{', '.join(syms)}`" if syms else ""
+def connected_for(path: str, role: str) -> tuple[str, str]:
+    p = path.replace("\\", "/")
+    parts = []
+    if p.startswith("lib/data/"):
+        parts.append("UI calls via `DatabaseService.instance`")
+        if "categories" in p:
+            parts.append("Categories screen, record start, plan cards")
+        elif "records" in p:
+            parts.append("Timeline tab, edit sheet, Wear")
+        elif "plans" in p:
+            parts.append("Plans tab, Lists tab, Time View")
+        elif "profile" in p:
+            parts.append("Profile, tag manager, header timezone")
+        elif "local_sync" in p:
+            parts.append("Offline banner in shell, reconnect flush")
+    elif p.startswith("lib/features/planning"):
+        parts.append("Plans tab (shell index 1)")
+    elif p.startswith("lib/features/timeline"):
+        parts.append("Timeline tab (shell index 0)")
+    elif p.startswith("lib/features/lists"):
+        parts.append("Lists tab (shell index 3)")
+    elif p.startswith("lib/shell"):
+        parts.append("All main tabs, `app_shell.dart`")
+    if role:
+        parts.append(f"Role: {role[:120]}")
+    en = "; ".join(parts) if parts else f"See `docs/APP_STRUCTURE.md` and nearby files in `{PurePosixPath(p).parent}`."
+    ru = en  # keep connected concise; bilingual where needed
+    return en, ru
+
+
+def guide_from_role(path: str, role: str, syms: list[str]) -> FileGuide:
+    layer_en, layer_ru = layer_for(path)
+    del_en, del_ru = delete_for(path)
+    when_en, when_ru = when_for(path)
+    conn_en, conn_ru = connected_for(path, role)
+
+    human = humanize_guide(path, role, syms)
+    if human:
+        return FileGuide(
+            what=human["what"],
+            why=human["why"],
+            contains=human["contains"],
+            responsibilities=human["responsibilities"],
+            when=when_en,
+            delete=del_en,
+            connected=conn_en,
+            layer=layer_en,
+            what_ru=human.get("what_ru", human["what"]),
+            why_ru=human.get("why_ru", human["why"]),
+            contains_ru=human.get("contains_ru", human["contains"]),
+            responsibilities_ru=human.get("responsibilities_ru", human["responsibilities"]),
+            when_ru=when_ru,
+            delete_ru=del_ru,
+            connected_ru=conn_ru,
+            layer_ru=layer_ru,
+        )
+
+    sym_txt = ", ".join(f"`{s}`" for s in syms[:4]) if syms else "see source file"
+    role_short = role.split(";")[0].strip()
+    return FileGuide(
+        what=f"Source file `{Path(path).name}` — {role_short}.",
+        why="Documented in `docs/APP_STRUCTURE.md`; required for current app behavior.",
+        contains=f"Source for `{Path(path).name}` ({sym_txt}).",
+        responsibilities=role_short,
+        when=when_en,
+        delete=del_en,
+        connected=conn_en,
+        layer=layer_en,
+        what_ru=f"Файл `{Path(path).name}` — {role_short}.",
+        why_ru="Описан в APP_STRUCTURE.md; нужен для текущего поведения.",
+        contains_ru=f"Исходник `{Path(path).name}`.",
+        responsibilities_ru=role_short,
+        when_ru=when_ru,
+        delete_ru=del_ru,
+        connected_ru=conn_ru,
+        layer_ru=layer_ru,
+    )
+
+
+ROOT_FILES: dict[str, FileGuide] = {
+    "pubspec.yaml": FileGuide(
+        what="The app’s package manifest — lists Flutter/Dart dependencies and version number.",
+        why="Flutter reads this to know which packages to download and how to name the app build.",
+        contains="Dependency list (PocketBase SDK, calendar, voice, notifications, etc.).",
+        responsibilities="Declare package name `counter`, SDK version, plugins.",
+        when="Adding a new Flutter package or bumping app version.",
+        delete="No — Flutter requires it.",
+        connected="`flutter pub get`, all imports `package:counter/...`.",
+        layer="Build config — root manifest.",
+    ),
+    "update.ps1": FileGuide(
+        what="One-click script to analyze, build web, commit, and push for GitHub Pages deploy.",
+        why="Owner deploys the public site without remembering long flutter commands.",
+        contains="Wrapper calling `scripts/manual/td.ps1`.",
+        responsibilities="Trigger deploy pipeline documented in `docs/DEPLOY.md`.",
+        when="Publishing website after verified changes.",
+        delete="No — primary deploy entry for owner.",
+        connected="`.github/workflows/deploy.yml`, `docs/DEPLOY.md`.",
+        layer="Deploy tooling.",
+    ),
+    "android.ps1": FileGuide(
+        what="Shortcut to build Android release APKs with git commit stamp in the app.",
+        why="Faster local APK builds with correct `--dart-define=GIT_COMMIT` for About/More build info.",
+        contains="PowerShell calling `flutter build apk --split-per-abi`.",
+        responsibilities="Build arm64 (and other ABI) release APKs.",
+        when="Testing release APK on device.",
+        delete="No — documented local Android build path.",
+        connected="`android/` Gradle project, CI optional.",
+        layer="Build tooling.",
+    ),
+    "AGENTS.md": FileGuide(
+        what="Short instruction map for Codex/AI agents working in this repo.",
+        why="Tells assistants which docs to read first and iron laws not to break.",
+        contains="Priority list, PocketBase rules, structure boundaries.",
+        responsibilities="Route AI to governing docs; not app runtime.",
+        when="Starting an AI coding session in Codex/Cursor.",
+        delete="No — Project Knowledge pack doc.",
+        connected="14-doc pack, `CLAUDE.md`, `docs/ARCHITECTURE.md`.",
+        layer="Agent instructions — Project Knowledge.",
+    ),
+    "CLAUDE.md": FileGuide(
+        what="Navigation map of symbols and docs for Claude/AI sessions.",
+        why="Answers ‘where is start/stop record?’ without searching the whole tree.",
+        contains="Tables of file → symbol, shipped feature status pointers.",
+        responsibilities="AI orientation; keep updated when symbols move.",
+        when="Finding which file owns a feature; AI context.",
+        delete="No — Project Knowledge pack doc.",
+        connected="All governing docs, `CHANGELOG.md`.",
+        layer="Agent instructions — Project Knowledge.",
+    ),
+    "CHANGELOG.md": FileGuide(
+        what="Journal of shipped changes — what was built and when.",
+        why="Prevents re-building features; shows history of structure passes and fixes.",
+        contains="Dated technical bullets with file names.",
+        responsibilities="Record shipped work after verification.",
+        when="Checking if a feature already exists.",
+        delete="No — Project Knowledge pack doc.",
+        connected="Every shipped pass report.",
+        layer="History — Project Knowledge.",
+    ),
+    ".gitignore": FileGuide(
+        what="Tells git which generated/local files never to commit (build/, captures, env secrets).",
+        why="Keeps repo clean — no APK dumps, perf captures, or personal env keys in git.",
+        contains="Ignore patterns for Flutter build output, IDE, exports.",
+        responsibilities="Exclude `build/`, `*.perf_capture.txt`, `lib/core/env/env.dart`.",
+        when="New local output folder should not be tracked.",
+        delete="No — repo hygiene.",
+        connected="All developers; CI.",
+        layer="Repo hygiene.",
+    ),
+    ".cursorrules": FileGuide(
+        what="Pointer for Cursor IDE to the real rules in `.cursor/rules/flutter_expert.mdc`.",
+        why="Ensures AI in Cursor follows architecture iron laws.",
+        contains="Single-line pointer to expert rules.",
+        responsibilities="Redirect to authoritative Cursor rules.",
+        when="Cursor agent ignores architecture — check linked rules.",
+        delete="No — Cursor workflow.",
+        connected="`.cursor/rules/flutter_expert.mdc`.",
+        layer="IDE agent config.",
+    ),
+}
+
+
+DOC_FILES: dict[str, FileGuide] = {
+    "docs/APP_STRUCTURE.md": FileGuide(
+        what="Concise map of folders, layers, and import rules.",
+        why="Quick answer to ‘where does X live?’ without reading the whole encyclopedia.",
+        contains="Tables of lib/data, features, scripts; guard commands.",
+        responsibilities="Canonical structure contract for architecture guard.",
+        when="Finding module ownership; before moving files.",
+        delete="No — Project Knowledge pack.",
+        connected="`APP_STRUCTURE_DETAILED.md`, `architecture_guard.ps1`.",
+        layer="Governing structure doc.",
+    ),
+    "docs/PROJECT_KNOWLEDGE_PACK.md": FileGuide(
+        what="Checklist of exactly 14 docs to upload to Project Knowledge (not architecture law itself).",
+        why="Owner limit of 25 uploaded docs — lists what to include/exclude.",
+        contains="Upload list, excluded repo-only docs, removed-doc log.",
+        responsibilities="Upload manifest only.",
+        when="Refreshing AI project files.",
+        delete="No — upload checklist.",
+        connected="14-doc pack listed inside.",
+        layer="Meta checklist — repo-only.",
+    ),
+    "docs/DEPLOY.md": FileGuide(
+        what="How to publish the website and set up PocketBase auth/admin on the server.",
+        why="Deploy and OAuth are easy to get wrong without step-by-step VPS notes.",
+        contains="`update.ps1` flow, GitHub Pages, Windows installer section, OAuth admin checklist.",
+        responsibilities="Deploy + production auth configuration guide.",
+        when="Site not updating, OAuth broken, building Windows installer.",
+        delete="No — Project Knowledge pack.",
+        connected="`.github/workflows/`, `update.ps1`, `installer/`.",
+        layer="Deploy guide — Project Knowledge.",
+    ),
+}
+
+
+def platform_guide(path: str) -> FileGuide:
+    name = Path(path).name
+    parent = PurePosixPath(path).parent.as_posix()
+    del_en, del_ru = delete_for(path)
+    when_en, when_ru = when_for(path)
+    layer_en, layer_ru = layer_for(path)
+
+    inferred = platform_file_description(path)
+    if inferred:
+        return FileGuide(
+            what=inferred["what"],
+            why=inferred["why"],
+            contains=inferred["contains"],
+            responsibilities=inferred["responsibilities"],
+            when=when_en,
+            delete=del_en,
+            connected=f"Flutter `{parent.split('/')[0] if parent else 'repo'}` tooling.",
+            layer=layer_en,
+            what_ru=inferred["what"],
+            why_ru=inferred["why"],
+            contains_ru=inferred["contains"],
+            responsibilities_ru=inferred["responsibilities"],
+            when_ru=when_ru,
+            delete_ru=del_ru,
+            connected_ru=f"Flutter tooling для `{parent}`.",
+            layer_ru=layer_ru,
+        )
+
+    if name == "AndroidManifest.xml":
+        return FileGuide(
+            what="Android app manifest — permissions, app name, deep links, activity entry.",
+            why="Android OS reads this at install/run time for permissions and launcher icon.",
+            contains="XML permissions (mic, notifications), application label, Flutter activity.",
+            responsibilities="Declare what Android allows the app to do.",
+            when="Permission denied on Android, app name wrong, intent filters.",
+            delete="No — required for Android build.",
+            connected="`android/app/build.gradle`, Flutter embedding.",
+            layer="Android platform config.",
+        )
+    if name.endswith("build.gradle") or name.endswith("build.gradle.kts"):
+        return FileGuide(
+            what=f"Gradle build script for `{parent}` — Android compile settings and plugins.",
+            why="Gradle uses this to compile Kotlin/Java and bundle Flutter Android build.",
+            contains="SDK versions, Flutter Gradle plugin hook, dependencies.",
+            responsibilities="Configure Android compile/target SDK, signing hooks.",
+            when="Gradle sync fails, SDK version errors.",
+            delete="No — required for Android build.",
+            connected="Flutter tooling, `AndroidManifest.xml`.",
+            layer="Android build config.",
+        )
+    if name == "index.html":
+        return FileGuide(
+            what="Web page shell that loads the compiled Flutter web app.",
+            why="Browser needs an HTML entry with base href for GitHub Pages `/Counter/`.",
+            contains="Script tags bootstrapping `flutter.js`, base href.",
+            responsibilities="Start Flutter web engine in browser.",
+            when="Blank web page after deploy.",
+            delete="No — required for web build.",
+            connected="`flutter build web`, `docs/DEPLOY.md`.",
+            layer="Web platform entry.",
+        )
+    if name == "counter.iss":
+        return FileGuide(
+            what="Inno Setup script — recipe for building `CounterSetup.exe` installer.",
+            why="Packages Flutter Windows build + STT helper + icons into one setup wizard.",
+            contains="File copy rules, shortcuts, optional autostart task.",
+            responsibilities="Define installer steps and installed file layout.",
+            when="Installer missing files or wrong install path on Windows.",
+            delete="No — required for Windows installer.",
+            connected="`prepare_stt_payload.ps1`, GitHub Actions workflow.",
+            layer="Windows installer config.",
+        )
+    if name.endswith(".pb.js"):
+        hook = name.replace(".pb.js", "")
+        return FileGuide(
+            what=f"PocketBase server hook `{hook}` — runs on VPS when specific API events fire.",
+            why="Some rules (password reset email, overlapping records) must be enforced server-side.",
+            contains="JavaScript hook handler copied to PocketBase `pb_hooks/` on server.",
+            responsibilities=f"Server-side logic for `{hook}` (see `docs/POCKETBASE_MANIFEST.md`).",
+            when="Server behavior differs from app expectations for auth/records.",
+            delete="No — production PocketBase deployment.",
+            connected="PocketBase Admin, Flutter auth/records client.",
+            layer="Server hook — not in app binary.",
+        )
+    plat = p.split("/")[0] if (p := path.replace("\\", "/")) else "repo"
+    return FileGuide(
+        what=f"{plat} build file `{name}` in `{parent}` — required by Flutter/native toolchain.",
+        why=f"Without `{name}`, {plat} compile or packaging step for this folder may fail.",
+        contains=f"Native/config source for `{parent}` (open file only when build errors cite it).",
+        responsibilities=f"Support {plat} embedder build for `{parent}` — not Dart business logic.",
+        when=f"Build log mentions `{name}` or `{parent}`.",
+        delete="No — required for build/deploy/platform tooling.",
+        connected=f"`{plat}/` platform folder, Flutter embedder.",
+        layer=layer_en,
+        what_ru=f"Файл сборки {plat}: `{name}` в `{parent}`.",
+        why_ru=f"Нужен для сборки {plat}; без него возможны ошибки compile.",
+        contains_ru=f"Native/config для `{parent}`.",
+        responsibilities_ru=f"Поддержка embedder {plat}.",
+        when_ru=f"Ошибка сборки с `{name}`.",
+        delete_ru=del_ru,
+        connected_ru=f"Папка `{plat}/`.",
+        layer_ru=layer_ru,
+    )
+
+
+def script_guide(path: str) -> FileGuide:
+    name = Path(path).name
+    if name == "architecture_guard.ps1":
+        return FileGuide(
+            what="Checks repo structure rules — forbidden imports, required docs, large-file warnings.",
+            why="Prevents accidental architecture breaks during refactors.",
+            contains="PowerShell rules matching `docs/APP_STRUCTURE.md`.",
+            responsibilities="Exit non-zero in `-Strict` mode on violations.",
+            when="Before merge; after moving files.",
+            delete="No — required for audit workflow.",
+            connected="`docs/APP_STRUCTURE.md`, CI optional.",
+            layer="Audit script.",
+        )
+    if name == "generate_app_structure_detailed.py":
+        return FileGuide(
+            what="Builds this document (`APP_STRUCTURE_DETAILED.md`) from git file list + role map.",
+            why="Keeps owner-readable structure guide in sync with repo after changes.",
+            contains="Python generator + curated folder/file descriptions.",
+            responsibilities="Regenerate detailed structure encyclopedia.",
+            when="After adding/removing tracked files; after editing structure docs.",
+            delete="No — required for structure doc generation.",
+            connected="`docs/APP_STRUCTURE.md`, `structure_guide_data.py`.",
+            layer="Doc generation script.",
+        )
+    if name == "sync_locales.dart":
+        return FileGuide(
+            what="Copies translation keys from English/Russian source files into other locale files.",
+            why="Keeps `lib/l10n/langs/*.dart` in sync when keys are added.",
+            contains="Dart script scanning dictionary keys.",
+            responsibilities="Run after editing `en.dart` / `ru.dart`.",
+            when="Missing translation key in non-EN/RU locale.",
+            delete="No — locale SSOT workflow.",
+            connected="`lib/l10n/langs/HELP HOW TO UPDATE the languages`.",
+            layer="Locale maintenance script.",
+        )
+    if name == "export_price_reporter_timesheet.dart":
+        return FileGuide(
+            what="Manual export of Price Reporter timeline records to CSV for owner billing/reporting.",
+            why="Internal business reporting — not an in-app user feature.",
+            contains="Read-only PocketBase queries + CSV writer to `exports/`.",
+            responsibilities="Generate timesheet CSV for configured date range.",
+            when="Owner runs monthly Price Reporter billing export.",
+            delete="Maybe — manual owner utility; keep unless export no longer used.",
+            connected="`docs/website/INTERNAL_NOTES_NOT_FOR_SITE.md`, `exports/` folder.",
+            layer="Manual owner script — not shipped in app.",
+        )
+    return FileGuide(
+        what=f"Developer script `{name}` — run manually for maintenance, smoke test, or deploy helper.",
+        why="Automates a repeatable task documented in repo notes or `DEPLOY.md`.",
+        contains=f"PowerShell, Python, or Dart commands for `{name}`.",
+        responsibilities="See script header comments for exact behavior.",
+        when=f"When workflow documented for `{name}` is needed.",
+        delete="No — part of documented dev workflow unless cleanup report removed it.",
+        connected="`scripts/manual/`, `docs/DEPLOY.md`.",
+        layer="Developer script.",
+    )
+
+
+def test_guide(path: str, syms: list[str]) -> FileGuide:
+    stem = Path(path).stem
+    return FileGuide(
+        what=f"Automated test `{stem}` — verifies behavior without manual tapping.",
+        why="Prevents regressions when related production code changes.",
+        contains=f"Test cases (symbols: {', '.join(syms[:3]) or 'test groups'}).",
+        responsibilities=f"Assert expected behavior for `{stem}` scenario.",
+        when=f"CI failure or changing code near `{stem.replace('_test', '')}`.",
+        delete="No — required for tests.",
+        connected=f"Matching files under `lib/` with similar name.",
+        layer="Test — not shipped to users.",
+    )
+
+
+def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
+    if path in CATEGORY_GUIDES:
+        return CATEGORY_GUIDES[path]
+    if path in ROOT_FILES:
+        return ROOT_FILES[path]
+    if path in DOC_FILES:
+        return DOC_FILES[path]
+    role = roles.get(path) or roles.get(Path(path).name, "")
+    if role:
+        return guide_from_role(path, role, syms)
+    if path.startswith("scripts/"):
+        return script_guide(path)
+    if path.startswith("docs/"):
+        doc_name = Path(path).name
+        return FileGuide(
+            what=f"Documentation file `{doc_name}` — explains part of project rules, deploy, or reports.",
+            why="Human/AI readable spec; not executed by the app.",
+            contains="Markdown sections for this topic.",
+            responsibilities=f"Answer questions about `{doc_name.replace('.md', '').replace('_', ' ')}`.",
+            when=f"Need written guidance for topic covered by `{doc_name}`.",
+            delete=delete_for(path)[0],
+            connected="Project Knowledge pack or repo-only per `PROJECT_KNOWLEDGE_PACK.md`.",
+            layer="Documentation.",
+        )
+    if path.startswith("test/") or path.startswith("integration_test/"):
+        return test_guide(path, syms)
+    if path.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/", ".github/", "installer/", "pb_hooks/", ".cursor/")):
+        return platform_guide(path)
+    # Last-resort: unique by path + extension
+    p = path.replace("\\", "/")
+    name = Path(p).name
+    parent = PurePosixPath(p).parent.as_posix()
+    ext = Path(p).suffix.lower()
+    del_en, _ = delete_for(path)
+    layer_en, layer_ru = layer_for(path)
+    when_en, when_ru = when_for(path)
+    kind = {
+        ".md": "Markdown document",
+        ".yaml": "YAML configuration",
+        ".yml": "YAML configuration",
+        ".json": "JSON data/config",
+        ".xml": "XML configuration",
+        ".properties": "Java/Gradle properties",
+        ".gradle": "Gradle script",
+        ".kts": "Kotlin Gradle script",
+        ".kt": "Kotlin source",
+        ".swift": "Swift source",
+        ".cpp": "C++ native source",
+        ".h": "C/C++ header",
+        ".rc": "Windows resource script",
+        ".ico": "Windows icon asset",
+        ".plist": "Apple property list",
+        ".xcconfig": "Xcode build setting",
+        ".pbxproj": "Xcode project file",
+        ".dart": "Dart source",
+        ".ps1": "PowerShell script",
+        ".py": "Python script",
+        ".js": "JavaScript source",
+        ".pb.js": "PocketBase hook script",
+        ".iss": "Inno Setup installer script",
+        ".bat": "Windows batch script",
+        ".sh": "Shell script",
+        ".png": "PNG image asset",
+        ".jpg": "JPEG image asset",
+        ".svg": "SVG vector asset",
+        ".ttf": "Font file",
+        ".otf": "Font file",
+    }.get(ext, f"{ext.lstrip('.') or 'text'} file")
+    return FileGuide(
+        what=f"{kind} `{name}` kept in `{parent}` for the Life OS repo.",
+        why=f"Tracked in git because `{parent}` workflow or build needs this exact file.",
+        contains=f"Open `{name}` when editing {kind.lower()} for `{parent}`.",
+        responsibilities=f"Serve its role inside `{parent}` (see folder section above).",
+        when=f"When `{name}` is cited in build output or `{parent}` maintenance.",
+        delete=del_en,
+        connected=f"Folder `{parent}/`, `docs/APP_STRUCTURE.md`.",
+        layer=layer_en,
+        what_ru=f"{kind} `{name}` в `{parent}`.",
+        why_ru=f"В git, потому что нужен для `{parent}`.",
+        contains_ru=f"Открывать `{name}` при правках в `{parent}`.",
+        responsibilities_ru=f"Роль внутри `{parent}`.",
+        when_ru=when_ru,
+        delete_ru=del_en,
+        connected_ru=f"Папка `{parent}/`.",
+        layer_ru=layer_ru,
+    )
+
+
+def render_folder(dirpath: str) -> str:
+    key = dirpath.replace("\\", "/").strip("/") or "."
+    data = infer_folder_guide(key)
+    if not data:
+        top = key.split("/")[0] if key else "repo"
+        plat_note = {
+            "linux": "Linux desktop Flutter embedder files.",
+            "macos": "macOS desktop Flutter/Xcode project files.",
+            "ios": "iOS Flutter/Xcode project files.",
+            "windows": "Windows desktop Flutter/CMake project files.",
+        }.get(top, f"Files grouped under `{key}` that ship or configure part of the repo.")
+        data = {
+            "what": f"Folder `{key}/` — {plat_note}",
+            "why": f"Keeps `{key}` files together so builds and edits stay organized.",
+            "inside": "See individual file sections below for each tracked file.",
+            "affects": f"Whatever features depend on files in `{key}/` (see child entries).",
+            "when": f"Build, config, or content work scoped to `{key}/`.",
+            "delete": delete_for(key + "/placeholder")[0],
+            "related": f"`docs/APP_STRUCTURE.md`, parent `{PurePosixPath(key).parent}`.",
+        }
+    display = f"`{key}/`" if key != "." else "Repository root"
+    return (
+        f"## Folder: {display}\n\n"
+        f"EN:\n\n"
+        f"- **What this folder is:** {data['what']}\n"
+        f"- **Why it exists:** {data['why']}\n"
+        f"- **What lives here:** {data['inside']}\n"
+        f"- **What part of the app it affects:** {data['affects']}\n"
+        f"- **When to open it:** {data['when']}\n"
+        f"- **Can it be deleted?** {data['delete']}\n"
+        f"- **Main related paths:** {data['related']}\n\n"
+        f"RU:\n\n"
+        f"- **Что это за папка:** см. EN (детали файлов ниже на RU).\n"
+        f"- **Зачем нужна:** {data['why']}\n"
+        f"- **Когда открывать:** {data['when']}\n"
+        f"- **Можно удалить?** {data['delete']}\n"
+    )
+
+
+def render_file(path: str, g: FileGuide, syms: list[str]) -> str:
+    sym_line = f"\n- **Key code names:** {', '.join(f'`{s}`' for s in syms)}" if syms else ""
     return (
         f"### `{path}`\n\n"
         f"EN:\n\n"
-        f"- **Purpose:** {pe}\n"
-        f"- **Contains:** {ce}{sym_line}\n"
-        f"- **Does:** {de}\n"
-        f"- **Connected to:** {ce2}\n\n"
+        f"- **What this is:** {g.what}\n"
+        f"- **Why needed:** {g.why}\n"
+        f"- **What it contains:** {g.contains}{sym_line}\n"
+        f"- **Responsibilities:** {g.responsibilities}\n"
+        f"- **When to open:** {g.when}\n"
+        f"- **Can it be deleted?** {g.delete}\n"
+        f"- **Connected to:** {g.connected}\n"
+        f"- **Layer / owner:** {g.layer}\n\n"
         f"RU:\n\n"
-        f"- **Назначение:** {pr}\n"
-        f"- **Что внутри:** {cr}\n"
-        f"- **Что делает:** {dr}\n"
-        f"- **Как связано с общей логикой:** {cr2}\n"
+        f"- **Что это:** {g.what_ru or g.what}\n"
+        f"- **Зачем:** {g.why_ru or g.why}\n"
+        f"- **Содержимое:** {g.contains_ru or g.contains}\n"
+        f"- **Обязанности:** {g.responsibilities_ru or g.responsibilities}\n"
+        f"- **Когда открывать:** {g.when_ru or g.when}\n"
+        f"- **Можно удалить?** {g.delete_ru or g.delete}\n"
+        f"- **Связано с:** {g.connected_ru or g.connected}\n"
+        f"- **Слой:** {g.layer_ru or g.layer}\n"
     )
 
 
+def quality_check(text: str, paths: list[str]) -> list[str]:
+    issues: list[str] = []
+    whats: list[str] = []
+    bad_hits = 0
+    for line in text.splitlines():
+        if line.startswith("- **What this is:**"):
+            val = line.split(":", 1)[1].strip()
+            whats.append(val)
+            for bad in BAD_PHRASES:
+                if bad.lower() in val.lower():
+                    bad_hits += 1
+                    issues.append(f"Bad phrase '{bad}' in: {val[:90]}")
+                    break
+        if line.startswith("- **What this folder is:**"):
+            val = line.split(":", 1)[1].strip()
+            for bad in ("holding related project files", "See path prefix"):
+                if bad in val:
+                    issues.append(f"Generic folder line: {val[:90]}")
+    counts = Counter(whats)
+    dupes = [(w, c) for w, c in counts.items() if c > 2 and len(w) < 100]
+    if dupes:
+        issues.append(
+            "Duplicate 'What this is' (>2): "
+            + "; ".join(f"{c}x {w[:60]}" for w, c in dupes[:8])
+        )
+    if bad_hits > 5:
+        issues.append(f"Too many bad-phrase file descriptions: {bad_hits}")
+    if len(paths) != len(set(paths)):
+        issues.append("Duplicate file paths in output")
+    return issues
+
+
 def main() -> None:
-    sections: list[tuple[str, list[str]]] = [
-        ("Root project files", [p for p in tracked() if "/" not in p]),
-        ("lib/ — application Dart", [p for p in tracked("lib") if p.endswith(".dart")]),
-        ("lib/ — non-Dart", [p for p in tracked("lib") if not p.endswith(".dart")]),
-        ("test/", tracked("test")),
-        ("scripts/", tracked("scripts")),
-        ("docs/", tracked("docs")),
-        ("assets/", tracked("assets")),
-        ("web/", tracked("web")),
-        ("android/ (selected)", [p for p in tracked("android") if p.count("/") <= 3][:40]),
-        ("ios/ (selected)", [p for p in tracked("ios") if p.count("/") <= 3][:40]),
-        ("windows/ (selected)", [p for p in tracked("windows") if p.count("/") <= 3][:30]),
-        ("linux/ (selected)", [p for p in tracked("linux") if p.count("/") <= 3][:30]),
-        ("macos/ (selected)", [p for p in tracked("macos") if p.count("/") <= 3][:30]),
-        (".github/", tracked(".github")),
-        ("pb_hooks/", tracked("pb_hooks")),
-        ("installer/", tracked("installer")),
-        ("design/", tracked("design")),
-    ]
+    all_files = tracked()
+    roles = parse_app_structure_roles()
+
+    # Unique folders deepest-first for section order
+    folders: set[str] = set()
+    for f in all_files:
+        parts = PurePosixPath(f).parts
+        for i in range(len(parts)):
+            folders.add("/".join(parts[:i]) if i else "")
+
+    folder_order = sorted(folders, key=lambda x: (x.count("/"), x))
 
     lines = [
         "# APP_STRUCTURE_DETAILED",
         "",
-        "Detailed bilingual (EN/RU) file guide for the Life OS / Counter repository.",
+        "Owner-readable guide: every tracked folder and file in plain language (EN + RU).",
         "",
-        f"**Generated from tree scan at SHA `{SHA}` (2026-07-03).**",
+        f"**Generated at git SHA `{sha()}` on {date.today().isoformat()}.**",
         "",
-        "Concise canonical map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md).",
+        "Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)",
+        "",
+        "Regenerate after tree changes:",
+        "",
+        "```powershell",
+        "python scripts/manual/generate_app_structure_detailed.py",
+        "```",
+        "",
+        "---",
+        "",
+        "## How to read this document",
+        "",
+        "Each **folder** section explains why that part of the repo exists. Each **file** section is unique — if two files did the same job, one of them would not belong in the repo.",
         "",
         "---",
         "",
     ]
 
-    for title, files in sections:
-        if not files:
+    # Folder sections (skip empty root duplicate)
+    for folder in folder_order:
+        if folder == "":
             continue
-        lines.append(f"## {title}")
+        # Only emit folders that are prefixes of tracked files
+        if not any(f == folder or f.startswith(folder + "/") for f in all_files):
+            continue
+        lines.append(render_folder(folder))
+        lines.append("---")
         lines.append("")
-        for f in sorted(files):
-            lines.append(entry(f))
-            lines.append("")
 
-    platform_note = (
-        "## Platform boilerplate (folder-level)\n\n"
-        "EN: Deeper paths under `android/`, `ios/`, `windows/`, `linux/`, `macos/` "
-        "are mostly Flutter-generated Gradle/Xcode/CMake runners, Gradle caches, and "
-        "plugin registrants. They are required for builds but do not contain product "
-        "business logic. Edit app identifiers, permissions, and icons at the top-level "
-        "manifest/gradle files listed above.\n\n"
-        "RU: Глубокие пути в platform-папках — в основном автоген Flutter (Gradle, "
-        "Xcode, CMake). Бизнес-логика только в `lib/`. Манифесты верхнего уровня — "
-        "точка правок permissions/icons.\n"
-    )
-    lines.append(platform_note)
+    lines.append("## All tracked files (alphabetical)")
+    lines.append("")
 
-    OUT.write_text("\n".join(lines), encoding="utf-8")
-    print(f"Wrote {OUT} ({len(lines)} lines)")
+    what_samples: list[str] = []
+    for path in all_files:
+        syms = symbols(path)
+        g = build_guide(path, roles, syms)
+        what_samples.append(g.what)
+        lines.append(render_file(path, g, syms))
+        lines.append("")
+
+    body = "\n".join(lines)
+    issues = quality_check(body, all_files)
+    OUT.write_text(body, encoding="utf-8")
+    print(f"Wrote {OUT} ({len(all_files)} files, {len(folder_order)} folders, {len(body.splitlines())} lines)")
+    if issues:
+        print("QUALITY FAILURES:", file=sys.stderr)
+        for i in issues[:30]:
+            print(f"  - {i}", file=sys.stderr)
+        print(f"Quality check: {len(issues)} issue(s)", file=sys.stderr)
+        sys.exit(1)
+    print("Quality check: OK")
 
 
 if __name__ == "__main__":

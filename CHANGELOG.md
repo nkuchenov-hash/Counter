@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Owner-readable structure encyclopedia [shipped]
+
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Rebuilt as owner-readable unique folder/file guide (525 files, 119 folders; EN+RU per entry).
+* **`scripts/manual/generate_app_structure_detailed.py`:** [shipped] Improved generator with curated folder/file dictionaries, role humanization, duplicate-quality gate.
+* **`scripts/manual/structure_guide_data.py`**, **`scripts/manual/structure_role_guides.py`:** [shipped] New curated description data for brain/UI/platform paths.
+* **Production code:** [skipped] no Dart behavior changes; HTML structure map not regenerated.
+
 ## [2026-07-03] - Full repo necessity cleanup [shipped]
 
 * **`design/`:** [shipped] Removed 6 unused CardPlan PNG/SVG reference mockups (not in `pubspec` assets, no runtime load).
