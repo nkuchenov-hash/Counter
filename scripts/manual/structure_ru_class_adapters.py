@@ -69,6 +69,23 @@ BANNED_GENERIC_RU_WRAPPERS: tuple[str, ...] = (
     "Native/config файлы для `",
 )
 
+GENERIC_EN_MARKERS: tuple[str, ...] = (
+    "Fulfill the documented role",
+    "required for current app behavior",
+    "documented workflow",
+    "see source file",
+    "Source file `",
+    "Dart source `",
+    "for the Life OS repository",
+    "Role:",
+)
+
+
+def _is_generic_en(text: str) -> bool:
+    if not text:
+        return False
+    return any(m in text for m in GENERIC_EN_MARKERS)
+
 # Exact EN field text → RU (from FOLDER_INFERENCE + synthesize).
 EXACT_EN_FIELD_RU: dict[str, str] = {
     "Android application module — the actual Counter APK target.": (
@@ -478,6 +495,9 @@ def has_semi_russian_or_english_leak(text: str) -> bool:
     for bad in BANNED_SEMI_RUSSIAN_WRAPPERS + BANNED_ENGLISH_IN_RU + BANNED_GENERIC_RU_WRAPPERS:
         if bad in sanitized:
             return True
+    for bad in GENERIC_EN_MARKERS:
+        if bad in sanitized:
+            return True
     return False
 
 
@@ -725,6 +745,8 @@ def file_class_field(path: str, field: str, en_val: str, en: dict[str, str]) -> 
         ru = _main_activity_field(field, en_val, en)
     elif p.startswith("docs/") and name.endswith(".md"):
         ru = _governing_doc_field(p, name, field, en_val, en)
+    elif p.startswith((".cursor/", ".github/", "pb_hooks/", "installer/")) or name.endswith(".pb.js") or name == "env.dart.example":
+        ru = _platform_native_file_field(p, name, field, en_val, en)
     elif p.startswith("lib/"):
         ru = _dart_file_field(p, field, en_val, en)
     elif (p.startswith("test/") or p.startswith("integration_test/")) and name.endswith(".dart"):
@@ -774,7 +796,7 @@ def _cmake_file_field(p: str, field: str, en_val: str, en: dict[str, str]) -> st
         m = {
             "what": f"CMake target `{plat}/runner` — собирает native host, который запускает Flutter engine.",
             "why": f"Executable Counter на {plat} создаётся из runner sources и Flutter glue.",
-            "contains": "Runner source list, link libraries, install rules для desktop binary.",
+            "contains": "Список runner sources, link libraries и install rules для desktop binary.",
             "responsibilities": f"Собрать {plat} host app и подключить Flutter plugins.",
             "when": f"Link errors runner target, missing plugin registration на {plat}.",
             "connected": f"`{plat}/CMakeLists.txt`, `{plat}/flutter/`.",
@@ -784,8 +806,8 @@ def _cmake_file_field(p: str, field: str, en_val: str, en: dict[str, str]) -> st
         m = {
             "what": f"Flutter-generated CMake glue для {plat} — подключает engine и plugin build steps.",
             "why": "Flutter tool перезаписывает этот файл при build; связывает Dart AOT с native runner.",
-            "contains": "Generated targets для `libflutter`, assets, plugin registrant.",
-            "responsibilities": f"Embed Flutter engine и assets в {plat} desktop build.",
+            "contains": "Сгенерированные targets для `libflutter`, assets и plugin registrant.",
+            "responsibilities": f"Встраивает Flutter engine и assets в {plat} desktop build.",
             "when": f"Flutter upgrade изменил generated CMake; plugin link fail на {plat}.",
             "connected": f"`{plat}/CMakeLists.txt`, `{plat}/runner/`.",
             "layer": f"Flutter-generated {plat} glue — не править вручную без причины.",
@@ -793,7 +815,7 @@ def _cmake_file_field(p: str, field: str, en_val: str, en: dict[str, str]) -> st
     else:
         return None
     v = m.get(field)
-    return v if v and ru_prose_ok(v, min_cyrillic=8) else None
+    return v if v and ru_prose_ok(v, min_cyrillic=6) else None
 
 
 def _generic_file_field(p: str, name: str, field: str, en_val: str, en: dict[str, str]) -> str | None:
@@ -804,7 +826,7 @@ def _generic_file_field(p: str, name: str, field: str, en_val: str, en: dict[str
     from structure_en_ru_adapt import _phrase_translate
 
     body = sanitize_ru_prose(_phrase_translate(en_val))
-    if ru_prose_ok(body, min_cyrillic=8):
+    if ru_prose_ok(body, min_cyrillic=6):
         return body
     return None
 
@@ -1015,6 +1037,8 @@ def _dart_file_field(p: str, field: str, en_val: str, en: dict[str, str]) -> str
     from structure_role_guides import humanize_guide
 
     role = en.get("responsibilities", en_val)
+    if _is_generic_en(role):
+        role = ""
     human = humanize_guide(p, role, [])
     if human:
         ru_key = f"{field}_ru"
@@ -1130,9 +1154,9 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
         }
     elif name == "info.plist":
         m = {
-            "what": f"Info.plist bundle {plat_ru} Runner — permissions, bundle id, display name.",
+            "what": f"Файл Info.plist bundle {plat_ru} Runner — разрешения, bundle id и display name.",
             "why": f"Apple OS читает plist для metadata приложения и permission prompts.",
-            "contains": "CFBundle keys, usage descriptions (mic и др.).",
+            "contains": "Ключи CFBundle, usage descriptions (микрофон и др.).",
             "responsibilities": f"Идентичность app и permission strings на {plat_ru}.",
             "when": f"Неверное имя app или permission prompt на {plat_ru}.",
             "connected": f"`{plat}/Runner/`, Xcode project.",
@@ -1140,9 +1164,9 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
         }
     elif name == "gradle.properties":
         m = {
-            "what": "Gradle properties Android — JVM args, AndroidX flags, версии toolchain.",
+            "what": "Свойства Gradle Android — JVM args, AndroidX flags и версии toolchain.",
             "why": "Gradle читает defaults отсюда до сборки `:app` module.",
-            "contains": "org.gradle.jvmargs, android.useAndroidX, plugin flags.",
+            "contains": "Строки key=value; часто local SDK path в gitignore.",
             "responsibilities": "Общие Gradle/Android build settings для Counter.",
             "when": "Gradle sync fail, JVM OOM, AndroidX migration warnings.",
             "connected": "`android/settings.gradle.kts`, `android/app/`.",
@@ -1150,9 +1174,9 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
         }
     elif name == "proguard-rules.pro":
         m = {
-            "what": "ProGuard keep rules для Android release minification.",
+            "what": "Правила ProGuard/R8 keep для Android release minification.",
             "why": "R8/ProGuard не должен вырезать Flutter/plugin classes в release APK.",
-            "contains": "Keep rules для Flutter embedding и plugins.",
+            "contains": "Правила keep для Flutter embedding и plugins.",
             "responsibilities": "Предотвратить crash release APK от over-shrinking.",
             "when": "Release APK падает после включения minify/shrink.",
             "connected": "`android/app/build.gradle.kts`.",
@@ -1160,7 +1184,7 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
         }
     elif name == "google-services.json":
         m = {
-            "what": "Placeholder Firebase/Google services config для Android Gradle plugin.",
+            "what": "Заглушка конфига Firebase/Google services для Android Gradle plugin.",
             "why": "Некоторые Gradle setups ожидают файл даже без Firebase features.",
             "contains": "JSON project ids (без секретов в repo copy).",
             "responsibilities": "Удовлетворить google-services plugin если включён.",
@@ -1172,7 +1196,7 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
         m = {
             "what": "HTML-оболочка web — загружает скомпилированный Flutter web app.",
             "why": "Браузеру нужен entry с base href `/Counter/` для GitHub Pages.",
-            "contains": "Script tags для `flutter.js`, base href.",
+            "contains": "Теги script для `flutter.js` и base href `/Counter/`.",
             "responsibilities": "Запустить Flutter web engine в браузере.",
             "when": "Пустая страница после web deploy.",
             "connected": "`flutter build web`, `docs/DEPLOY.md`.",
@@ -1182,7 +1206,7 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
         m = {
             "what": "Web app manifest — имя, theme color, пути иконок PWA.",
             "why": "Браузер использует manifest для install prompt и tab theming.",
-            "contains": "JSON с icons array и display mode.",
+            "contains": "JSON с массивом icons и режимом display для PWA.",
             "responsibilities": "PWA metadata для GitHub Pages сайта.",
             "when": "PWA install prompt или theme color неверны на web.",
             "connected": "`web/icons/`, `web/index.html`.",
@@ -1192,7 +1216,7 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
         m = {
             "what": f"PNG-иконка web/{plat_ru} — tab icon или PWA asset `{name}`.",
             "why": "Браузер и manifest ссылаются на этот PNG после `flutter build web`.",
-            "contains": f"Raster PNG `{name}`.",
+            "contains": f"Растровый PNG `{name}`.",
             "responsibilities": f"Показать иконку Counter в UI браузера/PWA.",
             "when": f"Пропала иконка вкладки или PWA tile для `{name}`.",
             "connected": "`web/manifest.json`, `web/index.html`.",
@@ -1208,20 +1232,41 @@ def _platform_native_file_field(p: str, name: str, field: str, en_val: str, en: 
             "connected": "`prepare_stt_payload.ps1`, GitHub Actions workflow.",
             "layer": "Windows installer config — не runtime.",
         }
+    elif name == "env.dart.example":
+        m = {
+            "what": "Шаблон compile-time secrets — копировать в `env.dart` (файл в gitignore).",
+            "why": "Разработчикам нужны локальные env-константы без commit секретов в git.",
+            "contains": "Пример ключей с placeholder values для локальной сборки.",
+            "responsibilities": "Документирует обязательную форму `env.dart`.",
+            "when": "Новый разработчик не знает какие ключи нужны в `env.dart`.",
+            "connected": "`lib/core/env/env.dart`, `docs/DEPLOY.md`.",
+            "layer": "Dev template — не runtime без копирования в `env.dart`.",
+        }
     elif name.endswith(".mdc") and ".cursor/rules" in p:
         m = {
             "what": "Always-applied правила Cursor Agent для Flutter/PocketBase архитектуры Counter.",
             "why": "Cursor подхватывает iron laws: optimistic UI, Brain/UI split, main-thread law.",
-            "contains": "Markdown rules: PocketBase IDs, polling guards, structure laws.",
+            "contains": "Markdown-правила Cursor: PocketBase IDs, запрет spam polling, законы структуры.",
             "responsibilities": "Удерживать AI codegen в рамках governing docs.",
             "when": "AI предлагает refactor, ломающий architecture guard или Brain.",
             "connected": "`.cursorrules`, `docs/ARCHITECTURE.md`.",
             "layer": "IDE agent rules — не runtime приложения.",
         }
+    elif name.endswith(".pb.js"):
+        hook = name.replace(".pb.js", "")
+        m = {
+            "what": f"PocketBase hook `{hook}` — серверная логика при API-событиях на VPS.",
+            "why": "Часть правил (reset пароля, overlap записей) должна выполняться на сервере, не в APK.",
+            "contains": f"JavaScript handler `{name}` — копируется в PocketBase `pb_hooks/` на VPS.",
+            "responsibilities": f"Серверная логика для `{hook}` (см. `docs/POCKETBASE_MANIFEST.md`).",
+            "when": f"Поведение auth/records на сервере не совпадает с ожиданиями приложения.",
+            "connected": "PocketBase Admin, Flutter auth/records client.",
+            "layer": "Server hook — не в бинарнике приложения.",
+        }
     else:
         return None
     v = m.get(field)
-    return v if v and ru_prose_ok(v, min_cyrillic=8) else None
+    return v if v and ru_prose_ok(v, min_cyrillic=6) else None
 
 
 def _script_file_field(p: str, name: str, field: str, en_val: str, en: dict[str, str]) -> str | None:

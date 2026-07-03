@@ -41,6 +41,45 @@ SYMBOL_RE = re.compile(
     re.M,
 )
 TABLE_ROW_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|")
+FEATURE_FOLDER_ROW_RE = re.compile(r"^\|\s*`([^`]+)/`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*$")
+
+GENERIC_EN_MARKERS: tuple[str, ...] = (
+    "Fulfill the documented role",
+    "required for current app behavior",
+    "documented workflow",
+    "see source file",
+    "Source file `",
+    "Dart source `",
+    "for the Life OS repository",
+)
+
+BANNED_EN_WRAPPER_IN_RU: tuple[str, ...] = (
+    "Fulfill the documented role",
+    "Source file",
+    "Role:",
+    "required for current app behavior",
+)
+
+RU_REQUIRED_PREFIXES: tuple[str, ...] = (
+    "- **Что это:**",
+    "- **Зачем:**",
+    "- **Содержимое:**",
+    "- **Обязанности:**",
+    "- **Связано с:**",
+)
+
+
+def ru_line_value(line: str, prefix: str) -> str:
+    """Value after a RU bullet prefix (avoid false non-empty from markdown ``**``)."""
+    if not line.startswith(prefix):
+        return ""
+    return line[len(prefix) :].strip()
+
+
+def is_generic_en(text: str) -> bool:
+    if not text:
+        return False
+    return any(m in text for m in GENERIC_EN_MARKERS)
 
 
 @dataclass
@@ -127,8 +166,24 @@ def parse_app_structure_roles() -> dict[str, str]:
                 current_prefix = "lib/features/"
             if "3.1.1" in line and "shell" in line:
                 current_prefix = "lib/shell/"
+            if "3.1 Entry" in line:
+                current_prefix = "lib/"
             if "PocketBase hooks" in line:
                 current_prefix = "pb_hooks/"
+            continue
+
+        fm = FEATURE_FOLDER_ROW_RE.match(line.strip())
+        if fm and current_prefix == "lib/features/":
+            folder, files_cell, role = fm.group(1).strip(), fm.group(2), clean_role(fm.group(3))
+            if role and not is_generic_en(role):
+                for file_m in re.finditer(r"`([^`]+)`", files_cell):
+                    raw = file_m.group(1).strip("* ")
+                    if raw.endswith("/") or "/" in raw:
+                        continue
+                    fname = raw if raw.endswith(".dart") else f"{raw}.dart"
+                    full = f"lib/features/{folder}/{fname}"
+                    roles[full] = role
+                    roles[Path(full).name] = role
             continue
 
         m = TABLE_ROW_RE.match(line.strip())
@@ -181,6 +236,18 @@ def parse_app_structure_roles() -> dict[str, str]:
     roles.setdefault(
         "lib/data/categories/category_default_time.dart",
         "Per-category default plan start time and timezone inheritance for new plans",
+    )
+    roles.setdefault(
+        "lib/app_shell.dart",
+        "Re-exports `shell/life_os_dashboard.dart` (thin entry)",
+    )
+    roles.setdefault(
+        "lib/services/notification_service.dart",
+        "Local notifications and plan alarms",
+    )
+    roles.setdefault(
+        ".cursor/rules/flutter_expert.mdc",
+        "Always-applied Cursor Agent rules — PocketBase, optimistic UI, main-thread law",
     )
     return roles
 
@@ -507,31 +574,60 @@ def when_for(path: str) -> tuple[str, str]:
 
 def connected_for(path: str, role: str) -> tuple[str, str]:
     p = path.replace("\\", "/")
-    parts = []
+    en_parts: list[str] = []
+    ru_parts: list[str] = []
     if p.startswith("lib/data/"):
-        parts.append("UI calls via `DatabaseService.instance`")
+        en_parts.append("UI calls via `DatabaseService.instance`")
+        ru_parts.append("UI вызывает `DatabaseService.instance`")
         if "categories" in p:
-            parts.append("Categories screen, record start, plan cards")
+            en_parts.append("Categories screen, record start, plan cards")
+            ru_parts.append("Экран Categories, старт записи, карточки планов")
         elif "records" in p:
-            parts.append("Timeline tab, edit sheet, Wear")
+            en_parts.append("Timeline tab, edit sheet, Wear")
+            ru_parts.append("Timeline, edit sheet, Wear")
         elif "plans" in p:
-            parts.append("Plans tab, Lists tab, Time View")
+            en_parts.append("Plans tab, Lists tab, Time View")
+            ru_parts.append("Plans, Lists, Time View")
         elif "profile" in p:
-            parts.append("Profile, tag manager, header timezone")
+            en_parts.append("Profile, tag manager, header timezone")
+            ru_parts.append("Profile, tag manager, timezone в header")
         elif "local_sync" in p:
-            parts.append("Offline banner in shell, reconnect flush")
+            en_parts.append("Offline banner in shell, reconnect flush")
+            ru_parts.append("Offline banner в shell, flush при reconnect")
     elif p.startswith("lib/features/planning"):
-        parts.append("Plans tab (shell index 1)")
+        en_parts.append("Plans tab (shell index 1)")
+        ru_parts.append("Вкладка Plans (shell index 1)")
     elif p.startswith("lib/features/timeline"):
-        parts.append("Timeline tab (shell index 0)")
+        en_parts.append("Timeline tab (shell index 0)")
+        ru_parts.append("Вкладка Timeline (shell index 0)")
     elif p.startswith("lib/features/lists"):
-        parts.append("Lists tab (shell index 3)")
+        en_parts.append("Lists tab (shell index 3)")
+        ru_parts.append("Вкладка Lists (shell index 3)")
+    elif p.startswith("lib/features/auth"):
+        en_parts.append("Login gate from `main.dart`")
+        ru_parts.append("Login gate из `main.dart`")
+    elif p.startswith("lib/features/shared"):
+        en_parts.append("Edit sheets and voice UI on every tab")
+        ru_parts.append("Edit sheets и voice UI на всех вкладках")
     elif p.startswith("lib/shell"):
-        parts.append("All main tabs, `app_shell.dart`")
-    if role:
-        parts.append(f"Role: {role[:120]}")
-    en = "; ".join(parts) if parts else f"See `docs/APP_STRUCTURE.md` and nearby files in `{PurePosixPath(p).parent}`."
-    ru = en  # keep connected concise; bilingual where needed
+        en_parts.append("All main tabs, `app_shell.dart`")
+        ru_parts.append("Все main tabs, `app_shell.dart`")
+    elif p.startswith("lib/services/"):
+        en_parts.append("`lib/data/plan_service.dart` alarm reschedule")
+        ru_parts.append("`lib/data/plan_service.dart` — reschedule alarm")
+    elif p.startswith("pb_hooks/"):
+        en_parts.append("PocketBase server on VPS — not in Flutter binary")
+        ru_parts.append("PocketBase server на VPS — не в APK")
+    elif p.startswith(".cursor/"):
+        en_parts.append("`.cursorrules`, `docs/ARCHITECTURE.md`")
+        ru_parts.append("`.cursorrules`, `docs/ARCHITECTURE.md`")
+    if role and not is_generic_en(role):
+        short = role.split(";")[0].strip()[:120]
+        en_parts.append(f"APP_STRUCTURE role: {short}")
+        # English role text belongs in EN block only — never copy into RU «Связано с».
+    parent = PurePosixPath(p).parent.as_posix()
+    en = "; ".join(en_parts) if en_parts else f"`{parent}/`, `docs/APP_STRUCTURE.md`"
+    ru = "; ".join(ru_parts) if ru_parts else f"`{parent}/`, `docs/APP_STRUCTURE.md`"
     return en, ru
 
 
@@ -562,18 +658,20 @@ def guide_from_role(path: str, role: str, syms: list[str]) -> FileGuide:
             layer_ru=layer_ru,
         )
 
-    sym_txt = ", ".join(f"`{s}`" for s in syms[:4]) if syms else "see source file"
+    sym_txt = ", ".join(f"`{s}`" for s in syms[:4]) if syms else "implementation in source"
     role_short = role.split(";")[0].strip()
+    if is_generic_en(role_short):
+        role_short = Path(path).stem.replace("_", " ")
     return FileGuide(
         what=f"Source file `{Path(path).name}` — {role_short}.",
-        why="Documented in `docs/APP_STRUCTURE.md`; required for current app behavior.",
-        contains=f"Source for `{Path(path).name}` ({sym_txt}).",
+        why=f"Part of `{PurePosixPath(path).parent}`; see `docs/APP_STRUCTURE.md` for ownership.",
+        contains=f"Implementation in `{Path(path).name}` ({sym_txt}).",
         responsibilities=role_short,
         when=when_en,
         delete=del_en,
         connected=conn_en,
         layer=layer_en,
-        what_ru=f"Файл `{Path(path).name}` — {role_short}.",
+        what_ru="",
         why_ru="",
         contains_ru="",
         responsibilities_ru="",
@@ -642,6 +740,7 @@ def platform_guide(path: str) -> FileGuide:
             when_ru=when_ru,
             delete_ru=del_ru,
             layer_ru=layer_ru,
+            connected_ru=f"`{parent.split('/')[0] if parent else 'repo'}/`, Flutter tooling.",
         )
 
     if name == "AndroidManifest.xml":
@@ -848,7 +947,7 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
             if (
                 src
                 and not str(src).startswith("NEEDS HUMAN")
-                and ru_field_ok(src)
+                and ru_field_ok(src, min_cyrillic=6)
                 and not has_banned_filler(src)
             ):
                 return src
@@ -858,11 +957,23 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
             from structure_ru_class_adapters import sanitize_ru_prose
 
             tr = sanitize_ru_prose(_phrase_translate(en_val))
-            if tr and ru_field_ok(tr) and not has_banned_filler(tr):
+            if tr and ru_field_ok(tr, min_cyrillic=6) and not has_banned_filler(tr) and not is_generic_en(tr):
                 return tr
         tail = fallback or existing.get(ru_key) or curated.get(ru_key) or ""
+        if not tail and path.endswith(".dart"):
+            from structure_role_guides import humanize_guide
+
+            human = humanize_guide(path, en.get("responsibilities", ""), [])
+            if human:
+                hv = human.get(ru_key, "")
+                if hv and not has_banned_filler(hv):
+                    return hv
         if tail and not str(tail).startswith("NEEDS HUMAN"):
             return tail
+        if ru_key == "connected_ru" and en.get("connected"):
+            return en["connected"].rstrip(".") + "."
+        if ru_key == "layer_ru" and fallback:
+            return fallback
         return ""
 
     return FileGuide(
@@ -894,6 +1005,8 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
         return ROOT_FILES_LEGACY[path]
     if path in DOC_FILES:
         return DOC_FILES[path]
+    if path.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/", ".github/", "installer/", "pb_hooks/", ".cursor/")):
+        return platform_guide(path)
     role = roles.get(path) or roles.get(Path(path).name, "")
     if role:
         return guide_from_role(path, role, syms)
@@ -913,8 +1026,12 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
         )
     if path.startswith("test/") or path.startswith("integration_test/"):
         return test_guide(path, syms)
-    if path.startswith(("android/", "ios/", "web/", "windows/", "linux/", "macos/", ".github/", "installer/", "pb_hooks/", ".cursor/")):
-        return platform_guide(path)
+    # lib/**/*.dart without APP_STRUCTURE row — still use humanize, never generic last-resort
+    if path.endswith(".dart") and path.startswith("lib/"):
+        role = roles.get(path) or roles.get(Path(path).name, "")
+        if is_generic_en(role):
+            role = ""
+        return guide_from_role(path, role or Path(path).stem.replace("_", " "), syms)
     # Last-resort: unique by path + extension
     p = path.replace("\\", "/")
     name = Path(p).name
@@ -956,13 +1073,13 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
         ".otf": "Font file",
     }.get(ext, f"{ext.lstrip('.') or 'text'} file")
     return FileGuide(
-        what=f"{kind} `{name}` in `{parent}` for the Life OS repository.",
-        why=f"This path is tracked because `{parent}` needs `{name}` for build, CI, or documented workflow.",
-        contains=f"Open `{name}` when editing {kind.lower()} for `{parent}` (see folder section above).",
-        responsibilities=f"Fulfill the documented role of `{name}` under `{parent}`.",
+        what=f"{kind} `{name}` in `{parent}` — repo tooling or config.",
+        why=f"Tracked because `{parent}` needs `{name}` for build, CI, or maintenance.",
+        contains=f"Open `{name}` when working on `{parent}` (see folder section above).",
+        responsibilities=f"Supports `{parent}` workflow for `{name}`.",
         when=f"When build output or maintenance cites `{name}`.",
         delete=del_en,
-        connected=f"Folder `{parent}/`, `docs/APP_STRUCTURE.md`.",
+        connected=f"`{parent}/`, `docs/APP_STRUCTURE.md`.",
         layer=layer_en,
         what_ru="",
         why_ru="",
@@ -1183,6 +1300,27 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                 f"Duplicate RU 'Что это' ({label}, >3): "
                 + "; ".join(f"{c}x {v[:50]}" for v, c in dupes[:6])
             )
+
+    in_ru_block = False
+    for line in text.splitlines():
+        if line.strip() == "RU:":
+            in_ru_block = True
+        elif line.strip() == "EN:" or line.startswith("## Folder:") or line.startswith("### `"):
+            if line.startswith("## Folder:") or line.startswith("### `"):
+                in_ru_block = False
+            elif line.strip() == "EN:":
+                in_ru_block = False
+        if not in_ru_block:
+            continue
+        for prefix in RU_REQUIRED_PREFIXES:
+            if line.startswith(prefix):
+                val = ru_line_value(line, prefix)
+                if not val:
+                    issues.append(f"Empty RU field: {line[:100]}")
+                for bad in BANNED_EN_WRAPPER_IN_RU:
+                    if bad in val:
+                        issues.append(f"EN wrapper in RU: {line[:100]}")
+                break
 
     return issues
 

@@ -307,23 +307,95 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "responsibilities_ru": "Экспорт моделей.",
         }
 
+    if p == "lib/app_shell.dart":
+        return {
+            "what": "Thin shell entry — re-exports `shell/life_os_dashboard.dart`.",
+            "why": "Provides a stable import path for the main dashboard without duplicating shell code.",
+            "contains": "Re-export of the dashboard shell widget.",
+            "responsibilities": "Re-exports `shell/life_os_dashboard.dart` (thin entry).",
+            "what_ru": "Тонкий entry-point приложения — re-export `shell/life_os_dashboard.dart`.",
+            "why_ru": "Стабильный import path для dashboard без дублирования shell-кода.",
+            "contains_ru": "Re-export виджета dashboard из `lib/shell/`.",
+            "responsibilities_ru": "Подключает shell dashboard как единую точку входа UI.",
+        }
+
+    if p == "lib/main.dart":
+        return {
+            "what": "Flutter app entry — `main()` bootstraps auth gate, brain load, and dashboard.",
+            "why": "OS launches this file first; it wires PocketBase session and initial data before tabs render.",
+            "contains": "`main()`, app widget tree, auth routing to dashboard or login.",
+            "responsibilities": "Start Flutter binding; load settings; show loading until brain ready.",
+            "what_ru": "Точка входа Flutter — `main()` запускает auth gate, загрузку brain и dashboard.",
+            "why_ru": "ОС стартует приложение отсюда; до вкладок нужны session PocketBase и initial data.",
+            "contains_ru": "`main()`, дерево виджетов, routing login ↔ dashboard.",
+            "responsibilities_ru": "Инициализация Flutter; loading до готовности brain.",
+        }
+
+    if p.startswith("lib/l10n/"):
+        fname = Path(p).name
+        stem = Path(p).stem
+        if stem == "dictionary":
+            role_ru = "мастер-ключи UI-текста (SSOT для подписей)."
+        elif stem == "app_locales":
+            role_ru = "реестр поддерживаемых локалей и fallback на English."
+        elif stem == "category_db_display":
+            role_ru = "отображение названий категорий из brain в UI."
+        elif stem.startswith("langs/") or "/langs/" in p:
+            lang = stem if stem != "langs" else Path(p).stem
+            role_ru = f"строки локали `{lang}` (частичный перевод поверх English)."
+        else:
+            role_ru = "локализация UI-текста приложения."
+        return {
+            "what": f"Localization module `{fname}` — {role_ru}",
+            "why": "UI labels resolve through l10n maps instead of hard-coded strings in widgets.",
+            "contains": f"Dart maps/keys in `{fname}`.",
+            "responsibilities": f"Provide translated strings for `{fname}`.",
+            "what_ru": f"Модуль локализации `{fname}` — {role_ru}",
+            "why_ru": "Подписи UI берутся из l10n maps, а не из hard-coded строк в виджетах.",
+            "contains_ru": f"Dart-карты ключей в `{fname}`.",
+            "responsibilities_ru": f"Даёт переведённые строки для `{fname}`.",
+        }
+
     if p.startswith("lib/features/"):
         parts = p.split("/")
         feature = parts[2] if len(parts) > 2 else "app"
         screen = FEATURE_SCREENS.get(feature, f"{feature} area")
-        name = Path(p).stem.replace("_", " ")
+        fname = Path(p).name
         role_short = role_clean.split(";")[0].strip()
         if role_short.startswith("`") and "`" in role_short[1:]:
             role_short = role_short.split("`", 2)[-1].strip(" `")
+        generic_markers = (
+            "Fulfill the documented role",
+            "required for current app behavior",
+            "Role:",
+            "Source file `",
+        )
+        if any(m in role_short for m in generic_markers):
+            role_short = Path(p).stem.replace("_", " ")
         return {
-            "what": f"UI code for {screen}: {role_short}.",
-            "why": f"Users interact with this when using {screen}.",
-            "contains": f"Flutter widgets ({sym}) implementing the visible behavior.",
-            "responsibilities": role_clean,
-            "what_ru": f"Код интерфейса экрана ({screen}) — {role_short}.",
-            "why_ru": f"Пользователь видит это, когда открывает {screen}.",
-            "contains_ru": f"Flutter-виджеты ({sym}).",
-            "responsibilities_ru": f"Реализует в UI: {role_clean}.",
+            "what": f"UI file `{fname}` for {screen}: {role_short}.",
+            "why": f"Users interact with `{fname}` when using {screen}.",
+            "contains": f"Flutter widgets in `{fname}` ({sym}).",
+            "responsibilities": role_clean if not any(m in role_clean for m in generic_markers) else role_short,
+            "what_ru": f"UI-модуль `{fname}` на экране ({screen}): {role_short}.",
+            "why_ru": f"Пользователь видит `{fname}`, когда открывает {screen}.",
+            "contains_ru": f"Flutter-виджеты в `{fname}` ({sym}).",
+            "responsibilities_ru": f"Реализует в `{fname}`: {role_short}.",
+        }
+
+    if p.startswith("lib/services/"):
+        fname = Path(p).name
+        stem = Path(p).stem.replace("_", " ")
+        role_short = role_clean.split(";")[0].strip() or stem
+        return {
+            "what": f"Device-side service `{fname}` — {role_short}.",
+            "why": f"OS APIs (notifications, voice, tray) cannot live in PocketBase brain code.",
+            "contains": f"Platform service code in `{fname}` ({sym}).",
+            "responsibilities": role_clean or role_short,
+            "what_ru": f"Сервис устройства `{fname}` — {role_short}.",
+            "why_ru": "OS API (уведомления, voice, tray) не могут жить в PocketBase brain.",
+            "contains_ru": f"Platform-код сервиса в `{fname}` ({sym}).",
+            "responsibilities_ru": f"Реализует сервис: {role_short}.",
         }
 
     if p.startswith("lib/shell/"):
