@@ -15,7 +15,7 @@ ROOT_FILE_GUIDES: dict[str, dict[str, str]] = {
         "delete": "No — repo hygiene and safety.",
         "connected": "All developers, CI, `flutter build` output paths.",
         "layer": "Repo hygiene — not app runtime.",
-        "what_ru": "Список того, что Git не должен коммитить: build output, временные логи, локальные env-файлы, Android/Gradle мусор, exports, IDE/cache.",
+        "what_ru": "Список того, что Git не должен коммитить: результат сборки, временные логи, локальные env-файлы, Android/Gradle мусор, exports, IDE/cache.",
         "why_ru": "Защищает репозиторий от случайного мусора и секретов в истории git.",
         "contains_ru": "Паттерны для `build/`, `.dart_tool/`, `lib/core/env/env.dart`, perf captures, `exports/`, `.gradle`.",
         "responsibilities_ru": "Не допускать commit build-артефактов и секретов.",

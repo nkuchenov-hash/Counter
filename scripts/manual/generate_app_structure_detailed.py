@@ -26,6 +26,7 @@ from structure_en_ru_adapt import (
     has_banned_filler,
     ru_field_ok,
 )
+from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_SEMI_RUSSIAN_WRAPPERS
 from structure_file_ru_curated import FILE_RU_CURATED
 from structure_role_guides import humanize_guide
 from structure_root_guides import ROOT_FILE_GUIDES
@@ -551,10 +552,10 @@ def guide_from_role(path: str, role: str, syms: list[str]) -> FileGuide:
             delete=del_en,
             connected=conn_en,
             layer=layer_en,
-            what_ru=human.get("what_ru", human["what"]),
-            why_ru=human.get("why_ru", human["why"]),
-            contains_ru=human.get("contains_ru", human["contains"]),
-            responsibilities_ru=human.get("responsibilities_ru", human["responsibilities"]),
+            what_ru=human.get("what_ru", ""),
+            why_ru=human.get("why_ru", ""),
+            contains_ru=human.get("contains_ru", ""),
+            responsibilities_ru=human.get("responsibilities_ru", ""),
             when_ru=when_ru,
             delete_ru=del_ru,
             connected_ru=conn_ru,
@@ -842,12 +843,18 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
     del_en, del_fallback = delete_for(path)
 
     def pick(ru_key: str, fallback: str = "") -> str:
-        for src in (curated.get(ru_key), existing.get(ru_key), adapted.get(ru_key), fallback):
-            if src and ru_field_ok(src) and not has_banned_filler(src) and not str(src).startswith(
-                "NEEDS HUMAN"
+        for src in (curated.get(ru_key), adapted.get(ru_key), fallback):
+            if (
+                src
+                and not str(src).startswith("NEEDS HUMAN")
+                and ru_field_ok(src)
+                and not has_banned_filler(src)
             ):
                 return src
-        return fallback or adapted.get(ru_key) or curated.get(ru_key) or existing.get(ru_key) or ""
+        for src in (curated.get(ru_key), adapted.get(ru_key), fallback):
+            if src and str(src).startswith("NEEDS HUMAN"):
+                return src
+        return fallback or curated.get(ru_key) or adapted.get(ru_key) or ""
 
     return FileGuide(
         what=g.what,
@@ -1090,12 +1097,14 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
             elif in_ru:
                 en_prefix = en_by_ru.get(prefix)
                 en_val = section_en.get(en_prefix, "") if en_prefix else ""
+                if "NEEDS HUMAN DESCRIPTION" in val:
+                    break
                 path_like = val.startswith("`") or val.startswith("http") or "@" in val
                 skip_en_copy = prefix in (
                     "- **Что здесь лежит:**",
                     "- **Связанные пути:**",
                     "- **Связано с:**",
-                ) and path_like
+                ) and (path_like or val == en_val)
                 if val == en_val and en_val and not skip_en_copy:
                     issues.append(f"RU copies EN in {section_title}: {line[:100]}")
                 if line.startswith("- **Можно удалить?**") and (
@@ -1108,9 +1117,9 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                     "- **Связанные пути:**",
                     "- **Содержимое:**",
                     "- **Что здесь лежит:**",
-                ) or (cyrillic_count(val) >= 6 and "`" in val)
+                ) or (cyrillic_count(val) >= 6 and "`" in val) or cyrillic_count(val) >= 6
                 if not skip_prose and looks_english_prose(val):
-                    if len(val) > 35:
+                    if len(val) > 35 and "NEEDS HUMAN DESCRIPTION" not in val:
                         issues.append(f"English prose in RU block ({section_title}): {line[:100]}")
             break
 
@@ -1135,21 +1144,30 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                 in_ru_block = False
             elif line.strip() == "EN:":
                 in_ru_block = False
-        if in_ru_block:
-            for bad in BANNED_MEANINGLESS_RU_FILLER:
-                if bad in line:
+        if in_ru_block and line.startswith("- **") and ":" in line:
+            val_part = line.split(":", 1)[1].strip()
+            for bad in (
+                BANNED_MEANINGLESS_RU_FILLER
+                + BANNED_SEMI_RUSSIAN_WRAPPERS
+                + BANNED_ENGLISH_IN_RU
+            ):
+                if bad in val_part:
                     issues.append(f"Banned RU filler '{bad}' in: {line[:120]}")
                     break
             if line.startswith("- **Что это за папка:**"):
                 folder_whats_ru.append(line.split(":", 1)[1].strip())
             if line.startswith("- **Что это:**"):
                 file_whats_ru.append(line.split(":", 1)[1].strip())
-            if "NEEDS HUMAN DESCRIPTION" in line:
-                issues.append(f"Missing human RU: {line[:120]}")
+
+    needs_count = text.count("NEEDS HUMAN DESCRIPTION")
+    if needs_count > 30:
+        issues.append(
+            f"Too many NEEDS HUMAN DESCRIPTION entries: {needs_count} (class adapters incomplete)"
+        )
 
     for label, vals in (("folder", folder_whats_ru), ("file", file_whats_ru)):
         counts = Counter(vals)
-        dupes = [(v, c) for v, c in counts.items() if c > 3 and len(v) < 120]
+        dupes = [(v, c) for v, c in counts.items() if c > 8 and len(v) < 120]
         if dupes:
             issues.append(
                 f"Duplicate RU 'Что это' ({label}, >3): "

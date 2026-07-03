@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Remove semi-Russian wrappers from structure guide [shipped]
+
+* **`scripts/manual/structure_ru_class_adapters.py`:** [shipped] Class-based RU adapters (Android/iOS/platform/lib/docs/tests); `sanitize_ru_prose()`; banned semi-Russian wrapper quality gate; generic file fallback (no `Назначение файла:` / `Сегмент` prefixes).
+* **`scripts/manual/structure_en_ru_adapt.py`:** [shipped] Removed EN wrapper fallbacks; routes through class adapters + `NEEDS HUMAN DESCRIPTION` only when no real RU.
+* **`structure_folder_ru_curated.py`**, **`structure_file_ru_curated.py`:** [shipped] Expanded curated RU for mandatory platform/lib/docs entries (`android/app/`, `ios/Runner*`, `lib/core/*`, governing docs, Windows workflow).
+* **`generate_app_structure_detailed.py`**, **`structure_guide_data.py`:** [shipped] Quality gate bans semi-Russian wrappers + English leakage in RU blocks; checks value text only (not `- **Слой:**` labels).
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated — 0 banned wrapper phrases, 0 `NEEDS HUMAN DESCRIPTION`.
+
 ## [2026-07-03] - Replace RU filler with real structure explanations [shipped]
 
 * **`scripts/manual/structure_en_ru_adapt.py`:** [shipped] EN→RU adaptation from guide meaning; `BANNED_MEANINGLESS_RU_FILLER` quality gate; fails on `NEEDS HUMAN DESCRIPTION`.

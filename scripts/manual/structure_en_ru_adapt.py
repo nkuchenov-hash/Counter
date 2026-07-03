@@ -3,6 +3,12 @@
 from __future__ import annotations
 
 from structure_ru_helpers import cyrillic_count, delete_en_to_ru
+from structure_ru_class_adapters import (
+    file_class_field,
+    folder_class_field,
+    has_semi_russian_or_english_leak,
+    sanitize_ru_prose,
+)
 
 # Banned meaningless RU filler (quality gate + generation guard).
 BANNED_MEANINGLESS_RU_FILLER: tuple[str, ...] = (
@@ -36,7 +42,6 @@ BANNED_MEANINGLESS_RU_FILLER: tuple[str, ...] = (
     "Роль `",
     " в модуле `",
     "Связи файла `",
-    "NEEDS HUMAN DESCRIPTION",
 )
 
 FIELD_KEYS = ("what", "why", "inside", "affects", "when", "delete", "related")
@@ -55,7 +60,9 @@ FILE_FIELD_KEYS = (
 def has_banned_filler(text: str) -> bool:
     if not text:
         return False
-    return any(bad in text for bad in BANNED_MEANINGLESS_RU_FILLER)
+    if any(bad in text for bad in BANNED_MEANINGLESS_RU_FILLER):
+        return True
+    return has_semi_russian_or_english_leak(text)
 
 
 def ru_field_ok(text: str, *, min_cyrillic: int = 8) -> bool:
@@ -63,7 +70,12 @@ def ru_field_ok(text: str, *, min_cyrillic: int = 8) -> bool:
         return False
     if has_banned_filler(text):
         return False
-    return cyrillic_count(text) >= min_cyrillic
+    cleaned = sanitize_ru_prose(text)
+    if cyrillic_count(cleaned) >= min_cyrillic:
+        return True
+    if "`" in cleaned and cyrillic_count(cleaned) >= 4 and len(cleaned) >= 18:
+        return True
+    return False
 
 
 # Exact EN → RU for folder fields (highest priority).
@@ -255,27 +267,17 @@ def adapt_folder_field_ru(key: str, field: str, en_val: str) -> str:
     curated = EXACT_FOLDER_RU.get(k, {})
     ru_key = f"{field}_ru"
     if curated.get(ru_key) and not has_banned_filler(curated[ru_key]):
-        return curated[ru_key]
+        return sanitize_ru_prose(curated[ru_key])
     if field == "delete":
         return delete_en_to_ru(en_val)
     if field == "related":
         return en_val
-    adapted = _phrase_translate(en_val)
+    class_ru = folder_class_field(k, field, en_val)
+    if class_ru and ru_field_ok(class_ru, min_cyrillic=6):
+        return class_ru
+    adapted = sanitize_ru_prose(_phrase_translate(en_val))
     if ru_field_ok(adapted, min_cyrillic=6):
         return adapted
-    # Meaningful wrapper from EN content (not path-only template).
-    wrappers = {
-        "inside": "Здесь лежит: {en}",
-        "affects": "На продукт влияет так: {en}",
-        "when": "Открывать, когда: {en}",
-        "why": "Нужна, потому что: {en}",
-        "what": "Сегмент `{k}`: {en}",
-    }
-    if field in wrappers and en_val:
-        body = _phrase_translate(en_val)
-        wrapped = wrappers[field].format(en=body, k=k)
-        if ru_field_ok(wrapped, min_cyrillic=6) and not has_banned_filler(wrapped):
-            return wrapped
     return f"NEEDS HUMAN DESCRIPTION ({k}/{field})"
 
 
@@ -292,26 +294,12 @@ def adapt_folder_guide_ru(key: str, en: dict[str, str]) -> dict[str, str]:
 def adapt_file_field_ru(path: str, field: str, en_val: str, en_guide: dict[str, str]) -> str:
     if field == "delete":
         return delete_en_to_ru(en_val)
-    adapted = _phrase_translate(en_val)
+    class_ru = file_class_field(path, field, en_val, en_guide)
+    if class_ru and ru_field_ok(class_ru, min_cyrillic=6):
+        return class_ru
+    adapted = sanitize_ru_prose(_phrase_translate(en_val))
     if ru_field_ok(adapted, min_cyrillic=6) and not has_banned_filler(adapted):
         return adapted
-    wrappers = {
-        "what": "Назначение файла: {en}",
-        "why": "Нужен, потому что: {en}",
-        "contains": "Содержит: {en}",
-        "responsibilities": "Отвечает за: {en}",
-        "when": "Открывать, когда: {en}",
-        "connected": "Связан с: {en}",
-        "layer": "Слой: {en}",
-    }
-    if field in wrappers and en_val:
-        wrapped = wrappers[field].format(en=_phrase_translate(en_val))
-        if ru_field_ok(wrapped, min_cyrillic=6) and not has_banned_filler(wrapped):
-            return wrapped
-    if field == "what" and en_guide.get("why"):
-        combo = _phrase_translate(f"{en_val}. {en_guide['why']}")
-        if ru_field_ok(combo, min_cyrillic=10) and not has_banned_filler(combo):
-            return combo
     return f"NEEDS HUMAN DESCRIPTION ({path}/{field})"
 
 

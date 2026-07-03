@@ -9,6 +9,7 @@ from structure_en_ru_adapt import (
     has_banned_filler,
     ru_field_ok,
 )
+from structure_ru_class_adapters import BANNED_ENGLISH_IN_RU, BANNED_SEMI_RUSSIAN_WRAPPERS
 
 # Side effect: registers curated folder RU blocks.
 import structure_folder_ru_curated  # noqa: F401
@@ -1015,8 +1016,7 @@ BANNED_RU_PHRASES: tuple[str, ...] = (
     "Поддержка embedder-сборки",
     "см. EN-блок",
     "platform/config файл",
-    "NEEDS HUMAN DESCRIPTION",
-)
+) + BANNED_SEMI_RUSSIAN_WRAPPERS + BANNED_ENGLISH_IN_RU
 
 
 def synthesize_folder_guide(key: str) -> dict[str, str]:
@@ -1079,13 +1079,14 @@ def synthesize_folder_guide(key: str) -> dict[str, str]:
             "related": "`windows/runner/Runner.rc`.",
         }
     if top == "android" and "kotlin" in k:
+        pkg = k.split("kotlin/")[-1] if "kotlin/" in k else k
         return {
-            "what": f"Kotlin/Java package path for Android Flutter activity under `{k}`.",
-            "why": "Android package naming mirrors Java folder structure required by Gradle.",
-            "inside": "Package directories leading to `MainActivity.kt`.",
-            "affects": "Android app entry class location only.",
-            "when": "Android package rename or activity class move.",
-            "delete": "No — required while Android entry lives here.",
+            "what": f"Kotlin/Java package `{pkg}` — путь к Flutter Activity на Android.",
+            "why": "Структура папок повторяет Java package name для Gradle.",
+            "inside": "Папки package, ведущие к `MainActivity.kt`.",
+            "affects": "Только расположение entry class Android.",
+            "when": "Переименование package или перенос Activity.",
+            "delete": "Нет — нужен пока MainActivity в этом package.",
             "related": "`android/app/src/main/kotlin/.../MainActivity.kt`.",
         }
     if top in ("android", "ios", "web", "windows", "linux", "macos"):
@@ -1249,9 +1250,7 @@ def ensure_folder_ru(key: str, data: dict[str, str]) -> dict[str, str]:
     adapted = adapt_folder_guide_ru(k, merged)
     for fk, fv in adapted.items():
         cur = merged.get(fk, "")
-        if (not cur or has_banned_filler(cur) or cur.startswith("NEEDS HUMAN")) and not fv.startswith(
-            "NEEDS HUMAN"
-        ):
+        if not cur or has_banned_filler(cur) or cur.startswith("NEEDS HUMAN"):
             merged[fk] = fv
     return merged
 
