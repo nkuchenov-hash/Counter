@@ -205,10 +205,11 @@ LOCAL_SYNC_PART: dict[str, tuple[str, str, str]] = {
 }
 
 
-def _sym_line(syms: list[str]) -> str:
-    if not syms:
-        return "implementation details in the source file"
-    return ", ".join(f"`{s}`" for s in syms[:4])
+def _sym_line(syms: list[str], path: str = "") -> str:
+    if syms:
+        return ", ".join(f"`{s}`" for s in syms[:6])
+    stem = Path(path).stem if path else "module"
+    return f"logic in `{stem}`"
 
 
 def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple[str, str, str]], area: str) -> dict[str, str]:
@@ -219,9 +220,10 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
     what, why, contains = part_map.get(stem, (
         f"Brain module for {area} — {role.split(';')[0].strip().lower()}.",
         f"Part of the app brain that keeps {area} consistent with PocketBase.",
-        f"Dart code ({_sym_line(syms)}).",
+        f"Dart code ({_sym_line(syms, path)}).",
     ))
     role_line = role.split(";")[0].strip()
+    sym = _sym_line(syms, path)
     what_ru = sanitize_ru_prose(_phrase_translate(what))
     why_ru = sanitize_ru_prose(_phrase_translate(why))
     contains_ru = sanitize_ru_prose(_phrase_translate(contains))
@@ -230,7 +232,7 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
     if sum(1 for c in why_ru if "\u0400" <= c <= "\u04FF") < 8:
         why_ru = f"Держит {area} согласованным с PocketBase и UI."
     if sum(1 for c in contains_ru if "\u0400" <= c <= "\u04FF") < 4:
-        contains_ru = f"Dart-код ({_sym_line(syms)})."
+        contains_ru = f"Dart-код ({sym})."
     return {
         "what": what,
         "why": why,
@@ -243,11 +245,19 @@ def _part_guide(path: str, role: str, syms: list[str], part_map: dict[str, tuple
     }
 
 
-def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | None:
+def humanize_guide(
+    path: str, role: str, syms: list[str], exports: list[str] | None = None
+) -> dict[str, str] | None:
     """Return partial FileGuide fields, or None to fall through."""
+    from structure_lib_file_guides import LIB_FILE_GUIDES, feature_file_guide
+
     p = path.replace("\\", "/")
     role_clean = role.strip()
-    sym = _sym_line(syms)
+    sym = _sym_line(syms, p)
+    exp = exports or []
+
+    if p in LIB_FILE_GUIDES:
+        return dict(LIB_FILE_GUIDES[p])
 
     if p == "lib/data/database_service.dart":
         return {
@@ -356,32 +366,12 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
             "responsibilities_ru": f"Даёт переведённые строки для `{fname}`.",
         }
 
+    from structure_lib_file_guides import feature_file_guide
+
     if p.startswith("lib/features/"):
-        parts = p.split("/")
-        feature = parts[2] if len(parts) > 2 else "app"
-        screen = FEATURE_SCREENS.get(feature, f"{feature} area")
-        fname = Path(p).name
-        role_short = role_clean.split(";")[0].strip()
-        if role_short.startswith("`") and "`" in role_short[1:]:
-            role_short = role_short.split("`", 2)[-1].strip(" `")
-        generic_markers = (
-            "Fulfill the documented role",
-            "required for current app behavior",
-            "Role:",
-            "Source file `",
-        )
-        if any(m in role_short for m in generic_markers):
-            role_short = Path(p).stem.replace("_", " ")
-        return {
-            "what": f"UI file `{fname}` for {screen}: {role_short}.",
-            "why": f"Users interact with `{fname}` when using {screen}.",
-            "contains": f"Flutter widgets in `{fname}` ({sym}).",
-            "responsibilities": role_clean if not any(m in role_clean for m in generic_markers) else role_short,
-            "what_ru": f"UI-модуль `{fname}` на экране ({screen}): {role_short}.",
-            "why_ru": f"Пользователь видит `{fname}`, когда открывает {screen}.",
-            "contains_ru": f"Flutter-виджеты в `{fname}` ({sym}).",
-            "responsibilities_ru": f"Реализует в `{fname}`: {role_short}.",
-        }
+        fg = feature_file_guide(p, role_clean, syms, exp)
+        if fg:
+            return fg
 
     if p.startswith("lib/services/"):
         fname = Path(p).name
@@ -425,17 +415,22 @@ def humanize_guide(path: str, role: str, syms: list[str]) -> dict[str, str] | No
         }
 
     if p.startswith("lib/core/"):
-        role_short = role_clean.split(";")[0].strip()
+        from structure_lib_file_guides import describe_contains, normalize_role_short
+
+        if p in LIB_FILE_GUIDES:
+            return dict(LIB_FILE_GUIDES[p])
+        role_short = normalize_role_short(role_clean, p)
+        contains_en, contains_ru, _, _ = describe_contains(p, syms, exp)
         sub = PurePosixPath(p).parent.name
         return {
-            "what": f"Foundation helper ({sub}) — {role_short}.",
+            "what": f"Foundation module `{Path(p).name}` ({sub}) — {role_short}.",
             "why": "Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.",
-            "contains": f"Dart utilities ({sym}).",
-            "responsibilities": role_clean,
-            "what_ru": f"Базовый слой приложения, модуль `{sub}` — {role_short}.",
+            "contains": contains_en,
+            "responsibilities": role_short,
+            "what_ru": f"Foundation-модуль `{Path(p).name}` ({sub}) — {role_short}.",
             "why_ru": "Общий код вне одного экрана: тема, время, voice, diagnostics.",
-            "contains_ru": f"Dart-утилиты ({sym}).",
-            "responsibilities_ru": f"Реализует foundation-логику: {role_clean}.",
+            "contains_ru": contains_ru,
+            "responsibilities_ru": f"Foundation-логика: {role_short}.",
         }
 
     if p.startswith("lib/l10n/"):

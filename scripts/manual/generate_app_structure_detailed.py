@@ -37,11 +37,19 @@ OUT = ROOT / "docs" / "APP_STRUCTURE_DETAILED.md"
 APP_STRUCTURE = ROOT / "docs" / "APP_STRUCTURE.md"
 
 SYMBOL_RE = re.compile(
-    r"^(?:class|enum|extension|mixin|typedef)\s+(\w+)|^void\s+main\s*\(",
+    r"^(?:abstract\s+(?:final\s+)?class|class|enum|extension|mixin|typedef)\s+(\w+)"
+    r"|^void\s+main\s*\(",
     re.M,
 )
-TABLE_ROW_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|")
-FEATURE_FOLDER_ROW_RE = re.compile(r"^\|\s*`([^`]+)/`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*$")
+EXPORT_RE = re.compile(r"^export\s+'([^']+)'", re.M)
+DETAIL_FILE_ROW_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|\s*$")
+
+RU_FOLDER_REQUIRED_PREFIXES: tuple[str, ...] = (
+    "- **Что это за папка:**",
+    "- **Зачем нужна:**",
+    "- **Что здесь лежит:**",
+    "- **На что влияет в приложении:**",
+)
 
 GENERIC_EN_MARKERS: tuple[str, ...] = (
     "Fulfill the documented role",
@@ -59,6 +67,15 @@ BANNED_EN_WRAPPER_IN_RU: tuple[str, ...] = (
     "Role:",
     "required for current app behavior",
 )
+
+BANNED_EN_IN_RU: tuple[str, ...] = BANNED_EN_WRAPPER_IN_RU + (
+    "implementation details in the source file",
+    "required for ",
+    "if macOS builds are kept",
+    "required for iOS CocoaPods workflow",
+)
+TABLE_ROW_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*([^|]+?)\s*\|")
+FEATURE_FOLDER_ROW_RE = re.compile(r"^\|\s*`([^`]+)/`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*$")
 
 RU_REQUIRED_PREFIXES: tuple[str, ...] = (
     "- **Что это:**",
@@ -118,7 +135,7 @@ def symbols(path: str) -> list[str]:
     if not p.is_file() or not path.endswith(".dart"):
         return []
     try:
-        text = p.read_text(encoding="utf-8")[:6000]
+        text = p.read_text(encoding="utf-8")[:12000]
     except OSError:
         return []
     found: list[str] = []
@@ -128,14 +145,35 @@ def symbols(path: str) -> list[str]:
             found.append(name)
         if m.group(0).startswith("void main"):
             found.append("main")
-    return found[:8]
+    return found[:10]
+
+
+def dart_exports(path: str) -> list[str]:
+    p = ROOT / path
+    if not p.is_file() or not path.endswith(".dart"):
+        return []
+    try:
+        text = p.read_text(encoding="utf-8")[:4000]
+    except OSError:
+        return []
+    return [Path(m.group(1)).name for m in EXPORT_RE.finditer(text)][:8]
 
 
 def clean_role(role: str) -> str:
     r = role.strip()
     r = re.sub(r"\s*\*\(part\)\*", "", r)
     r = r.replace("*(part)*", "").strip()
+    r = re.sub(r"^\s*,\s*", "", r)
     return r
+
+
+def _resolve_manifest_path(raw: str) -> str:
+    raw = raw.strip().replace("\\", "/")
+    if raw.startswith("lib/"):
+        return raw
+    if raw.startswith(("core/", "shell/")):
+        return "lib/" + raw
+    return "lib/features/" + raw
 
 
 def parse_app_structure_roles() -> dict[str, str]:
@@ -154,10 +192,12 @@ def parse_app_structure_roles() -> dict[str, str]:
     }
 
     current_prefix = ""
+    in_detail_section = False
 
     for line in text.splitlines():
         if line.startswith("###"):
             current_prefix = ""
+            in_detail_section = bool(re.search(r"### 3\.4\.[12]", line))
             for key, pref in section_prefix.items():
                 if key in line:
                     current_prefix = pref
@@ -170,6 +210,15 @@ def parse_app_structure_roles() -> dict[str, str]:
                 current_prefix = "lib/"
             if "PocketBase hooks" in line:
                 current_prefix = "pb_hooks/"
+            continue
+
+        dm = DETAIL_FILE_ROW_RE.match(line.strip())
+        if dm and in_detail_section:
+            raw_path, role = dm.group(1).strip(), clean_role(dm.group(2))
+            if role and role not in ("Role", "File"):
+                full = _resolve_manifest_path(raw_path)
+                roles[full] = role
+                roles[Path(full).name] = role
             continue
 
         fm = FEATURE_FOLDER_ROW_RE.match(line.strip())
@@ -248,6 +297,26 @@ def parse_app_structure_roles() -> dict[str, str]:
     roles.setdefault(
         ".cursor/rules/flutter_expert.mdc",
         "Always-applied Cursor Agent rules — PocketBase, optimistic UI, main-thread law",
+    )
+    roles.setdefault(
+        "lib/features/timeline/timeline_view.dart",
+        "TimelineSwipeWrapper day pager + TimelinePage body (header, day list, record cards)",
+    )
+    roles.setdefault(
+        "lib/features/planning/planning_view.dart",
+        "Planning feature barrel — re-exports planning_page, planning_page_shell, planning_sort_mode",
+    )
+    roles.setdefault(
+        "lib/features/shared/voice_input_sheet.dart",
+        "Mobile/web mic sheet — speech-to-text via VoiceCaptureConfig",
+    )
+    roles.setdefault(
+        "lib/core/app_build_info.dart",
+        "Compile-time git commit and build time from --dart-define",
+    )
+    roles.setdefault(
+        "lib/core/app_colors.dart",
+        "Design-system color tokens and ColorScheme factories",
     )
     return roles
 
@@ -631,13 +700,13 @@ def connected_for(path: str, role: str) -> tuple[str, str]:
     return en, ru
 
 
-def guide_from_role(path: str, role: str, syms: list[str]) -> FileGuide:
+def guide_from_role(path: str, role: str, syms: list[str], exports: list[str] | None = None) -> FileGuide:
     layer_en, layer_ru = layer_for(path)
     del_en, del_ru = delete_for(path)
     when_en, when_ru = when_for(path)
     conn_en, conn_ru = connected_for(path, role)
 
-    human = humanize_guide(path, role, syms)
+    human = humanize_guide(path, role, syms, exports or [])
     if human:
         return FileGuide(
             what=human["what"],
@@ -963,7 +1032,9 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
         if not tail and path.endswith(".dart"):
             from structure_role_guides import humanize_guide
 
-            human = humanize_guide(path, en.get("responsibilities", ""), [])
+            human = humanize_guide(
+                path, en.get("responsibilities", ""), symbols(path), dart_exports(path)
+            )
             if human:
                 hv = human.get(ru_key, "")
                 if hv and not has_banned_filler(hv):
@@ -996,7 +1067,7 @@ def finalize_file_guide(path: str, g: FileGuide) -> FileGuide:
     )
 
 
-def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
+def build_guide(path: str, roles: dict[str, str], syms: list[str], exports: list[str] | None = None) -> FileGuide:
     if path in ROOT_FILE_GUIDES:
         return file_guide_from_dict(ROOT_FILE_GUIDES[path])
     if path in CATEGORY_GUIDES:
@@ -1009,7 +1080,7 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
         return platform_guide(path)
     role = roles.get(path) or roles.get(Path(path).name, "")
     if role:
-        return guide_from_role(path, role, syms)
+        return guide_from_role(path, role, syms, exports)
     if path.startswith("scripts/"):
         return script_guide(path)
     if path.startswith("docs/"):
@@ -1031,7 +1102,7 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
         role = roles.get(path) or roles.get(Path(path).name, "")
         if is_generic_en(role):
             role = ""
-        return guide_from_role(path, role or Path(path).stem.replace("_", " "), syms)
+        return guide_from_role(path, role or Path(path).stem.replace("_", " "), syms, exports)
     # Last-resort: unique by path + extension
     p = path.replace("\\", "/")
     name = Path(p).name
@@ -1317,10 +1388,40 @@ def quality_check(text: str, paths: list[str], expected_sha: str) -> list[str]:
                 val = ru_line_value(line, prefix)
                 if not val:
                     issues.append(f"Empty RU field: {line[:100]}")
-                for bad in BANNED_EN_WRAPPER_IN_RU:
+                for bad in BANNED_EN_IN_RU:
                     if bad in val:
-                        issues.append(f"EN wrapper in RU: {line[:100]}")
+                        issues.append(f"EN leftover in RU: {line[:100]}")
+                if ": ," in val or ": ," in val.replace("  ", " "):
+                    issues.append(f"Broken RU punctuation: {line[:100]}")
+                if re.search(r":\s*,\s*[`']", val):
+                    issues.append(f"Broken RU punctuation: {line[:100]}")
                 break
+
+    in_ru_block = False
+    for line in text.splitlines():
+        if line.strip() == "RU:":
+            in_ru_block = True
+        elif line.strip() == "EN:" or line.startswith("## Folder:") or line.startswith("### `"):
+            if line.startswith("## Folder:") or line.startswith("### `"):
+                in_ru_block = False
+            elif line.strip() == "EN:":
+                in_ru_block = False
+        if not in_ru_block:
+            continue
+        for prefix in RU_FOLDER_REQUIRED_PREFIXES:
+            if line.startswith(prefix):
+                val = ru_line_value(line, prefix)
+                if not val:
+                    issues.append(f"Empty folder RU field: {line[:100]}")
+                for bad in BANNED_EN_IN_RU:
+                    if bad in val:
+                        issues.append(f"EN leftover in folder RU: {line[:100]}")
+                break
+
+    for line in text.splitlines():
+        if "implementation details in the source file" in line and line.strip().startswith("- **"):
+            if any(line.startswith(p) for p in ru_prefixes):
+                issues.append(f"Banned placeholder in RU: {line[:100]}")
 
     return issues
 
@@ -1385,7 +1486,8 @@ def main() -> None:
     what_samples: list[str] = []
     for path in all_files:
         syms = symbols(path)
-        g = finalize_file_guide(path, build_guide(path, roles, syms))
+        exp = dart_exports(path)
+        g = finalize_file_guide(path, build_guide(path, roles, syms, exp))
         what_samples.append(g.what)
         lines.append(render_file(path, g, syms))
         lines.append("")

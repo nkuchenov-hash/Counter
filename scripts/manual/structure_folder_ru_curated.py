@@ -723,7 +723,7 @@ register_folder_ru(
     "android/app/src/profile",
     {
         "what_ru": "Manifest Android profile variant — сборка для performance profiling.",
-        "why_ru": "Profile mode использует отдельный manifest merge для Flutter profile builds.",
+        "why_ru": "Profile-сборка Android мержит отдельный AndroidManifest для Flutter profile APK.",
         "inside_ru": "Profile `AndroidManifest.xml`.",
         "affects_ru": "Profile APK для измерения производительности.",
         "when_ru": "Ошибки merge manifest при profile build.",

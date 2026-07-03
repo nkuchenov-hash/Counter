@@ -1303,6 +1303,11 @@ def ensure_folder_ru(key: str, data: dict[str, str]) -> dict[str, str]:
     ):
         if suffix not in merged:
             merged[suffix] = ""
+    en_delete = merged.get("delete", data.get("delete", ""))
+    if en_delete:
+        from structure_ru_helpers import delete_en_to_ru
+
+        merged["delete_ru"] = delete_en_to_ru(en_delete)
     return merged
 
 

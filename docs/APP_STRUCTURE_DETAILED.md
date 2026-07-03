@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `fa4fcea` on 2026-07-03.**
+**Generated at git SHA `cc756df` on 2026-07-03.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -39,7 +39,7 @@ RU:
 - **Что здесь лежит:** Файлы правил Cursor, включая `rules/flutter_expert.mdc`.
 - **На что влияет в приложении:** Подсказки AI в Cursor — не runtime приложения.
 - **Когда открывать:** AI предлагает refactor, ломающий Brain/UI split или main-thread law.
-- **Можно удалить?** Нет — Cursor root discovery ожидает rules здесь.
+- **Можно удалить?** Возможно — safe for app; keep for Cursor workflow.
 - **Связанные пути:** `.cursorrules`, `docs/ARCHITECTURE.md`.
 
 ---
@@ -111,7 +111,7 @@ RU:
 - **Что здесь лежит:** Governing specs, Project Knowledge pack list, reports, `docs/website/` copy.
 - **На что влияет в приложении:** Решения при разработке и AI context — не runtime binary.
 - **Когда открывать:** Любой structural/behavior вопрос; upload list в `PROJECT_KNOWLEDGE_PACK.md`.
-- **Можно удалить?** Нет — governing documentation.
+- **Можно удалить?** Нет — governing-документация проекта.
 - **Связанные пути:** 14-doc Project Knowledge pack, `CHANGELOG.md`.
 
 ---
@@ -135,7 +135,7 @@ RU:
 - **Что здесь лежит:** Inno Setup `counter.iss`, STT payload scripts, helper build.
 - **На что влияет в приложении:** Дистрибуция Windows через artifact GitHub Actions.
 - **Когда открывать:** Installer missing files, STT helper не bundled, SmartScreen packaging.
-- **Можно удалить?** Нет — пока нужен Windows installer distribution.
+- **Можно удалить?** Нет — пока нужен Windows installer.
 - **Связанные пути:** `.github/workflows/windows-desktop-build.yml`, `docs/DEPLOY.md`.
 
 ---
@@ -159,7 +159,7 @@ RU:
 - **Что здесь лежит:** Dart integration test drivers и сценарии.
 - **На что влияет в приложении:** CI/integration QA — не APK пользователю.
 - **Когда открывать:** Падает integration test или меняется shell navigation.
-- **Можно удалить?** Нет — если integration QA остаётся в pipeline.
+- **Можно удалить?** Нет — нужен для integration-тестов.
 - **Связанные пути:** `test/`, `lib/shell/`.
 
 ---
@@ -207,7 +207,7 @@ RU:
 - **Что здесь лежит:** `lib/data/` — мозг (PocketBase, cache, optimistic UI, offline). `lib/features/` — экраны Timeline, Plans, Lists, Calendar, Profile, Categories. `lib/core/` — design system, тема, time, desktop voice. `lib/shell/` — вкладки, More, edit sheets, offline banner. `lib/l10n/` — тексты UI. `lib/services/` — уведомления устройства.
 - **На что влияет в приложении:** Весь продукт на всех платформах.
 - **Когда открывать:** Любой баг UI, сохранение данных, offline, локализация.
-- **Можно удалить?** Нет — удаление уничтожает приложение.
+- **Можно удалить?** Нет — deleting `lib/` removes the application.
 - **Связанные пути:** `pubspec.yaml`, `main.dart`, platform-папки.
 
 ---
@@ -279,7 +279,7 @@ RU:
 - **Что здесь лежит:** Два hook-файла (auth reset, record interval sanitize).
 - **На что влияет в приложении:** Forgot-password email на сервере; server-side cleanup пересекающихся running records.
 - **Когда открывать:** Password reset fail server-side; duplicate running records на сервере.
-- **Можно удалить?** Нет — production PocketBase ожидает hooks по manifest.
+- **Можно удалить?** Нет — production PocketBase ожидает эти hooks.
 - **Связанные пути:** `docs/POCKETBASE_MANIFEST.md`, `docs/DEPLOY.md` auth admin.
 
 ---
@@ -303,7 +303,7 @@ RU:
 - **Что здесь лежит:** Папки скриптов: `audit/`, `manual/`, плюс `sync_locales.dart`.
 - **На что влияет в приложении:** Deploy, architecture guard и regeneration structure doc — не UI приложения.
 - **Когда открывать:** Deploy сайта, strict guard, regenerate structure map, voice smoke Windows.
-- **Можно удалить?** Нет — deploy/audit/doc workflows в repo.
+- **Можно удалить?** Нет — нужен для deploy/audit/doc workflows documented in repo.
 - **Связанные пути:** `update.ps1`, `docs/DEPLOY.md`, `docs/APP_STRUCTURE.md` §6.
 
 ---
@@ -351,7 +351,7 @@ RU:
 - **Что здесь лежит:** Точка входа браузера, favicon, каталог `icons/`, `manifest.json`.
 - **На что влияет в приложении:** Публичный web-сайт: https://nkuchenov-hash.github.io/Counter/
 - **Когда открывать:** Blank page после deploy, wrong base href, missing icons.
-- **Можно удалить?** Нет — web deploy ломается.
+- **Можно удалить?** Нет — web deploy breaks.
 - **Связанные пути:** `docs/DEPLOY.md`, `.github/workflows/deploy.yml`.
 
 ---
@@ -375,7 +375,7 @@ RU:
 - **Что здесь лежит:** CMake-проект, runner main, plugin registration, иконка `.ico`.
 - **На что влияет в приложении:** Windows desktop app и содержимое installer.
 - **Когда открывать:** Windows build fail, desktop voice/tray на уровне OS.
-- **Можно удалить?** Нет — если поддерживается Windows desktop.
+- **Можно удалить?** Нет — if Windows desktop is supported.
 - **Связанные пути:** `installer/windows/`, `docs/DEPLOY.md`.
 
 ---
@@ -399,7 +399,7 @@ RU:
 - **Что здесь лежит:** `flutter_expert.mdc` и другие rule-файлы.
 - **На что влияет в приложении:** Качество AI-патчей — не APK пользователю.
 - **Когда открывать:** Обновили архитектурный закон и нужно, чтобы AI его видел сразу.
-- **Можно удалить?** Нет — основной rule pack Cursor.
+- **Можно удалить?** Возможно — safe for app; keep for Cursor workflow.
 - **Связанные пути:** `.cursorrules`, `docs/ARCHITECTURE.md`.
 
 ---
@@ -423,7 +423,7 @@ RU:
 - **Что здесь лежит:** YAML workflows: `deploy.yml` (GitHub Pages) и `windows-desktop-build.yml` (installer).
 - **На что влияет в приложении:** Живой сайт `/Counter/` и Windows installer artifact в Actions.
 - **Когда открывать:** Deploy упал, сайт не обновился, нет exe в Actions artifacts.
-- **Можно удалить?** Нет — если нужны GitHub Pages и Windows installer.
+- **Можно удалить?** Нет — нужен для CI и деплоя.
 - **Связанные пути:** `update.ps1`, `docs/DEPLOY.md`.
 
 ---
@@ -447,7 +447,7 @@ RU:
 - **Что здесь лежит:** `build.gradle`, каталог `src/`, при необходимости `google-services.json`.
 - **На что влияет в приложении:** Результат сборки — APK или AAB Counter для установки.
 - **Когда открывать:** Ошибки Gradle-модуля app, package name, подпись release.
-- **Можно удалить?** Нет — без app module нет Android APK.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/build.gradle.kts`, `android/settings.gradle.kts`.
 
 ---
@@ -471,7 +471,7 @@ RU:
 - **Что здесь лежит:** Wrapper jar/properties и версии Gradle-плагинов.
 - **На что влияет в приложении:** Только toolchain Android-сборки — не Dart UI.
 - **Когда открывать:** Ошибки несовпадения версии Gradle.
-- **Можно удалить?** Нет — без wrapper Gradle sync нестабилен.
+- **Можно удалить?** Нет — нужен для сборки Android.
 - **Связанные пути:** `android/settings.gradle.kts`.
 
 ---
@@ -495,7 +495,7 @@ RU:
 - **Что здесь лежит:** Отчёты audit/cleanup: `AUDIT_NOTES.md`, `FINAL_*`, `DESIGN_SYSTEM_INVENTORY.md` и др.
 - **На что влияет в приложении:** Контекст для owner/AI — не runtime.
 - **Когда открывать:** Нужно понять, почему roadmap/guard rule существует.
-- **Можно удалить?** Нет — история cleanup и audit.
+- **Можно удалить?** Нет — current reports referenced from CHANGELOG.
 - **Связанные пути:** `docs/ROADMAP.md`, `CHANGELOG.md`.
 
 ---
@@ -519,7 +519,7 @@ RU:
 - **Что здесь лежит:** Markdown страниц сайта и internal notes (repo-only).
 - **На что влияет в приложении:** Планирование публичного сайта — не Flutter binary.
 - **Когда открывать:** Обновление marketing copy или internal site notes.
-- **Можно удалить?** Нет — repo-only marketing copy.
+- **Можно удалить?** Нет — intentionally maintained repo-only copy.
 - **Связанные пути:** `docs/DEPLOY.md`, GitHub Pages.
 
 ---
@@ -567,7 +567,7 @@ RU:
 - **Что здесь лежит:** Generated xcconfig и настройки CocoaPods.
 - **На что влияет в приложении:** Интеграция Flutter engine с Xcode-проектом iOS.
 - **Когда открывать:** Падение `pod install` или `flutter build ios`.
-- **Можно удалить?** Нет — перегенерируется Flutter tool.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Podfile`, `ios/Runner/`.
 
 ---
@@ -591,7 +591,7 @@ RU:
 - **Что здесь лежит:** Asset catalogs, launch screen, Swift/ObjC glue для Flutter.
 - **На что влияет в приложении:** Сборки для TestFlight и App Store.
 - **Когда открывать:** Permissions iOS, иконки, launch screen.
-- **Можно удалить?** Нет — без Runner target нет iOS app.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Flutter/`, `ios/Runner.xcodeproj`.
 
 ---
@@ -615,7 +615,7 @@ RU:
 - **Что здесь лежит:** Файлы `project.pbxproj`, shared schemes, workspace metadata.
 - **На что влияет в приложении:** Только iOS TestFlight и App Store builds.
 - **Когда открывать:** Повреждение project, смена scheme, настройки signing.
-- **Можно удалить?** Нет — без project Xcode не соберёт iOS.
+- **Можно удалить?** Нет — нужен для сборки iOS.
 - **Связанные пути:** `ios/Runner/`, `ios/Runner.xcworkspace`.
 
 ---
@@ -639,7 +639,7 @@ RU:
 - **Что здесь лежит:** Workspace data, связывающая Runner и Pods.
 - **На что влияет в приложении:** Локальная iOS-разработка и CI с CocoaPods.
 - **Когда открывать:** Xcode просит open workspace; сломана интеграция Pods.
-- **Можно удалить?** Нет — стандартный CocoaPods workflow.
+- **Можно удалить?** Нет — нужен для CocoaPods workflow iOS.
 - **Связанные пути:** `ios/Podfile`, `ios/Runner.xcodeproj`.
 
 ---
@@ -663,7 +663,7 @@ RU:
 - **Что здесь лежит:** `RunnerTests.swift` — минимальный XCTest entry.
 - **На что влияет в приложении:** iOS test target в Xcode — не основной Flutter `test/` suite.
 - **Когда открывать:** Падение native iOS-тестов в Xcode.
-- **Можно удалить?** Возможно — Flutter CI использует `flutter test`; оставить для Xcode workflow.
+- **Можно удалить?** Возможно — Flutter CI uses `flutter test`; keep for Xcode workflow.
 - **Связанные пути:** `test/` Flutter tests, `ios/Runner/`.
 
 ---
@@ -687,7 +687,7 @@ RU:
 - **Что здесь лежит:** `theme.dart`, каталог `core/widgets/`, `core/time/`, `core/services/` (desktop voice), diagnostics.
 - **На что влияет в приложении:** Внешний вид всех вкладок; desktop voice/tray; часы/timezone в header; perf debug flags.
 - **Когда открывать:** Миграция кнопок/карточек, неверный timezone header, сломан desktop voice, смена theme token.
-- **Можно удалить?** Нет — features импортируют foundation повсюду.
+- **Можно удалить?** Нет — features import foundation code everywhere.
 - **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/data/models.dart`.
 
 ---
@@ -711,7 +711,7 @@ RU:
 - **Что здесь лежит:** Координаторы `*_service.dart`, `database_service.dart` и `part`-модули в subfolders.
 - **На что влияет в приложении:** Записи Timeline, планы, списки, категории, теги, настройки профиля и offline queue.
 - **Когда открывать:** Неверные данные, failed save, rollback optimistic UI, offline banner, ошибки полей PB.
-- **Можно удалить?** Нет — UI не работает без мозга.
+- **Можно удалить?** Нет — the UI cannot work without the brain.
 - **Связанные пути:** `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `lib/features/`.
 
 ---
@@ -735,7 +735,7 @@ RU:
 - **Что здесь лежит:** Папка на tab/flow: `timeline/`, `planning/`, `lists/`, `shared/`, `profile/` и др.
 - **На что влияет в приложении:** Вся видимая часть приложения кроме platform wrappers.
 - **Когда открывать:** UI bug на вкладке, новый экран, edit sheet, voice sheet layout.
-- **Можно удалить?** Нет — удаление убирает весь UI продукта.
+- **Можно удалить?** Нет — deleting this removes the entire product UI.
 - **Связанные пути:** `lib/shell/`, `lib/data/`.
 
 ---
@@ -759,7 +759,7 @@ RU:
 - **Что здесь лежит:** `dictionary.dart`, `langs/en.dart`, `langs/ru.dart`, partial other locales.
 - **На что влияет в приложении:** Все видимые строки UI.
 - **Когда открывать:** Missing translation key, неверный текст языка, новая UI label.
-- **Можно удалить?** Нет — без l10n сырые keys или crash.
+- **Можно удалить?** Нет — app shows raw keys or crashes without l10n.
 - **Связанные пути:** `scripts/sync_locales.dart`, HELP в `langs/`.
 
 ---
@@ -783,7 +783,7 @@ RU:
 - **Что здесь лежит:** `notification_service.dart` — local notifications и plan alarm reschedule.
 - **На что влияет в приложении:** Напоминания по планам на phone/desktop.
 - **Когда открывать:** Plan alarm не срабатывает, permission notifications.
-- **Можно удалить?** Нет — plan alarms перестанут работать.
+- **Можно удалить?** Нет — plan alarms stop working.
 - **Связанные пути:** `lib/data/plan_service.dart` alarm reschedule.
 
 ---
@@ -807,7 +807,7 @@ RU:
 - **Что здесь лежит:** Dashboard scaffold, IndexedStack вкладок, More menu, voice submit routing.
 - **На что влияет в приложении:** Навигация, global header, voice commands между вкладками.
 - **Когда открывать:** Неверная вкладка, voice уходит не туда, edit sheet host, offline banner.
-- **Можно удалить?** Нет — навигация приложения рушится.
+- **Можно удалить?** Нет — app navigation collapses.
 - **Связанные пути:** `lib/app_shell.dart`, все `lib/features/*`.
 
 ---
@@ -831,7 +831,7 @@ RU:
 - **Что здесь лежит:** `generated_plugin_registrant.*`, `generated_plugins.cmake`, child `CMakeLists.txt`.
 - **На что влияет в приложении:** Регистрация Flutter plugins на Linux desktop в runtime.
 - **Когда открывать:** Linux build падает после добавления/удаления Flutter plugin.
-- **Можно удалить?** Нет — перегенерируется Flutter tool.
+- **Можно удалить?** Нет — генерируется Flutter; нужен для Linux-сборки.
 - **Связанные пути:** `linux/CMakeLists.txt`, `linux/runner/`.
 
 ---
@@ -879,7 +879,7 @@ RU:
 - **Что здесь лежит:** Generated xcconfig и pod-настройки.
 - **На что влияет в приложении:** Интеграция Flutter с Xcode macOS target.
 - **Когда открывать:** Ошибки `flutter build macos`.
-- **Можно удалить?** Нет — перегенерируется Flutter tool.
+- **Можно удалить?** Нет — нужен для сборки macOS.
 - **Связанные пути:** `macos/Runner/`, `macos/Podfile`.
 
 ---
@@ -903,7 +903,7 @@ RU:
 - **Что здесь лежит:** Swift runner, assets, entitlements plist.
 - **На что влияет в приложении:** Сборка Counter `.app` на macOS desktop.
 - **Когда открывать:** Подпись macOS, sandbox, menu bar.
-- **Можно удалить?** Нет — если нужна поддержка macOS desktop.
+- **Можно удалить?** Нет — если поддерживается сборка macOS.
 - **Связанные пути:** `macos/Flutter/`, `macos/Runner.xcodeproj`.
 
 ---
@@ -927,7 +927,7 @@ RU:
 - **Что здесь лежит:** Файлы `project.pbxproj`, shared schemes для macOS Runner.
 - **На что влияет в приложении:** Сборки macOS desktop для распространения.
 - **Когда открывать:** Ошибки macOS Xcode build/sign.
-- **Можно удалить?** Нет — без project Xcode не соберёт macOS.
+- **Можно удалить?** Нет — нужен для сборки macOS desktop.
 - **Связанные пути:** `macos/Runner/`, `macos/Flutter/`.
 
 ---
@@ -951,7 +951,7 @@ RU:
 - **Что здесь лежит:** Содержимое workspace и shared IDE checks.
 - **На что влияет в приложении:** macOS desktop разработка в Xcode.
 - **Когда открывать:** Workspace не открывается; сломана CocoaPods integration на macOS.
-- **Можно удалить?** Нет — стандартный CocoaPods workflow.
+- **Можно удалить?** Нет — нужен для Xcode workflow macOS.
 - **Связанные пути:** `macos/Runner.xcodeproj`.
 
 ---
@@ -975,7 +975,7 @@ RU:
 - **Что здесь лежит:** `RunnerTests.swift` — минимальный XCTest entry.
 - **На что влияет в приложении:** macOS test target в Xcode — не основной Flutter `test/` suite.
 - **Когда открывать:** Падение native macOS-тестов в Xcode.
-- **Можно удалить?** Возможно — Flutter CI использует `flutter test`; оставить для Xcode workflow.
+- **Можно удалить?** Возможно — основной QA — `flutter test`.
 - **Связанные пути:** `test/` Flutter tests, `macos/Runner/`.
 
 ---
@@ -999,7 +999,7 @@ RU:
 - **Что здесь лежит:** `architecture_guard.ps1` и связанные audit helpers.
 - **На что влияет в приложении:** Качество repo — не экраны приложения.
 - **Когда открывать:** Перед merge или после перемещения файлов — `-Strict` guard.
-- **Можно удалить?** Нет — задокументированный audit workflow.
+- **Можно удалить?** Нет — нужен для audit workflow.
 - **Связанные пути:** `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`.
 
 ---
@@ -1023,7 +1023,7 @@ RU:
 - **Что здесь лежит:** `generate_app_structure_detailed.py`, `td.ps1`, export/billing utilities.
 - **На что влияет в приложении:** Deploy, регенерация docs и owner utilities — не runtime UI.
 - **Когда открывать:** Deploy сайта, regenerate APP_STRUCTURE_DETAILED, sync locales.
-- **Можно удалить?** Нет — задокументированные manual workflows.
+- **Можно удалить?** Нет — documented workflows depend on these.
 - **Связанные пути:** `update.ps1`, `docs/DEPLOY.md`.
 
 ---
@@ -1071,7 +1071,7 @@ RU:
 - **Что здесь лежит:** `generated_plugin_registrant.*`, `generated_plugins.cmake`.
 - **На что влияет в приложении:** Регистрация plugins на Windows desktop — от неё зависят voice/tray.
 - **Когда открывать:** Windows build падает после смены plugin; пропал desktop voice plugin.
-- **Можно удалить?** Нет — перегенерируется Flutter tool.
+- **Можно удалить?** Нет — нужен для сборки Windows desktop.
 - **Связанные пути:** `windows/runner/`, `windows/CMakeLists.txt`.
 
 ---
@@ -1095,7 +1095,7 @@ RU:
 - **Что здесь лежит:** `main.cpp`, создание окна, plugin registrant.
 - **На что влияет в приложении:** Содержимое Counter `.exe` и Windows installer.
 - **Когда открывать:** Desktop `.exe` не стартует или неверный заголовок окна.
-- **Можно удалить?** Нет — если нужна поддержка Windows desktop.
+- **Можно удалить?** Нет — нужен для сборки Windows desktop.
 - **Связанные пути:** `installer/windows/`, `windows/flutter/`.
 
 ---
@@ -1167,7 +1167,7 @@ RU:
 - **Что здесь лежит:** `win_speech_wav.ps1` и related helpers.
 - **На что влияет в приложении:** Поведение speech helper после установки на Windows.
 - **Когда открывать:** Installer missing speech script, WAV path broken.
-- **Можно удалить?** Нет — Windows installer packaging ожидает scripts.
+- **Можно удалить?** Нет — Windows installer packaging expects these scripts.
 - **Связанные пути:** `prepare_stt_payload.ps1`, `counter.iss`.
 
 ---
@@ -1191,7 +1191,7 @@ RU:
 - **Что здесь лежит:** Pre-built или CI-built `counter_stt_helper.exe`.
 - **На что влияет в приложении:** Расшифровка desktop voice на Windows после установки.
 - **Когда открывать:** Voice в dev OK, но не в installed app; rebuild STT helper.
-- **Можно удалить?** Нет — без exe STT bundle неполный.
+- **Можно удалить?** Нет — Windows installer STT bundle incomplete without it.
 - **Связанные пути:** `build_stt_helper_en.ps1`, `desktop_stt_helper_service.dart`.
 
 ---
@@ -1263,7 +1263,7 @@ RU:
 - **Что здесь лежит:** Workspace data, связывающая Runner и Pods.
 - **На что влияет в приложении:** Какой Xcode scheme собирает Runner — только workflow разработчика.
 - **Когда открывать:** Пропал scheme в Xcode или предупреждения workspace checks.
-- **Можно удалить?** Нет — required for iOS CocoaPods workflow.
+- **Можно удалить?** Нет — нужен для CocoaPods workflow iOS.
 - **Связанные пути:** `ios/Podfile`, `ios/Runner.xcodeproj`.
 
 ---
@@ -1335,7 +1335,7 @@ RU:
 - **Что здесь лежит:** Небольшие log wrapper, включаемые debug/profile flags.
 - **На что влияет в приложении:** Только диагностика разработчика — не UI пользователя.
 - **Когда открывать:** Трассировка шагов desktop voice или startup timing.
-- **Можно удалить?** Нет — используется в debug/profile builds.
+- **Можно удалить?** Нет — used by debug/profile builds.
 - **Связанные пути:** `lib/core/performance/`.
 
 ---
@@ -1359,7 +1359,7 @@ RU:
 - **Что здесь лежит:** В git только `env.dart.example`; настоящий `env.dart` локальный.
 - **На что влияет в приложении:** Только локальные dev builds, если используются env constants.
 - **Когда открывать:** Настройка новой dev-машины; добавление compile-time constant.
-- **Можно удалить?** Нет — документирует структуру env.dart.
+- **Можно удалить?** Нет — documents required env.dart structure.
 - **Связанные пути:** `.gitignore` entry для `lib/core/env/env.dart`.
 
 ---
@@ -1383,7 +1383,7 @@ RU:
 - **Что здесь лежит:** Файлы `app_navigator.dart` (`appRootNavigatorKey`), `shell_side_navigation.dart`.
 - **На что влияет в приложении:** Desktop/web layout (side nav) и overlay routing над вкладками.
 - **Когда открывать:** Desktop overlay не может push routes; неверный breakpoint side navigation.
-- **Можно удалить?** Нет — сломаются desktop layout и overlays.
+- **Можно удалить?** Нет — desktop layout and overlays break.
 - **Связанные пути:** `lib/shell/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.
 
 ---
@@ -1407,7 +1407,7 @@ RU:
 - **Что здесь лежит:** Файлы `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).
 - **На что влияет в приложении:** Perf: paging дат, tab stack оболочки, diagnostic builds.
 - **Когда открывать:** Расследование jank, warm-window kill switch, perf capture tests.
-- **Можно удалить?** Нет — perf tests и diagnostics ссылаются на эти flags.
+- **Можно удалить?** Нет — perf tests and diagnostics reference these flags.
 - **Связанные пути:** `test/perf_*`, `lib/data/cache/`.
 
 ---
@@ -1455,7 +1455,7 @@ RU:
 - **Что здесь лежит:** `app_clock.dart`, `profile_timezone_catalog.dart`, `plan_time_visible_window.dart`, форматтеры wall-clock.
 - **На что влияет в приложении:** Часы в global header, окно часов Time View (−3..27 h), подписи timezone picker.
 - **Когда открывать:** Неверный «today», label TZ в header, visible hours Time View, DST label.
-- **Можно удалить?** Нет — timeline и planning time display сломаются.
+- **Можно удалить?** Нет — timeline and planning time display breaks.
 - **Связанные пути:** `lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`.
 
 ---
@@ -1479,7 +1479,7 @@ RU:
 - **Что здесь лежит:** `AppButton`, `PlanTimeTaskCard`, date header, timezone picker, chips.
 - **На что влияет в приложении:** Все главные вкладки и большинство sheets.
 - **Когда открывать:** Миграция стиля кнопок, layout карточек, date/time picker, loading/empty states.
-- **Можно удалить?** Нет — features зависят от этих widgets.
+- **Можно удалить?** Нет — features depend on these widgets.
 - **Связанные пути:** `docs/DESIGN_SYSTEM.md`, Component Lab.
 
 ---
@@ -1503,7 +1503,7 @@ RU:
 - **Что здесь лежит:** `day_snapshot_window.dart`, `rendered_day_body_cache.dart`, `render_snapshot.dart`.
 - **На что влияет в приложении:** Плавность day swipe на Timeline и Planning; не влияет на корректность данных для пользователя.
 - **Когда открывать:** Jank при swipe дней, stale day content после edit, perf regression.
-- **Можно удалить?** Нет — paging станет медленным или рваным.
+- **Можно удалить?** Нет — paging becomes slow or glitchy.
 - **Связанные пути:** `lib/data/records/record_timeline_vm.dart`, `lib/core/performance/runtime_flags.dart`.
 
 ---
@@ -1527,7 +1527,7 @@ RU:
 - **Что здесь лежит:** Семь `part`-файлов; каждый закрывает одну задачу категорий (см. file entries ниже).
 - **На что влияет в приложении:** Category picker, экран Categories, category на start/stop записи, chips на планах, stats по категориям.
 - **Когда открывать:** Категории пропали, неверный color/icon, fuzzy match выбрал не того клиента, запись без category.
-- **Можно удалить?** Нет — category features перестанут работать.
+- **Можно удалить?** Нет — category features stop working.
 - **Связанные пути:** `lib/data/category_service.dart`, `lib/features/categories/`.
 
 ---
@@ -1551,7 +1551,7 @@ RU:
 - **Что здесь лежит:** SharedPreferences outboxes, pending-count state, connectivity listener для flush очередей.
 - **На что влияет в приложении:** Верхний offline/sync banner, фоновый retry при reconnect, auth-paused state.
 - **Когда открывать:** «Pending sync» завис, изменения offline потерялись, tap по banner ничего не делает.
-- **Можно удалить?** Нет — offline-first поведение — shipped product law.
+- **Можно удалить?** Нет — offline-first behavior is shipped product law.
 - **Связанные пути:** `lib/app_shell.dart` offline banner, `docs/UX_CONTRACT.md`.
 
 ---
@@ -1575,7 +1575,7 @@ RU:
 - **Что здесь лежит:** Dart-классы `TimelineRecord`, `PlanningTask`, `CategoryRule`, `Tag` и др.
 - **На что влияет в приложении:** Каждый экран, который показывает или редактирует user data.
 - **Когда открывать:** Неверная дата на Timeline, parsing errors после смены PocketBase schema.
-- **Можно удалить?** Нет — типы нужны по всему приложению.
+- **Можно удалить?** Нет — types are required across the app.
 - **Связанные пути:** `lib/data/models.dart` barrel, `docs/DATA_MAP.md`.
 
 ---
@@ -1599,7 +1599,7 @@ RU:
 - **Что здесь лежит:** Projection Time View, RRULE expansion, sync тегов, кэш, offline outbox.
 - **На что влияет в приложении:** Plans, Time View, Lists, edit sheets планов, plan alarms.
 - **Когда открывать:** Планы не сохраняются, recurrence неверна, карточки Time View не на месте.
-- **Можно удалить?** Нет — сломаются Plans и Lists.
+- **Можно удалить?** Нет — planning and lists break.
 - **Связанные пути:** `lib/data/plan_service.dart`, `lib/features/planning/`.
 
 ---
@@ -1623,7 +1623,7 @@ RU:
 - **Что здесь лежит:** Profile hydration, settings PATCH, timezone math, tag CRUD, tag display prefs.
 - **На что влияет в приложении:** Экран Profile, настройки tags, timezone в header, admin gate для Component Lab.
 - **Когда открывать:** Неверная «today» line, timezone не сохраняется, tags пропали на cards, settings не пишутся.
-- **Можно удалить?** Нет — profile и tags сломаются.
+- **Можно удалить?** Нет — profile and tags break.
 - **Связанные пути:** `lib/data/profile_service.dart`, `lib/features/profile/`.
 
 ---
@@ -1647,7 +1647,7 @@ RU:
 - **Что здесь лежит:** CRUD, optimistic UI, realtime, builders Timeline, overlap/Highlander, outbox.
 - **На что влияет в приложении:** Timeline, edit sheet записи, Wear lite timer, voice «start record».
 - **Когда открывать:** Таймер не стартует/стопится, неверный day bucket, дубликаты running.
-- **Можно удалить?** Нет — перестанет работать учёт времени.
+- **Можно удалить?** Нет — timeline tracking breaks.
 - **Связанные пути:** `lib/data/record_service.dart`, `lib/features/timeline/`.
 
 ---
@@ -1671,7 +1671,7 @@ RU:
 - **Что здесь лежит:** `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart`.
 - **На что влияет в приложении:** Login gate из `main.dart` когда session invalid.
 - **Когда открывать:** OAuth redirect broken, login form, register flow, password reset UI.
-- **Можно удалить?** Нет — users не смогут sign in.
+- **Можно удалить?** Нет — users cannot sign in.
 - **Связанные пути:** `lib/data/auth_bridge.dart`, `docs/DEPLOY.md` OAuth admin section.
 
 ---
@@ -1695,7 +1695,7 @@ RU:
 - **Что здесь лежит:** `calendar_view.dart`.
 - **На что влияет в приложении:** Calendar tab в bottom/side navigation (когда присутствует в shell).
 - **Когда открывать:** Calendar month layout, plan dots на dates, calendar navigation.
-- **Можно удалить?** Возможно — если calendar tab убран из shell; держать пока route существует.
+- **Можно удалить?** Возможно — if calendar tab removed from shell; keep while route exists.
 - **Связанные пути:** `lib/features/planning/`, plan card widgets в `core/widgets/`.
 
 ---
@@ -1719,7 +1719,7 @@ RU:
 - **Что здесь лежит:** List view, recursive tree picker, create dialog, visibility prefs.
 - **На что влияет в приложении:** More → Categories; category pickers в других экранах используют эти widgets.
 - **Когда открывать:** Create category, reorder, archive, pick category в tree dialog.
-- **Можно удалить?** Нет — UI category management исчезнет.
+- **Можно удалить?** Нет — category management UI gone.
 - **Связанные пути:** `lib/data/categories/`.
 
 ---
@@ -1743,7 +1743,7 @@ RU:
 - **Что здесь лежит:** Component lab page и card demos.
 - **На что влияет в приложении:** More menu только когда `profiles.is_admin` true.
 - **Когда открывать:** Design-system QA, V7 component acceptance.
-- **Можно удалить?** Возможно — runtime продукту не нужен, но V7 work использует; оставить для admins.
+- **Можно удалить?** Возможно — safe for product runtime, but V7 work uses it; keep for admins.
 - **Связанные пути:** `docs/DESIGN_SYSTEM.md`, `docs/reports/DESIGN_SYSTEM_INVENTORY.md`.
 
 ---
@@ -1767,7 +1767,7 @@ RU:
 - **Что здесь лежит:** Filters, cards, inline add, bulk bar, clipboard export.
 - **На что влияет в приложении:** Вкладка Lists (четвёртая bottom tab, index 3).
 - **Когда открывать:** List filters, checkbox done, bulk delete, export visible list as text.
-- **Можно удалить?** Нет — вкладка Lists исчезнет.
+- **Можно удалить?** Нет — Lists tab disappears.
 - **Связанные пути:** `lib/data/plan_service.dart`.
 
 ---
@@ -1791,7 +1791,7 @@ RU:
 - **Что здесь лежит:** `planning_page.dart`, подпапки `time_view/`, `settings/`, `widgets/`.
 - **На что влияет в приложении:** Только вкладка Plans (плюс calendar rows с теми же карточками).
 - **Когда открывать:** Неверные карточки, drag Time View, swipe дней, play/start plan.
-- **Можно удалить?** Нет — вкладка Plans исчезнет.
+- **Можно удалить?** Нет — Plans tab disappears.
 - **Связанные пути:** `lib/shell/`, `lib/data/plan_service.dart`.
 
 ---
@@ -1815,7 +1815,7 @@ RU:
 - **Что здесь лежит:** Profile view, секции settings, страницы tag manager, диагностика desktop voice.
 - **На что влияет в приложении:** More → Profile, маршруты tag settings, карточка desktop voice.
 - **Когда открывать:** Login profile, смена timezone, manage tags, desktop hotkey settings.
-- **Можно удалить?** Нет — profile/settings станут недоступны.
+- **Можно удалить?** Нет — profile/settings unavailable.
 - **Связанные пути:** `lib/data/profile/`, `lib/features/dev/` (admin only).
 
 ---
@@ -1839,7 +1839,7 @@ RU:
 - **Что здесь лежит:** Router activity detail, edit sheets, helpers `edit_sheet/*`, voice widgets.
 - **На что влияет в приложении:** Редактирование plans/records по tap; mobile voice sheet; desktop voice panel.
 - **Когда открывать:** Save edit sheet, date picker, tags на plan, voice input sheet.
-- **Можно удалить?** Нет — edit flows сломаются на всех вкладках.
+- **Можно удалить?** Нет — edit flows break on all tabs.
 - **Связанные пути:** `lib/shell/shell_edit_hosts.dart`, `docs/UX_CONTRACT.md`.
 
 ---
@@ -1863,7 +1863,7 @@ RU:
 - **Что здесь лежит:** `stats_view.dart`, `plan_vs_fact_tab.dart`.
 - **На что влияет в приложении:** Вкладка Timeline, когда пользователь нажимает Stats segmented control.
 - **Когда открывать:** Stats totals неверны, plan-vs-fact chart, stats tab toggle.
-- **Можно удалить?** Нет — stats mode Timeline исчезнет.
+- **Можно удалить?** Нет — Timeline stats mode disappears.
 - **Связанные пути:** `lib/data/categories/category_stats.dart`, `lib/features/timeline/timeline_header_controls.dart`.
 
 ---
@@ -1887,7 +1887,7 @@ RU:
 - **Что здесь лежит:** Swipe wrapper, day list, record cards, header controls (stats toggle, input).
 - **На что влияет в приложении:** Вкладка Timeline и встроенный stats view.
 - **Когда открывать:** Records на неверном дне, now-line, swipe между днями, tap/edit record card.
-- **Можно удалить?** Нет — вкладка Timeline исчезнет.
+- **Можно удалить?** Нет — Timeline tab disappears.
 - **Связанные пути:** `lib/data/record_service.dart`, `ActivityDetailSheet`.
 
 ---
@@ -1911,7 +1911,7 @@ RU:
 - **Что здесь лежит:** `wear_timer_screen.dart`, `wear_main_wrapper.dart`, platform channel shims.
 - **На что влияет в приложении:** Только Wear OS APK companion — не phone Timeline UI.
 - **Когда открывать:** Watch timer sync, Wear build entry, companion crashes на watch.
-- **Можно удалить?** Нет — если Wear OS companion — supported target.
+- **Можно удалить?** Нет — если нужен Wear OS companion.
 - **Связанные пути:** `lib/data/db_core.dart` Wear lite load, `android/` Wear module если настроен.
 
 ---
@@ -1935,7 +1935,7 @@ RU:
 - **Что здесь лежит:** `en.dart` и `ru.dart` — канонические; остальные локали частичные.
 - **На что влияет в приложении:** Все видимые подписи UI при смене языка в настройках.
 - **Когда открывать:** Пропал ключ перевода, неверная строка на выбранном языке.
-- **Можно удалить?** Нет — без locale maps локализация не работает.
+- **Можно удалить?** Нет — нужен для localization.
 - **Связанные пути:** `lib/l10n/dictionary.dart`, `scripts/sync_locales.dart`.
 
 ---
@@ -2007,7 +2007,7 @@ RU:
 - **Что здесь лежит:** Содержимое workspace и shared IDE checks.
 - **На что влияет в приложении:** Какой Xcode scheme собирает Runner — только workflow разработчика.
 - **Когда открывать:** Пропал scheme в Xcode или предупреждения workspace checks.
-- **Можно удалить?** Нет — required for macOS Xcode workflow.
+- **Можно удалить?** Нет — нужен для Xcode workflow macOS.
 - **Связанные пути:** `macos/Runner.xcodeproj`.
 
 ---
@@ -2031,7 +2031,7 @@ RU:
 - **Что здесь лежит:** Swift runner, assets, entitlements plist.
 - **На что влияет в приложении:** Сборка Counter `.app` на macOS desktop.
 - **Когда открывать:** Неверная или пропавшая app icon на iOS/macOS.
-- **Можно удалить?** Нет — if macOS builds are kept.
+- **Можно удалить?** Нет — если поддерживается сборка macOS.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -2055,7 +2055,7 @@ RU:
 - **Что здесь лежит:** Storyboard или xib файлы launch UI.
 - **На что влияет в приложении:** Сборка Counter `.app` на macOS desktop.
 - **Когда открывать:** Flash launch screen или неверная orientation на iOS/macOS.
-- **Можно удалить?** Нет — if macOS builds are kept.
+- **Можно удалить?** Нет — если поддерживается сборка macOS.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -2079,7 +2079,7 @@ RU:
 - **Что здесь лежит:** Swift runner, assets, entitlements plist.
 - **На что влияет в приложении:** Сборка Counter `.app` на macOS desktop.
 - **Когда открывать:** Подпись macOS, sandbox, menu bar.
-- **Можно удалить?** Нет — if macOS builds are kept.
+- **Можно удалить?** Нет — если поддерживается сборка macOS.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -2127,7 +2127,7 @@ RU:
 - **Что здесь лежит:** Debug `AndroidManifest.xml`, merge только в debug builds.
 - **На что влияет в приложении:** Только debug Android installs — не release APK.
 - **Когда открывать:** Проблемы permissions или слияния manifest только в debug-сборке.
-- **Можно удалить?** Нет — нужен для Android debug builds.
+- **Можно удалить?** Нет — нужен для debug-сборки Android.
 - **Связанные пути:** `android/app/src/main/AndroidManifest.xml`.
 
 ---
@@ -2171,11 +2171,11 @@ EN:
 RU:
 
 - **Что это за папка:** Manifest Android profile variant — сборка для performance profiling.
-- **Зачем нужна:** 
+- **Зачем нужна:** Profile-сборка Android мержит отдельный AndroidManifest для Flutter profile APK.
 - **Что здесь лежит:** Profile `AndroidManifest.xml`.
 - **На что влияет в приложении:** Profile APK для измерения производительности.
 - **Когда открывать:** Ошибки merge manifest при profile build.
-- **Можно удалить?** Нет — нужен для Flutter profile Android builds.
+- **Можно удалить?** Нет — нужен для profile-сборки Android.
 - **Связанные пути:** `android/app/src/main/`.
 
 ---
@@ -2295,7 +2295,7 @@ RU:
 - **Что здесь лежит:** Тонкие export stubs без логики.
 - **На что влияет в приложении:** Legacy import paths всё ещё резолвятся.
 - **Когда открывать:** Удаление migration stubs после обновления всех import.
-- **Можно удалить?** Возможно — после проверки, что import `plan_card/` не осталось.
+- **Можно удалить?** Возможно — after confirming no imports use `plan_card/` path.
 - **Связанные пути:** `lib/core/widgets/plan_time_task_card/`.
 
 ---
@@ -2319,7 +2319,7 @@ RU:
 - **Что здесь лежит:** Разделены density, geometry, layouts, tags, progress и controls.
 - **На что влияет в приложении:** Карточки на Plans, блоки Time View и строки calendar.
 - **Когда открывать:** Высота card, tag pills, play button, density bands Time View.
-- **Можно удалить?** Нет — plan UI сломается везде.
+- **Можно удалить?** Нет — plan UI breaks everywhere.
 - **Связанные пути:** `lib/features/planning/`, `plan_card_layouts.dart`.
 
 ---
@@ -2343,7 +2343,7 @@ RU:
 - **Что здесь лежит:** Bounds slider, prefs record→plan link, no-tags chip settings.
 - **На что влияет в приложении:** Маршруты Plans → settings и конфигурация Time View.
 - **Когда открывать:** Диапазон visible hours, default category/timezone search.
-- **Можно удалить?** Нет — plan settings станут недоступны.
+- **Можно удалить?** Нет — plan settings unavailable.
 - **Связанные пути:** `time_view/time_view_settings_sheet.dart`.
 
 ---
@@ -2367,7 +2367,7 @@ RU:
 - **Что здесь лежит:** Canvas, card layer, drag/resize controllers, settings sheet, search default times.
 - **На что влияет в приложении:** Sub-mode Time View внутри вкладки Plans.
 - **Когда открывать:** Карточки overlap неверно, jank drag/resize, масштаб часов, fixed-time tags, жесты Time View.
-- **Можно удалить?** Нет — Time View — core feature Plans.
+- **Можно удалить?** Нет — Time View is a core Plans feature.
 - **Связанные пути:** `planning_page.dart`, `PlanTimeTaskCard` в `core/widgets/`.
 
 ---
@@ -2391,7 +2391,7 @@ RU:
 - **Что здесь лежит:** Bulk selection bar, filter controls, quick-add strip, card menus.
 - **На что влияет в приложении:** Части list mode UI на вкладке Plans.
 - **Когда открывать:** Bulk edit bar, menu карточки plan, неверный empty state.
-- **Можно удалить?** Нет — UI вкладки Plans сломается.
+- **Можно удалить?** Нет — Plans tab UI breaks.
 - **Связанные пути:** `planning_page.dart`.
 
 ---
@@ -2415,7 +2415,7 @@ RU:
 - **Что здесь лежит:** Logout row, notification permission, password reset, biometric lock.
 - **На что влияет в приложении:** Маршруты settings из shell и profile.
 - **Когда открывать:** Logout, notification permission, password reset UI.
-- **Можно удалить?** Нет — секции settings пропадут.
+- **Можно удалить?** Нет — settings sections missing.
 - **Связанные пути:** `lib/shell/settings_page.dart`.
 
 ---
@@ -2439,7 +2439,7 @@ RU:
 - **Что здесь лежит:** Omni picker entry, debounced autosave, RRULE helpers, Quill toolbar.
 - **На что влияет в приложении:** Сохранение edit sheet, смена date/time, строки checklist.
 - **Когда открывать:** Autosave edit sheet, date picker, неверный repeat preset.
-- **Можно удалить?** Нет — edit sheets сломаются.
+- **Можно удалить?** Нет — edit sheets break.
 - **Связанные пути:** `activity_detail_sheet.dart`.
 
 ---
@@ -2511,7 +2511,7 @@ RU:
 - **Что здесь лежит:** Swift runner, assets, entitlements plist.
 - **На что влияет в приложении:** Сборка Counter `.app` на macOS desktop.
 - **Когда открывать:** Неверная или пропавшая app icon на iOS/macOS.
-- **Можно удалить?** Нет — if macOS builds are kept.
+- **Можно удалить?** Нет — если поддерживается сборка macOS.
 - **Связанные пути:** `macos/Flutter/`.
 
 ---
@@ -4399,7 +4399,7 @@ RU:
 - **Содержимое:** Правила копирования файлов, shortcuts, optional autostart.
 - **Обязанности:** Шаги installer и layout установленных файлов.
 - **Когда открывать:** Installer не копирует файлы или неверный install path на Windows.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Можно удалить?** Нет — нужен для Windows installer.
 - **Связано с:** `prepare_stt_payload.ps1`, GitHub Actions workflow.
 - **Слой:** Сборка/деплой/сервер.
 
@@ -5559,10 +5559,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Build metadata.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
-- **Responsibilities:** Build metadata
+- **What this is:** Compile-time build stamp — git commit and build time from `--dart-define`.
+- **Why needed:** Logcat/console markers (`APP_BUILD`, P0N/P0O diagnostics) identify which APK build ran on device.
+- **What it contains:** `AppBuildInfo` — `gitCommit`, `builtAt`, `bootLogLine()`, perf test markers.
+- **Key code names:** `AppBuildInfo`
+- **Responsibilities:** Expose build identity strings; no runtime PocketBase logic.
 - **When to open:** When behavior tied to `app_build_info.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: Build metadata
@@ -5570,10 +5571,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Build metadata.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Build metadata.
+- **Что это:** Compile-time метка сборки — git commit и время из `--dart-define`.
+- **Зачем:** Маркеры logcat/console (`APP_BUILD`, P0N/P0O) показывают, какой APK на устройстве.
+- **Содержимое:** `AppBuildInfo` — `gitCommit`, `builtAt`, `bootLogLine()`, perf-маркеры.
+- **Обязанности:** Отдаёт строки идентификации сборки; без логики PocketBase.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_build_info.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5584,10 +5585,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Color tokens.
-- **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
-- **Responsibilities:** Color tokens
+- **What this is:** Design-system color tokens (V3/V7) — action primary, surfaces, semantic success, dark scheme.
+- **Why needed:** Change `actionPrimary` once to retint buttons, tabs, and nav chrome app-wide.
+- **What it contains:** `AppColors` constants; `lightColorScheme()` / `darkColorScheme()` factories.
+- **Key code names:** `AppColors`
+- **Responsibilities:** Single source for default UI colors — not per-category data colors.
 - **When to open:** When behavior tied to `app_colors.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: Color tokens
@@ -5595,10 +5597,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Color tokens.
-- **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Color tokens.
+- **Что это:** Токены цветов design system (V3/V7) — action primary, surfaces, success и dark scheme.
+- **Зачем:** Смена `actionPrimary` перекрашивает кнопки, tabs и nav chrome во всём приложении.
+- **Содержимое:** Константы `AppColors`; фабрики `lightColorScheme()` / `darkColorScheme()`.
+- **Обязанности:** Единый источник цветов UI — не цвета данных категорий.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_colors.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5609,9 +5611,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Canonical icon tokens (timezone family, shared glyphs).
+- **What this is:** Foundation module `app_icons.dart` (core) — Canonical icon tokens (timezone family, shared glyphs).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`AppTimezoneIconKey`).
+- **What it contains:** Primary symbols: `AppTimezoneIconKey`.
 - **Key code names:** `AppTimezoneIconKey`
 - **Responsibilities:** Canonical icon tokens (timezone family, shared glyphs)
 - **When to open:** When behavior tied to `app_icons.dart` breaks or you need to change its documented role.
@@ -5621,10 +5623,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Canonical icon tokens (timezone family, shared glyphs).
+- **Что это:** Foundation-модуль `app_icons.dart` (core) — Canonical icon tokens (timezone family, shared glyphs).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`AppTimezoneIconKey`).
-- **Обязанности:** Реализует foundation-логику: Canonical icon tokens (timezone family, shared glyphs).
+- **Содержимое:** Основные символы: `AppTimezoneIconKey`.
+- **Обязанности:** Foundation-логика: Canonical icon tokens (timezone family, shared glyphs).
 - **Когда открывать:** Когда ломается поведение, связанное с `app_icons.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5635,11 +5637,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — `AppSnack` toasts.
+- **What this is:** Foundation module `app_snackbar.dart` (core) — AppSnack.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`AppSnack`).
+- **What it contains:** Primary symbols: `AppSnack`.
 - **Key code names:** `AppSnack`
-- **Responsibilities:** `AppSnack` toasts
+- **Responsibilities:** AppSnack
 - **When to open:** When behavior tied to `app_snackbar.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: `AppSnack` toasts
@@ -5647,10 +5649,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — `AppSnack` toasts.
+- **Что это:** Foundation-модуль `app_snackbar.dart` (core) — AppSnack.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`AppSnack`).
-- **Обязанности:** Реализует foundation-логику: `AppSnack` toasts.
+- **Содержимое:** Основные символы: `AppSnack`.
+- **Обязанности:** Foundation-логика: AppSnack.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_snackbar.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5661,9 +5663,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Category tile palette.
+- **What this is:** Foundation module `category_color_palette.dart` (core) — Category tile palette.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `category_color_palette.dart` — open file for classes and helpers.
 - **Responsibilities:** Category tile palette
 - **When to open:** When behavior tied to `category_color_palette.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -5672,10 +5674,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Category tile palette.
+- **Что это:** Foundation-модуль `category_color_palette.dart` (core) — Category tile palette.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Category tile palette.
+- **Содержимое:** Dart-модуль `category_color_palette.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Category tile palette.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_color_palette.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5686,9 +5688,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — UI limits, global keys.
+- **What this is:** Foundation module `constants.dart` (core) — UI limits, global keys.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `TableNames`, `AppLimits`.
+- **Key code names:** `TableNames`, `AppLimits`
 - **Responsibilities:** UI limits, global keys
 - **When to open:** When behavior tied to `constants.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -5697,10 +5700,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — UI limits, global keys.
+- **Что это:** Foundation-модуль `constants.dart` (core) — UI limits, global keys.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: UI limits, global keys.
+- **Содержимое:** Основные символы: `TableNames`, `AppLimits`.
+- **Обязанности:** Foundation-логика: UI limits, global keys.
 - **Когда открывать:** Когда ломается поведение, связанное с `constants.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5711,10 +5714,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Shared date `PageView` settle coordinator.
+- **What this is:** Foundation module `date_pager_settle_gate.dart` (core) — PageView.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
-- **Responsibilities:** Shared date `PageView` settle coordinator
+- **What it contains:** Dart module `date_pager_settle_gate.dart` — open file for classes and helpers.
+- **Responsibilities:** PageView
 - **When to open:** When behavior tied to `date_pager_settle_gate.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: Shared date `PageView` settle coordinator
@@ -5722,10 +5725,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Shared date `PageView` settle coordinator.
+- **Что это:** Foundation-модуль `date_pager_settle_gate.dart` (core) — PageView.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Shared date `PageView` settle coordinator.
+- **Содержимое:** Dart-модуль `date_pager_settle_gate.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: PageView.
 - **Когда открывать:** Когда ломается поведение, связанное с `date_pager_settle_gate.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5736,9 +5739,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Date swipe physics.
+- **What this is:** Foundation module `date_swipe_physics.dart` (core) — Date swipe physics.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`LightDateSwipePhysics`, `FeatherDateSwipePhysics`).
+- **What it contains:** Primary symbols: `LightDateSwipePhysics`, `FeatherDateSwipePhysics`.
 - **Key code names:** `LightDateSwipePhysics`, `FeatherDateSwipePhysics`
 - **Responsibilities:** Date swipe physics
 - **When to open:** When behavior tied to `date_swipe_physics.dart` breaks or you need to change its documented role.
@@ -5748,10 +5751,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Date swipe physics.
+- **Что это:** Foundation-модуль `date_swipe_physics.dart` (core) — Date swipe physics.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`LightDateSwipePhysics`, `FeatherDateSwipePhysics`).
-- **Обязанности:** Реализует foundation-логику: Date swipe physics.
+- **Содержимое:** Основные символы: `LightDateSwipePhysics`, `FeatherDateSwipePhysics`.
+- **Обязанности:** Foundation-логика: Date swipe physics.
 - **Когда открывать:** Когда ломается поведение, связанное с `date_swipe_physics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5762,11 +5765,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (diagnostics) — `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only.
+- **What this is:** Foundation module `desktop_voice_log.dart` (diagnostics) — DesktopVoiceLog.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceLog`).
+- **What it contains:** Primary symbols: `DesktopVoiceLog`.
 - **Key code names:** `DesktopVoiceLog`
-- **Responsibilities:** `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet)
+- **Responsibilities:** DesktopVoiceLog
 - **When to open:** When behavior tied to `desktop_voice_log.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only
@@ -5774,10 +5777,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `diagnostics` — `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only.
+- **Что это:** Foundation-модуль `desktop_voice_log.dart` (diagnostics) — DesktopVoiceLog.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceLog`).
-- **Обязанности:** Реализует foundation-логику: `DesktopVoiceLog` — concise desktop-voice pipeline markers (debug/profile only; release quiet).
+- **Содержимое:** Основные символы: `DesktopVoiceLog`.
+- **Обязанности:** Foundation-логика: DesktopVoiceLog.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
@@ -5788,10 +5791,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (diagnostics) — Desktop-voice pipeline step helpers built on `DesktopVoiceLog`.
+- **What this is:** Foundation module `desktop_voice_pipeline.dart` (diagnostics) — DesktopVoiceLog.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
-- **Responsibilities:** Desktop-voice pipeline step helpers built on `DesktopVoiceLog`
+- **What it contains:** Primary symbols: `DesktopVoicePipeline`.
+- **Key code names:** `DesktopVoicePipeline`
+- **Responsibilities:** DesktopVoiceLog
 - **When to open:** When behavior tied to `desktop_voice_pipeline.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: Desktop-voice pipeline step helpers built on `DesktopVoiceLog`
@@ -5799,10 +5803,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `diagnostics` — Desktop-voice pipeline step helpers built on `DesktopVoiceLog`.
+- **Что это:** Foundation-модуль `desktop_voice_pipeline.dart` (diagnostics) — DesktopVoiceLog.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Desktop-voice pipeline step helpers built on `DesktopVoiceLog`.
+- **Содержимое:** Основные символы: `DesktopVoicePipeline`.
+- **Обязанности:** Foundation-логика: DesktopVoiceLog.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_pipeline.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
@@ -5813,9 +5817,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (diagnostics) — Plan duplicate detection logs.
+- **What this is:** Foundation module `plan_duplicate_log.dart` (diagnostics) — Plan duplicate detection logs.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `plan_duplicate_log.dart` — open file for classes and helpers.
 - **Responsibilities:** Plan duplicate detection logs
 - **When to open:** When behavior tied to `plan_duplicate_log.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -5824,10 +5828,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `diagnostics` — Plan duplicate detection logs.
+- **Что это:** Foundation-модуль `plan_duplicate_log.dart` (diagnostics) — Plan duplicate detection logs.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Plan duplicate detection logs.
+- **Содержимое:** Dart-модуль `plan_duplicate_log.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Plan duplicate detection logs.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_duplicate_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
@@ -5838,9 +5842,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (diagnostics) — Platform-specific log sinks.
+- **What this is:** Foundation module `platform_log.dart` (diagnostics) — Platform-specific log sinks.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `platform_log.dart` — open file for classes and helpers.
 - **Responsibilities:** Platform-specific log sinks
 - **When to open:** When behavior tied to `platform_log.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -5849,10 +5853,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `diagnostics` — Platform-specific log sinks.
+- **Что это:** Foundation-модуль `platform_log.dart` (diagnostics) — Platform-specific log sinks.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Platform-specific log sinks.
+- **Содержимое:** Dart-модуль `platform_log.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Platform-specific log sinks.
 - **Когда открывать:** Когда ломается поведение, связанное с `platform_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
@@ -5863,9 +5867,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (diagnostics) — Uncaught error logging.
+- **What this is:** Foundation module `runtime_log.dart` (diagnostics) — Uncaught error logging.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `RuntimeLog`.
+- **Key code names:** `RuntimeLog`
 - **Responsibilities:** Uncaught error logging
 - **When to open:** When behavior tied to `runtime_log.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -5874,10 +5879,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `diagnostics` — Uncaught error logging.
+- **Что это:** Foundation-модуль `runtime_log.dart` (diagnostics) — Uncaught error logging.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Uncaught error logging.
+- **Содержимое:** Основные символы: `RuntimeLog`.
+- **Обязанности:** Foundation-логика: Uncaught error logging.
 - **Когда открывать:** Когда ломается поведение, связанное с `runtime_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
@@ -5888,9 +5893,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (diagnostics) — Boot-phase structured logs.
+- **What this is:** Foundation module `startup_log.dart` (diagnostics) — Boot-phase structured logs.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `StartupLog`.
+- **Key code names:** `StartupLog`
 - **Responsibilities:** Boot-phase structured logs
 - **When to open:** When behavior tied to `startup_log.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -5899,10 +5905,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `diagnostics` — Boot-phase structured logs.
+- **Что это:** Foundation-модуль `startup_log.dart` (diagnostics) — Boot-phase structured logs.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Boot-phase structured logs.
+- **Содержимое:** Основные символы: `StartupLog`.
+- **Обязанности:** Foundation-логика: Boot-phase structured logs.
 - **Когда открывать:** Когда ломается поведение, связанное с `startup_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/diagnostics/`, `docs/APP_STRUCTURE.md`
@@ -5938,9 +5944,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Plan link scalar helper.
+- **What this is:** Foundation module `link_scalar.dart` (core) — Plan link scalar helper.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `link_scalar.dart` — open file for classes and helpers.
 - **Responsibilities:** Plan link scalar helper
 - **When to open:** When behavior tied to `link_scalar.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -5949,10 +5955,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Plan link scalar helper.
+- **Что это:** Foundation-модуль `link_scalar.dart` (core) — Plan link scalar helper.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Plan link scalar helper.
+- **Содержимое:** Dart-модуль `link_scalar.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Plan link scalar helper.
 - **Когда открывать:** Когда ломается поведение, связанное с `link_scalar.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -5963,10 +5969,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (navigation) — `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden.
+- **What this is:** Foundation module `app_navigator.dart` (navigation) — appRootNavigatorKey.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
-- **Responsibilities:** `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden
+- **What it contains:** Dart module `app_navigator.dart` — open file for classes and helpers.
+- **Responsibilities:** appRootNavigatorKey
 - **When to open:** When behavior tied to `app_navigator.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden
@@ -5974,10 +5980,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `navigation` — `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden.
+- **Что это:** Foundation-модуль `app_navigator.dart` (navigation) — appRootNavigatorKey.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: `appRootNavigatorKey` — root navigator for desktop overlays when main window is hidden.
+- **Содержимое:** Dart-модуль `app_navigator.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: appRootNavigatorKey.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_navigator.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/navigation/`, `docs/APP_STRUCTURE.md`
@@ -5988,9 +5994,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (navigation) — Desktop/web side navigation rail.
+- **What this is:** Foundation module `shell_side_navigation.dart` (navigation) — Desktop/web side navigation rail.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Barrel `export` lines: `shell_side_navigation.dart`.
 - **Responsibilities:** Desktop/web side navigation rail
 - **When to open:** When behavior tied to `shell_side_navigation.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -5999,10 +6005,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `navigation` — Desktop/web side navigation rail.
+- **Что это:** Foundation-модуль `shell_side_navigation.dart` (navigation) — Desktop/web side navigation rail.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Desktop/web side navigation rail.
+- **Содержимое:** Dart-модуль `shell_side_navigation.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Desktop/web side navigation rail.
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_side_navigation.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/navigation/`, `docs/APP_STRUCTURE.md`
@@ -6013,11 +6019,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (performance) — Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated).
+- **What this is:** Foundation module `rebuild_metrics.dart` (performance) — --dart-define=PERF_DIAG.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`RebuildMetrics`).
+- **What it contains:** Primary symbols: `RebuildMetrics`.
 - **Key code names:** `RebuildMetrics`
-- **Responsibilities:** Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated)
+- **Responsibilities:** --dart-define=PERF_DIAG
 - **When to open:** When behavior tied to `rebuild_metrics.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated)
@@ -6025,10 +6031,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `performance` — Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated).
+- **Что это:** Foundation-модуль `rebuild_metrics.dart` (performance) — --dart-define=PERF_DIAG.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`RebuildMetrics`).
-- **Обязанности:** Реализует foundation-логику: Rebuild/frame metrics (`--dart-define=PERF_DIAG` gated).
+- **Содержимое:** Основные символы: `RebuildMetrics`.
+- **Обязанности:** Foundation-логика: --dart-define=PERF_DIAG.
 - **Когда открывать:** Когда ломается поведение, связанное с `rebuild_metrics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/performance/`, `docs/APP_STRUCTURE.md`
@@ -6039,9 +6045,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (performance) — Feature kill switches (date strip, warm window, etc.).
+- **What this is:** Foundation module `runtime_flags.dart` (performance) — Feature kill switches (date strip, warm window, etc.).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `runtime_flags.dart` — open file for classes and helpers.
 - **Responsibilities:** Feature kill switches (date strip, warm window, etc.)
 - **When to open:** When behavior tied to `runtime_flags.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6050,10 +6056,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `performance` — Feature kill switches (date strip, warm window, etc.).
+- **Что это:** Foundation-модуль `runtime_flags.dart` (performance) — Feature kill switches (date strip, warm window, etc.).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Feature kill switches (date strip, warm window, etc.).
+- **Содержимое:** Dart-модуль `runtime_flags.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Feature kill switches (date strip, warm window, etc.).
 - **Когда открывать:** Когда ломается поведение, связанное с `runtime_flags.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/performance/`, `docs/APP_STRUCTURE.md`
@@ -6064,9 +6070,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (performance) — Shell tab stack behavior flags.
+- **What this is:** Foundation module `shell_flags.dart` (performance) — Shell tab stack behavior flags.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `ShellFlags`.
+- **Key code names:** `ShellFlags`
 - **Responsibilities:** Shell tab stack behavior flags
 - **When to open:** When behavior tied to `shell_flags.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6075,10 +6082,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `performance` — Shell tab stack behavior flags.
+- **Что это:** Foundation-модуль `shell_flags.dart` (performance) — Shell tab stack behavior flags.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Shell tab stack behavior flags.
+- **Содержимое:** Основные символы: `ShellFlags`.
+- **Обязанности:** Foundation-логика: Shell tab stack behavior flags.
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_flags.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/performance/`, `docs/APP_STRUCTURE.md`
@@ -6089,9 +6096,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Platform-aware picker entry (keyboard vs touch).
+- **What this is:** Foundation module `picker_entry_modes.dart` (core) — Platform-aware picker entry (keyboard vs touch).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `picker_entry_modes.dart` — open file for classes and helpers.
 - **Responsibilities:** Platform-aware picker entry (keyboard vs touch)
 - **When to open:** When behavior tied to `picker_entry_modes.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6100,10 +6107,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Platform-aware picker entry (keyboard vs touch).
+- **Что это:** Foundation-модуль `picker_entry_modes.dart` (core) — Platform-aware picker entry (keyboard vs touch).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Platform-aware picker entry (keyboard vs touch).
+- **Содержимое:** Dart-модуль `picker_entry_modes.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Platform-aware picker entry (keyboard vs touch).
 - **Когда открывать:** Когда ломается поведение, связанное с `picker_entry_modes.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -6114,10 +6121,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Category presentation lookup (shell-injected).
+- **What this is:** Foundation module `plan_category_lookup.dart` (core) — Category presentation lookup (shell-injected).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`PlanCategoryPresentation`).
-- **Key code names:** `PlanCategoryPresentation`
+- **What it contains:** Primary symbols: `PlanCategoryPresentation`, `PlanCategoryLookup`.
+- **Key code names:** `PlanCategoryPresentation`, `PlanCategoryLookup`
 - **Responsibilities:** Category presentation lookup (shell-injected)
 - **When to open:** When behavior tied to `plan_category_lookup.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6126,10 +6133,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Category presentation lookup (shell-injected).
+- **Что это:** Foundation-модуль `plan_category_lookup.dart` (core) — Category presentation lookup (shell-injected).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`PlanCategoryPresentation`).
-- **Обязанности:** Реализует foundation-логику: Category presentation lookup (shell-injected).
+- **Содержимое:** Основные символы: `PlanCategoryPresentation`, `PlanCategoryLookup`.
+- **Обязанности:** Foundation-логика: Category presentation lookup (shell-injected).
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_category_lookup.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -6140,9 +6147,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Desktop hotkey string encode/decode.
+- **What this is:** Foundation module `desktop_hotkey_codec.dart` (services) — Desktop hotkey string encode/decode.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopHotkeyCodec`.
+- **Key code names:** `DesktopHotkeyCodec`
 - **Responsibilities:** Desktop hotkey string encode/decode
 - **When to open:** When behavior tied to `desktop_hotkey_codec.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6151,10 +6159,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Desktop hotkey string encode/decode.
+- **Что это:** Foundation-модуль `desktop_hotkey_codec.dart` (services) — Desktop hotkey string encode/decode.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Desktop hotkey string encode/decode.
+- **Содержимое:** Основные символы: `DesktopHotkeyCodec`.
+- **Обязанности:** Foundation-логика: Desktop hotkey string encode/decode.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_hotkey_codec.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6165,9 +6173,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — STT helper diagnostics markers.
+- **What this is:** Foundation module `desktop_stt_diagnostics.dart` (services) — STT helper diagnostics markers.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopSttDiagnostics`).
+- **What it contains:** Primary symbols: `DesktopSttDiagnostics`.
 - **Key code names:** `DesktopSttDiagnostics`
 - **Responsibilities:** STT helper diagnostics markers
 - **When to open:** When behavior tied to `desktop_stt_diagnostics.dart` breaks or you need to change its documented role.
@@ -6177,10 +6185,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — STT helper diagnostics markers.
+- **Что это:** Foundation-модуль `desktop_stt_diagnostics.dart` (services) — STT helper diagnostics markers.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopSttDiagnostics`).
-- **Обязанности:** Реализует foundation-логику: STT helper diagnostics markers.
+- **Содержимое:** Основные символы: `DesktopSttDiagnostics`.
+- **Обязанности:** Foundation-логика: STT helper diagnostics markers.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_diagnostics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6191,9 +6199,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Desktop GOLOS STT helper subprocess and HTTP transcribe.
+- **What this is:** Foundation module `desktop_stt_helper_service.dart` (services) — Desktop GOLOS STT helper subprocess and HTTP transcribe.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopSttHelperService`).
+- **What it contains:** Primary symbols: `DesktopSttHelperService`.
 - **Key code names:** `DesktopSttHelperService`
 - **Responsibilities:** Desktop GOLOS STT helper subprocess and HTTP transcribe
 - **When to open:** When behavior tied to `desktop_stt_helper_service.dart` breaks or you need to change its documented role.
@@ -6203,10 +6211,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Desktop GOLOS STT helper subprocess and HTTP transcribe.
+- **Что это:** Foundation-модуль `desktop_stt_helper_service.dart` (services) — Desktop GOLOS STT helper subprocess and HTTP transcribe.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopSttHelperService`).
-- **Обязанности:** Реализует foundation-логику: Desktop GOLOS STT helper subprocess and HTTP transcribe.
+- **Содержимое:** Основные символы: `DesktopSttHelperService`.
+- **Обязанности:** Foundation-логика: Desktop GOLOS STT helper subprocess and HTTP transcribe.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_helper_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6217,9 +6225,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — System tray entry (conditional export).
+- **What this is:** Foundation module `desktop_tray_service.dart` (services) — System tray entry (conditional export).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopTrayService`.
+- **Key code names:** `DesktopTrayService`
 - **Responsibilities:** System tray entry (conditional export)
 - **When to open:** When behavior tied to `desktop_tray_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6228,10 +6237,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — System tray entry (conditional export).
+- **Что это:** Foundation-модуль `desktop_tray_service.dart` (services) — System tray entry (conditional export).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: System tray entry (conditional export).
+- **Содержимое:** Основные символы: `DesktopTrayService`.
+- **Обязанности:** Foundation-логика: System tray entry (conditional export).
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_tray_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6242,9 +6251,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Windows tray implementation.
+- **What this is:** Foundation module `desktop_tray_service_io.dart` (services) — Windows tray implementation.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`_DesktopTrayListener`).
+- **What it contains:** Primary symbols: `_DesktopTrayListener`.
 - **Key code names:** `_DesktopTrayListener`
 - **Responsibilities:** Windows tray implementation
 - **When to open:** When behavior tied to `desktop_tray_service_io.dart` breaks or you need to change its documented role.
@@ -6254,10 +6263,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Windows tray implementation.
+- **Что это:** Foundation-модуль `desktop_tray_service_io.dart` (services) — Windows tray implementation.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`_DesktopTrayListener`).
-- **Обязанности:** Реализует foundation-логику: Windows tray implementation.
+- **Содержимое:** Основные символы: `_DesktopTrayListener`.
+- **Обязанности:** Foundation-логика: Windows tray implementation.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_tray_service_io.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6268,9 +6277,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Non-desktop tray stub.
+- **What this is:** Foundation module `desktop_tray_service_stub.dart` (services) — Non-desktop tray stub.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `desktop_tray_service_stub.dart` — open file for classes and helpers.
 - **Responsibilities:** Non-desktop tray stub
 - **When to open:** When behavior tied to `desktop_tray_service_stub.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6279,10 +6288,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Non-desktop tray stub.
+- **Что это:** Foundation-модуль `desktop_tray_service_stub.dart` (services) — Non-desktop tray stub.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Non-desktop tray stub.
+- **Содержимое:** Dart-модуль `desktop_tray_service_stub.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Non-desktop tray stub.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_tray_service_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6293,9 +6302,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Acceptance-test hooks for desktop voice.
+- **What this is:** Foundation module `desktop_voice_acceptance_bridge.dart` (services) — Acceptance-test hooks for desktop voice.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopVoiceAcceptanceBridge`.
+- **Key code names:** `DesktopVoiceAcceptanceBridge`
 - **Responsibilities:** Acceptance-test hooks for desktop voice
 - **When to open:** When behavior tied to `desktop_voice_acceptance_bridge.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6304,10 +6314,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Acceptance-test hooks for desktop voice.
+- **Что это:** Foundation-модуль `desktop_voice_acceptance_bridge.dart` (services) — Acceptance-test hooks for desktop voice.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Acceptance-test hooks for desktop voice.
+- **Содержимое:** Основные символы: `DesktopVoiceAcceptanceBridge`.
+- **Обязанности:** Foundation-логика: Acceptance-test hooks for desktop voice.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_acceptance_bridge.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6318,9 +6328,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Persisted voice attempt history for profile UI.
+- **What this is:** Foundation module `desktop_voice_attempt_log.dart` (services) — Persisted voice attempt history for profile UI.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceAttemptStatus`, `DesktopVoiceAttempt`, `DesktopVoiceAttemptLog`).
+- **What it contains:** Primary symbols: `DesktopVoiceAttemptStatus`, `DesktopVoiceAttempt`, `DesktopVoiceAttemptLog`.
 - **Key code names:** `DesktopVoiceAttemptStatus`, `DesktopVoiceAttempt`, `DesktopVoiceAttemptLog`
 - **Responsibilities:** Persisted voice attempt history for profile UI
 - **When to open:** When behavior tied to `desktop_voice_attempt_log.dart` breaks or you need to change its documented role.
@@ -6330,10 +6340,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Persisted voice attempt history for profile UI.
+- **Что это:** Foundation-модуль `desktop_voice_attempt_log.dart` (services) — Persisted voice attempt history for profile UI.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceAttemptStatus`, `DesktopVoiceAttempt`, `DesktopVoiceAttemptLog`).
-- **Обязанности:** Реализует foundation-логику: Persisted voice attempt history for profile UI.
+- **Содержимое:** Основные символы: `DesktopVoiceAttemptStatus`, `DesktopVoiceAttempt`, `DesktopVoiceAttemptLog`.
+- **Обязанности:** Foundation-логика: Persisted voice attempt history for profile UI.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_attempt_log.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6344,10 +6354,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Mic capture for desktop voice.
+- **What this is:** Foundation module `desktop_voice_audio_capture.dart` (services) — Mic capture for desktop voice.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceAudioCapture`).
-- **Key code names:** `DesktopVoiceAudioCapture`
+- **What it contains:** Primary symbols: `DesktopVoiceAudioCapture`, `DesktopVoiceCaptureResult`.
+- **Key code names:** `DesktopVoiceAudioCapture`, `DesktopVoiceCaptureResult`
 - **Responsibilities:** Mic capture for desktop voice
 - **When to open:** When behavior tied to `desktop_voice_audio_capture.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6356,10 +6366,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Mic capture for desktop voice.
+- **Что это:** Foundation-модуль `desktop_voice_audio_capture.dart` (services) — Mic capture for desktop voice.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceAudioCapture`).
-- **Обязанности:** Реализует foundation-логику: Mic capture for desktop voice.
+- **Содержимое:** Основные символы: `DesktopVoiceAudioCapture`, `DesktopVoiceCaptureResult`.
+- **Обязанности:** Foundation-логика: Mic capture for desktop voice.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_audio_capture.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6370,9 +6380,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Desktop voice benchmark harness.
+- **What this is:** Foundation module `desktop_voice_benchmark_service.dart` (services) — Desktop voice benchmark harness.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceBenchmarkService`).
+- **What it contains:** Primary symbols: `DesktopVoiceBenchmarkService`.
 - **Key code names:** `DesktopVoiceBenchmarkService`
 - **Responsibilities:** Desktop voice benchmark harness
 - **When to open:** When behavior tied to `desktop_voice_benchmark_service.dart` breaks or you need to change its documented role.
@@ -6382,10 +6392,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Desktop voice benchmark harness.
+- **Что это:** Foundation-модуль `desktop_voice_benchmark_service.dart` (services) — Desktop voice benchmark harness.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceBenchmarkService`).
-- **Обязанности:** Реализует foundation-логику: Desktop voice benchmark harness.
+- **Содержимое:** Основные символы: `DesktopVoiceBenchmarkService`.
+- **Обязанности:** Foundation-логика: Desktop voice benchmark harness.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_benchmark_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6396,9 +6406,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Transcript normalization before parse/submit.
+- **What this is:** Foundation module `desktop_voice_command_normalize.dart` (services) — Transcript normalization before parse/submit.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceNormalizedCommand`).
+- **What it contains:** Primary symbols: `DesktopVoiceNormalizedCommand`.
 - **Key code names:** `DesktopVoiceNormalizedCommand`
 - **Responsibilities:** Transcript normalization before parse/submit
 - **When to open:** When behavior tied to `desktop_voice_command_normalize.dart` breaks or you need to change its documented role.
@@ -6408,10 +6418,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Transcript normalization before parse/submit.
+- **Что это:** Foundation-модуль `desktop_voice_command_normalize.dart` (services) — Transcript normalization before parse/submit.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceNormalizedCommand`).
-- **Обязанности:** Реализует foundation-логику: Transcript normalization before parse/submit.
+- **Содержимое:** Основные символы: `DesktopVoiceNormalizedCommand`.
+- **Обязанности:** Foundation-логика: Transcript normalization before parse/submit.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_command_normalize.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6422,9 +6432,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Start/stop voice confirmation copy.
+- **What this is:** Foundation module `desktop_voice_confirmation.dart` (services) — Start/stop voice confirmation copy.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopVoiceConfirmation`.
+- **Key code names:** `DesktopVoiceConfirmation`
 - **Responsibilities:** Start/stop voice confirmation copy
 - **When to open:** When behavior tied to `desktop_voice_confirmation.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6433,10 +6444,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Start/stop voice confirmation copy.
+- **Что это:** Foundation-модуль `desktop_voice_confirmation.dart` (services) — Start/stop voice confirmation copy.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Start/stop voice confirmation copy.
+- **Содержимое:** Основные символы: `DesktopVoiceConfirmation`.
+- **Обязанности:** Foundation-логика: Start/stop voice confirmation copy.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_confirmation.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6447,9 +6458,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Desktop voice engine lifecycle.
+- **What this is:** Foundation module `desktop_voice_engine.dart` (services) — Desktop voice engine lifecycle.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceEngineId`, `DesktopVoiceEngineBenchmark`).
+- **What it contains:** Primary symbols: `DesktopVoiceEngineId`, `DesktopVoiceEngineBenchmark`.
 - **Key code names:** `DesktopVoiceEngineId`, `DesktopVoiceEngineBenchmark`
 - **Responsibilities:** Desktop voice engine lifecycle
 - **When to open:** When behavior tied to `desktop_voice_engine.dart` breaks or you need to change its documented role.
@@ -6459,10 +6470,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Desktop voice engine lifecycle.
+- **Что это:** Foundation-модуль `desktop_voice_engine.dart` (services) — Desktop voice engine lifecycle.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceEngineId`, `DesktopVoiceEngineBenchmark`).
-- **Обязанности:** Реализует foundation-логику: Desktop voice engine lifecycle.
+- **Содержимое:** Основные символы: `DesktopVoiceEngineId`, `DesktopVoiceEngineBenchmark`.
+- **Обязанности:** Foundation-логика: Desktop voice engine lifecycle.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_engine.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6473,10 +6484,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Global desktop voice hotkey coordinator.
+- **What this is:** Foundation module `desktop_voice_hotkey.dart` (services) — Global desktop voice hotkey coordinator.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceHotkeyAction`).
-- **Key code names:** `DesktopVoiceHotkeyAction`
+- **What it contains:** Primary symbols: `DesktopVoiceHotkey`, `DesktopVoiceHotkeyAction`.
+- **Key code names:** `DesktopVoiceHotkey`, `DesktopVoiceHotkeyAction`
 - **Responsibilities:** Global desktop voice hotkey coordinator
 - **When to open:** When behavior tied to `desktop_voice_hotkey.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6485,10 +6496,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Global desktop voice hotkey coordinator.
+- **Что это:** Foundation-модуль `desktop_voice_hotkey.dart` (services) — Global desktop voice hotkey coordinator.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceHotkeyAction`).
-- **Обязанности:** Реализует foundation-логику: Global desktop voice hotkey coordinator.
+- **Содержимое:** Основные символы: `DesktopVoiceHotkey`, `DesktopVoiceHotkeyAction`.
+- **Обязанности:** Foundation-логика: Global desktop voice hotkey coordinator.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_hotkey.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6499,9 +6510,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Windows hotkey registration.
+- **What this is:** Foundation module `desktop_voice_hotkey_io.dart` (services) — Windows hotkey registration.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `desktop_voice_hotkey_io.dart` — open file for classes and helpers.
 - **Responsibilities:** Windows hotkey registration
 - **When to open:** When behavior tied to `desktop_voice_hotkey_io.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6510,10 +6521,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Windows hotkey registration.
+- **Что это:** Foundation-модуль `desktop_voice_hotkey_io.dart` (services) — Windows hotkey registration.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Windows hotkey registration.
+- **Содержимое:** Dart-модуль `desktop_voice_hotkey_io.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Windows hotkey registration.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_hotkey_io.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6524,9 +6535,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Hotkey self-test / acceptance markers.
+- **What this is:** Foundation module `desktop_voice_hotkey_markers.dart` (services) — Hotkey self-test / acceptance markers.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopVoiceHotkeyMarkers`.
+- **Key code names:** `DesktopVoiceHotkeyMarkers`
 - **Responsibilities:** Hotkey self-test / acceptance markers
 - **When to open:** When behavior tied to `desktop_voice_hotkey_markers.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6535,10 +6547,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Hotkey self-test / acceptance markers.
+- **Что это:** Foundation-модуль `desktop_voice_hotkey_markers.dart` (services) — Hotkey self-test / acceptance markers.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Hotkey self-test / acceptance markers.
+- **Содержимое:** Основные символы: `DesktopVoiceHotkeyMarkers`.
+- **Обязанности:** Foundation-логика: Hotkey self-test / acceptance markers.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_hotkey_markers.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6549,9 +6561,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Non-desktop hotkey stub.
+- **What this is:** Foundation module `desktop_voice_hotkey_stub.dart` (services) — Non-desktop hotkey stub.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `desktop_voice_hotkey_stub.dart` — open file for classes and helpers.
 - **Responsibilities:** Non-desktop hotkey stub
 - **When to open:** When behavior tied to `desktop_voice_hotkey_stub.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6560,10 +6572,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Non-desktop hotkey stub.
+- **Что это:** Foundation-модуль `desktop_voice_hotkey_stub.dart` (services) — Non-desktop hotkey stub.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Non-desktop hotkey stub.
+- **Содержимое:** Dart-модуль `desktop_voice_hotkey_stub.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Non-desktop hotkey stub.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_hotkey_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6574,9 +6586,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Native overlay channel bridge.
+- **What this is:** Foundation module `desktop_voice_native_overlay.dart` (services) — Native overlay channel bridge.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopVoiceNativeOverlay`.
+- **Key code names:** `DesktopVoiceNativeOverlay`
 - **Responsibilities:** Native overlay channel bridge
 - **When to open:** When behavior tied to `desktop_voice_native_overlay.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6585,10 +6598,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Native overlay channel bridge.
+- **Что это:** Foundation-модуль `desktop_voice_native_overlay.dart` (services) — Native overlay channel bridge.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Native overlay channel bridge.
+- **Содержимое:** Основные символы: `DesktopVoiceNativeOverlay`.
+- **Обязанности:** Foundation-логика: Native overlay channel bridge.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_native_overlay.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6599,9 +6612,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Overlay ↔ Flutter bridge.
+- **What this is:** Foundation module `desktop_voice_overlay_bridge.dart` (services) — Overlay ↔ Flutter bridge.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopVoiceOverlayBridge`.
+- **Key code names:** `DesktopVoiceOverlayBridge`
 - **Responsibilities:** Overlay ↔ Flutter bridge
 - **When to open:** When behavior tied to `desktop_voice_overlay_bridge.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6610,10 +6624,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Overlay ↔ Flutter bridge.
+- **Что это:** Foundation-модуль `desktop_voice_overlay_bridge.dart` (services) — Overlay ↔ Flutter bridge.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Overlay ↔ Flutter bridge.
+- **Содержимое:** Основные символы: `DesktopVoiceOverlayBridge`.
+- **Обязанности:** Foundation-логика: Overlay ↔ Flutter bridge.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_bridge.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6624,9 +6638,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Overlay host conditional export.
+- **What this is:** Foundation module `desktop_voice_overlay_host.dart` (services) — Overlay host conditional export.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopVoiceOverlayHost`.
+- **Key code names:** `DesktopVoiceOverlayHost`
 - **Responsibilities:** Overlay host conditional export
 - **When to open:** When behavior tied to `desktop_voice_overlay_host.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6635,10 +6650,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Overlay host conditional export.
+- **Что это:** Foundation-модуль `desktop_voice_overlay_host.dart` (services) — Overlay host conditional export.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Overlay host conditional export.
+- **Содержимое:** Основные символы: `DesktopVoiceOverlayHost`.
+- **Обязанности:** Foundation-логика: Overlay host conditional export.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_host.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6649,9 +6664,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Windows overlay host.
+- **What this is:** Foundation module `desktop_voice_overlay_host_io.dart` (services) — Windows overlay host.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `desktop_voice_overlay_host_io.dart` — open file for classes and helpers.
 - **Responsibilities:** Windows overlay host
 - **When to open:** When behavior tied to `desktop_voice_overlay_host_io.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6660,10 +6675,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Windows overlay host.
+- **Что это:** Foundation-модуль `desktop_voice_overlay_host_io.dart` (services) — Windows overlay host.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Windows overlay host.
+- **Содержимое:** Dart-модуль `desktop_voice_overlay_host_io.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Windows overlay host.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_host_io.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6674,9 +6689,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Non-desktop overlay host stub.
+- **What this is:** Foundation module `desktop_voice_overlay_host_stub.dart` (services) — Non-desktop overlay host stub.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `desktop_voice_overlay_host_stub.dart` — open file for classes and helpers.
 - **Responsibilities:** Non-desktop overlay host stub
 - **When to open:** When behavior tied to `desktop_voice_overlay_host_stub.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6685,10 +6700,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Non-desktop overlay host stub.
+- **Что это:** Foundation-модуль `desktop_voice_overlay_host_stub.dart` (services) — Non-desktop overlay host stub.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Non-desktop overlay host stub.
+- **Содержимое:** Dart-модуль `desktop_voice_overlay_host_stub.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Non-desktop overlay host stub.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_host_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6699,9 +6714,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Native overlay state machine.
+- **What this is:** Foundation module `desktop_voice_overlay_service.dart` (services) — Native overlay state machine.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopVoiceOverlayService`.
+- **Key code names:** `DesktopVoiceOverlayService`
 - **Responsibilities:** Native overlay state machine
 - **When to open:** When behavior tied to `desktop_voice_overlay_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6710,10 +6726,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Native overlay state machine.
+- **Что это:** Foundation-модуль `desktop_voice_overlay_service.dart` (services) — Native overlay state machine.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Native overlay state machine.
+- **Содержимое:** Основные символы: `DesktopVoiceOverlayService`.
+- **Обязанности:** Foundation-логика: Native overlay state machine.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_overlay_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6724,10 +6740,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Desktop voice recognizer interface.
+- **What this is:** Foundation module `desktop_voice_recognizer.dart` (services) — Desktop voice recognizer interface.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceRecognitionResult`).
-- **Key code names:** `DesktopVoiceRecognitionResult`
+- **What it contains:** Primary symbols: `DesktopVoiceRecognitionResult`, `DesktopVoiceRecognizer`.
+- **Key code names:** `DesktopVoiceRecognitionResult`, `DesktopVoiceRecognizer`
 - **Responsibilities:** Desktop voice recognizer interface
 - **When to open:** When behavior tied to `desktop_voice_recognizer.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6736,10 +6752,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Desktop voice recognizer interface.
+- **Что это:** Foundation-модуль `desktop_voice_recognizer.dart` (services) — Desktop voice recognizer interface.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceRecognitionResult`).
-- **Обязанности:** Реализует foundation-логику: Desktop voice recognizer interface.
+- **Содержимое:** Основные символы: `DesktopVoiceRecognitionResult`, `DesktopVoiceRecognizer`.
+- **Обязанности:** Foundation-логика: Desktop voice recognizer interface.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognizer.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6750,9 +6766,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Platform recognizer factory.
+- **What this is:** Foundation module `desktop_voice_recognizer_factory.dart` (services) — Platform recognizer factory.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Barrel `export` lines: `desktop_voice_recognizer.dart`, `desktop_voice_recognizer_stub.dart`.
 - **Responsibilities:** Platform recognizer factory
 - **When to open:** When behavior tied to `desktop_voice_recognizer_factory.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6761,10 +6777,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Platform recognizer factory.
+- **Что это:** Foundation-модуль `desktop_voice_recognizer_factory.dart` (services) — Platform recognizer factory.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Platform recognizer factory.
+- **Содержимое:** Dart-модуль `desktop_voice_recognizer_factory.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Platform recognizer factory.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognizer_factory.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6775,9 +6791,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Windows recognizer implementation.
+- **What this is:** Foundation module `desktop_voice_recognizer_io.dart` (services) — Windows recognizer implementation.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceRecognizerGolosHelper`).
+- **What it contains:** Primary symbols: `DesktopVoiceRecognizerGolosHelper`.
 - **Key code names:** `DesktopVoiceRecognizerGolosHelper`
 - **Responsibilities:** Windows recognizer implementation
 - **When to open:** When behavior tied to `desktop_voice_recognizer_io.dart` breaks or you need to change its documented role.
@@ -6787,10 +6803,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Windows recognizer implementation.
+- **Что это:** Foundation-модуль `desktop_voice_recognizer_io.dart` (services) — Windows recognizer implementation.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceRecognizerGolosHelper`).
-- **Обязанности:** Реализует foundation-логику: Windows recognizer implementation.
+- **Содержимое:** Основные символы: `DesktopVoiceRecognizerGolosHelper`.
+- **Обязанности:** Foundation-логика: Windows recognizer implementation.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognizer_io.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6801,9 +6817,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Non-desktop recognizer stub.
+- **What this is:** Foundation module `desktop_voice_recognizer_stub.dart` (services) — Non-desktop recognizer stub.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`_DesktopVoiceRecognizerUnsupported`).
+- **What it contains:** Primary symbols: `_DesktopVoiceRecognizerUnsupported`.
 - **Key code names:** `_DesktopVoiceRecognizerUnsupported`
 - **Responsibilities:** Non-desktop recognizer stub
 - **When to open:** When behavior tied to `desktop_voice_recognizer_stub.dart` breaks or you need to change its documented role.
@@ -6813,10 +6829,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Non-desktop recognizer stub.
+- **Что это:** Foundation-модуль `desktop_voice_recognizer_stub.dart` (services) — Non-desktop recognizer stub.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`_DesktopVoiceRecognizerUnsupported`).
-- **Обязанности:** Реализует foundation-логику: Non-desktop recognizer stub.
+- **Содержимое:** Основные символы: `_DesktopVoiceRecognizerUnsupported`.
+- **Обязанности:** Foundation-логика: Non-desktop recognizer stub.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_recognizer_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6827,11 +6843,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Parsed voice command → `writeRecord` bridge.
+- **What this is:** Foundation module `desktop_voice_record_submit.dart` (services) — writeRecord.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`).
-- **Key code names:** `DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`
-- **Responsibilities:** Parsed voice command → `writeRecord` bridge
+- **What it contains:** Primary symbols: `DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`.
+- **Key code names:** `DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`
+- **Responsibilities:** writeRecord
 - **When to open:** When behavior tied to `desktop_voice_record_submit.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: Parsed voice command → `writeRecord` bridge
@@ -6839,10 +6855,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Parsed voice command → `writeRecord` bridge.
+- **Что это:** Foundation-модуль `desktop_voice_record_submit.dart` (services) — writeRecord.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`).
-- **Обязанности:** Реализует foundation-логику: Parsed voice command → `writeRecord` bridge.
+- **Содержимое:** Основные символы: `DesktopVoiceWriteRecordRequest`, `DesktopVoiceWriteRecordFn`, `DesktopVoiceSubmitOutcome`, `DesktopVoiceRecordSubmit`.
+- **Обязанности:** Foundation-логика: writeRecord.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_record_submit.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6853,9 +6869,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Local desktop voice prefs (SharedPreferences).
+- **What this is:** Foundation module `desktop_voice_settings.dart` (services) — Local desktop voice prefs (SharedPreferences).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceHotkeyConfig`, `DesktopVoiceSettings`).
+- **What it contains:** Primary symbols: `DesktopVoiceHotkeyConfig`, `DesktopVoiceSettings`.
 - **Key code names:** `DesktopVoiceHotkeyConfig`, `DesktopVoiceSettings`
 - **Responsibilities:** Local desktop voice prefs (SharedPreferences)
 - **When to open:** When behavior tied to `desktop_voice_settings.dart` breaks or you need to change its documented role.
@@ -6865,10 +6881,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Local desktop voice prefs (SharedPreferences).
+- **Что это:** Foundation-модуль `desktop_voice_settings.dart` (services) — Local desktop voice prefs (SharedPreferences).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceHotkeyConfig`, `DesktopVoiceSettings`).
-- **Обязанности:** Реализует foundation-логику: Local desktop voice prefs (SharedPreferences).
+- **Содержимое:** Основные символы: `DesktopVoiceHotkeyConfig`, `DesktopVoiceSettings`.
+- **Обязанности:** Foundation-логика: Local desktop voice prefs (SharedPreferences).
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6879,9 +6895,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Smoke-test hooks for desktop voice.
+- **What this is:** Foundation module `desktop_voice_smoke_bridge.dart` (services) — Smoke-test hooks for desktop voice.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `DesktopVoiceSmokeBridge`.
+- **Key code names:** `DesktopVoiceSmokeBridge`
 - **Responsibilities:** Smoke-test hooks for desktop voice
 - **When to open:** When behavior tied to `desktop_voice_smoke_bridge.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6890,10 +6907,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Smoke-test hooks for desktop voice.
+- **Что это:** Foundation-модуль `desktop_voice_smoke_bridge.dart` (services) — Smoke-test hooks for desktop voice.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Smoke-test hooks for desktop voice.
+- **Содержимое:** Основные символы: `DesktopVoiceSmokeBridge`.
+- **Обязанности:** Foundation-логика: Smoke-test hooks for desktop voice.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_smoke_bridge.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6904,9 +6921,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Friendly desktop voice error mapping.
+- **What this is:** Foundation module `desktop_voice_user_error.dart` (services) — Friendly desktop voice error mapping.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopVoiceErrorStage`, `DesktopVoiceUserError`).
+- **What it contains:** Primary symbols: `DesktopVoiceErrorStage`, `DesktopVoiceUserError`.
 - **Key code names:** `DesktopVoiceErrorStage`, `DesktopVoiceUserError`
 - **Responsibilities:** Friendly desktop voice error mapping
 - **When to open:** When behavior tied to `desktop_voice_user_error.dart` breaks or you need to change its documented role.
@@ -6916,10 +6933,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Friendly desktop voice error mapping.
+- **Что это:** Foundation-модуль `desktop_voice_user_error.dart` (services) — Friendly desktop voice error mapping.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopVoiceErrorStage`, `DesktopVoiceUserError`).
-- **Обязанности:** Реализует foundation-логику: Friendly desktop voice error mapping.
+- **Содержимое:** Основные символы: `DesktopVoiceErrorStage`, `DesktopVoiceUserError`.
+- **Обязанности:** Foundation-логика: Friendly desktop voice error mapping.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_user_error.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6930,9 +6947,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Desktop window visibility flags.
+- **What this is:** Foundation module `desktop_voice_window_flags.dart` (services) — Desktop window visibility flags.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `desktop_voice_window_flags.dart` — open file for classes and helpers.
 - **Responsibilities:** Desktop window visibility flags
 - **When to open:** When behavior tied to `desktop_voice_window_flags.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6941,10 +6958,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Desktop window visibility flags.
+- **Что это:** Foundation-модуль `desktop_voice_window_flags.dart` (services) — Desktop window visibility flags.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Desktop window visibility flags.
+- **Содержимое:** Dart-модуль `desktop_voice_window_flags.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Desktop window visibility flags.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_window_flags.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6955,9 +6972,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Windows speech platform adapter.
+- **What this is:** Foundation module `desktop_win_speech_service.dart` (services) — Windows speech platform adapter.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`DesktopWinSpeechService`).
+- **What it contains:** Primary symbols: `DesktopWinSpeechService`.
 - **Key code names:** `DesktopWinSpeechService`
 - **Responsibilities:** Windows speech platform adapter
 - **When to open:** When behavior tied to `desktop_win_speech_service.dart` breaks or you need to change its documented role.
@@ -6967,10 +6984,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Windows speech platform adapter.
+- **Что это:** Foundation-модуль `desktop_win_speech_service.dart` (services) — Windows speech platform adapter.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`DesktopWinSpeechService`).
-- **Обязанности:** Реализует foundation-логику: Windows speech platform adapter.
+- **Содержимое:** Основные символы: `DesktopWinSpeechService`.
+- **Обязанности:** Foundation-логика: Windows speech platform adapter.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_win_speech_service.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -6981,9 +6998,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — PCM/WAV audio helpers for desktop STT.
+- **What this is:** Foundation module `pcm_audio_utils.dart` (services) — PCM/WAV audio helpers for desktop STT.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `pcm_audio_utils.dart` — open file for classes and helpers.
 - **Responsibilities:** PCM/WAV audio helpers for desktop STT
 - **When to open:** When behavior tied to `pcm_audio_utils.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -6992,10 +7009,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — PCM/WAV audio helpers for desktop STT.
+- **Что это:** Foundation-модуль `pcm_audio_utils.dart` (services) — PCM/WAV audio helpers for desktop STT.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: PCM/WAV audio helpers for desktop STT.
+- **Содержимое:** Dart-модуль `pcm_audio_utils.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: PCM/WAV audio helpers for desktop STT.
 - **Когда открывать:** Когда ломается поведение, связанное с `pcm_audio_utils.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -7006,9 +7023,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — Speech-to-text engine lifecycle.
+- **What this is:** Foundation module `speech_engine_handle.dart` (services) — Speech-to-text engine lifecycle.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `speech_engine_handle.dart` — open file for classes and helpers.
 - **Responsibilities:** Speech-to-text engine lifecycle
 - **When to open:** When behavior tied to `speech_engine_handle.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7017,10 +7034,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — Speech-to-text engine lifecycle.
+- **Что это:** Foundation-модуль `speech_engine_handle.dart` (services) — Speech-to-text engine lifecycle.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Speech-to-text engine lifecycle.
+- **Содержимое:** Dart-модуль `speech_engine_handle.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Speech-to-text engine lifecycle.
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_engine_handle.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -7031,9 +7048,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (services) — STT locale resolution.
+- **What this is:** Foundation module `speech_listen_locale.dart` (services) — STT locale resolution.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `SpeechListenLocale`.
+- **Key code names:** `SpeechListenLocale`
 - **Responsibilities:** STT locale resolution
 - **When to open:** When behavior tied to `speech_listen_locale.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7042,10 +7060,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `services` — STT locale resolution.
+- **Что это:** Foundation-модуль `speech_listen_locale.dart` (services) — STT locale resolution.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: STT locale resolution.
+- **Содержимое:** Основные символы: `SpeechListenLocale`.
+- **Обязанности:** Foundation-логика: STT locale resolution.
 - **Когда открывать:** Когда ломается поведение, связанное с `speech_listen_locale.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
@@ -7056,9 +7074,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Side vs bottom navigation breakpoint.
+- **What this is:** Foundation module `shell_adaptive.dart` (core) — Side vs bottom navigation breakpoint.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `shell_adaptive.dart` — open file for classes and helpers.
 - **Responsibilities:** Side vs bottom navigation breakpoint
 - **When to open:** When behavior tied to `shell_adaptive.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7067,10 +7085,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Side vs bottom navigation breakpoint.
+- **Что это:** Foundation-модуль `shell_adaptive.dart` (core) — Side vs bottom navigation breakpoint.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Side vs bottom navigation breakpoint.
+- **Содержимое:** Dart-модуль `shell_adaptive.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Side vs bottom navigation breakpoint.
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_adaptive.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -7081,11 +7099,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — `ShellLayoutController` / FAB clearance.
+- **What this is:** Foundation module `shell_layout_state.dart` (core) — ShellLayoutController.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`ShellLayoutController`, `ShellLayoutScope`).
+- **What it contains:** Primary symbols: `ShellLayoutController`, `ShellLayoutScope`.
 - **Key code names:** `ShellLayoutController`, `ShellLayoutScope`
-- **Responsibilities:** `ShellLayoutController` / FAB clearance
+- **Responsibilities:** ShellLayoutController
 - **When to open:** When behavior tied to `shell_layout_state.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: `ShellLayoutController` / FAB clearance
@@ -7093,10 +7111,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — `ShellLayoutController` / FAB clearance.
+- **Что это:** Foundation-модуль `shell_layout_state.dart` (core) — ShellLayoutController.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`ShellLayoutController`, `ShellLayoutScope`).
-- **Обязанности:** Реализует foundation-логику: `ShellLayoutController` / FAB clearance.
+- **Содержимое:** Основные символы: `ShellLayoutController`, `ShellLayoutScope`.
+- **Обязанности:** Foundation-логика: ShellLayoutController.
 - **Когда открывать:** Когда ломается поведение, связанное с `shell_layout_state.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -7107,9 +7125,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Tag foreground/background contrast.
+- **What this is:** Foundation module `tag_contrast.dart` (core) — Tag foreground/background contrast.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `tag_contrast.dart` — open file for classes and helpers.
 - **Responsibilities:** Tag foreground/background contrast
 - **When to open:** When behavior tied to `tag_contrast.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7118,10 +7136,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Tag foreground/background contrast.
+- **Что это:** Foundation-модуль `tag_contrast.dart` (core) — Tag foreground/background contrast.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Tag foreground/background contrast.
+- **Содержимое:** Dart-модуль `tag_contrast.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Tag foreground/background contrast.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_contrast.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -7132,10 +7150,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — `ThemeData`, density, input decoration.
+- **What this is:** Foundation module `theme.dart` (core) — ThemeData.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
-- **Responsibilities:** `ThemeData`, density, input decoration
+- **What it contains:** Dart module `theme.dart` — open file for classes and helpers.
+- **Responsibilities:** ThemeData
 - **When to open:** When behavior tied to `theme.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: `ThemeData`, density, input decoration
@@ -7143,10 +7161,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — `ThemeData`, density, input decoration.
+- **Что это:** Foundation-модуль `theme.dart` (core) — ThemeData.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: `ThemeData`, density, input decoration.
+- **Содержимое:** Dart-модуль `theme.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: ThemeData.
 - **Когда открывать:** Когда ломается поведение, связанное с `theme.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -7157,9 +7175,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (time) — Injectable wall clock + timezone label.
+- **What this is:** Foundation module `app_clock.dart` (time) — Injectable wall clock + timezone label.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`WallNowFn`, `AppClock`).
+- **What it contains:** Primary symbols: `WallNowFn`, `AppClock`.
 - **Key code names:** `WallNowFn`, `AppClock`
 - **Responsibilities:** Injectable wall clock + timezone label
 - **When to open:** When behavior tied to `app_clock.dart` breaks or you need to change its documented role.
@@ -7169,10 +7187,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `time` — Injectable wall clock + timezone label.
+- **Что это:** Foundation-модуль `app_clock.dart` (time) — Injectable wall clock + timezone label.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`WallNowFn`, `AppClock`).
-- **Обязанности:** Реализует foundation-логику: Injectable wall clock + timezone label.
+- **Содержимое:** Основные символы: `WallNowFn`, `AppClock`.
+- **Обязанности:** Foundation-логика: Injectable wall clock + timezone label.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_clock.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
@@ -7183,9 +7201,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (time) — Per-category timezone option list.
+- **What this is:** Foundation module `category_timezone_options.dart` (time) — Per-category timezone option list.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`CategoryDefaultTimezoneOption`).
+- **What it contains:** Primary symbols: `CategoryDefaultTimezoneOption`.
 - **Key code names:** `CategoryDefaultTimezoneOption`
 - **Responsibilities:** Per-category timezone option list
 - **When to open:** When behavior tied to `category_timezone_options.dart` breaks or you need to change its documented role.
@@ -7195,10 +7213,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `time` — Per-category timezone option list.
+- **Что это:** Foundation-модуль `category_timezone_options.dart` (time) — Per-category timezone option list.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`CategoryDefaultTimezoneOption`).
-- **Обязанности:** Реализует foundation-логику: Per-category timezone option list.
+- **Содержимое:** Основные символы: `CategoryDefaultTimezoneOption`.
+- **Обязанности:** Foundation-логика: Per-category timezone option list.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_timezone_options.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
@@ -7209,9 +7227,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (time) — Plan time label formatting.
+- **What this is:** Foundation module `plan_time_labels.dart` (time) — Plan time label formatting.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `plan_time_labels.dart` — open file for classes and helpers.
 - **Responsibilities:** Plan time label formatting
 - **When to open:** When behavior tied to `plan_time_labels.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7220,10 +7238,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `time` — Plan time label formatting.
+- **Что это:** Foundation-модуль `plan_time_labels.dart` (time) — Plan time label formatting.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Plan time label formatting.
+- **Содержимое:** Dart-модуль `plan_time_labels.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Plan time label formatting.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_labels.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
@@ -7234,9 +7252,10 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (time) — Extended Time View day window math (−3..27 h).
+- **What this is:** Foundation module `plan_time_visible_window.dart` (time) — Extended Time View day window math (−3..27 h).
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Primary symbols: `PlanTimeVisibleWindow`.
+- **Key code names:** `PlanTimeVisibleWindow`
 - **Responsibilities:** Extended Time View day window math (−3..27 h)
 - **When to open:** When behavior tied to `plan_time_visible_window.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7245,10 +7264,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `time` — Extended Time View day window math (−3..27 h).
+- **Что это:** Foundation-модуль `plan_time_visible_window.dart` (time) — Extended Time View day window math (−3..27 h).
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Extended Time View day window math (−3..27 h).
+- **Содержимое:** Основные символы: `PlanTimeVisibleWindow`.
+- **Обязанности:** Foundation-логика: Extended Time View day window math (−3..27 h).
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_visible_window.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
@@ -7259,11 +7278,11 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (time) — Injectable profile timezone read/write hooks (`ProfileTimezoneActions`).
+- **What this is:** Foundation module `profile_timezone_actions.dart` (time) — ProfileTimezoneActions.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`).
+- **What it contains:** Primary symbols: `ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`.
 - **Key code names:** `ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`
-- **Responsibilities:** Injectable profile timezone read/write hooks (`ProfileTimezoneActions`)
+- **Responsibilities:** ProfileTimezoneActions
 - **When to open:** When behavior tied to `profile_timezone_actions.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** APP_STRUCTURE role: Injectable profile timezone read/write hooks (`ProfileTimezoneActions`)
@@ -7271,10 +7290,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `time` — Injectable profile timezone read/write hooks (`ProfileTimezoneActions`).
+- **Что это:** Foundation-модуль `profile_timezone_actions.dart` (time) — ProfileTimezoneActions.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`).
-- **Обязанности:** Реализует foundation-логику: Injectable profile timezone read/write hooks (`ProfileTimezoneActions`).
+- **Содержимое:** Основные символы: `ProfileTimezoneShortLabelFn`, `SaveProfileTimezoneFn`, `CurrentUserSettingsFn`, `ProfileTimezoneActions`.
+- **Обязанности:** Foundation-логика: ProfileTimezoneActions.
 - **Когда открывать:** Когда ломается поведение, связанное с `profile_timezone_actions.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
@@ -7285,9 +7304,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (time) — Canonical profile timezone catalog, IANA IDs, DST labels.
+- **What this is:** Foundation module `profile_timezone_catalog.dart` (time) — Canonical profile timezone catalog, IANA IDs, DST labels.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (`ProfileTimezoneCatalogEntry`).
+- **What it contains:** Primary symbols: `ProfileTimezoneCatalogEntry`.
 - **Key code names:** `ProfileTimezoneCatalogEntry`
 - **Responsibilities:** Canonical profile timezone catalog, IANA IDs, DST labels
 - **When to open:** When behavior tied to `profile_timezone_catalog.dart` breaks or you need to change its documented role.
@@ -7297,10 +7316,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `time` — Canonical profile timezone catalog, IANA IDs, DST labels.
+- **Что это:** Foundation-модуль `profile_timezone_catalog.dart` (time) — Canonical profile timezone catalog, IANA IDs, DST labels.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (`ProfileTimezoneCatalogEntry`).
-- **Обязанности:** Реализует foundation-логику: Canonical profile timezone catalog, IANA IDs, DST labels.
+- **Содержимое:** Основные символы: `ProfileTimezoneCatalogEntry`.
+- **Обязанности:** Foundation-логика: Canonical profile timezone catalog, IANA IDs, DST labels.
 - **Когда открывать:** Когда ломается поведение, связанное с `profile_timezone_catalog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
@@ -7311,9 +7330,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (time) — Wall-clock formatting helpers.
+- **What this is:** Foundation module `wall_clock.dart` (time) — Wall-clock formatting helpers.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `wall_clock.dart` — open file for classes and helpers.
 - **Responsibilities:** Wall-clock formatting helpers
 - **When to open:** When behavior tied to `wall_clock.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7322,10 +7341,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `time` — Wall-clock formatting helpers.
+- **Что это:** Foundation-модуль `wall_clock.dart` (time) — Wall-clock formatting helpers.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Wall-clock formatting helpers.
+- **Содержимое:** Dart-модуль `wall_clock.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Wall-clock formatting helpers.
 - **Когда открывать:** Когда ломается поведение, связанное с `wall_clock.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/time/`, `docs/APP_STRUCTURE.md`
@@ -7336,9 +7355,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Web URL strategy conditional import.
+- **What this is:** Foundation module `url_strategy_stub.dart` (core) — Web URL strategy conditional import.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `url_strategy_stub.dart` — open file for classes and helpers.
 - **Responsibilities:** Web URL strategy conditional import
 - **When to open:** When behavior tied to `url_strategy_stub.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7347,10 +7366,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Web URL strategy conditional import.
+- **Что это:** Foundation-модуль `url_strategy_stub.dart` (core) — Web URL strategy conditional import.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Web URL strategy conditional import.
+- **Содержимое:** Dart-модуль `url_strategy_stub.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Web URL strategy conditional import.
 - **Когда открывать:** Когда ломается поведение, связанное с `url_strategy_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -7361,9 +7380,9 @@ RU:
 
 EN:
 
-- **What this is:** Foundation helper (core) — Production web OAuth redirect URI helper.
+- **What this is:** Foundation module `web_redirect.dart` (core) — Production web OAuth redirect URI helper.
 - **Why needed:** Shared non-screen code: theme, time, voice, diagnostics — not tied to one tab.
-- **What it contains:** Dart utilities (implementation details in the source file).
+- **What it contains:** Dart module `web_redirect.dart` — open file for classes and helpers.
 - **Responsibilities:** Production web OAuth redirect URI helper
 - **When to open:** When behavior tied to `web_redirect.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7372,10 +7391,10 @@ EN:
 
 RU:
 
-- **Что это:** Базовый слой приложения, модуль `core` — Production web OAuth redirect URI helper.
+- **Что это:** Foundation-модуль `web_redirect.dart` (core) — Production web OAuth redirect URI helper.
 - **Зачем:** Общий код вне одного экрана: тема, время, voice, diagnostics.
-- **Содержимое:** Dart-утилиты (implementation details in the source file).
-- **Обязанности:** Реализует foundation-логику: Production web OAuth redirect URI helper.
+- **Содержимое:** Dart-модуль `web_redirect.dart` — классы и helpers в исходнике.
+- **Обязанности:** Foundation-логика: Production web OAuth redirect URI helper.
 - **Когда открывать:** Когда ломается поведение, связанное с `web_redirect.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/`, `docs/APP_STRUCTURE.md`
@@ -7518,8 +7537,8 @@ EN:
 
 - **What this is:** Shared design-system widget — `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`).
-- **Key code names:** `AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`
+- **What it contains:** Canonical Flutter widget (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`).
+- **Key code names:** `AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`, `AppSettingsSwitchRow`, `AppSettingsInfoRow`, `AppSettingsActionRow`, `AppSettingsCardGrid`
 - **Responsibilities:** `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers
 - **When to open:** When behavior tied to `app_settings_layout.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7530,7 +7549,7 @@ RU:
 
 - **Что это:** Общий виджет design system — `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`).
+- **Содержимое:** Канонический Flutter-виджет (`AppSettingsTab`, `AppSettingsCategoryTabs`, `AppHotkeyKeycaps`, `_Keycap`, `AppSettingsPageBody`, `AppSettingsSectionCard`).
 - **Обязанности:** Реализует в UI: `AppSettingsPageBody`, `AppSettingsSectionCard`, settings row helpers.
 - **Когда открывать:** Когда ломается поведение, связанное с `app_settings_layout.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7648,7 +7667,7 @@ EN:
 
 - **What this is:** Shared design-system widget — `showConfirmDialog`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (logic in `confirm_dialog`).
 - **Responsibilities:** `showConfirmDialog`
 - **When to open:** When behavior tied to `confirm_dialog.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7659,7 +7678,7 @@ RU:
 
 - **Что это:** Общий виджет design system — `showConfirmDialog`.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (logic in `confirm_dialog`).
 - **Обязанности:** Реализует в UI: `showConfirmDialog`.
 - **Когда открывать:** Когда ломается поведение, связанное с `confirm_dialog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7673,8 +7692,8 @@ EN:
 
 - **What this is:** Shared design-system widget — Day content pager strip.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (`EagerDayItemBuilder`, `EagerDayContentStripController`, `EagerDayContentStrip`, `_EagerDayContentStripState`).
-- **Key code names:** `EagerDayItemBuilder`, `EagerDayContentStripController`, `EagerDayContentStrip`, `_EagerDayContentStripState`
+- **What it contains:** Canonical Flutter widget (`EagerDayItemBuilder`, `EagerDayContentStripController`, `EagerDayContentStrip`, `_EagerDayContentStripState`, `_MountedDaySlot`, `_MountedDaySlotState`).
+- **Key code names:** `EagerDayItemBuilder`, `EagerDayContentStripController`, `EagerDayContentStrip`, `_EagerDayContentStripState`, `_MountedDaySlot`, `_MountedDaySlotState`
 - **Responsibilities:** Day content pager strip
 - **When to open:** When behavior tied to `day_content_strip.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7685,7 +7704,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Day content pager strip.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (`EagerDayItemBuilder`, `EagerDayContentStripController`, `EagerDayContentStrip`, `_EagerDayContentStripState`).
+- **Содержимое:** Канонический Flutter-виджет (`EagerDayItemBuilder`, `EagerDayContentStripController`, `EagerDayContentStrip`, `_EagerDayContentStripState`, `_MountedDaySlot`, `_MountedDaySlotState`).
 - **Обязанности:** Реализует в UI: Day content pager strip.
 - **Когда открывать:** Когда ломается поведение, связанное с `day_content_strip.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7699,7 +7718,7 @@ EN:
 
 - **What this is:** Shared design-system widget — Mounted day window.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (logic in `day_window`).
 - **Responsibilities:** Mounted day window
 - **When to open:** When behavior tied to `day_window.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7710,7 +7729,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Mounted day window.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (logic in `day_window`).
 - **Обязанности:** Реализует в UI: Mounted day window.
 - **Когда открывать:** Когда ломается поведение, связанное с `day_window.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7776,8 +7795,8 @@ EN:
 
 - **What this is:** Shared design-system widget — Card foundation for Component Lab.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (`LifeCardState`, `LifeCardDensity`, `AppTaskCardType`, `LifeCard`).
-- **Key code names:** `LifeCardState`, `LifeCardDensity`, `AppTaskCardType`, `LifeCard`, `AppTaskCard`
+- **What it contains:** Canonical Flutter widget (`LifeCardState`, `LifeCardDensity`, `AppTaskCardType`, `LifeCard`, `AppTaskCard`, `_TaskMetaPill`).
+- **Key code names:** `LifeCardState`, `LifeCardDensity`, `AppTaskCardType`, `LifeCard`, `AppTaskCard`, `_TaskMetaPill`, `_TaskTagPill`
 - **Responsibilities:** Card foundation for Component Lab
 - **When to open:** When behavior tied to `life_card.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7788,7 +7807,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Card foundation for Component Lab.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (`LifeCardState`, `LifeCardDensity`, `AppTaskCardType`, `LifeCard`).
+- **Содержимое:** Канонический Flutter-виджет (`LifeCardState`, `LifeCardDensity`, `AppTaskCardType`, `LifeCard`, `AppTaskCard`, `_TaskMetaPill`).
 - **Обязанности:** Реализует в UI: Card foundation for Component Lab.
 - **Когда открывать:** Когда ломается поведение, связанное с `life_card.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7880,7 +7899,7 @@ EN:
 
 - **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (logic in `plan_card_controls`).
 - **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_controls.dart`
 - **When to open:** When behavior tied to `plan_card_controls.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7891,7 +7910,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_controls`).
 - **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_controls.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7905,7 +7924,7 @@ EN:
 
 - **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (logic in `plan_card_geometry`).
 - **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
 - **When to open:** When behavior tied to `plan_card_geometry.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7916,7 +7935,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_geometry`).
 - **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_geometry.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7930,7 +7949,7 @@ EN:
 
 - **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (logic in `plan_card_metrics`).
 - **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_metrics.dart`
 - **When to open:** When behavior tied to `plan_card_metrics.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7941,7 +7960,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_metrics`).
 - **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_metrics.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_metrics.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7955,7 +7974,7 @@ EN:
 
 - **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (logic in `plan_card_sections`).
 - **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_sections.dart`
 - **When to open:** When behavior tied to `plan_card_sections.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7966,7 +7985,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (logic in `plan_card_sections`).
 - **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_sections.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_card_sections.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -7980,7 +7999,7 @@ EN:
 
 - **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_density.dart`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (logic in `plan_time_card_density`).
 - **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_density.dart`
 - **When to open:** When behavior tied to `plan_time_card_density.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -7991,7 +8010,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_density.dart`.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (logic in `plan_time_card_density`).
 - **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_density.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_card_density.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8005,7 +8024,7 @@ EN:
 
 - **What this is:** Shared design-system widget — Public `PlanTimeTaskCard` widget.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (logic in `plan_time_task_card`).
 - **Responsibilities:** Public `PlanTimeTaskCard` widget
 - **When to open:** When behavior tied to `plan_time_task_card.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8016,7 +8035,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Public `PlanTimeTaskCard` widget.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (logic in `plan_time_task_card`).
 - **Обязанности:** Реализует в UI: Public `PlanTimeTaskCard` widget.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_task_card.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8030,8 +8049,8 @@ EN:
 
 - **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (`PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`).
-- **Key code names:** `PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`, `PlanCardPlayIconPainter`
+- **What it contains:** Canonical Flutter widget (`PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`, `PlanCardPlayIconPainter`, `PlanCardRecurringGlyph`).
+- **Key code names:** `PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`, `PlanCardPlayIconPainter`, `PlanCardRecurringGlyph`, `PlanCardMenuButton`, `PlanCardMenuButtonState`, `PlanCardMenuIconPainter`, `PlanCardTitleRow`
 - **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_controls.dart`
 - **When to open:** Plan card look/feel: height, tags, play button, Time View density.
 - **Can it be deleted?** No — required for app runtime.
@@ -8042,7 +8061,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (`PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`).
+- **Содержимое:** Канонический Flutter-виджет (`PlanCardCheckbox`, `PlanCardCheckboxState`, `PlanCardPlayButton`, `PlanCardPlayButtonState`, `PlanCardPlayIconPainter`, `PlanCardRecurringGlyph`).
 - **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_controls.dart`.
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8082,7 +8101,8 @@ EN:
 
 - **What this is:** Shared design-system widget — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (implementation details in the source file).
+- **What it contains:** Canonical Flutter widget (`PlanCardGeom`, `PlanCardTokens`).
+- **Key code names:** `PlanCardGeom`, `PlanCardTokens`
 - **Responsibilities:** Re-export stub → `plan_time_task_card/plan_card_geometry.dart`
 - **When to open:** Plan card look/feel: height, tags, play button, Time View density.
 - **Can it be deleted?** No — required for app runtime.
@@ -8093,7 +8113,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (implementation details in the source file).
+- **Содержимое:** Канонический Flutter-виджет (`PlanCardGeom`, `PlanCardTokens`).
 - **Обязанности:** Реализует в UI: Re-export stub → `plan_time_task_card/plan_card_geometry.dart`.
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8107,8 +8127,8 @@ EN:
 
 - **What this is:** Shared design-system widget — Time View CardPlan layout variants.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (`TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`).
-- **Key code names:** `TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`
+- **What it contains:** Canonical Flutter widget (`TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`, `TimeViewResponsiveShell`, `TimeViewVerticalShell`, `TimeViewVerySmallLayout`).
+- **Key code names:** `TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`, `TimeViewResponsiveShell`, `TimeViewVerticalShell`, `TimeViewVerySmallLayout`, `TimeViewSmallLayout`, `TimeViewMoreCompactLayout`, `TimeViewTwoRowCenterLayout`
 - **Responsibilities:** Time View CardPlan layout variants
 - **When to open:** Plan card look/feel: height, tags, play button, Time View density.
 - **Can it be deleted?** No — required for app runtime.
@@ -8119,7 +8139,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Time View CardPlan layout variants.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (`TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`).
+- **Содержимое:** Канонический Flutter-виджет (`TimeViewDensityBody`, `TimeViewCardCommon`, `TimeViewLeftControls`, `TimeViewResponsiveShell`, `TimeViewVerticalShell`, `TimeViewVerySmallLayout`).
 - **Обязанности:** Реализует в UI: Time View CardPlan layout variants.
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8159,8 +8179,8 @@ EN:
 
 - **What this is:** Shared design-system widget — Progress/invariant card shells.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (`PlanCardProgressSlot`, `PlanCardInvariantBody`).
-- **Key code names:** `PlanCardProgressSlot`, `PlanCardInvariantBody`
+- **What it contains:** Canonical Flutter widget (`PlanCardProgressSlot`, `PlanCardInvariantBody`, `PlanCardRailShell`, `PlanCardProgressRow`).
+- **Key code names:** `PlanCardProgressSlot`, `PlanCardInvariantBody`, `PlanCardRailShell`, `PlanCardProgressRow`
 - **Responsibilities:** Progress/invariant card shells
 - **When to open:** Plan card look/feel: height, tags, play button, Time View density.
 - **Can it be deleted?** No — required for app runtime.
@@ -8171,7 +8191,7 @@ RU:
 
 - **Что это:** Общий виджет design system — Progress/invariant card shells.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (`PlanCardProgressSlot`, `PlanCardInvariantBody`).
+- **Содержимое:** Канонический Flutter-виджет (`PlanCardProgressSlot`, `PlanCardInvariantBody`, `PlanCardRailShell`, `PlanCardProgressRow`).
 - **Обязанности:** Реализует в UI: Progress/invariant card shells.
 - **Когда открывать:** Внешний вид карточки плана.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8289,8 +8309,8 @@ EN:
 
 - **What this is:** Shared design-system widget — `HeaderTimezoneQuickSwitcher`, profile timezone quick picker.
 - **Why needed:** Plans, Timeline, and Lists reuse this instead of copying button/card styles.
-- **What it contains:** Canonical Flutter widget (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`).
-- **Key code names:** `HeaderTimezoneQuickSwitcher`, `TimezonePickerField`
+- **What it contains:** Canonical Flutter widget (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`, `TimezonePickerOptionRow`, `_TimezoneOptionText`).
+- **Key code names:** `HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`, `TimezonePickerOptionRow`, `_TimezoneOptionText`
 - **Responsibilities:** `HeaderTimezoneQuickSwitcher`, profile timezone quick picker
 - **When to open:** When behavior tied to `timezone_quick_picker.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8301,7 +8321,7 @@ RU:
 
 - **Что это:** Общий виджет design system — `HeaderTimezoneQuickSwitcher`, profile timezone quick picker.
 - **Зачем:** Один стиль кнопок и карточек на Plans, Timeline и Lists.
-- **Содержимое:** Канонический Flutter-виджет (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`).
+- **Содержимое:** Канонический Flutter-виджет (`HeaderTimezoneQuickSwitcher`, `TimezonePickerField`, `_TimezoneQuickPickerSheet`, `_TimezoneQuickPickerSheetState`, `TimezonePickerOptionRow`, `_TimezoneOptionText`).
 - **Обязанности:** Реализует в UI: `HeaderTimezoneQuickSwitcher`, profile timezone quick picker.
 - **Когда открывать:** Когда ломается поведение, связанное с `timezone_quick_picker.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8315,7 +8335,7 @@ EN:
 
 - **What this is:** Brain support file — Session check, OAuth routing.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (`OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`).
+- **What it contains:** Dart code (`OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`, `AuthBridge`).
 - **Key code names:** `OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`, `AuthBridge`
 - **Responsibilities:** Session check, OAuth routing
 - **When to open:** When behavior tied to `auth_bridge.dart` breaks or you need to change its documented role.
@@ -8327,7 +8347,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Session check, OAuth routing.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (`OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`).
+- **Содержимое:** Dart-код (`OAuthSignInResult`, `PasswordResetRequestResult`, `AuthBridgeException`, `AuthBridgeCancelled`, `AuthBridge`).
 - **Обязанности:** Реализует в brain: Session check, OAuth routing.
 - **Когда открывать:** Когда ломается поведение, связанное с `auth_bridge.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8341,8 +8361,8 @@ EN:
 
 - **What this is:** Brain support file — Rolling warm day snapshots for date paging.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (`TimelineDaySnapshot`, `PlansDaySnapshot`, `WarmSnapshotWindow`).
-- **Key code names:** `TimelineDaySnapshot`, `PlansDaySnapshot`, `WarmSnapshotWindow`
+- **What it contains:** Dart code (`WarmDayWindowConstants`, `TimelineDaySnapshot`, `PlansDaySnapshot`, `WarmSnapshotWindow`).
+- **Key code names:** `WarmDayWindowConstants`, `TimelineDaySnapshot`, `PlansDaySnapshot`, `WarmSnapshotWindow`
 - **Responsibilities:** Rolling warm day snapshots for date paging
 - **When to open:** When behavior tied to `day_snapshot_window.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8353,7 +8373,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Rolling warm day snapshots for date paging.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (`TimelineDaySnapshot`, `PlansDaySnapshot`, `WarmSnapshotWindow`).
+- **Содержимое:** Dart-код (`WarmDayWindowConstants`, `TimelineDaySnapshot`, `PlansDaySnapshot`, `WarmSnapshotWindow`).
 - **Обязанности:** Реализует в brain: Rolling warm day snapshots for date paging.
 - **Когда открывать:** Когда ломается поведение, связанное с `day_snapshot_window.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8393,8 +8413,8 @@ EN:
 
 - **What this is:** Brain support file — Rendered day-body LRU cache.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (`TimelineDayBodyEntry`, `PlansDayBodyEntry`).
-- **Key code names:** `TimelineDayBodyEntry`, `PlansDayBodyEntry`
+- **What it contains:** Dart code (`RenderedDayBodyConstants`, `TimelineDayBodyEntry`, `PlansDayBodyEntry`).
+- **Key code names:** `RenderedDayBodyConstants`, `TimelineDayBodyEntry`, `PlansDayBodyEntry`
 - **Responsibilities:** Rendered day-body LRU cache
 - **When to open:** When behavior tied to `rendered_day_body_cache.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8405,7 +8425,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Rendered day-body LRU cache.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (`TimelineDayBodyEntry`, `PlansDayBodyEntry`).
+- **Содержимое:** Dart-код (`RenderedDayBodyConstants`, `TimelineDayBodyEntry`, `PlansDayBodyEntry`).
 - **Обязанности:** Реализует в brain: Rendered day-body LRU cache.
 - **Когда открывать:** Когда ломается поведение, связанное с `rendered_day_body_cache.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8601,7 +8621,7 @@ EN:
 
 - **What this is:** Brain support file — Category name scoring.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (implementation details in the source file).
+- **What it contains:** Dart code (logic in `category_fuzzy_match`).
 - **Responsibilities:** Category name scoring
 - **When to open:** When behavior tied to `category_fuzzy_match.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8612,7 +8632,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Category name scoring.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (logic in `category_fuzzy_match`).
 - **Обязанности:** Реализует в brain: Category name scoring.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_fuzzy_match.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8653,7 +8673,7 @@ EN:
 - **What this is:** The single “brain” front door — one place all screens ask for data and saves.
 - **Why needed:** Timeline, Plans, Lists, and Categories share one singleton so PocketBase rules stay consistent.
 - **What it contains:** Shared streams, caches, and `part` declarations for records, plans, categories, profile.
-- **Key code names:** `_BuildNode`, `_OptimisticEndPatch`, `LegacyIdResolutionException`, `AuthenticatedUserIdRequiredException`, `AiBackendException`, `_DatabaseServiceLifecycleObserver`
+- **Key code names:** `_BuildNode`, `_OptimisticEndPatch`, `LegacyIdResolutionException`, `AuthenticatedUserIdRequiredException`, `AiBackendException`, `_DatabaseServiceLifecycleObserver`, `_HighlanderRollbackToken`, `DatabaseService`
 - **Responsibilities:** Host extensions; route work to `record_service`, `plan_service`, etc.
 - **When to open:** When behavior tied to `database_service.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8741,7 +8761,7 @@ RU:
 
 - **Что это:** Модуль brain для offline sync — файл `plan_create_outbox`.
 - **Зачем:** Держит offline sync согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (logic in `plan_create_outbox`).
 - **Обязанности:** Реализует в коде: Re-export of `plan_mutation_outbox.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_create_outbox.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8756,6 +8776,7 @@ EN:
 - **What this is:** Remembers plan/list create/update/delete when offline.
 - **Why needed:** List checkbox and plan edits queue here until reconnect.
 - **What it contains:** SharedPreferences queue for plan mutations.
+- **Key code names:** `PlanMutationOutbox`
 - **Responsibilities:** Offline queue: plan/list create/update/delete
 - **When to open:** When behavior tied to `plan_mutation_outbox.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8766,7 +8787,7 @@ RU:
 
 - **Что это:** Модуль brain для offline sync — файл `plan_mutation_outbox`.
 - **Зачем:** Держит offline sync согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (`PlanMutationOutbox`).
 - **Обязанности:** Реализует в коде: Offline queue: plan/list create/update/delete.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_mutation_outbox.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8781,6 +8802,7 @@ EN:
 - **What this is:** Remembers record start/stop/edit/delete when the network fails.
 - **Why needed:** Offline-first law: tap must succeed locally even on airplane mode.
 - **What it contains:** SharedPreferences queue for record mutations; coalesces duplicate ops.
+- **Key code names:** `RecordMutationOutbox`
 - **Responsibilities:** Offline queue: record start/stop/update/delete
 - **When to open:** When behavior tied to `record_mutation_outbox.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8791,7 +8813,7 @@ RU:
 
 - **Что это:** Модуль brain для offline sync — файл `record_mutation_outbox`.
 - **Зачем:** Держит offline sync согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (`RecordMutationOutbox`).
 - **Обязанности:** Реализует в коде: Offline queue: record start/stop/update/delete.
 - **Когда открывать:** Когда ломается поведение, связанное с `record_mutation_outbox.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8883,7 +8905,7 @@ EN:
 - **What this is:** Defines `CategoryRule` — name, color, icon, parent, PocketBase ids.
 - **Why needed:** Category picker and manager display this shape.
 - **What it contains:** `CategoryRule` with stable hash for category business id.
-- **Key code names:** `Category`, `CategoryNameInputKind`, `CategoryNameInputStatus`
+- **Key code names:** `Category`, `CategoryNameInputKind`, `CategoryNameInputStatus`, `CategoryRule`
 - **Responsibilities:** `CategoryRule`
 - **When to open:** When behavior tied to `category.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8894,7 +8916,7 @@ RU:
 
 - **Что это:** Модуль brain для data models — файл `category`.
 - **Зачем:** Держит data models согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (`Category`, `CategoryNameInputKind`, `CategoryNameInputStatus`).
+- **Содержимое:** Dart-код (`Category`, `CategoryNameInputKind`, `CategoryNameInputStatus`, `CategoryRule`).
 - **Обязанности:** Реализует в коде: `CategoryRule`.
 - **Когда открывать:** Когда ломается поведение, связанное с `category.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8946,7 +8968,7 @@ RU:
 
 - **Что это:** Модуль brain для data models — файл `profile`.
 - **Зачем:** Держит data models согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (`Profile`, `UserProfile`, `ProfileUpdate`, `TagCatalogScope`).
+- **Содержимое:** Dart-код (`Profile`, `UserProfile`, `ProfileUpdate`, `TagCatalogScope`, `TagCatalogScopeMatch`, `UserSettings`).
 - **Обязанности:** Реализует в коде: `UserSettings`, profile fields.
 - **Когда открывать:** Когда ломается поведение, связанное с `profile.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -8961,7 +8983,7 @@ EN:
 - **What this is:** Defines `TimelineRecord` — start/stop times, status, category, date key.
 - **Why needed:** Every Timeline card is a `TimelineRecord` instance.
 - **What it contains:** UTC storage, profile-timezone date key bucketing.
-- **Key code names:** `Record`
+- **Key code names:** `Record`, `TimelineRecord`
 - **Responsibilities:** `TimelineRecord`
 - **When to open:** When behavior tied to `record.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -8972,7 +8994,7 @@ RU:
 
 - **Что это:** Модуль brain для data models — файл `record`.
 - **Зачем:** Держит data models согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (`Record`).
+- **Содержимое:** Dart-код (`Record`, `TimelineRecord`).
 - **Обязанности:** Реализует в коде: `TimelineRecord`.
 - **Когда открывать:** Когда ломается поведение, связанное с `record.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9038,7 +9060,8 @@ EN:
 
 - **What this is:** Brain support file — PocketBase URL, collection names, expand constants.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (implementation details in the source file).
+- **What it contains:** Dart code (`PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`).
+- **Key code names:** `PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`
 - **Responsibilities:** PocketBase URL, collection names, expand constants
 - **When to open:** When behavior tied to `pb_config.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9049,7 +9072,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — PocketBase URL, collection names, expand constants.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (`PbAppApiRoutes`, `PbCollections`, `PbOauthProviderNames`).
 - **Обязанности:** Реализует в brain: PocketBase URL, collection names, expand constants.
 - **Когда открывать:** Когда ломается поведение, связанное с `pb_config.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9089,8 +9112,8 @@ EN:
 
 - **What this is:** Brain support file — Plan time sequential layout math + `computeTimeViewInsertionCascade`.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (`PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`).
-- **Key code names:** `PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`
+- **What it contains:** Dart code (`PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`, `TimeViewInsertionIntent`, `TimeViewCardLayout`).
+- **Key code names:** `PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`, `TimeViewInsertionIntent`, `TimeViewCardLayout`, `TimeViewDropIntentKind`, `TimeViewDropIntent`
 - **Responsibilities:** Plan time sequential layout math + `computeTimeViewInsertionCascade`
 - **When to open:** When behavior tied to `plan_time_sequential_cascade.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9101,7 +9124,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Plan time sequential layout math + `computeTimeViewInsertionCascade`.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (`PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`).
+- **Содержимое:** Dart-код (`PlanTimeSequentialCascadePatch`, `TimeViewTargetDropSchedule`, `TimeViewInsertPosition`, `TimeViewInsertionSource`, `TimeViewInsertionIntent`, `TimeViewCardLayout`).
 - **Обязанности:** Реализует в brain: Plan time sequential layout math + `computeTimeViewInsertionCascade`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_time_sequential_cascade.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9271,8 +9294,8 @@ EN:
 
 - **What this is:** Brain support file — Price Reporter client-category token guard for voice parse.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (`PriceReporterAliasEntry`, `PriceReporterClientMatchResult`, `PriceReporterCategoryNode`).
-- **Key code names:** `PriceReporterAliasEntry`, `PriceReporterClientMatchResult`, `PriceReporterCategoryNode`
+- **What it contains:** Dart code (`PriceReporterAliasEntry`, `PriceReporterClientMatchResult`, `PriceReporterCategoryNode`, `PriceReporterClientIndex`).
+- **Key code names:** `PriceReporterAliasEntry`, `PriceReporterClientMatchResult`, `PriceReporterCategoryNode`, `PriceReporterClientIndex`
 - **Responsibilities:** Price Reporter client-category token guard for voice parse
 - **When to open:** When behavior tied to `price_reporter_client_match.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9283,7 +9306,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Price Reporter client-category token guard for voice parse.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (`PriceReporterAliasEntry`, `PriceReporterClientMatchResult`, `PriceReporterCategoryNode`).
+- **Содержимое:** Dart-код (`PriceReporterAliasEntry`, `PriceReporterClientMatchResult`, `PriceReporterCategoryNode`, `PriceReporterClientIndex`).
 - **Обязанности:** Реализует в brain: Price Reporter client-category token guard for voice parse.
 - **Когда открывать:** Когда ломается поведение, связанное с `price_reporter_client_match.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9308,7 +9331,7 @@ RU:
 
 - **Что это:** Модуль brain для profile and tags — файл `profile_admin`.
 - **Зачем:** Держит profile and tags согласованным с PocketBase и UI.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (logic in `profile_admin`).
 - **Обязанности:** Реализует в коде: Admin bool parse helper for hydration.
 - **Когда открывать:** Профиль, timezone, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9790,8 +9813,8 @@ EN:
 
 - **What this is:** Brain support file — Natural-language plan/list parse (client + AI backend hook).
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (`SmartTimeParseResult`, `SmartTimeRangeParseResult`).
-- **Key code names:** `SmartTimeParseResult`, `SmartTimeRangeParseResult`
+- **What it contains:** Dart code (`SmartTimeParseResult`, `SmartTimeRangeParseResult`, `SmartInputParser`).
+- **Key code names:** `SmartTimeParseResult`, `SmartTimeRangeParseResult`, `SmartInputParser`
 - **Responsibilities:** Natural-language plan/list parse (client + AI backend hook)
 - **When to open:** When behavior tied to `smart_input_parser.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9802,7 +9825,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Natural-language plan/list parse (client + AI backend hook).
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (`SmartTimeParseResult`, `SmartTimeRangeParseResult`).
+- **Содержимое:** Dart-код (`SmartTimeParseResult`, `SmartTimeRangeParseResult`, `SmartInputParser`).
 - **Обязанности:** Реализует в brain: Natural-language plan/list parse (client + AI backend hook).
 - **Когда открывать:** Когда ломается поведение, связанное с `smart_input_parser.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9842,7 +9865,7 @@ EN:
 
 - **What this is:** Brain support file — Non-web voice audio stub.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (implementation details in the source file).
+- **What it contains:** Dart code (logic in `voice_audio_stub`).
 - **Responsibilities:** Non-web voice audio stub
 - **When to open:** When behavior tied to `voice_audio_stub.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9853,7 +9876,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Non-web voice audio stub.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (logic in `voice_audio_stub`).
 - **Обязанности:** Реализует в brain: Non-web voice audio stub.
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_audio_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9867,7 +9890,7 @@ EN:
 
 - **What this is:** Brain support file — Web voice audio implementation.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (implementation details in the source file).
+- **What it contains:** Dart code (logic in `voice_audio_web`).
 - **Responsibilities:** Web voice audio implementation
 - **When to open:** When behavior tied to `voice_audio_web.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9878,7 +9901,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Web voice audio implementation.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (logic in `voice_audio_web`).
 - **Обязанности:** Реализует в brain: Web voice audio implementation.
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_audio_web.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9892,8 +9915,8 @@ EN:
 
 - **What this is:** Brain support file — Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`).
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (`VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`).
-- **Key code names:** `VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`
+- **What it contains:** Dart code (`VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`, `VoiceCommandCategoryScope`).
+- **Key code names:** `VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`, `VoiceCommandCategoryScope`
 - **Responsibilities:** Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`)
 - **When to open:** When behavior tied to `voice_command_parser.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9904,7 +9927,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`).
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (`VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`).
+- **Содержимое:** Dart-код (`VoiceCommandMatchConfidence`, `VoiceCommandParseResult`, `VoiceCommandCategoryCandidate`, `VoiceCommandCategoryIndex`, `VoiceCommandCategoryScope`).
 - **Обязанности:** Реализует в brain: Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`).
 - **Когда открывать:** Когда ломается поведение, связанное с `voice_command_parser.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9918,7 +9941,7 @@ EN:
 
 - **What this is:** Brain support file — Web history API conditional export.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (implementation details in the source file).
+- **What it contains:** Dart code (logic in `web_history`).
 - **Responsibilities:** Web history API conditional export
 - **When to open:** When behavior tied to `web_history.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9929,7 +9952,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Web history API conditional export.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (logic in `web_history`).
 - **Обязанности:** Реализует в brain: Web history API conditional export.
 - **Когда открывать:** Когда ломается поведение, связанное с `web_history.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9943,7 +9966,7 @@ EN:
 
 - **What this is:** Brain support file — Non-web history stub.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (implementation details in the source file).
+- **What it contains:** Dart code (logic in `web_history_stub`).
 - **Responsibilities:** Non-web history stub
 - **When to open:** When behavior tied to `web_history_stub.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9954,7 +9977,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Non-web history stub.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (logic in `web_history_stub`).
 - **Обязанности:** Реализует в brain: Non-web history stub.
 - **Когда открывать:** Когда ломается поведение, связанное с `web_history_stub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9968,7 +9991,7 @@ EN:
 
 - **What this is:** Brain support file — Web history implementation.
 - **Why needed:** Shared PocketBase/auth/parse logic used by multiple tabs.
-- **What it contains:** Dart code (implementation details in the source file).
+- **What it contains:** Dart code (logic in `web_history_web`).
 - **Responsibilities:** Web history implementation
 - **When to open:** When behavior tied to `web_history_web.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -9979,7 +10002,7 @@ RU:
 
 - **Что это:** Вспомогательный модуль brain — Web history implementation.
 - **Зачем:** Общая логика PocketBase и auth для нескольких вкладок.
-- **Содержимое:** Dart-код (implementation details in the source file).
+- **Содержимое:** Dart-код (logic in `web_history_web`).
 - **Обязанности:** Реализует в brain: Web history implementation.
 - **Когда открывать:** Когда ломается поведение, связанное с `web_history_web.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -9991,9 +10014,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `auth_screen.dart` for sign-in and registration screen: Sign-in, register, OAuth, password reset.
-- **Why needed:** Users interact with `auth_screen.dart` when using sign-in and registration screen.
-- **What it contains:** Flutter widgets in `auth_screen.dart` (`AuthScreen`).
+- **What this is:** `auth_screen.dart` on sign-in and registration screen — Sign-in, register, OAuth, password reset.
+- **Why needed:** Users see `auth_screen.dart` when using sign-in and registration screen.
+- **What it contains:** Primary symbols: `AuthScreen`.
 - **Key code names:** `AuthScreen`
 - **Responsibilities:** Sign-in, register, OAuth, password reset
 - **When to open:** When behavior tied to `auth_screen.dart` breaks or you need to change its documented role.
@@ -10003,10 +10026,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `auth_screen.dart` на экране (sign-in and registration screen): Sign-in, register, OAuth, password reset.
-- **Зачем:** Пользователь видит `auth_screen.dart`, когда открывает sign-in and registration screen.
-- **Содержимое:** Flutter-виджеты в `auth_screen.dart` (`AuthScreen`).
-- **Обязанности:** Реализует в `auth_screen.dart`: Sign-in, register, OAuth, password reset.
+- **Что это:** `auth_screen.dart` на экран входа и регистрации — Реализует `AuthScreen` и связанный API в `auth_screen.dart`..
+- **Зачем:** Пользователь видит UI из `auth_screen.dart` на экран входа и регистрации.
+- **Содержимое:** Основные символы: `AuthScreen`.
+- **Обязанности:** Реализует `AuthScreen` и связанный API в `auth_screen.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `auth_screen.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Login gate из `main.dart`
@@ -10017,9 +10040,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `auth_view.dart` for sign-in and registration screen: Sign-in, register, OAuth, password reset.
-- **Why needed:** Users interact with `auth_view.dart` when using sign-in and registration screen.
-- **What it contains:** Flutter widgets in `auth_view.dart` (`AuthView`, `_AuthViewState`).
+- **What this is:** `auth_view.dart` on sign-in and registration screen — Sign-in, register, OAuth, password reset.
+- **Why needed:** Users see `auth_view.dart` when using sign-in and registration screen.
+- **What it contains:** Primary symbols: `AuthView`, `_AuthViewState`.
 - **Key code names:** `AuthView`, `_AuthViewState`
 - **Responsibilities:** Sign-in, register, OAuth, password reset
 - **When to open:** When behavior tied to `auth_view.dart` breaks or you need to change its documented role.
@@ -10029,10 +10052,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `auth_view.dart` на экране (sign-in and registration screen): Sign-in, register, OAuth, password reset.
-- **Зачем:** Пользователь видит `auth_view.dart`, когда открывает sign-in and registration screen.
-- **Содержимое:** Flutter-виджеты в `auth_view.dart` (`AuthView`, `_AuthViewState`).
-- **Обязанности:** Реализует в `auth_view.dart`: Sign-in, register, OAuth, password reset.
+- **Что это:** `auth_view.dart` на экран входа и регистрации — Реализует `AuthView` и связанный API в `auth_view.dart`..
+- **Зачем:** Пользователь видит UI из `auth_view.dart` на экран входа и регистрации.
+- **Содержимое:** Основные символы: `AuthView`, `_AuthViewState`.
+- **Обязанности:** Реализует `AuthView` и связанный API в `auth_view.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `auth_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Login gate из `main.dart`
@@ -10043,9 +10066,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `oauth_session.dart` for sign-in and registration screen: Sign-in, register, OAuth, password reset.
-- **Why needed:** Users interact with `oauth_session.dart` when using sign-in and registration screen.
-- **What it contains:** Flutter widgets in `oauth_session.dart` (`OAuthUser`, `OAuthSession`).
+- **What this is:** `oauth_session.dart` on sign-in and registration screen — Sign-in, register, OAuth, password reset.
+- **Why needed:** Users see `oauth_session.dart` when using sign-in and registration screen.
+- **What it contains:** Primary symbols: `OAuthUser`, `OAuthSession`.
 - **Key code names:** `OAuthUser`, `OAuthSession`
 - **Responsibilities:** Sign-in, register, OAuth, password reset
 - **When to open:** When behavior tied to `oauth_session.dart` breaks or you need to change its documented role.
@@ -10055,10 +10078,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `oauth_session.dart` на экране (sign-in and registration screen): Sign-in, register, OAuth, password reset.
-- **Зачем:** Пользователь видит `oauth_session.dart`, когда открывает sign-in and registration screen.
-- **Содержимое:** Flutter-виджеты в `oauth_session.dart` (`OAuthUser`, `OAuthSession`).
-- **Обязанности:** Реализует в `oauth_session.dart`: Sign-in, register, OAuth, password reset.
+- **Что это:** `oauth_session.dart` на экран входа и регистрации — Реализует `OAuthUser` и связанный API в `oauth_session.dart`..
+- **Зачем:** Пользователь видит UI из `oauth_session.dart` на экран входа и регистрации.
+- **Содержимое:** Основные символы: `OAuthUser`, `OAuthSession`.
+- **Обязанности:** Реализует `OAuthUser` и связанный API в `oauth_session.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `oauth_session.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Login gate из `main.dart`
@@ -10069,10 +10092,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `calendar_view.dart` for Calendar tab: Calendar tab.
-- **Why needed:** Users interact with `calendar_view.dart` when using Calendar tab.
-- **What it contains:** Flutter widgets in `calendar_view.dart` (`_CalendarViewMode`, `CalendarView`, `_CalendarViewState`).
-- **Key code names:** `_CalendarViewMode`, `CalendarView`, `_CalendarViewState`
+- **What this is:** `calendar_view.dart` on Calendar tab — Calendar tab.
+- **Why needed:** Users see `calendar_view.dart` when using Calendar tab.
+- **What it contains:** Primary symbols: `_CalendarViewMode`, `CalendarView`, `_CalendarViewState`, `_CalendarChromeHeader`.
+- **Key code names:** `_CalendarViewMode`, `CalendarView`, `_CalendarViewState`, `_CalendarChromeHeader`
 - **Responsibilities:** Calendar tab
 - **When to open:** When behavior tied to `calendar_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -10081,10 +10104,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `calendar_view.dart` на экране (Calendar tab): Calendar tab.
-- **Зачем:** Пользователь видит `calendar_view.dart`, когда открывает Calendar tab.
-- **Содержимое:** Flutter-виджеты в `calendar_view.dart` (`_CalendarViewMode`, `CalendarView`, `_CalendarViewState`).
-- **Обязанности:** Реализует в `calendar_view.dart`: Calendar tab.
+- **Что это:** `calendar_view.dart` на вкладка Calendar — Реализует `_CalendarViewMode` и связанный API в `calendar_view.dart`..
+- **Зачем:** Пользователь видит UI из `calendar_view.dart` на вкладка Calendar.
+- **Содержимое:** Основные символы: `_CalendarViewMode`, `CalendarView`, `_CalendarViewState`, `_CalendarChromeHeader`.
+- **Обязанности:** Реализует `_CalendarViewMode` и связанный API в `calendar_view.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `calendar_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
@@ -10095,9 +10118,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `category_list_view.dart` for More → Categories manager: Category manager (More menu).
-- **Why needed:** Users interact with `category_list_view.dart` when using More → Categories manager.
-- **What it contains:** Flutter widgets in `category_list_view.dart` (`_CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`).
+- **What this is:** `category_list_view.dart` on More → Categories manager — Category manager (More menu).
+- **Why needed:** Users see `category_list_view.dart` when using More → Categories manager.
+- **What it contains:** Primary symbols: `_CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`.
 - **Key code names:** `_CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`
 - **Responsibilities:** Category manager (More menu)
 - **When to open:** When behavior tied to `category_list_view.dart` breaks or you need to change its documented role.
@@ -10107,10 +10130,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `category_list_view.dart` на экране (More → Categories manager): Category manager (More menu).
-- **Зачем:** Пользователь видит `category_list_view.dart`, когда открывает More → Categories manager.
-- **Содержимое:** Flutter-виджеты в `category_list_view.dart` (`_CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`).
-- **Обязанности:** Реализует в `category_list_view.dart`: Category manager (More menu).
+- **Что это:** `category_list_view.dart` на More → Categories — Реализует `_CategoryDepthLayout` и связанный API в `category_list_view.dart`..
+- **Зачем:** Пользователь видит UI из `category_list_view.dart` на More → Categories.
+- **Содержимое:** Основные символы: `_CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`.
+- **Обязанности:** Реализует `_CategoryDepthLayout` и связанный API в `category_list_view.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_list_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
@@ -10121,10 +10144,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `category_recursive_tree.dart` for More → Categories manager: Category manager (More menu).
-- **Why needed:** Users interact with `category_recursive_tree.dart` when using More → Categories manager.
-- **What it contains:** Flutter widgets in `category_recursive_tree.dart` (`CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`).
-- **Key code names:** `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`
+- **What this is:** `category_recursive_tree.dart` on More → Categories manager — Category manager (More menu).
+- **Why needed:** Users see `category_recursive_tree.dart` when using More → Categories manager.
+- **What it contains:** Primary symbols: `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`, `CategoryTreeFormField`, `_CategoryTreeBody`, `_CategoryTreeBodyState`.
+- **Key code names:** `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`, `CategoryTreeFormField`, `_CategoryTreeBody`, `_CategoryTreeBodyState`, `_CategoryTreeNode`
 - **Responsibilities:** Category manager (More menu)
 - **When to open:** When behavior tied to `category_recursive_tree.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -10133,10 +10156,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `category_recursive_tree.dart` на экране (More → Categories manager): Category manager (More menu).
-- **Зачем:** Пользователь видит `category_recursive_tree.dart`, когда открывает More → Categories manager.
-- **Содержимое:** Flutter-виджеты в `category_recursive_tree.dart` (`CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`).
-- **Обязанности:** Реализует в `category_recursive_tree.dart`: Category manager (More menu).
+- **Что это:** `category_recursive_tree.dart` на More → Categories — Реализует `CategoryTreeSheetPicked` и связанный API в `category_recursive_tree.dart`..
+- **Зачем:** Пользователь видит UI из `category_recursive_tree.dart` на More → Categories.
+- **Содержимое:** Основные символы: `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`, `CategoryTreeFormField`, `_CategoryTreeBody`, `_CategoryTreeBodyState`.
+- **Обязанности:** Реализует `CategoryTreeSheetPicked` и связанный API в `category_recursive_tree.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_recursive_tree.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
@@ -10147,9 +10170,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `category_visibility_prefs.dart` for More → Categories manager: Category manager (More menu).
-- **Why needed:** Users interact with `category_visibility_prefs.dart` when using More → Categories manager.
-- **What it contains:** Flutter widgets in `category_visibility_prefs.dart` (`CategoryVisibilityPrefs`).
+- **What this is:** `category_visibility_prefs.dart` on More → Categories manager — Category manager (More menu).
+- **Why needed:** Users see `category_visibility_prefs.dart` when using More → Categories manager.
+- **What it contains:** Primary symbols: `CategoryVisibilityPrefs`.
 - **Key code names:** `CategoryVisibilityPrefs`
 - **Responsibilities:** Category manager (More menu)
 - **When to open:** When behavior tied to `category_visibility_prefs.dart` breaks or you need to change its documented role.
@@ -10159,10 +10182,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `category_visibility_prefs.dart` на экране (More → Categories manager): Category manager (More menu).
-- **Зачем:** Пользователь видит `category_visibility_prefs.dart`, когда открывает More → Categories manager.
-- **Содержимое:** Flutter-виджеты в `category_visibility_prefs.dart` (`CategoryVisibilityPrefs`).
-- **Обязанности:** Реализует в `category_visibility_prefs.dart`: Category manager (More menu).
+- **Что это:** `category_visibility_prefs.dart` на More → Categories — Реализует `CategoryVisibilityPrefs` и связанный API в `category_visibility_prefs.dart`..
+- **Зачем:** Пользователь видит UI из `category_visibility_prefs.dart` на More → Categories.
+- **Содержимое:** Основные символы: `CategoryVisibilityPrefs`.
+- **Обязанности:** Реализует `CategoryVisibilityPrefs` и связанный API в `category_visibility_prefs.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `category_visibility_prefs.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
@@ -10173,9 +10196,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `create_category_dialog.dart` for More → Categories manager: Category manager (More menu).
-- **Why needed:** Users interact with `create_category_dialog.dart` when using More → Categories manager.
-- **What it contains:** Flutter widgets in `create_category_dialog.dart` (`_CreateCategoryDialog`, `_CreateCategoryDialogState`).
+- **What this is:** `create_category_dialog.dart` on More → Categories manager — Category manager (More menu).
+- **Why needed:** Users see `create_category_dialog.dart` when using More → Categories manager.
+- **What it contains:** Primary symbols: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
 - **Key code names:** `_CreateCategoryDialog`, `_CreateCategoryDialogState`
 - **Responsibilities:** Category manager (More menu)
 - **When to open:** When behavior tied to `create_category_dialog.dart` breaks or you need to change its documented role.
@@ -10185,10 +10208,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `create_category_dialog.dart` на экране (More → Categories manager): Category manager (More menu).
-- **Зачем:** Пользователь видит `create_category_dialog.dart`, когда открывает More → Categories manager.
-- **Содержимое:** Flutter-виджеты в `create_category_dialog.dart` (`_CreateCategoryDialog`, `_CreateCategoryDialogState`).
-- **Обязанности:** Реализует в `create_category_dialog.dart`: Category manager (More menu).
+- **Что это:** `create_category_dialog.dart` на More → Categories — Реализует `_CreateCategoryDialog` и связанный API в `create_category_dialog.dart`..
+- **Зачем:** Пользователь видит UI из `create_category_dialog.dart` на More → Categories.
+- **Содержимое:** Основные символы: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
+- **Обязанности:** Реализует `_CreateCategoryDialog` и связанный API в `create_category_dialog.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `create_category_dialog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
@@ -10199,9 +10222,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `component_lab_cards_demo.dart` for admin-only Component Lab (More → Dev): Admin-only Component Lab.
-- **Why needed:** Users interact with `component_lab_cards_demo.dart` when using admin-only Component Lab (More → Dev).
-- **What it contains:** Flutter widgets in `component_lab_cards_demo.dart` (`ComponentLabPlanCardsDemo`).
+- **What this is:** `component_lab_cards_demo.dart` on admin-only Component Lab (More → Dev) — Admin-only Component Lab.
+- **Why needed:** Users see `component_lab_cards_demo.dart` when using admin-only Component Lab (More → Dev).
+- **What it contains:** Primary symbols: `ComponentLabPlanCardsDemo`.
 - **Key code names:** `ComponentLabPlanCardsDemo`
 - **Responsibilities:** Admin-only Component Lab
 - **When to open:** When behavior tied to `component_lab_cards_demo.dart` breaks or you need to change its documented role.
@@ -10211,10 +10234,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `component_lab_cards_demo.dart` на экране (admin-only Component Lab (More → Dev)): Admin-only Component Lab.
-- **Зачем:** Пользователь видит `component_lab_cards_demo.dart`, когда открывает admin-only Component Lab (More → Dev).
-- **Содержимое:** Flutter-виджеты в `component_lab_cards_demo.dart` (`ComponentLabPlanCardsDemo`).
-- **Обязанности:** Реализует в `component_lab_cards_demo.dart`: Admin-only Component Lab.
+- **Что это:** `component_lab_cards_demo.dart` на Component Lab (More → Dev, только admin) — Реализует `ComponentLabPlanCardsDemo` и связанный API в `component_lab_cards_demo.dart`..
+- **Зачем:** Пользователь видит UI из `component_lab_cards_demo.dart` на Component Lab (More → Dev, только admin).
+- **Содержимое:** Основные символы: `ComponentLabPlanCardsDemo`.
+- **Обязанности:** Реализует `ComponentLabPlanCardsDemo` и связанный API в `component_lab_cards_demo.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `component_lab_cards_demo.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/dev/`, `docs/APP_STRUCTURE.md`
@@ -10225,10 +10248,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `component_lab_view.dart` for admin-only Component Lab (More → Dev): Admin-only Component Lab.
-- **Why needed:** Users interact with `component_lab_view.dart` when using admin-only Component Lab (More → Dev).
-- **What it contains:** Flutter widgets in `component_lab_view.dart` (`ComponentLabPage`, `_LabSection`, `_ButtonsDemo`).
-- **Key code names:** `ComponentLabPage`, `_LabSection`, `_ButtonsDemo`
+- **What this is:** `component_lab_view.dart` on admin-only Component Lab (More → Dev) — Admin-only Component Lab.
+- **Why needed:** Users see `component_lab_view.dart` when using admin-only Component Lab (More → Dev).
+- **What it contains:** Primary symbols: `ComponentLabPage`, `_LabSection`, `_ButtonsDemo`, `_IconButtonsDemo`.
+- **Key code names:** `ComponentLabPage`, `_LabSection`, `_ButtonsDemo`, `_IconButtonsDemo`
 - **Responsibilities:** Admin-only Component Lab
 - **When to open:** When behavior tied to `component_lab_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -10237,10 +10260,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `component_lab_view.dart` на экране (admin-only Component Lab (More → Dev)): Admin-only Component Lab.
-- **Зачем:** Пользователь видит `component_lab_view.dart`, когда открывает admin-only Component Lab (More → Dev).
-- **Содержимое:** Flutter-виджеты в `component_lab_view.dart` (`ComponentLabPage`, `_LabSection`, `_ButtonsDemo`).
-- **Обязанности:** Реализует в `component_lab_view.dart`: Admin-only Component Lab.
+- **Что это:** `component_lab_view.dart` на Component Lab (More → Dev, только admin) — Реализует `ComponentLabPage` и связанный API в `component_lab_view.dart`..
+- **Зачем:** Пользователь видит UI из `component_lab_view.dart` на Component Lab (More → Dev, только admin).
+- **Содержимое:** Основные символы: `ComponentLabPage`, `_LabSection`, `_ButtonsDemo`, `_IconButtonsDemo`.
+- **Обязанности:** Реализует `ComponentLabPage` и связанный API в `component_lab_view.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `component_lab_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/dev/`, `docs/APP_STRUCTURE.md`
@@ -10251,9 +10274,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `lists_bulk_actions.dart` for Lists tab (fourth bottom tab): Select-mode header + bulk action bottom bar.
-- **Why needed:** Users interact with `lists_bulk_actions.dart` when using Lists tab (fourth bottom tab).
-- **What it contains:** Flutter widgets in `lists_bulk_actions.dart` (`ListsBulkSelectModeBar`, `ListsBulkBottomBar`).
+- **What this is:** `lists_bulk_actions.dart` on Lists tab (fourth bottom tab) — Select-mode header + bulk action bottom bar.
+- **Why needed:** Users see `lists_bulk_actions.dart` when using Lists tab (fourth bottom tab).
+- **What it contains:** Primary symbols: `ListsBulkSelectModeBar`, `ListsBulkBottomBar`.
 - **Key code names:** `ListsBulkSelectModeBar`, `ListsBulkBottomBar`
 - **Responsibilities:** Select-mode header + bulk action bottom bar
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
@@ -10263,10 +10286,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `lists_bulk_actions.dart` на экране (Lists tab (fourth bottom tab)): Select-mode header + bulk action bottom bar.
-- **Зачем:** Пользователь видит `lists_bulk_actions.dart`, когда открывает Lists tab (fourth bottom tab).
-- **Содержимое:** Flutter-виджеты в `lists_bulk_actions.dart` (`ListsBulkSelectModeBar`, `ListsBulkBottomBar`).
-- **Обязанности:** Реализует в `lists_bulk_actions.dart`: Select-mode header + bulk action bottom bar.
+- **Что это:** `lists_bulk_actions.dart` на вкладка Lists (четвёртая снизу) — Реализует `ListsBulkSelectModeBar` и связанный API в `lists_bulk_actions.dart`..
+- **Зачем:** Пользователь видит UI из `lists_bulk_actions.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Основные символы: `ListsBulkSelectModeBar`, `ListsBulkBottomBar`.
+- **Обязанности:** Реализует `ListsBulkSelectModeBar` и связанный API в `lists_bulk_actions.dart`.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
@@ -10277,11 +10300,11 @@ RU:
 
 EN:
 
-- **What this is:** UI file `lists_card.dart` for Lists tab (fourth bottom tab): , filter chips, semicircle menu.
-- **Why needed:** Users interact with `lists_card.dart` when using Lists tab (fourth bottom tab).
-- **What it contains:** Flutter widgets in `lists_card.dart` (`ListsQuadraticChip`, `BacklogPlanCard`).
-- **Key code names:** `ListsQuadraticChip`, `BacklogPlanCard`
-- **Responsibilities:** `BacklogPlanCard`, filter chips, semicircle menu
+- **What this is:** `lists_card.dart` on Lists tab (fourth bottom tab) — BacklogPlanCard.
+- **Why needed:** Users see `lists_card.dart` when using Lists tab (fourth bottom tab).
+- **What it contains:** Primary symbols: `ListsQuadraticChip`, `BacklogPlanCard`, `ListsSemicircleMenuOverlay`, `ListsSemicircleMenuOverlayState`.
+- **Key code names:** `ListsQuadraticChip`, `BacklogPlanCard`, `ListsSemicircleMenuOverlay`, `ListsSemicircleMenuOverlayState`
+- **Responsibilities:** BacklogPlanCard
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Lists tab (shell index 3); APP_STRUCTURE role: `BacklogPlanCard`, filter chips, semicircle menu
@@ -10289,10 +10312,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `lists_card.dart` на экране (Lists tab (fourth bottom tab)): , filter chips, semicircle menu.
-- **Зачем:** Пользователь видит `lists_card.dart`, когда открывает Lists tab (fourth bottom tab).
-- **Содержимое:** Flutter-виджеты в `lists_card.dart` (`ListsQuadraticChip`, `BacklogPlanCard`).
-- **Обязанности:** Реализует в `lists_card.dart`: , filter chips, semicircle menu.
+- **Что это:** `lists_card.dart` на вкладка Lists (четвёртая снизу) — Реализует `ListsQuadraticChip` и связанный API в `lists_card.dart`..
+- **Зачем:** Пользователь видит UI из `lists_card.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Основные символы: `ListsQuadraticChip`, `BacklogPlanCard`, `ListsSemicircleMenuOverlay`, `ListsSemicircleMenuOverlayState`.
+- **Обязанности:** Реализует `ListsQuadraticChip` и связанный API в `lists_card.dart`.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
@@ -10303,9 +10326,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `lists_empty_state.dart` for Lists tab (fourth bottom tab): Loading / filtered / no-category empty panels.
-- **Why needed:** Users interact with `lists_empty_state.dart` when using Lists tab (fourth bottom tab).
-- **What it contains:** Flutter widgets in `lists_empty_state.dart` (`ListsNoCategoryEmptyPanel`, `ListsFilteredEmptyPanel`, `ListsLoadingPanel`).
+- **What this is:** `lists_empty_state.dart` on Lists tab (fourth bottom tab) — Loading / filtered / no-category empty panels.
+- **Why needed:** Users see `lists_empty_state.dart` when using Lists tab (fourth bottom tab).
+- **What it contains:** Primary symbols: `ListsNoCategoryEmptyPanel`, `ListsFilteredEmptyPanel`, `ListsLoadingPanel`.
 - **Key code names:** `ListsNoCategoryEmptyPanel`, `ListsFilteredEmptyPanel`, `ListsLoadingPanel`
 - **Responsibilities:** Loading / filtered / no-category empty panels
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
@@ -10315,10 +10338,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `lists_empty_state.dart` на экране (Lists tab (fourth bottom tab)): Loading / filtered / no-category empty panels.
-- **Зачем:** Пользователь видит `lists_empty_state.dart`, когда открывает Lists tab (fourth bottom tab).
-- **Содержимое:** Flutter-виджеты в `lists_empty_state.dart` (`ListsNoCategoryEmptyPanel`, `ListsFilteredEmptyPanel`, `ListsLoadingPanel`).
-- **Обязанности:** Реализует в `lists_empty_state.dart`: Loading / filtered / no-category empty panels.
+- **Что это:** `lists_empty_state.dart` на вкладка Lists (четвёртая снизу) — Реализует `ListsNoCategoryEmptyPanel` и связанный API в `lists_empty_state.dart`..
+- **Зачем:** Пользователь видит UI из `lists_empty_state.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Основные символы: `ListsNoCategoryEmptyPanel`, `ListsFilteredEmptyPanel`, `ListsLoadingPanel`.
+- **Обязанности:** Реализует `ListsNoCategoryEmptyPanel` и связанный API в `lists_empty_state.dart`.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
@@ -10329,9 +10352,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `lists_export.dart` for Lists tab (fourth bottom tab): Export visible list as clipboard text.
-- **Why needed:** Users interact with `lists_export.dart` when using Lists tab (fourth bottom tab).
-- **What it contains:** Flutter widgets in `lists_export.dart` (implementation details in the source file).
+- **What this is:** `lists_export.dart` on Lists tab (fourth bottom tab) — Export visible list as clipboard text.
+- **Why needed:** Users see `lists_export.dart` when using Lists tab (fourth bottom tab).
+- **What it contains:** Dart module `lists_export.dart` — open file for classes and helpers.
 - **Responsibilities:** Export visible list as clipboard text
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
 - **Can it be deleted?** No — required for app runtime.
@@ -10340,10 +10363,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `lists_export.dart` на экране (Lists tab (fourth bottom tab)): Export visible list as clipboard text.
-- **Зачем:** Пользователь видит `lists_export.dart`, когда открывает Lists tab (fourth bottom tab).
-- **Содержимое:** Flutter-виджеты в `lists_export.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `lists_export.dart`: Export visible list as clipboard text.
+- **Что это:** `lists_export.dart` на вкладка Lists (четвёртая снизу) — Поддерживает поведение `lists_export` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `lists_export.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Dart-модуль `lists_export.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `lists_export` в этой feature-зоне.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
@@ -10354,10 +10377,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `lists_filters.dart` for Lists tab (fourth bottom tab): Tag/category filter chips, chip bar, settings sheet.
-- **Why needed:** Users interact with `lists_filters.dart` when using Lists tab (fourth bottom tab).
-- **What it contains:** Flutter widgets in `lists_filters.dart` (`ListsTagFilterChip`, `ListsCategoryChipBar`, `ListsTagFilterBar`).
-- **Key code names:** `ListsTagFilterChip`, `ListsCategoryChipBar`, `ListsTagFilterBar`
+- **What this is:** `lists_filters.dart` on Lists tab (fourth bottom tab) — Tag/category filter chips, chip bar, settings sheet.
+- **Why needed:** Users see `lists_filters.dart` when using Lists tab (fourth bottom tab).
+- **What it contains:** Primary symbols: `ListsTagFilterChip`, `ListsCategoryChipBar`, `ListsTagFilterBar`, `ListsFilterToolbarRow`.
+- **Key code names:** `ListsTagFilterChip`, `ListsCategoryChipBar`, `ListsTagFilterBar`, `ListsFilterToolbarRow`
 - **Responsibilities:** Tag/category filter chips, chip bar, settings sheet
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
 - **Can it be deleted?** No — required for app runtime.
@@ -10366,10 +10389,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `lists_filters.dart` на экране (Lists tab (fourth bottom tab)): Tag/category filter chips, chip bar, settings sheet.
-- **Зачем:** Пользователь видит `lists_filters.dart`, когда открывает Lists tab (fourth bottom tab).
-- **Содержимое:** Flutter-виджеты в `lists_filters.dart` (`ListsTagFilterChip`, `ListsCategoryChipBar`, `ListsTagFilterBar`).
-- **Обязанности:** Реализует в `lists_filters.dart`: Tag/category filter chips, chip bar, settings sheet.
+- **Что это:** `lists_filters.dart` на вкладка Lists (четвёртая снизу) — Реализует `ListsTagFilterChip` и связанный API в `lists_filters.dart`..
+- **Зачем:** Пользователь видит UI из `lists_filters.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Основные символы: `ListsTagFilterChip`, `ListsCategoryChipBar`, `ListsTagFilterBar`, `ListsFilterToolbarRow`.
+- **Обязанности:** Реализует `ListsTagFilterChip` и связанный API в `lists_filters.dart`.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
@@ -10380,9 +10403,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `lists_inline_add.dart` for Lists tab (fourth bottom tab): Inline quick-add input row.
-- **Why needed:** Users interact with `lists_inline_add.dart` when using Lists tab (fourth bottom tab).
-- **What it contains:** Flutter widgets in `lists_inline_add.dart` (`ListsInlineAddRow`).
+- **What this is:** `lists_inline_add.dart` on Lists tab (fourth bottom tab) — Inline quick-add input row.
+- **Why needed:** Users see `lists_inline_add.dart` when using Lists tab (fourth bottom tab).
+- **What it contains:** Primary symbols: `ListsInlineAddRow`.
 - **Key code names:** `ListsInlineAddRow`
 - **Responsibilities:** Inline quick-add input row
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
@@ -10392,10 +10415,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `lists_inline_add.dart` на экране (Lists tab (fourth bottom tab)): Inline quick-add input row.
-- **Зачем:** Пользователь видит `lists_inline_add.dart`, когда открывает Lists tab (fourth bottom tab).
-- **Содержимое:** Flutter-виджеты в `lists_inline_add.dart` (`ListsInlineAddRow`).
-- **Обязанности:** Реализует в `lists_inline_add.dart`: Inline quick-add input row.
+- **Что это:** `lists_inline_add.dart` на вкладка Lists (четвёртая снизу) — Реализует `ListsInlineAddRow` и связанный API в `lists_inline_add.dart`..
+- **Зачем:** Пользователь видит UI из `lists_inline_add.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Основные символы: `ListsInlineAddRow`.
+- **Обязанности:** Реализует `ListsInlineAddRow` и связанный API в `lists_inline_add.dart`.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
@@ -10406,9 +10429,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `lists_view.dart` for Lists tab (fourth bottom tab): Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export.
-- **Why needed:** Users interact with `lists_view.dart` when using Lists tab (fourth bottom tab).
-- **What it contains:** Flutter widgets in `lists_view.dart` (`ListsPage`, `_ListsPageState`).
+- **What this is:** `lists_view.dart` on Lists tab (fourth bottom tab) — Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export.
+- **Why needed:** Users see `lists_view.dart` when using Lists tab (fourth bottom tab).
+- **What it contains:** Primary symbols: `ListsPage`, `_ListsPageState`.
 - **Key code names:** `ListsPage`, `_ListsPageState`
 - **Responsibilities:** Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export
 - **When to open:** Lists tab: filters, done checkbox, bulk actions, export.
@@ -10418,10 +10441,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `lists_view.dart` на экране (Lists tab (fourth bottom tab)): Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export.
-- **Зачем:** Пользователь видит `lists_view.dart`, когда открывает Lists tab (fourth bottom tab).
-- **Содержимое:** Flutter-виджеты в `lists_view.dart` (`ListsPage`, `_ListsPageState`).
-- **Обязанности:** Реализует в `lists_view.dart`: Lists/backlog coordinator + filter/bulk/inline/empty modules + card + export.
+- **Что это:** `lists_view.dart` на вкладка Lists (четвёртая снизу) — Реализует `ListsPage` и связанный API в `lists_view.dart`..
+- **Зачем:** Пользователь видит UI из `lists_view.dart` на вкладка Lists (четвёртая снизу).
+- **Содержимое:** Основные символы: `ListsPage`, `_ListsPageState`.
+- **Обязанности:** Реализует `ListsPage` и связанный API в `lists_view.dart`.
 - **Когда открывать:** Вкладка Lists: фильтры, done, экспорт.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Lists (shell index 3)
@@ -10432,9 +10455,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `bulk_planning_edit_sheet.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `bulk_planning_edit_sheet.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `bulk_planning_edit_sheet.dart` (`BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`).
+- **What this is:** `bulk_planning_edit_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Why needed:** Users see `bulk_planning_edit_sheet.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`.
 - **Key code names:** `BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`
 - **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -10444,10 +10467,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `bulk_planning_edit_sheet.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `bulk_planning_edit_sheet.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `bulk_planning_edit_sheet.dart` (`BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`).
-- **Обязанности:** Реализует в `bulk_planning_edit_sheet.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `bulk_planning_edit_sheet.dart` на вкладка Plans (вторая снизу) — Реализует `BulkPlanningEditResult` и связанный API в `bulk_planning_edit_sheet.dart`..
+- **Зачем:** Пользователь видит UI из `bulk_planning_edit_sheet.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `BulkPlanningEditResult`, `BulkEditWallTimes`, `_BulkPlanningEditSheetBody`, `_BulkPlanningEditSheetBodyState`.
+- **Обязанности:** Реализует `BulkPlanningEditResult` и связанный API в `bulk_planning_edit_sheet.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10458,9 +10481,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `plan_time_gesture_contract.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `plan_time_gesture_contract.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `plan_time_gesture_contract.dart` (implementation details in the source file).
+- **What this is:** `plan_time_gesture_contract.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Why needed:** Users see `plan_time_gesture_contract.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Dart module `plan_time_gesture_contract.dart` — open file for classes and helpers.
 - **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
@@ -10469,10 +10492,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `plan_time_gesture_contract.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `plan_time_gesture_contract.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `plan_time_gesture_contract.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `plan_time_gesture_contract.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `plan_time_gesture_contract.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `plan_time_gesture_contract` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `plan_time_gesture_contract.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `plan_time_gesture_contract.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `plan_time_gesture_contract` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10483,10 +10506,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `plan_time_view_layout.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `plan_time_view_layout.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `plan_time_view_layout.dart` (`TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`).
-- **Key code names:** `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`
+- **What this is:** `plan_time_view_layout.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Why needed:** Users see `plan_time_view_layout.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`.
+- **Key code names:** `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`
 - **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
@@ -10495,10 +10518,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `plan_time_view_layout.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `plan_time_view_layout.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `plan_time_view_layout.dart` (`TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`).
-- **Обязанности:** Реализует в `plan_time_view_layout.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `plan_time_view_layout.dart` на вкладка Plans (вторая снизу) — Реализует `TimeViewYScale` и связанный API в `plan_time_view_layout.dart`..
+- **Зачем:** Пользователь видит UI из `plan_time_view_layout.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `TimeViewYScale`, `PlanTimeViewDurationGrid`, `PlanTimeViewBlockLayout`, `_PlanTimeViewCardSlot`, `PlanTimeViewLayoutCalculator`.
+- **Обязанности:** Реализует `TimeViewYScale` и связанный API в `plan_time_view_layout.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10509,9 +10532,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_day_start_prefs.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `planning_day_start_prefs.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_day_start_prefs.dart` (`PlanningSheetTimelinePrefs`).
+- **What this is:** `planning_day_start_prefs.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Why needed:** Users see `planning_day_start_prefs.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningSheetTimelinePrefs`.
 - **Key code names:** `PlanningSheetTimelinePrefs`
 - **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -10521,10 +10544,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_day_start_prefs.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `planning_day_start_prefs.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_day_start_prefs.dart` (`PlanningSheetTimelinePrefs`).
-- **Обязанности:** Реализует в `planning_day_start_prefs.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `planning_day_start_prefs.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningSheetTimelinePrefs` и связанный API в `planning_day_start_prefs.dart`..
+- **Зачем:** Пользователь видит UI из `planning_day_start_prefs.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningSheetTimelinePrefs`.
+- **Обязанности:** Реализует `PlanningSheetTimelinePrefs` и связанный API в `planning_day_start_prefs.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10535,22 +10558,22 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_page.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `planning_page.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_page.dart` (`PlanningPage`).
-- **Key code names:** `PlanningPage`
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **What this is:** `planning_page.dart` on Plans tab (second bottom tab) — PlanningPage.
+- **Why needed:** Users see `planning_page.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningPage`, `_PlanningPageState`.
+- **Key code names:** `PlanningPage`, `_PlanningPageState`
+- **Responsibilities:** PlanningPage
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: `PlanningPage` + day body state (~2.4k lines
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
 
-- **Что это:** UI-модуль `planning_page.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `planning_page.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_page.dart` (`PlanningPage`).
-- **Обязанности:** Реализует в `planning_page.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `planning_page.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningPage` и связанный API в `planning_page.dart`..
+- **Зачем:** Пользователь видит UI из `planning_page.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningPage`, `_PlanningPageState`.
+- **Обязанности:** Реализует `PlanningPage` и связанный API в `planning_page.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10561,22 +10584,22 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_page_shell.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `planning_page_shell.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_page_shell.dart` (`PlanningSwipeWrapper`, `_PlanningSwipeWrapperState`).
+- **What this is:** `planning_page_shell.dart` on Plans tab (second bottom tab) — PlanningSwipeWrapper.
+- **Why needed:** Users see `planning_page_shell.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningSwipeWrapper`, `_PlanningSwipeWrapperState`.
 - **Key code names:** `PlanningSwipeWrapper`, `_PlanningSwipeWrapperState`
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Responsibilities:** PlanningSwipeWrapper
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: `PlanningSwipeWrapper` date pager
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
 
-- **Что это:** UI-модуль `planning_page_shell.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `planning_page_shell.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_page_shell.dart` (`PlanningSwipeWrapper`, `_PlanningSwipeWrapperState`).
-- **Обязанности:** Реализует в `planning_page_shell.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `planning_page_shell.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningSwipeWrapper` и связанный API в `planning_page_shell.dart`..
+- **Зачем:** Пользователь видит UI из `planning_page_shell.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningSwipeWrapper`, `_PlanningSwipeWrapperState`.
+- **Обязанности:** Реализует `PlanningSwipeWrapper` и связанный API в `planning_page_shell.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10587,22 +10610,22 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_sort_mode.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `planning_sort_mode.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_sort_mode.dart` (`PlanSortMode`).
+- **What this is:** `planning_sort_mode.dart` on Plans tab (second bottom tab) — PlanSortMode.
+- **Why needed:** Users see `planning_sort_mode.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanSortMode`.
 - **Key code names:** `PlanSortMode`
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Responsibilities:** PlanSortMode
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: `PlanSortMode` + persist index helpers
 - **Layer / owner:** UI code for the planning area of the app (what users see and tap).
 
 RU:
 
-- **Что это:** UI-модуль `planning_sort_mode.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `planning_sort_mode.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_sort_mode.dart` (`PlanSortMode`).
-- **Обязанности:** Реализует в `planning_sort_mode.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `planning_sort_mode.dart` на вкладка Plans (вторая снизу) — Реализует `PlanSortMode` и связанный API в `planning_sort_mode.dart`..
+- **Зачем:** Пользователь видит UI из `planning_sort_mode.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanSortMode`.
+- **Обязанности:** Реализует `PlanSortMode` и связанный API в `planning_sort_mode.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10613,10 +10636,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_view.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `planning_view.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_view.dart` (implementation details in the source file).
-- **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
+- **What this is:** Planning feature barrel — re-exports `planning_page.dart`, `planning_page_shell.dart`, and `planning_sort_mode.dart`.
+- **Why needed:** Shell and tests import one stable path instead of three planning entry files.
+- **What it contains:** Three `export` lines only — no widgets in this file.
+- **Responsibilities:** Public entry surface for the Plans tab modules.
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
@@ -10624,10 +10647,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_view.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `planning_view.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_view.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `planning_view.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** Barrel вкладки Plans — re-export `planning_page.dart`, `planning_page_shell.dart`, `planning_sort_mode.dart`.
+- **Зачем:** Shell импортирует один путь вместо трёх entry-файлов planning.
+- **Содержимое:** Только три строки `export` — виджетов здесь нет.
+- **Обязанности:** Единая точка входа для модулей вкладки Plans.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10638,9 +10661,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `recurrence_scope_dialog.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `recurrence_scope_dialog.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `recurrence_scope_dialog.dart` (implementation details in the source file).
+- **What this is:** `recurrence_scope_dialog.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Why needed:** Users see `recurrence_scope_dialog.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Modal UI widgets and controllers in `recurrence_scope_dialog.dart`.
 - **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
@@ -10649,10 +10672,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `recurrence_scope_dialog.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `recurrence_scope_dialog.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `recurrence_scope_dialog.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `recurrence_scope_dialog.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `recurrence_scope_dialog.dart` на вкладка Plans (вторая снизу) — Пользователь открывает sheet/dialog из entry `recurrence_scope_dialog`..
+- **Зачем:** Пользователь видит UI из `recurrence_scope_dialog.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Modal UI и controllers в `recurrence_scope_dialog.dart`.
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `recurrence_scope_dialog`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10663,9 +10686,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `default_plan_category_search.dart` for Plans tab (second bottom tab): Default plan category search delegate.
-- **Why needed:** Users interact with `default_plan_category_search.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `default_plan_category_search.dart` (`DefaultPlanCategorySearchDelegate`).
+- **What this is:** `default_plan_category_search.dart` on Plans tab (second bottom tab) — Default plan category search delegate.
+- **Why needed:** Users see `default_plan_category_search.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `DefaultPlanCategorySearchDelegate`.
 - **Key code names:** `DefaultPlanCategorySearchDelegate`
 - **Responsibilities:** Default plan category search delegate
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -10675,10 +10698,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `default_plan_category_search.dart` на экране (Plans tab (second bottom tab)): Default plan category search delegate.
-- **Зачем:** Пользователь видит `default_plan_category_search.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `default_plan_category_search.dart` (`DefaultPlanCategorySearchDelegate`).
-- **Обязанности:** Реализует в `default_plan_category_search.dart`: Default plan category search delegate.
+- **Что это:** `default_plan_category_search.dart` на вкладка Plans (вторая снизу) — Реализует `DefaultPlanCategorySearchDelegate` и связанный API в `default_plan_category_search.dart`..
+- **Зачем:** Пользователь видит UI из `default_plan_category_search.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `DefaultPlanCategorySearchDelegate`.
+- **Обязанности:** Реализует `DefaultPlanCategorySearchDelegate` и связанный API в `default_plan_category_search.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10689,9 +10712,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `default_plan_timezone_search.dart` for Plans tab (second bottom tab): Default plan TZ search delegate.
-- **Why needed:** Users interact with `default_plan_timezone_search.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `default_plan_timezone_search.dart` (implementation details in the source file).
+- **What this is:** `default_plan_timezone_search.dart` on Plans tab (second bottom tab) — Default plan TZ search delegate.
+- **Why needed:** Users see `default_plan_timezone_search.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Dart module `default_plan_timezone_search.dart` — open file for classes and helpers.
 - **Responsibilities:** Default plan TZ search delegate
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
@@ -10700,10 +10723,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `default_plan_timezone_search.dart` на экране (Plans tab (second bottom tab)): Default plan TZ search delegate.
-- **Зачем:** Пользователь видит `default_plan_timezone_search.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `default_plan_timezone_search.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `default_plan_timezone_search.dart`: Default plan TZ search delegate.
+- **Что это:** `default_plan_timezone_search.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `default_plan_timezone_search` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `default_plan_timezone_search.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `default_plan_timezone_search.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `default_plan_timezone_search` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10714,9 +10737,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `plan_record_link_settings.dart` for Plans tab (second bottom tab): Record→plan suggestion prefs.
-- **Why needed:** Users interact with `plan_record_link_settings.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `plan_record_link_settings.dart` (`PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`).
+- **What this is:** `plan_record_link_settings.dart` on Plans tab (second bottom tab) — Record→plan suggestion prefs.
+- **Why needed:** Users see `plan_record_link_settings.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`.
 - **Key code names:** `PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`
 - **Responsibilities:** Record→plan suggestion prefs
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -10726,10 +10749,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `plan_record_link_settings.dart` на экране (Plans tab (second bottom tab)): Record→plan suggestion prefs.
-- **Зачем:** Пользователь видит `plan_record_link_settings.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `plan_record_link_settings.dart` (`PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`).
-- **Обязанности:** Реализует в `plan_record_link_settings.dart`: Record→plan suggestion prefs.
+- **Что это:** `plan_record_link_settings.dart` на вкладка Plans (вторая снизу) — Реализует `PlanRecordLinkSuggestionSettingsBlock` и связанный API в `plan_record_link_settings.dart`..
+- **Зачем:** Пользователь видит UI из `plan_record_link_settings.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanRecordLinkSuggestionSettingsBlock`, `PlanRecordLinkSuggestionSettingsBlockState`.
+- **Обязанности:** Реализует `PlanRecordLinkSuggestionSettingsBlock` и связанный API в `plan_record_link_settings.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10740,9 +10763,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_no_tags_settings.dart` for Plans tab (second bottom tab): Synthetic “No Tags” chip prefs.
-- **Why needed:** Users interact with `planning_no_tags_settings.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_no_tags_settings.dart` (`PlanningNoTagsSettingsBlock`, `PlanningNoTagsSettingsBlockState`).
+- **What this is:** `planning_no_tags_settings.dart` on Plans tab (second bottom tab) — Synthetic “No Tags” chip prefs.
+- **Why needed:** Users see `planning_no_tags_settings.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningNoTagsSettingsBlock`, `PlanningNoTagsSettingsBlockState`.
 - **Key code names:** `PlanningNoTagsSettingsBlock`, `PlanningNoTagsSettingsBlockState`
 - **Responsibilities:** Synthetic “No Tags” chip prefs
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -10752,10 +10775,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_no_tags_settings.dart` на экране (Plans tab (second bottom tab)): Synthetic “No Tags” chip prefs.
-- **Зачем:** Пользователь видит `planning_no_tags_settings.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_no_tags_settings.dart` (`PlanningNoTagsSettingsBlock`, `PlanningNoTagsSettingsBlockState`).
-- **Обязанности:** Реализует в `planning_no_tags_settings.dart`: Synthetic “No Tags” chip prefs.
+- **Что это:** `planning_no_tags_settings.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningNoTagsSettingsBlock` и связанный API в `planning_no_tags_settings.dart`..
+- **Зачем:** Пользователь видит UI из `planning_no_tags_settings.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningNoTagsSettingsBlock`, `PlanningNoTagsSettingsBlockState`.
+- **Обязанности:** Реализует `PlanningNoTagsSettingsBlock` и связанный API в `planning_no_tags_settings.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10766,9 +10789,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_timeline_bounds_sheet.dart` for Plans tab (second bottom tab): Visible hour range slider sheet.
-- **Why needed:** Users interact with `planning_timeline_bounds_sheet.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_timeline_bounds_sheet.dart` (`PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`).
+- **What this is:** `planning_timeline_bounds_sheet.dart` on Plans tab (second bottom tab) — Visible hour range slider sheet.
+- **Why needed:** Users see `planning_timeline_bounds_sheet.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`.
 - **Key code names:** `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`
 - **Responsibilities:** Visible hour range slider sheet
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -10778,10 +10801,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_timeline_bounds_sheet.dart` на экране (Plans tab (second bottom tab)): Visible hour range slider sheet.
-- **Зачем:** Пользователь видит `planning_timeline_bounds_sheet.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_timeline_bounds_sheet.dart` (`PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`).
-- **Обязанности:** Реализует в `planning_timeline_bounds_sheet.dart`: Visible hour range slider sheet.
+- **Что это:** `planning_timeline_bounds_sheet.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimelineBoundsSheet` и связанный API в `planning_timeline_bounds_sheet.dart`..
+- **Зачем:** Пользователь видит UI из `planning_timeline_bounds_sheet.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimelineBoundsSheet`, `PlanningTimelineBoundsSheetState`.
+- **Обязанности:** Реализует `PlanningTimelineBoundsSheet` и связанный API в `planning_timeline_bounds_sheet.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10792,9 +10815,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `smart_plan_sheet.dart` for Plans tab (second bottom tab): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Why needed:** Users interact with `smart_plan_sheet.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `smart_plan_sheet.dart` (`SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`).
+- **What this is:** `smart_plan_sheet.dart` on Plans tab (second bottom tab) — Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Why needed:** Users see `smart_plan_sheet.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`.
 - **Key code names:** `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`
 - **Responsibilities:** Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -10804,10 +10827,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `smart_plan_sheet.dart` на экране (Plans tab (second bottom tab)): Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
-- **Зачем:** Пользователь видит `smart_plan_sheet.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `smart_plan_sheet.dart` (`SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`).
-- **Обязанности:** Реализует в `smart_plan_sheet.dart`: Plans tab: date pager shell + day page body, Time View modules, settings, bulk edit.
+- **Что это:** `smart_plan_sheet.dart` на вкладка Plans (вторая снизу) — Реализует `SmartPlanCommit` и связанный API в `smart_plan_sheet.dart`..
+- **Зачем:** Пользователь видит UI из `smart_plan_sheet.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `SmartPlanCommit`, `SmartPlanSheet`, `_SmartPlanSheetState`.
+- **Обязанности:** Реализует `SmartPlanCommit` и связанный API в `smart_plan_sheet.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10818,9 +10841,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_time_view.dart` for Plans tab (second bottom tab): Time View composition, cascade, edge scroll.
-- **Why needed:** Users interact with `planning_time_view.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_time_view.dart` (`PlanningTimeViewPlanningTimeView`).
+- **What this is:** `planning_time_view.dart` on Plans tab (second bottom tab) — Time View composition, cascade, edge scroll.
+- **Why needed:** Users see `planning_time_view.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewPlanningTimeView`.
 - **Key code names:** `PlanningTimeViewPlanningTimeView`
 - **Responsibilities:** Time View composition, cascade, edge scroll
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -10830,10 +10853,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_time_view.dart` на экране (Plans tab (second bottom tab)): Time View composition, cascade, edge scroll.
-- **Зачем:** Пользователь видит `planning_time_view.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_time_view.dart` (`PlanningTimeViewPlanningTimeView`).
-- **Обязанности:** Реализует в `planning_time_view.dart`: Time View composition, cascade, edge scroll.
+- **Что это:** `planning_time_view.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewPlanningTimeView` и связанный API в `planning_time_view.dart`..
+- **Зачем:** Пользователь видит UI из `planning_time_view.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewPlanningTimeView`.
+- **Обязанности:** Реализует `PlanningTimeViewPlanningTimeView` и связанный API в `planning_time_view.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10844,9 +10867,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_time_view_coordinator.dart` for Plans tab (second bottom tab): Time View state fields.
-- **Why needed:** Users interact with `planning_time_view_coordinator.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_time_view_coordinator.dart` (`PlanningTimeViewCoordinator`).
+- **What this is:** `planning_time_view_coordinator.dart` on Plans tab (second bottom tab) — Time View state fields.
+- **Why needed:** Users see `planning_time_view_coordinator.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewCoordinator`.
 - **Key code names:** `PlanningTimeViewCoordinator`
 - **Responsibilities:** Time View state fields
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -10856,10 +10879,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_time_view_coordinator.dart` на экране (Plans tab (second bottom tab)): Time View state fields.
-- **Зачем:** Пользователь видит `planning_time_view_coordinator.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_time_view_coordinator.dart` (`PlanningTimeViewCoordinator`).
-- **Обязанности:** Реализует в `planning_time_view_coordinator.dart`: Time View state fields.
+- **Что это:** `planning_time_view_coordinator.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewCoordinator` и связанный API в `planning_time_view_coordinator.dart`..
+- **Зачем:** Пользователь видит UI из `planning_time_view_coordinator.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewCoordinator`.
+- **Обязанности:** Реализует `PlanningTimeViewCoordinator` и связанный API в `planning_time_view_coordinator.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10870,10 +10893,11 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_time_view_host.dart` for Plans tab (second bottom tab): callback surface.
-- **Why needed:** Users interact with `planning_time_view_host.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_time_view_host.dart` (implementation details in the source file).
-- **Responsibilities:** `PlanningTimeViewHost` callback surface
+- **What this is:** `planning_time_view_host.dart` on Plans tab (second bottom tab) — PlanningTimeViewHost.
+- **Why needed:** Users see `planning_time_view_host.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewHost`.
+- **Key code names:** `PlanningTimeViewHost`
+- **Responsibilities:** PlanningTimeViewHost
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: `PlanningTimeViewHost` callback surface
@@ -10881,10 +10905,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_time_view_host.dart` на экране (Plans tab (second bottom tab)): callback surface.
-- **Зачем:** Пользователь видит `planning_time_view_host.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_time_view_host.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `planning_time_view_host.dart`: callback surface.
+- **Что это:** `planning_time_view_host.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewHost` и связанный API в `planning_time_view_host.dart`..
+- **Зачем:** Пользователь видит UI из `planning_time_view_host.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewHost`.
+- **Обязанности:** Реализует `PlanningTimeViewHost` и связанный API в `planning_time_view_host.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10895,9 +10919,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_canvas.dart` for Plans tab (second bottom tab): Proportional day timeline canvas.
-- **Why needed:** Users interact with `time_view_canvas.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_canvas.dart` (`PlanningTimeViewTimeViewCanvas`).
+- **What this is:** `time_view_canvas.dart` on Plans tab (second bottom tab) — Proportional day timeline canvas.
+- **Why needed:** Users see `time_view_canvas.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewTimeViewCanvas`.
 - **Key code names:** `PlanningTimeViewTimeViewCanvas`
 - **Responsibilities:** Proportional day timeline canvas
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -10907,10 +10931,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_canvas.dart` на экране (Plans tab (second bottom tab)): Proportional day timeline canvas.
-- **Зачем:** Пользователь видит `time_view_canvas.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_canvas.dart` (`PlanningTimeViewTimeViewCanvas`).
-- **Обязанности:** Реализует в `time_view_canvas.dart`: Proportional day timeline canvas.
+- **Что это:** `time_view_canvas.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewTimeViewCanvas` и связанный API в `time_view_canvas.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_canvas.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewCanvas`.
+- **Обязанности:** Реализует `PlanningTimeViewTimeViewCanvas` и связанный API в `time_view_canvas.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10921,9 +10945,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_card_layer.dart` for Plans tab (second bottom tab): Scheduled card stack layer.
-- **Why needed:** Users interact with `time_view_card_layer.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_card_layer.dart` (`PlanningTimeViewTimeViewCardLayer`).
+- **What this is:** `time_view_card_layer.dart` on Plans tab (second bottom tab) — Scheduled card stack layer.
+- **Why needed:** Users see `time_view_card_layer.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewTimeViewCardLayer`.
 - **Key code names:** `PlanningTimeViewTimeViewCardLayer`
 - **Responsibilities:** Scheduled card stack layer
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -10933,10 +10957,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_card_layer.dart` на экране (Plans tab (second bottom tab)): Scheduled card stack layer.
-- **Зачем:** Пользователь видит `time_view_card_layer.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_card_layer.dart` (`PlanningTimeViewTimeViewCardLayer`).
-- **Обязанности:** Реализует в `time_view_card_layer.dart`: Scheduled card stack layer.
+- **Что это:** `time_view_card_layer.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewTimeViewCardLayer` и связанный API в `time_view_card_layer.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_card_layer.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewCardLayer`.
+- **Обязанности:** Реализует `PlanningTimeViewTimeViewCardLayer` и связанный API в `time_view_card_layer.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10947,9 +10971,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_drag_controller.dart` for Plans tab (second bottom tab): Vertical drag state/helpers.
-- **Why needed:** Users interact with `time_view_drag_controller.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_drag_controller.dart` (`PlanningTimeViewTimeViewDragController`).
+- **What this is:** `time_view_drag_controller.dart` on Plans tab (second bottom tab) — Vertical drag state/helpers.
+- **Why needed:** Users see `time_view_drag_controller.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewTimeViewDragController`.
 - **Key code names:** `PlanningTimeViewTimeViewDragController`
 - **Responsibilities:** Vertical drag state/helpers
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -10959,10 +10983,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_drag_controller.dart` на экране (Plans tab (second bottom tab)): Vertical drag state/helpers.
-- **Зачем:** Пользователь видит `time_view_drag_controller.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_drag_controller.dart` (`PlanningTimeViewTimeViewDragController`).
-- **Обязанности:** Реализует в `time_view_drag_controller.dart`: Vertical drag state/helpers.
+- **Что это:** `time_view_drag_controller.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewTimeViewDragController` и связанный API в `time_view_drag_controller.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_drag_controller.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewDragController`.
+- **Обязанности:** Реализует `PlanningTimeViewTimeViewDragController` и связанный API в `time_view_drag_controller.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10973,11 +10997,11 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_drag_state.dart` for Plans tab (second bottom tab): , gesture phase enums.
-- **Why needed:** Users interact with `time_view_drag_state.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_drag_state.dart` (`TimelineResizeEdge`, `TimelinePointerGesturePhase`).
+- **What this is:** `time_view_drag_state.dart` on Plans tab (second bottom tab) — TimelineResizeEdge.
+- **Why needed:** Users see `time_view_drag_state.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `TimelineResizeEdge`, `TimelinePointerGesturePhase`.
 - **Key code names:** `TimelineResizeEdge`, `TimelinePointerGesturePhase`
-- **Responsibilities:** `TimelineResizeEdge`, gesture phase enums
+- **Responsibilities:** TimelineResizeEdge
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: `TimelineResizeEdge`, gesture phase enums
@@ -10985,10 +11009,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_drag_state.dart` на экране (Plans tab (second bottom tab)): , gesture phase enums.
-- **Зачем:** Пользователь видит `time_view_drag_state.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_drag_state.dart` (`TimelineResizeEdge`, `TimelinePointerGesturePhase`).
-- **Обязанности:** Реализует в `time_view_drag_state.dart`: , gesture phase enums.
+- **Что это:** `time_view_drag_state.dart` на вкладка Plans (вторая снизу) — Реализует `TimelineResizeEdge` и связанный API в `time_view_drag_state.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_drag_state.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `TimelineResizeEdge`, `TimelinePointerGesturePhase`.
+- **Обязанности:** Реализует `TimelineResizeEdge` и связанный API в `time_view_drag_state.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -10999,9 +11023,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_drop_preview.dart` for Plans tab (second bottom tab): Drop intent / cascade preview.
-- **Why needed:** Users interact with `time_view_drop_preview.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_drop_preview.dart` (`PlanningTimeViewTimeViewDropPreview`).
+- **What this is:** `time_view_drop_preview.dart` on Plans tab (second bottom tab) — Drop intent / cascade preview.
+- **Why needed:** Users see `time_view_drop_preview.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewTimeViewDropPreview`.
 - **Key code names:** `PlanningTimeViewTimeViewDropPreview`
 - **Responsibilities:** Drop intent / cascade preview
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -11011,10 +11035,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_drop_preview.dart` на экране (Plans tab (second bottom tab)): Drop intent / cascade preview.
-- **Зачем:** Пользователь видит `time_view_drop_preview.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_drop_preview.dart` (`PlanningTimeViewTimeViewDropPreview`).
-- **Обязанности:** Реализует в `time_view_drop_preview.dart`: Drop intent / cascade preview.
+- **Что это:** `time_view_drop_preview.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewTimeViewDropPreview` и связанный API в `time_view_drop_preview.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_drop_preview.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewDropPreview`.
+- **Обязанности:** Реализует `PlanningTimeViewTimeViewDropPreview` и связанный API в `time_view_drop_preview.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11025,9 +11049,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_fixed_time_settings.dart` for Plans tab (second bottom tab): Fixed-time tag chip settings block.
-- **Why needed:** Users interact with `time_view_fixed_time_settings.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_fixed_time_settings.dart` (`TimeViewFixedTagsSettingsBlock`, `TimeViewFixedTagsSettingsBlockState`).
+- **What this is:** `time_view_fixed_time_settings.dart` on Plans tab (second bottom tab) — Fixed-time tag chip settings block.
+- **Why needed:** Users see `time_view_fixed_time_settings.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `TimeViewFixedTagsSettingsBlock`, `TimeViewFixedTagsSettingsBlockState`.
 - **Key code names:** `TimeViewFixedTagsSettingsBlock`, `TimeViewFixedTagsSettingsBlockState`
 - **Responsibilities:** Fixed-time tag chip settings block
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -11037,10 +11061,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_fixed_time_settings.dart` на экране (Plans tab (second bottom tab)): Fixed-time tag chip settings block.
-- **Зачем:** Пользователь видит `time_view_fixed_time_settings.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_fixed_time_settings.dart` (`TimeViewFixedTagsSettingsBlock`, `TimeViewFixedTagsSettingsBlockState`).
-- **Обязанности:** Реализует в `time_view_fixed_time_settings.dart`: Fixed-time tag chip settings block.
+- **Что это:** `time_view_fixed_time_settings.dart` на вкладка Plans (вторая снизу) — Реализует `TimeViewFixedTagsSettingsBlock` и связанный API в `time_view_fixed_time_settings.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_fixed_time_settings.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `TimeViewFixedTagsSettingsBlock`, `TimeViewFixedTagsSettingsBlockState`.
+- **Обязанности:** Реализует `TimeViewFixedTagsSettingsBlock` и связанный API в `time_view_fixed_time_settings.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11051,9 +11075,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_hour_grid.dart` for Plans tab (second bottom tab): Hour grid + unscheduled strip.
-- **Why needed:** Users interact with `time_view_hour_grid.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_hour_grid.dart` (`PlanningTimeViewTimeViewHourGrid`).
+- **What this is:** `time_view_hour_grid.dart` on Plans tab (second bottom tab) — Hour grid + unscheduled strip.
+- **Why needed:** Users see `time_view_hour_grid.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewTimeViewHourGrid`.
 - **Key code names:** `PlanningTimeViewTimeViewHourGrid`
 - **Responsibilities:** Hour grid + unscheduled strip
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -11063,10 +11087,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_hour_grid.dart` на экране (Plans tab (second bottom tab)): Hour grid + unscheduled strip.
-- **Зачем:** Пользователь видит `time_view_hour_grid.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_hour_grid.dart` (`PlanningTimeViewTimeViewHourGrid`).
-- **Обязанности:** Реализует в `time_view_hour_grid.dart`: Hour grid + unscheduled strip.
+- **Что это:** `time_view_hour_grid.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewTimeViewHourGrid` и связанный API в `time_view_hour_grid.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_hour_grid.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewHourGrid`.
+- **Обязанности:** Реализует `PlanningTimeViewTimeViewHourGrid` и связанный API в `time_view_hour_grid.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11077,10 +11101,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_interaction_block.dart` for Plans tab (second bottom tab): Time View card pointer/drag/resize zones.
-- **Why needed:** Users interact with `time_view_interaction_block.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_interaction_block.dart` (`TimelinePlanInteractionBlock`, `TimelinePlanInteractionBlockState`).
-- **Key code names:** `TimelinePlanInteractionBlock`, `TimelinePlanInteractionBlockState`
+- **What this is:** `time_view_interaction_block.dart` on Plans tab (second bottom tab) — Time View card pointer/drag/resize zones.
+- **Why needed:** Users see `time_view_interaction_block.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `TimelinePlanInteractionBlock`, `TimelinePlanInteractionBlockState`, `TimelineResizeEdgeHandle`, `TimelineResizeEdgeHandleState`.
+- **Key code names:** `TimelinePlanInteractionBlock`, `TimelinePlanInteractionBlockState`, `TimelineResizeEdgeHandle`, `TimelineResizeEdgeHandleState`
 - **Responsibilities:** Time View card pointer/drag/resize zones
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
 - **Can it be deleted?** No — required for app runtime.
@@ -11089,10 +11113,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_interaction_block.dart` на экране (Plans tab (second bottom tab)): Time View card pointer/drag/resize zones.
-- **Зачем:** Пользователь видит `time_view_interaction_block.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_interaction_block.dart` (`TimelinePlanInteractionBlock`, `TimelinePlanInteractionBlockState`).
-- **Обязанности:** Реализует в `time_view_interaction_block.dart`: Time View card pointer/drag/resize zones.
+- **Что это:** `time_view_interaction_block.dart` на вкладка Plans (вторая снизу) — Реализует `TimelinePlanInteractionBlock` и связанный API в `time_view_interaction_block.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_interaction_block.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `TimelinePlanInteractionBlock`, `TimelinePlanInteractionBlockState`, `TimelineResizeEdgeHandle`, `TimelineResizeEdgeHandleState`.
+- **Обязанности:** Реализует `TimelinePlanInteractionBlock` и связанный API в `time_view_interaction_block.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11103,9 +11127,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_resize_controller.dart` for Plans tab (second bottom tab): Edge resize state/helpers.
-- **Why needed:** Users interact with `time_view_resize_controller.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_resize_controller.dart` (`PlanningTimeViewTimeViewResizeController`).
+- **What this is:** `time_view_resize_controller.dart` on Plans tab (second bottom tab) — Edge resize state/helpers.
+- **Why needed:** Users see `time_view_resize_controller.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewTimeViewResizeController`.
 - **Key code names:** `PlanningTimeViewTimeViewResizeController`
 - **Responsibilities:** Edge resize state/helpers
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -11115,10 +11139,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_resize_controller.dart` на экране (Plans tab (second bottom tab)): Edge resize state/helpers.
-- **Зачем:** Пользователь видит `time_view_resize_controller.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_resize_controller.dart` (`PlanningTimeViewTimeViewResizeController`).
-- **Обязанности:** Реализует в `time_view_resize_controller.dart`: Edge resize state/helpers.
+- **Что это:** `time_view_resize_controller.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewTimeViewResizeController` и связанный API в `time_view_resize_controller.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_resize_controller.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewResizeController`.
+- **Обязанности:** Реализует `PlanningTimeViewTimeViewResizeController` и связанный API в `time_view_resize_controller.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11129,9 +11153,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_search_delegate.dart` for Plans tab (second bottom tab): Category default-time search UI.
-- **Why needed:** Users interact with `time_view_search_delegate.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_search_delegate.dart` (`PlanningTimeViewTimeViewSearchDelegate`).
+- **What this is:** `time_view_search_delegate.dart` on Plans tab (second bottom tab) — Category default-time search UI.
+- **Why needed:** Users see `time_view_search_delegate.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewTimeViewSearchDelegate`.
 - **Key code names:** `PlanningTimeViewTimeViewSearchDelegate`
 - **Responsibilities:** Category default-time search UI
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -11141,10 +11165,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_search_delegate.dart` на экране (Plans tab (second bottom tab)): Category default-time search UI.
-- **Зачем:** Пользователь видит `time_view_search_delegate.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_search_delegate.dart` (`PlanningTimeViewTimeViewSearchDelegate`).
-- **Обязанности:** Реализует в `time_view_search_delegate.dart`: Category default-time search UI.
+- **Что это:** `time_view_search_delegate.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewTimeViewSearchDelegate` и связанный API в `time_view_search_delegate.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_search_delegate.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewSearchDelegate`.
+- **Обязанности:** Реализует `PlanningTimeViewTimeViewSearchDelegate` и связанный API в `time_view_search_delegate.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11155,9 +11179,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `time_view_settings_sheet.dart` for Plans tab (second bottom tab): Time View settings + default plan times.
-- **Why needed:** Users interact with `time_view_settings_sheet.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `time_view_settings_sheet.dart` (`PlanningTimeViewTimeViewSettingsSheet`).
+- **What this is:** `time_view_settings_sheet.dart` on Plans tab (second bottom tab) — Time View settings + default plan times.
+- **Why needed:** Users see `time_view_settings_sheet.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningTimeViewTimeViewSettingsSheet`.
 - **Key code names:** `PlanningTimeViewTimeViewSettingsSheet`
 - **Responsibilities:** Time View settings + default plan times
 - **When to open:** Time View visual schedule: drag, resize, hour grid, card placement.
@@ -11167,10 +11191,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `time_view_settings_sheet.dart` на экране (Plans tab (second bottom tab)): Time View settings + default plan times.
-- **Зачем:** Пользователь видит `time_view_settings_sheet.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `time_view_settings_sheet.dart` (`PlanningTimeViewTimeViewSettingsSheet`).
-- **Обязанности:** Реализует в `time_view_settings_sheet.dart`: Time View settings + default plan times.
+- **Что это:** `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningTimeViewTimeViewSettingsSheet` и связанный API в `time_view_settings_sheet.dart`..
+- **Зачем:** Пользователь видит UI из `time_view_settings_sheet.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningTimeViewTimeViewSettingsSheet`.
+- **Обязанности:** Реализует `PlanningTimeViewTimeViewSettingsSheet` и связанный API в `time_view_settings_sheet.dart`.
 - **Когда открывать:** Time View: перетаскивание, сетка часов, карточки.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11181,9 +11205,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `plan_card_reorder_settle.dart` for Plans tab (second bottom tab): Done-card reorder slide settle.
-- **Why needed:** Users interact with `plan_card_reorder_settle.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `plan_card_reorder_settle.dart` (`PlanCardReorderSettle`, `PlanCardReorderSettleState`).
+- **What this is:** `plan_card_reorder_settle.dart` on Plans tab (second bottom tab) — Done-card reorder slide settle.
+- **Why needed:** Users see `plan_card_reorder_settle.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanCardReorderSettle`, `PlanCardReorderSettleState`.
 - **Key code names:** `PlanCardReorderSettle`, `PlanCardReorderSettleState`
 - **Responsibilities:** Done-card reorder slide settle
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -11193,10 +11217,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `plan_card_reorder_settle.dart` на экране (Plans tab (second bottom tab)): Done-card reorder slide settle.
-- **Зачем:** Пользователь видит `plan_card_reorder_settle.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `plan_card_reorder_settle.dart` (`PlanCardReorderSettle`, `PlanCardReorderSettleState`).
-- **Обязанности:** Реализует в `plan_card_reorder_settle.dart`: Done-card reorder slide settle.
+- **Что это:** `plan_card_reorder_settle.dart` на вкладка Plans (вторая снизу) — Реализует `PlanCardReorderSettle` и связанный API в `plan_card_reorder_settle.dart`..
+- **Зачем:** Пользователь видит UI из `plan_card_reorder_settle.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanCardReorderSettle`, `PlanCardReorderSettleState`.
+- **Обязанности:** Реализует `PlanCardReorderSettle` и связанный API в `plan_card_reorder_settle.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11207,9 +11231,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_bulk_bar.dart` for Plans tab (second bottom tab): Bulk selection bottom bar.
-- **Why needed:** Users interact with `planning_bulk_bar.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_bulk_bar.dart` (`PlanningBulkBottomBar`).
+- **What this is:** `planning_bulk_bar.dart` on Plans tab (second bottom tab) — Bulk selection bottom bar.
+- **Why needed:** Users see `planning_bulk_bar.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningBulkBottomBar`.
 - **Key code names:** `PlanningBulkBottomBar`
 - **Responsibilities:** Bulk selection bottom bar
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -11219,10 +11243,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_bulk_bar.dart` на экране (Plans tab (second bottom tab)): Bulk selection bottom bar.
-- **Зачем:** Пользователь видит `planning_bulk_bar.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_bulk_bar.dart` (`PlanningBulkBottomBar`).
-- **Обязанности:** Реализует в `planning_bulk_bar.dart`: Bulk selection bottom bar.
+- **Что это:** `planning_bulk_bar.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningBulkBottomBar` и связанный API в `planning_bulk_bar.dart`..
+- **Зачем:** Пользователь видит UI из `planning_bulk_bar.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningBulkBottomBar`.
+- **Обязанности:** Реализует `PlanningBulkBottomBar` и связанный API в `planning_bulk_bar.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11233,9 +11257,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_day_card_list_keep_alive.dart` for Plans tab (second bottom tab): List keep-alive wrapper.
-- **Why needed:** Users interact with `planning_day_card_list_keep_alive.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_day_card_list_keep_alive.dart` (`PlanningDayCardListKeepAliveState`).
+- **What this is:** `planning_day_card_list_keep_alive.dart` on Plans tab (second bottom tab) — List keep-alive wrapper.
+- **Why needed:** Users see `planning_day_card_list_keep_alive.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningDayCardListKeepAliveState`.
 - **Key code names:** `PlanningDayCardListKeepAliveState`
 - **Responsibilities:** List keep-alive wrapper
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -11245,10 +11269,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_day_card_list_keep_alive.dart` на экране (Plans tab (second bottom tab)): List keep-alive wrapper.
-- **Зачем:** Пользователь видит `planning_day_card_list_keep_alive.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_day_card_list_keep_alive.dart` (`PlanningDayCardListKeepAliveState`).
-- **Обязанности:** Реализует в `planning_day_card_list_keep_alive.dart`: List keep-alive wrapper.
+- **Что это:** `planning_day_card_list_keep_alive.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningDayCardListKeepAliveState` и связанный API в `planning_day_card_list_keep_alive.dart`..
+- **Зачем:** Пользователь видит UI из `planning_day_card_list_keep_alive.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningDayCardListKeepAliveState`.
+- **Обязанности:** Реализует `PlanningDayCardListKeepAliveState` и связанный API в `planning_day_card_list_keep_alive.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11259,9 +11283,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_empty_states.dart` for Plans tab (second bottom tab): Planning empty-state widgets.
-- **Why needed:** Users interact with `planning_empty_states.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_empty_states.dart` (`PlanningDayEmptyState`, `PlanningFrozenListEmptyState`).
+- **What this is:** `planning_empty_states.dart` on Plans tab (second bottom tab) — Planning empty-state widgets.
+- **Why needed:** Users see `planning_empty_states.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningDayEmptyState`, `PlanningFrozenListEmptyState`.
 - **Key code names:** `PlanningDayEmptyState`, `PlanningFrozenListEmptyState`
 - **Responsibilities:** Planning empty-state widgets
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -11271,10 +11295,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_empty_states.dart` на экране (Plans tab (second bottom tab)): Planning empty-state widgets.
-- **Зачем:** Пользователь видит `planning_empty_states.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_empty_states.dart` (`PlanningDayEmptyState`, `PlanningFrozenListEmptyState`).
-- **Обязанности:** Реализует в `planning_empty_states.dart`: Planning empty-state widgets.
+- **Что это:** `planning_empty_states.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningDayEmptyState` и связанный API в `planning_empty_states.dart`..
+- **Зачем:** Пользователь видит UI из `planning_empty_states.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningDayEmptyState`, `PlanningFrozenListEmptyState`.
+- **Обязанности:** Реализует `PlanningDayEmptyState` и связанный API в `planning_empty_states.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11285,9 +11309,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_filter_controls.dart` for Plans tab (second bottom tab): Sort-mode segmented control.
-- **Why needed:** Users interact with `planning_filter_controls.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_filter_controls.dart` (`PlanningSortModeBar`).
+- **What this is:** `planning_filter_controls.dart` on Plans tab (second bottom tab) — Sort-mode segmented control.
+- **Why needed:** Users see `planning_filter_controls.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningSortModeBar`.
 - **Key code names:** `PlanningSortModeBar`
 - **Responsibilities:** Sort-mode segmented control
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -11297,10 +11321,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_filter_controls.dart` на экране (Plans tab (second bottom tab)): Sort-mode segmented control.
-- **Зачем:** Пользователь видит `planning_filter_controls.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_filter_controls.dart` (`PlanningSortModeBar`).
-- **Обязанности:** Реализует в `planning_filter_controls.dart`: Sort-mode segmented control.
+- **Что это:** `planning_filter_controls.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningSortModeBar` и связанный API в `planning_filter_controls.dart`..
+- **Зачем:** Пользователь видит UI из `planning_filter_controls.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningSortModeBar`.
+- **Обязанности:** Реализует `PlanningSortModeBar` и связанный API в `planning_filter_controls.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11311,9 +11335,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_list_helpers.dart` for Plans tab (second bottom tab): Reorder list proxy decorator.
-- **Why needed:** Users interact with `planning_list_helpers.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_list_helpers.dart` (implementation details in the source file).
+- **What this is:** `planning_list_helpers.dart` on Plans tab (second bottom tab) — Reorder list proxy decorator.
+- **Why needed:** Users see `planning_list_helpers.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Dart module `planning_list_helpers.dart` — open file for classes and helpers.
 - **Responsibilities:** Reorder list proxy decorator
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
 - **Can it be deleted?** No — required for app runtime.
@@ -11322,10 +11346,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_list_helpers.dart` на экране (Plans tab (second bottom tab)): Reorder list proxy decorator.
-- **Зачем:** Пользователь видит `planning_list_helpers.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_list_helpers.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `planning_list_helpers.dart`: Reorder list proxy decorator.
+- **Что это:** `planning_list_helpers.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_list_helpers` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_list_helpers.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_list_helpers.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `planning_list_helpers` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11336,9 +11360,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_menu_overlay.dart` for Plans tab (second bottom tab): Semicircle plan card radial menu.
-- **Why needed:** Users interact with `planning_menu_overlay.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_menu_overlay.dart` (`SemicirclePlanningMenuOverlay`, `SemicirclePlanningMenuOverlayState`).
+- **What this is:** `planning_menu_overlay.dart` on Plans tab (second bottom tab) — Semicircle plan card radial menu.
+- **Why needed:** Users see `planning_menu_overlay.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `SemicirclePlanningMenuOverlay`, `SemicirclePlanningMenuOverlayState`.
 - **Key code names:** `SemicirclePlanningMenuOverlay`, `SemicirclePlanningMenuOverlayState`
 - **Responsibilities:** Semicircle plan card radial menu
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -11348,10 +11372,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_menu_overlay.dart` на экране (Plans tab (second bottom tab)): Semicircle plan card radial menu.
-- **Зачем:** Пользователь видит `planning_menu_overlay.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_menu_overlay.dart` (`SemicirclePlanningMenuOverlay`, `SemicirclePlanningMenuOverlayState`).
-- **Обязанности:** Реализует в `planning_menu_overlay.dart`: Semicircle plan card radial menu.
+- **Что это:** `planning_menu_overlay.dart` на вкладка Plans (вторая снизу) — Реализует `SemicirclePlanningMenuOverlay` и связанный API в `planning_menu_overlay.dart`..
+- **Зачем:** Пользователь видит UI из `planning_menu_overlay.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `SemicirclePlanningMenuOverlay`, `SemicirclePlanningMenuOverlayState`.
+- **Обязанности:** Реализует `SemicirclePlanningMenuOverlay` и связанный API в `planning_menu_overlay.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11362,9 +11386,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_quick_add_strip.dart` for Plans tab (second bottom tab): Quick-add tag strip above inline task field.
-- **Why needed:** Users interact with `planning_quick_add_strip.dart` when using Plans tab (second bottom tab).
-- **What it contains:** Flutter widgets in `planning_quick_add_strip.dart` (`PlanningQuickAddTagStrip`).
+- **What this is:** `planning_quick_add_strip.dart` on Plans tab (second bottom tab) — Quick-add tag strip above inline task field.
+- **Why needed:** Users see `planning_quick_add_strip.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningQuickAddTagStrip`.
 - **Key code names:** `PlanningQuickAddTagStrip`
 - **Responsibilities:** Quick-add tag strip above inline task field
 - **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
@@ -11374,10 +11398,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `planning_quick_add_strip.dart` на экране (Plans tab (second bottom tab)): Quick-add tag strip above inline task field.
-- **Зачем:** Пользователь видит `planning_quick_add_strip.dart`, когда открывает Plans tab (second bottom tab).
-- **Содержимое:** Flutter-виджеты в `planning_quick_add_strip.dart` (`PlanningQuickAddTagStrip`).
-- **Обязанности:** Реализует в `planning_quick_add_strip.dart`: Quick-add tag strip above inline task field.
+- **Что это:** `planning_quick_add_strip.dart` на вкладка Plans (вторая снизу) — Реализует `PlanningQuickAddTagStrip` и связанный API в `planning_quick_add_strip.dart`..
+- **Зачем:** Пользователь видит UI из `planning_quick_add_strip.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Основные символы: `PlanningQuickAddTagStrip`.
+- **Обязанности:** Реализует `PlanningQuickAddTagStrip` и связанный API в `planning_quick_add_strip.dart`.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)
@@ -11388,10 +11412,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `desktop_voice_attempt_dialog.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `desktop_voice_attempt_dialog.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `desktop_voice_attempt_dialog.dart` (`DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`).
-- **Key code names:** `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`
+- **What this is:** `desktop_voice_attempt_dialog.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `desktop_voice_attempt_dialog.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`.
+- **Key code names:** `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `desktop_voice_attempt_dialog.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -11400,10 +11424,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `desktop_voice_attempt_dialog.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `desktop_voice_attempt_dialog.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `desktop_voice_attempt_dialog.dart` (`DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`).
-- **Обязанности:** Реализует в `desktop_voice_attempt_dialog.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `desktop_voice_attempt_dialog.dart` на More → Profile и настройки — Реализует `DesktopVoiceAttemptCopyFn` и связанный API в `desktop_voice_attempt_dialog.dart`..
+- **Зачем:** Пользователь видит UI из `desktop_voice_attempt_dialog.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `DesktopVoiceAttemptCopyFn`, `DesktopVoiceAttemptDialogTestHooks`, `_DesktopVoiceAttemptDialog`, `_DesktopVoiceAttemptDialogState`, `_AttemptView`, `_StatusHeader`.
+- **Обязанности:** Реализует `DesktopVoiceAttemptCopyFn` и связанный API в `desktop_voice_attempt_dialog.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_attempt_dialog.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11414,10 +11438,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `desktop_voice_settings_desktop.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `desktop_voice_settings_desktop.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `desktop_voice_settings_desktop.dart` (`DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`).
-- **Key code names:** `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`
+- **What this is:** `desktop_voice_settings_desktop.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `desktop_voice_settings_desktop.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`, `_HeroIconTile`.
+- **Key code names:** `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`, `_HeroIconTile`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `desktop_voice_settings_desktop.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -11426,10 +11450,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `desktop_voice_settings_desktop.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `desktop_voice_settings_desktop.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `desktop_voice_settings_desktop.dart` (`DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`).
-- **Обязанности:** Реализует в `desktop_voice_settings_desktop.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `desktop_voice_settings_desktop.dart` на More → Profile и настройки — Реализует `DesktopVoiceSettingsDesktopGrid` и связанный API в `desktop_voice_settings_desktop.dart`..
+- **Зачем:** Пользователь видит UI из `desktop_voice_settings_desktop.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `DesktopVoiceSettingsDesktopGrid`, `_DesktopVoiceSettingsDesktopGridState`, `_HeroIconTile`.
+- **Обязанности:** Реализует `DesktopVoiceSettingsDesktopGrid` и связанный API в `desktop_voice_settings_desktop.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings_desktop.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11440,10 +11464,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `desktop_voice_settings_section.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `desktop_voice_settings_section.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `desktop_voice_settings_section.dart` (`DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`).
-- **Key code names:** `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`
+- **What this is:** `desktop_voice_settings_section.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `desktop_voice_settings_section.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`.
+- **Key code names:** `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `desktop_voice_settings_section.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -11452,10 +11476,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `desktop_voice_settings_section.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `desktop_voice_settings_section.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `desktop_voice_settings_section.dart` (`DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`).
-- **Обязанности:** Реализует в `desktop_voice_settings_section.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `desktop_voice_settings_section.dart` на More → Profile и настройки — Реализует `DesktopVoiceSettingsSection` и связанный API в `desktop_voice_settings_section.dart`..
+- **Зачем:** Пользователь видит UI из `desktop_voice_settings_section.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `DesktopVoiceSettingsSection`, `_DesktopVoiceSettingsSectionState`, `HotkeyCaptureDialog`, `_HotkeyCaptureDialogState`.
+- **Обязанности:** Реализует `DesktopVoiceSettingsSection` и связанный API в `desktop_voice_settings_section.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_voice_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11466,9 +11490,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `profile_view.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `profile_view.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `profile_view.dart` (`ProfilePage`, `_ProfilePageState`).
+- **What this is:** `profile_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `profile_view.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `ProfilePage`, `_ProfilePageState`.
 - **Key code names:** `ProfilePage`, `_ProfilePageState`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `profile_view.dart` breaks or you need to change its documented role.
@@ -11478,10 +11502,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `profile_view.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `profile_view.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `profile_view.dart` (`ProfilePage`, `_ProfilePageState`).
-- **Обязанности:** Реализует в `profile_view.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `profile_view.dart` на More → Profile и настройки — Реализует `ProfilePage` и связанный API в `profile_view.dart`..
+- **Зачем:** Пользователь видит UI из `profile_view.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `ProfilePage`, `_ProfilePageState`.
+- **Обязанности:** Реализует `ProfilePage` и связанный API в `profile_view.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `profile_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11492,9 +11516,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `account_settings_section.dart` for More → Profile and settings: Signed-in identity + logout row.
-- **Why needed:** Users interact with `account_settings_section.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `account_settings_section.dart` (`AccountSecuritySection`).
+- **What this is:** `account_settings_section.dart` on More → Profile and settings — Signed-in identity + logout row.
+- **Why needed:** Users see `account_settings_section.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `AccountSecuritySection`.
 - **Key code names:** `AccountSecuritySection`
 - **Responsibilities:** Signed-in identity + logout row
 - **When to open:** When behavior tied to `account_settings_section.dart` breaks or you need to change its documented role.
@@ -11504,10 +11528,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `account_settings_section.dart` на экране (More → Profile and settings): Signed-in identity + logout row.
-- **Зачем:** Пользователь видит `account_settings_section.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `account_settings_section.dart` (`AccountSecuritySection`).
-- **Обязанности:** Реализует в `account_settings_section.dart`: Signed-in identity + logout row.
+- **Что это:** `account_settings_section.dart` на More → Profile и настройки — Реализует `AccountSecuritySection` и связанный API в `account_settings_section.dart`..
+- **Зачем:** Пользователь видит UI из `account_settings_section.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `AccountSecuritySection`.
+- **Обязанности:** Реализует `AccountSecuritySection` и связанный API в `account_settings_section.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `account_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/settings/`, `docs/APP_STRUCTURE.md`
@@ -11518,9 +11542,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `notification_settings_section.dart` for More → Profile and settings: OS notification permission block.
-- **Why needed:** Users interact with `notification_settings_section.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `notification_settings_section.dart` (`ProfileNotificationsSection`, `ProfileNotificationsSectionState`).
+- **What this is:** `notification_settings_section.dart` on More → Profile and settings — OS notification permission block.
+- **Why needed:** Users see `notification_settings_section.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `ProfileNotificationsSection`, `ProfileNotificationsSectionState`.
 - **Key code names:** `ProfileNotificationsSection`, `ProfileNotificationsSectionState`
 - **Responsibilities:** OS notification permission block
 - **When to open:** When behavior tied to `notification_settings_section.dart` breaks or you need to change its documented role.
@@ -11530,10 +11554,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `notification_settings_section.dart` на экране (More → Profile and settings): OS notification permission block.
-- **Зачем:** Пользователь видит `notification_settings_section.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `notification_settings_section.dart` (`ProfileNotificationsSection`, `ProfileNotificationsSectionState`).
-- **Обязанности:** Реализует в `notification_settings_section.dart`: OS notification permission block.
+- **Что это:** `notification_settings_section.dart` на More → Profile и настройки — Реализует `ProfileNotificationsSection` и связанный API в `notification_settings_section.dart`..
+- **Зачем:** Пользователь видит UI из `notification_settings_section.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `ProfileNotificationsSection`, `ProfileNotificationsSectionState`.
+- **Обязанности:** Реализует `ProfileNotificationsSection` и связанный API в `notification_settings_section.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `notification_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/settings/`, `docs/APP_STRUCTURE.md`
@@ -11544,9 +11568,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `security_settings_section.dart` for More → Profile and settings: Password reset + biometric lock.
-- **Why needed:** Users interact with `security_settings_section.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `security_settings_section.dart` (`SecuritySection`, `SecuritySectionState`).
+- **What this is:** `security_settings_section.dart` on More → Profile and settings — Password reset + biometric lock.
+- **Why needed:** Users see `security_settings_section.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `SecuritySection`, `SecuritySectionState`.
 - **Key code names:** `SecuritySection`, `SecuritySectionState`
 - **Responsibilities:** Password reset + biometric lock
 - **When to open:** When behavior tied to `security_settings_section.dart` breaks or you need to change its documented role.
@@ -11556,10 +11580,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `security_settings_section.dart` на экране (More → Profile and settings): Password reset + biometric lock.
-- **Зачем:** Пользователь видит `security_settings_section.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `security_settings_section.dart` (`SecuritySection`, `SecuritySectionState`).
-- **Обязанности:** Реализует в `security_settings_section.dart`: Password reset + biometric lock.
+- **Что это:** `security_settings_section.dart` на More → Profile и настройки — Реализует `SecuritySection` и связанный API в `security_settings_section.dart`..
+- **Зачем:** Пользователь видит UI из `security_settings_section.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `SecuritySection`, `SecuritySectionState`.
+- **Обязанности:** Реализует `SecuritySection` и связанный API в `security_settings_section.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `security_settings_section.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/settings/`, `docs/APP_STRUCTURE.md`
@@ -11570,9 +11594,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `settings_page.dart` for More → Profile and settings: Language/TZ settings page (shell route).
-- **Why needed:** Users interact with `settings_page.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `settings_page.dart` (implementation details in the source file).
+- **What this is:** Barrel `settings_page.dart` for More → Profile and settings — re-exports entry modules.
+- **Why needed:** Users see `settings_page.dart` when using More → Profile and settings.
+- **What it contains:** Barrel `export` lines: `settings_page.dart`.
 - **Responsibilities:** Language/TZ settings page (shell route)
 - **When to open:** When behavior tied to `settings_page.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -11581,10 +11605,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `settings_page.dart` на экране (More → Profile and settings): Language/TZ settings page (shell route).
-- **Зачем:** Пользователь видит `settings_page.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `settings_page.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `settings_page.dart`: Language/TZ settings page (shell route).
+- **Что это:** Barrel `settings_page.dart` для More → Profile и настройки — re-export entry-модулей.
+- **Зачем:** Пользователь видит UI из `settings_page.dart` на More → Profile и настройки.
+- **Содержимое:** Компоновка экрана и state в `settings_page.dart`.
+- **Обязанности:** Re-export entry-модулей через `settings_page.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `settings_page.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/settings/`, `docs/APP_STRUCTURE.md`
@@ -11595,9 +11619,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `tag_default_duration_settings_view.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `tag_default_duration_settings_view.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `tag_default_duration_settings_view.dart` (`TagDefaultDurationSettingsView`, `_TagDefaultDurationSettingsViewState`).
+- **What this is:** `tag_default_duration_settings_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `tag_default_duration_settings_view.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `TagDefaultDurationSettingsView`, `_TagDefaultDurationSettingsViewState`.
 - **Key code names:** `TagDefaultDurationSettingsView`, `_TagDefaultDurationSettingsViewState`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `tag_default_duration_settings_view.dart` breaks or you need to change its documented role.
@@ -11607,10 +11631,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `tag_default_duration_settings_view.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `tag_default_duration_settings_view.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `tag_default_duration_settings_view.dart` (`TagDefaultDurationSettingsView`, `_TagDefaultDurationSettingsViewState`).
-- **Обязанности:** Реализует в `tag_default_duration_settings_view.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `tag_default_duration_settings_view.dart` на More → Profile и настройки — Реализует `TagDefaultDurationSettingsView` и связанный API в `tag_default_duration_settings_view.dart`..
+- **Зачем:** Пользователь видит UI из `tag_default_duration_settings_view.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `TagDefaultDurationSettingsView`, `_TagDefaultDurationSettingsViewState`.
+- **Обязанности:** Реализует `TagDefaultDurationSettingsView` и связанный API в `tag_default_duration_settings_view.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_default_duration_settings_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11621,9 +11645,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `tag_manager_page.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `tag_manager_page.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `tag_manager_page.dart` (`TagManagerPage`, `_TagManagerPageState`).
+- **What this is:** `tag_manager_page.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `tag_manager_page.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `TagManagerPage`, `_TagManagerPageState`.
 - **Key code names:** `TagManagerPage`, `_TagManagerPageState`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `tag_manager_page.dart` breaks or you need to change its documented role.
@@ -11633,10 +11657,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `tag_manager_page.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `tag_manager_page.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `tag_manager_page.dart` (`TagManagerPage`, `_TagManagerPageState`).
-- **Обязанности:** Реализует в `tag_manager_page.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `tag_manager_page.dart` на More → Profile и настройки — Реализует `TagManagerPage` и связанный API в `tag_manager_page.dart`..
+- **Зачем:** Пользователь видит UI из `tag_manager_page.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `TagManagerPage`, `_TagManagerPageState`.
+- **Обязанности:** Реализует `TagManagerPage` и связанный API в `tag_manager_page.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_manager_page.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11647,9 +11671,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `tag_settings_hub.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `tag_settings_hub.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `tag_settings_hub.dart` (`TagSettingsHub`, `_TagSettingsHubState`).
+- **What this is:** `tag_settings_hub.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `tag_settings_hub.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `TagSettingsHub`, `_TagSettingsHubState`.
 - **Key code names:** `TagSettingsHub`, `_TagSettingsHubState`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `tag_settings_hub.dart` breaks or you need to change its documented role.
@@ -11659,10 +11683,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `tag_settings_hub.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `tag_settings_hub.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `tag_settings_hub.dart` (`TagSettingsHub`, `_TagSettingsHubState`).
-- **Обязанности:** Реализует в `tag_settings_hub.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `tag_settings_hub.dart` на More → Profile и настройки — Реализует `TagSettingsHub` и связанный API в `tag_settings_hub.dart`..
+- **Зачем:** Пользователь видит UI из `tag_settings_hub.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `TagSettingsHub`, `_TagSettingsHubState`.
+- **Обязанности:** Реализует `TagSettingsHub` и связанный API в `tag_settings_hub.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_settings_hub.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11673,9 +11697,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `tag_settings_view.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `tag_settings_view.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `tag_settings_view.dart` (`TagSettingsView`, `_TagSettingsViewState`).
+- **What this is:** `tag_settings_view.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `tag_settings_view.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `TagSettingsView`, `_TagSettingsViewState`.
 - **Key code names:** `TagSettingsView`, `_TagSettingsViewState`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `tag_settings_view.dart` breaks or you need to change its documented role.
@@ -11685,10 +11709,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `tag_settings_view.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `tag_settings_view.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `tag_settings_view.dart` (`TagSettingsView`, `_TagSettingsViewState`).
-- **Обязанности:** Реализует в `tag_settings_view.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `tag_settings_view.dart` на More → Profile и настройки — Реализует `TagSettingsView` и связанный API в `tag_settings_view.dart`..
+- **Зачем:** Пользователь видит UI из `tag_settings_view.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `TagSettingsView`, `_TagSettingsViewState`.
+- **Обязанности:** Реализует `TagSettingsView` и связанный API в `tag_settings_view.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `tag_settings_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11699,9 +11723,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `timezone_settings.dart` for More → Profile and settings: Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Why needed:** Users interact with `timezone_settings.dart` when using More → Profile and settings.
-- **What it contains:** Flutter widgets in `timezone_settings.dart` (`TimezoneOption`).
+- **What this is:** `timezone_settings.dart` on More → Profile and settings — Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Why needed:** Users see `timezone_settings.dart` when using More → Profile and settings.
+- **What it contains:** Primary symbols: `TimezoneOption`.
 - **Key code names:** `TimezoneOption`
 - **Responsibilities:** Profile & tag settings, timezone, desktop voice settings (Windows)
 - **When to open:** When behavior tied to `timezone_settings.dart` breaks or you need to change its documented role.
@@ -11711,10 +11735,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `timezone_settings.dart` на экране (More → Profile and settings): Profile & tag settings, timezone, desktop voice settings (Windows).
-- **Зачем:** Пользователь видит `timezone_settings.dart`, когда открывает More → Profile and settings.
-- **Содержимое:** Flutter-виджеты в `timezone_settings.dart` (`TimezoneOption`).
-- **Обязанности:** Реализует в `timezone_settings.dart`: Profile & tag settings, timezone, desktop voice settings (Windows).
+- **Что это:** `timezone_settings.dart` на More → Profile и настройки — Реализует `TimezoneOption` и связанный API в `timezone_settings.dart`..
+- **Зачем:** Пользователь видит UI из `timezone_settings.dart` на More → Profile и настройки.
+- **Содержимое:** Основные символы: `TimezoneOption`.
+- **Обязанности:** Реализует `TimezoneOption` и связанный API в `timezone_settings.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `timezone_settings.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/profile/`, `docs/APP_STRUCTURE.md`
@@ -11725,22 +11749,22 @@ RU:
 
 EN:
 
-- **What this is:** UI file `activity_detail_sheet.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `activity_detail_sheet.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `activity_detail_sheet.dart` (`ActivityDetailKind`, `ActivityDetailSheet`).
+- **What this is:** `activity_detail_sheet.dart` on edit sheets and voice UI on every tab — ActivityDetailKind.
+- **Why needed:** Users see `activity_detail_sheet.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `ActivityDetailKind`, `ActivityDetailSheet`.
 - **Key code names:** `ActivityDetailKind`, `ActivityDetailSheet`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** ActivityDetailKind
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Edit sheet router (`ActivityDetailKind`)
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
 
-- **Что это:** UI-модуль `activity_detail_sheet.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `activity_detail_sheet.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `activity_detail_sheet.dart` (`ActivityDetailKind`, `ActivityDetailSheet`).
-- **Обязанности:** Реализует в `activity_detail_sheet.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `activity_detail_sheet.dart` на edit sheets и voice UI на всех вкладках — Реализует `ActivityDetailKind` и связанный API в `activity_detail_sheet.dart`..
+- **Зачем:** Пользователь видит UI из `activity_detail_sheet.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `ActivityDetailKind`, `ActivityDetailSheet`.
+- **Обязанности:** Реализует `ActivityDetailKind` и связанный API в `activity_detail_sheet.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11751,9 +11775,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `desktop_voice_capsule.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `desktop_voice_capsule.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `desktop_voice_capsule.dart` (`DesktopVoiceCapsule`, `_LeadingIcon`).
+- **What this is:** `desktop_voice_capsule.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Why needed:** Users see `desktop_voice_capsule.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `DesktopVoiceCapsule`, `_LeadingIcon`.
 - **Key code names:** `DesktopVoiceCapsule`, `_LeadingIcon`
 - **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
@@ -11763,10 +11787,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `desktop_voice_capsule.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `desktop_voice_capsule.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `desktop_voice_capsule.dart` (`DesktopVoiceCapsule`, `_LeadingIcon`).
-- **Обязанности:** Реализует в `desktop_voice_capsule.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `desktop_voice_capsule.dart` на edit sheets и voice UI на всех вкладках — Реализует `DesktopVoiceCapsule` и связанный API в `desktop_voice_capsule.dart`..
+- **Зачем:** Пользователь видит UI из `desktop_voice_capsule.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `DesktopVoiceCapsule`, `_LeadingIcon`.
+- **Обязанности:** Реализует `DesktopVoiceCapsule` и связанный API в `desktop_voice_capsule.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11777,9 +11801,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `desktop_voice_command_panel.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `desktop_voice_command_panel.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `desktop_voice_command_panel.dart` (`_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`).
+- **What this is:** `desktop_voice_command_panel.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Why needed:** Users see `desktop_voice_command_panel.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`.
 - **Key code names:** `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`
 - **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
@@ -11789,10 +11813,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `desktop_voice_command_panel.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `desktop_voice_command_panel.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `desktop_voice_command_panel.dart` (`_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`).
-- **Обязанности:** Реализует в `desktop_voice_command_panel.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `desktop_voice_command_panel.dart` на edit sheets и voice UI на всех вкладках — Реализует `_DesktopVoicePanelPhase` и связанный API в `desktop_voice_command_panel.dart`..
+- **Зачем:** Пользователь видит UI из `desktop_voice_command_panel.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `_DesktopVoicePanelPhase`, `DesktopVoiceCommandPanel`, `_DesktopVoiceCommandPanelState`.
+- **Обязанности:** Реализует `_DesktopVoicePanelPhase` и связанный API в `desktop_voice_command_panel.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11803,9 +11827,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `desktop_voice_widget.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `desktop_voice_widget.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `desktop_voice_widget.dart` (`DesktopVoiceOverlayPhase`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`).
+- **What this is:** `desktop_voice_widget.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Why needed:** Users see `desktop_voice_widget.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `DesktopVoiceOverlayPhase`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`.
 - **Key code names:** `DesktopVoiceOverlayPhase`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`
 - **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
@@ -11815,10 +11839,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `desktop_voice_widget.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `desktop_voice_widget.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `desktop_voice_widget.dart` (`DesktopVoiceOverlayPhase`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`).
-- **Обязанности:** Реализует в `desktop_voice_widget.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `desktop_voice_widget.dart` на edit sheets и voice UI на всех вкладках — Реализует `DesktopVoiceOverlayPhase` и связанный API в `desktop_voice_widget.dart`..
+- **Зачем:** Пользователь видит UI из `desktop_voice_widget.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `DesktopVoiceOverlayPhase`, `DesktopVoiceOverlay`, `_DesktopVoiceOverlayState`.
+- **Обязанности:** Реализует `DesktopVoiceOverlayPhase` и связанный API в `desktop_voice_widget.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11829,9 +11853,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `checklist_helpers.dart` for edit sheets and voice UI on every tab: Checklist row sync/partition helpers.
-- **Why needed:** Users interact with `checklist_helpers.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `checklist_helpers.dart` (implementation details in the source file).
+- **What this is:** `checklist_helpers.dart` on edit sheets and voice UI on every tab — Checklist row sync/partition helpers.
+- **Why needed:** Users see `checklist_helpers.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Dart module `checklist_helpers.dart` — open file for classes and helpers.
 - **Responsibilities:** Checklist row sync/partition helpers
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -11840,10 +11864,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `checklist_helpers.dart` на экране (edit sheets and voice UI on every tab): Checklist row sync/partition helpers.
-- **Зачем:** Пользователь видит `checklist_helpers.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `checklist_helpers.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `checklist_helpers.dart`: Checklist row sync/partition helpers.
+- **Что это:** `checklist_helpers.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `checklist_helpers` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `checklist_helpers.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `checklist_helpers.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `checklist_helpers` в этой feature-зоне.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11854,10 +11878,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `parallel_record_panels.dart` for edit sheets and voice UI on every tab: Backlog sub-items + parallel child panels.
-- **Why needed:** Users interact with `parallel_record_panels.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `parallel_record_panels.dart` (`BacklogSubItemsPanel`, `BacklogSubItemsPanelState`).
-- **Key code names:** `BacklogSubItemsPanel`, `BacklogSubItemsPanelState`
+- **What this is:** `parallel_record_panels.dart` on edit sheets and voice UI on every tab — Backlog sub-items + parallel child panels.
+- **Why needed:** Users see `parallel_record_panels.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `BacklogSubItemsPanel`, `BacklogSubItemsPanelState`, `ParallelActivitiesTab`, `ParallelActivitiesTabState`.
+- **Key code names:** `BacklogSubItemsPanel`, `BacklogSubItemsPanelState`, `ParallelActivitiesTab`, `ParallelActivitiesTabState`
 - **Responsibilities:** Backlog sub-items + parallel child panels
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -11866,10 +11890,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `parallel_record_panels.dart` на экране (edit sheets and voice UI on every tab): Backlog sub-items + parallel child panels.
-- **Зачем:** Пользователь видит `parallel_record_panels.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `parallel_record_panels.dart` (`BacklogSubItemsPanel`, `BacklogSubItemsPanelState`).
-- **Обязанности:** Реализует в `parallel_record_panels.dart`: Backlog sub-items + parallel child panels.
+- **Что это:** `parallel_record_panels.dart` на edit sheets и voice UI на всех вкладках — Реализует `BacklogSubItemsPanel` и связанный API в `parallel_record_panels.dart`..
+- **Зачем:** Пользователь видит UI из `parallel_record_panels.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `BacklogSubItemsPanel`, `BacklogSubItemsPanelState`, `ParallelActivitiesTab`, `ParallelActivitiesTabState`.
+- **Обязанности:** Реализует `BacklogSubItemsPanel` и связанный API в `parallel_record_panels.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11880,9 +11904,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `plan_repeat_helpers.dart` for edit sheets and voice UI on every tab: RRULE ↔ UI repeat preset helpers.
-- **Why needed:** Users interact with `plan_repeat_helpers.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `plan_repeat_helpers.dart` (implementation details in the source file).
+- **What this is:** `plan_repeat_helpers.dart` on edit sheets and voice UI on every tab — RRULE ↔ UI repeat preset helpers.
+- **Why needed:** Users see `plan_repeat_helpers.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Dart module `plan_repeat_helpers.dart` — open file for classes and helpers.
 - **Responsibilities:** RRULE ↔ UI repeat preset helpers
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -11891,10 +11915,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `plan_repeat_helpers.dart` на экране (edit sheets and voice UI on every tab): RRULE ↔ UI repeat preset helpers.
-- **Зачем:** Пользователь видит `plan_repeat_helpers.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `plan_repeat_helpers.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `plan_repeat_helpers.dart`: RRULE ↔ UI repeat preset helpers.
+- **Что это:** `plan_repeat_helpers.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `plan_repeat_helpers` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `plan_repeat_helpers.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `plan_repeat_helpers.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `plan_repeat_helpers` в этой feature-зоне.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11905,9 +11929,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `quill_link_launcher.dart` for edit sheets and voice UI on every tab: Quill note external URL launcher.
-- **Why needed:** Users interact with `quill_link_launcher.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `quill_link_launcher.dart` (implementation details in the source file).
+- **What this is:** `quill_link_launcher.dart` on edit sheets and voice UI on every tab — Quill note external URL launcher.
+- **Why needed:** Users see `quill_link_launcher.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Dart module `quill_link_launcher.dart` — open file for classes and helpers.
 - **Responsibilities:** Quill note external URL launcher
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -11916,10 +11940,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `quill_link_launcher.dart` на экране (edit sheets and voice UI on every tab): Quill note external URL launcher.
-- **Зачем:** Пользователь видит `quill_link_launcher.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `quill_link_launcher.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `quill_link_launcher.dart`: Quill note external URL launcher.
+- **Что это:** `quill_link_launcher.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `quill_link_launcher` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `quill_link_launcher.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `quill_link_launcher.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `quill_link_launcher` в этой feature-зоне.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11930,9 +11954,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `quill_toolbar_config.dart` for edit sheets and voice UI on every tab: Planning edit Quill toolbar config.
-- **Why needed:** Users interact with `quill_toolbar_config.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `quill_toolbar_config.dart` (implementation details in the source file).
+- **What this is:** `quill_toolbar_config.dart` on edit sheets and voice UI on every tab — Planning edit Quill toolbar config.
+- **Why needed:** Users see `quill_toolbar_config.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Dart module `quill_toolbar_config.dart` — open file for classes and helpers.
 - **Responsibilities:** Planning edit Quill toolbar config
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -11941,10 +11965,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `quill_toolbar_config.dart` на экране (edit sheets and voice UI on every tab): Planning edit Quill toolbar config.
-- **Зачем:** Пользователь видит `quill_toolbar_config.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `quill_toolbar_config.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `quill_toolbar_config.dart`: Planning edit Quill toolbar config.
+- **Что это:** `quill_toolbar_config.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `quill_toolbar_config` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `quill_toolbar_config.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `quill_toolbar_config.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `quill_toolbar_config` в этой feature-зоне.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11955,9 +11979,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `sheet_autosave_gate.dart` for edit sheets and voice UI on every tab: Debounced edit-sheet autosave gate.
-- **Why needed:** Users interact with `sheet_autosave_gate.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `sheet_autosave_gate.dart` (`EditSheetAutosaveGate`).
+- **What this is:** `sheet_autosave_gate.dart` on edit sheets and voice UI on every tab — Debounced edit-sheet autosave gate.
+- **Why needed:** Users see `sheet_autosave_gate.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `EditSheetAutosaveGate`.
 - **Key code names:** `EditSheetAutosaveGate`
 - **Responsibilities:** Debounced edit-sheet autosave gate
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
@@ -11967,10 +11991,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `sheet_autosave_gate.dart` на экране (edit sheets and voice UI on every tab): Debounced edit-sheet autosave gate.
-- **Зачем:** Пользователь видит `sheet_autosave_gate.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `sheet_autosave_gate.dart` (`EditSheetAutosaveGate`).
-- **Обязанности:** Реализует в `sheet_autosave_gate.dart`: Debounced edit-sheet autosave gate.
+- **Что это:** `sheet_autosave_gate.dart` на edit sheets и voice UI на всех вкладках — Реализует `EditSheetAutosaveGate` и связанный API в `sheet_autosave_gate.dart`..
+- **Зачем:** Пользователь видит UI из `sheet_autosave_gate.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `EditSheetAutosaveGate`.
+- **Обязанности:** Реализует `EditSheetAutosaveGate` и связанный API в `sheet_autosave_gate.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -11981,9 +12005,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `sheet_time_helpers.dart` for edit sheets and voice UI on every tab: UTC/display time format helpers.
-- **Why needed:** Users interact with `sheet_time_helpers.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `sheet_time_helpers.dart` (implementation details in the source file).
+- **What this is:** `sheet_time_helpers.dart` on edit sheets and voice UI on every tab — UTC/display time format helpers.
+- **Why needed:** Users see `sheet_time_helpers.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Dart module `sheet_time_helpers.dart` — open file for classes and helpers.
 - **Responsibilities:** UTC/display time format helpers
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -11992,10 +12016,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `sheet_time_helpers.dart` на экране (edit sheets and voice UI on every tab): UTC/display time format helpers.
-- **Зачем:** Пользователь видит `sheet_time_helpers.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `sheet_time_helpers.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `sheet_time_helpers.dart`: UTC/display time format helpers.
+- **Что это:** `sheet_time_helpers.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `sheet_time_helpers` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `sheet_time_helpers.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `sheet_time_helpers.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `sheet_time_helpers` в этой feature-зоне.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12006,11 +12030,11 @@ RU:
 
 EN:
 
-- **What this is:** UI file `sheet_time_picker.dart` for edit sheets and voice UI on every tab: , `AppEditSheetTimeButton.
-- **Why needed:** Users interact with `sheet_time_picker.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `sheet_time_picker.dart` (`AppEditSheetTimeButton`).
+- **What this is:** `sheet_time_picker.dart` on edit sheets and voice UI on every tab — showAppDateTimePicker, AppEditSheetTimeButton.
+- **Why needed:** Users see `sheet_time_picker.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `AppEditSheetTimeButton`.
 - **Key code names:** `AppEditSheetTimeButton`
-- **Responsibilities:** `showAppDateTimePicker`, `AppEditSheetTimeButton`
+- **Responsibilities:** showAppDateTimePicker, AppEditSheetTimeButton
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: `showAppDateTimePicker`, `AppEditSheetTimeButton`
@@ -12018,10 +12042,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `sheet_time_picker.dart` на экране (edit sheets and voice UI on every tab): , `AppEditSheetTimeButton.
-- **Зачем:** Пользователь видит `sheet_time_picker.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `sheet_time_picker.dart` (`AppEditSheetTimeButton`).
-- **Обязанности:** Реализует в `sheet_time_picker.dart`: , `AppEditSheetTimeButton.
+- **Что это:** `sheet_time_picker.dart` на edit sheets и voice UI на всех вкладках — Реализует `AppEditSheetTimeButton` и связанный API в `sheet_time_picker.dart`..
+- **Зачем:** Пользователь видит UI из `sheet_time_picker.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `AppEditSheetTimeButton`.
+- **Обязанности:** Реализует `AppEditSheetTimeButton` и связанный API в `sheet_time_picker.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12032,21 +12056,21 @@ RU:
 
 EN:
 
-- **What this is:** UI file `empty_state_placeholder.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `empty_state_placeholder.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `empty_state_placeholder.dart` (implementation details in the source file).
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **What this is:** `empty_state_placeholder.dart` on edit sheets and voice UI on every tab — Shared empty-state placeholder.
+- **Why needed:** Users see `empty_state_placeholder.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Dart module `empty_state_placeholder.dart` — open file for classes and helpers.
+- **Responsibilities:** Shared empty-state placeholder
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Shared empty-state placeholder
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
 
-- **Что это:** UI-модуль `empty_state_placeholder.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `empty_state_placeholder.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `empty_state_placeholder.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `empty_state_placeholder.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `empty_state_placeholder.dart` на edit sheets и voice UI на всех вкладках — Поддерживает поведение `empty_state_placeholder` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `empty_state_placeholder.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `empty_state_placeholder.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `empty_state_placeholder` в этой feature-зоне.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12057,22 +12081,22 @@ RU:
 
 EN:
 
-- **What this is:** UI file `offline_sync_status_bar.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `offline_sync_status_bar.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `offline_sync_status_bar.dart` (`OfflineSyncStatusBar`, `OfflineSyncStatusBarState`).
+- **What this is:** `offline_sync_status_bar.dart` on edit sheets and voice UI on every tab — O1 offline/sync tap-to-retry banner.
+- **Why needed:** Users see `offline_sync_status_bar.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `OfflineSyncStatusBar`, `OfflineSyncStatusBarState`.
 - **Key code names:** `OfflineSyncStatusBar`, `OfflineSyncStatusBarState`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** O1 offline/sync tap-to-retry banner
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: O1 offline/sync tap-to-retry banner
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
 
-- **Что это:** UI-модуль `offline_sync_status_bar.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `offline_sync_status_bar.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `offline_sync_status_bar.dart` (`OfflineSyncStatusBar`, `OfflineSyncStatusBarState`).
-- **Обязанности:** Реализует в `offline_sync_status_bar.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `offline_sync_status_bar.dart` на edit sheets и voice UI на всех вкладках — Реализует `OfflineSyncStatusBar` и связанный API в `offline_sync_status_bar.dart`..
+- **Зачем:** Пользователь видит UI из `offline_sync_status_bar.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `OfflineSyncStatusBar`, `OfflineSyncStatusBarState`.
+- **Обязанности:** Реализует `OfflineSyncStatusBar` и связанный API в `offline_sync_status_bar.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12083,22 +12107,22 @@ RU:
 
 EN:
 
-- **What this is:** UI file `planning_task_edit_sheet.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `planning_task_edit_sheet.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `planning_task_edit_sheet.dart` (`PlanningTaskEditSheetState`).
+- **What this is:** `planning_task_edit_sheet.dart` on edit sheets and voice UI on every tab — Plan/list task edit sheet.
+- **Why needed:** Users see `planning_task_edit_sheet.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `PlanningTaskEditSheetState`.
 - **Key code names:** `PlanningTaskEditSheetState`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** Plan/list task edit sheet
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Plan/list task edit sheet
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
 
-- **Что это:** UI-модуль `planning_task_edit_sheet.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `planning_task_edit_sheet.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `planning_task_edit_sheet.dart` (`PlanningTaskEditSheetState`).
-- **Обязанности:** Реализует в `planning_task_edit_sheet.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `planning_task_edit_sheet.dart` на edit sheets и voice UI на всех вкладках — Реализует `PlanningTaskEditSheetState` и связанный API в `planning_task_edit_sheet.dart`..
+- **Зачем:** Пользователь видит UI из `planning_task_edit_sheet.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `PlanningTaskEditSheetState`.
+- **Обязанности:** Реализует `PlanningTaskEditSheetState` и связанный API в `planning_task_edit_sheet.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12109,9 +12133,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `profile_hydration_status_bar.dart` for edit sheets and voice UI on every tab: Profile hydration error banner.
-- **Why needed:** Users interact with `profile_hydration_status_bar.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `profile_hydration_status_bar.dart` (implementation details in the source file).
+- **What this is:** Barrel `profile_hydration_status_bar.dart` for edit sheets and voice UI on every tab — re-exports entry modules.
+- **Why needed:** Users see `profile_hydration_status_bar.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Barrel `export` lines: `profile_hydration_status_bar.dart`.
 - **Responsibilities:** Profile hydration error banner
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -12120,10 +12144,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `profile_hydration_status_bar.dart` на экране (edit sheets and voice UI on every tab): Profile hydration error banner.
-- **Зачем:** Пользователь видит `profile_hydration_status_bar.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `profile_hydration_status_bar.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `profile_hydration_status_bar.dart`: Profile hydration error banner.
+- **Что это:** Barrel `profile_hydration_status_bar.dart` для edit sheets и voice UI на всех вкладках — re-export entry-модулей.
+- **Зачем:** Пользователь видит UI из `profile_hydration_status_bar.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `profile_hydration_status_bar.dart` — классы и helpers в исходнике.
+- **Обязанности:** Re-export entry-модулей через `profile_hydration_status_bar.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12134,9 +12158,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `shared_widgets.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `shared_widgets.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `shared_widgets.dart` (implementation details in the source file).
+- **What this is:** Barrel `shared_widgets.dart` for edit sheets and voice UI on every tab — re-exports entry modules.
+- **Why needed:** Users see `shared_widgets.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Barrel `export` lines: `activity_detail_sheet.dart`, `empty_state_placeholder.dart`, `planning_task_edit_sheet.dart`, `timeline_record_edit_sheet.dart`, `checklist_helpers.dart`.
 - **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
@@ -12145,10 +12169,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `shared_widgets.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `shared_widgets.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `shared_widgets.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `shared_widgets.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** Barrel `shared_widgets.dart` для edit sheets и voice UI на всех вкладках — re-export entry-модулей.
+- **Зачем:** Пользователь видит UI из `shared_widgets.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Dart-модуль `shared_widgets.dart` — классы и helpers в исходнике.
+- **Обязанности:** Re-export entry-модулей через `shared_widgets.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12159,22 +12183,22 @@ RU:
 
 EN:
 
-- **What this is:** UI file `timeline_record_edit_sheet.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `timeline_record_edit_sheet.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `timeline_record_edit_sheet.dart` (`TimelineRecordSheetContentState`).
+- **What this is:** `timeline_record_edit_sheet.dart` on edit sheets and voice UI on every tab — Timeline record edit sheet.
+- **Why needed:** Users see `timeline_record_edit_sheet.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `TimelineRecordSheetContentState`.
 - **Key code names:** `TimelineRecordSheetContentState`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** Timeline record edit sheet
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Timeline record edit sheet
 - **Layer / owner:** UI code for the shared area of the app (what users see and tap).
 
 RU:
 
-- **Что это:** UI-модуль `timeline_record_edit_sheet.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `timeline_record_edit_sheet.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `timeline_record_edit_sheet.dart` (`TimelineRecordSheetContentState`).
-- **Обязанности:** Реализует в `timeline_record_edit_sheet.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `timeline_record_edit_sheet.dart` на edit sheets и voice UI на всех вкладках — Реализует `TimelineRecordSheetContentState` и связанный API в `timeline_record_edit_sheet.dart`..
+- **Зачем:** Пользователь видит UI из `timeline_record_edit_sheet.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `TimelineRecordSheetContentState`.
+- **Обязанности:** Реализует `TimelineRecordSheetContentState` и связанный API в `timeline_record_edit_sheet.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12185,9 +12209,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `voice_capture_config.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `voice_capture_config.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `voice_capture_config.dart` (`VoiceCaptureConfig`).
+- **What this is:** `voice_capture_config.dart` on edit sheets and voice UI on every tab — Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Why needed:** Users see `voice_capture_config.dart` when using edit sheets and voice UI on every tab.
+- **What it contains:** Primary symbols: `VoiceCaptureConfig`.
 - **Key code names:** `VoiceCaptureConfig`
 - **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
@@ -12197,10 +12221,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `voice_capture_config.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `voice_capture_config.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `voice_capture_config.dart` (`VoiceCaptureConfig`).
-- **Обязанности:** Реализует в `voice_capture_config.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** `voice_capture_config.dart` на edit sheets и voice UI на всех вкладках — Реализует `VoiceCaptureConfig` и связанный API в `voice_capture_config.dart`..
+- **Зачем:** Пользователь видит UI из `voice_capture_config.dart` на edit sheets и voice UI на всех вкладках.
+- **Содержимое:** Основные символы: `VoiceCaptureConfig`.
+- **Обязанности:** Реализует `VoiceCaptureConfig` и связанный API в `voice_capture_config.dart`.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12211,11 +12235,11 @@ RU:
 
 EN:
 
-- **What this is:** UI file `voice_input_sheet.dart` for edit sheets and voice UI on every tab: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Why needed:** Users interact with `voice_input_sheet.dart` when using edit sheets and voice UI on every tab.
-- **What it contains:** Flutter widgets in `voice_input_sheet.dart` (`VoiceInputSheet`, `_VoiceInputSheetState`).
+- **What this is:** Mobile/web mic bottom sheet — speech-to-text capture routed by `VoiceCaptureConfig`.
+- **Why needed:** Voice submit on Timeline, Plans, and Lists opens this sheet; must not block main thread.
+- **What it contains:** `VoiceInputSheet`, `_VoiceInputSheetState`; STT engine handle, permission prompts.
 - **Key code names:** `VoiceInputSheet`, `_VoiceInputSheetState`
-- **Responsibilities:** Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
+- **Responsibilities:** Listen/transcribe user speech; return text to shell voice routing.
 - **When to open:** Edit sheet, date/time picker, tags strip, voice sheet, offline banner UI.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Edit sheets and voice UI on every tab; APP_STRUCTURE role: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI
@@ -12223,10 +12247,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `voice_input_sheet.dart` на экране (edit sheets and voice UI on every tab): Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
-- **Зачем:** Пользователь видит `voice_input_sheet.dart`, когда открывает edit sheets and voice UI on every tab.
-- **Содержимое:** Flutter-виджеты в `voice_input_sheet.dart` (`VoiceInputSheet`, `_VoiceInputSheetState`).
-- **Обязанности:** Реализует в `voice_input_sheet.dart`: Activity edit sheets, Omni-Picker entry, offline sync banner, mobile/web voice sheet, desktop Price Reporter voice UI.
+- **Что это:** Нижняя шторка микрофона (mobile/web) — speech-to-text по `VoiceCaptureConfig`.
+- **Зачем:** Voice submit на Timeline, Plans и Lists открывает эту шторку; не блокирует main thread.
+- **Содержимое:** `VoiceInputSheet`, `_VoiceInputSheetState`; STT handle, запрос permissions.
+- **Обязанности:** Слушает/транскрибирует речь; отдаёт текст в shell voice routing.
 - **Когда открывать:** Шторка редактирования, picker, voice, offline banner.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Edit sheets и voice UI на всех вкладках
@@ -12237,10 +12261,10 @@ RU:
 
 EN:
 
-- **What this is:** UI file `plan_vs_fact_tab.dart` for stats panel inside Timeline: Productivity stats (embedded in Timeline).
-- **Why needed:** Users interact with `plan_vs_fact_tab.dart` when using stats panel inside Timeline.
-- **What it contains:** Flutter widgets in `plan_vs_fact_tab.dart` (`PlanVsFactTab`, `_PlanVsFactTabState`).
-- **Key code names:** `PlanVsFactTab`, `_PlanVsFactTabState`
+- **What this is:** `plan_vs_fact_tab.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline).
+- **Why needed:** Users see `plan_vs_fact_tab.dart` when using stats panel inside Timeline.
+- **What it contains:** Primary symbols: `PlanVsFactTab`, `_PlanVsFactTabState`, `_PlanFactSummaryRow`, `_PlanFactOrphanCategoryRow`.
+- **Key code names:** `PlanVsFactTab`, `_PlanVsFactTabState`, `_PlanFactSummaryRow`, `_PlanFactOrphanCategoryRow`
 - **Responsibilities:** Productivity stats (embedded in Timeline)
 - **When to open:** When behavior tied to `plan_vs_fact_tab.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -12249,10 +12273,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `plan_vs_fact_tab.dart` на экране (stats panel inside Timeline): Productivity stats (embedded in Timeline).
-- **Зачем:** Пользователь видит `plan_vs_fact_tab.dart`, когда открывает stats panel inside Timeline.
-- **Содержимое:** Flutter-виджеты в `plan_vs_fact_tab.dart` (`PlanVsFactTab`, `_PlanVsFactTabState`).
-- **Обязанности:** Реализует в `plan_vs_fact_tab.dart`: Productivity stats (embedded in Timeline).
+- **Что это:** `plan_vs_fact_tab.dart` на панель stats внутри Timeline — Реализует `PlanVsFactTab` и связанный API в `plan_vs_fact_tab.dart`..
+- **Зачем:** Пользователь видит UI из `plan_vs_fact_tab.dart` на панель stats внутри Timeline.
+- **Содержимое:** Основные символы: `PlanVsFactTab`, `_PlanVsFactTabState`, `_PlanFactSummaryRow`, `_PlanFactOrphanCategoryRow`.
+- **Обязанности:** Реализует `PlanVsFactTab` и связанный API в `plan_vs_fact_tab.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `plan_vs_fact_tab.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/stats/`, `docs/APP_STRUCTURE.md`
@@ -12263,9 +12287,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `stats_view.dart` for stats panel inside Timeline: Productivity stats (embedded in Timeline).
-- **Why needed:** Users interact with `stats_view.dart` when using stats panel inside Timeline.
-- **What it contains:** Flutter widgets in `stats_view.dart` (`StatsView`, `_StatsViewState`).
+- **What this is:** `stats_view.dart` on stats panel inside Timeline — Productivity stats (embedded in Timeline).
+- **Why needed:** Users see `stats_view.dart` when using stats panel inside Timeline.
+- **What it contains:** Primary symbols: `StatsView`, `_StatsViewState`.
 - **Key code names:** `StatsView`, `_StatsViewState`
 - **Responsibilities:** Productivity stats (embedded in Timeline)
 - **When to open:** When behavior tied to `stats_view.dart` breaks or you need to change its documented role.
@@ -12275,10 +12299,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `stats_view.dart` на экране (stats panel inside Timeline): Productivity stats (embedded in Timeline).
-- **Зачем:** Пользователь видит `stats_view.dart`, когда открывает stats panel inside Timeline.
-- **Содержимое:** Flutter-виджеты в `stats_view.dart` (`StatsView`, `_StatsViewState`).
-- **Обязанности:** Реализует в `stats_view.dart`: Productivity stats (embedded in Timeline).
+- **Что это:** `stats_view.dart` на панель stats внутри Timeline — Реализует `StatsView` и связанный API в `stats_view.dart`..
+- **Зачем:** Пользователь видит UI из `stats_view.dart` на панель stats внутри Timeline.
+- **Содержимое:** Основные символы: `StatsView`, `_StatsViewState`.
+- **Обязанности:** Реализует `StatsView` и связанный API в `stats_view.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `stats_view.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/stats/`, `docs/APP_STRUCTURE.md`
@@ -12289,11 +12313,11 @@ RU:
 
 EN:
 
-- **What this is:** UI file `timeline_day_page.dart` for Timeline tab (first bottom tab): , lazy record list.
-- **Why needed:** Users interact with `timeline_day_page.dart` when using Timeline tab (first bottom tab).
-- **What it contains:** Flutter widgets in `timeline_day_page.dart` (`TimelineDayCardList`, `TimelineDayCardListState`, `TimelineLazyRecordList`, `TimelineLazyRecordListState`).
+- **What this is:** `timeline_day_page.dart` on Timeline tab (first bottom tab) — TimelineDayCardList.
+- **Why needed:** Users see `timeline_day_page.dart` when using Timeline tab (first bottom tab).
+- **What it contains:** Primary symbols: `TimelineDayCardList`, `TimelineDayCardListState`, `TimelineLazyRecordList`, `TimelineLazyRecordListState`.
 - **Key code names:** `TimelineDayCardList`, `TimelineDayCardListState`, `TimelineLazyRecordList`, `TimelineLazyRecordListState`
-- **Responsibilities:** `TimelineDayCardList`, lazy record list
+- **Responsibilities:** TimelineDayCardList
 - **When to open:** Timeline tab: day list, record cards, stats toggle, date swipe.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Timeline tab (shell index 0); APP_STRUCTURE role: `TimelineDayCardList`, lazy record list
@@ -12301,10 +12325,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `timeline_day_page.dart` на экране (Timeline tab (first bottom tab)): , lazy record list.
-- **Зачем:** Пользователь видит `timeline_day_page.dart`, когда открывает Timeline tab (first bottom tab).
-- **Содержимое:** Flutter-виджеты в `timeline_day_page.dart` (`TimelineDayCardList`, `TimelineDayCardListState`, `TimelineLazyRecordList`, `TimelineLazyRecordListState`).
-- **Обязанности:** Реализует в `timeline_day_page.dart`: , lazy record list.
+- **Что это:** `timeline_day_page.dart` на вкладка Timeline (первая снизу) — Реализует `TimelineDayCardList` и связанный API в `timeline_day_page.dart`..
+- **Зачем:** Пользователь видит UI из `timeline_day_page.dart` на вкладка Timeline (первая снизу).
+- **Содержимое:** Основные символы: `TimelineDayCardList`, `TimelineDayCardListState`, `TimelineLazyRecordList`, `TimelineLazyRecordListState`.
+- **Обязанности:** Реализует `TimelineDayCardList` и связанный API в `timeline_day_page.dart`.
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Timeline (shell index 0)
@@ -12315,9 +12339,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `timeline_header_controls.dart` for Timeline tab (first bottom tab): List/stats segmented control + record input row.
-- **Why needed:** Users interact with `timeline_header_controls.dart` when using Timeline tab (first bottom tab).
-- **What it contains:** Flutter widgets in `timeline_header_controls.dart` (`TimelineHeaderControls`).
+- **What this is:** `timeline_header_controls.dart` on Timeline tab (first bottom tab) — List/stats segmented control + record input row.
+- **Why needed:** Users see `timeline_header_controls.dart` when using Timeline tab (first bottom tab).
+- **What it contains:** Primary symbols: `TimelineHeaderControls`.
 - **Key code names:** `TimelineHeaderControls`
 - **Responsibilities:** List/stats segmented control + record input row
 - **When to open:** Timeline tab: day list, record cards, stats toggle, date swipe.
@@ -12327,10 +12351,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `timeline_header_controls.dart` на экране (Timeline tab (first bottom tab)): List/stats segmented control + record input row.
-- **Зачем:** Пользователь видит `timeline_header_controls.dart`, когда открывает Timeline tab (first bottom tab).
-- **Содержимое:** Flutter-виджеты в `timeline_header_controls.dart` (`TimelineHeaderControls`).
-- **Обязанности:** Реализует в `timeline_header_controls.dart`: List/stats segmented control + record input row.
+- **Что это:** `timeline_header_controls.dart` на вкладка Timeline (первая снизу) — Реализует `TimelineHeaderControls` и связанный API в `timeline_header_controls.dart`..
+- **Зачем:** Пользователь видит UI из `timeline_header_controls.dart` на вкладка Timeline (первая снизу).
+- **Содержимое:** Основные символы: `TimelineHeaderControls`.
+- **Обязанности:** Реализует `TimelineHeaderControls` и связанный API в `timeline_header_controls.dart`.
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Timeline (shell index 0)
@@ -12341,9 +12365,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `timeline_helpers.dart` for Timeline tab (first bottom tab): Shared timeline time/duration helpers.
-- **Why needed:** Users interact with `timeline_helpers.dart` when using Timeline tab (first bottom tab).
-- **What it contains:** Flutter widgets in `timeline_helpers.dart` (implementation details in the source file).
+- **What this is:** `timeline_helpers.dart` on Timeline tab (first bottom tab) — Shared timeline time/duration helpers.
+- **Why needed:** Users see `timeline_helpers.dart` when using Timeline tab (first bottom tab).
+- **What it contains:** Dart module `timeline_helpers.dart` — open file for classes and helpers.
 - **Responsibilities:** Shared timeline time/duration helpers
 - **When to open:** Timeline tab: day list, record cards, stats toggle, date swipe.
 - **Can it be deleted?** No — required for app runtime.
@@ -12352,10 +12376,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `timeline_helpers.dart` на экране (Timeline tab (first bottom tab)): Shared timeline time/duration helpers.
-- **Зачем:** Пользователь видит `timeline_helpers.dart`, когда открывает Timeline tab (first bottom tab).
-- **Содержимое:** Flutter-виджеты в `timeline_helpers.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `timeline_helpers.dart`: Shared timeline time/duration helpers.
+- **Что это:** `timeline_helpers.dart` на вкладка Timeline (первая снизу) — Поддерживает поведение `timeline_helpers` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `timeline_helpers.dart` на вкладка Timeline (первая снизу).
+- **Содержимое:** Dart-модуль `timeline_helpers.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `timeline_helpers` в этой feature-зоне.
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Timeline (shell index 0)
@@ -12366,11 +12390,11 @@ RU:
 
 EN:
 
-- **What this is:** UI file `timeline_record_card.dart` for Timeline tab (first bottom tab): .
-- **Why needed:** Users interact with `timeline_record_card.dart` when using Timeline tab (first bottom tab).
-- **What it contains:** Flutter widgets in `timeline_record_card.dart` (`TimelineRecordCard`, `TimelineRecordCardState`).
+- **What this is:** `timeline_record_card.dart` on Timeline tab (first bottom tab) — TimelineRecordCard.
+- **Why needed:** Users see `timeline_record_card.dart` when using Timeline tab (first bottom tab).
+- **What it contains:** Primary symbols: `TimelineRecordCard`, `TimelineRecordCardState`.
 - **Key code names:** `TimelineRecordCard`, `TimelineRecordCardState`
-- **Responsibilities:** `TimelineRecordCard`
+- **Responsibilities:** TimelineRecordCard
 - **When to open:** Timeline tab: day list, record cards, stats toggle, date swipe.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Timeline tab (shell index 0); APP_STRUCTURE role: `TimelineRecordCard`
@@ -12378,10 +12402,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `timeline_record_card.dart` на экране (Timeline tab (first bottom tab)): .
-- **Зачем:** Пользователь видит `timeline_record_card.dart`, когда открывает Timeline tab (first bottom tab).
-- **Содержимое:** Flutter-виджеты в `timeline_record_card.dart` (`TimelineRecordCard`, `TimelineRecordCardState`).
-- **Обязанности:** Реализует в `timeline_record_card.dart`: .
+- **Что это:** `timeline_record_card.dart` на вкладка Timeline (первая снизу) — Реализует `TimelineRecordCard` и связанный API в `timeline_record_card.dart`..
+- **Зачем:** Пользователь видит UI из `timeline_record_card.dart` на вкладка Timeline (первая снизу).
+- **Содержимое:** Основные символы: `TimelineRecordCard`, `TimelineRecordCardState`.
+- **Обязанности:** Реализует `TimelineRecordCard` и связанный API в `timeline_record_card.dart`.
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Timeline (shell index 0)
@@ -12392,11 +12416,11 @@ RU:
 
 EN:
 
-- **What this is:** UI file `timeline_view.dart` for Timeline tab (first bottom tab): , `TimelinePage.
-- **Why needed:** Users interact with `timeline_view.dart` when using Timeline tab (first bottom tab).
-- **What it contains:** Flutter widgets in `timeline_view.dart` (`TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`).
+- **What this is:** Timeline tab root — `TimelineSwipeWrapper` day pager plus `TimelinePage` body (header, day list, record cards).
+- **Why needed:** First bottom tab: swipe days, start/stop records, toggle stats — all wired from here.
+- **What it contains:** `TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`; imports day page, header controls, stats.
 - **Key code names:** `TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`
-- **Responsibilities:** `TimelineSwipeWrapper`, `TimelinePage`; header controls + day list + record cards
+- **Responsibilities:** Compose Timeline UI; profile-timezone day keys; warm-window paging hooks.
 - **When to open:** Timeline tab: day list, record cards, stats toggle, date swipe.
 - **Can it be deleted?** No — required for app runtime.
 - **Connected to:** Timeline tab (shell index 0); APP_STRUCTURE role: `TimelineSwipeWrapper`, `TimelinePage`
@@ -12404,10 +12428,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `timeline_view.dart` на экране (Timeline tab (first bottom tab)): , `TimelinePage.
-- **Зачем:** Пользователь видит `timeline_view.dart`, когда открывает Timeline tab (first bottom tab).
-- **Содержимое:** Flutter-виджеты в `timeline_view.dart` (`TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`).
-- **Обязанности:** Реализует в `timeline_view.dart`: , `TimelinePage.
+- **Что это:** Корень вкладки Timeline — day pager `TimelineSwipeWrapper` и тело `TimelinePage` (header, список дня, карточки записей).
+- **Зачем:** Первая вкладка: свайп дней, старт/стоп записей, stats — собрано здесь.
+- **Содержимое:** `TimelineSwipeWrapper`, `_TimelineSwipeWrapperState`; подключает day page, header controls, stats.
+- **Обязанности:** Собирает UI Timeline; day keys по profile timezone; warm-window paging.
 - **Когда открывать:** Вкладка Timeline: записи, день, stats.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Timeline (shell index 0)
@@ -12418,9 +12442,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `wear_main_wrapper.dart` for Wear OS watch companion: Wear OS companion.
-- **Why needed:** Users interact with `wear_main_wrapper.dart` when using Wear OS watch companion.
-- **What it contains:** Flutter widgets in `wear_main_wrapper.dart` (`WearMainWrapper`).
+- **What this is:** `wear_main_wrapper.dart` on Wear OS watch companion — Wear OS companion.
+- **Why needed:** Users see `wear_main_wrapper.dart` when using Wear OS watch companion.
+- **What it contains:** Primary symbols: `WearMainWrapper`.
 - **Key code names:** `WearMainWrapper`
 - **Responsibilities:** Wear OS companion
 - **When to open:** When behavior tied to `wear_main_wrapper.dart` breaks or you need to change its documented role.
@@ -12430,10 +12454,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `wear_main_wrapper.dart` на экране (Wear OS watch companion): Wear OS companion.
-- **Зачем:** Пользователь видит `wear_main_wrapper.dart`, когда открывает Wear OS watch companion.
-- **Содержимое:** Flutter-виджеты в `wear_main_wrapper.dart` (`WearMainWrapper`).
-- **Обязанности:** Реализует в `wear_main_wrapper.dart`: Wear OS companion.
+- **Что это:** `wear_main_wrapper.dart` на Wear OS companion — Реализует `WearMainWrapper` и связанный API в `wear_main_wrapper.dart`..
+- **Зачем:** Пользователь видит UI из `wear_main_wrapper.dart` на Wear OS companion.
+- **Содержимое:** Основные символы: `WearMainWrapper`.
+- **Обязанности:** Реализует `WearMainWrapper` и связанный API в `wear_main_wrapper.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `wear_main_wrapper.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/wear/`, `docs/APP_STRUCTURE.md`
@@ -12444,9 +12468,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `wear_platform.dart` for Wear OS watch companion: Wear OS companion.
-- **Why needed:** Users interact with `wear_platform.dart` when using Wear OS watch companion.
-- **What it contains:** Flutter widgets in `wear_platform.dart` (`WearPlatform`).
+- **What this is:** `wear_platform.dart` on Wear OS watch companion — Wear OS companion.
+- **Why needed:** Users see `wear_platform.dart` when using Wear OS watch companion.
+- **What it contains:** Primary symbols: `WearPlatform`.
 - **Key code names:** `WearPlatform`
 - **Responsibilities:** Wear OS companion
 - **When to open:** When behavior tied to `wear_platform.dart` breaks or you need to change its documented role.
@@ -12456,10 +12480,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `wear_platform.dart` на экране (Wear OS watch companion): Wear OS companion.
-- **Зачем:** Пользователь видит `wear_platform.dart`, когда открывает Wear OS watch companion.
-- **Содержимое:** Flutter-виджеты в `wear_platform.dart` (`WearPlatform`).
-- **Обязанности:** Реализует в `wear_platform.dart`: Wear OS companion.
+- **Что это:** `wear_platform.dart` на Wear OS companion — Реализует `WearPlatform` и связанный API в `wear_platform.dart`..
+- **Зачем:** Пользователь видит UI из `wear_platform.dart` на Wear OS companion.
+- **Содержимое:** Основные символы: `WearPlatform`.
+- **Обязанности:** Реализует `WearPlatform` и связанный API в `wear_platform.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `wear_platform.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/wear/`, `docs/APP_STRUCTURE.md`
@@ -12470,9 +12494,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `wear_runtime.dart` for Wear OS watch companion: Wear OS companion.
-- **Why needed:** Users interact with `wear_runtime.dart` when using Wear OS watch companion.
-- **What it contains:** Flutter widgets in `wear_runtime.dart` (implementation details in the source file).
+- **What this is:** `wear_runtime.dart` on Wear OS watch companion — Wear OS companion.
+- **Why needed:** Users see `wear_runtime.dart` when using Wear OS watch companion.
+- **What it contains:** Dart module `wear_runtime.dart` — open file for classes and helpers.
 - **Responsibilities:** Wear OS companion
 - **When to open:** When behavior tied to `wear_runtime.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -12481,10 +12505,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `wear_runtime.dart` на экране (Wear OS watch companion): Wear OS companion.
-- **Зачем:** Пользователь видит `wear_runtime.dart`, когда открывает Wear OS watch companion.
-- **Содержимое:** Flutter-виджеты в `wear_runtime.dart` (implementation details in the source file).
-- **Обязанности:** Реализует в `wear_runtime.dart`: Wear OS companion.
+- **Что это:** `wear_runtime.dart` на Wear OS companion — Поддерживает поведение `wear_runtime` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `wear_runtime.dart` на Wear OS companion.
+- **Содержимое:** Dart-модуль `wear_runtime.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `wear_runtime` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `wear_runtime.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/wear/`, `docs/APP_STRUCTURE.md`
@@ -12495,9 +12519,9 @@ RU:
 
 EN:
 
-- **What this is:** UI file `wear_timer_screen.dart` for Wear OS watch companion: Wear OS companion.
-- **Why needed:** Users interact with `wear_timer_screen.dart` when using Wear OS watch companion.
-- **What it contains:** Flutter widgets in `wear_timer_screen.dart` (`WearTimerScreen`, `_WearTimerScreenState`).
+- **What this is:** `wear_timer_screen.dart` on Wear OS watch companion — Wear OS companion.
+- **Why needed:** Users see `wear_timer_screen.dart` when using Wear OS watch companion.
+- **What it contains:** Primary symbols: `WearTimerScreen`, `_WearTimerScreenState`.
 - **Key code names:** `WearTimerScreen`, `_WearTimerScreenState`
 - **Responsibilities:** Wear OS companion
 - **When to open:** When behavior tied to `wear_timer_screen.dart` breaks or you need to change its documented role.
@@ -12507,10 +12531,10 @@ EN:
 
 RU:
 
-- **Что это:** UI-модуль `wear_timer_screen.dart` на экране (Wear OS watch companion): Wear OS companion.
-- **Зачем:** Пользователь видит `wear_timer_screen.dart`, когда открывает Wear OS watch companion.
-- **Содержимое:** Flutter-виджеты в `wear_timer_screen.dart` (`WearTimerScreen`, `_WearTimerScreenState`).
-- **Обязанности:** Реализует в `wear_timer_screen.dart`: Wear OS companion.
+- **Что это:** `wear_timer_screen.dart` на Wear OS companion — Реализует `WearTimerScreen` и связанный API в `wear_timer_screen.dart`..
+- **Зачем:** Пользователь видит UI из `wear_timer_screen.dart` на Wear OS companion.
+- **Содержимое:** Основные символы: `WearTimerScreen`, `_WearTimerScreenState`.
+- **Обязанности:** Реализует `WearTimerScreen` и связанный API в `wear_timer_screen.dart`.
 - **Когда открывать:** Когда ломается поведение, связанное с `wear_timer_screen.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/wear/`, `docs/APP_STRUCTURE.md`
@@ -12849,7 +12873,7 @@ EN:
 - **What this is:** Flutter app entry — `main()` bootstraps auth gate, brain load, and dashboard.
 - **Why needed:** OS launches this file first; it wires PocketBase session and initial data before tabs render.
 - **What it contains:** `main()`, app widget tree, auth routing to dashboard or login.
-- **Key code names:** `main`
+- **Key code names:** `main`, `DateTimeTrackerApp`, `_DateTimeTrackerAppState`, `RootAuthWrapper`, `_RootAuthWrapperState`
 - **Responsibilities:** Start Flutter binding; load settings; show loading until brain ready.
 - **When to open:** When behavior tied to `main.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
@@ -12900,8 +12924,8 @@ EN:
 
 - **What this is:** App shell wiring — Shell dashboard entry (see §3.1.1).
 - **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What it contains:** Shell mixin or widget (`ShellDashboardBase`).
-- **Key code names:** `ShellDashboardBase`
+- **What it contains:** Shell mixin or widget (`ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`).
+- **Key code names:** `ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`
 - **Responsibilities:** Shell dashboard entry (see §3.1.1)
 - **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
 - **Can it be deleted?** No — required for app runtime.
@@ -12912,7 +12936,7 @@ RU:
 
 - **Что это:** Оболочка приложения (shell) — Shell dashboard entry (see §3.1.1).
 - **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (`ShellDashboardBase`).
+- **Содержимое:** Shell mixin или виджет (`ShellDashboardBase`, `LifeOSDashboard`, `ShellDashboardState`).
 - **Обязанности:** Реализует в shell: Shell dashboard entry (see §3.1.1).
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -13082,7 +13106,7 @@ EN:
 
 - **What this is:** App shell wiring — Shell shared helpers.
 - **Why needed:** Connects bottom tabs, voice, edit sheets, and offline banner across the whole app.
-- **What it contains:** Shell mixin or widget (implementation details in the source file).
+- **What it contains:** Shell mixin or widget (logic in `shell_shared`).
 - **Responsibilities:** Shell shared helpers
 - **When to open:** Bottom tabs, voice routing, edit modal host, offline banner slot.
 - **Can it be deleted?** No — required for app runtime.
@@ -13093,7 +13117,7 @@ RU:
 
 - **Что это:** Оболочка приложения (shell) — Shell shared helpers.
 - **Зачем:** Связывает вкладки, voice, edit sheets и offline banner.
-- **Содержимое:** Shell mixin или виджет (implementation details in the source file).
+- **Содержимое:** Shell mixin или виджет (logic in `shell_shared`).
 - **Обязанности:** Реализует в shell: Shell shared helpers.
 - **Когда открывать:** Навигация, voice, edit host.
 - **Можно удалить?** Нет — нужен для работы приложения.
@@ -14249,7 +14273,7 @@ RU:
 - **Содержимое:** Команды PowerShell/Python/Dart в `architecture_guard.ps1`.
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `architecture_guard.ps1` по инструкции в repo docs.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Можно удалить?** Нет — нужен для audit workflow.
 - **Связано с:** `docs/APP_STRUCTURE.md`, CI optional.
 - **Слой:** Dev/CI script — не runtime приложения.
 
@@ -14286,6 +14310,7 @@ EN:
 - **What this is:** Manual export of Price Reporter timeline records to CSV for owner billing/reporting.
 - **Why needed:** Internal business reporting — not an in-app user feature.
 - **What it contains:** Read-only PocketBase queries + CSV writer to `exports/`.
+- **Key code names:** `_ExportRow`
 - **Responsibilities:** Generate timesheet CSV for configured date range.
 - **When to open:** Owner runs monthly Price Reporter billing export.
 - **Can it be deleted?** Maybe — manual owner utility; keep unless export no longer used.
@@ -14324,7 +14349,7 @@ RU:
 - **Содержимое:** Команды PowerShell/Python/Dart в `generate_app_structure_detailed.py`.
 - **Обязанности:** Workflow, описанный в header или `docs/DEPLOY.md`.
 - **Когда открывать:** Owner или CI запускает `generate_app_structure_detailed.py` по инструкции в repo docs.
-- **Можно удалить?** Нет — нужен для сборки/деплоя/аудита.
+- **Можно удалить?** Нет — нужен для генерации structure doc.
 - **Связано с:** `docs/APP_STRUCTURE.md`, `structure_guide_data.py`.
 - **Слой:** Dev/CI script — не runtime приложения.
 

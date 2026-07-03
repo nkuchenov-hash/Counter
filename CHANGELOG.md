@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - APP_STRUCTURE_DETAILED lib guides + RU quality gate hardening [shipped]
+
+* **`scripts/manual/structure_lib_file_guides.py`:** [shipped] New curated EN+RU for mandatory lib files (`planning_view.dart` barrel, `timeline_view.dart`, `voice_input_sheet.dart`, `app_build_info.dart`, `app_colors.dart`); `feature_file_guide()` + `describe_contains()` from symbols/exports (no `implementation details in the source file`).
+* **`scripts/manual/generate_app_structure_detailed.py`:** [shipped] Quality gate fails on empty folder RU (`Зачем нужна`), `BANNED_EN_IN_RU` (`required for `, CocoaPods/macOS leftovers, `: ,` punctuation), and placeholder scan; `dart_exports()` + expanded `SYMBOL_RE`.
+* **`scripts/manual/structure_role_guides.py`**, **`structure_folder_ru_curated.py`**, **`structure_guide_data.py`**, **`structure_ru_helpers.py`:** [shipped] Route `lib/features/*` through feature guides; profile folder RU; `delete_en_to_ru()` always applied in folder RU merge.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated — 0 empty RU fields, 0 `implementation details in the source file`, 0 EN leftovers in RU delete/desc fields, quality gate OK.
+
 ## [2026-07-03] - APP_STRUCTURE_DETAILED empty RU + EN-wrapper quality gate [shipped]
 
 * **`scripts/manual/generate_app_structure_detailed.py`:** [shipped] `ru_line_value()` fixes empty-field detection (markdown `**` false positive); quality gate fails on empty required RU prefixes + `Fulfill`/`Source file`/`Role:`/`required for current app behavior`; platform paths before role lookup; no English APP_STRUCTURE role in RU `Связано с`.
