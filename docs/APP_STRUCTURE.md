@@ -368,19 +368,17 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | `windows/`, `linux/`, `macos/` | Desktop embedders | Flutter platform runners |
 | `test/` | Unit/widget tests | `flutter test`; perf and domain tests |
 | `integration_test/` | Device integration tests | Emulator/device only |
-| `scripts/` | Tooling | `audit/architecture_guard.ps1`, `sync_locales.dart`, `manual/td.ps1` (deploy), manual PB scripts |
+| `scripts/` | Tooling | `audit/architecture_guard.ps1`, `sync_locales.dart`, `manual/td.ps1` (deploy), structure scan/generator, desktop voice smoke scripts |
 | `installer/windows/` | Windows packaging | `counter.iss` (Inno Setup) → CI produces `CounterSetup.exe` |
-| `docs/` | Governing documents | `ARCHITECTURE.md`, `DATA_MAP.md`, `POCKETBASE_MANIFEST.md`, `UX_CONTRACT.md`, `DESIGN_SYSTEM.md`, `DEPLOY.md`, `ROADMAP.md` |
+| `docs/` | Governing documents | See `docs/PROJECT_KNOWLEDGE_PACK.md` (14-doc upload list) |
 | `pb_hooks/` | PocketBase server hooks (JS) | Deploy next to PocketBase binary on VPS |
-| `design/` | Figma/reference assets | Design reference PNG/SVG |
+| `android.ps1` | Local Android APK build | `GIT_COMMIT` / `BUILD_TIME` dart-defines for build stamp |
 | `build/` | Flutter build output | **Gitignored** — must not be tracked |
-| `exports/` | Price Reporter / audit script output | **Gitignored** — local CSV/XLSX only |
-| `tools/` | Sample data + migration helpers | `sample_data/` tracked; `tools/exports/` gitignored |
+| `exports/` | Script output (e.g. Price Reporter CSV) | **Gitignored** — local only |
 | `.dart_tool/` | Dart/Flutter tool cache | **Gitignored** — must not be tracked |
 | `update.ps1` | Deploy wrapper | Calls `scripts/manual/td.ps1` |
 | `.github/workflows/deploy.yml` | CI web deploy | Push `main` → `gh-pages` |
 | `.github/workflows/windows-desktop-build.yml` | CI Windows installer | Manual `workflow_dispatch` → `CounterSetup.exe` |
-| `pocketbase.service` | systemd unit example | VPS ops reference |
 | `pubspec.yaml` | Flutter package manifest | |
 | `analysis_options.yaml` | Analyzer rules | |
 

@@ -1,7 +1,0 @@
-[P0U_P0T_DISABLED] platform=android enabled=false
-[P0U_TIMELINE_ADJ_VM_WARM_DISABLED] reason=killSwitch
-[P0U_BIOMETRIC_GATE] enabled=false reason=stabilization
---- TIMELINE PERF LOGS (3) ---
-[P0U_P0T_DISABLED] platform=android enabled=false
-[P0U_TIMELINE_ADJ_VM_WARM_DISABLED] reason=killSwitch
-[P0U_BIOMETRIC_GATE] enabled=false reason=stabilization

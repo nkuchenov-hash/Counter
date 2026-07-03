@@ -11,6 +11,16 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Full repo necessity cleanup [shipped]
+
+* **`design/`:** [shipped] Removed 6 unused CardPlan PNG/SVG reference mockups (not in `pubspec` assets, no runtime load).
+* **Perf captures:** [shipped] `git rm` tracked `shell_timeline_swipe_capture.txt`, `timeline_perf_capture.txt` (already `.gitignore`; test output only).
+* **Legacy Firebase:** [shipped] Removed `firebase.json`, `.firebaserc`.
+* **Obsolete scripts/tools:** [shipped] Removed `COMPLETE_INSTALL.ps1` (stale paths + credentials), migration/audit/repair one-offs, `tools/migrate_to_pb.dart` + sample CSVs, `p0b_build_apk.ps1`, `run_desktop_voice_test.bat`, `.claude/settings.local.json`, `pocketbase.service`.
+* **`docs/reports/FULL_REPO_NECESSITY_CLEANUP_2026-07-03.md`:** [shipped] Deletion inventory + human-decision list.
+* **`docs/APP_STRUCTURE.md`**, **`APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated; removed `design/`, `tools/`, stale root entries.
+* **Production code:** [skipped] no Dart changes; `update.ps1` not run.
+
 ## [2026-07-03] - Project Knowledge pack cleanup [shipped]
 
 * **`docs/PROJECT_KNOWLEDGE_PACK.md`:** [shipped] 14-doc upload checklist (≤25 limit); excluded repo-only docs listed.

@@ -2,7 +2,7 @@
 
 Detailed bilingual (EN/RU) file guide for the Life OS / Counter repository.
 
-**Generated from tree scan at SHA `bc5cf7f` (2026-07-03).**
+**Generated from tree scan at SHA `b4206b4` (2026-07-03).**
 
 Concise canonical map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md).
 
@@ -11,23 +11,6 @@ Concise canonical map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md).
 ## Root project files
 
 ### `.cursorrules`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `.firebaserc`
 
 EN:
 
@@ -180,40 +163,6 @@ RU:
 - **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
 
 
-### `firebase.json`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `pocketbase.service`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
 ### `pubspec.lock`
 
 EN:
@@ -239,57 +188,6 @@ EN:
 - **Contains:** Build/analyzer/deploy configuration or changelog. Symbols: (library).
 - **Does:** Defines dependencies, lints, deploy entrypoints.
 - **Connected to:** First stop for tooling and AI context.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `run_desktop_voice_test.bat`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `shell_timeline_swipe_capture.txt`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `timeline_perf_capture.txt`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
 
 RU:
 
@@ -6270,58 +6168,6 @@ RU:
 - **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
 
 
-### `scripts/manual/COMPLETE_INSTALL.ps1`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/manual/_count_pr.dart`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/manual/_probe_pb_auth.dart`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: main.
-- **Symbols:** `main`
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
 ### `scripts/manual/check_no_preparing_ui.ps1`
 
 EN:
@@ -6356,76 +6202,7 @@ RU:
 - **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
 
 
-### `scripts/manual/extract_l10n_from_dictionary.dart`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: main.
-- **Symbols:** `main`
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
 ### `scripts/manual/generate_app_structure_detailed.py`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/manual/plans_dry_run_audit.dart`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/manual/plans_duplicate_cleanup_apply.dart`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
-### `scripts/manual/repair_2026_06_25_plan_times_msk.dart`
 
 EN:
 
@@ -6578,23 +6355,6 @@ RU:
 - **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
 
 
-### `scripts/p0b_build_apk.ps1`
-
-EN:
-
-- **Purpose:** Developer/CI script.
-- **Contains:** Audit, deploy, locale sync, or one-off maintenance. Symbols: (library).
-- **Does:** Not shipped in app binary.
-- **Connected to:** Documented in `docs/DEPLOY.md` or audit reports when workflow-critical.
-
-RU:
-
-- **Назначение:** Скрипт разработки/CI.
-- **Что внутри:** Аудит, деплой, синхронизация.
-- **Что делает:** Не входит в релизный бинарник.
-- **Как связано с общей логикой:** См. `docs/DEPLOY.md` для deploy-пути.
-
-
 ### `scripts/sync_locales.dart`
 
 EN:
@@ -6718,6 +6478,23 @@ RU:
 
 
 ### `docs/POCKETBASE_MANIFEST.md`
+
+EN:
+
+- **Purpose:** Project documentation.
+- **Contains:** Architecture, data map, reports. Symbols: (library).
+- **Does:** Governing specs for Brain/UI behavior.
+- **Connected to:** Must stay aligned with code tree (this file).
+
+RU:
+
+- **Назначение:** Документация проекта.
+- **Что внутри:** Контракты архитектуры и DATA_MAP.
+- **Что делает:** Источник правды для полей PB.
+- **Как связано с общей логикой:** Должна совпадать с деревом файлов.
+
+
+### `docs/PROJECT_KNOWLEDGE_PACK.md`
 
 EN:
 
@@ -8555,110 +8332,6 @@ RU:
 
 
 ### `installer/windows/stt_helper_build/counter_stt_helper.exe`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-## design/
-
-### `design/CardPlan Large.png`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `design/CardPlan Large.svg`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `design/CardPlan Medium.png`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `design/CardPlan Medium.svg`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `design/CardPlan Small.png`
-
-EN:
-
-- **Purpose:** Project file.
-- **Contains:** Supporting source or config. Symbols: (library).
-- **Does:** See path prefix for ownership.
-- **Connected to:** Cross-check `docs/APP_STRUCTURE.md` layer rules.
-
-RU:
-
-- **Назначение:** Файл проекта.
-- **Что внутри:** См. англ. блок Purpose/Contains.
-- **Что делает:** Смотри префикс пути для владения.
-- **Как связано с общей логикой:** Правила слоёв — `docs/APP_STRUCTURE.md`.
-
-
-### `design/CardPlan Small.svg`
 
 EN:
 
