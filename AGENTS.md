@@ -9,7 +9,7 @@ Future Codex work should usually start by reading:
 - `docs/APP_STRUCTURE.md`
 - `docs/ARCHITECTURE.md`
 - `docs/UX_CONTRACT.md`
-- `CLAUDE.md`
+- `AGENT_NAVIGATION.md`
 - `CHANGELOG.md`
 - task-specific docs listed below
 

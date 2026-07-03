@@ -11,7 +11,7 @@
 | # | Path | Topic |
 | :---: | :--- | :--- |
 | 1 | `AGENTS.md` | Codex / agent routing |
-| 2 | `CLAUDE.md` | AI navigation map, symbols |
+| 2 | `AGENT_NAVIGATION.md` | AI navigation map, symbols (renamed from legacy `CLAUDE.md`) |
 | 3 | `CHANGELOG.md` | Shipped history |
 | 4 | `docs/APP_STRUCTURE.md` | Concise structure map |
 | 5 | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual per-file guide |
@@ -42,7 +42,7 @@
 
 | Removed | Merge target / reason |
 | :--- | :--- |
-| `docs/AI_CONTEXT.md` | Pointer + laws already in `ARCHITECTURE.md`, `UX_CONTRACT.md`, `CLAUDE.md`, `DEPLOY.md` |
+| `docs/AI_CONTEXT.md` | Pointer + laws already in `ARCHITECTURE.md`, `UX_CONTRACT.md`, `AGENT_NAVIGATION.md`, `DEPLOY.md` |
 | `docs/APP_STRUCTURE_EXPLAINED_RU.md` | Covered by `APP_STRUCTURE_DETAILED.md` (bilingual) |
 | `docs/DESKTOP_WINDOWS_ARTIFACT.md` | Merged into `docs/DEPLOY.md` § Windows desktop release |
 | `docs/WINDOWS_INSTALLER.md` | Merged into `docs/DEPLOY.md` § Windows desktop release |

@@ -15,7 +15,7 @@ Before any structural, behavior, data, PocketBase, performance, or UI/design cha
 - `docs/DESIGN_SYSTEM.md` — Figma → Flutter mapping, tokens, canonical components.
 - `docs/reports/DESIGN_SYSTEM_INVENTORY.md` — legacy UI exceptions.
 - `docs/DEPLOY.md` — GitHub Pages deploy path.
-- `CLAUDE.md` — navigation map and AI laws.
+- `AGENT_NAVIGATION.md` — navigation map and AI laws.
 
 Do not paste these docs into code or instructions; reference them.
 

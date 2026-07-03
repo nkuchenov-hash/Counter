@@ -18,7 +18,7 @@ Architecture-only pass. **No production Dart behavior changed.** No app source f
 
 1. `git ls-files`, `git status --short`, `git status --ignored --short`
 2. Recursive classification of repo root into: application source, tooling, canonical docs, historical docs, generated/ignored, delete candidates
-3. Cross-check against `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, `AGENTS.md`, `CLAUDE.md`
+3. Cross-check against `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, `AGENTS.md`, `AGENT_NAVIGATION.md`
 4. Post-cleanup: `python scripts/manual/generate_app_structure_detailed.py`, `.\scripts\manual\structure_scan.ps1`
 5. `git grep` for every deleted path stem — broken references fixed in governing docs
 
@@ -48,7 +48,7 @@ Architecture-only pass. **No production Dart behavior changed.** No app source f
 | `docs/reports/STRUCTURE_DECOMPOSITION_PASS4C_CATEGORY_2026-07-03.md` | Intermediate pass report |
 | `docs/reports/STRUCTURE_DECOMPOSITION_PASS4D_PROFILE_2026-07-03.md` | Intermediate pass report |
 | `docs/reports/_lockdown_inventory.csv` | Temporary lockdown CSV; not a canonical doc |
-| `docs/archive/LIFE_OS_CURSOR_PROMPT.md` | Legacy prompt; superseded by `AGENTS.md` / `CLAUDE.md` |
+| `docs/archive/LIFE_OS_CURSOR_PROMPT.md` | Legacy prompt; superseded by `AGENTS.md` / `AGENT_NAVIGATION.md` |
 | `docs/archive/lib_notes_scratch.txt` | Personal dev scratch; not project knowledge |
 
 ### Obsolete one-off extraction scripts (16)
@@ -96,7 +96,7 @@ See **`docs/PROJECT_KNOWLEDGE_PACK.md`** for the current upload checklist (≤25
 | Doc | Topic |
 | :--- | :--- |
 | `AGENTS.md` | Codex / agent routing |
-| `CLAUDE.md` | AI navigation map |
+| `AGENT_NAVIGATION.md` | AI navigation map |
 | `CHANGELOG.md` | Shipped history |
 | `docs/APP_STRUCTURE.md` | Concise structure map |
 | `docs/APP_STRUCTURE_DETAILED.md` | Bilingual per-file guide |
@@ -122,7 +122,7 @@ See **`docs/PROJECT_KNOWLEDGE_PACK.md`** for the current upload checklist (≤25
 
 | Path | Merge target / reason |
 | :--- | :--- |
-| `docs/AI_CONTEXT.md` | Laws in `ARCHITECTURE.md`, `UX_CONTRACT.md`, `CLAUDE.md` |
+| `docs/AI_CONTEXT.md` | Laws in `ARCHITECTURE.md`, `UX_CONTRACT.md`, `AGENT_NAVIGATION.md` |
 | `docs/APP_STRUCTURE_EXPLAINED_RU.md` | Covered by bilingual `APP_STRUCTURE_DETAILED.md` |
 | `docs/DESKTOP_WINDOWS_ARTIFACT.md` | Merged into `docs/DEPLOY.md` |
 | `docs/WINDOWS_INSTALLER.md` | Merged into `docs/DEPLOY.md` |
@@ -157,7 +157,7 @@ See **`docs/PROJECT_KNOWLEDGE_PACK.md`** for the current upload checklist (≤25
 Searched tracked files for deleted report/script stems. Fixed in:
 
 - `AGENTS.md`
-- `CLAUDE.md`
+- `AGENT_NAVIGATION.md`
 - `docs/ROADMAP.md`
 - `docs/APP_STRUCTURE.md`
 - `docs/DEPLOY.md`

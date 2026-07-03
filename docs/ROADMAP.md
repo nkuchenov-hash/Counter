@@ -2,7 +2,7 @@
 
 **Single canonical plan.** Drawn from the April 2026 audit (findings captured in Phase 1 below). Updated 2026-06-09.
 
-> Other docs (`CLAUDE.md`, `AGENTS.md`) link here — do not maintain a second roadmap copy.
+> Other docs (`AGENT_NAVIGATION.md`, `AGENTS.md`) link here — do not maintain a second roadmap copy.
 
 ---
 
@@ -47,7 +47,7 @@ Performance, responsiveness, and stability are sacred. Preload/cache/render expe
 | Console/logcat spam, invisible-plan projection storm | Gate verbose logs; stop hot-path full scans |
 | Memory/mounted-widget explosion | Kill mounted-window default; shrink boot work |
 
-**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `CLAUDE.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`
+**Docs:** `docs/ARCHITECTURE.md` § PERFORMANCE_KILL_SWITCH_LAW · `docs/UX_CONTRACT.md` § Performance & Responsiveness Contract · `AGENT_NAVIGATION.md` · `lib/core/perf_flags.dart` · `lib/core/p0u_feature_flags.dart`
 
 ### ~~O1 — Offline-first core reliability~~ ✅ (shipped 2026-06-09)
 

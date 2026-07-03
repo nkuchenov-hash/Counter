@@ -91,7 +91,7 @@ alwaysApply: true
 5. **Wear / platform bridge:** `DatabaseService` does **not** own `MethodChannel` Wear I/O (that lives under `lib/features/wear/`). The Brain’s **Wear-lite** load path must **not** await realtime subscription or other optional background hooks that are not required for the watch UI to render.
 
 Before editing any code, read and follow:
-- CLAUDE.md
+- AGENT_NAVIGATION.md
 - docs/APP_STRUCTURE.md
 - docs/ARCHITECTURE.md
 - docs/POCKETBASE_MANIFEST.md

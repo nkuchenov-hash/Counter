@@ -13,12 +13,15 @@ from pathlib import Path, PurePosixPath
 
 from structure_guide_data import (
     BAD_PHRASES,
+    BANNED_EN_PHRASES,
     BANNED_FOLDER_PHRASES,
+    BANNED_RU_PHRASES,
     FOLDERS,
     infer_folder_guide,
     platform_file_description,
 )
 from structure_role_guides import humanize_guide
+from structure_root_guides import ROOT_FILE_GUIDES
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "docs" / "APP_STRUCTURE_DETAILED.md"
@@ -567,88 +570,7 @@ def guide_from_role(path: str, role: str, syms: list[str]) -> FileGuide:
     )
 
 
-ROOT_FILES: dict[str, FileGuide] = {
-    "pubspec.yaml": FileGuide(
-        what="The app’s package manifest — lists Flutter/Dart dependencies and version number.",
-        why="Flutter reads this to know which packages to download and how to name the app build.",
-        contains="Dependency list (PocketBase SDK, calendar, voice, notifications, etc.).",
-        responsibilities="Declare package name `counter`, SDK version, plugins.",
-        when="Adding a new Flutter package or bumping app version.",
-        delete="No — Flutter requires it.",
-        connected="`flutter pub get`, all imports `package:counter/...`.",
-        layer="Build config — root manifest.",
-    ),
-    "update.ps1": FileGuide(
-        what="One-click script to analyze, build web, commit, and push for GitHub Pages deploy.",
-        why="Owner deploys the public site without remembering long flutter commands.",
-        contains="Wrapper calling `scripts/manual/td.ps1`.",
-        responsibilities="Trigger deploy pipeline documented in `docs/DEPLOY.md`.",
-        when="Publishing website after verified changes.",
-        delete="No — primary deploy entry for owner.",
-        connected="`.github/workflows/deploy.yml`, `docs/DEPLOY.md`.",
-        layer="Deploy tooling.",
-    ),
-    "android.ps1": FileGuide(
-        what="Shortcut to build Android release APKs with git commit stamp in the app.",
-        why="Faster local APK builds with correct `--dart-define=GIT_COMMIT` for About/More build info.",
-        contains="PowerShell calling `flutter build apk --split-per-abi`.",
-        responsibilities="Build arm64 (and other ABI) release APKs.",
-        when="Testing release APK on device.",
-        delete="No — documented local Android build path.",
-        connected="`android/` Gradle project, CI optional.",
-        layer="Build tooling.",
-    ),
-    "AGENTS.md": FileGuide(
-        what="Short instruction map for Codex/AI agents working in this repo.",
-        why="Tells assistants which docs to read first and iron laws not to break.",
-        contains="Priority list, PocketBase rules, structure boundaries.",
-        responsibilities="Route AI to governing docs; not app runtime.",
-        when="Starting an AI coding session in Codex/Cursor.",
-        delete="No — Project Knowledge pack doc.",
-        connected="14-doc pack, `CLAUDE.md`, `docs/ARCHITECTURE.md`.",
-        layer="Agent instructions — Project Knowledge.",
-    ),
-    "CLAUDE.md": FileGuide(
-        what="Navigation map of symbols and docs for Claude/AI sessions.",
-        why="Answers ‘where is start/stop record?’ without searching the whole tree.",
-        contains="Tables of file → symbol, shipped feature status pointers.",
-        responsibilities="AI orientation; keep updated when symbols move.",
-        when="Finding which file owns a feature; AI context.",
-        delete="No — Project Knowledge pack doc.",
-        connected="All governing docs, `CHANGELOG.md`.",
-        layer="Agent instructions — Project Knowledge.",
-    ),
-    "CHANGELOG.md": FileGuide(
-        what="Journal of shipped changes — what was built and when.",
-        why="Prevents re-building features; shows history of structure passes and fixes.",
-        contains="Dated technical bullets with file names.",
-        responsibilities="Record shipped work after verification.",
-        when="Checking if a feature already exists.",
-        delete="No — Project Knowledge pack doc.",
-        connected="Every shipped pass report.",
-        layer="History — Project Knowledge.",
-    ),
-    ".gitignore": FileGuide(
-        what="Tells git which generated/local files never to commit (build/, captures, env secrets).",
-        why="Excludes APK dumps, perf captures, and personal env keys from git — repo stays clean.",
-        contains="Ignore patterns for Flutter build output, IDE, exports.",
-        responsibilities="Exclude `build/`, `*.perf_capture.txt`, `lib/core/env/env.dart`.",
-        when="New local output folder should not be tracked.",
-        delete="No — repo hygiene.",
-        connected="All developers; CI.",
-        layer="Repo hygiene.",
-    ),
-    ".cursorrules": FileGuide(
-        what="Pointer for Cursor IDE to the real rules in `.cursor/rules/flutter_expert.mdc`.",
-        why="Ensures AI in Cursor follows architecture iron laws.",
-        contains="Single-line pointer to expert rules.",
-        responsibilities="Redirect to authoritative Cursor rules.",
-        when="Cursor agent ignores architecture — check linked rules.",
-        delete="No — Cursor workflow.",
-        connected="`.cursor/rules/flutter_expert.mdc`.",
-        layer="IDE agent config.",
-    ),
-}
+ROOT_FILES_LEGACY: dict[str, FileGuide] = {}
 
 
 DOC_FILES: dict[str, FileGuide] = {
@@ -862,11 +784,34 @@ def test_guide(path: str, syms: list[str]) -> FileGuide:
     )
 
 
+def file_guide_from_dict(data: dict[str, str]) -> FileGuide:
+    return FileGuide(
+        what=data["what"],
+        why=data["why"],
+        contains=data["contains"],
+        responsibilities=data["responsibilities"],
+        when=data["when"],
+        delete=data["delete"],
+        connected=data["connected"],
+        layer=data["layer"],
+        what_ru=data.get("what_ru", ""),
+        why_ru=data.get("why_ru", ""),
+        contains_ru=data.get("contains_ru", ""),
+        responsibilities_ru=data.get("responsibilities_ru", ""),
+        when_ru=data.get("when_ru", ""),
+        delete_ru=data.get("delete_ru", ""),
+        connected_ru=data.get("connected_ru", ""),
+        layer_ru=data.get("layer_ru", ""),
+    )
+
+
 def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
+    if path in ROOT_FILE_GUIDES:
+        return file_guide_from_dict(ROOT_FILE_GUIDES[path])
     if path in CATEGORY_GUIDES:
         return CATEGORY_GUIDES[path]
-    if path in ROOT_FILES:
-        return ROOT_FILES[path]
+    if path in ROOT_FILES_LEGACY:
+        return ROOT_FILES_LEGACY[path]
     if path in DOC_FILES:
         return DOC_FILES[path]
     role = roles.get(path) or roles.get(Path(path).name, "")
@@ -931,21 +876,21 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
         ".otf": "Font file",
     }.get(ext, f"{ext.lstrip('.') or 'text'} file")
     return FileGuide(
-        what=f"{kind} `{name}` kept in `{parent}` for the Life OS repo.",
-        why=f"Tracked in git because `{parent}` workflow or build needs this exact file.",
-        contains=f"Open `{name}` when editing {kind.lower()} for `{parent}`.",
-        responsibilities=f"Serve its role inside `{parent}` (see folder section above).",
-        when=f"When `{name}` is cited in build output or `{parent}` maintenance.",
+        what=f"{kind} `{name}` in `{parent}` for the Life OS repository.",
+        why=f"This path is tracked because `{parent}` needs `{name}` for build, CI, or documented workflow.",
+        contains=f"Open `{name}` when editing {kind.lower()} for `{parent}` (see folder section above).",
+        responsibilities=f"Fulfill the documented role of `{name}` under `{parent}`.",
+        when=f"When build output or maintenance cites `{name}`.",
         delete=del_en,
         connected=f"Folder `{parent}/`, `docs/APP_STRUCTURE.md`.",
         layer=layer_en,
-        what_ru=f"{kind} `{name}` в `{parent}`.",
-        why_ru=f"В git, потому что нужен для `{parent}`.",
+        what_ru=f"{kind} `{name}` в `{parent}` репозитория Life OS.",
+        why_ru=f"Файл в git, потому что `{parent}` использует `{name}` в сборке или workflow.",
         contains_ru=f"Открывать `{name}` при правках в `{parent}`.",
-        responsibilities_ru=f"Роль внутри `{parent}`.",
+        responsibilities_ru=f"Роль `{name}` описана в секции папки выше.",
         when_ru=when_ru,
         delete_ru=del_en,
-        connected_ru=f"Папка `{parent}/`.",
+        connected_ru=f"Папка `{parent}/`, `docs/APP_STRUCTURE.md`.",
         layer_ru=layer_ru,
     )
 
@@ -965,10 +910,13 @@ def render_folder(dirpath: str) -> str:
         f"- **Can it be deleted?** {data['delete']}\n"
         f"- **Main related paths:** {data['related']}\n\n"
         f"RU:\n\n"
-        f"- **Что это за папка:** см. EN (детали файлов ниже на RU).\n"
-        f"- **Зачем нужна:** {data['why']}\n"
-        f"- **Когда открывать:** {data['when']}\n"
-        f"- **Можно удалить?** {data['delete']}\n"
+        f"- **Что это за папка:** {data.get('what_ru', data['what'])}\n"
+        f"- **Зачем нужна:** {data.get('why_ru', data['why'])}\n"
+        f"- **Что здесь лежит:** {data.get('inside_ru', data['inside'])}\n"
+        f"- **На что влияет в приложении:** {data.get('affects_ru', data['affects'])}\n"
+        f"- **Когда открывать:** {data.get('when_ru', data['when'])}\n"
+        f"- **Можно удалить?** {data.get('delete_ru', data['delete'])}\n"
+        f"- **Связанные пути:** {data.get('related_ru', data['related'])}\n"
     )
 
 
@@ -1000,21 +948,28 @@ def render_file(path: str, g: FileGuide, syms: list[str]) -> str:
 def quality_check(text: str, paths: list[str]) -> list[str]:
     issues: list[str] = []
     whats: list[str] = []
-    all_banned = BAD_PHRASES + BANNED_FOLDER_PHRASES
+    all_banned_en = BAD_PHRASES + BANNED_EN_PHRASES
     desc_prefixes = (
         "- **What this is:**",
         "- **Why needed:**",
         "- **What it contains:**",
+        "- **Responsibilities:**",
         "- **What this folder is:**",
         "- **Why it exists:**",
         "- **What lives here:**",
         "- **What part of the app it affects:**",
+        "- **When to open:**",
         "- **When to open it:**",
-        "- **Зачем нужна:**",
-        "- **Когда открывать:**",
         "- **Что это:**",
         "- **Что это за папка:**",
+        "- **Зачем:**",
+        "- **Зачем нужна:**",
+        "- **Содержимое:**",
+        "- **Что здесь лежит:**",
+        "- **Обязанности:**",
+        "- **На что влияет в приложении:**",
     )
+    ru_prefixes = ("- **Что", "- **Зачем", "- **Содержимое", "- **Обязанности", "- **На что")
     for line in text.splitlines():
         if line.startswith("- **What this is:**"):
             whats.append(line.split(":", 1)[1].strip())
@@ -1022,13 +977,15 @@ def quality_check(text: str, paths: list[str]) -> list[str]:
             if not line.startswith(prefix):
                 continue
             val = line.split(":", 1)[1].strip()
-            for bad in all_banned:
+            is_ru = any(line.startswith(p) for p in ru_prefixes)
+            banned = BANNED_RU_PHRASES if is_ru else all_banned_en
+            for bad in banned:
                 if bad in val:
                     issues.append(f"Banned phrase '{bad}' in: {line[:120]}")
                     break
-            # Ban "Folder `" only in folder what lines (generic filler pattern)
             if line.startswith("- **What this folder is:**") and val.startswith("Folder `"):
                 issues.append(f"Generic folder prefix in: {val[:90]}")
+            break
     counts = Counter(whats)
     dupes = [(w, c) for w, c in counts.items() if c > 2 and len(w) < 100]
     if dupes:

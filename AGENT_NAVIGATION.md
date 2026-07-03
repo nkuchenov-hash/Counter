@@ -1,4 +1,6 @@
-# Life OS — Claude Context
+# Life OS — Agent navigation map
+
+> **Legacy filename:** was `CLAUDE.md` (2026-07-03 renamed to neutral `AGENT_NAVIGATION.md`). No external Claude service reads this path — repo-local AI orientation only.
 
 Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best time tracker possible, tidy codebase where every reusable thing lives in one place.
 
@@ -327,4 +329,4 @@ At the end of any session where code was shipped (committed and verified clean b
 ---
 
 ## Doc sync reminder
-Maintain a running list of every governing doc modified during the session. At session end, print the full list. Do not rely on memory of what was last edited. Current governing docs are committed in this repository. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `CHANGELOG.md`, `CLAUDE.md`, `AGENTS.md`.
+Maintain a running list of every governing doc modified during the session. At session end, print the full list. Do not rely on memory of what was last edited. Current governing docs are committed in this repository. Governing docs that must be tracked: `docs/APP_STRUCTURE.md`, `docs/ARCHITECTURE.md`, `docs/DATA_MAP.md`, `docs/POCKETBASE_MANIFEST.md`, `docs/ROADMAP.md`, `CHANGELOG.md`, `AGENT_NAVIGATION.md`, `AGENTS.md`.

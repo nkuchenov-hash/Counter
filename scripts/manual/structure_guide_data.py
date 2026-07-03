@@ -7,13 +7,20 @@ from pathlib import Path, PurePosixPath
 # Each folder entry: what, why, inside, affects, when, delete, related
 FOLDERS: dict[str, dict[str, str]] = {
     "lib": {
-        "what": "All Dart source code for the Life OS app — screens, data brain, shared widgets, and translations.",
-        "why": "Flutter puts every user-visible feature and every PocketBase save/load path here.",
-        "inside": "Feature screens (`features/`), data brain (`data/`), design-system widgets (`core/`), app shell (`shell/`), locales (`l10n/`).",
-        "affects": "The entire app on every platform.",
-        "when": "Almost any product bug or new feature touches something under `lib/`.",
-        "delete": "No — deleting this folder removes the application.",
-        "related": "`pubspec.yaml`, platform folders (`android/`, `ios/`, `web/`, …).",
+        "what": "The Flutter application itself — screens, navigation, cards, buttons, data brain, PocketBase sync, offline queue, localization, shared UI.",
+        "why": "Everything users see and everything that saves data lives here; without `lib/` there is no app.",
+        "inside": "`lib/data/` brain · `lib/features/` screens · `lib/core/` design system · `lib/shell/` navigation · `lib/l10n/` texts · `lib/services/` device notifications.",
+        "affects": "The entire product on Android, iOS, web, Windows, Wear.",
+        "when": "Almost any product bug, UI change, or PocketBase behavior fix.",
+        "delete": "No — deleting `lib/` removes the application.",
+        "related": "`pubspec.yaml`, `main.dart`, platform folders.",
+        "what_ru": "Это само Flutter-приложение. Здесь живут экраны, навигация, карточки, кнопки, мозг данных, PocketBase-синхронизация, offline queue, локализация и общие UI-компоненты.",
+        "why_ru": "Если удалить `lib`, приложения больше нет — весь продукт собран из этой папки.",
+        "inside_ru": "`lib/data/` — мозг (PocketBase, cache, optimistic UI, offline). `lib/features/` — экраны Timeline, Plans, Lists, Calendar, Profile, Categories. `lib/core/` — design system, тема, time, desktop voice. `lib/shell/` — вкладки, More, edit sheets, offline banner. `lib/l10n/` — тексты UI. `lib/services/` — уведомления устройства.",
+        "affects_ru": "Весь продукт на всех платформах.",
+        "when_ru": "Любой баг UI, сохранение данных, offline, локализация.",
+        "delete_ru": "Нет — удаление уничтожает приложение.",
+        "related_ru": "`pubspec.yaml`, `main.dart`, platform-папки.",
     },
     "lib/data": {
         "what": "The app “brain” — everything that talks to PocketBase, holds cached data, and applies changes before the server confirms.",
@@ -268,13 +275,20 @@ FOLDERS: dict[str, dict[str, str]] = {
         "related": "Production files with matching names under `lib/`.",
     },
     ".github": {
-        "what": "GitHub Actions workflows — automatic web deploy and Windows installer build.",
-        "why": "Push to `main` publishes website; manual workflow builds `CounterSetup.exe`.",
-        "inside": "`deploy.yml`, `windows-desktop-build.yml`, Copilot instructions.",
-        "affects": "Live site and release artifacts on GitHub.",
-        "when": "CI deploy failure, Windows artifact missing.",
-        "delete": "No — required for CI/deploy.",
-        "related": "`docs/DEPLOY.md`, `update.ps1`.",
+        "what": "GitHub automation folder — CI workflows that publish the web site and build the Windows installer.",
+        "why": "Robots run here after git push: one workflow deploys GitHub Pages, another builds `CounterSetup.exe`.",
+        "inside": "`workflows/deploy.yml`, `workflows/windows-desktop-build.yml`, `copilot-instructions.md`.",
+        "affects": "Live site at GitHub Pages and Windows installer artifact — not in-app screens.",
+        "when": "CI deploy failed, site not updating, Windows installer artifact missing.",
+        "delete": "No — if GitHub Pages deploy and Windows installer artifacts are required.",
+        "related": "`update.ps1`, `docs/DEPLOY.md`.",
+        "what_ru": "Папка автоматизации GitHub. Здесь workflow-файлы: один публикует web build на GitHub Pages после push, другой собирает Windows installer artifact.",
+        "why_ru": "Это не экран приложения, а роботы сборки и публикации.",
+        "inside_ru": "`deploy.yml`, `windows-desktop-build.yml`, `copilot-instructions.md`.",
+        "affects_ru": "Живой сайт и артефакт Windows installer.",
+        "when_ru": "CI deploy упал, сайт не обновился, нет CounterSetup.exe в Actions.",
+        "delete_ru": "Нет — если нужны GitHub Pages и Windows installer.",
+        "related_ru": "`update.ps1`, `docs/DEPLOY.md`.",
     },
     "lib/core": {
         "what": "Foundation layer — theme colors, shared widgets, clock/time math, desktop voice services, diagnostics.",
@@ -933,6 +947,42 @@ BANNED_FOLDER_PHRASES: tuple[str, ...] = (
     "ship or configure part of the repo",
 )
 
+BANNED_EN_PHRASES: tuple[str, ...] = BANNED_FOLDER_PHRASES + (
+    "service part of repository",
+    "supporting repository file",
+    "part of this structure branch",
+    "this area",
+    "this zone",
+    "cannot judge only by filename",
+    "file belongs to tooling",
+    "open this path when problem is in this zone",
+    "part of repository tooling or config",
+    "Repository support file",
+    "kept in `.` for the Life OS repo",
+    "Tracked in git because",
+    "Serve its role inside",
+    "text file `.metadata`",
+)
+
+BANNED_RU_PHRASES: tuple[str, ...] = (
+    "см. EN",
+    "service part",
+    "generic",
+    "эта зона",
+    "эта область",
+    "ветка структуры",
+    "нельзя оценивать только по названию",
+    "служебная часть репозитория",
+    "частью области",
+    "часть этой ветки структуры",
+    "относится к области",
+    "открывать этот путь надо не",
+    "когда проблема относится именно к этой зоне",
+    "В git, потому что нужен для",
+    "Роль внутри",
+    "Вспомогательный файл репозитория",
+)
+
 
 def synthesize_folder_guide(key: str) -> dict[str, str]:
     """Last-resort folder guide — must never use BANNED_FOLDER_PHRASES."""
@@ -1074,6 +1124,78 @@ def synthesize_folder_guide(key: str) -> dict[str, str]:
     }
 
 
+def _folder_ru_auto(key: str, en: dict[str, str]) -> dict[str, str]:
+    """Generate Russian folder fields from English guide when no curated RU exists."""
+    k = key.replace("\\", "/").strip("/")
+    top = k.split("/")[0] if k else ""
+    plat_ru = {
+        "android": "Android",
+        "ios": "iOS",
+        "web": "Web",
+        "windows": "Windows",
+        "linux": "Linux",
+        "macos": "macOS",
+    }.get(top, "")
+    if plat_ru:
+        return {
+            "what_ru": f"Платформенная папка {plat_ru}: `{k}/` — native-обёртка и конфиги Flutter для этой платформы.",
+            "why_ru": f"Flutter собирает {plat_ru}-версию из файлов под `{top}/`; это не Dart-код экранов.",
+            "inside_ru": en.get("inside", "Конфиги и native-файлы — см. список файлов ниже."),
+            "affects_ru": en.get("affects", f"Только сборка и поведение на {plat_ru}."),
+            "when_ru": en.get("when", f"Ошибка сборки {plat_ru} или native-проблема."),
+            "delete_ru": en.get("delete", "Нет — нужна для сборки платформы."),
+            "related_ru": en.get("related", f"`{top}/`, `docs/APP_STRUCTURE.md`."),
+        }
+    if k.startswith("lib/"):
+        sub = k[4:] if k.startswith("lib/") else k
+        return {
+            "what_ru": f"Код приложения в `{k}/` — часть Flutter-приложения ({sub}).",
+            "why_ru": "Всё под `lib/` попадает в APK/web/desktop build и определяет поведение продукта.",
+            "inside_ru": en.get("inside", "Dart-файлы — перечень ниже."),
+            "affects_ru": en.get("affects", "Поведение и UI, связанные с этим модулем."),
+            "when_ru": en.get("when", f"Правки или баги в `{sub}`."),
+            "delete_ru": en.get("delete", "Нет — нужен для работы приложения."),
+            "related_ru": en.get("related", "`lib/`, `docs/APP_STRUCTURE.md`."),
+        }
+    if k.startswith("docs/"):
+        return {
+            "what_ru": f"Документация в `{k}/` — written specs, не runtime-код.",
+            "why_ru": "Текстовые правила и отчёты для owner и AI; приложение их не исполняет.",
+            "inside_ru": en.get("inside", "Markdown-файлы ниже."),
+            "affects_ru": "Решения при разработке — не бинарник приложения.",
+            "when_ru": en.get("when", "Нужно прочитать правила по теме папки."),
+            "delete_ru": en.get("delete", "Нет — governing или report документация."),
+            "related_ru": en.get("related", "`docs/PROJECT_KNOWLEDGE_PACK.md`."),
+        }
+    if k.startswith("scripts/") or k.startswith("test/"):
+        kind = "скрипты" if k.startswith("scripts") else "автотесты"
+        return {
+            "what_ru": f"Папка {kind}: `{k}/`.",
+            "why_ru": "Поддержка CI, deploy, audit или регрессионных проверок.",
+            "inside_ru": en.get("inside", "Файлы перечислены ниже."),
+            "affects_ru": en.get("affects", "Качество и workflow — не экраны приложения."),
+            "when_ru": en.get("when", "Запуск workflow или падение CI."),
+            "delete_ru": en.get("delete", "Нет — задокументированный workflow."),
+            "related_ru": en.get("related", "`docs/APP_STRUCTURE.md`."),
+        }
+    return {
+        "what_ru": en.get("what", f"Папка `{k}/` репозитория Life OS."),
+        "why_ru": en.get("why", "Файлы здесь нужны для сборки, CI или сопровождения проекта."),
+        "inside_ru": en.get("inside", "Tracked-файлы перечислены ниже."),
+        "affects_ru": en.get("affects", "Workflow или сборка, связанная с этим путём."),
+        "when_ru": en.get("when", f"Работа с `{k}/`."),
+        "delete_ru": en.get("delete", "Нет — часть репозитория."),
+        "related_ru": en.get("related", "`docs/APP_STRUCTURE.md`."),
+    }
+
+
+def ensure_folder_ru(key: str, data: dict[str, str]) -> dict[str, str]:
+    if data.get("what_ru"):
+        return data
+    ru = _folder_ru_auto(key, data)
+    return {**data, **ru}
+
+
 def infer_folder_guide(key: str) -> dict[str, str]:
     """Return folder guide dict for path prefix; always returns specific text."""
     k = key.replace("\\", "/").strip("/")
@@ -1085,10 +1207,10 @@ def infer_folder_guide(key: str) -> dict[str, str]:
                 best = data
                 best_len = len(prefix)
     if best:
-        return best
+        return ensure_folder_ru(k, best)
     if k in FOLDERS:
-        return FOLDERS[k]
-    return synthesize_folder_guide(k)
+        return ensure_folder_ru(k, FOLDERS[k])
+    return ensure_folder_ru(k, synthesize_folder_guide(k))
 
 
 def platform_file_description(path: str) -> dict[str, str] | None:

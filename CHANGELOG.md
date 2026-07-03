@@ -11,6 +11,16 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Root/tooling structure guide humanization [shipped]
+
+* **`AGENT_NAVIGATION.md`:** [shipped] Renamed from legacy `CLAUDE.md` (no hard tool dependency on filename); AI navigation map unchanged in role.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Curated EN+RU root file guides (`.gitignore`, `.metadata`, `pubspec.*`, `update.ps1`, `android.ps1`, etc.); full RU folder sections; banned generic EN/RU filler phrases.
+* **`scripts/manual/structure_root_guides.py`:** [shipped] New curated root file dictionary.
+* **`scripts/manual/generate_app_structure_detailed.py`**, **`structure_guide_data.py`:** [shipped] Stricter quality gate; `lib/` and `.github/` concrete RU; no `см. EN`.
+* **`.cursorrules`:** [kept] Root pointer to `.cursor/rules/flutter_expert.mdc` (Cursor discovery convention).
+* **`android.ps1`:** [kept] Documented APK build helper (`flutter build apk --split-per-abi` → `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`).
+* **Production code:** [skipped] no Dart behavior changes; HTML structure map not regenerated.
+
 ## [2026-07-03] - Remove generic structure guide filler [shipped]
 
 * **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Removed remaining generic folder descriptions; curated entries for `lib/core/`, `lib/features/`, `lib/l10n/`, platform subfolders, installer STT paths.
