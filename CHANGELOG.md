@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-03] - Remove generic structure guide filler [shipped]
+
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Removed remaining generic folder descriptions; curated entries for `lib/core/`, `lib/features/`, `lib/l10n/`, platform subfolders, installer STT paths.
+* **`scripts/manual/generate_app_structure_detailed.py`**, **`structure_guide_data.py`:** [shipped] Quality gate now fails on banned folder filler phrases; removed generic folder fallback.
+* **Production code:** [skipped] no Dart behavior changes; HTML structure map not regenerated.
+
 ## [2026-07-03] - Owner-readable structure encyclopedia [shipped]
 
 * **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Rebuilt as owner-readable unique folder/file guide (525 files, 119 folders; EN+RU per entry).

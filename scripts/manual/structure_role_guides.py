@@ -84,7 +84,7 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Tag catalog fetch, PB link sync for plans/lists.",
     ),
     "plan_cache_helpers": (
-        "Keeps the local plan list clean and scores title similarity for smart linking.",
+        "Maintains the local plan list clean and scores title similarity for smart linking.",
         "Duplicate plan rows or bad merges would break Planning and Lists tabs.",
         "Plan dedupe/scrub, title link scoring heuristics.",
     ),

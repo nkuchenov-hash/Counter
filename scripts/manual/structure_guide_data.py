@@ -17,7 +17,7 @@ FOLDERS: dict[str, dict[str, str]] = {
     },
     "lib/data": {
         "what": "The app “brain” — everything that talks to PocketBase, holds cached data, and applies changes before the server confirms.",
-        "why": "Keeps one place for save/load rules so Timeline, Plans, Lists, and Categories stay consistent and offline-safe.",
+        "why": "Single place for save/load rules so Timeline, Plans, Lists, and Categories stay consistent and offline-safe.",
         "inside": "Coordinator files (`*_service.dart`, `database_service.dart`) and focused `part` modules in subfolders.",
         "affects": "Timeline records, plans, lists, categories, tags, profile settings, offline queue.",
         "when": "Wrong data, failed save, optimistic UI rollback, offline banner, or PocketBase field errors.",
@@ -276,6 +276,159 @@ FOLDERS: dict[str, dict[str, str]] = {
         "delete": "No — required for CI/deploy.",
         "related": "`docs/DEPLOY.md`, `update.ps1`.",
     },
+    "lib/core": {
+        "what": "Foundation layer — theme colors, shared widgets, clock/time math, desktop voice services, diagnostics.",
+        "why": "Feature screens must not duplicate buttons, date headers, or voice plumbing; this is the design-system and utility base.",
+        "inside": "`theme.dart`, `core/widgets/` (AppButton, plan cards), `core/time/`, `core/services/` (desktop voice), `core/diagnostics/`.",
+        "affects": "Look and feel on every tab; desktop voice/tray; header clock/timezone; perf debug flags.",
+        "when": "Button/card migration, timezone header wrong, desktop voice broken, theme token change.",
+        "delete": "No — features import foundation code everywhere.",
+        "related": "`docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/data/models.dart` (types only).",
+    },
+    "lib/features": {
+        "what": "All user-facing screens — Timeline, Plans, Lists, Profile, Categories, auth, Wear, shared edit sheets.",
+        "why": "Separates what users see and tap from the PocketBase brain in `lib/data/`.",
+        "inside": "One folder per tab or flow: `timeline/`, `planning/`, `lists/`, `shared/`, `profile/`, etc.",
+        "affects": "Every visible part of the app except raw platform wrappers.",
+        "when": "UI bug on a specific tab, new screen, edit sheet behavior, voice sheet layout.",
+        "delete": "No — deleting this removes the entire product UI.",
+        "related": "`lib/shell/` (navigation host), `lib/data/` (saves/loads).",
+    },
+    "lib/l10n": {
+        "what": "Translations — every button label, error message, and menu title the app shows.",
+        "why": "Users switch language in settings; all text must resolve through one dictionary.",
+        "inside": "`dictionary.dart` (`t()` lookup), `langs/en.dart` + `langs/ru.dart` (canonical), partial other locales.",
+        "affects": "All visible strings in every locale.",
+        "when": "Missing translation key, wrong language text, adding a new UI label.",
+        "delete": "No — app shows raw keys or crashes without l10n.",
+        "related": "`scripts/sync_locales.dart`, `lib/l10n/langs/HELP HOW TO UPDATE the languages`.",
+    },
+    "lib/services": {
+        "what": "Device-only services that are not PocketBase — currently plan alarm notifications.",
+        "why": "OS notification scheduling lives outside the brain; keeps `lib/data/` free of platform notification APIs.",
+        "inside": "`notification_service.dart` — local notifications and plan alarm reschedule hooks.",
+        "affects": "Plan reminder notifications on phone/desktop.",
+        "when": "Plan alarm not firing, notification permission issues.",
+        "delete": "No — plan alarms stop working.",
+        "related": "`lib/data/plan_service.dart` alarm reschedule requests.",
+    },
+    "lib/core/env": {
+        "what": "Compile-time environment template — copy to gitignored `env.dart` for local secrets/constants.",
+        "why": "Some build-time values must not be committed; example file documents the required shape.",
+        "inside": "`env.dart.example` only in git; real `env.dart` is local.",
+        "affects": "Developer local builds only if env constants are referenced.",
+        "when": "Setting up a new dev machine; adding compile-time constant.",
+        "delete": "No — documents required env.dart structure.",
+        "related": "`.gitignore` entry for `lib/core/env/env.dart`.",
+    },
+    "lib/core/navigation": {
+        "what": "Root navigator key and desktop side-rail navigation helpers.",
+        "why": "Desktop voice overlay and hidden main window need a global navigator; side rail replaces bottom tabs on wide screens.",
+        "inside": "`app_navigator.dart` (`appRootNavigatorKey`), `shell_side_navigation.dart`.",
+        "affects": "Desktop/web layout (side nav) and overlay routing above tabs.",
+        "when": "Desktop overlay cannot push routes; side navigation breakpoint wrong.",
+        "delete": "No — desktop layout and overlays break.",
+        "related": "`lib/shell/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.",
+    },
+    "lib/core/performance": {
+        "what": "Runtime feature flags and optional perf metrics — date strip, warm window, rebuild counters.",
+        "why": "Lets developers toggle expensive features or capture frame metrics without shipping debug code to all users.",
+        "inside": "`runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).",
+        "affects": "Perf-sensitive paths: date paging, shell tab stack, diagnostic builds.",
+        "when": "Investigating jank, toggling warm-window kill switch, perf capture tests.",
+        "delete": "No — perf tests and diagnostics reference these flags.",
+        "related": "`test/perf_*`, `lib/data/cache/`.",
+    },
+    "lib/core/time": {
+        "what": "Wall-clock and timezone math shared by header, Plans Time View, and profile ‘today’ line.",
+        "why": "Time bucketing must follow profile timezone law — not device local time — across all tabs.",
+        "inside": "`app_clock.dart`, `profile_timezone_catalog.dart`, `plan_time_visible_window.dart`, wall-clock formatters.",
+        "affects": "Global header clock, Time View hour window (−3..27 h), timezone picker labels.",
+        "when": "Wrong ‘today’, header TZ label, Time View visible hours, DST label wrong.",
+        "delete": "No — timeline and planning time display breaks.",
+        "related": "`lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`.",
+    },
+    "lib/data/cache": {
+        "what": "Performance caches for fast date paging — warm day snapshots and rendered list bodies.",
+        "why": "Swiping Timeline/Plans days must stay smooth with large record/plan histories.",
+        "inside": "`day_snapshot_window.dart`, `rendered_day_body_cache.dart`, `render_snapshot.dart`.",
+        "affects": "Day swipe smoothness on Timeline and Planning; not user-visible data correctness.",
+        "when": "Jank swiping days, stale day content after edit, perf regression.",
+        "delete": "No — paging becomes slow or glitchy.",
+        "related": "`lib/data/records/record_timeline_vm.dart`, `lib/core/performance/runtime_flags.dart`.",
+    },
+    "lib/features/auth": {
+        "what": "Sign-in, registration, OAuth, and password-reset screens before the main app loads.",
+        "why": "Users must authenticate to PocketBase before Timeline/Plans data is available.",
+        "inside": "`auth_view.dart`, `auth_screen.dart`, `oauth_session.dart`.",
+        "affects": "Login gate shown from `main.dart` when session invalid.",
+        "when": "OAuth redirect broken, login form, register flow, password reset UI.",
+        "delete": "No — users cannot sign in.",
+        "related": "`lib/data/auth_bridge.dart`, `docs/DEPLOY.md` OAuth admin section.",
+    },
+    "lib/features/calendar": {
+        "what": "Calendar tab UI — month view of plans (when enabled in navigation).",
+        "why": "Alternative plan browsing by calendar month alongside Plans tab list/Time View.",
+        "inside": "`calendar_view.dart`.",
+        "affects": "Calendar tab in bottom/side navigation (when present in shell).",
+        "when": "Calendar month layout, plan dots on dates, calendar navigation.",
+        "delete": "Maybe — if calendar tab removed from shell; keep while route exists.",
+        "related": "`lib/features/planning/`, plan card widgets in `core/widgets/`.",
+    },
+    "lib/features/stats": {
+        "what": "Productivity stats views embedded inside Timeline — hours by category, plan vs fact.",
+        "why": "Stats toggle on Timeline header switches list mode to analytics without a separate app area.",
+        "inside": "`stats_view.dart`, `plan_vs_fact_tab.dart`.",
+        "affects": "Timeline tab when user taps Stats segmented control.",
+        "when": "Stats totals wrong, plan-vs-fact chart, stats tab toggle.",
+        "delete": "No — Timeline stats mode disappears.",
+        "related": "`lib/data/categories/category_stats.dart`, `lib/features/timeline/timeline_header_controls.dart`.",
+    },
+    "lib/features/wear": {
+        "what": "Wear OS watch companion — simplified timer screen on Android watches.",
+        "why": "Watch form factor needs a lite UI and `loadInitialDataWearLite` brain path.",
+        "inside": "`wear_timer_screen.dart`, `wear_main_wrapper.dart`, platform channel shims.",
+        "affects": "Wear OS APK companion only — not phone Timeline UI.",
+        "when": "Watch timer sync, Wear build entry, companion crashes on watch.",
+        "delete": "No — if Wear OS companion is a supported target.",
+        "related": "`lib/data/db_core.dart` Wear lite load, `android/` Wear module if configured.",
+    },
+    "linux": {
+        "what": "Linux desktop Flutter embedder — CMake project to build Counter on Linux.",
+        "why": "Flutter requires native runner sources for Linux desktop target.",
+        "inside": "Top-level `CMakeLists.txt`, `flutter/` generated glue, `runner/` GTK entry.",
+        "affects": "Linux desktop builds only — not Android/iOS/web.",
+        "when": "Linux desktop compile fails, GTK runner errors.",
+        "delete": "No — if Linux desktop support is kept.",
+        "related": "`windows/`, `macos/` sibling desktop folders.",
+    },
+    "macos": {
+        "what": "macOS desktop Flutter/Xcode project — builds Counter `.app` on Apple Silicon/Intel Mac.",
+        "why": "Apple desktop builds need Xcode target, entitlements, and Flutter macOS embedder.",
+        "inside": "`Runner/`, `Flutter/` generated configs, `Runner.xcodeproj`.",
+        "affects": "macOS desktop distribution only.",
+        "when": "macOS signing, sandbox entitlements, menu bar, desktop build errors.",
+        "delete": "No — if macOS desktop support is kept.",
+        "related": "`ios/` (mobile Apple) vs this desktop target.",
+    },
+    "installer/windows/scripts": {
+        "what": "Helper PowerShell scripts bundled into or used by the Windows installer pipeline.",
+        "why": "Windows speech and installer prep need small scripts copied beside the setup `.exe`.",
+        "inside": "`win_speech_wav.ps1` — WAV capture helper for Windows speech path.",
+        "affects": "Installed Windows app speech helper behavior post-install.",
+        "when": "Installer missing speech helper script, Windows voice WAV path broken.",
+        "delete": "No — Windows installer packaging expects these scripts.",
+        "related": "`installer/windows/prepare_stt_payload.ps1`, `counter.iss`.",
+    },
+    "installer/windows/stt_helper_build": {
+        "what": "Built speech-to-text helper binary folder — `counter_stt_helper.exe` copied into installer.",
+        "why": "Desktop voice on Windows uses a GOLOS STT helper subprocess; installer must ship the compiled exe.",
+        "inside": "Pre-built or CI-built `counter_stt_helper.exe` (tracked artifact for packaging).",
+        "affects": "Windows desktop voice transcription after install.",
+        "when": "Voice works in dev but not in installed app; rebuild STT helper for installer.",
+        "delete": "No — Windows installer STT bundle incomplete without it.",
+        "related": "`installer/windows/build_stt_helper_en.ps1`, `lib/core/services/desktop_stt_helper_service.dart`.",
+    },
 }
 
 BAD_PHRASES = (
@@ -459,7 +612,7 @@ FOLDER_INFERENCE: list[tuple[str, dict[str, str]]] = [
         ".cursor",
         {
             "what": "Cursor IDE project rules for AI assistants in this repo.",
-            "why": "Keeps Cursor agents aligned with Flutter/PocketBase iron laws.",
+            "why": "Ensures Cursor agents follow Flutter/PocketBase iron laws.",
             "inside": "`.cursor/rules/flutter_expert.mdc`.",
             "affects": "AI coding sessions in Cursor only — not app runtime.",
             "when": "Cursor agent ignores architecture rules.",
@@ -647,11 +800,282 @@ FOLDER_INFERENCE: list[tuple[str, dict[str, str]]] = [
             "related": "`lib/features/wear/`, `loadInitialDataWearLite`.",
         },
     ),
+    (
+        "linux/flutter",
+        {
+            "what": "Flutter-generated Linux embedder glue — plugin registrant and CMake hooks.",
+            "why": "Flutter tool regenerates these when `pubspec.yaml` plugins change.",
+            "inside": "`generated_plugin_registrant.*`, `generated_plugins.cmake`, child `CMakeLists.txt`.",
+            "affects": "Linux desktop plugin registration at runtime.",
+            "when": "Linux build fails after adding/removing Flutter plugin.",
+            "delete": "No — regenerated by Flutter; required for Linux build.",
+            "related": "`linux/CMakeLists.txt`, `flutter pub get`.",
+        },
+    ),
+    (
+        "windows/flutter",
+        {
+            "what": "Flutter-generated Windows embedder glue — plugin registrant and CMake hooks.",
+            "why": "Native Windows plugins (tray, hotkey, voice overlay) register through this generated code.",
+            "inside": "`generated_plugin_registrant.*`, `generated_plugins.cmake`.",
+            "affects": "Windows desktop plugin registration — desktop voice/tray depend on it.",
+            "when": "Windows build fails after plugin change; desktop voice plugin missing.",
+            "delete": "No — required for Windows desktop build.",
+            "related": "`windows/runner/`, `windows/CMakeLists.txt`.",
+        },
+    ),
+    (
+        "ios/Runner.xcodeproj",
+        {
+            "what": "Xcode project file bundle for the iOS Counter app target.",
+            "why": "Xcode opens this project to compile, sign, and archive the iOS IPA.",
+            "inside": "`project.pbxproj`, shared schemes, workspace metadata.",
+            "affects": "iOS App Store / TestFlight builds only.",
+            "when": "Xcode project corruption, scheme changes, iOS signing settings.",
+            "delete": "No — required for iOS build.",
+            "related": "`ios/Runner/`, `ios/Flutter/`.",
+        },
+    ),
+    (
+        "ios/Runner.xcworkspace",
+        {
+            "what": "Xcode workspace wrapping the iOS Runner project and CocoaPods.",
+            "why": "Developers open `.xcworkspace` (not `.xcodeproj` alone) after `pod install`.",
+            "inside": "Workspace data linking Runner + Pods.",
+            "affects": "Local iOS development and CI iOS builds using CocoaPods.",
+            "when": "Xcode says open workspace; Pod integration broken.",
+            "delete": "No — required for iOS CocoaPods workflow.",
+            "related": "`ios/Podfile`, `ios/Runner.xcodeproj`.",
+        },
+    ),
+    (
+        "ios/RunnerTests",
+        {
+            "what": "Xcode unit test target for iOS Runner smoke tests.",
+            "why": "Apple project template includes a test target for native/iOS integration checks.",
+            "inside": "`RunnerTests.swift` — minimal XCTest entry.",
+            "affects": "iOS test target in Xcode — not the main Flutter `test/` suite.",
+            "when": "iOS native test failures in Xcode.",
+            "delete": "Maybe — Flutter CI uses `flutter test`; keep for Xcode workflow.",
+            "related": "`test/` Flutter tests, `ios/Runner/`.",
+        },
+    ),
+    (
+        "macos/Runner.xcodeproj",
+        {
+            "what": "Xcode project for macOS desktop Counter `.app` target.",
+            "why": "macOS desktop builds compile through this Xcode project.",
+            "inside": "`project.pbxproj`, shared schemes for macOS Runner.",
+            "affects": "macOS desktop distribution builds.",
+            "when": "macOS Xcode build/sign errors.",
+            "delete": "No — required for macOS desktop build.",
+            "related": "`macos/Runner/`, `macos/Flutter/`.",
+        },
+    ),
+    (
+        "macos/Runner.xcworkspace",
+        {
+            "what": "Xcode workspace for macOS Counter desktop app.",
+            "why": "Opens Runner + Flutter macOS pods together in Xcode.",
+            "inside": "Workspace contents and shared IDE checks.",
+            "affects": "macOS desktop development in Xcode.",
+            "when": "Workspace won't open; CocoaPods integration on macOS.",
+            "delete": "No — required for macOS Xcode workflow.",
+            "related": "`macos/Runner.xcodeproj`.",
+        },
+    ),
+    (
+        "macos/RunnerTests",
+        {
+            "what": "Xcode test target for macOS Runner.",
+            "why": "Template XCTest target for macOS native smoke checks.",
+            "inside": "`RunnerTests.swift`.",
+            "affects": "macOS Xcode test runs only.",
+            "when": "macOS native unit test failures.",
+            "delete": "Maybe — primary QA is `flutter test`.",
+            "related": "`macos/Runner/`.",
+        },
+    ),
+    (
+        "android/app/src/debug",
+        {
+            "what": "Android debug build variant manifest overrides.",
+            "why": "Debug APK may enable extra logging or different application id suffix.",
+            "inside": "Debug `AndroidManifest.xml` merged into debug builds.",
+            "affects": "Debug Android installs only — not release APK.",
+            "when": "Debug-only permission or manifest merge issue.",
+            "delete": "No — required for Android debug builds.",
+            "related": "`android/app/src/main/AndroidManifest.xml`.",
+        },
+    ),
+    (
+        "android/app/src/profile",
+        {
+            "what": "Android profile build variant manifest (performance profiling).",
+            "why": "Profile mode uses separate manifest merge for Flutter profile builds.",
+            "inside": "Profile `AndroidManifest.xml`.",
+            "affects": "Profile APK used for performance measurement.",
+            "when": "Profile build manifest merge errors.",
+            "delete": "No — required for Flutter profile Android builds.",
+            "related": "`android/app/src/main/`.",
+        },
+    ),
 ]
 
 
-def infer_folder_guide(key: str) -> dict[str, str] | None:
-    """Return folder guide dict for path prefix, or None."""
+BANNED_FOLDER_PHRASES: tuple[str, ...] = (
+    "Files grouped under",
+    "Keeps ",
+    "files together so builds and edits stay organized",
+    "Whatever features depend on files in",
+    "Build, config, or content work scoped to",
+    "See individual file sections below",
+    "ship or configure part of the repo",
+)
+
+
+def synthesize_folder_guide(key: str) -> dict[str, str]:
+    """Last-resort folder guide — must never use BANNED_FOLDER_PHRASES."""
+    k = key.replace("\\", "/").strip("/")
+    parts = k.split("/") if k else []
+    top = parts[0] if parts else ""
+    leaf = parts[-1] if parts else k
+    parent = "/".join(parts[:-1]) if len(parts) > 1 else ""
+
+    if k.endswith(".xcassets") or leaf == "AppIcon.appiconset":
+        plat = top if top in ("ios", "macos") else "platform"
+        return {
+            "what": f"App icon and image asset catalog for {plat} — `{k}`.",
+            "why": "Apple builds bundle PNG icons from asset catalogs into the `.app` bundle.",
+            "inside": "PNG icons at required sizes, `Contents.json` manifest.",
+            "affects": f"{plat} app icon and launch imagery on device/home screen.",
+            "when": "Wrong or missing app icon on Apple platform build.",
+            "delete": "No — required for Apple platform branding.",
+            "related": f"`{top}/Runner/Info.plist` if {top} else parent Runner target.",
+        }
+    if leaf == "Base.lproj" or leaf.endswith(".storyboard") or k.endswith("Base.lproj"):
+        return {
+            "what": f"Apple launch/storyboard resources under `{k}`.",
+            "why": "iOS/macOS show native launch screen before first Flutter frame.",
+            "inside": "Storyboard or xib launch UI files.",
+            "affects": "Splash/launch appearance on Apple platforms.",
+            "when": "Launch screen flash or wrong orientation on iOS/macOS.",
+            "delete": "No — required for Apple runner launch UX.",
+            "related": f"`{top}/Runner/` main target.",
+        }
+    if leaf == "Configs" and "macos/Runner" in k:
+        return {
+            "what": "macOS Runner build configuration xcconfig files.",
+            "why": "Xcode reads Debug/Release xcconfig for bundle id, version, warning flags.",
+            "inside": "`AppInfo.xcconfig`, `Debug.xcconfig`, `Release.xcconfig`, `Warnings.xcconfig`.",
+            "affects": "macOS app bundle metadata and compile settings.",
+            "when": "Wrong macOS app name/version in built `.app`.",
+            "delete": "No — required for macOS Xcode build.",
+            "related": "`macos/Runner.xcodeproj`.",
+        }
+    if leaf in ("xcshareddata", "xcschemes") or "xcshareddata" in k:
+        return {
+            "what": f"Shared Xcode IDE/scheme metadata for `{parent or k}`.",
+            "why": "Xcode stores workspace checks and build schemes here for team consistency.",
+            "inside": "Plist scheme files, IDE workspace checks.",
+            "affects": "Which Xcode scheme builds Runner — developer workflow only.",
+            "when": "Xcode scheme missing or workspace check warnings.",
+            "delete": "No — part of Xcode project structure.",
+            "related": f"`{parent}` Xcode project.",
+        }
+    if leaf == "resources" and "windows/runner" in k:
+        return {
+            "what": "Windows runner embedded resources — app icon for the `.exe`.",
+            "why": "Windows executable shows icon from `.ico` resource compiled into runner.",
+            "inside": "`app_icon.ico` and related RC resources.",
+            "affects": "Counter `.exe` icon on Windows taskbar and desktop shortcut.",
+            "when": "Wrong Windows app icon after desktop build.",
+            "delete": "No — required for Windows desktop branding.",
+            "related": "`windows/runner/Runner.rc`.",
+        }
+    if top == "android" and "kotlin" in k:
+        return {
+            "what": f"Kotlin/Java package path for Android Flutter activity under `{k}`.",
+            "why": "Android package naming mirrors Java folder structure required by Gradle.",
+            "inside": "Package directories leading to `MainActivity.kt`.",
+            "affects": "Android app entry class location only.",
+            "when": "Android package rename or activity class move.",
+            "delete": "No — required while Android entry lives here.",
+            "related": "`android/app/src/main/kotlin/.../MainActivity.kt`.",
+        }
+    if top in ("android", "ios", "web", "windows", "linux", "macos"):
+        label = {
+            "android": "Android",
+            "ios": "iOS",
+            "web": "Web",
+            "windows": "Windows desktop",
+            "linux": "Linux desktop",
+            "macos": "macOS desktop",
+        }[top]
+        return {
+            "what": f"{label} platform path `{k}/` — native/build support for Flutter {label} target.",
+            "why": f"Flutter {label} builds compile native runner and assets from paths under `{top}/`.",
+            "inside": "Native config, generated embedder files, or assets for this path segment.",
+            "affects": f"{label} build output only — not Dart UI logic in `lib/`.",
+            "when": f"{label} build error referencing `{leaf}` or `{k}`.",
+            "delete": f"No — required for {label} build/deploy/platform tooling.",
+            "related": f"`{top}/` root platform folder, `docs/APP_STRUCTURE.md` §4.",
+        }
+    if k.startswith("docs/"):
+        topic = leaf.replace("_", " ").replace(".md", "")
+        return {
+            "what": f"Documentation topic folder `{k}/` — {topic} notes.",
+            "why": "Groups related markdown specs so owners find written guidance by topic.",
+            "inside": "Markdown files listed in file sections below.",
+            "affects": "Development and AI context — not app runtime.",
+            "when": f"Reading or editing docs about {topic}.",
+            "delete": "No — governing or report documentation.",
+            "related": "`docs/PROJECT_KNOWLEDGE_PACK.md`, `CHANGELOG.md`.",
+        }
+    if k.startswith("scripts/"):
+        return {
+            "what": f"Automation scripts under `{k}/` — developer/CI maintenance commands.",
+            "why": "Repeatable audits, deploy helpers, and doc generation live here instead of ad-hoc notes.",
+            "inside": "PowerShell, Python, or Dart scripts (see files below).",
+            "affects": "Build, deploy, audit, and doc workflows — not end-user app screens.",
+            "when": f"Running documented workflow that uses `{leaf or k}`.",
+            "delete": "No — required for documented repo workflows.",
+            "related": "`docs/DEPLOY.md`, `docs/APP_STRUCTURE.md` §6.",
+        }
+    if k.startswith("test/"):
+        return {
+            "what": f"Flutter test files under `{k}/` — automated regression checks.",
+            "why": "Each test file guards a specific behavior (voice, timezone, plan cards, perf).",
+            "inside": "Dart `*_test.dart` files run by `flutter test`.",
+            "affects": "CI quality gate — not shipped in user APK/web build.",
+            "when": "CI failure or changing code covered by tests in this folder.",
+            "delete": "No — required for tests.",
+            "related": "Matching production files under `lib/`.",
+        }
+    if k.startswith("lib/"):
+        area = "/".join(parts[1:]) if len(parts) > 1 else "lib root"
+        return {
+            "what": f"Dart source subtree `{k}/` — part of app code for {area}.",
+            "why": "Code under `lib/` ships in every platform build; this folder groups related Dart modules.",
+            "inside": "Dart modules listed in file entries below.",
+            "affects": "App behavior for the feature or layer named in the path.",
+            "when": f"Bug or feature work in `{area}`.",
+            "delete": "No — required for app runtime unless explicitly deprecated in ROADMAP.",
+            "related": "`docs/APP_STRUCTURE.md`, parent `lib/` folders.",
+        }
+    return {
+        "what": f"Repository path `{k}/` — tracked config, assets, or tooling for Life OS.",
+        "why": f"Git tracks `{k}` because release, CI, or maintenance workflow depends on these files.",
+        "inside": "Tracked files listed below with individual explanations.",
+        "affects": "Repo workflow or platform build tied to this path — see child file entries.",
+        "when": f"Maintenance or build work involving `{k}`.",
+        "delete": "No — part of repository tooling or config unless cleanup report says otherwise.",
+        "related": "`docs/APP_STRUCTURE.md`, `CHANGELOG.md`.",
+    }
+
+
+def infer_folder_guide(key: str) -> dict[str, str]:
+    """Return folder guide dict for path prefix; always returns specific text."""
     k = key.replace("\\", "/").strip("/")
     best: dict[str, str] | None = None
     best_len = -1
@@ -664,7 +1088,7 @@ def infer_folder_guide(key: str) -> dict[str, str] | None:
         return best
     if k in FOLDERS:
         return FOLDERS[k]
-    return None
+    return synthesize_folder_guide(k)
 
 
 def platform_file_description(path: str) -> dict[str, str] | None:
@@ -811,7 +1235,7 @@ def platform_file_description(path: str) -> dict[str, str] | None:
         scope = parent if parent != "." else "repository root"
         return {
             "what": f"Git ignore rules for `{scope}` — files not to commit.",
-            "why": "Keeps build output and secrets out of git history.",
+            "why": "Prevents build output and secrets from entering git history.",
             "contains": "Ignore patterns for this folder scope.",
             "responsibilities": "Prevent accidental commit of generated files.",
         }

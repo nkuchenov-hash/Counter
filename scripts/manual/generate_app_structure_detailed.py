@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 
 from structure_guide_data import (
     BAD_PHRASES,
+    BANNED_FOLDER_PHRASES,
     FOLDERS,
     infer_folder_guide,
     platform_file_description,
@@ -629,7 +630,7 @@ ROOT_FILES: dict[str, FileGuide] = {
     ),
     ".gitignore": FileGuide(
         what="Tells git which generated/local files never to commit (build/, captures, env secrets).",
-        why="Keeps repo clean — no APK dumps, perf captures, or personal env keys in git.",
+        why="Excludes APK dumps, perf captures, and personal env keys from git — repo stays clean.",
         contains="Ignore patterns for Flutter build output, IDE, exports.",
         responsibilities="Exclude `build/`, `*.perf_capture.txt`, `lib/core/env/env.dart`.",
         when="New local output folder should not be tracked.",
@@ -805,7 +806,7 @@ def script_guide(path: str) -> FileGuide:
     if name == "generate_app_structure_detailed.py":
         return FileGuide(
             what="Builds this document (`APP_STRUCTURE_DETAILED.md`) from git file list + role map.",
-            why="Keeps owner-readable structure guide in sync with repo after changes.",
+            why="Maintains owner-readable structure guide in sync with repo after changes.",
             contains="Python generator + curated folder/file descriptions.",
             responsibilities="Regenerate detailed structure encyclopedia.",
             when="After adding/removing tracked files; after editing structure docs.",
@@ -816,7 +817,7 @@ def script_guide(path: str) -> FileGuide:
     if name == "sync_locales.dart":
         return FileGuide(
             what="Copies translation keys from English/Russian source files into other locale files.",
-            why="Keeps `lib/l10n/langs/*.dart` in sync when keys are added.",
+            why="Synchronizes `lib/l10n/langs/*.dart` when dictionary keys are added.",
             contains="Dart script scanning dictionary keys.",
             responsibilities="Run after editing `en.dart` / `ru.dart`.",
             when="Missing translation key in non-EN/RU locale.",
@@ -952,23 +953,6 @@ def build_guide(path: str, roles: dict[str, str], syms: list[str]) -> FileGuide:
 def render_folder(dirpath: str) -> str:
     key = dirpath.replace("\\", "/").strip("/") or "."
     data = infer_folder_guide(key)
-    if not data:
-        top = key.split("/")[0] if key else "repo"
-        plat_note = {
-            "linux": "Linux desktop Flutter embedder files.",
-            "macos": "macOS desktop Flutter/Xcode project files.",
-            "ios": "iOS Flutter/Xcode project files.",
-            "windows": "Windows desktop Flutter/CMake project files.",
-        }.get(top, f"Files grouped under `{key}` that ship or configure part of the repo.")
-        data = {
-            "what": f"Folder `{key}/` — {plat_note}",
-            "why": f"Keeps `{key}` files together so builds and edits stay organized.",
-            "inside": "See individual file sections below for each tracked file.",
-            "affects": f"Whatever features depend on files in `{key}/` (see child entries).",
-            "when": f"Build, config, or content work scoped to `{key}/`.",
-            "delete": delete_for(key + "/placeholder")[0],
-            "related": f"`docs/APP_STRUCTURE.md`, parent `{PurePosixPath(key).parent}`.",
-        }
     display = f"`{key}/`" if key != "." else "Repository root"
     return (
         f"## Folder: {display}\n\n"
@@ -1016,21 +1000,35 @@ def render_file(path: str, g: FileGuide, syms: list[str]) -> str:
 def quality_check(text: str, paths: list[str]) -> list[str]:
     issues: list[str] = []
     whats: list[str] = []
-    bad_hits = 0
+    all_banned = BAD_PHRASES + BANNED_FOLDER_PHRASES
+    desc_prefixes = (
+        "- **What this is:**",
+        "- **Why needed:**",
+        "- **What it contains:**",
+        "- **What this folder is:**",
+        "- **Why it exists:**",
+        "- **What lives here:**",
+        "- **What part of the app it affects:**",
+        "- **When to open it:**",
+        "- **Зачем нужна:**",
+        "- **Когда открывать:**",
+        "- **Что это:**",
+        "- **Что это за папка:**",
+    )
     for line in text.splitlines():
         if line.startswith("- **What this is:**"):
+            whats.append(line.split(":", 1)[1].strip())
+        for prefix in desc_prefixes:
+            if not line.startswith(prefix):
+                continue
             val = line.split(":", 1)[1].strip()
-            whats.append(val)
-            for bad in BAD_PHRASES:
-                if bad.lower() in val.lower():
-                    bad_hits += 1
-                    issues.append(f"Bad phrase '{bad}' in: {val[:90]}")
-                    break
-        if line.startswith("- **What this folder is:**"):
-            val = line.split(":", 1)[1].strip()
-            for bad in ("holding related project files", "See path prefix"):
+            for bad in all_banned:
                 if bad in val:
-                    issues.append(f"Generic folder line: {val[:90]}")
+                    issues.append(f"Banned phrase '{bad}' in: {line[:120]}")
+                    break
+            # Ban "Folder `" only in folder what lines (generic filler pattern)
+            if line.startswith("- **What this folder is:**") and val.startswith("Folder `"):
+                issues.append(f"Generic folder prefix in: {val[:90]}")
     counts = Counter(whats)
     dupes = [(w, c) for w, c in counts.items() if c > 2 and len(w) < 100]
     if dupes:
@@ -1038,8 +1036,6 @@ def quality_check(text: str, paths: list[str]) -> list[str]:
             "Duplicate 'What this is' (>2): "
             + "; ".join(f"{c}x {w[:60]}" for w, c in dupes[:8])
         )
-    if bad_hits > 5:
-        issues.append(f"Too many bad-phrase file descriptions: {bad_hits}")
     if len(paths) != len(set(paths)):
         issues.append("Duplicate file paths in output")
     return issues

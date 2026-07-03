@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `dcd1799` on 2026-07-03.**
+**Generated at git SHA `c5e0e8b` on 2026-07-03.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -25,7 +25,7 @@ Each **folder** section explains why that part of the repo exists. Each **file**
 EN:
 
 - **What this folder is:** Cursor IDE project rules for AI assistants in this repo.
-- **Why it exists:** Keeps Cursor agents aligned with Flutter/PocketBase iron laws.
+- **Why it exists:** Ensures Cursor agents follow Flutter/PocketBase iron laws.
 - **What lives here:** `.cursor/rules/flutter_expert.mdc`.
 - **What part of the app it affects:** AI coding sessions in Cursor only — not app runtime.
 - **When to open it:** Cursor agent ignores architecture rules.
@@ -35,7 +35,7 @@ EN:
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps Cursor agents aligned with Flutter/PocketBase iron laws.
+- **Зачем нужна:** Ensures Cursor agents follow Flutter/PocketBase iron laws.
 - **Когда открывать:** Cursor agent ignores architecture rules.
 - **Можно удалить?** Maybe — safe for app; keep for Cursor workflow.
 
@@ -192,20 +192,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `linux/` — Linux desktop Flutter embedder files.
-- **Why it exists:** Keeps `linux` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `linux/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `linux/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `.`.
+- **What this folder is:** Linux desktop Flutter embedder — CMake project to build Counter on Linux.
+- **Why it exists:** Flutter requires native runner sources for Linux desktop target.
+- **What lives here:** Top-level `CMakeLists.txt`, `flutter/` generated glue, `runner/` GTK entry.
+- **What part of the app it affects:** Linux desktop builds only — not Android/iOS/web.
+- **When to open it:** Linux desktop compile fails, GTK runner errors.
+- **Can it be deleted?** No — if Linux desktop support is kept.
+- **Main related paths:** `windows/`, `macos/` sibling desktop folders.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `linux` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `linux/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Flutter requires native runner sources for Linux desktop target.
+- **Когда открывать:** Linux desktop compile fails, GTK runner errors.
+- **Можно удалить?** No — if Linux desktop support is kept.
 
 ---
 
@@ -213,20 +213,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `.`.
+- **What this folder is:** macOS desktop Flutter/Xcode project — builds Counter `.app` on Apple Silicon/Intel Mac.
+- **Why it exists:** Apple desktop builds need Xcode target, entitlements, and Flutter macOS embedder.
+- **What lives here:** `Runner/`, `Flutter/` generated configs, `Runner.xcodeproj`.
+- **What part of the app it affects:** macOS desktop distribution only.
+- **When to open it:** macOS signing, sandbox entitlements, menu bar, desktop build errors.
+- **Can it be deleted?** No — if macOS desktop support is kept.
+- **Main related paths:** `ios/` (mobile Apple) vs this desktop target.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Apple desktop builds need Xcode target, entitlements, and Flutter macOS embedder.
+- **Когда открывать:** macOS signing, sandbox entitlements, menu bar, desktop build errors.
+- **Можно удалить?** No — if macOS desktop support is kept.
 
 ---
 
@@ -340,7 +340,7 @@ RU:
 EN:
 
 - **What this folder is:** Cursor IDE project rules for AI assistants in this repo.
-- **Why it exists:** Keeps Cursor agents aligned with Flutter/PocketBase iron laws.
+- **Why it exists:** Ensures Cursor agents follow Flutter/PocketBase iron laws.
 - **What lives here:** `.cursor/rules/flutter_expert.mdc`.
 - **What part of the app it affects:** AI coding sessions in Cursor only — not app runtime.
 - **When to open it:** Cursor agent ignores architecture rules.
@@ -350,7 +350,7 @@ EN:
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps Cursor agents aligned with Flutter/PocketBase iron laws.
+- **Зачем нужна:** Ensures Cursor agents follow Flutter/PocketBase iron laws.
 - **Когда открывать:** Cursor agent ignores architecture rules.
 - **Можно удалить?** Maybe — safe for app; keep for Cursor workflow.
 
@@ -528,20 +528,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `ios/Runner.xcodeproj/` — iOS Flutter/Xcode project files.
-- **Why it exists:** Keeps `ios/Runner.xcodeproj` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `ios/Runner.xcodeproj/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `ios/Runner.xcodeproj/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `ios`.
+- **What this folder is:** Xcode project file bundle for the iOS Counter app target.
+- **Why it exists:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **What lives here:** `project.pbxproj`, shared schemes, workspace metadata.
+- **What part of the app it affects:** iOS App Store / TestFlight builds only.
+- **When to open it:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Can it be deleted?** No — required for iOS build.
+- **Main related paths:** `ios/Runner/`, `ios/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `ios/Runner.xcodeproj` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `ios/Runner.xcodeproj/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Когда открывать:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** No — required for iOS build.
 
 ---
 
@@ -549,20 +549,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `ios/Runner.xcworkspace/` — iOS Flutter/Xcode project files.
-- **Why it exists:** Keeps `ios/Runner.xcworkspace` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `ios/Runner.xcworkspace/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `ios/Runner.xcworkspace/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `ios`.
+- **What this folder is:** Xcode workspace wrapping the iOS Runner project and CocoaPods.
+- **Why it exists:** Developers open `.xcworkspace` (not `.xcodeproj` alone) after `pod install`.
+- **What lives here:** Workspace data linking Runner + Pods.
+- **What part of the app it affects:** Local iOS development and CI iOS builds using CocoaPods.
+- **When to open it:** Xcode says open workspace; Pod integration broken.
+- **Can it be deleted?** No — required for iOS CocoaPods workflow.
+- **Main related paths:** `ios/Podfile`, `ios/Runner.xcodeproj`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `ios/Runner.xcworkspace` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `ios/Runner.xcworkspace/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Developers open `.xcworkspace` (not `.xcodeproj` alone) after `pod install`.
+- **Когда открывать:** Xcode says open workspace; Pod integration broken.
+- **Можно удалить?** No — required for iOS CocoaPods workflow.
 
 ---
 
@@ -570,20 +570,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `ios/RunnerTests/` — iOS Flutter/Xcode project files.
-- **Why it exists:** Keeps `ios/RunnerTests` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `ios/RunnerTests/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `ios/RunnerTests/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `ios`.
+- **What this folder is:** Xcode unit test target for iOS Runner smoke tests.
+- **Why it exists:** Apple project template includes a test target for native/iOS integration checks.
+- **What lives here:** `RunnerTests.swift` — minimal XCTest entry.
+- **What part of the app it affects:** iOS test target in Xcode — not the main Flutter `test/` suite.
+- **When to open it:** iOS native test failures in Xcode.
+- **Can it be deleted?** Maybe — Flutter CI uses `flutter test`; keep for Xcode workflow.
+- **Main related paths:** `test/` Flutter tests, `ios/Runner/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `ios/RunnerTests` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `ios/RunnerTests/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Apple project template includes a test target for native/iOS integration checks.
+- **Когда открывать:** iOS native test failures in Xcode.
+- **Можно удалить?** Maybe — Flutter CI uses `flutter test`; keep for Xcode workflow.
 
 ---
 
@@ -591,20 +591,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/core/` — Files grouped under `lib/core` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/core` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/core/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/core/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib`.
+- **What this folder is:** Foundation layer — theme colors, shared widgets, clock/time math, desktop voice services, diagnostics.
+- **Why it exists:** Feature screens must not duplicate buttons, date headers, or voice plumbing; this is the design-system and utility base.
+- **What lives here:** `theme.dart`, `core/widgets/` (AppButton, plan cards), `core/time/`, `core/services/` (desktop voice), `core/diagnostics/`.
+- **What part of the app it affects:** Look and feel on every tab; desktop voice/tray; header clock/timezone; perf debug flags.
+- **When to open it:** Button/card migration, timezone header wrong, desktop voice broken, theme token change.
+- **Can it be deleted?** No — features import foundation code everywhere.
+- **Main related paths:** `docs/DESIGN_SYSTEM.md`, `lib/features/`, `lib/data/models.dart` (types only).
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/core` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/core/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Feature screens must not duplicate buttons, date headers, or voice plumbing; this is the design-system and utility base.
+- **Когда открывать:** Button/card migration, timezone header wrong, desktop voice broken, theme token change.
+- **Можно удалить?** No — features import foundation code everywhere.
 
 ---
 
@@ -613,7 +613,7 @@ RU:
 EN:
 
 - **What this folder is:** The app “brain” — everything that talks to PocketBase, holds cached data, and applies changes before the server confirms.
-- **Why it exists:** Keeps one place for save/load rules so Timeline, Plans, Lists, and Categories stay consistent and offline-safe.
+- **Why it exists:** Single place for save/load rules so Timeline, Plans, Lists, and Categories stay consistent and offline-safe.
 - **What lives here:** Coordinator files (`*_service.dart`, `database_service.dart`) and focused `part` modules in subfolders.
 - **What part of the app it affects:** Timeline records, plans, lists, categories, tags, profile settings, offline queue.
 - **When to open it:** Wrong data, failed save, optimistic UI rollback, offline banner, or PocketBase field errors.
@@ -623,7 +623,7 @@ EN:
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps one place for save/load rules so Timeline, Plans, Lists, and Categories stay consistent and offline-safe.
+- **Зачем нужна:** Single place for save/load rules so Timeline, Plans, Lists, and Categories stay consistent and offline-safe.
 - **Когда открывать:** Wrong data, failed save, optimistic UI rollback, offline banner, or PocketBase field errors.
 - **Можно удалить?** No — the UI cannot work without the brain.
 
@@ -633,20 +633,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/features/` — Files grouped under `lib/features` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/features` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/features/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/features/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib`.
+- **What this folder is:** All user-facing screens — Timeline, Plans, Lists, Profile, Categories, auth, Wear, shared edit sheets.
+- **Why it exists:** Separates what users see and tap from the PocketBase brain in `lib/data/`.
+- **What lives here:** One folder per tab or flow: `timeline/`, `planning/`, `lists/`, `shared/`, `profile/`, etc.
+- **What part of the app it affects:** Every visible part of the app except raw platform wrappers.
+- **When to open it:** UI bug on a specific tab, new screen, edit sheet behavior, voice sheet layout.
+- **Can it be deleted?** No — deleting this removes the entire product UI.
+- **Main related paths:** `lib/shell/` (navigation host), `lib/data/` (saves/loads).
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/features` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/features/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Separates what users see and tap from the PocketBase brain in `lib/data/`.
+- **Когда открывать:** UI bug on a specific tab, new screen, edit sheet behavior, voice sheet layout.
+- **Можно удалить?** No — deleting this removes the entire product UI.
 
 ---
 
@@ -654,20 +654,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/l10n/` — Files grouped under `lib/l10n` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/l10n` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/l10n/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/l10n/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib`.
+- **What this folder is:** Translations — every button label, error message, and menu title the app shows.
+- **Why it exists:** Users switch language in settings; all text must resolve through one dictionary.
+- **What lives here:** `dictionary.dart` (`t()` lookup), `langs/en.dart` + `langs/ru.dart` (canonical), partial other locales.
+- **What part of the app it affects:** All visible strings in every locale.
+- **When to open it:** Missing translation key, wrong language text, adding a new UI label.
+- **Can it be deleted?** No — app shows raw keys or crashes without l10n.
+- **Main related paths:** `scripts/sync_locales.dart`, `lib/l10n/langs/HELP HOW TO UPDATE the languages`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/l10n` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/l10n/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Users switch language in settings; all text must resolve through one dictionary.
+- **Когда открывать:** Missing translation key, wrong language text, adding a new UI label.
+- **Можно удалить?** No — app shows raw keys or crashes without l10n.
 
 ---
 
@@ -675,20 +675,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/services/` — Files grouped under `lib/services` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/services` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/services/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/services/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib`.
+- **What this folder is:** Device-only services that are not PocketBase — currently plan alarm notifications.
+- **Why it exists:** OS notification scheduling lives outside the brain; keeps `lib/data/` free of platform notification APIs.
+- **What lives here:** `notification_service.dart` — local notifications and plan alarm reschedule hooks.
+- **What part of the app it affects:** Plan reminder notifications on phone/desktop.
+- **When to open it:** Plan alarm not firing, notification permission issues.
+- **Can it be deleted?** No — plan alarms stop working.
+- **Main related paths:** `lib/data/plan_service.dart` alarm reschedule requests.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/services` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/services/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** OS notification scheduling lives outside the brain; keeps `lib/data/` free of platform notification APIs.
+- **Когда открывать:** Plan alarm not firing, notification permission issues.
+- **Можно удалить?** No — plan alarms stop working.
 
 ---
 
@@ -717,20 +717,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `linux/flutter/` — Linux desktop Flutter embedder files.
-- **Why it exists:** Keeps `linux/flutter` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `linux/flutter/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `linux/flutter/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `linux`.
+- **What this folder is:** Flutter-generated Linux embedder glue — plugin registrant and CMake hooks.
+- **Why it exists:** Flutter tool regenerates these when `pubspec.yaml` plugins change.
+- **What lives here:** `generated_plugin_registrant.*`, `generated_plugins.cmake`, child `CMakeLists.txt`.
+- **What part of the app it affects:** Linux desktop plugin registration at runtime.
+- **When to open it:** Linux build fails after adding/removing Flutter plugin.
+- **Can it be deleted?** No — regenerated by Flutter; required for Linux build.
+- **Main related paths:** `linux/CMakeLists.txt`, `flutter pub get`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `linux/flutter` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `linux/flutter/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Flutter tool regenerates these when `pubspec.yaml` plugins change.
+- **Когда открывать:** Linux build fails after adding/removing Flutter plugin.
+- **Можно удалить?** No — regenerated by Flutter; required for Linux build.
 
 ---
 
@@ -801,20 +801,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/Runner.xcodeproj/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos/Runner.xcodeproj` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/Runner.xcodeproj/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/Runner.xcodeproj/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `macos`.
+- **What this folder is:** Xcode project for macOS desktop Counter `.app` target.
+- **Why it exists:** macOS desktop builds compile through this Xcode project.
+- **What lives here:** `project.pbxproj`, shared schemes for macOS Runner.
+- **What part of the app it affects:** macOS desktop distribution builds.
+- **When to open it:** macOS Xcode build/sign errors.
+- **Can it be deleted?** No — required for macOS desktop build.
+- **Main related paths:** `macos/Runner/`, `macos/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos/Runner.xcodeproj` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/Runner.xcodeproj/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** macOS desktop builds compile through this Xcode project.
+- **Когда открывать:** macOS Xcode build/sign errors.
+- **Можно удалить?** No — required for macOS desktop build.
 
 ---
 
@@ -822,20 +822,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/Runner.xcworkspace/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos/Runner.xcworkspace` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/Runner.xcworkspace/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/Runner.xcworkspace/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `macos`.
+- **What this folder is:** Xcode workspace for macOS Counter desktop app.
+- **Why it exists:** Opens Runner + Flutter macOS pods together in Xcode.
+- **What lives here:** Workspace contents and shared IDE checks.
+- **What part of the app it affects:** macOS desktop development in Xcode.
+- **When to open it:** Workspace won't open; CocoaPods integration on macOS.
+- **Can it be deleted?** No — required for macOS Xcode workflow.
+- **Main related paths:** `macos/Runner.xcodeproj`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos/Runner.xcworkspace` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/Runner.xcworkspace/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Opens Runner + Flutter macOS pods together in Xcode.
+- **Когда открывать:** Workspace won't open; CocoaPods integration on macOS.
+- **Можно удалить?** No — required for macOS Xcode workflow.
 
 ---
 
@@ -843,20 +843,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/RunnerTests/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos/RunnerTests` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/RunnerTests/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/RunnerTests/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `macos`.
+- **What this folder is:** Xcode test target for macOS Runner.
+- **Why it exists:** Template XCTest target for macOS native smoke checks.
+- **What lives here:** `RunnerTests.swift`.
+- **What part of the app it affects:** macOS Xcode test runs only.
+- **When to open it:** macOS native unit test failures.
+- **Can it be deleted?** Maybe — primary QA is `flutter test`.
+- **Main related paths:** `macos/Runner/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos/RunnerTests` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/RunnerTests/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Template XCTest target for macOS native smoke checks.
+- **Когда открывать:** macOS native unit test failures.
+- **Можно удалить?** Maybe — primary QA is `flutter test`.
 
 ---
 
@@ -927,20 +927,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `windows/flutter/` — Windows desktop Flutter/CMake project files.
-- **Why it exists:** Keeps `windows/flutter` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `windows/flutter/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `windows/flutter/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `windows`.
+- **What this folder is:** Flutter-generated Windows embedder glue — plugin registrant and CMake hooks.
+- **Why it exists:** Native Windows plugins (tray, hotkey, voice overlay) register through this generated code.
+- **What lives here:** `generated_plugin_registrant.*`, `generated_plugins.cmake`.
+- **What part of the app it affects:** Windows desktop plugin registration — desktop voice/tray depend on it.
+- **When to open it:** Windows build fails after plugin change; desktop voice plugin missing.
+- **Can it be deleted?** No — required for Windows desktop build.
+- **Main related paths:** `windows/runner/`, `windows/CMakeLists.txt`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `windows/flutter` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `windows/flutter/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Native Windows plugins (tray, hotkey, voice overlay) register through this generated code.
+- **Когда открывать:** Windows build fails after plugin change; desktop voice plugin missing.
+- **Можно удалить?** No — required for Windows desktop build.
 
 ---
 
@@ -1011,20 +1011,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `installer/windows/scripts/` — Files grouped under `installer/windows/scripts` that ship or configure part of the repo.
-- **Why it exists:** Keeps `installer/windows/scripts` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `installer/windows/scripts/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `installer/windows/scripts/`.
-- **Can it be deleted?** No — required for build/deploy/audit workflows documented in repo.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `installer/windows`.
+- **What this folder is:** Helper PowerShell scripts bundled into or used by the Windows installer pipeline.
+- **Why it exists:** Windows speech and installer prep need small scripts copied beside the setup `.exe`.
+- **What lives here:** `win_speech_wav.ps1` — WAV capture helper for Windows speech path.
+- **What part of the app it affects:** Installed Windows app speech helper behavior post-install.
+- **When to open it:** Installer missing speech helper script, Windows voice WAV path broken.
+- **Can it be deleted?** No — Windows installer packaging expects these scripts.
+- **Main related paths:** `installer/windows/prepare_stt_payload.ps1`, `counter.iss`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `installer/windows/scripts` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `installer/windows/scripts/`.
-- **Можно удалить?** No — required for build/deploy/audit workflows documented in repo.
+- **Зачем нужна:** Windows speech and installer prep need small scripts copied beside the setup `.exe`.
+- **Когда открывать:** Installer missing speech helper script, Windows voice WAV path broken.
+- **Можно удалить?** No — Windows installer packaging expects these scripts.
 
 ---
 
@@ -1032,20 +1032,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `installer/windows/stt_helper_build/` — Files grouped under `installer/windows/stt_helper_build` that ship or configure part of the repo.
-- **Why it exists:** Keeps `installer/windows/stt_helper_build` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `installer/windows/stt_helper_build/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `installer/windows/stt_helper_build/`.
-- **Can it be deleted?** No — required for build/deploy/audit workflows documented in repo.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `installer/windows`.
+- **What this folder is:** Built speech-to-text helper binary folder — `counter_stt_helper.exe` copied into installer.
+- **Why it exists:** Desktop voice on Windows uses a GOLOS STT helper subprocess; installer must ship the compiled exe.
+- **What lives here:** Pre-built or CI-built `counter_stt_helper.exe` (tracked artifact for packaging).
+- **What part of the app it affects:** Windows desktop voice transcription after install.
+- **When to open it:** Voice works in dev but not in installed app; rebuild STT helper for installer.
+- **Can it be deleted?** No — Windows installer STT bundle incomplete without it.
+- **Main related paths:** `installer/windows/build_stt_helper_en.ps1`, `lib/core/services/desktop_stt_helper_service.dart`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `installer/windows/stt_helper_build` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `installer/windows/stt_helper_build/`.
-- **Можно удалить?** No — required for build/deploy/audit workflows documented in repo.
+- **Зачем нужна:** Desktop voice on Windows uses a GOLOS STT helper subprocess; installer must ship the compiled exe.
+- **Когда открывать:** Voice works in dev but not in installed app; rebuild STT helper for installer.
+- **Можно удалить?** No — Windows installer STT bundle incomplete without it.
 
 ---
 
@@ -1053,20 +1053,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `ios/Runner.xcodeproj/project.xcworkspace/` — iOS Flutter/Xcode project files.
-- **Why it exists:** Keeps `ios/Runner.xcodeproj/project.xcworkspace` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `ios/Runner.xcodeproj/project.xcworkspace/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `ios/Runner.xcodeproj/project.xcworkspace/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `ios/Runner.xcodeproj`.
+- **What this folder is:** Xcode project file bundle for the iOS Counter app target.
+- **Why it exists:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **What lives here:** `project.pbxproj`, shared schemes, workspace metadata.
+- **What part of the app it affects:** iOS App Store / TestFlight builds only.
+- **When to open it:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Can it be deleted?** No — required for iOS build.
+- **Main related paths:** `ios/Runner/`, `ios/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `ios/Runner.xcodeproj/project.xcworkspace` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `ios/Runner.xcodeproj/project.xcworkspace/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Когда открывать:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** No — required for iOS build.
 
 ---
 
@@ -1074,20 +1074,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `ios/Runner.xcodeproj/xcshareddata/` — iOS Flutter/Xcode project files.
-- **Why it exists:** Keeps `ios/Runner.xcodeproj/xcshareddata` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `ios/Runner.xcodeproj/xcshareddata/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `ios/Runner.xcodeproj/xcshareddata/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `ios/Runner.xcodeproj`.
+- **What this folder is:** Xcode project file bundle for the iOS Counter app target.
+- **Why it exists:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **What lives here:** `project.pbxproj`, shared schemes, workspace metadata.
+- **What part of the app it affects:** iOS App Store / TestFlight builds only.
+- **When to open it:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Can it be deleted?** No — required for iOS build.
+- **Main related paths:** `ios/Runner/`, `ios/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `ios/Runner.xcodeproj/xcshareddata` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `ios/Runner.xcodeproj/xcshareddata/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Когда открывать:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** No — required for iOS build.
 
 ---
 
@@ -1095,20 +1095,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `ios/Runner.xcworkspace/xcshareddata/` — iOS Flutter/Xcode project files.
-- **Why it exists:** Keeps `ios/Runner.xcworkspace/xcshareddata` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `ios/Runner.xcworkspace/xcshareddata/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `ios/Runner.xcworkspace/xcshareddata/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `ios/Runner.xcworkspace`.
+- **What this folder is:** Xcode workspace wrapping the iOS Runner project and CocoaPods.
+- **Why it exists:** Developers open `.xcworkspace` (not `.xcodeproj` alone) after `pod install`.
+- **What lives here:** Workspace data linking Runner + Pods.
+- **What part of the app it affects:** Local iOS development and CI iOS builds using CocoaPods.
+- **When to open it:** Xcode says open workspace; Pod integration broken.
+- **Can it be deleted?** No — required for iOS CocoaPods workflow.
+- **Main related paths:** `ios/Podfile`, `ios/Runner.xcodeproj`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `ios/Runner.xcworkspace/xcshareddata` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `ios/Runner.xcworkspace/xcshareddata/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Developers open `.xcworkspace` (not `.xcodeproj` alone) after `pod install`.
+- **Когда открывать:** Xcode says open workspace; Pod integration broken.
+- **Можно удалить?** No — required for iOS CocoaPods workflow.
 
 ---
 
@@ -1179,20 +1179,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/core/env/` — Files grouped under `lib/core/env` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/core/env` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/core/env/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/core/env/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/core`.
+- **What this folder is:** Compile-time environment template — copy to gitignored `env.dart` for local secrets/constants.
+- **Why it exists:** Some build-time values must not be committed; example file documents the required shape.
+- **What lives here:** `env.dart.example` only in git; real `env.dart` is local.
+- **What part of the app it affects:** Developer local builds only if env constants are referenced.
+- **When to open it:** Setting up a new dev machine; adding compile-time constant.
+- **Can it be deleted?** No — documents required env.dart structure.
+- **Main related paths:** `.gitignore` entry for `lib/core/env/env.dart`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/core/env` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/core/env/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Some build-time values must not be committed; example file documents the required shape.
+- **Когда открывать:** Setting up a new dev machine; adding compile-time constant.
+- **Можно удалить?** No — documents required env.dart structure.
 
 ---
 
@@ -1200,20 +1200,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/core/navigation/` — Files grouped under `lib/core/navigation` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/core/navigation` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/core/navigation/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/core/navigation/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/core`.
+- **What this folder is:** Root navigator key and desktop side-rail navigation helpers.
+- **Why it exists:** Desktop voice overlay and hidden main window need a global navigator; side rail replaces bottom tabs on wide screens.
+- **What lives here:** `app_navigator.dart` (`appRootNavigatorKey`), `shell_side_navigation.dart`.
+- **What part of the app it affects:** Desktop/web layout (side nav) and overlay routing above tabs.
+- **When to open it:** Desktop overlay cannot push routes; side navigation breakpoint wrong.
+- **Can it be deleted?** No — desktop layout and overlays break.
+- **Main related paths:** `lib/shell/shell_side_navigation.dart`, `lib/core/shell_adaptive.dart`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/core/navigation` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/core/navigation/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Desktop voice overlay and hidden main window need a global navigator; side rail replaces bottom tabs on wide screens.
+- **Когда открывать:** Desktop overlay cannot push routes; side navigation breakpoint wrong.
+- **Можно удалить?** No — desktop layout and overlays break.
 
 ---
 
@@ -1221,20 +1221,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/core/performance/` — Files grouped under `lib/core/performance` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/core/performance` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/core/performance/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/core/performance/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/core`.
+- **What this folder is:** Runtime feature flags and optional perf metrics — date strip, warm window, rebuild counters.
+- **Why it exists:** Lets developers toggle expensive features or capture frame metrics without shipping debug code to all users.
+- **What lives here:** `runtime_flags.dart`, `shell_flags.dart`, `rebuild_metrics.dart` (`PERF_DIAG` gated).
+- **What part of the app it affects:** Perf-sensitive paths: date paging, shell tab stack, diagnostic builds.
+- **When to open it:** Investigating jank, toggling warm-window kill switch, perf capture tests.
+- **Can it be deleted?** No — perf tests and diagnostics reference these flags.
+- **Main related paths:** `test/perf_*`, `lib/data/cache/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/core/performance` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/core/performance/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Lets developers toggle expensive features or capture frame metrics without shipping debug code to all users.
+- **Когда открывать:** Investigating jank, toggling warm-window kill switch, perf capture tests.
+- **Можно удалить?** No — perf tests and diagnostics reference these flags.
 
 ---
 
@@ -1263,20 +1263,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/core/time/` — Files grouped under `lib/core/time` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/core/time` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/core/time/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/core/time/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/core`.
+- **What this folder is:** Wall-clock and timezone math shared by header, Plans Time View, and profile ‘today’ line.
+- **Why it exists:** Time bucketing must follow profile timezone law — not device local time — across all tabs.
+- **What lives here:** `app_clock.dart`, `profile_timezone_catalog.dart`, `plan_time_visible_window.dart`, wall-clock formatters.
+- **What part of the app it affects:** Global header clock, Time View hour window (−3..27 h), timezone picker labels.
+- **When to open it:** Wrong ‘today’, header TZ label, Time View visible hours, DST label wrong.
+- **Can it be deleted?** No — timeline and planning time display breaks.
+- **Main related paths:** `lib/data/profile/profile_timezone.dart`, `lib/core/widgets/global_app_header.dart`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/core/time` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/core/time/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Time bucketing must follow profile timezone law — not device local time — across all tabs.
+- **Когда открывать:** Wrong ‘today’, header TZ label, Time View visible hours, DST label wrong.
+- **Можно удалить?** No — timeline and planning time display breaks.
 
 ---
 
@@ -1305,20 +1305,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/data/cache/` — Files grouped under `lib/data/cache` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/data/cache` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/data/cache/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/data/cache/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/data`.
+- **What this folder is:** Performance caches for fast date paging — warm day snapshots and rendered list bodies.
+- **Why it exists:** Swiping Timeline/Plans days must stay smooth with large record/plan histories.
+- **What lives here:** `day_snapshot_window.dart`, `rendered_day_body_cache.dart`, `render_snapshot.dart`.
+- **What part of the app it affects:** Day swipe smoothness on Timeline and Planning; not user-visible data correctness.
+- **When to open it:** Jank swiping days, stale day content after edit, perf regression.
+- **Can it be deleted?** No — paging becomes slow or glitchy.
+- **Main related paths:** `lib/data/records/record_timeline_vm.dart`, `lib/core/performance/runtime_flags.dart`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/data/cache` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/data/cache/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Swiping Timeline/Plans days must stay smooth with large record/plan histories.
+- **Когда открывать:** Jank swiping days, stale day content after edit, perf regression.
+- **Можно удалить?** No — paging becomes slow or glitchy.
 
 ---
 
@@ -1452,20 +1452,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/features/auth/` — Files grouped under `lib/features/auth` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/features/auth` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/features/auth/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/features/auth/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/features`.
+- **What this folder is:** Sign-in, registration, OAuth, and password-reset screens before the main app loads.
+- **Why it exists:** Users must authenticate to PocketBase before Timeline/Plans data is available.
+- **What lives here:** `auth_view.dart`, `auth_screen.dart`, `oauth_session.dart`.
+- **What part of the app it affects:** Login gate shown from `main.dart` when session invalid.
+- **When to open it:** OAuth redirect broken, login form, register flow, password reset UI.
+- **Can it be deleted?** No — users cannot sign in.
+- **Main related paths:** `lib/data/auth_bridge.dart`, `docs/DEPLOY.md` OAuth admin section.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/features/auth` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/features/auth/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Users must authenticate to PocketBase before Timeline/Plans data is available.
+- **Когда открывать:** OAuth redirect broken, login form, register flow, password reset UI.
+- **Можно удалить?** No — users cannot sign in.
 
 ---
 
@@ -1473,20 +1473,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/features/calendar/` — Files grouped under `lib/features/calendar` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/features/calendar` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/features/calendar/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/features/calendar/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/features`.
+- **What this folder is:** Calendar tab UI — month view of plans (when enabled in navigation).
+- **Why it exists:** Alternative plan browsing by calendar month alongside Plans tab list/Time View.
+- **What lives here:** `calendar_view.dart`.
+- **What part of the app it affects:** Calendar tab in bottom/side navigation (when present in shell).
+- **When to open it:** Calendar month layout, plan dots on dates, calendar navigation.
+- **Can it be deleted?** Maybe — if calendar tab removed from shell; keep while route exists.
+- **Main related paths:** `lib/features/planning/`, plan card widgets in `core/widgets/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/features/calendar` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/features/calendar/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Alternative plan browsing by calendar month alongside Plans tab list/Time View.
+- **Когда открывать:** Calendar month layout, plan dots on dates, calendar navigation.
+- **Можно удалить?** Maybe — if calendar tab removed from shell; keep while route exists.
 
 ---
 
@@ -1620,20 +1620,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/features/stats/` — Files grouped under `lib/features/stats` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/features/stats` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/features/stats/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/features/stats/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/features`.
+- **What this folder is:** Productivity stats views embedded inside Timeline — hours by category, plan vs fact.
+- **Why it exists:** Stats toggle on Timeline header switches list mode to analytics without a separate app area.
+- **What lives here:** `stats_view.dart`, `plan_vs_fact_tab.dart`.
+- **What part of the app it affects:** Timeline tab when user taps Stats segmented control.
+- **When to open it:** Stats totals wrong, plan-vs-fact chart, stats tab toggle.
+- **Can it be deleted?** No — Timeline stats mode disappears.
+- **Main related paths:** `lib/data/categories/category_stats.dart`, `lib/features/timeline/timeline_header_controls.dart`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/features/stats` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/features/stats/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Stats toggle on Timeline header switches list mode to analytics without a separate app area.
+- **Когда открывать:** Stats totals wrong, plan-vs-fact chart, stats tab toggle.
+- **Можно удалить?** No — Timeline stats mode disappears.
 
 ---
 
@@ -1662,20 +1662,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `lib/features/wear/` — Files grouped under `lib/features/wear` that ship or configure part of the repo.
-- **Why it exists:** Keeps `lib/features/wear` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `lib/features/wear/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `lib/features/wear/`.
-- **Can it be deleted?** No — required for app runtime.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `lib/features`.
+- **What this folder is:** Wear OS watch companion — simplified timer screen on Android watches.
+- **Why it exists:** Watch form factor needs a lite UI and `loadInitialDataWearLite` brain path.
+- **What lives here:** `wear_timer_screen.dart`, `wear_main_wrapper.dart`, platform channel shims.
+- **What part of the app it affects:** Wear OS APK companion only — not phone Timeline UI.
+- **When to open it:** Watch timer sync, Wear build entry, companion crashes on watch.
+- **Can it be deleted?** No — if Wear OS companion is a supported target.
+- **Main related paths:** `lib/data/db_core.dart` Wear lite load, `android/` Wear module if configured.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `lib/features/wear` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `lib/features/wear/`.
-- **Можно удалить?** No — required for app runtime.
+- **Зачем нужна:** Watch form factor needs a lite UI and `loadInitialDataWearLite` brain path.
+- **Когда открывать:** Watch timer sync, Wear build entry, companion crashes on watch.
+- **Можно удалить?** No — if Wear OS companion is a supported target.
 
 ---
 
@@ -1704,20 +1704,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/Runner.xcodeproj/project.xcworkspace/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos/Runner.xcodeproj/project.xcworkspace` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/Runner.xcodeproj/project.xcworkspace/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/Runner.xcodeproj/project.xcworkspace/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `macos/Runner.xcodeproj`.
+- **What this folder is:** Xcode project for macOS desktop Counter `.app` target.
+- **Why it exists:** macOS desktop builds compile through this Xcode project.
+- **What lives here:** `project.pbxproj`, shared schemes for macOS Runner.
+- **What part of the app it affects:** macOS desktop distribution builds.
+- **When to open it:** macOS Xcode build/sign errors.
+- **Can it be deleted?** No — required for macOS desktop build.
+- **Main related paths:** `macos/Runner/`, `macos/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos/Runner.xcodeproj/project.xcworkspace` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/Runner.xcodeproj/project.xcworkspace/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** macOS desktop builds compile through this Xcode project.
+- **Когда открывать:** macOS Xcode build/sign errors.
+- **Можно удалить?** No — required for macOS desktop build.
 
 ---
 
@@ -1725,20 +1725,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/Runner.xcodeproj/xcshareddata/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos/Runner.xcodeproj/xcshareddata` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/Runner.xcodeproj/xcshareddata/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/Runner.xcodeproj/xcshareddata/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `macos/Runner.xcodeproj`.
+- **What this folder is:** Xcode project for macOS desktop Counter `.app` target.
+- **Why it exists:** macOS desktop builds compile through this Xcode project.
+- **What lives here:** `project.pbxproj`, shared schemes for macOS Runner.
+- **What part of the app it affects:** macOS desktop distribution builds.
+- **When to open it:** macOS Xcode build/sign errors.
+- **Can it be deleted?** No — required for macOS desktop build.
+- **Main related paths:** `macos/Runner/`, `macos/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos/Runner.xcodeproj/xcshareddata` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/Runner.xcodeproj/xcshareddata/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** macOS desktop builds compile through this Xcode project.
+- **Когда открывать:** macOS Xcode build/sign errors.
+- **Можно удалить?** No — required for macOS desktop build.
 
 ---
 
@@ -1746,20 +1746,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/Runner.xcworkspace/xcshareddata/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos/Runner.xcworkspace/xcshareddata` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/Runner.xcworkspace/xcshareddata/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/Runner.xcworkspace/xcshareddata/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `macos/Runner.xcworkspace`.
+- **What this folder is:** Xcode workspace for macOS Counter desktop app.
+- **Why it exists:** Opens Runner + Flutter macOS pods together in Xcode.
+- **What lives here:** Workspace contents and shared IDE checks.
+- **What part of the app it affects:** macOS desktop development in Xcode.
+- **When to open it:** Workspace won't open; CocoaPods integration on macOS.
+- **Can it be deleted?** No — required for macOS Xcode workflow.
+- **Main related paths:** `macos/Runner.xcodeproj`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos/Runner.xcworkspace/xcshareddata` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/Runner.xcworkspace/xcshareddata/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Opens Runner + Flutter macOS pods together in Xcode.
+- **Когда открывать:** Workspace won't open; CocoaPods integration on macOS.
+- **Можно удалить?** No — required for macOS Xcode workflow.
 
 ---
 
@@ -1851,20 +1851,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Android app module source — manifest, resources, Kotlin entry.
-- **Why it exists:** Gradle compiles this tree into the installable APK.
-- **What lives here:** Manifest, res/, kotlin/.
-- **What part of the app it affects:** Android APK contents and permissions.
-- **When to open it:** Permission denied, wrong app label, manifest merge errors.
-- **Can it be deleted?** No — required for Android build.
-- **Main related paths:** `android/app/build.gradle`.
+- **What this folder is:** Android debug build variant manifest overrides.
+- **Why it exists:** Debug APK may enable extra logging or different application id suffix.
+- **What lives here:** Debug `AndroidManifest.xml` merged into debug builds.
+- **What part of the app it affects:** Debug Android installs only — not release APK.
+- **When to open it:** Debug-only permission or manifest merge issue.
+- **Can it be deleted?** No — required for Android debug builds.
+- **Main related paths:** `android/app/src/main/AndroidManifest.xml`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Gradle compiles this tree into the installable APK.
-- **Когда открывать:** Permission denied, wrong app label, manifest merge errors.
-- **Можно удалить?** No — required for Android build.
+- **Зачем нужна:** Debug APK may enable extra logging or different application id suffix.
+- **Когда открывать:** Debug-only permission or manifest merge issue.
+- **Можно удалить?** No — required for Android debug builds.
 
 ---
 
@@ -1893,20 +1893,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Android app module source — manifest, resources, Kotlin entry.
-- **Why it exists:** Gradle compiles this tree into the installable APK.
-- **What lives here:** Manifest, res/, kotlin/.
-- **What part of the app it affects:** Android APK contents and permissions.
-- **When to open it:** Permission denied, wrong app label, manifest merge errors.
-- **Can it be deleted?** No — required for Android build.
-- **Main related paths:** `android/app/build.gradle`.
+- **What this folder is:** Android profile build variant manifest (performance profiling).
+- **Why it exists:** Profile mode uses separate manifest merge for Flutter profile builds.
+- **What lives here:** Profile `AndroidManifest.xml`.
+- **What part of the app it affects:** Profile APK used for performance measurement.
+- **When to open it:** Profile build manifest merge errors.
+- **Can it be deleted?** No — required for Flutter profile Android builds.
+- **Main related paths:** `android/app/src/main/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Gradle compiles this tree into the installable APK.
-- **Когда открывать:** Permission denied, wrong app label, manifest merge errors.
-- **Можно удалить?** No — required for Android build.
+- **Зачем нужна:** Profile mode uses separate manifest merge for Flutter profile builds.
+- **Когда открывать:** Profile build manifest merge errors.
+- **Можно удалить?** No — required for Flutter profile Android builds.
 
 ---
 
@@ -1914,20 +1914,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/` — iOS Flutter/Xcode project files.
-- **Why it exists:** Keeps `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `ios/Runner.xcodeproj/project.xcworkspace`.
+- **What this folder is:** Xcode project file bundle for the iOS Counter app target.
+- **Why it exists:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **What lives here:** `project.pbxproj`, shared schemes, workspace metadata.
+- **What part of the app it affects:** iOS App Store / TestFlight builds only.
+- **When to open it:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Can it be deleted?** No — required for iOS build.
+- **Main related paths:** `ios/Runner/`, `ios/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Когда открывать:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** No — required for iOS build.
 
 ---
 
@@ -1935,20 +1935,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `ios/Runner.xcodeproj/xcshareddata/xcschemes/` — iOS Flutter/Xcode project files.
-- **Why it exists:** Keeps `ios/Runner.xcodeproj/xcshareddata/xcschemes` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `ios/Runner.xcodeproj/xcshareddata/xcschemes/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `ios/Runner.xcodeproj/xcshareddata/xcschemes/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `ios/Runner.xcodeproj/xcshareddata`.
+- **What this folder is:** Xcode project file bundle for the iOS Counter app target.
+- **Why it exists:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **What lives here:** `project.pbxproj`, shared schemes, workspace metadata.
+- **What part of the app it affects:** iOS App Store / TestFlight builds only.
+- **When to open it:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Can it be deleted?** No — required for iOS build.
+- **Main related paths:** `ios/Runner/`, `ios/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `ios/Runner.xcodeproj/xcshareddata/xcschemes` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `ios/Runner.xcodeproj/xcshareddata/xcschemes/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** Xcode opens this project to compile, sign, and archive the iOS IPA.
+- **Когда открывать:** Xcode project corruption, scheme changes, iOS signing settings.
+- **Можно удалить?** No — required for iOS build.
 
 ---
 
@@ -2145,20 +2145,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `macos/Runner.xcodeproj/project.xcworkspace`.
+- **What this folder is:** Xcode project for macOS desktop Counter `.app` target.
+- **Why it exists:** macOS desktop builds compile through this Xcode project.
+- **What lives here:** `project.pbxproj`, shared schemes for macOS Runner.
+- **What part of the app it affects:** macOS desktop distribution builds.
+- **When to open it:** macOS Xcode build/sign errors.
+- **Can it be deleted?** No — required for macOS desktop build.
+- **Main related paths:** `macos/Runner/`, `macos/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** macOS desktop builds compile through this Xcode project.
+- **Когда открывать:** macOS Xcode build/sign errors.
+- **Можно удалить?** No — required for macOS desktop build.
 
 ---
 
@@ -2166,20 +2166,20 @@ RU:
 
 EN:
 
-- **What this folder is:** Folder `macos/Runner.xcodeproj/xcshareddata/xcschemes/` — macOS desktop Flutter/Xcode project files.
-- **Why it exists:** Keeps `macos/Runner.xcodeproj/xcshareddata/xcschemes` files together so builds and edits stay organized.
-- **What lives here:** See individual file sections below for each tracked file.
-- **What part of the app it affects:** Whatever features depend on files in `macos/Runner.xcodeproj/xcshareddata/xcschemes/` (see child entries).
-- **When to open it:** Build, config, or content work scoped to `macos/Runner.xcodeproj/xcshareddata/xcschemes/`.
-- **Can it be deleted?** No — required for build/deploy/platform tooling.
-- **Main related paths:** `docs/APP_STRUCTURE.md`, parent `macos/Runner.xcodeproj/xcshareddata`.
+- **What this folder is:** Xcode project for macOS desktop Counter `.app` target.
+- **Why it exists:** macOS desktop builds compile through this Xcode project.
+- **What lives here:** `project.pbxproj`, shared schemes for macOS Runner.
+- **What part of the app it affects:** macOS desktop distribution builds.
+- **When to open it:** macOS Xcode build/sign errors.
+- **Can it be deleted?** No — required for macOS desktop build.
+- **Main related paths:** `macos/Runner/`, `macos/Flutter/`.
 
 RU:
 
 - **Что это за папка:** см. EN (детали файлов ниже на RU).
-- **Зачем нужна:** Keeps `macos/Runner.xcodeproj/xcshareddata/xcschemes` files together so builds and edits stay organized.
-- **Когда открывать:** Build, config, or content work scoped to `macos/Runner.xcodeproj/xcshareddata/xcschemes/`.
-- **Можно удалить?** No — required for build/deploy/platform tooling.
+- **Зачем нужна:** macOS desktop builds compile through this Xcode project.
+- **Когда открывать:** macOS Xcode build/sign errors.
+- **Можно удалить?** No — required for macOS desktop build.
 
 ---
 
@@ -2630,7 +2630,7 @@ RU:
 EN:
 
 - **What this is:** Tells git which generated/local files never to commit (build/, captures, env secrets).
-- **Why needed:** Keeps repo clean — no APK dumps, perf captures, or personal env keys in git.
+- **Why needed:** Excludes APK dumps, perf captures, and personal env keys from git — repo stays clean.
 - **What it contains:** Ignore patterns for Flutter build output, IDE, exports.
 - **Responsibilities:** Exclude `build/`, `*.perf_capture.txt`, `lib/core/env/env.dart`.
 - **When to open:** New local output folder should not be tracked.
@@ -2641,7 +2641,7 @@ EN:
 RU:
 
 - **Что это:** Tells git which generated/local files never to commit (build/, captures, env secrets).
-- **Зачем:** Keeps repo clean — no APK dumps, perf captures, or personal env keys in git.
+- **Зачем:** Excludes APK dumps, perf captures, and personal env keys from git — repo stays clean.
 - **Содержимое:** Ignore patterns for Flutter build output, IDE, exports.
 - **Обязанности:** Exclude `build/`, `*.perf_capture.txt`, `lib/core/env/env.dart`.
 - **Когда открывать:** New local output folder should not be tracked.
@@ -2830,7 +2830,7 @@ RU:
 EN:
 
 - **What this is:** Git ignore rules for `android` — files not to commit.
-- **Why needed:** Keeps build output and secrets out of git history.
+- **Why needed:** Prevents build output and secrets from entering git history.
 - **What it contains:** Ignore patterns for this folder scope.
 - **Responsibilities:** Prevent accidental commit of generated files.
 - **When to open:** Android APK build or permission issues.
@@ -2841,7 +2841,7 @@ EN:
 RU:
 
 - **Что это:** Git ignore rules for `android` — files not to commit.
-- **Зачем:** Keeps build output and secrets out of git history.
+- **Зачем:** Prevents build output and secrets from entering git history.
 - **Содержимое:** Ignore patterns for this folder scope.
 - **Обязанности:** Prevent accidental commit of generated files.
 - **Когда открывать:** Сборка/permissions Android.
@@ -4181,7 +4181,7 @@ RU:
 EN:
 
 - **What this is:** Git ignore rules for `ios` — files not to commit.
-- **Why needed:** Keeps build output and secrets out of git history.
+- **Why needed:** Prevents build output and secrets from entering git history.
 - **What it contains:** Ignore patterns for this folder scope.
 - **Responsibilities:** Prevent accidental commit of generated files.
 - **When to open:** When behavior tied to `.gitignore` breaks or you need to change its documented role.
@@ -4192,7 +4192,7 @@ EN:
 RU:
 
 - **Что это:** Git ignore rules for `ios` — files not to commit.
-- **Зачем:** Keeps build output and secrets out of git history.
+- **Зачем:** Prevents build output and secrets from entering git history.
 - **Содержимое:** Ignore patterns for this folder scope.
 - **Обязанности:** Prevent accidental commit of generated files.
 - **Когда открывать:** Когда ломается поведение, связанное с `.gitignore`.
@@ -8759,7 +8759,7 @@ RU:
 
 EN:
 
-- **What this is:** Keeps the local plan list clean and scores title similarity for smart linking.
+- **What this is:** Maintains the local plan list clean and scores title similarity for smart linking.
 - **Why needed:** Duplicate plan rows or bad merges would break Planning and Lists tabs.
 - **What it contains:** Plan dedupe/scrub, title link scoring heuristics.
 - **Key code names:** `PlanCacheProjectionExtension`
@@ -8771,7 +8771,7 @@ EN:
 
 RU:
 
-- **Что это:** Keeps the local plan list clean and scores title similarity for smart linking.
+- **Что это:** Maintains the local plan list clean and scores title similarity for smart linking.
 - **Зачем:** Duplicate plan rows or bad merges would break Planning and Lists tabs.
 - **Содержимое:** Plan dedupe/scrub, title link scoring heuristics.
 - **Обязанности:** Plan dedupe/scrub, title link scoring heuristics
@@ -12830,7 +12830,7 @@ RU:
 EN:
 
 - **What this is:** Git ignore rules for `linux` — files not to commit.
-- **Why needed:** Keeps build output and secrets out of git history.
+- **Why needed:** Prevents build output and secrets from entering git history.
 - **What it contains:** Ignore patterns for this folder scope.
 - **Responsibilities:** Prevent accidental commit of generated files.
 - **When to open:** When behavior tied to `.gitignore` breaks or you need to change its documented role.
@@ -12841,7 +12841,7 @@ EN:
 RU:
 
 - **Что это:** Git ignore rules for `linux` — files not to commit.
-- **Зачем:** Keeps build output and secrets out of git history.
+- **Зачем:** Prevents build output and secrets from entering git history.
 - **Содержимое:** Ignore patterns for this folder scope.
 - **Обязанности:** Prevent accidental commit of generated files.
 - **Когда открывать:** Когда ломается поведение, связанное с `.gitignore`.
@@ -13080,7 +13080,7 @@ RU:
 EN:
 
 - **What this is:** Git ignore rules for `macos` — files not to commit.
-- **Why needed:** Keeps build output and secrets out of git history.
+- **Why needed:** Prevents build output and secrets from entering git history.
 - **What it contains:** Ignore patterns for this folder scope.
 - **Responsibilities:** Prevent accidental commit of generated files.
 - **When to open:** When behavior tied to `.gitignore` breaks or you need to change its documented role.
@@ -13091,7 +13091,7 @@ EN:
 RU:
 
 - **Что это:** Git ignore rules for `macos` — files not to commit.
-- **Зачем:** Keeps build output and secrets out of git history.
+- **Зачем:** Prevents build output and secrets from entering git history.
 - **Содержимое:** Ignore patterns for this folder scope.
 - **Обязанности:** Prevent accidental commit of generated files.
 - **Когда открывать:** Когда ломается поведение, связанное с `.gitignore`.
@@ -13955,7 +13955,7 @@ RU:
 EN:
 
 - **What this is:** Builds this document (`APP_STRUCTURE_DETAILED.md`) from git file list + role map.
-- **Why needed:** Keeps owner-readable structure guide in sync with repo after changes.
+- **Why needed:** Maintains owner-readable structure guide in sync with repo after changes.
 - **What it contains:** Python generator + curated folder/file descriptions.
 - **Responsibilities:** Regenerate detailed structure encyclopedia.
 - **When to open:** After adding/removing tracked files; after editing structure docs.
@@ -13966,7 +13966,7 @@ EN:
 RU:
 
 - **Что это:** Builds this document (`APP_STRUCTURE_DETAILED.md`) from git file list + role map.
-- **Зачем:** Keeps owner-readable structure guide in sync with repo after changes.
+- **Зачем:** Maintains owner-readable structure guide in sync with repo after changes.
 - **Содержимое:** Python generator + curated folder/file descriptions.
 - **Обязанности:** Regenerate detailed structure encyclopedia.
 - **Когда открывать:** After adding/removing tracked files; after editing structure docs.
@@ -14230,7 +14230,7 @@ RU:
 EN:
 
 - **What this is:** Copies translation keys from English/Russian source files into other locale files.
-- **Why needed:** Keeps `lib/l10n/langs/*.dart` in sync when keys are added.
+- **Why needed:** Synchronizes `lib/l10n/langs/*.dart` when dictionary keys are added.
 - **What it contains:** Dart script scanning dictionary keys.
 - **Key code names:** `main`, `_MapRegion`
 - **Responsibilities:** Run after editing `en.dart` / `ru.dart`.
@@ -14242,7 +14242,7 @@ EN:
 RU:
 
 - **Что это:** Copies translation keys from English/Russian source files into other locale files.
-- **Зачем:** Keeps `lib/l10n/langs/*.dart` in sync when keys are added.
+- **Зачем:** Synchronizes `lib/l10n/langs/*.dart` when dictionary keys are added.
 - **Содержимое:** Dart script scanning dictionary keys.
 - **Обязанности:** Run after editing `en.dart` / `ru.dart`.
 - **Когда открывать:** Missing translation key in non-EN/RU locale.
@@ -15418,7 +15418,7 @@ RU:
 EN:
 
 - **What this is:** Git ignore rules for `windows` — files not to commit.
-- **Why needed:** Keeps build output and secrets out of git history.
+- **Why needed:** Prevents build output and secrets from entering git history.
 - **What it contains:** Ignore patterns for this folder scope.
 - **Responsibilities:** Prevent accidental commit of generated files.
 - **When to open:** When behavior tied to `.gitignore` breaks or you need to change its documented role.
@@ -15429,7 +15429,7 @@ EN:
 RU:
 
 - **Что это:** Git ignore rules for `windows` — files not to commit.
-- **Зачем:** Keeps build output and secrets out of git history.
+- **Зачем:** Prevents build output and secrets from entering git history.
 - **Содержимое:** Ignore patterns for this folder scope.
 - **Обязанности:** Prevent accidental commit of generated files.
 - **Когда открывать:** Когда ломается поведение, связанное с `.gitignore`.
