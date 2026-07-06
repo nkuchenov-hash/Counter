@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Calendar view decomposition (Stage A) [shipped]
+
+* **`lib/features/calendar/`:** [shipped] UI-only split of `calendar_view.dart` (~1142→~276 lines) into `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart`; `CalendarView` entrypoint unchanged; zero user-visible behavior change.
+* **`docs/APP_STRUCTURE.md`:** [shipped] Calendar folder file list updated for architecture guard.
+* **Verification:** `flutter analyze --no-fatal-infos --no-fatal-warnings` OK; `flutter test` 248 passed; `architecture_guard.ps1 -Strict` 0 violations.
+
 ## [2026-07-06] - Large file decomposition plan (report-only) [shipped]
 
 * **`docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`:** [shipped] Staged queue Stage A–E for 31 Dart files ≥600 lines; per-file responsibility maps for `plan_service`, `planning_page`, categories, edit sheets, lists, calendar; risk/test matrix; first prompt = Stage A calendar or category sheet extract.
