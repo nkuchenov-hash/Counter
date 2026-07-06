@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `338666c` on 2026-07-06.**
+**Generated at git SHA `1fbbda2` on 2026-07-06.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -4051,6 +4051,31 @@ RU:
 - **Когда открывать:** Спор о repo bloat, pre-commit cleanup, onboarding «что safe ignore».
 - **Можно удалить?** Нет — актуальный отчёт или чеклист.
 - **Связано с:** `docs/APP_STRUCTURE_DETAILED.md`, `docs/APP_STRUCTURE.md`.
+- **Слой:** Документация — правила, не runtime.
+
+
+### `docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`
+
+EN:
+
+- **What this is:** Staged decomposition queue for large Dart files — responsibility maps, split targets, risk matrix, execution order.
+- **Why needed:** Watchlist files must not keep growing; splits need seams and tests before Brain moves.
+- **What it contains:** Top-10 table, per-file maps for plan_service/planning_page/etc., Stage A–E queue, first implementation prompt.
+- **Responsibilities:** Report-only roadmap — no refactors until an stage prompt is explicitly approved.
+- **When to open:** Before adding features to files over 1000 lines or starting Pass 5 decomposition.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/APP_STRUCTURE.md` §8, §11 ARCHITECTURE.
+- **Layer / owner:** Repo-only decomposition plan.
+
+RU:
+
+- **Что это:** Поэтапная очередь декомпозиции крупных Dart-файлов — карты ответственности, цели split, матрица рисков, порядок выполнения.
+- **Зачем:** Watchlist-файлы не должны расти бесконечно; split требует швов и тестов до Brain moves.
+- **Содержимое:** Таблица top-10, per-file maps, очередь Stage A–E, первый implementation prompt.
+- **Обязанности:** Только отчёт — без рефакторинга до явного одобрения stage prompt.
+- **Когда открывать:** Перед feature work в файлах >1000 строк или стартом Pass 5 decomposition.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/APP_STRUCTURE.md` §8.
 - **Слой:** Документация — правила, не runtime.
 
 
@@ -10113,18 +10138,148 @@ RU:
 - **Слой:** UI — экран/виджет (auth).
 
 
+### `lib/features/calendar/calendar_chrome_header.dart`
+
+EN:
+
+- **What this is:** `calendar_chrome_header.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Why needed:** Users see `calendar_chrome_header.dart` when using Calendar tab.
+- **What it contains:** Primary symbols: `CalendarChromeHeader`.
+- **Key code names:** `CalendarChromeHeader`
+- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **When to open:** When behavior tied to `calendar_chrome_header.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Layer / owner:** UI code for the calendar area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `calendar_chrome_header.dart` на вкладка Calendar — Поддерживает поведение `calendar_chrome_header` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_chrome_header.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_chrome_header.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `calendar_chrome_header` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_chrome_header.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (calendar).
+
+
+### `lib/features/calendar/calendar_day_events.dart`
+
+EN:
+
+- **What this is:** `calendar_day_events.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Why needed:** Users see `calendar_day_events.dart` when using Calendar tab.
+- **What it contains:** Primary symbols: `CalendarDayEventList`, `CalendarEventPill`.
+- **Key code names:** `CalendarDayEventList`, `CalendarEventPill`
+- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **When to open:** When behavior tied to `calendar_day_events.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Layer / owner:** UI code for the calendar area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `calendar_day_events.dart` на вкладка Calendar — Поддерживает поведение `calendar_day_events` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_day_events.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_day_events.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `calendar_day_events` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_day_events.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (calendar).
+
+
+### `lib/features/calendar/calendar_day_panel.dart`
+
+EN:
+
+- **What this is:** `calendar_day_panel.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Why needed:** Users see `calendar_day_panel.dart` when using Calendar tab.
+- **What it contains:** Primary symbols: `CalendarSelectedDayTaskPanel`.
+- **Key code names:** `CalendarSelectedDayTaskPanel`
+- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **When to open:** When behavior tied to `calendar_day_panel.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Layer / owner:** UI code for the calendar area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `calendar_day_panel.dart` на вкладка Calendar — Поддерживает поведение `calendar_day_panel` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_day_panel.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_day_panel.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `calendar_day_panel` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_day_panel.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (calendar).
+
+
+### `lib/features/calendar/calendar_helpers.dart`
+
+EN:
+
+- **What this is:** `calendar_helpers.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Why needed:** Users see `calendar_helpers.dart` when using Calendar tab.
+- **What it contains:** Primary symbols: `CalendarViewMode`.
+- **Key code names:** `CalendarViewMode`
+- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **When to open:** When behavior tied to `calendar_helpers.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Layer / owner:** UI code for the calendar area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `calendar_helpers.dart` на вкладка Calendar — Поддерживает поведение `calendar_helpers` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_helpers.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_helpers.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `calendar_helpers` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_helpers.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (calendar).
+
+
+### `lib/features/calendar/calendar_month_grid.dart`
+
+EN:
+
+- **What this is:** `calendar_month_grid.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Why needed:** Users see `calendar_month_grid.dart` when using Calendar tab.
+- **What it contains:** Primary symbols: `CalendarMonthGrid`, `CalendarMonthDayCell`.
+- **Key code names:** `CalendarMonthGrid`, `CalendarMonthDayCell`
+- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **When to open:** When behavior tied to `calendar_month_grid.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Layer / owner:** UI code for the calendar area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `calendar_month_grid.dart` на вкладка Calendar — Поддерживает поведение `calendar_month_grid` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_month_grid.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_month_grid.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `calendar_month_grid` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_month_grid.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (calendar).
+
+
 ### `lib/features/calendar/calendar_view.dart`
 
 EN:
 
-- **What this is:** `calendar_view.dart` on Calendar tab — Calendar tab.
+- **What this is:** `calendar_view.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
 - **Why needed:** Users see `calendar_view.dart` when using Calendar tab.
-- **What it contains:** Primary symbols: `_CalendarViewMode`, `CalendarView`, `_CalendarViewState`, `_CalendarChromeHeader`.
-- **Key code names:** `_CalendarViewMode`, `CalendarView`, `_CalendarViewState`, `_CalendarChromeHeader`
-- **Responsibilities:** Calendar tab
+- **What it contains:** Primary symbols: `CalendarView`, `_CalendarViewState`.
+- **Key code names:** `CalendarView`, `_CalendarViewState`
+- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
 - **When to open:** When behavior tied to `calendar_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Calendar tab
+- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
 - **Layer / owner:** UI code for the calendar area of the app (what users see and tap).
 
 RU:
@@ -10139,18 +10294,121 @@ RU:
 - **Слой:** UI — экран/виджет (calendar).
 
 
+### `lib/features/calendar/calendar_week_grid.dart`
+
+EN:
+
+- **What this is:** `calendar_week_grid.dart` on Calendar tab — Calendar tab: month/week grids, chrome header, focused-day task panel.
+- **Why needed:** Users see `calendar_week_grid.dart` when using Calendar tab.
+- **What it contains:** Primary symbols: `CalendarWeekPlannerGrid`, `CalendarWeekCompactStrip`.
+- **Key code names:** `CalendarWeekPlannerGrid`, `CalendarWeekCompactStrip`
+- **Responsibilities:** Calendar tab: month/week grids, chrome header, focused-day task panel
+- **When to open:** When behavior tied to `calendar_week_grid.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Calendar tab: month/week grids, chrome header, focused-day task panel
+- **Layer / owner:** UI code for the calendar area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `calendar_week_grid.dart` на вкладка Calendar — Поддерживает поведение `calendar_week_grid` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `calendar_week_grid.dart` на вкладка Calendar.
+- **Содержимое:** Dart-модуль `calendar_week_grid.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `calendar_week_grid` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `calendar_week_grid.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/calendar/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (calendar).
+
+
+### `lib/features/categories/category_appearance_sheet.dart`
+
+EN:
+
+- **What this is:** `category_appearance_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **Why needed:** Users see `category_appearance_sheet.dart` when using More → Categories manager.
+- **What it contains:** Primary symbols: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
+- **Key code names:** `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **When to open:** When behavior tied to `category_appearance_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Layer / owner:** UI code for the categories area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `category_appearance_sheet.dart` на More → Categories — Пользователь открывает sheet/dialog из entry `category_appearance_sheet`..
+- **Зачем:** Пользователь видит UI из `category_appearance_sheet.dart` на More → Categories.
+- **Содержимое:** Основные символы: `CategoryAppearanceSheet`, `_CategoryAppearanceSheetState`.
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `category_appearance_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_appearance_sheet.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (categories).
+
+
+### `lib/features/categories/category_editor_sheet.dart`
+
+EN:
+
+- **What this is:** `category_editor_sheet.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **Why needed:** Users see `category_editor_sheet.dart` when using More → Categories manager.
+- **What it contains:** Primary symbols: `CategoryEditorSheet`, `_CategoryEditorSheetState`.
+- **Key code names:** `CategoryEditorSheet`, `_CategoryEditorSheetState`
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **When to open:** When behavior tied to `category_editor_sheet.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Layer / owner:** UI code for the categories area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `category_editor_sheet.dart` на More → Categories — Пользователь открывает sheet/dialog из entry `category_editor_sheet`..
+- **Зачем:** Пользователь видит UI из `category_editor_sheet.dart` на More → Categories.
+- **Содержимое:** Основные символы: `CategoryEditorSheet`, `_CategoryEditorSheetState`.
+- **Обязанности:** Пользователь открывает sheet/dialog из entry `category_editor_sheet`.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_editor_sheet.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (categories).
+
+
+### `lib/features/categories/category_helpers.dart`
+
+EN:
+
+- **What this is:** `category_helpers.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **Why needed:** Users see `category_helpers.dart` when using More → Categories manager.
+- **What it contains:** Dart module `category_helpers.dart` — open file for classes and helpers.
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **When to open:** When behavior tied to `category_helpers.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Layer / owner:** UI code for the categories area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `category_helpers.dart` на More → Categories — Поддерживает поведение `category_helpers` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_helpers.dart` на More → Categories.
+- **Содержимое:** Dart-модуль `category_helpers.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `category_helpers` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_helpers.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (categories).
+
+
 ### `lib/features/categories/category_list_view.dart`
 
 EN:
 
-- **What this is:** `category_list_view.dart` on More → Categories manager — Category manager (More menu).
+- **What this is:** `category_list_view.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
 - **Why needed:** Users see `category_list_view.dart` when using More → Categories manager.
-- **What it contains:** Primary symbols: `_CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`.
-- **Key code names:** `_CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`
-- **Responsibilities:** Category manager (More menu)
+- **What it contains:** Primary symbols: `CategoriesPage`, `_CategoriesPageState`.
+- **Key code names:** `CategoriesPage`, `_CategoriesPageState`
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
 - **When to open:** When behavior tied to `category_list_view.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu)
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10169,14 +10427,14 @@ RU:
 
 EN:
 
-- **What this is:** `category_recursive_tree.dart` on More → Categories manager — Category manager (More menu).
+- **What this is:** `category_recursive_tree.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
 - **Why needed:** Users see `category_recursive_tree.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`, `CategoryTreeFormField`, `_CategoryTreeBody`, `_CategoryTreeBodyState`.
 - **Key code names:** `CategoryTreeSheetPicked`, `CategoryTreeSheetAll`, `CategoryFilterTreeField`, `CategoryTreeFormField`, `_CategoryTreeBody`, `_CategoryTreeBodyState`, `_CategoryTreeNode`
-- **Responsibilities:** Category manager (More menu)
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
 - **When to open:** When behavior tied to `category_recursive_tree.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu)
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10191,18 +10449,70 @@ RU:
 - **Слой:** UI — экран/виджет (categories).
 
 
+### `lib/features/categories/category_row_widget.dart`
+
+EN:
+
+- **What this is:** `category_row_widget.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **Why needed:** Users see `category_row_widget.dart` when using More → Categories manager.
+- **What it contains:** Primary symbols: `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`.
+- **Key code names:** `CategoryDepthLayout`, `CategoryBandLayout`, `CategoryRowWidget`
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **When to open:** When behavior tied to `category_row_widget.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Layer / owner:** UI code for the categories area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `category_row_widget.dart` на More → Categories — Поддерживает поведение `category_row_widget` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_row_widget.dart` на More → Categories.
+- **Содержимое:** Dart-модуль `category_row_widget.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `category_row_widget` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_row_widget.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (categories).
+
+
+### `lib/features/categories/category_tag_input_field.dart`
+
+EN:
+
+- **What this is:** `category_tag_input_field.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
+- **Why needed:** Users see `category_tag_input_field.dart` when using More → Categories manager.
+- **What it contains:** Primary symbols: `TagInputField`, `_TagInputFieldState`.
+- **Key code names:** `TagInputField`, `_TagInputFieldState`
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **When to open:** When behavior tied to `category_tag_input_field.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
+- **Layer / owner:** UI code for the categories area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `category_tag_input_field.dart` на More → Categories — Поддерживает поведение `category_tag_input_field` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `category_tag_input_field.dart` на More → Categories.
+- **Содержимое:** Dart-модуль `category_tag_input_field.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `category_tag_input_field` в этой feature-зоне.
+- **Когда открывать:** Когда ломается поведение, связанное с `category_tag_input_field.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/categories/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (categories).
+
+
 ### `lib/features/categories/category_visibility_prefs.dart`
 
 EN:
 
-- **What this is:** `category_visibility_prefs.dart` on More → Categories manager — Category manager (More menu).
+- **What this is:** `category_visibility_prefs.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
 - **Why needed:** Users see `category_visibility_prefs.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `CategoryVisibilityPrefs`.
 - **Key code names:** `CategoryVisibilityPrefs`
-- **Responsibilities:** Category manager (More menu)
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
 - **When to open:** When behavior tied to `category_visibility_prefs.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu)
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:
@@ -10221,14 +10531,14 @@ RU:
 
 EN:
 
-- **What this is:** `create_category_dialog.dart` on More → Categories manager — Category manager (More menu).
+- **What this is:** `create_category_dialog.dart` on More → Categories manager — Category manager (More menu): band grid, editor/appearance sheets, tree picker.
 - **Why needed:** Users see `create_category_dialog.dart` when using More → Categories manager.
 - **What it contains:** Primary symbols: `_CreateCategoryDialog`, `_CreateCategoryDialogState`.
 - **Key code names:** `_CreateCategoryDialog`, `_CreateCategoryDialogState`
-- **Responsibilities:** Category manager (More menu)
+- **Responsibilities:** Category manager (More menu): band grid, editor/appearance sheets, tree picker
 - **When to open:** When behavior tied to `create_category_dialog.dart` breaks or you need to change its documented role.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** APP_STRUCTURE role: Category manager (More menu)
+- **Connected to:** APP_STRUCTURE role: Category manager (More menu): band grid, editor/appearance sheets, tree picker
 - **Layer / owner:** UI code for the categories area of the app (what users see and tap).
 
 RU:

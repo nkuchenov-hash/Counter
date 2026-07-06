@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Category view decomposition (Stage A alternate) [shipped]
+
+* **`lib/features/categories/`:** [shipped] UI-only split of `category_list_view.dart` (~1727→~330 lines) into `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`; `CategoriesPage` entrypoint unchanged; re-exports preserved; zero user-visible behavior change.
+* **`docs/APP_STRUCTURE.md`**, **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Categories folder file list updated; detailed guide regenerated.
+* **Verification:** `flutter analyze --no-fatal-infos --no-fatal-warnings` OK; `flutter test` 248 passed; `architecture_guard.ps1 -Strict` 0 violations.
+
 ## [2026-07-06] - Calendar view decomposition (Stage A) [shipped]
 
 * **`lib/features/calendar/`:** [shipped] UI-only split of `calendar_view.dart` (~1142→~276 lines) into `calendar_chrome_header.dart`, `calendar_month_grid.dart`, `calendar_week_grid.dart`, `calendar_day_panel.dart`, `calendar_day_events.dart`, `calendar_helpers.dart`; `CalendarView` entrypoint unchanged; zero user-visible behavior change.
