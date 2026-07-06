@@ -72,10 +72,10 @@ class _CreateCategoryDialogState extends State<_CreateCategoryDialog> {
         colorValue: Colors.grey.toARGB32(),
         iconCodePoint: Icons.folder_rounded.codePoint,
       );
-      final ok =
+      final createdId =
           await DatabaseService.instance.addNestedCategory(widget.parentId, child);
       if (!mounted) return;
-      if (ok) {
+      if (createdId != null) {
         Navigator.of(context).pop();
         await widget.onDone();
       } else {

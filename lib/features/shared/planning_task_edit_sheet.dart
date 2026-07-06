@@ -7,6 +7,7 @@ import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
+import 'package:counter/features/categories/create_category_from_picker.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
@@ -485,12 +486,12 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   }
 
   PlanningTask? _buildDraftTask() {
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final title = _titleController.text.trim();
     if (title.isEmpty) return null;
-    final catId = pairs.any((p) => p.id == _categoryId)
-        ? _categoryId
-        : (pairs.isNotEmpty ? pairs.first.id : _categoryId);
+    final catId = resolveEditFieldCategoryId(
+      db: DatabaseService.instance,
+      categoryId: _categoryId,
+    );
     final newDateKey = _dateKeyFromDate(_date);
     syncChecklistDoneLength(_checklistControllers, _checklistDone);
     final List<Map<String, dynamic>> checklist = [];
@@ -584,9 +585,10 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   @override
   Widget build(BuildContext context) {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
-    final dropdownValue = pairs.any((p) => p.id == _categoryId)
-        ? _categoryId
-        : (pairs.isNotEmpty ? pairs.first.id : _categoryId);
+    final dropdownValue = resolveEditFieldCategoryId(
+      db: DatabaseService.instance,
+      categoryId: _categoryId,
+    );
     final kbBottom = MediaQuery.viewInsetsOf(context).bottom;
     final keyboardOpen = kbBottom > 0;
     final compactChrome = keyboardOpen;

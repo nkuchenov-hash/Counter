@@ -348,6 +348,20 @@ extension CategoryLookupExtension on DatabaseService {
     return found;
   }
 
+  /// Resolves a sibling under [parentLocalId] by display name (post-create handoff).
+  int? findCreatedCategoryLocalIdUnderParent({
+    required int? parentLocalId,
+    required String displayName,
+  }) {
+    final trimmed = displayName.trim().toLowerCase();
+    if (trimmed.isEmpty) return null;
+    for (final s in getChildrenOf(parentLocalId)) {
+      if (s.isArchived) continue;
+      if (s.name.trim().toLowerCase() == trimmed) return s.id;
+    }
+    return null;
+  }
+
   String getCategoryPath(int categoryId) {
     final parts = <String>[];
     void collect(List<CategoryRule> rules, List<String> soFar) {

@@ -433,8 +433,7 @@ class CategoryTreeFormField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final db = DatabaseService.instance;
-    final pairs = db.allCategoryIdPathPairs;
-    final pathText = value != null && pairs.any((p) => p.id == value)
+    final pathText = value != null && db.categoryExists(value!)
         ? db.getCategoryPath(value!)
         : null;
 

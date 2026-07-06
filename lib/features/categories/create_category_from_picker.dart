@@ -64,24 +64,62 @@ bool categoryCreateFromPickerAllowed() {
   return ownerPbId?.isNotEmpty ?? false;
 }
 
+@immutable
+class CategoryPickerCreateResult {
+  const CategoryPickerCreateResult({
+    required this.localCategoryId,
+    required this.displayName,
+    this.parentLocalId,
+    this.pocketBaseSystemId,
+  });
+
+  final int localCategoryId;
+  final String displayName;
+  final int? parentLocalId;
+  final String? pocketBaseSystemId;
+}
+
 @visibleForTesting
 int? findCreatedCategoryLocalIdUnderParent({
   required DatabaseService db,
   required int? parentLocalId,
   required String name,
 }) {
-  final trimmed = name.trim().toLowerCase();
-  if (trimmed.isEmpty) return null;
-  for (final s in db.getChildrenOf(parentLocalId)) {
-    if (s.isArchived) continue;
-    if (s.name.trim().toLowerCase() == trimmed) return s.id;
-  }
-  return null;
+  return db.findCreatedCategoryLocalIdUnderParent(
+    parentLocalId: parentLocalId,
+    displayName: name,
+  );
 }
 
 @visibleForTesting
-Future<bool> Function(int? parentLocalId, CategoryRule child)?
+Future<int?> Function(int? parentLocalId, CategoryRule child)?
     categoryPickerAddNestedCategoryOverride;
+
+/// Resolves category id for edit fields — prefer in-memory tree over stale pair lists.
+@visibleForTesting
+int resolveEditFieldCategoryIdValues({
+  required int categoryId,
+  required bool existsInTree,
+  required Iterable<int> knownPairIds,
+}) {
+  if (existsInTree) return categoryId;
+  if (knownPairIds.contains(categoryId)) return categoryId;
+  final known = knownPairIds.toList(growable: false);
+  if (known.isNotEmpty) return known.first;
+  return categoryId;
+}
+
+@visibleForTesting
+int resolveEditFieldCategoryId({
+  required DatabaseService db,
+  required int categoryId,
+}) {
+  return resolveEditFieldCategoryIdValues(
+    categoryId: categoryId,
+    existsInTree: db.categoryExists(categoryId),
+    knownPairIds: db.allCategoryIdPathPairs.map((p) => p.id),
+  );
+}
 
 /// Creates a category under [target.parentLocalId] (root when null).
 Future<int?> createCategoryFromPickerSubmit({
@@ -109,19 +147,14 @@ Future<int?> createCategoryFromPickerSubmit({
     iconCodePoint: Icons.folder_rounded.codePoint,
   );
 
-  final ok = categoryPickerAddNestedCategoryOverride != null
+  final createdId = categoryPickerAddNestedCategoryOverride != null
       ? await categoryPickerAddNestedCategoryOverride!(parentId, child)
       : await db.addNestedCategory(parentId, child);
-  if (!ok) return null;
-
-  final createdId = findCreatedCategoryLocalIdUnderParent(
-    db: db,
-    parentLocalId: parentId,
-    name: trimmed,
-  );
+  if (createdId == null) return null;
 
   assert(() {
-    if (createdId != null && parentId != null) {
+    if (categoryPickerAddNestedCategoryOverride != null) return true;
+    if (parentId != null) {
       final actualParent = db.getParentId(createdId);
       assert(
         actualParent == parentId,

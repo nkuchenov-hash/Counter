@@ -7,6 +7,7 @@ import 'package:counter/core/widgets/omni_date_time_picker_dialog.dart';
 import 'package:counter/core/picker_entry_modes.dart';
 import 'package:counter/core/theme.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
+import 'package:counter/features/categories/create_category_from_picker.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/recurrence_edit_scope.dart';
@@ -709,14 +710,14 @@ class TimelineRecordSheetContentState
   Widget build(BuildContext context) {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final isRunning = widget.record.endTime == null;
-    final int catVal;
-    if (_categoryId != null && pairs.any((p) => p.id == _categoryId)) {
-      catVal = _categoryId!;
-    } else if (pairs.isNotEmpty) {
-      catVal = pairs.first.id;
-    } else {
-      catVal = CategoryRule.uncategorizedSyntheticId;
-    }
+    final int catVal = _categoryId != null
+        ? resolveEditFieldCategoryId(
+            db: DatabaseService.instance,
+            categoryId: _categoryId!,
+          )
+        : (pairs.isNotEmpty
+            ? pairs.first.id
+            : CategoryRule.uncategorizedSyntheticId);
 
     return Material(
       clipBehavior: Clip.none,

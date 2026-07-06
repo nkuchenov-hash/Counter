@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Category picker create selection handoff [shipped]
+
+* **`lib/data/categories/category_crud.dart`:** [fix] `addNestedCategory` returns created local `CategoryRule.id` from placeholder upgrade (not `bool`); sibling duplicate returns existing id.
+* **`lib/features/categories/create_category_from_picker.dart`:** [fix] Create submit uses Brain-returned id directly; `resolveEditFieldCategoryId` prefers `categoryExists` over stale `allCategoryIdPathPairs` fallback.
+* **`lib/features/shared/planning_task_edit_sheet.dart`**, **`timeline_record_edit_sheet.dart`**, **`category_recursive_tree.dart`:** [fix] Edit draft/display/category field use resolved id so newly created categories apply immediately (Plans/Lists/Timeline including stopped/completed records).
+* **`test/category_picker_create_test.dart`:** [fix] Selection-handoff and id-return regression tests.
+
 ## [2026-07-06] - Category picker parent-context fix [shipped]
 
 * **`create_category_from_picker.dart`:** [fix] Explicit [CategoryPickerCreateTarget] for every create action; sibling-scoped id resolution only (removed global `classifyCategoryDisplayNameInput` / `findActiveLocalCategoryIdByDisplayName` fallback that could attach creates to the wrong parent, e.g. Work instead of Price Reporter); dialog title shows target parent.

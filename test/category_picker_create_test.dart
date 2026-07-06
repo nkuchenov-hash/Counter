@@ -103,7 +103,7 @@ void main() {
       int? recordedParentId;
       categoryPickerAddNestedCategoryOverride = (parentId, child) async {
         recordedParentId = parentId;
-        return true;
+        return 501;
       };
 
       final target = CategoryPickerCreateTarget.child(
@@ -111,23 +111,24 @@ void main() {
         parentDisplayName: 'Price Reporter',
       );
 
-      await createCategoryFromPickerSubmit(
+      final id = await createCategoryFromPickerSubmit(
         name: 'New Client',
         target: target,
       );
 
       expect(recordedParentId, 100);
       expect(recordedParentId, isNot(1));
+      expect(id, 501);
     });
 
     test('row plus on Work records parent 1', () async {
       int? recordedParentId;
       categoryPickerAddNestedCategoryOverride = (parentId, child) async {
         recordedParentId = parentId;
-        return true;
+        return 502;
       };
 
-      await createCategoryFromPickerSubmit(
+      final id = await createCategoryFromPickerSubmit(
         name: 'New Bucket',
         target: CategoryPickerCreateTarget.child(
           parentLocalId: 1,
@@ -136,37 +137,116 @@ void main() {
       );
 
       expect(recordedParentId, 1);
+      expect(id, 502);
     });
 
     test('root add row records null parent', () async {
       int? recordedParentId;
       categoryPickerAddNestedCategoryOverride = (parentId, child) async {
         recordedParentId = parentId;
-        return true;
+        return 503;
       };
 
-      await createCategoryFromPickerSubmit(
+      final id = await createCategoryFromPickerSubmit(
         name: 'Top Level',
         target: const CategoryPickerCreateTarget.root(),
       );
 
       expect(recordedParentId, isNull);
+      expect(id, 503);
     });
 
     test('folder-scoped target for Price Reporter matches row plus', () async {
       int? recordedParentId;
       categoryPickerAddNestedCategoryOverride = (parentId, child) async {
         recordedParentId = parentId;
-        return true;
+        return 504;
       };
 
       final priceReporter = _node(100, 'Price Reporter');
-      await createCategoryFromPickerSubmit(
+      final id = await createCategoryFromPickerSubmit(
         name: 'Folder Scoped',
         target: categoryPickerCreateTargetForRow(priceReporter),
       );
 
       expect(recordedParentId, 100);
+      expect(id, 504);
+    });
+
+    test('returns null when create fails', () async {
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async => null;
+
+      final id = await createCategoryFromPickerSubmit(
+        name: 'Failed',
+        target: const CategoryPickerCreateTarget.root(),
+      );
+
+      expect(id, isNull);
+    });
+  });
+
+  group('resolveEditFieldCategoryIdValues selection handoff', () {
+    test('new category in tree wins over stale pair list', () {
+      expect(
+        resolveEditFieldCategoryIdValues(
+          categoryId: 999,
+          existsInTree: true,
+          knownPairIds: const [1, 2, 3],
+        ),
+        999,
+      );
+    });
+
+    test('falls back to first pair only when id missing from tree and pairs', () {
+      expect(
+        resolveEditFieldCategoryIdValues(
+          categoryId: 999,
+          existsInTree: false,
+          knownPairIds: const [1, 2, 3],
+        ),
+        1,
+      );
+    });
+
+    test('keeps requested id when tree and pairs both empty', () {
+      expect(
+        resolveEditFieldCategoryIdValues(
+          categoryId: 999,
+          existsInTree: false,
+          knownPairIds: const [],
+        ),
+        999,
+      );
+    });
+  });
+
+  group('category picker selection callback contract', () {
+    test('create submit id matches row tap result shape', () async {
+      const createdId = 777;
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        return createdId;
+      };
+
+      final fromCreate = await createCategoryFromPickerSubmit(
+        name: 'Handoff',
+        target: const CategoryPickerCreateTarget.root(),
+      );
+
+      final fromRowTap = CategoryTreeSheetPicked(createdId).id;
+
+      expect(fromCreate, fromRowTap);
+      expect(fromCreate, createdId);
+    });
+
+    test('edit draft uses created id not pairs.first when in tree', () {
+      const createdId = 888;
+      final draftCategoryId = resolveEditFieldCategoryIdValues(
+        categoryId: createdId,
+        existsInTree: true,
+        knownPairIds: const [10, 20],
+      );
+      expect(draftCategoryId, createdId);
+      expect(draftCategoryId, isNot(10));
     });
   });
 

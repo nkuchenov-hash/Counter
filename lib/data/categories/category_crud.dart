@@ -757,14 +757,14 @@ extension CategoryCrudExtension on DatabaseService {
     );
   }
 
-  void _applyCategoryCreateResponseToPlaceholderPb({
+  int? _applyCategoryCreateResponseToPlaceholderPb({
     required int? parentId,
     required String displayName,
     required RecordModel created,
   }) {
     try {
       final rowId = created.id.trim();
-      if (rowId.isEmpty) return;
+      if (rowId.isEmpty) return null;
       final wantTag = displayName.trim();
       final biz = created.data['category_id']?.toString();
       final newId = _categoryDisplayIdFromServerPk(rowId, tagFallback: wantTag);
@@ -791,10 +791,10 @@ extension CategoryCrudExtension on DatabaseService {
           final r = _rules[i];
           if (r.id == -1 && r.name.trim() == wantTag) {
             _rules[i] = upgraded(r);
-            return;
+            return newId;
           }
         }
-        return;
+        return null;
       }
 
       bool walk(List<CategoryRule> rules) {
@@ -818,14 +818,18 @@ extension CategoryCrudExtension on DatabaseService {
         return false;
       }
 
-      walk(_rules);
-    } catch (_) {}
+      if (walk(_rules)) return newId;
+      return null;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// UI-first: add child to _rules (temp id -1), push; then PocketBase create.
-  Future<bool> addNestedCategory(int? parentId, CategoryRule child) async {
+  /// Returns the created category's local [CategoryRule.id], or null on failure.
+  Future<int?> addNestedCategory(int? parentId, CategoryRule child) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
-      return false;
+      return null;
     }
 
     final ownerPbId = _userIdForWhere;
@@ -833,11 +837,14 @@ extension CategoryCrudExtension on DatabaseService {
       DatabaseService._log(
         'ADD_CATEGORY: missing auth record id for user_id relation',
       );
-      return false;
+      return null;
     }
 
     if (siblingHasTag(parentId, child.name)) {
-      return false;
+      return findCreatedCategoryLocalIdUnderParent(
+        parentLocalId: parentId,
+        displayName: child.name,
+      );
     }
 
     final parentKey = _parentCategoryIdStringForApi(parentId);
@@ -845,7 +852,7 @@ extension CategoryCrudExtension on DatabaseService {
       DatabaseService._log(
         'ADD_CATEGORY: parent missing PocketBase row id (backendRowId) localParent=$parentId',
       );
-      return false;
+      return null;
     }
 
     var categoryId = _pickNewCategoryBusinessKey(child);
@@ -906,20 +913,24 @@ extension CategoryCrudExtension on DatabaseService {
             'ADD_CATEGORY: POST blocked — category_id missing in fields map',
           );
           _removeFailedPlaceholderCategory(parentId, child.name);
-          return false;
+          return null;
         }
         await ensurePocketBaseReady();
         final created = await _pb
             .collection(PbCollections.categories)
             .create(body: fields);
-        _applyCategoryCreateResponseToPlaceholderPb(
+        final createdLocalId = _applyCategoryCreateResponseToPlaceholderPb(
           parentId: parentId,
           displayName: child.name,
           created: created,
         );
         _categoryController.add(List.from(_rules));
         unawaited(_loadRulesFromNoco());
-        return true;
+        return createdLocalId ??
+            findCreatedCategoryLocalIdUnderParent(
+              parentLocalId: parentId,
+              displayName: child.name,
+            );
       } on ClientException catch (e) {
         debugPrint('[SERVER_ERROR_BODY] ${e.response}');
         if (attempt == 0 && _pbErrorLooksLikeUniqueCategoryCollision(e)) {
@@ -947,7 +958,7 @@ extension CategoryCrudExtension on DatabaseService {
       }
     }
     _removeFailedPlaceholderCategory(parentId, child.name);
-    return false;
+    return null;
   }
 
   Future<bool> removeNestedCategory(int? parentId, int childId) async {

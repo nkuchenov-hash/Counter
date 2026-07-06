@@ -85,7 +85,7 @@ This document defines how Life OS behaves when people interact with it. It is th
 - Create actions must pass an **explicit parent** to the Brain create path — never infer parent from selected category, expanded folder, search UI, or global name lookup.
 - When search/filter text does not match an existing category, show a contextual **Create “&lt;name&gt;”** action near the empty-result area.
 - Category creation requires network connection; do not invent client-only temporary categories or fake ids.
-- After successful creation, refresh the in-memory category cache via the Brain path, close only the create dialog, keep the parent picker/sheet open until the new category is auto-selected, then return to the edit sheet with the same autosave behavior as picking an existing row.
+- After successful creation, refresh the in-memory category cache via the Brain path, close only the create dialog, auto-select the new category through the **same selection callback** as tapping an existing row (`CategoryTreeSheetPicked` → edit-sheet draft → autosave), then close the picker and return to the edit sheet. The parent edit sheet must stay open; category field and entity draft must update immediately without reopening the picker.
 
 ## Selection / Bulk Mode
 
