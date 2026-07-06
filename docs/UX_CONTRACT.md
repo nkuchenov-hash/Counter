@@ -76,6 +76,13 @@ This document defines how Life OS behaves when people interact with it. It is th
 - If a sheet contains unsaved local edits, it must either autosave/flush pending edits or ask for confirmation.
 - Sheets that perform background writes must remain closeable unless closing would corrupt state.
 
+## Picker / Taxonomy Creation
+
+- Category pickers opened from edit sheets or category-selection controls must offer **New category** without closing the parent edit flow.
+- When search/filter text does not match an existing category, show a contextual **Create “&lt;name&gt;”** action when online.
+- Category creation requires network connection; do not invent client-only temporary categories or fake ids.
+- After successful creation, refresh the in-memory category cache via the Brain path, close only the create dialog, keep the parent picker/sheet open, and auto-select the new category with the same save/autosave behavior as picking an existing row.
+
 ## Selection / Bulk Mode
 
 - Bulk mode must have a clear entry and exit.

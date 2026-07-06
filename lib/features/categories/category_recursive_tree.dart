@@ -1,11 +1,16 @@
 // Recursive category tree: expand-in-place hierarchy + active-path opacity (Strike 3A).
 // UI only — data remains [DatabaseService.rules] / [CategoryRule] tree.
 
+import 'dart:async';
+
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
+import 'package:counter/features/categories/create_category_from_picker.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 const double _kInactiveBranchOpacity = 0.4;
@@ -49,75 +54,212 @@ class CategoryTreeSheetPicked extends CategoryTreeSheetResult {
 /// Nullable filter: user chose "all categories".
 class CategoryTreeSheetAll extends CategoryTreeSheetResult {}
 
+/// Filters category roots for picker search (label match on node or descendants).
+@visibleForTesting
+List<CategoryRule> filterCategoryRootsForPickerSearch(
+  List<CategoryRule> roots,
+  String query,
+  String Function(CategoryRule rule) labelFor,
+) {
+  final q = query.trim().toLowerCase();
+  if (q.isEmpty) return roots;
+
+  CategoryRule? filterNode(CategoryRule rule) {
+    final labelMatch = labelFor(rule).toLowerCase().contains(q);
+    final childrenRaw = rule.children ?? const <CategoryRule>[];
+    final filteredChildren = <CategoryRule>[
+      for (final c in childrenRaw)
+        if (filterNode(c) case final filtered?) filtered,
+    ];
+    if (labelMatch || filteredChildren.isNotEmpty) {
+      return rule.copyWith(children: filteredChildren);
+    }
+    return null;
+  }
+
+  return [
+    for (final r in roots)
+      if (filterNode(r) case final filtered?) filtered,
+  ];
+}
+
 Future<CategoryTreeSheetResult?> _showCategoryTreeSheet(
   BuildContext context, {
   int? initialCategoryId,
   bool showAllCategoriesRow = false,
-}) async {
-  final loc = currentLocale.value;
-  final rootsRaw = DatabaseService.instance.getChildrenOf(null);
-  final roots = [
-    for (final r in rootsRaw)
-      if (!CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) r
-  ];
-  if (roots.isEmpty) return null;
-
+}) {
   return showModalBottomSheet<CategoryTreeSheetResult>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (ctx) {
-      return SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(ctx).bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Text(
-                  t(loc, 'category_label'),
-                  style: Theme.of(ctx).textTheme.titleMedium,
-                ),
+      return _CategoryTreePickerSheet(
+        initialCategoryId: initialCategoryId,
+        showAllCategoriesRow: showAllCategoriesRow,
+      );
+    },
+  );
+}
+
+class _CategoryTreePickerSheet extends StatefulWidget {
+  const _CategoryTreePickerSheet({
+    required this.initialCategoryId,
+    required this.showAllCategoriesRow,
+  });
+
+  final int? initialCategoryId;
+  final bool showAllCategoriesRow;
+
+  @override
+  State<_CategoryTreePickerSheet> createState() =>
+      _CategoryTreePickerSheetState();
+}
+
+class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
+  late final TextEditingController _searchController;
+  StreamSubscription<List<CategoryRule>>? _catSub;
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _searchController.addListener(() {
+      setState(() => _query = _searchController.text);
+    });
+    _catSub = DatabaseService.instance.categoryStream.listen((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _catSub?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<CategoryRule> get _visibleRoots {
+    final rootsRaw = DatabaseService.instance.getChildrenOf(null);
+    final roots = [
+      for (final r in rootsRaw)
+        if (!CategoryVisibilityPrefs.isHiddenOrAncestor(r.id)) r,
+    ];
+    return filterCategoryRootsForPickerSearch(roots, _query, _labelForRule);
+  }
+
+  bool get _hasSearchMatch => _visibleRoots.isNotEmpty;
+
+  Future<void> _createCategory({String? initialName}) async {
+    final id = await showCreateCategoryFromPickerDialog(
+      context,
+      initialName: initialName,
+    );
+    if (!mounted || id == null) return;
+    Navigator.of(context).pop(CategoryTreeSheetPicked(id));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = currentLocale.value;
+    final roots = _visibleRoots;
+    final trimmedQuery = _query.trim();
+    final showNamedCreate =
+        trimmedQuery.isNotEmpty && !_hasSearchMatch;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+              child: Text(
+                t(loc, 'category_label'),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(ctx).height * 0.55,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  hintText: t(loc, 'category_label'),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (showAllCategoriesRow)
-                        ListTile(
-                          title: Text(t(loc, 'lists_filter_all')),
-                          leading: const Icon(Icons.filter_alt_off_rounded),
-                          onTap: () =>
-                              Navigator.of(ctx).pop(CategoryTreeSheetAll()),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+            ),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.55,
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.showAllCategoriesRow)
+                      ListTile(
+                        title: Text(t(loc, 'lists_filter_all')),
+                        leading: const Icon(Icons.filter_alt_off_rounded),
+                        onTap: () =>
+                            Navigator.of(context).pop(CategoryTreeSheetAll()),
+                      ),
+                    if (showNamedCreate)
+                      ListTile(
+                        leading: const Icon(Icons.add_rounded),
+                        title: Text(
+                          t(loc, 'category_picker_create_named')
+                              .replaceFirst('%s', trimmedQuery),
                         ),
+                        onTap: () =>
+                            unawaited(_createCategory(initialName: trimmedQuery)),
+                      ),
+                    if (roots.isEmpty && !showNamedCreate)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Text(
+                          t(loc, 'category_picker_new'),
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      )
+                    else
                       _CategoryTreeBody(
                         roots: roots,
-                        selectedCategoryId: initialCategoryId,
+                        selectedCategoryId: widget.initialCategoryId,
                         expandSelectionPath: false,
-                        onSelect: (id) => Navigator.of(ctx).pop(
+                        onSelect: (id) => Navigator.of(context).pop(
                           CategoryTreeSheetPicked(id),
                         ),
                         showEditChrome: false,
                       ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: AppButton.secondary(
+                label: t(loc, 'category_picker_new'),
+                icon: Icons.add_rounded,
+                expand: true,
+                onPressed: categoryCreateFromPickerAllowed()
+                    ? () => unawaited(_createCategory())
+                    : null,
+              ),
+            ),
+          ],
         ),
-      );
-    },
-  );
+      ),
+    );
+  }
 }
 
 /// Picker sheet: returns chosen category id, or null if dismissed unchanged.

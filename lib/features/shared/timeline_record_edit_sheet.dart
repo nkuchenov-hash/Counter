@@ -777,7 +777,7 @@ class TimelineRecordSheetContentState
                             padding: const EdgeInsets.only(bottom: 8),
                             child: CategoryTreeFormField(
                               value: catVal,
-                              enabled: pairs.isNotEmpty,
+                              enabled: true,
                               decoration: InputDecoration(
                                 isDense: true,
                                 labelText: t(
@@ -785,14 +785,11 @@ class TimelineRecordSheetContentState
                                   'category_label',
                                 ),
                               ),
-                              onChanged: pairs.isEmpty
-                                  ? (_) {}
-                                  : (id) {
-                                      setState(
-                                        () => _categoryId = id ?? catVal,
-                                      );
-                                      _onRecordFieldChanged(immediate: true);
-                                    },
+                              onChanged: (id) {
+                                if (id == null) return;
+                                setState(() => _categoryId = id);
+                                _onRecordFieldChanged(immediate: true);
+                              },
                             ),
                           ),
                           Padding(

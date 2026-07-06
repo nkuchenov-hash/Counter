@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/categories/create_category_from_picker.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -153,6 +154,17 @@ class _WearTimerScreenState extends State<WearTimerScreen> {
                         },
                       ),
                     ),
+                    if (categoryCreateFromPickerAllowed())
+                      ListTile(
+                        leading: const Icon(Icons.add_rounded),
+                        title: Text(t(locale, 'category_picker_new')),
+                        onTap: () async {
+                          final id = await showCreateCategoryFromPickerDialog(ctx);
+                          if (id == null || !ctx.mounted) return;
+                          Navigator.pop(ctx);
+                          unawaited(_startWithCategory(id));
+                        },
+                      ),
                   ],
                 ),
               ),

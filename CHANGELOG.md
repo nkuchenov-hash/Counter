@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Create category from picker [shipped]
+
+* **`lib/features/categories/category_recursive_tree.dart`**, **`create_category_from_picker.dart`:** [shipped] Shared category tree picker sheet now includes search, “New category”, and contextual Create “name”; compact create dialog stacks above the picker without closing parent edit sheets; newly created category auto-selects via `CategoryTreeSheetPicked`.
+* **`lib/features/planning/settings/default_plan_category_search.dart`**, **`lib/features/wear/wear_timer_screen.dart`:** [shipped] Planning default-time category search and Wear start picker reuse the same create-from-picker flow; offline disables create with one clear message.
+* **`lib/features/shared/timeline_record_edit_sheet.dart`:** [shipped] Category field stays enabled when no categories exist so first category can be created from the record edit sheet.
+* **`lib/l10n/langs/en.dart`**, **`lib/l10n/langs/ru.dart`**, **`test/category_picker_create_test.dart`:** [shipped] EN/RU picker strings + filter unit tests.
+
 ## [2026-07-06] - Planning grouped list UI split (Stage B2) [shipped]
 
 * **`lib/features/planning/planning_page.dart`:** [shipped] UI-only extract S2/S3 grouped list rendering (~2202→~2095 lines); reorder handlers and page state unchanged.
