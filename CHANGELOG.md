@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Planning page seam audit (Stage B report-only) [shipped]
+
+* **`docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`:** [shipped] Seam map for `planning_page.dart` (2394 lines); verdict **NEEDS TESTS FIRST**; staged B0–B6 plan; Time View host no-touch boundaries; test gap analysis (no `PlanningPage` widget tests).
+* **`scripts/manual/structure_doc_file_guides.py`:** [shipped] Guide entry for planning page seam audit report.
+
 ## [2026-07-06] - Category view decomposition (Stage A alternate) [shipped]
 
 * **`lib/features/categories/`:** [shipped] UI-only split of `category_list_view.dart` (~1727→~330 lines) into `category_row_widget.dart`, `category_editor_sheet.dart`, `category_appearance_sheet.dart`, `category_tag_input_field.dart`, `category_helpers.dart`; `CategoriesPage` entrypoint unchanged; re-exports preserved; zero user-visible behavior change.
