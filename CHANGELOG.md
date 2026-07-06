@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Large file decomposition plan (report-only) [shipped]
+
+* **`docs/reports/LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md`:** [shipped] Staged queue Stage A–E for 31 Dart files ≥600 lines; per-file responsibility maps for `plan_service`, `planning_page`, categories, edit sheets, lists, calendar; risk/test matrix; first prompt = Stage A calendar or category sheet extract.
+* **`scripts/manual/structure_doc_file_guides.py`:** [shipped] Guide entries for decomposition plan; restored `what` on final audit report entry.
+
 ## [2026-07-06] - Final structure audit + Structure Growth Law [shipped]
 
 * **`docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`:** [shipped] Full repo inventory (538 tracked), boundary audit (guard 0 violations), long-file watchlist, duplicate-responsibility table, verdict **ACCEPTED WITH WATCHLIST**.
