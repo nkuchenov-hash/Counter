@@ -10,12 +10,18 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Life OS — time tracking, planning, and lists.">
 
-  <!-- iOS meta tags & icons -->
+  <!-- PWA / browser chrome (matches lib/core/app_colors.dart light shell) -->
+  <meta name="theme-color" content="#111111">
+
+  <!-- iOS Home Screen / standalone PWA -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Life OS">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/Icon-180.png">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
@@ -23,6 +29,27 @@
 
   <title>Life OS</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Shell-only: prevent white bars / browser chrome gaps around Flutter canvas on iPhone PWA.
+       Flutter owns in-app safe areas via MediaQuery; do not add padding here. -->
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #FAFAF8;
+    }
+    body {
+      /* iOS standalone: fill dynamic viewport without double safe-area padding. */
+      min-height: 100%;
+      min-height: -webkit-fill-available;
+    }
+    flt-glass-pane, flutter-view, #flutter_view {
+      background-color: #FAFAF8;
+    }
+  </style>
 
   <!-- Google Sign-In Web Client ID. Add authorized redirect URI in Google Cloud Console: https://nkuchenov-hash.github.io/Counter/ -->
   <script src="https://apis.google.com/js/api.js"></script>
