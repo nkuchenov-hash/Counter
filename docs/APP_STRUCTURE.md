@@ -6,17 +6,18 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 
 ---
 
-## 0. Current status (2026-07-03)
+## 0. Current status (2026-07-06)
 
 | Item | Value |
 | :--- | :--- |
-| **Structure baseline SHA** | `4846c15` (full repo necessity cleanup) |
+| **Structure baseline SHA** | `dbba57d` (final structure audit + Structure Growth Law) |
+| **Structure audit verdict** | **ACCEPTED WITH WATCHLIST** — see [`docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`](reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md) |
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
 | **Strict architecture guard** | Green (0 violations) |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable unique EN/RU entry per tracked folder and file (regenerate via `generate_app_structure_detailed.py`) |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
-| **Final parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
+| **Prior parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
 
 Regenerate the detailed guide after large tree changes:
 
@@ -505,7 +506,37 @@ Run from repo root:
 
 ---
 
-## 7. Do not split further without product reason
+## 7. Structure Growth Law
+
+**Permanent rule:** new features integrate into the existing layer map above — no parallel architecture, no duplicate canonical homes.
+
+### Integration
+
+- Pick **one owner layer** per new file: Entry/Shell · Brain/Data · Core/Foundation · Feature UI · Services · l10n · Platform · Tests · Scripts · Docs.
+- Extend existing Brain coordinators and `part` domains (`records/*`, `plans/*`, …) instead of new PocketBase I/O paths.
+- Compose **canonical** core widgets (`AppButton`, `PlanTimeTaskCard`, `AppLoading`, …) — see `docs/DESIGN_SYSTEM.md`.
+- Platform folders stay embedder/config only; product logic stays in `lib/data/` and `lib/features/`.
+
+### File size / decomposition
+
+Split **early** when responsibilities mix or size grows:
+
+| Signal | Action |
+| :--- | :--- |
+| Feature screen **>1000 lines** | Split shell / widgets / sheets / helpers (see Pass 3 pattern) |
+| Brain domain `part` **>1500 lines** | Further domain split under `records/*`, `plans/*`, etc. |
+| Mixed domains in one file | Split regardless of line count |
+| Generated doc (`APP_STRUCTURE_DETAILED`) | Regenerate; do not hand-edit body |
+
+Full law text: **`docs/ARCHITECTURE.md` §11**.
+
+### New-feature checklist
+
+Before implementation, answer: **owner layer?** · **extends which module?** · **canonical components?** · **DATA_MAP/PB schema?** · **file-size risk?** · **docs/tests update?**
+
+---
+
+## 8. Do not split further without product reason
 
 | Area | Why leave as-is |
 | :--- | :--- |
@@ -521,7 +552,7 @@ Pass 4 regex/line Brain split scripts (`pass4_brain_split.py`, `pass4_split_fast
 
 ---
 
-## 8. Next product priorities (not structure)
+## 9. Next product priorities (not structure)
 
 From `docs/ROADMAP.md` — active velocity track is **V3 UX_CONTRACT / V7 Design System** (canonical components, Component Lab). Feature work (F2B plan category filter, list pin schema, etc.) remains paused unless explicitly requested.
 

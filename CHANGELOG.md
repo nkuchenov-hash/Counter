@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Final structure audit + Structure Growth Law [shipped]
+
+* **`docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`:** [shipped] Full repo inventory (538 tracked), boundary audit (guard 0 violations), long-file watchlist, duplicate-responsibility table, verdict **ACCEPTED WITH WATCHLIST**.
+* **`docs/ARCHITECTURE.md` §11, `docs/APP_STRUCTURE.md` §7, `AGENTS.md`, `AGENT_NAVIGATION.md`:** [shipped] Permanent Structure Growth Law — integrate into existing layers, split mixed/large files early, new-feature checklist.
+* **`scripts/manual/structure_doc_file_guides.py`:** [shipped] Guide entry for final audit report; fixed `FINAL_STRUCTURE_PARITY` `what` field.
+* **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated (538 files, quality gate OK).
+
 ## [2026-07-06] - P0 mobile web / APK layout parity + iPhone PWA shell [shipped]
 
 * **`web/index.html`:** [shipped] Added `viewport` (`width=device-width`, `viewport-fit=cover`), `apple-mobile-web-app-capable`, shell CSS (`#FAFAF8` full-bleed, no double safe-area padding), `theme-color` `#111111`, and `icons/Icon-180.png` apple-touch-icon — fixes mobile browser ~980px layout width (side nav at phone size) and iPhone PWA white bars.

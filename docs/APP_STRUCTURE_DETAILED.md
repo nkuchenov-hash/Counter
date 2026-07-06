@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `5dc9b6c` on 2026-07-03.**
+**Generated at git SHA `338666c` on 2026-07-06.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -3976,6 +3976,31 @@ RU:
 - **Когда открывать:** Планирование V7 UI migration или проверка canonical-compliance экрана.
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `docs/DESIGN_SYSTEM.md`, `lib/features/dev/component_lab_view.dart`.
+- **Слой:** Документация — правила, не runtime.
+
+
+### `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`
+
+EN:
+
+- **What this is:** Final repository structure audit — inventory, boundaries, long-file watchlist, doc parity, Structure Growth Law verdict.
+- **Why needed:** Records 2026-07-06 acceptance baseline so future work knows what to monitor without re-debating Pass 3–4D.
+- **What it contains:** Commands run, inventory table, architecture guard results, long-file table, duplicate-responsibility watchlist, verdict.
+- **Responsibilities:** Authoritative structure health snapshot for owner and AI; repo-only, not Project Knowledge pack.
+- **When to open:** Before large refactors, new feature folders, or arguing whether structure is still healthy.
+- **Can it be deleted?** No — current cleanup/structure report or upload checklist.
+- **Connected to:** `docs/APP_STRUCTURE.md` §7, `docs/ARCHITECTURE.md` §11, `architecture_guard.ps1`.
+- **Layer / owner:** Repo-only final audit report.
+
+RU:
+
+- **Что это:** Финальный structure audit repo — inventory, boundaries, long-file watchlist, doc parity, verdict Structure Growth Law.
+- **Зачем:** Фиксирует acceptance baseline 2026-07-06 — что monitor без re-debate Pass 3–4D.
+- **Содержимое:** Commands run, inventory table, architecture guard, long-file table, duplicate watchlist, verdict.
+- **Обязанности:** Authoritative snapshot здоровья structure для owner и AI; repo-only, не Project Knowledge pack.
+- **Когда открывать:** Перед large refactors, new feature folders или спором «structure ещё healthy?».
+- **Можно удалить?** Нет — актуальный отчёт или чеклист.
+- **Связано с:** `docs/APP_STRUCTURE.md` §7, `docs/ARCHITECTURE.md` §11, `architecture_guard.ps1`.
 - **Слой:** Документация — правила, не runtime.
 
 
@@ -15887,6 +15912,31 @@ RU:
 - **Содержимое:** Растровый PNG `favicon.png`.
 - **Обязанности:** Показать иконку Counter в UI браузера/PWA.
 - **Когда открывать:** Пропала иконка вкладки или PWA tile для `favicon.png`.
+- **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
+- **Связано с:** Flutter `web` tooling.
+- **Слой:** Платформенная обёртка Flutter — не Dart UI.
+
+
+### `web/icons/Icon-180.png`
+
+EN:
+
+- **What this is:** Web/PWA icon (180px) for add-to-home-screen.
+- **Why needed:** Browsers pick closest icon size for install banner.
+- **What it contains:** PNG at fixed square size.
+- **Responsibilities:** Icon at 180px for PWA.
+- **When to open:** Web deploy blank page, icons, base href.
+- **Can it be deleted?** No — required for build/deploy/platform tooling.
+- **Connected to:** Flutter `web` tooling.
+- **Layer / owner:** Platform wrapper — required for native/web builds.
+
+RU:
+
+- **Что это:** PNG-иконка web/Web — tab icon или PWA asset `icon-180.png`.
+- **Зачем:** Браузер и manifest ссылаются на этот PNG после `flutter build web`.
+- **Содержимое:** Растровый PNG `icon-180.png`.
+- **Обязанности:** Показать иконку Counter в UI браузера/PWA.
+- **Когда открывать:** Пропала иконка вкладки или PWA tile для `icon-180.png`.
 - **Можно удалить?** Нет — без него не соберётся web deploy на GitHub Pages.
 - **Связано с:** Flutter `web` tooling.
 - **Слой:** Платформенная обёртка Flutter — не Dart UI.

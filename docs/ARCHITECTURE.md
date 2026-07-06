@@ -137,3 +137,43 @@ Web vs. Mobile STT: Web (kIsWeb) MUST use strict BCP-47 tags (e.g., ru-RU) bypas
 | **POCKETBASE_MANIFEST.md** | PB URL, collections, `category_id` / `category_link`, auth. |
 | **DATA_MAP.md** | Field naming reference (legacy Noco table UIDs are historical only). |
 | **NOCODB_MANIFEST.md** | Legacy Noco contract — do not use for new work. |
+| **APP_STRUCTURE.md** | Layer map, import boundaries, Structure Growth Law. |
+
+---
+
+## 11. Structure Growth Law
+
+New features must integrate into the **existing** architecture — not parallel folders, duplicate Brain paths, or feature-local “mini frameworks.” Every new file must have **one clear owner layer**: Entry/Shell, Brain/Data, Core/Foundation, Feature UI, Services, l10n, Platform, Tests, Scripts, or Docs.
+
+**Integration rules:**
+
+- Extend the canonical screen, service, Brain module, or shared widget that already owns the domain.
+- Do **not** create duplicate local components, duplicate PocketBase constants, duplicate offline/outbox paths, or duplicate timezone/date helpers when a canonical home exists (see `docs/APP_STRUCTURE.md`, `docs/DESIGN_SYSTEM.md`).
+- PocketBase schema or field-name changes require **`docs/DATA_MAP.md`** and **`docs/POCKETBASE_MANIFEST.md`** updates before client behavior ships.
+
+### File size / decomposition law
+
+Large files must **not** grow without bound. When a file mixes responsibilities or approaches risky size, **split early** into focused modules:
+
+| Layer | Split pattern |
+| :--- | :--- |
+| **Feature UI** | Screen shell · widgets · controllers/helpers · sheets |
+| **Brain/Data** | Domain parts under `records/*`, `plans/*`, `categories/*`, `profile/*`, `local_sync/*`; keep coordinators thin |
+| **Core widgets** | One canonical component per file; small private layout helpers only |
+| **Platform** | Native/runner/config only — **never** absorb product logic |
+| **Docs/scripts** | Generated or reference material may be large if clearly marked generated/reference |
+
+**Risk thresholds (watchlist, not auto-split triggers):** Dart UI/coordinator files **>1000 lines** → plan decomposition; Brain domain parts **>1500 lines** → consider further `part` split; any file mixing unrelated domains → split regardless of line count.
+
+### New-feature checklist (required before implementation)
+
+Every new feature prompt must answer:
+
+1. Which **existing layer** owns this feature?
+2. Which **existing screen / service / Brain module** does it extend?
+3. Which **canonical components** does it use (`AppButton`, `PlanTimeTaskCard`, Omni-Picker, offline banner, etc.)?
+4. Does it need **PocketBase schema / DATA_MAP** changes?
+5. Does it create a **file-size or mixed-responsibility** risk?
+6. Do **docs / tests / APP_STRUCTURE_DETAILED** need updates?
+
+Run `.\scripts\audit\architecture_guard.ps1 -Strict` after structural edits. Regenerate `docs/APP_STRUCTURE_DETAILED.md` after tree changes.

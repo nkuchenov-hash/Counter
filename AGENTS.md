@@ -28,8 +28,10 @@ Use `CHANGELOG.md` and `docs/ROADMAP.md` to understand what is already built bef
 - Correctness and performance regressions outrank design, feature, preload, cache, or cleanup work.
 - Active foundation tracks are V3/V7: `docs/UX_CONTRACT.md`, `docs/DESIGN_SYSTEM.md`, canonical Flutter components, and admin-only Component Lab.
 - Feature work is paused unless explicitly requested or required by the current task.
+- **Structure Growth Law:** new features must extend existing layers and canonical components; split mixed/large files early (`docs/ARCHITECTURE.md` §11, `docs/APP_STRUCTURE.md` §7). Final audit: `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`.
 - Structure cleanup is governed by `docs/APP_STRUCTURE.md`, `docs/APP_STRUCTURE_DETAILED.md`, and `docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`; do not perform opportunistic architecture moves.
-- Brain/UI structure decomposition (Passes 3–4D) is **complete** as of 2026-07-03 (`d7e7c12`). Further splits need explicit product scope — see `docs/APP_STRUCTURE.md` §7.
+- **Structure Growth Law** (permanent): integrate new features into existing layers; split large files early — see `docs/ARCHITECTURE.md` §11 and `docs/APP_STRUCTURE.md` §7.
+- Brain/UI structure decomposition (Passes 3–4D) is **complete** as of 2026-07-03 (`d7e7c12`). Further splits need explicit product scope — see `docs/APP_STRUCTURE.md` §8.
 
 ## Task-Specific Document Routing
 

@@ -23,6 +23,7 @@ Flutter time tracker. Owner: Nick (UX designer, not a developer). Goal: best tim
 | `docs/DESIGN_SYSTEM.md` | Figma → Flutter mapping, tokens, canonical component categories, and forbidden local UI rule. |
 | `AGENTS.md` | Compact Codex/agent routing at repo root. |
 | `docs/PROJECT_KNOWLEDGE_PACK.md` | Upload checklist (14-doc pack, ≤25 limit) — not architecture law. |
+| `docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md` | Final structure audit verdict + watchlist (repo-only). |
 
 ---
 
