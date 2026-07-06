@@ -115,6 +115,15 @@ Key get categoryPickerBottomAddKey =>
     const ValueKey<String>('category_picker_bottom_add');
 
 @visibleForTesting
+Key categoryPickerFolderAddKey(int categoryId) =>
+    ValueKey<String>('category_picker_folder_add_$categoryId');
+
+@visibleForTesting
+String categoryPickerAddInsideLabel(String loc, String folderName) {
+  return t(loc, 'category_picker_add_inside').replaceFirst('%s', folderName);
+}
+
+@visibleForTesting
 Key categoryPickerRowAddKey(int categoryId) =>
     ValueKey<String>('category_picker_row_add_$categoryId');
 
@@ -199,26 +208,32 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
     return t(currentLocale.value, 'category_create_requires_connection');
   }
 
-  Future<void> _createCategory({String? initialName, int? parentId}) async {
+  Future<void> _createCategory({
+    String? initialName,
+    required CategoryPickerCreateTarget target,
+  }) async {
     final id = await showCreateCategoryFromPickerDialog(
       context,
       initialName: initialName,
-      parentId: parentId,
+      target: target,
     );
     if (!mounted || id == null) return;
     Navigator.of(context).pop(CategoryTreeSheetPicked(id));
   }
 
-  void _onTopAddCategory() {
-    unawaited(_createCategory(parentId: null));
-  }
-
-  void _onBottomAddCategory() {
-    unawaited(_createCategory(parentId: null));
+  void _onRootAddCategory() {
+    unawaited(_createCategory(target: const CategoryPickerCreateTarget.root()));
   }
 
   void _onPickerAddChild(CategoryRule parent) {
-    unawaited(_createCategory(parentId: parent.id));
+    unawaited(
+      _createCategory(
+        target: CategoryPickerCreateTarget.child(
+          parentLocalId: parent.id,
+          parentDisplayName: _labelForRule(parent),
+        ),
+      ),
+    );
   }
 
   @override
@@ -257,9 +272,9 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
           ),
           categoryPickerCreateListTile(
             key: categoryPickerTopAddKey,
-            label: t(loc, 'category_picker_add'),
+            label: t(loc, 'category_picker_add_root'),
             subtitle: offlineHint,
-            onTap: _canCreate ? _onTopAddCategory : null,
+            onTap: _canCreate ? _onRootAddCategory : null,
           ),
           const Divider(height: 1),
           Expanded(
@@ -283,7 +298,7 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
                         ? () => unawaited(
                               _createCategory(
                                 initialName: trimmedQuery,
-                                parentId: null,
+                                target: const CategoryPickerCreateTarget.root(),
                               ),
                             )
                         : null,
@@ -317,9 +332,9 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
           const Divider(height: 1),
           categoryPickerCreateListTile(
             key: categoryPickerBottomAddKey,
-            label: t(loc, 'category_picker_add'),
+            label: t(loc, 'category_picker_add_root'),
             subtitle: offlineHint,
-            onTap: _canCreate ? _onBottomAddCategory : null,
+            onTap: _canCreate ? _onRootAddCategory : null,
           ),
         ],
       ),
@@ -624,81 +639,100 @@ class _CategoryTreeNode extends StatelessWidget {
       opacity: opacity,
       child: Material(
         color: Colors.transparent,
-        child: InkWell(
-          onTap: () => onSelect(rule.id),
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (hasChildren)
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      icon: Icon(
-                        expanded
-                            ? Icons.expand_more_rounded
-                            : Icons.chevron_right_rounded,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                      onPressed: () => onToggleExpand(rule.id),
-                    ),
-                  )
-                else
-                  const SizedBox(width: 12),
-                Icon(rule.iconOrDefault, color: color, size: 22),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    label,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight:
-                              isSelected ? FontWeight.w800 : FontWeight.w600,
-                          color: isSelected ? scheme.primary : color,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (hasChildren)
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    expanded
+                        ? Icons.expand_more_rounded
+                        : Icons.chevron_right_rounded,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  onPressed: () => onToggleExpand(rule.id),
+                ),
+              )
+            else
+              const SizedBox(width: 12),
+            Expanded(
+              child: InkWell(
+                onTap: () => onSelect(rule.id),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                  child: Row(
+                    children: [
+                      Icon(rule.iconOrDefault, color: color, size: 22),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: isSelected
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: isSelected ? scheme.primary : color,
+                              ),
                         ),
+                      ),
+                    ],
                   ),
                 ),
-                if (showRowAdd)
-                  AppIconButton(
-                    key: categoryPickerRowAddKey(rule.id),
-                    icon: Icons.add_rounded,
-                    tooltip: t(loc, 'add_subcategory'),
-                    size: AppIconButtonSize.s,
-                    variant: AppIconButtonVariant.subtle,
-                    onPressed: () => onPickerAddChild!(rule),
-                  ),
-                if (showEditChrome && onAddChild != null && depth < 4)
-                  IconButton(
-                    iconSize: 20,
-                    tooltip: t(loc, 'add_subcategory'),
-                    onPressed: () => onAddChild!(rule),
-                    icon: const Icon(Icons.add_rounded),
-                  ),
-                if (showEditChrome && onAppearanceTap != null)
-                  IconButton(
-                    iconSize: 20,
-                    tooltip: t(loc, 'category_section_appearance'),
-                    onPressed: () => onAppearanceTap!(rule),
-                    icon: const Icon(Icons.palette_outlined),
-                  ),
-                if (showEditChrome && onFullSettingsTap != null)
-                  IconButton(
-                    iconSize: 20,
-                    tooltip: t(loc, 'edit_keywords'),
-                    onPressed: () => onFullSettingsTap!(rule),
-                    icon: const Icon(Icons.settings_rounded),
-                  ),
-              ],
+              ),
             ),
-          ),
+            if (showRowAdd)
+              AppIconButton(
+                key: categoryPickerRowAddKey(rule.id),
+                icon: Icons.add_rounded,
+                tooltip: t(loc, 'add_subcategory'),
+                size: AppIconButtonSize.s,
+                variant: AppIconButtonVariant.subtle,
+                onPressed: () => onPickerAddChild!(rule),
+              ),
+            if (showEditChrome && onAddChild != null && depth < 4)
+              IconButton(
+                iconSize: 20,
+                tooltip: t(loc, 'add_subcategory'),
+                onPressed: () => onAddChild!(rule),
+                icon: const Icon(Icons.add_rounded),
+              ),
+            if (showEditChrome && onAppearanceTap != null)
+              IconButton(
+                iconSize: 20,
+                tooltip: t(loc, 'category_section_appearance'),
+                onPressed: () => onAppearanceTap!(rule),
+                icon: const Icon(Icons.palette_outlined),
+              ),
+            if (showEditChrome && onFullSettingsTap != null)
+              IconButton(
+                iconSize: 20,
+                tooltip: t(loc, 'edit_keywords'),
+                onPressed: () => onFullSettingsTap!(rule),
+                icon: const Icon(Icons.settings_rounded),
+              ),
+          ],
         ),
       ),
     );
+
+    Widget? folderScopedAddRow;
+    if (showRowAdd && expanded) {
+      folderScopedAddRow = Padding(
+        padding: EdgeInsetsDirectional.only(start: 20 + depth * 12.0),
+        child: categoryPickerCreateListTile(
+          key: categoryPickerFolderAddKey(rule.id),
+          label: categoryPickerAddInsideLabel(loc, label),
+          onTap: () => onPickerAddChild!(rule),
+        ),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -725,6 +759,7 @@ class _CategoryTreeNode extends StatelessWidget {
                     onAppearanceTap: onAppearanceTap,
                     onAddChild: onAddChild,
                   ),
+                if (folderScopedAddRow != null) folderScopedAddRow,
               ],
             ),
           ),

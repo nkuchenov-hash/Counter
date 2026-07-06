@@ -29,6 +29,7 @@ class DefaultPlanCategorySearchDelegate
     final id = await showCreateCategoryFromPickerDialog(
       context,
       initialName: initialName,
+      target: const CategoryPickerCreateTarget.root(),
     );
     if (id == null || !context.mounted) return;
     final path = DatabaseService.instance.getCategoryPath(id);
@@ -41,7 +42,7 @@ class DefaultPlanCategorySearchDelegate
       if (categoryCreateFromPickerAllowed())
         IconButton(
           icon: const Icon(Icons.add_rounded),
-          tooltip: t(loc, 'category_picker_add'),
+          tooltip: t(loc, 'category_picker_add_root'),
           onPressed: () => unawaited(_createCategory(context)),
         ),
       if (query.isNotEmpty)
@@ -84,7 +85,7 @@ class DefaultPlanCategorySearchDelegate
         children: [
           ListTile(
             leading: const Icon(Icons.add_rounded),
-            title: Text(t(loc, 'category_picker_add')),
+            title: Text(t(loc, 'category_picker_add_root')),
             subtitle: offlineHint != null ? Text(offlineHint) : null,
             enabled: canCreate,
             onTap: canCreate ? () => unawaited(_createCategory(context)) : null,
@@ -122,7 +123,7 @@ class DefaultPlanCategorySearchDelegate
         if (index == 0) {
           return ListTile(
             leading: const Icon(Icons.add_rounded),
-            title: Text(t(loc, 'category_picker_add')),
+            title: Text(t(loc, 'category_picker_add_root')),
             subtitle: offlineHint != null ? Text(offlineHint) : null,
             enabled: canCreate,
             onTap: canCreate ? () => unawaited(_createCategory(context)) : null,

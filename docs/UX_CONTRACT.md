@@ -79,8 +79,10 @@ This document defines how Life OS behaves when people interact with it. It is th
 ## Picker / Taxonomy Creation
 
 - Category pickers opened from edit sheets or category-selection controls must expose **visible create actions immediately** when the picker opens — not only at the end of a long scrollable list.
-- Layout: sheet header → search (optional) → **always-visible top “+ Add category” row** → scrollable tree → **sticky bottom “+ Add category” row** (root level in nested tree pickers).
-- Every category row in the picker tree must show a trailing **“+”** (`add_subcategory`) that creates a **child** under that row; row tap still selects the category.
+- Layout: sheet header → search (optional) → **always-visible top “+ Add root category” row** → scrollable tree → **sticky bottom “+ Add root category” row** (root level only in nested tree pickers).
+- Every category row in the picker tree must show a trailing **“+”** (`add_subcategory`) that creates a **child under that exact row**; row tap still selects the category; the trailing **“+”** must be a separate tap target outside the row selection hit area.
+- Each **expanded folder** must show a folder-scoped **“Add category inside &lt;folder&gt;”** row after its visible children.
+- Create actions must pass an **explicit parent** to the Brain create path — never infer parent from selected category, expanded folder, search UI, or global name lookup.
 - When search/filter text does not match an existing category, show a contextual **Create “&lt;name&gt;”** action near the empty-result area.
 - Category creation requires network connection; do not invent client-only temporary categories or fake ids.
 - After successful creation, refresh the in-memory category cache via the Brain path, close only the create dialog, keep the parent picker/sheet open until the new category is auto-selected, then return to the edit sheet with the same autosave behavior as picking an existing row.

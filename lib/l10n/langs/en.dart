@@ -459,6 +459,10 @@ const Map<String, String> kEnL10n = {
     'category_create_action': 'Create',
     'category_picker_new': 'New category',
     'category_picker_add': 'Add category',
+    'category_picker_add_root': 'Add root category',
+    'category_picker_add_inside': 'Add category inside %s',
+    'category_create_root_title': 'Create root category',
+    'category_create_inside_title': 'Create category inside %s',
     'category_picker_empty_hint':
         'No categories yet. Tap Add category above to create one.',
     'category_create_title': 'Create category',

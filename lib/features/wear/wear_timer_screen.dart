@@ -145,15 +145,17 @@ class _WearTimerScreenState extends State<WearTimerScreen> {
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.add_rounded),
-                      title: Text(t(locale, 'category_picker_add')),
+                      title: Text(t(locale, 'category_picker_add_root')),
                       subtitle: categoryCreateFromPickerAllowed()
                           ? null
                           : Text(t(locale, 'category_create_requires_connection')),
                       enabled: categoryCreateFromPickerAllowed(),
                       onTap: categoryCreateFromPickerAllowed()
                           ? () async {
-                              final id =
-                                  await showCreateCategoryFromPickerDialog(ctx);
+                              final id = await showCreateCategoryFromPickerDialog(
+                                ctx,
+                                target: const CategoryPickerCreateTarget.root(),
+                              );
                               if (id == null || !ctx.mounted) return;
                               Navigator.pop(ctx);
                               unawaited(_startWithCategory(id));

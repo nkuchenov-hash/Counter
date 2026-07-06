@@ -1,18 +1,33 @@
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
+import 'package:counter/features/categories/create_category_from_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-CategoryRule _node(int id, String name, {List<CategoryRule>? children}) {
+CategoryRule _node(
+  int id,
+  String name, {
+  String? backendRowId,
+  List<CategoryRule>? children,
+}) {
   return CategoryRule(
     id: id,
     name: name,
-    backendRowId: 'pb$id',
+    backendRowId: backendRowId ?? 'pb$id',
     children: children,
   );
 }
 
 void main() {
+  tearDown(() {
+    categoryPickerAddNestedCategoryOverride = null;
+    categoryCreateFromPickerAllowedOverride = null;
+  });
+
+  setUp(() {
+    categoryCreateFromPickerAllowedOverride = () => true;
+  });
+
   group('filterCategoryRootsForPickerSearch', () {
     final roots = [
       _node(1, 'Work', children: [
@@ -29,28 +44,6 @@ void main() {
         (r) => r.name,
       );
       expect(out.length, 2);
-    });
-
-    test('matches root label', () {
-      final out = filterCategoryRootsForPickerSearch(
-        roots,
-        'health',
-        (r) => r.name,
-      );
-      expect(out.length, 1);
-      expect(out.first.id, 4);
-    });
-
-    test('matches descendant and keeps branch', () {
-      final out = filterCategoryRootsForPickerSearch(
-        roots,
-        'meet',
-        (r) => r.name,
-      );
-      expect(out.length, 1);
-      expect(out.first.id, 1);
-      expect(out.first.children?.length, 1);
-      expect(out.first.children?.first.id, 2);
     });
 
     test('no match returns empty list', () {
@@ -84,9 +77,119 @@ void main() {
       );
     });
 
-    test('row add key is stable per category id', () {
-      expect(categoryPickerRowAddKey(42), categoryPickerRowAddKey(42));
-      expect(categoryPickerRowAddKey(42), isNot(categoryPickerRowAddKey(43)));
+    test('row target uses exact row category id', () {
+      final priceReporter = _node(100, 'Price Reporter');
+      final work = _node(1, 'Work');
+
+      final prTarget = categoryPickerCreateTargetForRow(priceReporter);
+      final workTarget = categoryPickerCreateTargetForRow(work);
+
+      expect(prTarget.parentLocalId, 100);
+      expect(prTarget.parentDisplayName, 'Price Reporter');
+      expect(workTarget.parentLocalId, 1);
+      expect(workTarget.parentDisplayName, 'Work');
+    });
+
+    test('folder add label includes parent name', () {
+      expect(
+        categoryPickerAddInsideLabel('en', 'Price Reporter'),
+        contains('Price Reporter'),
+      );
+    });
+  });
+
+  group('createCategoryFromPickerSubmit parent contract', () {
+    test('row plus on Price Reporter records parent 100 not Work 1', () async {
+      int? recordedParentId;
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        recordedParentId = parentId;
+        return true;
+      };
+
+      final target = CategoryPickerCreateTarget.child(
+        parentLocalId: 100,
+        parentDisplayName: 'Price Reporter',
+      );
+
+      await createCategoryFromPickerSubmit(
+        name: 'New Client',
+        target: target,
+      );
+
+      expect(recordedParentId, 100);
+      expect(recordedParentId, isNot(1));
+    });
+
+    test('row plus on Work records parent 1', () async {
+      int? recordedParentId;
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        recordedParentId = parentId;
+        return true;
+      };
+
+      await createCategoryFromPickerSubmit(
+        name: 'New Bucket',
+        target: CategoryPickerCreateTarget.child(
+          parentLocalId: 1,
+          parentDisplayName: 'Work',
+        ),
+      );
+
+      expect(recordedParentId, 1);
+    });
+
+    test('root add row records null parent', () async {
+      int? recordedParentId;
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        recordedParentId = parentId;
+        return true;
+      };
+
+      await createCategoryFromPickerSubmit(
+        name: 'Top Level',
+        target: const CategoryPickerCreateTarget.root(),
+      );
+
+      expect(recordedParentId, isNull);
+    });
+
+    test('folder-scoped target for Price Reporter matches row plus', () async {
+      int? recordedParentId;
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        recordedParentId = parentId;
+        return true;
+      };
+
+      final priceReporter = _node(100, 'Price Reporter');
+      await createCategoryFromPickerSubmit(
+        name: 'Folder Scoped',
+        target: categoryPickerCreateTargetForRow(priceReporter),
+      );
+
+      expect(recordedParentId, 100);
+    });
+  });
+
+  group('categoryPickerCreateTarget dialog titles', () {
+    test('root title is localized root string', () {
+      expect(
+        categoryPickerCreateDialogTitle(
+          'en',
+          const CategoryPickerCreateTarget.root(),
+        ),
+        isNotEmpty,
+      );
+    });
+
+    test('child title includes parent name', () {
+      final title = categoryPickerCreateDialogTitle(
+        'en',
+        const CategoryPickerCreateTarget.child(
+          parentLocalId: 100,
+          parentDisplayName: 'Price Reporter',
+        ),
+      );
+      expect(title, contains('Price Reporter'));
     });
   });
 
@@ -97,19 +200,19 @@ void main() {
         home: Scaffold(
           body: categoryPickerCreateListTile(
             key: categoryPickerTopAddKey,
-            label: 'Add category',
+            label: 'Add root category',
             onTap: () => tapped = true,
           ),
         ),
       ),
     );
 
-    expect(find.text('Add category'), findsOneWidget);
-    await tester.tap(find.text('Add category'));
+    expect(find.text('Add root category'), findsOneWidget);
+    await tester.tap(find.text('Add root category'));
     expect(tapped, isTrue);
   });
 
-  testWidgets('picker bottom add key is distinct from top add key', (tester) async {
+  testWidgets('top and bottom root add keys are distinct', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(

@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Category picker parent-context fix [shipped]
+
+* **`create_category_from_picker.dart`:** [fix] Explicit [CategoryPickerCreateTarget] for every create action; sibling-scoped id resolution only (removed global `classifyCategoryDisplayNameInput` / `findActiveLocalCategoryIdByDisplayName` fallback that could attach creates to the wrong parent, e.g. Work instead of Price Reporter); dialog title shows target parent.
+* **`category_recursive_tree.dart`:** [fix] Row trailing `+` moved outside row `InkWell`; folder-scoped **Add category inside %s** after expanded children; root top/bottom rows labeled **Add root category**; parent passed from exact row/folder context only.
+* **`test/category_picker_create_test.dart`:** [fix] Parent-id recording tests for Price Reporter vs Work, root create, and folder-scoped targets.
+
 ## [2026-07-06] - Category picker create UX fix [shipped]
 
 * **`lib/features/categories/category_recursive_tree.dart`:** [fix] Picker sheet uses fixed height (~82% viewport), always-visible top **+ Add category** row, sticky bottom **+ Add category**, trailing **+** on every tree row (`AppIconButton` / `add_subcategory`), and search-miss **Create "name"** — fixes Plans/Timeline edit pickers where create was hidden below the fold.

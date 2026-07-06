@@ -5,10 +5,58 @@ import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+/// Explicit parent for picker create — never inferred from selection/search UI.
+@immutable
+class CategoryPickerCreateTarget {
+  const CategoryPickerCreateTarget._({
+    required this.parentLocalId,
+    this.parentDisplayName,
+  });
+
+  const CategoryPickerCreateTarget.root()
+      : parentLocalId = null,
+        parentDisplayName = null;
+
+  const CategoryPickerCreateTarget.child({
+    required int parentLocalId,
+    required String parentDisplayName,
+  }) : parentLocalId = parentLocalId,
+       parentDisplayName = parentDisplayName;
+
+  final int? parentLocalId;
+  final String? parentDisplayName;
+
+  bool get isRoot => parentLocalId == null;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CategoryPickerCreateTarget &&
+      other.parentLocalId == parentLocalId &&
+      other.parentDisplayName == parentDisplayName;
+
+  @override
+  int get hashCode => Object.hash(parentLocalId, parentDisplayName);
+}
+
+@visibleForTesting
+CategoryPickerCreateTarget categoryPickerCreateTargetForRow(CategoryRule rule) {
+  return CategoryPickerCreateTarget.child(
+    parentLocalId: rule.id,
+    parentDisplayName: rule.name.trim(),
+  );
+}
+
 /// Whether category creation from a picker is allowed (online + authed).
+@visibleForTesting
+bool Function()? categoryCreateFromPickerAllowedOverride;
+
 bool categoryCreateFromPickerAllowed() {
+  if (categoryCreateFromPickerAllowedOverride != null) {
+    return categoryCreateFromPickerAllowedOverride!();
+  }
   final db = DatabaseService.instance;
   if (!db.isInitialized) return false;
   if (db.offlineSync.isOffline) return false;
@@ -16,27 +64,43 @@ bool categoryCreateFromPickerAllowed() {
   return ownerPbId?.isNotEmpty ?? false;
 }
 
-/// Creates a root category from picker context. Returns local [CategoryRule.id].
+@visibleForTesting
+int? findCreatedCategoryLocalIdUnderParent({
+  required DatabaseService db,
+  required int? parentLocalId,
+  required String name,
+}) {
+  final trimmed = name.trim().toLowerCase();
+  if (trimmed.isEmpty) return null;
+  for (final s in db.getChildrenOf(parentLocalId)) {
+    if (s.isArchived) continue;
+    if (s.name.trim().toLowerCase() == trimmed) return s.id;
+  }
+  return null;
+}
+
+@visibleForTesting
+Future<bool> Function(int? parentLocalId, CategoryRule child)?
+    categoryPickerAddNestedCategoryOverride;
+
+/// Creates a category under [target.parentLocalId] (root when null).
 Future<int?> createCategoryFromPickerSubmit({
   required String name,
-  int? parentId,
+  required CategoryPickerCreateTarget target,
 }) async {
   final trimmed = name.trim();
   if (trimmed.isEmpty) return null;
   final db = DatabaseService.instance;
   if (!categoryCreateFromPickerAllowed()) return null;
 
-  final status = db.classifyCategoryDisplayNameInput(trimmed);
-  switch (status.kind) {
-    case CategoryNameInputKind.empty:
-      return null;
-    case CategoryNameInputKind.active:
-      return status.activeLocalId;
-    case CategoryNameInputKind.archived:
-      return null;
-    case CategoryNameInputKind.available:
-      break;
-  }
+  final parentId = target.parentLocalId;
+
+  final existingSibling = findCreatedCategoryLocalIdUnderParent(
+    db: db,
+    parentLocalId: parentId,
+    name: trimmed,
+  );
+  if (existingSibling != null) return existingSibling;
 
   final child = CategoryRule(
     id: db.newId(),
@@ -44,41 +108,64 @@ Future<int?> createCategoryFromPickerSubmit({
     colorValue: Colors.grey.toARGB32(),
     iconCodePoint: Icons.folder_rounded.codePoint,
   );
-  final ok = await db.addNestedCategory(parentId, child);
+
+  final ok = categoryPickerAddNestedCategoryOverride != null
+      ? await categoryPickerAddNestedCategoryOverride!(parentId, child)
+      : await db.addNestedCategory(parentId, child);
   if (!ok) return null;
-  final siblings = db.getChildrenOf(parentId);
-  for (final s in siblings) {
-    if (s.isArchived) continue;
-    if (s.name.trim().toLowerCase() == trimmed.toLowerCase()) {
-      return s.id;
+
+  final createdId = findCreatedCategoryLocalIdUnderParent(
+    db: db,
+    parentLocalId: parentId,
+    name: trimmed,
+  );
+
+  assert(() {
+    if (createdId != null && parentId != null) {
+      final actualParent = db.getParentId(createdId);
+      assert(
+        actualParent == parentId,
+        'Category picker create parent mismatch: '
+        'requested=$parentId actual=$actualParent name=$trimmed',
+      );
     }
+    return true;
+  }());
+
+  return createdId;
+}
+
+String categoryPickerCreateDialogTitle(String loc, CategoryPickerCreateTarget target) {
+  if (target.isRoot) {
+    return t(loc, 'category_create_root_title');
   }
-  return db.findActiveLocalCategoryIdByDisplayName(trimmed);
+  final parentName = (target.parentDisplayName ?? '').trim();
+  return t(loc, 'category_create_inside_title').replaceFirst('%s', parentName);
 }
 
 /// Compact create dialog stacked above an open category picker / edit sheet.
 Future<int?> showCreateCategoryFromPickerDialog(
   BuildContext context, {
+  required CategoryPickerCreateTarget target,
   String? initialName,
-  int? parentId,
 }) {
   return showDialog<int?>(
     context: context,
     builder: (ctx) => _CreateCategoryFromPickerDialog(
+      target: target,
       initialName: initialName,
-      parentId: parentId,
     ),
   );
 }
 
 class _CreateCategoryFromPickerDialog extends StatefulWidget {
   const _CreateCategoryFromPickerDialog({
+    required this.target,
     this.initialName,
-    this.parentId,
   });
 
+  final CategoryPickerCreateTarget target;
   final String? initialName;
-  final int? parentId;
 
   @override
   State<_CreateCategoryFromPickerDialog> createState() =>
@@ -114,16 +201,15 @@ class _CreateCategoryFromPickerDialogState
       return;
     }
 
-    final status =
-        DatabaseService.instance.classifyCategoryDisplayNameInput(name);
-    if (status.kind == CategoryNameInputKind.archived) {
-      AppSnack.show(t(loc, 'category_name_in_archive'), error: true);
-      return;
-    }
-    if (status.kind == CategoryNameInputKind.active &&
-        status.activeLocalId != null) {
+    final db = DatabaseService.instance;
+    final existingSibling = findCreatedCategoryLocalIdUnderParent(
+      db: db,
+      parentLocalId: widget.target.parentLocalId,
+      name: name,
+    );
+    if (existingSibling != null) {
       if (!mounted) return;
-      Navigator.of(context).pop(status.activeLocalId);
+      Navigator.of(context).pop(existingSibling);
       return;
     }
 
@@ -131,7 +217,7 @@ class _CreateCategoryFromPickerDialogState
     try {
       final id = await createCategoryFromPickerSubmit(
         name: name,
-        parentId: widget.parentId,
+        target: widget.target,
       );
       if (!mounted) return;
       if (id != null) {
@@ -149,7 +235,7 @@ class _CreateCategoryFromPickerDialogState
     final loc = currentLocale.value;
     final canCreate = categoryCreateFromPickerAllowed();
     return AlertDialog(
-      title: Text(t(loc, 'category_create_title')),
+      title: Text(categoryPickerCreateDialogTitle(loc, widget.target)),
       content: SizedBox(
         width: 360,
         child: Column(
