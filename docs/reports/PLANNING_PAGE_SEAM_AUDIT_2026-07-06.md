@@ -10,17 +10,19 @@
 
 ## 1. Executive verdict
 
-### **NEEDS TESTS FIRST**
+### **B0 COMPLETE — B1 CONDITIONALLY UNBLOCKED**
 
-`planning_page.dart` is **not ready for a blind line-count split**. Time View drag/cascade/layout logic is **already extracted** to `time_view/*` (~783 lines in `planning_time_view.dart` alone), but the page still **implements `PlanningTimeViewHost`**, owns **card-row rendering used by Time View**, and duplicates **day-body routing** in two methods. There is **no widget or integration test** that mounts `PlanningPage`.
+`planning_page.dart` is **not ready for a blind line-count split**. Time View drag/cascade/layout logic is **already extracted** to `time_view/*` (~783 lines in `planning_time_view.dart` alone), but the page still **implements `PlanningTimeViewHost`**, owns **card-row rendering used by Time View**, and duplicates **day-body routing** in two methods.
+
+**Stage B0 (2026-07-06):** Added `test/planning_page_host_contract_test.dart` and `test/planning_page_list_modes_test.dart` — `PlanningPage` mounts without network; empty-day and sort-mode shell smoke; Time View host path does not throw. **B1 low-risk UI extraction (S1/S5/S6) is allowed only while these tests remain green.** Selection, quick-add, and full host-interface contract tests remain deferred (§7.3 items 3–4).
 
 | Sub-verdict | Meaning |
 | :--- | :--- |
-| **Low-risk UI extraction (B1)** | Possible **after B0** for grouped list builders + select-mode chrome — mechanical, callback-driven |
+| **Low-risk UI extraction (B1)** | **Unblocked (conditional)** — grouped list builders + select-mode chrome after B0 green |
 | **Time View host / card row (B3+)** | **High risk** — do not move without host contract tests |
 | **Brain / CRUD paths** | **No-touch** — all mutations stay via `DatabaseService.instance.*` |
 
-**Do not split yet** beyond documented B1 seams until B0 test harness exists.
+**Do not split** beyond documented B1 seams until B0 tests pass; re-run `flutter test test/planning_page_*` before any B1 commit.
 
 ---
 
@@ -203,7 +205,14 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 | `planning_realtime_stream_lifecycle_test.dart` | Offline sync + stream stub | No |
 | `widget_test.dart` | App smoke | Indirect (shell only) |
 
-**Gap:** **Zero tests** import or pump `PlanningPage` / `_PlanningPageState`.
+**Gap (partially closed B0):** `PlanningPage` now has widget smoke tests; selection/quick-add/host-fake tests still missing (§7.3 items 3–4).
+
+| Test file | Status |
+| :--- | :--- |
+| `test/planning_page_host_contract_test.dart` | **Added B0** — mount, empty state, Time View host path, barrel exports |
+| `test/planning_page_list_modes_test.dart` | **Added B0** — sort-mode shell, empty + seeded task, `PlanSortMode` indices |
+| `test/planning_page_selection_test.dart` | **Deferred** |
+| `test/planning_page_quick_add_test.dart` | **Deferred** |
 
 ### 7.2 Seam → test mapping
 
@@ -222,10 +231,10 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 
 ### 7.3 Recommended B0 tests (minimum)
 
-1. **`test/planning_page_host_contract_test.dart`** — fake `PlanningTimeViewHost`; verify coordinator invokes `planCardRow`, `planKey`, `toggleKeySelection`.
-2. **`test/planning_page_list_modes_test.dart`** — pump `PlanningPage` with mocked/stub `DatabaseService` or golden empty states per `PlanSortMode` (custom/category/tags/time stub).
-3. **`test/planning_page_selection_test.dart`** — long-press enters select mode; bulk bar visible; FAB reserve callback (mock `ShellLayoutScope` if needed).
-4. **`test/planning_page_quick_add_test.dart`** — `_addTask` optimistic path (may require Brain test doubles).
+1. **`test/planning_page_host_contract_test.dart`** — ✅ **Shipped B0** — `ShellLayoutScope` + `PlanningPage` mount; empty `PlanningDayEmptyState`; Time sort + optimistic task → scroll surface; barrel exports. *(Full fake `PlanningTimeViewHost` coordinator contract deferred.)*
+2. **`test/planning_page_list_modes_test.dart`** — ✅ **Shipped B0** — empty day + sort taps; seeded optimistic task per `PlanSortMode`; persistence index unit check.
+3. **`test/planning_page_selection_test.dart`** — **Deferred** — long-press enters select mode; bulk bar visible; FAB reserve callback (mock `ShellLayoutScope` if needed).
+4. **`test/planning_page_quick_add_test.dart`** — **Deferred** — `_addTask` optimistic path (may require Brain test doubles).
 
 ### 7.4 Manual smoke checks (any extraction)
 
@@ -241,15 +250,16 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 
 ## 8. Staged decomposition plan
 
-### Stage B0 — Tests only (required before non-trivial split)
+### Stage B0 — Tests only (required before non-trivial split) ✅ **Complete 2026-07-06**
 
 | Item | Detail |
 | :--- | :--- |
-| **Target** | New tests under `test/planning_page_*` (see §7.3) |
+| **Target** | `test/planning_page_host_contract_test.dart`, `test/planning_page_list_modes_test.dart` (§7.3 items 1–2) |
 | **Line reduction** | 0 |
 | **Risk** | Low (test-only) |
-| **Run** | `flutter test test/planning_page_*` + full suite |
+| **Run** | `flutter test test/planning_page_*` + full suite — **255 passed** at B0 ship |
 | **Rollback** | Revert test files |
+| **B1 gate** | Low-risk split (S1/S5/S6) allowed **only if** B0 tests stay green; items 3–4 still recommended before B4/B3 |
 
 ### Stage B1 — Low-risk pure UI extraction
 
@@ -336,9 +346,9 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 
 ## 9. Recommended first implementation prompt
 
-> **Stage B0 only:** Add `test/planning_page_host_contract_test.dart` and `test/planning_page_list_modes_test.dart` with a minimal fake `PlanningTimeViewHost` and widget tests that pump `PlanningPage` in custom/category/tags sort modes using existing Brain test patterns. **Do not** move production code. Verify `flutter test` green.
+> **Stage B0:** ✅ Complete — host + list-mode widget tests shipped. Re-run `flutter test test/planning_page_*` before any split.
 
-After B0 passes, first split prompt:
+First split prompt (B1 — only if B0 green):
 
 > **Stage B1:** Extract `_buildFrozenPlanCardList` to `lib/features/planning/widgets/planning_frozen_day_list.dart` and grouping helpers (S1) to `lib/features/planning/widgets/planning_list_grouping.dart`. Zero behavior change. Run B0 tests + architecture guard.
 

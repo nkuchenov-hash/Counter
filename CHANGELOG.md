@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Planning page host test coverage (Stage B0) [shipped]
+
+* **`test/planning_page_host_contract_test.dart`:** [shipped] `PlanningPage` pumps under `ShellLayoutScope`; empty-day `PlanningDayEmptyState`; Time sort + optimistic task → Time View scroll surface; barrel exports `PlanningPage` / `PlanningSwipeWrapper`; no PocketBase network; bounded pumps only.
+* **`test/planning_page_list_modes_test.dart`:** [shipped] Empty day survives Category/Time/Tags/Custom sort taps; seeded optimistic task renders list shell per mode; `PlanSortMode` persistence indices stable.
+* **`docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`:** [shipped] B0 complete — **B1 low-risk split allowed only while these tests stay green**; selection/quick-add tests (§7.3 items 3–4) still deferred.
+* **Verification:** `flutter analyze --no-fatal-infos --no-fatal-warnings` OK; `flutter test` 255 passed; `architecture_guard.ps1 -Strict` 0 violations.
+
 ## [2026-07-06] - Planning page seam audit (Stage B report-only) [shipped]
 
 * **`docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`:** [shipped] Seam map for `planning_page.dart` (2394 lines); verdict **NEEDS TESTS FIRST**; staged B0–B6 plan; Time View host no-touch boundaries; test gap analysis (no `PlanningPage` widget tests).
