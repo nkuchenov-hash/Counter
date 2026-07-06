@@ -104,7 +104,7 @@ extension PlanningTimeViewTimeViewSearchDelegate on PlanningTimeViewCoordinator 
                         final picked = await showTimePicker(
                           context: host.context,
                           initialTime: pickedTime,
-                          initialEntryMode: appTimePickerEntryMode(),
+                          initialEntryMode: appTimePickerEntryModeFromContext(host.context),
                         );
                         if (picked == null) return;
                         setSheetState(() => pickedTime = picked);

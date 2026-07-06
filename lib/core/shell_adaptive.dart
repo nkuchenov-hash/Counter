@@ -12,6 +12,11 @@ const double kShellSideNavWidth = 272;
 bool shellUsesSideNavigation(double width) =>
     width >= kShellDesktopNavBreakpoint;
 
+/// Phone-width shell (bottom nav, APK-equivalent metrics). Used instead of
+/// blanket [kIsWeb] when choosing touch vs pointer affordances.
+bool shellUsesCompactPhoneLayout(double width) =>
+    width < kShellDesktopNavBreakpoint;
+
 /// Calendar day cells use event pills when the viewport is wide enough.
 const double kCalendarEventPillBreakpoint = 600;
 

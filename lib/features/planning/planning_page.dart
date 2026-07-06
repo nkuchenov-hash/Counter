@@ -253,7 +253,7 @@ class _PlanningPageState extends State<PlanningPage>
       initialDate: DateTime.utc(initial.year, initial.month, initial.day),
       firstDate: DateTime.utc(2020),
       lastDate: DateTime.utc(2035),
-      initialEntryMode: appDatePickerEntryMode(),
+      initialEntryMode: appDatePickerEntryModeFromContext(context),
     );
     if (picked == null || !mounted) return;
     var h = 9;

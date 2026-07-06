@@ -62,7 +62,7 @@ Future<DateTime?> showAppDateTimePicker(
   );
   final base = initial ?? defaultInitial;
 
-  if (useKeyboardFriendlyMaterialPickers()) {
+  if (useKeyboardFriendlyMaterialPickersFromContext(context)) {
     final fd = firstDate ?? DateTime.utc(2020);
     final ld = lastDate ?? DateTime.utc(2030);
     final clampedDay = clampPickerDay(base, fd, ld);

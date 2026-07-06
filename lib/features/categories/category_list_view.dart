@@ -10,7 +10,6 @@ import 'package:counter/features/categories/create_category_dialog.dart';
 import 'package:counter/features/shared/shared_widgets.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -39,11 +38,11 @@ const double _kCategoryGridGap = 8;
 const double _kScrollPeekFraction = 0.17;
 const double _kTileWidthClampMin = 48;
 
-/// Cap tile side on large viewports (desktop web) so grids stay compact (@DATA_MAP grid tiers).
+/// Cap tile side on large viewports so grids stay compact (@DATA_MAP grid tiers).
 double _maxTileSideForViewport(BuildContext context) {
   final w = MediaQuery.sizeOf(context).width;
-  if (kIsWeb && w >= 1100) return 104;
-  if (kIsWeb && w >= 800) return 112;
+  if (w >= 1100) return 104;
+  if (w >= 800) return 112;
   if (w >= 900) return 118;
   if (w >= 700) return 124;
   return 560;

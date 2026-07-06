@@ -57,13 +57,9 @@ class TimelinePlanInteractionBlockState
   double _pendingGrabOffsetCanvasPx = 0;
   Offset? _pointerDownGlobal;
 
-  bool get _immediateBodyDrag =>
-      kIsWeb ||
-      defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.macOS ||
-      defaultTargetPlatform == TargetPlatform.linux;
-
-  double get _dragThresholdPx => planTimeViewDragMovementThresholdPx();
+  /// Cached from last [build] — phone-width shell uses APK touch thresholds.
+  double _viewportDragThreshold = kPlanTimeDragThresholdTouchPx;
+  bool _useImmediatePointerDrag = false;
 
   double get _resizeZoneInset {
     final h = widget.blockHeightPx ?? widget.resizeHandlePx * 2;
@@ -98,7 +94,7 @@ class TimelinePlanInteractionBlockState
       final down = _pointerDownGlobal;
       if (down != null) {
         final moved = (globalPosition - down).distance;
-        if (moved >= _dragThresholdPx) {
+        if (moved >= _viewportDragThreshold) {
           _maybeStartDragFromPending();
         }
       }
@@ -149,7 +145,7 @@ class TimelinePlanInteractionBlockState
         cursor: _bodyDragActive
             ? SystemMouseCursors.grabbing
             : SystemMouseCursors.grab,
-        child: _immediateBodyDrag
+        child: _useImmediatePointerDrag
             ? Listener(
                 behavior: HitTestBehavior.translucent,
                 onPointerDown: (e) {
@@ -188,7 +184,7 @@ class TimelinePlanInteractionBlockState
                     final down = _pointerDownGlobal;
                     if (down != null &&
                         (details.globalPosition - down).distance >=
-                            _dragThresholdPx) {
+                            _viewportDragThreshold) {
                       _maybeStartDragFromPending();
                     }
                   }
@@ -259,6 +255,11 @@ class TimelinePlanInteractionBlockState
   @override
   Widget build(BuildContext context) {
     if (!widget.canMove && !widget.canResize) return widget.child;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    _viewportDragThreshold =
+        planTimeViewDragMovementThresholdForViewport(viewportWidth);
+    _useImmediatePointerDrag =
+        planTimeViewUsesImmediatePointerDrag(viewportWidth);
     final scheme = Theme.of(context).colorScheme;
     return Stack(
       fit: StackFit.expand,

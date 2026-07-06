@@ -23,14 +23,14 @@ Future<void> _pickDayForGlobalHeader(
   // Date-only: Omni-Picker Law (ARCHITECTURE §8.1) applies when both date and
   // time are selected; see showAppDateTimePicker in shared_widgets.dart.
   final loc = currentLocale.value;
-  if (useKeyboardFriendlyMaterialPickers()) {
+  if (useKeyboardFriendlyMaterialPickersFromContext(context)) {
     final picked = await showDatePicker(
       context: context,
       locale: Locale(loc),
       initialDate: initialDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2035),
-      initialEntryMode: appDatePickerEntryMode(),
+      initialEntryMode: appDatePickerEntryModeFromContext(context),
     );
     if (picked != null && context.mounted) {
       onSelected(DateTime(picked.year, picked.month, picked.day));

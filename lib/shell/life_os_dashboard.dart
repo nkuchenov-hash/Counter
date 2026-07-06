@@ -474,7 +474,9 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
                     if (shellUsesSideNavigation(constraints.maxWidth)) {
                       return const SizedBox.shrink();
                     }
-                    return NavigationBar(
+                    return SafeArea(
+                      top: false,
+                      child: NavigationBar(
                       selectedIndex: navBarSelectedIndex,
                       onDestinationSelected: onShellTabSelected,
                       destinations: [
@@ -506,6 +508,7 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
                           label: t(currentLocale.value, 'tab_more'),
                         ),
                       ],
+                    ),
                     );
                   },
                 ),

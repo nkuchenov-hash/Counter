@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - P0 mobile web / APK layout parity + iPhone PWA shell [shipped]
+
+* **`web/index.html`:** [shipped] Added `viewport` (`width=device-width`, `viewport-fit=cover`), `apple-mobile-web-app-capable`, shell CSS (`#FAFAF8` full-bleed, no double safe-area padding), `theme-color` `#111111`, and `icons/Icon-180.png` apple-touch-icon — fixes mobile browser ~980px layout width (side nav at phone size) and iPhone PWA white bars.
+* **`web/manifest.json`:** [shipped] Replaced default Flutter blue with app shell colors (`theme_color` `#111111`, `background_color` `#FAFAF8`); explicit `./` `start_url`/`scope` for GitHub Pages `/Counter/`.
+* **`lib/core/shell_adaptive.dart`:** [shipped] `shellUsesCompactPhoneLayout(width)` — shared phone-width breakpoint (<900) instead of blanket `kIsWeb` for metrics/gestures.
+* **`lib/features/planning/plan_time_gesture_contract.dart`**, **`time_view_interaction_block.dart`**, **`lib/core/picker_entry_modes.dart`:** [shipped] Phone-width web uses APK touch drag thresholds, long-press move, and calendar/dial pickers; wide web/desktop unchanged.
+* **`lib/shell/life_os_dashboard.dart`:** [shipped] Bottom `NavigationBar` wrapped in `SafeArea(top: false)` for iPhone home-indicator padding.
+* **Verification:** `flutter analyze`, `flutter test`, `flutter build web --base-href="/Counter/"`, `flutter build apk --target-platform android-arm64` green.
+
 ## [2026-07-03] - Ban generic doc file wrappers in APP_STRUCTURE_DETAILED [shipped]
 
 * **`scripts/manual/structure_doc_file_guides.py`:** [shipped] Curated EN+RU for all `docs/*.md`, `docs/reports/*`, `docs/website/*` — ROADMAP, UX_CONTRACT, POCKETBASE_MANIFEST, PROJECT_KNOWLEDGE_PACK, APP_STRUCTURE_DETAILED, website matrix/wireframe/scope, etc.
