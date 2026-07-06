@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `1fbbda2` on 2026-07-06.**
+**Generated at git SHA `1d58d68` on 2026-07-06.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -4077,6 +4077,31 @@ RU:
 - **Можно удалить?** Нет — governing документация.
 - **Связано с:** `FINAL_STRUCTURE_AUDIT_2026-07-06.md`, `docs/APP_STRUCTURE.md` §8.
 - **Слой:** Документация — правила, не runtime.
+
+
+### `docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`
+
+EN:
+
+- **What this is:** Seam audit for planning_page.dart — responsibility map, Time View host risks, test gaps, staged B0–B6 split plan (report-only).
+- **Why needed:** 2394-line watchlist file must not split blindly; host contract and optimistic paths need tests first.
+- **What it contains:** Verdict NEEDS TESTS FIRST, seam table, Time View risk table, test matrix, B0–B6 stages, first prompt.
+- **Responsibilities:** Report-only — no production Dart until B0 tests and approved stage prompt.
+- **When to open:** Before any planning_page.dart decomposition or major Plans tab feature work.
+- **Can it be deleted?** No — governing/current documentation.
+- **Connected to:** `LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md` §3.2, `planning_page.dart`, `time_view/*`.
+- **Layer / owner:** Repo-only planning UI seam audit.
+
+RU:
+
+- **Что это:** Seam audit для planning_page.dart — карта ответственности, риски Time View host, пробелы в тестах, поэтапный план split B0–B6 (только отчёт).
+- **Зачем:** Watchlist-файл 2394 строки нельзя split вслепую; host contract и optimistic paths требуют тестов первыми.
+- **Содержимое:** Verdict NEEDS TESTS FIRST, таблица seams, риски Time View, матрица тестов, этапы B0–B6, первый prompt.
+- **Обязанности:** Только отчёт — без production Dart до B0 tests и одобренного stage prompt.
+- **Когда открывать:** Перед декомпозицией planning_page.dart или крупной feature work на вкладке Plans.
+- **Можно удалить?** Нет — governing документация.
+- **Связано с:** `LARGE_FILE_DECOMPOSITION_PLAN_2026-07-06.md` §3.2, `planning_page.dart`, `time_view/*`.
+- **Слой:** Repo-only seam audit UI планирования.
 
 
 ### `docs/website/CONTENT_LIBRARY.md`
@@ -16016,6 +16041,58 @@ RU:
 - **Содержимое:** Test cases для сценария `planning_duplicate_plan_guard`.
 - **Обязанности:** Assert ожидаемого поведения `planning_duplicate_plan_guard`.
 - **Когда открывать:** Падение CI или правка кода рядом с `planning_duplicate_plan_guard`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/planning_page_host_contract_test.dart`
+
+EN:
+
+- **What this is:** Automated test `planning_page_host_contract_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `planning_page_host_contract_test` scenario.
+- **When to open:** CI failure or changing code near `planning_page_host_contract`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `planning_page_host_contract` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `planning_page_host_contract`.
+- **Обязанности:** Assert ожидаемого поведения `planning_page_host_contract`.
+- **Когда открывать:** Падение CI или правка кода рядом с `planning_page_host_contract`.
+- **Можно удалить?** Нет — нужен для тестов.
+- **Связано с:** Production files под `lib/` с похожим именем.
+- **Слой:** Автотест — не попадает пользователю в APK.
+
+
+### `test/planning_page_list_modes_test.dart`
+
+EN:
+
+- **What this is:** Automated test `planning_page_list_modes_test` — verifies behavior without manual tapping.
+- **Why needed:** Prevents regressions when related production code changes.
+- **What it contains:** Test cases (symbols: main).
+- **Key code names:** `main`
+- **Responsibilities:** Assert expected behavior for `planning_page_list_modes_test` scenario.
+- **When to open:** CI failure or changing code near `planning_page_list_modes`.
+- **Can it be deleted?** No — required for tests.
+- **Connected to:** Matching files under `lib/` with similar name.
+- **Layer / owner:** Test — not shipped to users.
+
+RU:
+
+- **Что это:** Автотест `planning_page_list_modes` — проверяет поведение без ручного UI.
+- **Зачем:** Ловит регрессии при изменении связанного production-кода.
+- **Содержимое:** Test cases для сценария `planning_page_list_modes`.
+- **Обязанности:** Assert ожидаемого поведения `planning_page_list_modes`.
+- **Когда открывать:** Падение CI или правка кода рядом с `planning_page_list_modes`.
 - **Можно удалить?** Нет — нужен для тестов.
 - **Связано с:** Production files под `lib/` с похожим именем.
 - **Слой:** Автотест — не попадает пользователю в APK.

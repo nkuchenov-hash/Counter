@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Planning page low-risk split (Stage B1) [shipped]
+
+* **`lib/features/planning/planning_page.dart`:** [shipped] UI-only extract S1/S5/S6 (~2394→~2202 lines); orchestration, Time View host, card row, CRUD paths unchanged.
+* **`lib/features/planning/widgets/planning_list_grouping.dart`:** [shipped] Pure category/tag sort helpers (`planningTaskSortCmp`, `groupPlanningTasksByCategoryPath`, `groupPlanningTasksByMasterBar`, `planningGroupIdsInMasterBarSequence`, `planningTagSortMasterBarOrder`).
+* **`lib/features/planning/widgets/planning_frozen_day_list.dart`:** [shipped] Read-only offscreen/frozen day `PlanCard` list (`PlanningFrozenDayList`).
+* **`lib/features/planning/widgets/planning_select_mode_header.dart`:** [shipped] Bulk selection mode chrome (`PlanningSelectModeHeader`).
+* **`docs/APP_STRUCTURE.md`**, **`docs/APP_STRUCTURE_DETAILED.md`**, **`docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`:** [shipped] B1 complete; B2 grouped-list extraction next.
+* **Verification:** B0 tests green; `flutter test` 255 passed; `architecture_guard.ps1 -Strict` 0 violations.
+
 ## [2026-07-06] - Planning page host test coverage (Stage B0) [shipped]
 
 * **`test/planning_page_host_contract_test.dart`:** [shipped] `PlanningPage` pumps under `ShellLayoutScope`; empty-day `PlanningDayEmptyState`; Time sort + optimistic task → Time View scroll surface; barrel exports `PlanningPage` / `PlanningSwipeWrapper`; no PocketBase network; bounded pumps only.

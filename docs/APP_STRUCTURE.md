@@ -455,6 +455,9 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_empty_states.dart` | Planning empty-state widgets |
 | `planning/widgets/planning_quick_add_strip.dart` | Quick-add tag strip above inline task field |
 | `planning/widgets/planning_list_helpers.dart` | Reorder list proxy decorator |
+| `planning/widgets/planning_list_grouping.dart` | Category/tag sort grouping helpers |
+| `planning/widgets/planning_frozen_day_list.dart` | Offscreen frozen day plan card list |
+| `planning/widgets/planning_select_mode_header.dart` | Bulk selection mode header chrome |
 | `profile/settings/settings_page.dart` | Language/TZ settings page (shell route) |
 | `shared/profile_hydration_status_bar.dart` | Profile hydration error banner |
 | `core/navigation/shell_side_navigation.dart` | Desktop/web side navigation rail |

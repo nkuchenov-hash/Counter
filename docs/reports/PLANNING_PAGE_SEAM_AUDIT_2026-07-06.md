@@ -10,19 +10,21 @@
 
 ## 1. Executive verdict
 
-### **B0 COMPLETE — B1 CONDITIONALLY UNBLOCKED**
+### **B1 COMPLETE — B2 CONDITIONALLY UNBLOCKED**
 
 `planning_page.dart` is **not ready for a blind line-count split**. Time View drag/cascade/layout logic is **already extracted** to `time_view/*` (~783 lines in `planning_time_view.dart` alone), but the page still **implements `PlanningTimeViewHost`**, owns **card-row rendering used by Time View**, and duplicates **day-body routing** in two methods.
 
-**Stage B0 (2026-07-06):** Added `test/planning_page_host_contract_test.dart` and `test/planning_page_list_modes_test.dart` — `PlanningPage` mounts without network; empty-day and sort-mode shell smoke; Time View host path does not throw. **B1 low-risk UI extraction (S1/S5/S6) is allowed only while these tests remain green.** Selection, quick-add, and full host-interface contract tests remain deferred (§7.3 items 3–4).
+**Stage B0 (2026-07-06):** Added `test/planning_page_host_contract_test.dart` and `test/planning_page_list_modes_test.dart` — `PlanningPage` mounts without network; empty-day and sort-mode shell smoke; Time View host path does not throw.
+
+**Stage B1 (2026-07-06):** Extracted S1 → `widgets/planning_list_grouping.dart`, S5 → `widgets/planning_frozen_day_list.dart`, S6 → `widgets/planning_select_mode_header.dart`. `planning_page.dart` **2394 → ~2202 lines**. Zero behavior change; B0 tests green.
 
 | Sub-verdict | Meaning |
 | :--- | :--- |
-| **Low-risk UI extraction (B1)** | **Unblocked (conditional)** — grouped list builders + select-mode chrome after B0 green |
+| **Grouped list sections (B2)** | **Unblocked (conditional)** — S2/S3/S4 after B0 stays green |
 | **Time View host / card row (B3+)** | **High risk** — do not move without host contract tests |
 | **Brain / CRUD paths** | **No-touch** — all mutations stay via `DatabaseService.instance.*` |
 
-**Do not split** beyond documented B1 seams until B0 tests pass; re-run `flutter test test/planning_page_*` before any B1 commit.
+**Do not split** beyond documented B2 seams until B0 tests pass; re-run `flutter test test/planning_page_*` before any B2 commit.
 
 ---
 
@@ -30,7 +32,7 @@
 
 | Metric | Value |
 | :--- | :--- |
-| **`planning_page.dart` lines** | **2394** |
+| **`planning_page.dart` lines** | **~2202** (was 2394 pre-B1) |
 | **Public entrypoints** | `PlanningPage`, `_PlanningPageState` (private) |
 | **Private widget classes in file** | **0** (all logic in `_PlanningPageState` methods) |
 | **Import count** | **~52** package imports |
@@ -261,15 +263,14 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 | **Rollback** | Revert test files |
 | **B1 gate** | Low-risk split (S1/S5/S6) allowed **only if** B0 tests stay green; items 3–4 still recommended before B4/B3 |
 
-### Stage B1 — Low-risk pure UI extraction
+### Stage B1 — Low-risk pure UI extraction ✅ **Complete 2026-07-06**
 
 | Item | Detail |
 | :--- | :--- |
 | **Targets** | S1 → `widgets/planning_list_grouping.dart`; S6 → `widgets/planning_select_mode_header.dart`; S5 → `widgets/planning_frozen_day_list.dart` |
-| **Est. reduction** | ~200–280 lines |
+| **Est. reduction** | ~192 lines (`planning_page.dart` 2394 → ~2202) |
 | **Risk** | **Low–medium** |
-| **Prerequisite** | B0 helper + frozen list smoke tests |
-| **Run** | `flutter test`, manual §7.4 items 1–2 |
+| **Run** | B0 tests + full suite green at ship |
 | **Rollback** | Revert sibling files; restore methods inline |
 
 ### Stage B2 — Grouped list sections
@@ -346,11 +347,12 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 
 ## 9. Recommended first implementation prompt
 
-> **Stage B0:** ✅ Complete — host + list-mode widget tests shipped. Re-run `flutter test test/planning_page_*` before any split.
+> **Stage B0:** ✅ Complete — host + list-mode widget tests shipped.
+> **Stage B1:** ✅ Complete — S1/S5/S6 extracted; B0 tests green.
 
-First split prompt (B1 — only if B0 green):
+Next split prompt (B2 — only if B0 green):
 
-> **Stage B1:** Extract `_buildFrozenPlanCardList` to `lib/features/planning/widgets/planning_frozen_day_list.dart` and grouping helpers (S1) to `lib/features/planning/widgets/planning_list_grouping.dart`. Zero behavior change. Run B0 tests + architecture guard.
+> **Stage B2:** Extract `_buildCategoryGroupedView` to `widgets/planning_category_grouped_list.dart` and tag grouped list (S3/S4) to `widgets/planning_tag_grouped_list.dart`. Zero behavior change. Run B0 tests + architecture guard + manual §7.4 items 1–2.
 
 ---
 

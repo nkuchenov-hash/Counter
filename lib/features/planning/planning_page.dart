@@ -26,7 +26,6 @@ import 'package:counter/core/widgets/compact_nav_controls.dart';
 import 'package:counter/core/widgets/global_app_header.dart';
 import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
-import 'package:counter/data/cache/render_snapshot.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
@@ -79,7 +78,10 @@ import 'package:counter/features/planning/planning_sort_mode.dart';
 import 'package:counter/features/planning/widgets/planning_bulk_bar.dart';
 import 'package:counter/features/planning/widgets/planning_empty_states.dart';
 import 'package:counter/features/planning/widgets/planning_filter_controls.dart';
+import 'package:counter/features/planning/widgets/planning_list_grouping.dart';
+import 'package:counter/features/planning/widgets/planning_frozen_day_list.dart';
 import 'package:counter/features/planning/widgets/planning_list_helpers.dart';
+import 'package:counter/features/planning/widgets/planning_select_mode_header.dart';
 import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart';
 
 
@@ -434,7 +436,8 @@ DatabaseService.instance.persistPlanningTaskOrder(
   String planKey(PlanningTask task) => _planKey(task);
 
   @override
-  int taskSortCmp(PlanningTask a, PlanningTask b) => _taskSortCmp(a, b);
+  int taskSortCmp(PlanningTask a, PlanningTask b) =>
+      planningTaskSortCmp(a, b, sortTreatAsDone: _sortTreatAsDone);
 
   @override
   Widget planCardRow({
@@ -1473,135 +1476,11 @@ DatabaseService.instance.persistPlanningTaskOrder(
     }
   }
 
-  int _taskSortCmp(PlanningTask a, PlanningTask b) {
-    if (_sortTreatAsDone(a) != _sortTreatAsDone(b)) {
-      return _sortTreatAsDone(a) ? 1 : -1;
-    }
-    final o = a.order.compareTo(b.order);
-    if (o != 0) return o;
-    return a.title.compareTo(b.title);
-  }
-
-
-
-  Map<String, List<PlanningTask>> _groupTasksByCategoryPath(
-    List<PlanningTask> tasks,
-  ) {
-    final groups = <String, List<PlanningTask>>{};
-    for (final t in tasks) {
-      final path = DatabaseService.instance.getCategoryPath(t.categoryId);
-      groups.putIfAbsent(path, () => []).add(t);
-    }
-    for (final e in groups.entries) {
-      e.value.sort(_taskSortCmp);
-    }
-    return groups;
-  }
-
-  /// Bar index for [tagId] in [masterBarOrder]; tags not in the bar sort after all bar tags.
-  int _masterBarIndexForTag(int tagId, List<Tag> masterBarOrder) {
-    for (var i = 0; i < masterBarOrder.length; i++) {
-      if (masterBarOrder[i].tagId == tagId) return i;
-    }
-    return 1 << 20;
-  }
-
-  /// Chip tag that appears earliest in the quick-pick / master sequence wins the group.
-  /// Canonical [Tag] is taken from [masterBarOrder] when present, else the task tag.
-  Tag? _priorityTagForPlanByMasterBar(
-    PlanningTask p,
-    List<Tag> masterBarOrder,
-  ) {
-    Tag? best;
-    var bestIdx = 1 << 30;
-    var bestBiz = 1 << 30;
-    for (final tg in p.tags) {
-      if (!tg.rendersAsChip) continue;
-      final idx = _masterBarIndexForTag(tg.tagId, masterBarOrder);
-      final id = tg.tagId;
-      if (idx < bestIdx || (idx == bestIdx && id < bestBiz)) {
-        bestIdx = idx;
-        bestBiz = id;
-        Tag? canonical;
-        for (final m in masterBarOrder) {
-          if (m.tagId == id) {
-            canonical = m;
-            break;
-          }
-        }
-        best = canonical ?? tg;
-      }
-    }
-    return best;
-  }
-
-  List<Tag> _tagSortMasterBarOrder() {
-    final raw = _quickAddAvailableTags.isNotEmpty
-        ? _quickAddAvailableTags
-        : List<Tag>.from(DatabaseService.instance.cachedUserTagsCatalog);
-    if (raw.any((t) => t.tagId == _kUntaggedPlanGroupId)) {
-      return raw;
-    }
-    return [...raw, _syntheticNoTagsTag()];
-  }
-
-  Map<int, List<PlanningTask>> _groupTasksByMasterBar(
-    List<PlanningTask> tasks,
-    List<Tag> masterBarOrder,
-  ) {
-    final groups = <int, List<PlanningTask>>{};
-    for (final p in tasks) {
-      final pt = _priorityTagForPlanByMasterBar(p, masterBarOrder);
-      final gid = pt == null ? _kUntaggedPlanGroupId : pt.tagId;
-      groups.putIfAbsent(gid, () => []).add(p);
-    }
-    for (final e in groups.entries) {
-      e.value.sort(_taskSortCmp);
-    }
-    return groups;
-  }
-
-  /// Group column order: follow [masterBarOrder] (including synthetic “No Tags” at [-1]),
-  /// then orphan tag ids (by id). Untagged tasks appear where [-1] sits in the bar order.
-  List<int> _groupIdsInMasterBarSequence(
-    Map<int, List<PlanningTask>> groups,
-    List<Tag> masterBarOrder,
-  ) {
-    final seen = <int>{};
-    final out = <int>[];
-    for (final t in masterBarOrder) {
-      final id = t.tagId;
-      if (id == 0) continue;
-      if (id == _kUntaggedPlanGroupId) {
-        final bucket = groups[_kUntaggedPlanGroupId];
-        if (bucket != null &&
-            bucket.isNotEmpty &&
-            !seen.contains(_kUntaggedPlanGroupId)) {
-          seen.add(_kUntaggedPlanGroupId);
-          out.add(_kUntaggedPlanGroupId);
-        }
-        continue;
-      }
-      final bucket = groups[id];
-      if (bucket != null && bucket.isNotEmpty && !seen.contains(id)) {
-        seen.add(id);
-        out.add(id);
-      }
-    }
-    final orphan =
-        groups.keys
-            .where((k) => k != _kUntaggedPlanGroupId && !seen.contains(k))
-            .toList()
-          ..sort();
-    out.addAll(orphan);
-    if (!seen.contains(_kUntaggedPlanGroupId)) {
-      final untagged = groups[_kUntaggedPlanGroupId];
-      if (untagged != null && untagged.isNotEmpty) {
-        out.add(_kUntaggedPlanGroupId);
-      }
-    }
-    return out;
-  }
+  List<Tag> _tagSortMasterBarOrder() => planningTagSortMasterBarOrder(
+        quickAddAvailableTags: _quickAddAvailableTags,
+        cachedUserTagsCatalog: DatabaseService.instance.cachedUserTagsCatalog,
+        syntheticNoTagsTag: _syntheticNoTagsTag(),
+      );
 
   PlanCard _planningTaskCardForRow(
     PlanningTask task,
@@ -1863,7 +1742,10 @@ DatabaseService.instance.persistPlanningTaskOrder(
     Map<String, int> planActualByPbId,
   ) {
     final scheme = Theme.of(context).colorScheme;
-    final groups = _groupTasksByCategoryPath(tasks);
+    final groups = groupPlanningTasksByCategoryPath(
+      tasks,
+      sortTreatAsDone: _sortTreatAsDone,
+    );
     final keys = groups.keys.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     final children = <Widget>[];
@@ -1952,8 +1834,12 @@ DatabaseService.instance.persistPlanningTaskOrder(
     Map<String, int> planActualByPbId,
   ) {
     final masterBar = _tagSortMasterBarOrder();
-    final groups = _groupTasksByMasterBar(tasks, masterBar);
-    final orderedIds = _groupIdsInMasterBarSequence(groups, masterBar);
+    final groups = groupPlanningTasksByMasterBar(
+      tasks,
+      masterBar,
+      sortTreatAsDone: _sortTreatAsDone,
+    );
+    final orderedIds = planningGroupIdsInMasterBarSequence(groups, masterBar);
     final children = <Widget>[];
     var firstGroup = true;
     for (final gid in orderedIds) {
@@ -2026,7 +1912,10 @@ DatabaseService.instance.persistPlanningTaskOrder(
     int newIndex,
   ) {
     if (_planSelectMode || _sortMode != PlanSortMode.category) return;
-    final groups = _groupTasksByCategoryPath(allDisplayed);
+    final groups = groupPlanningTasksByCategoryPath(
+      allDisplayed,
+      sortTreatAsDone: _sortTreatAsDone,
+    );
     final keys = groups.keys.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     final bucket = List<PlanningTask>.from(groups[categoryPath] ?? []);
@@ -2066,7 +1955,11 @@ DatabaseService.instance.persistPlanningTaskOrder(
     int newIndex,
   ) {
     if (_planSelectMode || _sortMode != PlanSortMode.tags) return;
-    final groups = _groupTasksByMasterBar(allDisplayed, masterBar);
+    final groups = groupPlanningTasksByMasterBar(
+      allDisplayed,
+      masterBar,
+      sortTreatAsDone: _sortTreatAsDone,
+    );
     final bucket = List<PlanningTask>.from(groups[groupId] ?? []);
     if (bucket.isEmpty) return;
     if (oldIndex < 0 || oldIndex >= bucket.length) return;
@@ -2078,7 +1971,7 @@ DatabaseService.instance.persistPlanningTaskOrder(
     bucket.removeAt(oldIndex);
     bucket.insert(ni, row);
     groups[groupId] = bucket;
-    final orderedIds = _groupIdsInMasterBarSequence(groups, masterBar);
+    final orderedIds = planningGroupIdsInMasterBarSequence(groups, masterBar);
     final flat = <PlanningTask>[];
     for (final gid in orderedIds) {
       flat.addAll(groups[gid] ?? const <PlanningTask>[]);
@@ -2122,73 +2015,6 @@ DatabaseService.instance.persistPlanningTaskOrder(
       toIndex: ni,
       withOrders: withOrders,
       baselineBefore: current,
-    );
-  }
-
-  Widget _buildFrozenPlanCardList(
-    List<PlanningTask> tasks,
-    ColorScheme scheme,
-    DateTime wallDay,
-  ) {
-    DatabaseService.instance.buildPlansDayRenderSnapshot(
-      wallDay,
-      activeRecordingTitleNorm: _activeRecordingTitleNorm,
-    );
-    final renderSnap =
-        DatabaseService.instance.plansRenderSnapshotForDate(wallDay);
-    final planActual = DatabaseService.instance
-        .aggregateSourcePlanActualSecondsForWallCalendarDay(wallDay);
-
-    if (tasks.isEmpty) {
-      return PlanningFrozenListEmptyState(scheme: scheme);
-    }
-
-    final cards = renderSnap?.ready == true
-        ? renderSnap!.cards
-        : tasks.map((task) {
-            final pbId = DatabaseService.pocketRelationIdOrNull(
-              task.pocketRecordId,
-            );
-            return PlanCardRenderDto(
-              task: task,
-              planTrackedSeconds: pbId != null ? (planActual[pbId] ?? 0) : 0,
-              planEstimatedSeconds: planningWallEstimateSeconds(task),
-              displayIsDone: task.isDone,
-              showPlay: !task.isDone,
-              highlightAsRunning: false,
-              timeLabel: timelineTimeRangeLabel(task),
-              tagsReady: true,
-              categoryReady: true,
-            );
-          }).toList();
-
-    return ColoredBox(
-      color: scheme.surface,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        physics: const ClampingScrollPhysics(),
-        itemCount: cards.length,
-        itemBuilder: (context, index) {
-          final dto = cards[index];
-          return PlanCard(
-            key: ValueKey<String>(
-              'plan-day-${dto.task.planRowIdForBackend}',
-            ),
-            task: dto.task,
-            planTrackedSeconds: dto.planTrackedSeconds,
-            planEstimatedSeconds: dto.planEstimatedSeconds,
-            displayIsDone: dto.displayIsDone,
-            selectMode: false,
-            isSelected: false,
-            highlightAsRunning: dto.highlightAsRunning,
-            toggleDoneEnabled: false,
-            onToggleDone: () {},
-            onBodyTap: () {},
-            onPlay: dto.showPlay ? () {} : null,
-            onOpenMenu: (_) {},
-          );
-        },
-      ),
     );
   }
 
@@ -2285,7 +2111,12 @@ DatabaseService.instance.persistPlanningTaskOrder(
       }
       return RepaintBoundary(
         child: PlanningDayCardListKeepAlive(
-          child: _buildFrozenPlanCardList(tasks, scheme, wallDay),
+          child: PlanningFrozenDayList(
+            tasks: tasks,
+            scheme: scheme,
+            wallDay: wallDay,
+            activeRecordingTitleNorm: _activeRecordingTitleNorm,
+          ),
         ),
       );
     }
@@ -2416,52 +2247,17 @@ DatabaseService.instance.persistPlanningTaskOrder(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (_planSelectMode) ...[
-                  Material(
-                    color: scheme.surface,
-                    elevation: 0,
-                    surfaceTintColor: scheme.surfaceTint,
-                    child: SizedBox(
-                      height: kGlobalCompactHeaderHeight,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: _exitSelectMode,
-                            tooltip: t(currentLocale.value, 'plan_exit_select'),
-                          ),
-                          Expanded(
-                            child: Text(
-                              t(currentLocale.value, 'plan_select_mode'),
-                              style: Theme.of(context).textTheme.titleMedium,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (visiblePlans != null)
-                            TextButton(
-                              style: TextButton.styleFrom(
-                                visualDensity: VisualDensity.compact,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                              ),
-                              onPressed: () =>
-                                  _toggleSelectAllVisiblePlans(visiblePlans),
-                              child: Text(
-                                _allVisiblePlanTasksSelected(visiblePlans)
-                                    ? t(
-                                        currentLocale.value,
-                                        'plan_deselect_visible',
-                                      )
-                                    : t(currentLocale.value, 'plan_select_all'),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                if (_planSelectMode)
+                  PlanningSelectModeHeader(
+                    scheme: scheme,
+                    onExit: _exitSelectMode,
+                    visiblePlans: visiblePlans,
+                    allVisibleSelected: visiblePlans != null &&
+                        _allVisiblePlanTasksSelected(visiblePlans),
+                    onToggleSelectAll: visiblePlans != null
+                        ? () => _toggleSelectAllVisiblePlans(visiblePlans)
+                        : null,
                   ),
-                  Divider(height: 1, color: scheme.outlineVariant),
-                ],
                 Expanded(child: body),
               ],
             ),
