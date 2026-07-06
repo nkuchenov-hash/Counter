@@ -458,6 +458,9 @@ const Map<String, String> kRuL10n = {
     'category_create_duplicate': 'Создать дубликат',
     'category_create_action': 'Создать',
     'category_picker_new': 'Новая категория',
+    'category_picker_add': 'Добавить категорию',
+    'category_picker_empty_hint':
+        'Категорий пока нет. Нажмите «Добавить категорию» выше.',
     'category_create_title': 'Создать категорию',
     'category_name_label': 'Название категории',
     'category_picker_create_named': 'Создать «%s»',

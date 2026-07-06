@@ -143,6 +143,24 @@ class _WearTimerScreenState extends State<WearTimerScreen> {
                       },
                     ),
                     const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.add_rounded),
+                      title: Text(t(locale, 'category_picker_add')),
+                      subtitle: categoryCreateFromPickerAllowed()
+                          ? null
+                          : Text(t(locale, 'category_create_requires_connection')),
+                      enabled: categoryCreateFromPickerAllowed(),
+                      onTap: categoryCreateFromPickerAllowed()
+                          ? () async {
+                              final id =
+                                  await showCreateCategoryFromPickerDialog(ctx);
+                              if (id == null || !ctx.mounted) return;
+                              Navigator.pop(ctx);
+                              unawaited(_startWithCategory(id));
+                            }
+                          : null,
+                    ),
+                    const Divider(height: 1),
                     ...flat.map(
                       (r) => ListTile(
                         title: Text(
@@ -154,17 +172,6 @@ class _WearTimerScreenState extends State<WearTimerScreen> {
                         },
                       ),
                     ),
-                    if (categoryCreateFromPickerAllowed())
-                      ListTile(
-                        leading: const Icon(Icons.add_rounded),
-                        title: Text(t(locale, 'category_picker_new')),
-                        onTap: () async {
-                          final id = await showCreateCategoryFromPickerDialog(ctx);
-                          if (id == null || !ctx.mounted) return;
-                          Navigator.pop(ctx);
-                          unawaited(_startWithCategory(id));
-                        },
-                      ),
                   ],
                 ),
               ),

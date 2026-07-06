@@ -41,7 +41,7 @@ class DefaultPlanCategorySearchDelegate
       if (categoryCreateFromPickerAllowed())
         IconButton(
           icon: const Icon(Icons.add_rounded),
-          tooltip: t(loc, 'category_picker_new'),
+          tooltip: t(loc, 'category_picker_add'),
           onPressed: () => unawaited(_createCategory(context)),
         ),
       if (query.isNotEmpty)
@@ -74,29 +74,61 @@ class DefaultPlanCategorySearchDelegate
             return o.path.toLowerCase().contains(q) ||
                 o.name.toLowerCase().contains(q);
           }).toList();
+    final canCreate = categoryCreateFromPickerAllowed();
+    final offlineHint = canCreate
+        ? null
+        : t(loc, 'category_create_requires_connection');
 
     if (matches.isEmpty) {
-      if (q.isNotEmpty && categoryCreateFromPickerAllowed()) {
-        return ListView(
-          children: [
+      return ListView(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.add_rounded),
+            title: Text(t(loc, 'category_picker_add')),
+            subtitle: offlineHint != null ? Text(offlineHint) : null,
+            enabled: canCreate,
+            onTap: canCreate ? () => unawaited(_createCategory(context)) : null,
+          ),
+          if (q.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.add_rounded),
               title: Text(
-                t(loc, 'category_picker_create_named').replaceFirst('%s', query.trim()),
+                t(loc, 'category_picker_create_named')
+                    .replaceFirst('%s', query.trim()),
               ),
-              onTap: () => unawaited(_createCategory(context, initialName: query.trim())),
+              enabled: canCreate,
+              onTap: canCreate
+                  ? () => unawaited(
+                        _createCategory(context, initialName: query.trim()),
+                      )
+                  : null,
             ),
-          ],
-        );
-      }
-      return Center(child: Text(t(loc, 'plan_default_time_search_category')));
+          if (q.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                t(loc, 'plan_default_time_search_category'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+        ],
+      );
     }
 
     return ListView.separated(
-      itemCount: matches.length,
+      itemCount: matches.length + 1,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
-        final option = matches[index];
+        if (index == 0) {
+          return ListTile(
+            leading: const Icon(Icons.add_rounded),
+            title: Text(t(loc, 'category_picker_add')),
+            subtitle: offlineHint != null ? Text(offlineHint) : null,
+            enabled: canCreate,
+            onTap: canCreate ? () => unawaited(_createCategory(context)) : null,
+          );
+        }
+        final option = matches[index - 1];
         return ListTile(
           title: Text(option.path),
           onTap: () => close(context, option),

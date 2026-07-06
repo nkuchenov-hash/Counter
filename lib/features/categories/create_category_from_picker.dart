@@ -46,6 +46,13 @@ Future<int?> createCategoryFromPickerSubmit({
   );
   final ok = await db.addNestedCategory(parentId, child);
   if (!ok) return null;
+  final siblings = db.getChildrenOf(parentId);
+  for (final s in siblings) {
+    if (s.isArchived) continue;
+    if (s.name.trim().toLowerCase() == trimmed.toLowerCase()) {
+      return s.id;
+    }
+  }
   return db.findActiveLocalCategoryIdByDisplayName(trimmed);
 }
 

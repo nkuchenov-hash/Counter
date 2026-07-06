@@ -3,7 +3,7 @@
 
 import 'dart:async';
 
-import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/core/widgets/app_icon_button.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_visibility_prefs.dart';
@@ -92,12 +92,54 @@ Future<CategoryTreeSheetResult?> _showCategoryTreeSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    useSafeArea: true,
     builder: (ctx) {
-      return _CategoryTreePickerSheet(
-        initialCategoryId: initialCategoryId,
-        showAllCategoriesRow: showAllCategoriesRow,
+      final sheetHeight = (MediaQuery.sizeOf(ctx).height * 0.82).clamp(320.0, 720.0);
+      return SizedBox(
+        height: sheetHeight,
+        child: _CategoryTreePickerSheet(
+          initialCategoryId: initialCategoryId,
+          showAllCategoriesRow: showAllCategoriesRow,
+        ),
       );
     },
+  );
+}
+
+/// Always-visible picker create row (top / bottom / search miss).
+@visibleForTesting
+Key get categoryPickerTopAddKey => const ValueKey<String>('category_picker_top_add');
+
+@visibleForTesting
+Key get categoryPickerBottomAddKey =>
+    const ValueKey<String>('category_picker_bottom_add');
+
+@visibleForTesting
+Key categoryPickerRowAddKey(int categoryId) =>
+    ValueKey<String>('category_picker_row_add_$categoryId');
+
+@visibleForTesting
+bool categoryTreeNodeShowsPickerAddChild({
+  required bool showPickerCreateChrome,
+  required void Function(CategoryRule parent)? onPickerAddChild,
+}) {
+  return showPickerCreateChrome && onPickerAddChild != null;
+}
+
+@visibleForTesting
+Widget categoryPickerCreateListTile({
+  required Key key,
+  required String label,
+  required VoidCallback? onTap,
+  String? subtitle,
+}) {
+  return ListTile(
+    key: key,
+    leading: const Icon(Icons.add_rounded),
+    title: Text(label),
+    subtitle: subtitle != null && subtitle.isNotEmpty ? Text(subtitle) : null,
+    enabled: onTap != null,
+    onTap: onTap,
   );
 }
 
@@ -150,13 +192,33 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
 
   bool get _hasSearchMatch => _visibleRoots.isNotEmpty;
 
-  Future<void> _createCategory({String? initialName}) async {
+  bool get _canCreate => categoryCreateFromPickerAllowed();
+
+  String? get _offlineCreateHint {
+    if (_canCreate) return null;
+    return t(currentLocale.value, 'category_create_requires_connection');
+  }
+
+  Future<void> _createCategory({String? initialName, int? parentId}) async {
     final id = await showCreateCategoryFromPickerDialog(
       context,
       initialName: initialName,
+      parentId: parentId,
     );
     if (!mounted || id == null) return;
     Navigator.of(context).pop(CategoryTreeSheetPicked(id));
+  }
+
+  void _onTopAddCategory() {
+    unawaited(_createCategory(parentId: null));
+  }
+
+  void _onBottomAddCategory() {
+    unawaited(_createCategory(parentId: null));
+  }
+
+  void _onPickerAddChild(CategoryRule parent) {
+    unawaited(_createCategory(parentId: parent.id));
   }
 
   @override
@@ -164,99 +226,102 @@ class _CategoryTreePickerSheetState extends State<_CategoryTreePickerSheet> {
     final loc = currentLocale.value;
     final roots = _visibleRoots;
     final trimmedQuery = _query.trim();
-    final showNamedCreate =
-        trimmedQuery.isNotEmpty && !_hasSearchMatch;
+    final showNamedCreate = trimmedQuery.isNotEmpty && !_hasSearchMatch;
+    final offlineHint = _offlineCreateHint;
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text(
-                t(loc, 'category_label'),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+            child: Text(
+              t(loc, 'category_label'),
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  isDense: true,
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  hintText: t(loc, 'category_label'),
-                ),
-                textCapitalization: TextCapitalization.sentences,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                isDense: true,
+                prefixIcon: const Icon(Icons.search_rounded),
+                hintText: t(loc, 'category_label'),
               ),
+              textCapitalization: TextCapitalization.sentences,
             ),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(context).height * 0.55,
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (widget.showAllCategoriesRow)
-                      ListTile(
-                        title: Text(t(loc, 'lists_filter_all')),
-                        leading: const Icon(Icons.filter_alt_off_rounded),
-                        onTap: () =>
-                            Navigator.of(context).pop(CategoryTreeSheetAll()),
-                      ),
-                    if (showNamedCreate)
-                      ListTile(
-                        leading: const Icon(Icons.add_rounded),
-                        title: Text(
-                          t(loc, 'category_picker_create_named')
-                              .replaceFirst('%s', trimmedQuery),
-                        ),
-                        onTap: () =>
-                            unawaited(_createCategory(initialName: trimmedQuery)),
-                      ),
-                    if (roots.isEmpty && !showNamedCreate)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Text(
-                          t(loc, 'category_picker_new'),
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      )
-                    else
-                      _CategoryTreeBody(
-                        roots: roots,
-                        selectedCategoryId: widget.initialCategoryId,
-                        expandSelectionPath: false,
-                        onSelect: (id) => Navigator.of(context).pop(
-                          CategoryTreeSheetPicked(id),
-                        ),
-                        showEditChrome: false,
-                      ),
-                  ],
-                ),
-              ),
+          ),
+          categoryPickerCreateListTile(
+            key: categoryPickerTopAddKey,
+            label: t(loc, 'category_picker_add'),
+            subtitle: offlineHint,
+            onTap: _canCreate ? _onTopAddCategory : null,
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+              children: [
+                if (widget.showAllCategoriesRow)
+                  ListTile(
+                    title: Text(t(loc, 'lists_filter_all')),
+                    leading: const Icon(Icons.filter_alt_off_rounded),
+                    onTap: () =>
+                        Navigator.of(context).pop(CategoryTreeSheetAll()),
+                  ),
+                if (showNamedCreate)
+                  categoryPickerCreateListTile(
+                    key: const ValueKey<String>('category_picker_named_create'),
+                    label: t(loc, 'category_picker_create_named')
+                        .replaceFirst('%s', trimmedQuery),
+                    subtitle: offlineHint,
+                    onTap: _canCreate
+                        ? () => unawaited(
+                              _createCategory(
+                                initialName: trimmedQuery,
+                                parentId: null,
+                              ),
+                            )
+                        : null,
+                  ),
+                if (roots.isEmpty && !showNamedCreate)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      t(loc, 'category_picker_empty_hint'),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  )
+                else
+                  _CategoryTreeBody(
+                    roots: roots,
+                    selectedCategoryId: widget.initialCategoryId,
+                    expandSelectionPath: false,
+                    onSelect: (id) => Navigator.of(context).pop(
+                      CategoryTreeSheetPicked(id),
+                    ),
+                    showEditChrome: false,
+                    showPickerCreateChrome: true,
+                    onPickerAddChild: _canCreate ? _onPickerAddChild : null,
+                  ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: AppButton.secondary(
-                label: t(loc, 'category_picker_new'),
-                icon: Icons.add_rounded,
-                expand: true,
-                onPressed: categoryCreateFromPickerAllowed()
-                    ? () => unawaited(_createCategory())
-                    : null,
-              ),
-            ),
-          ],
-        ),
+          ),
+          const Divider(height: 1),
+          categoryPickerCreateListTile(
+            key: categoryPickerBottomAddKey,
+            label: t(loc, 'category_picker_add'),
+            subtitle: offlineHint,
+            onTap: _canCreate ? _onBottomAddCategory : null,
+          ),
+        ],
       ),
     );
   }
@@ -408,6 +473,8 @@ class _CategoryTreeBody extends StatefulWidget {
     this.expandSelectionPath = true,
     required this.onSelect,
     required this.showEditChrome,
+    this.showPickerCreateChrome = false,
+    this.onPickerAddChild,
     this.onFullSettingsTap,
     this.onAppearanceTap,
     this.onAddChild,
@@ -419,6 +486,8 @@ class _CategoryTreeBody extends StatefulWidget {
   final bool expandSelectionPath;
   final ValueChanged<int> onSelect;
   final bool showEditChrome;
+  final bool showPickerCreateChrome;
+  final void Function(CategoryRule parent)? onPickerAddChild;
   final void Function(CategoryRule r)? onFullSettingsTap;
   final void Function(CategoryRule r)? onAppearanceTap;
   final void Function(CategoryRule parent)? onAddChild;
@@ -486,6 +555,8 @@ class _CategoryTreeBodyState extends State<_CategoryTreeBody> {
             onToggleExpand: _toggle,
             onSelect: widget.onSelect,
             showEditChrome: widget.showEditChrome,
+            showPickerCreateChrome: widget.showPickerCreateChrome,
+            onPickerAddChild: widget.onPickerAddChild,
             onFullSettingsTap: widget.onFullSettingsTap,
             onAppearanceTap: widget.onAppearanceTap,
             onAddChild: widget.onAddChild,
@@ -504,6 +575,8 @@ class _CategoryTreeNode extends StatelessWidget {
     required this.onToggleExpand,
     required this.onSelect,
     required this.showEditChrome,
+    this.showPickerCreateChrome = false,
+    this.onPickerAddChild,
     this.onFullSettingsTap,
     this.onAppearanceTap,
     this.onAddChild,
@@ -516,6 +589,8 @@ class _CategoryTreeNode extends StatelessWidget {
   final void Function(int id) onToggleExpand;
   final ValueChanged<int> onSelect;
   final bool showEditChrome;
+  final bool showPickerCreateChrome;
+  final void Function(CategoryRule parent)? onPickerAddChild;
   final void Function(CategoryRule r)? onFullSettingsTap;
   final void Function(CategoryRule r)? onAppearanceTap;
   final void Function(CategoryRule parent)? onAddChild;
@@ -539,6 +614,10 @@ class _CategoryTreeNode extends StatelessWidget {
     final color = rule.colorOrDefault;
     final isSelected = selectedCategoryId == rule.id;
     final loc = currentLocale.value;
+    final showRowAdd = categoryTreeNodeShowsPickerAddChild(
+      showPickerCreateChrome: showPickerCreateChrome,
+      onPickerAddChild: onPickerAddChild,
+    );
 
     final row = AnimatedOpacity(
       duration: _kTreeOpacityDuration,
@@ -584,6 +663,15 @@ class _CategoryTreeNode extends StatelessWidget {
                         ),
                   ),
                 ),
+                if (showRowAdd)
+                  AppIconButton(
+                    key: categoryPickerRowAddKey(rule.id),
+                    icon: Icons.add_rounded,
+                    tooltip: t(loc, 'add_subcategory'),
+                    size: AppIconButtonSize.s,
+                    variant: AppIconButtonVariant.subtle,
+                    onPressed: () => onPickerAddChild!(rule),
+                  ),
                 if (showEditChrome && onAddChild != null && depth < 4)
                   IconButton(
                     iconSize: 20,
@@ -631,6 +719,8 @@ class _CategoryTreeNode extends StatelessWidget {
                     onToggleExpand: onToggleExpand,
                     onSelect: onSelect,
                     showEditChrome: showEditChrome,
+                    showPickerCreateChrome: showPickerCreateChrome,
+                    onPickerAddChild: onPickerAddChild,
                     onFullSettingsTap: onFullSettingsTap,
                     onAppearanceTap: onAppearanceTap,
                     onAddChild: onAddChild,

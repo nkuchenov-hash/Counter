@@ -78,10 +78,12 @@ This document defines how Life OS behaves when people interact with it. It is th
 
 ## Picker / Taxonomy Creation
 
-- Category pickers opened from edit sheets or category-selection controls must offer **New category** without closing the parent edit flow.
-- When search/filter text does not match an existing category, show a contextual **Create “&lt;name&gt;”** action when online.
+- Category pickers opened from edit sheets or category-selection controls must expose **visible create actions immediately** when the picker opens — not only at the end of a long scrollable list.
+- Layout: sheet header → search (optional) → **always-visible top “+ Add category” row** → scrollable tree → **sticky bottom “+ Add category” row** (root level in nested tree pickers).
+- Every category row in the picker tree must show a trailing **“+”** (`add_subcategory`) that creates a **child** under that row; row tap still selects the category.
+- When search/filter text does not match an existing category, show a contextual **Create “&lt;name&gt;”** action near the empty-result area.
 - Category creation requires network connection; do not invent client-only temporary categories or fake ids.
-- After successful creation, refresh the in-memory category cache via the Brain path, close only the create dialog, keep the parent picker/sheet open, and auto-select the new category with the same save/autosave behavior as picking an existing row.
+- After successful creation, refresh the in-memory category cache via the Brain path, close only the create dialog, keep the parent picker/sheet open until the new category is auto-selected, then return to the edit sheet with the same autosave behavior as picking an existing row.
 
 ## Selection / Bulk Mode
 

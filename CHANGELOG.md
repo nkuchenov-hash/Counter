@@ -11,12 +11,24 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Category picker create UX fix [shipped]
+
+* **`lib/features/categories/category_recursive_tree.dart`:** [fix] Picker sheet uses fixed height (~82% viewport), always-visible top **+ Add category** row, sticky bottom **+ Add category**, trailing **+** on every tree row (`AppIconButton` / `add_subcategory`), and search-miss **Create "name"** — fixes Plans/Timeline edit pickers where create was hidden below the fold.
+* **`lib/features/categories/create_category_from_picker.dart`:** [fix] Resolve newly created child category local id via sibling lookup under parent.
+* **`test/category_picker_create_test.dart`:** [fix] Regression tests for picker create chrome keys and list tiles.
+
 ## [2026-07-06] - Create category from picker [shipped]
 
 * **`lib/features/categories/category_recursive_tree.dart`**, **`create_category_from_picker.dart`:** [shipped] Shared category tree picker sheet now includes search, “New category”, and contextual Create “name”; compact create dialog stacks above the picker without closing parent edit sheets; newly created category auto-selects via `CategoryTreeSheetPicked`.
 * **`lib/features/planning/settings/default_plan_category_search.dart`**, **`lib/features/wear/wear_timer_screen.dart`:** [shipped] Planning default-time category search and Wear start picker reuse the same create-from-picker flow; offline disables create with one clear message.
 * **`lib/features/shared/timeline_record_edit_sheet.dart`:** [shipped] Category field stays enabled when no categories exist so first category can be created from the record edit sheet.
 * **`lib/l10n/langs/en.dart`**, **`lib/l10n/langs/ru.dart`**, **`test/category_picker_create_test.dart`:** [shipped] EN/RU picker strings + filter unit tests.
+
+## [2026-07-06] - Planning quick-add test (B3 prerequisite) [shipped]
+
+* **`test/planning_page_quick_add_test.dart`:** [shipped] Quick-add chrome (`PlanningQuickAddTagStrip`, field, Add button); empty submit no-op; typed submit + keyboard done no-throw without PocketBase; optimistic task list shell smoke.
+* **`docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`:** [shipped] §7.3 item 4 complete — B3 extraction unblocked while planning_page_* tests stay green.
+* **Verification:** `flutter test test/planning_page_*` 12 passed; full suite 260 passed.
 
 ## [2026-07-06] - Planning grouped list UI split (Stage B2) [shipped]
 

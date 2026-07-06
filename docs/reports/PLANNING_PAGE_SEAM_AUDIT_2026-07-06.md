@@ -18,7 +18,7 @@
 
 | Sub-verdict | Meaning |
 | :--- | :--- |
-| **Quick-add extraction (B3)** | **Unblocked (conditional)** — after B0 stays green; `planning_page_quick_add_test.dart` still recommended |
+| **Quick-add extraction (B3)** | **Unblocked** — `planning_page_quick_add_test.dart` shipped; keep all `planning_page_*` tests green |
 | **Time View host / card row (B3+)** | **High risk** — do not move without host contract tests |
 | **Brain / CRUD paths** | **No-touch** |
 
@@ -212,7 +212,7 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 | `test/planning_page_host_contract_test.dart` | **Added B0** — mount, empty state, Time View host path, barrel exports |
 | `test/planning_page_list_modes_test.dart` | **Added B0** — sort-mode shell, empty + seeded task, `PlanSortMode` indices |
 | `test/planning_page_selection_test.dart` | **Deferred** |
-| `test/planning_page_quick_add_test.dart` | **Deferred** |
+| `test/planning_page_quick_add_test.dart` | **Added B3 prereq** — quick-add chrome, submit no-throw, optimistic list shell |
 
 ### 7.2 Seam → test mapping
 
@@ -234,7 +234,7 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 1. **`test/planning_page_host_contract_test.dart`** — ✅ **Shipped B0** — `ShellLayoutScope` + `PlanningPage` mount; empty `PlanningDayEmptyState`; Time sort + optimistic task → scroll surface; barrel exports. *(Full fake `PlanningTimeViewHost` coordinator contract deferred.)*
 2. **`test/planning_page_list_modes_test.dart`** — ✅ **Shipped B0** — empty day + sort taps; seeded optimistic task per `PlanSortMode`; persistence index unit check.
 3. **`test/planning_page_selection_test.dart`** — **Deferred** — long-press enters select mode; bulk bar visible; FAB reserve callback (mock `ShellLayoutScope` if needed).
-4. **`test/planning_page_quick_add_test.dart`** — **Deferred** — `_addTask` optimistic path (may require Brain test doubles).
+4. **`test/planning_page_quick_add_test.dart`** — ✅ **Shipped B3 prereq** — quick-add chrome; empty/typed submit; keyboard done; optimistic list shell via `applyOptimisticPlanningTask`. *(Full Brain `addPlanningTask` write path deferred — harness has no PocketBase session.)*
 
 ### 7.4 Manual smoke checks (any extraction)
 
