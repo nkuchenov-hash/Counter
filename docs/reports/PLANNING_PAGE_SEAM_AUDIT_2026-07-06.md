@@ -10,21 +10,19 @@
 
 ## 1. Executive verdict
 
-### **B1 COMPLETE — B2 CONDITIONALLY UNBLOCKED**
+### **B2 COMPLETE — B3 CONDITIONALLY UNBLOCKED**
 
-`planning_page.dart` is **not ready for a blind line-count split**. Time View drag/cascade/layout logic is **already extracted** to `time_view/*` (~783 lines in `planning_time_view.dart` alone), but the page still **implements `PlanningTimeViewHost`**, owns **card-row rendering used by Time View**, and duplicates **day-body routing** in two methods.
+**Stage B1 (2026-07-06):** S1/S5/S6 extracted; `planning_page.dart` 2394 → ~2202 lines.
 
-**Stage B0 (2026-07-06):** Added `test/planning_page_host_contract_test.dart` and `test/planning_page_list_modes_test.dart` — `PlanningPage` mounts without network; empty-day and sort-mode shell smoke; Time View host path does not throw.
-
-**Stage B1 (2026-07-06):** Extracted S1 → `widgets/planning_list_grouping.dart`, S5 → `widgets/planning_frozen_day_list.dart`, S6 → `widgets/planning_select_mode_header.dart`. `planning_page.dart` **2394 → ~2202 lines**. Zero behavior change; B0 tests green.
+**Stage B2 (2026-07-06):** S2/S3 extracted → `planning_category_grouped_list.dart`, `planning_tag_grouped_list.dart`, `planning_group_section.dart`. `planning_page.dart` **~2202 → ~2095 lines**. Reorder handlers (`_onCategoryBucketReorder`, `_onTagBucketReorder`) remain on page; B0 tests green.
 
 | Sub-verdict | Meaning |
 | :--- | :--- |
-| **Grouped list sections (B2)** | **Unblocked (conditional)** — S2/S3/S4 after B0 stays green |
+| **Quick-add extraction (B3)** | **Unblocked (conditional)** — after B0 stays green; `planning_page_quick_add_test.dart` still recommended |
 | **Time View host / card row (B3+)** | **High risk** — do not move without host contract tests |
-| **Brain / CRUD paths** | **No-touch** — all mutations stay via `DatabaseService.instance.*` |
+| **Brain / CRUD paths** | **No-touch** |
 
-**Do not split** beyond documented B2 seams until B0 tests pass; re-run `flutter test test/planning_page_*` before any B2 commit.
+**Do not split** beyond documented B3 seams until B0 tests pass.
 
 ---
 
@@ -32,7 +30,7 @@
 
 | Metric | Value |
 | :--- | :--- |
-| **`planning_page.dart` lines** | **~2202** (was 2394 pre-B1) |
+| **`planning_page.dart` lines** | **~2095** (was ~2202 post-B1, 2394 pre-B1) |
 | **Public entrypoints** | `PlanningPage`, `_PlanningPageState` (private) |
 | **Private widget classes in file** | **0** (all logic in `_PlanningPageState` methods) |
 | **Import count** | **~52** package imports |
@@ -273,15 +271,14 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 | **Run** | B0 tests + full suite green at ship |
 | **Rollback** | Revert sibling files; restore methods inline |
 
-### Stage B2 — Grouped list sections
+### Stage B2 — Grouped list sections ✅ **Complete 2026-07-06**
 
 | Item | Detail |
 | :--- | :--- |
-| **Targets** | S2, S3, S4 → `widgets/planning_category_grouped_list.dart`, `widgets/planning_tag_grouped_list.dart` (+ shared reorder callbacks) |
-| **Est. reduction** | ~350–400 lines |
+| **Targets** | S2 → `planning_category_grouped_list.dart`; S3 → `planning_tag_grouped_list.dart`; shared → `planning_group_section.dart`; S4 reorder handlers stay on page |
+| **Est. reduction** | ~107 lines (`planning_page.dart` ~2202 → ~2095) |
 | **Risk** | **Medium** |
-| **Prerequisite** | B0 list mode widget tests |
-| **Run** | Full suite + manual §7.4 (1–2) |
+| **Run** | B0 tests + full suite green at ship |
 | **Rollback** | Single revert commit |
 
 ### Stage B3 — Quick-add extraction
@@ -349,10 +346,11 @@ Product rules from `docs/UX_CONTRACT.md` / Time View modules. Column **Controlle
 
 > **Stage B0:** ✅ Complete — host + list-mode widget tests shipped.
 > **Stage B1:** ✅ Complete — S1/S5/S6 extracted; B0 tests green.
+> **Stage B2:** ✅ Complete — S2/S3 grouped list UI extracted; B0 tests green.
 
-Next split prompt (B2 — only if B0 green):
+Next split prompt (B3 — only if B0 green; quick-add test recommended):
 
-> **Stage B2:** Extract `_buildCategoryGroupedView` to `widgets/planning_category_grouped_list.dart` and tag grouped list (S3/S4) to `widgets/planning_tag_grouped_list.dart`. Zero behavior change. Run B0 tests + architecture guard + manual §7.4 items 1–2.
+> **Stage B3:** Extend `planning_quick_add_strip.dart` with quick-add controller logic (S7/S8). Zero behavior change. Run B0 tests + `planning_page_quick_add_test.dart` if added + architecture guard.
 
 ---
 

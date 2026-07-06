@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-06] - Planning grouped list UI split (Stage B2) [shipped]
+
+* **`lib/features/planning/planning_page.dart`:** [shipped] UI-only extract S2/S3 grouped list rendering (~2202→~2095 lines); reorder handlers and page state unchanged.
+* **`lib/features/planning/widgets/planning_category_grouped_list.dart`:** [shipped] `PlanningCategoryGroupedList` — category-sort buckets + breadcrumb headers.
+* **`lib/features/planning/widgets/planning_tag_grouped_list.dart`:** [shipped] `PlanningTagGroupedList` — tags-sort buckets in master-bar order.
+* **`lib/features/planning/widgets/planning_group_section.dart`:** [shipped] Shared `PlanningGroupedReorderBucket`, `PlanningCategoryGroupHeader`, `PlanningGroupedPlanCardRowBuilder`.
+* **`docs/APP_STRUCTURE.md`**, **`docs/APP_STRUCTURE_DETAILED.md`**, **`docs/reports/PLANNING_PAGE_SEAM_AUDIT_2026-07-06.md`:** [shipped] B2 complete; B3 quick-add next (tests deferred).
+* **Verification:** B0 tests green; `flutter test` 255 passed; `architecture_guard.ps1 -Strict` 0 violations.
+
 ## [2026-07-06] - Planning page low-risk split (Stage B1) [shipped]
 
 * **`lib/features/planning/planning_page.dart`:** [shipped] UI-only extract S1/S5/S6 (~2394→~2202 lines); orchestration, Time View host, card row, CRUD paths unchanged.

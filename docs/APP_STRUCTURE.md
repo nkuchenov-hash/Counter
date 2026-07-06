@@ -458,6 +458,9 @@ Explicit manifest entries for `architecture_guard.ps1 -Strict`:
 | `planning/widgets/planning_list_grouping.dart` | Category/tag sort grouping helpers |
 | `planning/widgets/planning_frozen_day_list.dart` | Offscreen frozen day plan card list |
 | `planning/widgets/planning_select_mode_header.dart` | Bulk selection mode header chrome |
+| `planning/widgets/planning_category_grouped_list.dart` | Category-sort grouped plan list |
+| `planning/widgets/planning_tag_grouped_list.dart` | Tags-sort grouped plan list |
+| `planning/widgets/planning_group_section.dart` | Shared grouped-list section widgets |
 | `profile/settings/settings_page.dart` | Language/TZ settings page (shell route) |
 | `shared/profile_hydration_status_bar.dart` | Profile hydration error banner |
 | `core/navigation/shell_side_navigation.dart` | Desktop/web side navigation rail |

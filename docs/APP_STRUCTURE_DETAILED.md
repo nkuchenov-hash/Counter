@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `1d58d68` on 2026-07-06.**
+**Generated at git SHA `205c6b8` on 2026-07-06.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -11691,6 +11691,57 @@ RU:
 - **Слой:** UI — экран/виджет (planning).
 
 
+### `lib/features/planning/widgets/planning_frozen_day_list.dart`
+
+EN:
+
+- **What this is:** `planning_frozen_day_list.dart` on Plans tab (second bottom tab) — Offscreen frozen day plan card list.
+- **Why needed:** Users see `planning_frozen_day_list.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningFrozenDayList`.
+- **Key code names:** `PlanningFrozenDayList`
+- **Responsibilities:** Offscreen frozen day plan card list
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Offscreen frozen day plan card list
+- **Layer / owner:** UI code for the planning area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `planning_frozen_day_list.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_frozen_day_list` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_frozen_day_list.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_frozen_day_list.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `planning_frozen_day_list` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+- **Слой:** UI — экран/виджет (planning).
+
+
+### `lib/features/planning/widgets/planning_list_grouping.dart`
+
+EN:
+
+- **What this is:** `planning_list_grouping.dart` on Plans tab (second bottom tab) — Category/tag sort grouping helpers.
+- **Why needed:** Users see `planning_list_grouping.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Dart module `planning_list_grouping.dart` — open file for classes and helpers.
+- **Responsibilities:** Category/tag sort grouping helpers
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Category/tag sort grouping helpers
+- **Layer / owner:** UI code for the planning area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `planning_list_grouping.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_list_grouping` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_list_grouping.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_list_grouping.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `planning_list_grouping` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+- **Слой:** UI — экран/виджет (planning).
+
+
 ### `lib/features/planning/widgets/planning_list_helpers.dart`
 
 EN:
@@ -11762,6 +11813,32 @@ RU:
 - **Зачем:** Пользователь видит UI из `planning_quick_add_strip.dart` на вкладка Plans (вторая снизу).
 - **Содержимое:** Dart-модуль `planning_quick_add_strip.dart` — классы и helpers в исходнике.
 - **Обязанности:** Поддерживает поведение `planning_quick_add_strip` в этой feature-зоне.
+- **Когда открывать:** Вкладка Plans: день, карточки, play.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** Вкладка Plans (shell index 1)
+- **Слой:** UI — экран/виджет (planning).
+
+
+### `lib/features/planning/widgets/planning_select_mode_header.dart`
+
+EN:
+
+- **What this is:** `planning_select_mode_header.dart` on Plans tab (second bottom tab) — Bulk selection mode header chrome.
+- **Why needed:** Users see `planning_select_mode_header.dart` when using Plans tab (second bottom tab).
+- **What it contains:** Primary symbols: `PlanningSelectModeHeader`.
+- **Key code names:** `PlanningSelectModeHeader`
+- **Responsibilities:** Bulk selection mode header chrome
+- **When to open:** Plans tab: day swipe, plan cards, play/start plan, bulk edit.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** Plans tab (shell index 1); APP_STRUCTURE role: Bulk selection mode header chrome
+- **Layer / owner:** UI code for the planning area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `planning_select_mode_header.dart` на вкладка Plans (вторая снизу) — Поддерживает поведение `planning_select_mode_header` в этой feature-зоне..
+- **Зачем:** Пользователь видит UI из `planning_select_mode_header.dart` на вкладка Plans (вторая снизу).
+- **Содержимое:** Dart-модуль `planning_select_mode_header.dart` — классы и helpers в исходнике.
+- **Обязанности:** Поддерживает поведение `planning_select_mode_header` в этой feature-зоне.
 - **Когда открывать:** Вкладка Plans: день, карточки, play.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** Вкладка Plans (shell index 1)

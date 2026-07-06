@@ -81,6 +81,8 @@ import 'package:counter/features/planning/widgets/planning_filter_controls.dart'
 import 'package:counter/features/planning/widgets/planning_list_grouping.dart';
 import 'package:counter/features/planning/widgets/planning_frozen_day_list.dart';
 import 'package:counter/features/planning/widgets/planning_list_helpers.dart';
+import 'package:counter/features/planning/widgets/planning_category_grouped_list.dart';
+import 'package:counter/features/planning/widgets/planning_tag_grouped_list.dart';
 import 'package:counter/features/planning/widgets/planning_select_mode_header.dart';
 import 'package:counter/features/planning/widgets/planning_quick_add_strip.dart';
 
@@ -1737,95 +1739,42 @@ DatabaseService.instance.persistPlanningTaskOrder(
 
 
 
+  Widget _groupedListPlanCardRow({
+    required BuildContext context,
+    required PlanningTask task,
+    required String key,
+    required bool displayDone,
+    required bool isSelected,
+    required Map<String, int> planActualByPbId,
+    bool omitLongPressForReorder = false,
+  }) {
+    return _planCardRow(
+      context: context,
+      task: task,
+      key: key,
+      displayDone: displayDone,
+      isSelected: isSelected,
+      planActualByPbId: planActualByPbId,
+      omitLongPressForReorder: omitLongPressForReorder,
+    );
+  }
+
   Widget _buildCategoryGroupedView(
     List<PlanningTask> tasks,
     Map<String, int> planActualByPbId,
   ) {
-    final scheme = Theme.of(context).colorScheme;
-    final groups = groupPlanningTasksByCategoryPath(
-      tasks,
+    return PlanningCategoryGroupedList(
+      tasks: tasks,
+      planActualByPbId: planActualByPbId,
       sortTreatAsDone: _sortTreatAsDone,
-    );
-    final keys = groups.keys.toList()
-      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-    final children = <Widget>[];
-    var firstCategoryGroup = true;
-    for (final k in keys) {
-      final bucket = groups[k];
-      if (bucket == null || bucket.isEmpty) continue;
-      if (!firstCategoryGroup) {
-        children.add(const SizedBox(height: 32));
-      }
-      firstCategoryGroup = false;
-      children.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              localizeCategoryBreadcrumbPath(k, currentLocale.value),
-              textAlign: TextAlign.start,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      );
-      if (_planSelectMode) {
-        for (final task in bucket) {
-          final key = _planKey(task);
-          final displayDone = _planDoneOverride[key] ?? task.isDone;
-          children.add(
-            _planCardRow(
-              context: context,
-              task: task,
-              key: key,
-              displayDone: displayDone,
-              isSelected: _selectedPlanKeys.contains(key),
-              planActualByPbId: planActualByPbId,
-            ),
-          );
-        }
-      } else {
-        children.add(
-          ReorderableListView.builder(
-            key: ValueKey<String>('category-bucket-$k'),
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            buildDefaultDragHandles: false,
-            proxyDecorator: planningReorderProxyDecorator,
-            itemCount: bucket.length,
-            onReorder: (oldI, newI) =>
-                _onCategoryBucketReorder(tasks, k, oldI, newI),
-            itemBuilder: (context, index) {
-              final task = bucket[index];
-              final key = _planKey(task);
-              final displayDone = _planDoneOverride[key] ?? task.isDone;
-              final canReorder = !_planSelectMode && _planCanReorderTask(task);
-              return ReorderableDelayedDragStartListener(
-                key: ValueKey<String>(key),
-                index: index,
-                enabled: canReorder,
-                child: _planCardRow(
-                  context: context,
-                  task: task,
-                  key: key,
-                  displayDone: displayDone,
-                  isSelected: _selectedPlanKeys.contains(key),
-                  planActualByPbId: planActualByPbId,
-                  omitLongPressForReorder: canReorder,
-                ),
-              );
-            },
-          ),
-        );
-      }
-    }
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      children: children,
+      planSelectMode: _planSelectMode,
+      planKeyForTask: _planKey,
+      resolveDisplayDone: (task, key) => _planDoneOverride[key] ?? task.isDone,
+      isSelectedKey: (key) => _selectedPlanKeys.contains(key),
+      canReorderTask: _planCanReorderTask,
+      planCardRow: _groupedListPlanCardRow,
+      onCategoryBucketReorder: (path, oldI, newI) =>
+          _onCategoryBucketReorder(tasks, path, oldI, newI),
     );
   }
 
@@ -1834,74 +1783,19 @@ DatabaseService.instance.persistPlanningTaskOrder(
     Map<String, int> planActualByPbId,
   ) {
     final masterBar = _tagSortMasterBarOrder();
-    final groups = groupPlanningTasksByMasterBar(
-      tasks,
-      masterBar,
+    return PlanningTagGroupedList(
+      tasks: tasks,
+      planActualByPbId: planActualByPbId,
+      masterBarOrder: masterBar,
       sortTreatAsDone: _sortTreatAsDone,
-    );
-    final orderedIds = planningGroupIdsInMasterBarSequence(groups, masterBar);
-    final children = <Widget>[];
-    var firstGroup = true;
-    for (final gid in orderedIds) {
-      final bucket = groups[gid];
-      if (bucket == null || bucket.isEmpty) continue;
-      if (!firstGroup) {
-        children.add(const SizedBox(height: 24));
-      }
-      firstGroup = false;
-      if (_planSelectMode) {
-        for (final task in bucket) {
-          final key = _planKey(task);
-          final displayDone = _planDoneOverride[key] ?? task.isDone;
-          children.add(
-            _planCardRow(
-              context: context,
-              task: task,
-              key: key,
-              displayDone: displayDone,
-              isSelected: _selectedPlanKeys.contains(key),
-              planActualByPbId: planActualByPbId,
-            ),
-          );
-        }
-      } else {
-        children.add(
-          ReorderableListView.builder(
-            key: ValueKey<String>('tag-bucket-$gid'),
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            buildDefaultDragHandles: false,
-            proxyDecorator: planningReorderProxyDecorator,
-            itemCount: bucket.length,
-            onReorder: (oldI, newI) =>
-                _onTagBucketReorder(tasks, masterBar, gid, oldI, newI),
-            itemBuilder: (context, index) {
-              final task = bucket[index];
-              final key = _planKey(task);
-              final displayDone = _planDoneOverride[key] ?? task.isDone;
-              final canReorder = !_planSelectMode && _planCanReorderTask(task);
-              return ReorderableDelayedDragStartListener(
-                key: ValueKey<String>(key),
-                index: index,
-                enabled: canReorder,
-                child: _planCardRow(
-                  context: context,
-                  task: task,
-                  key: key,
-                  displayDone: displayDone,
-                  isSelected: _selectedPlanKeys.contains(key),
-                  planActualByPbId: planActualByPbId,
-                  omitLongPressForReorder: canReorder,
-                ),
-              );
-            },
-          ),
-        );
-      }
-    }
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      children: children,
+      planSelectMode: _planSelectMode,
+      planKeyForTask: _planKey,
+      resolveDisplayDone: (task, key) => _planDoneOverride[key] ?? task.isDone,
+      isSelectedKey: (key) => _selectedPlanKeys.contains(key),
+      canReorderTask: _planCanReorderTask,
+      planCardRow: _groupedListPlanCardRow,
+      onTagBucketReorder: (gid, oldI, newI) =>
+          _onTagBucketReorder(tasks, masterBar, gid, oldI, newI),
     );
   }
 
