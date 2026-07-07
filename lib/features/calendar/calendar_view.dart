@@ -192,6 +192,34 @@ class _CalendarViewState extends State<CalendarView>
     unawaited(_reloadIndicators());
   }
 
+  void _openAddPlanForSelectedDay() {
+    final d = _selectedDay;
+    final dateKey = calendarDayKey(d);
+    final categoryId =
+        DatabaseService.instance.defaultCategoryId ??
+        (DatabaseService.instance.rules.isNotEmpty
+            ? DatabaseService.instance.rules.first.id
+            : 0);
+    final wall = DateTime(d.year, d.month, d.day, 9, 0);
+    final draft = PlanningTask(
+      id: 0,
+      planRowId: null,
+      title: '',
+      categoryId: categoryId,
+      isDone: false,
+      dateKey: dateKey,
+      order: 0,
+      startTime: wall,
+      date: DateTime.utc(d.year, d.month, d.day),
+      endDateTime: null,
+      checklist: const [],
+      parentPlanId: null,
+      initialDateKey: dateKey,
+      isPostponed: false,
+    );
+    widget.onEditTask(draft);
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -287,6 +315,7 @@ class _CalendarViewState extends State<CalendarView>
                   stream: _dayStream,
                   onCollapse: _collapseDayFocus,
                   onEditTask: widget.onEditTask,
+                  onAddPlan: _openAddPlanForSelectedDay,
                   onStartRecordFromTask: widget.onStartRecordFromTask,
                 ),
               ),

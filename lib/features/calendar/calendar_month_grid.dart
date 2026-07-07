@@ -171,59 +171,114 @@ class CalendarMonthDayCell extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
     final scheduled = tasks.where((t) => t.startTime != null).toList();
-    final bg = _selected
-        ? scheme.primaryContainer.withValues(alpha: 0.55)
-        : _isToday
-            ? AppColors.cardSurface
-            : Colors.transparent;
-    final side = _selected
-        ? BorderSide(color: scheme.primary, width: 1.5)
-        : _isToday
-            ? BorderSide(color: scheme.primary.withValues(alpha: 0.5))
-            : BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.35));
 
     return Padding(
       padding: const EdgeInsets.all(2),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: bg,
+      child: Material(
+        color: Colors.transparent,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: () => onTap(day),
           borderRadius: BorderRadius.circular(8),
-          border: Border.fromBorderSide(side),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          clipBehavior: Clip.antiAlias,
-          borderRadius: BorderRadius.circular(8),
-          child: InkWell(
-            onTap: () => onTap(day),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(5, 5, 5, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    '${day.day}',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: _selected || _isToday
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: _inMonth
-                              ? scheme.onSurface
-                              : scheme.onSurface.withValues(alpha: 0.35),
-                        ),
-                  ),
-                  const SizedBox(height: 3),
-                  Expanded(
-                    child: CalendarDayEventList(
-                      tasks: scheduled,
-                      loc: loc,
-                      showPills: showEventPills,
-                      maxVisible: maxVisibleEvents,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(3, 3, 3, 3),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  height: 28,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _CalendarDayNumberBadge(
+                      label: '${day.day}',
+                      inMonth: _inMonth,
+                      selected: _selected,
+                      isToday: _isToday,
+                      scheme: scheme,
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 2),
+                Expanded(
+                  child: CalendarDayEventList(
+                    tasks: scheduled,
+                    loc: loc,
+                    showPills: showEventPills,
+                    maxVisible: maxVisibleEvents,
+                  ),
+                ),
+              ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fixed-size day number capsule — selection does not stretch the whole cell.
+class _CalendarDayNumberBadge extends StatelessWidget {
+  const _CalendarDayNumberBadge({
+    required this.label,
+    required this.inMonth,
+    required this.selected,
+    required this.isToday,
+    required this.scheme,
+  });
+
+  static const double _size = 28;
+
+  final String label;
+  final bool inMonth;
+  final bool selected;
+  final bool isToday;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = !inMonth
+        ? scheme.onSurface.withValues(alpha: 0.35)
+        : scheme.onSurface;
+    BoxDecoration? decoration;
+    if (selected) {
+      decoration = BoxDecoration(
+        color: scheme.primaryContainer.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: scheme.primary, width: 1.5),
+      );
+    } else if (isToday) {
+      decoration = BoxDecoration(
+        color: AppColors.cardSurface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: scheme.primary.withValues(alpha: 0.55),
+          width: 1,
+        ),
+      );
+    }
+
+    return Container(
+      width: _size,
+      height: _size,
+      alignment: Alignment.center,
+      decoration: decoration,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: selected || isToday
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  fontSize: 14,
+                  height: 1,
+                  color: fg,
+                ),
           ),
         ),
       ),

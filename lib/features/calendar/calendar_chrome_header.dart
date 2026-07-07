@@ -37,21 +37,29 @@ class CalendarChromeHeader extends StatelessWidget {
   final VoidCallback onCollapse;
   final bool showToday;
 
+  String _title(bool compact) {
+    if (mode == CalendarViewMode.month) {
+      return calendarMonthHeaderTitle(focusedMonth, loc);
+    }
+    final start = dayFocusActive
+        ? selectedDay.subtract(Duration(days: selectedDay.weekday - 1))
+        : weekAnchor;
+    final end = start.add(const Duration(days: 6));
+    if (compact) {
+      return '${DateFormat.MMMd(loc).format(start)}–${DateFormat.MMMd(loc).format(end)}';
+    }
+    return '${DateFormat.MMMd(loc).format(start)} – ${DateFormat.MMMd(loc).format(end)}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isWide =
-        MediaQuery.sizeOf(context).width >= kShellDesktopNavBreakpoint;
-    final title = mode == CalendarViewMode.month
-        ? DateFormat.yMMMM(loc).format(focusedMonth)
-        : () {
-            final start = dayFocusActive
-                ? selectedDay.subtract(
-                    Duration(days: selectedDay.weekday - 1),
-                  )
-                : weekAnchor;
-            final end = start.add(const Duration(days: 6));
-            return '${DateFormat.MMMd(loc).format(start)} – ${DateFormat.MMMd(loc).format(end)}';
-          }();
+    final viewportW = MediaQuery.sizeOf(context).width;
+    final compact = calendarIsCompactPhoneWidth(viewportW);
+    final isWide = viewportW >= kShellDesktopNavBreakpoint;
+    final title = _title(compact);
+    final titleStyle = calendarHeaderTitleStyle(context, compact: compact);
+    final sidePad = dayFocusActive ? (compact ? 88.0 : 96.0) : 48.0;
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         isWide ? 16 : 8,
@@ -62,34 +70,46 @@ class CalendarChromeHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              if (dayFocusActive)
-                IconButton(
-                  tooltip: t(loc, 'calendar_collapse'),
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: onCollapse,
-                ),
-              IconButton(
-                icon: const Icon(Icons.chevron_left_rounded),
-                onPressed: onPrev,
-              ),
-              Expanded(
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isWide ? 20 : null,
+          SizedBox(
+            height: 48,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Row(
+                  children: [
+                    if (dayFocusActive)
+                      IconButton(
+                        tooltip: t(loc, 'calendar_collapse'),
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: onCollapse,
+                        visualDensity: VisualDensity.compact,
                       ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left_rounded),
+                      onPressed: onPrev,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right_rounded),
+                      onPressed: onNext,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.chevron_right_rounded),
-                onPressed: onNext,
-              ),
-              if (dayFocusActive) const SizedBox(width: 48),
-            ],
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: sidePad),
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: titleStyle,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 6),
           Row(
@@ -98,12 +118,20 @@ class CalendarChromeHeader extends StatelessWidget {
                 segments: [
                   ButtonSegment(
                     value: CalendarViewMode.month,
-                    label: Text(t(loc, 'calendar_month_view')),
+                    label: Text(
+                      t(loc, 'calendar_month_view'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     icon: const Icon(Icons.calendar_month_rounded, size: 18),
                   ),
                   ButtonSegment(
                     value: CalendarViewMode.week,
-                    label: Text(t(loc, 'calendar_week_view')),
+                    label: Text(
+                      t(loc, 'calendar_week_view'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     icon: const Icon(Icons.view_week_rounded, size: 18),
                   ),
                 ],

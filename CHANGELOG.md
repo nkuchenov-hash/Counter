@@ -97,6 +97,17 @@
 * **`scripts/manual/structure_doc_file_guides.py`:** [shipped] Guide entry for final audit report; fixed `FINAL_STRUCTURE_PARITY` `what` field.
 * **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated (538 files, quality gate OK).
 
+## [2026-07-07] - Calendar mobile layout + date-tap Add plan UX [shipped]
+
+* **Root cause:** `DateFormat.yMMMM` RU title («июль 2026 г.») wrapped in cramped `NavigationBar`-era header row; full-cell selection decoration in `CalendarMonthDayCell` stretched/clipped day numbers; no primary action after date tap (user had to switch to Plan tab).
+* **`calendar_chrome_header.dart`:** [shipped] Stacked title row with bounded horizontal padding, `maxLines: 1`, `calendarMonthHeaderTitle()` without orphan «г.», 16px title on phone width.
+* **`calendar_month_grid.dart`:** [shipped] Fixed 28×28 `_CalendarDayNumberBadge` for selection/today — grid row height stable, no full-cell border stretch.
+* **`calendar_week_grid.dart`:** [shipped] Week compact strip uses same fixed badge selection pattern.
+* **`calendar_day_panel.dart` + `calendar_view.dart`:** [shipped] Primary `AppButton` «Добавить план» / «Add plan» opens existing `openEditDialog` draft with selected date prefilled (09:00 wall); live planning stream shows new plan immediately.
+* **`lib/l10n/langs/en.dart`**, **`ru.dart`:** [shipped] `calendar_add_plan`.
+* **Scope:** bottom nav / PWA shell untouched.
+* **Verification:** analyze + test (280) + web + APK green.
+
 ## [2026-07-07] - P0 iPhone bottom nav + radial menu viewport clamp [shipped]
 
 * **Root cause:** Material `NavigationBar` with 5 labeled destinations wraps/clips on ~390px (worse on iOS web text scaling); `ListsSemicircleMenuOverlay` / `SemicirclePlanningMenuOverlay` used a fixed 300px canvas with `Clip.none`, so satellites overflowed when the card menu anchor was near the right edge.

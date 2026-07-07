@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_loading.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
 import 'package:counter/core/widgets/plan_time_task_card.dart';
@@ -18,6 +19,7 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
     required this.stream,
     required this.onCollapse,
     required this.onEditTask,
+    required this.onAddPlan,
     required this.onStartRecordFromTask,
   });
 
@@ -26,6 +28,7 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
   final Stream<List<PlanningTask>>? stream;
   final VoidCallback onCollapse;
   final void Function(PlanningTask task) onEditTask;
+  final VoidCallback onAddPlan;
   final Future<void> Function(
     String title,
     int categoryId,
@@ -47,6 +50,9 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: scheme.onSurface,
@@ -59,6 +65,15 @@ class CalendarSelectedDayTaskPanel extends StatelessWidget {
                 onPressed: onCollapse,
               ),
             ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+          child: AppButton(
+            label: t(loc, 'calendar_add_plan'),
+            icon: Icons.add_rounded,
+            onPressed: onAddPlan,
+            expand: true,
           ),
         ),
         Expanded(

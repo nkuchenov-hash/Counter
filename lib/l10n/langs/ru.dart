@@ -483,6 +483,7 @@ const Map<String, String> kRuL10n = {
     'calendar_today': 'Сегодня',
     'calendar_more_tasks': '+%s ещё',
     'calendar_collapse': 'К календарю',
+    'calendar_add_plan': 'Добавить план',
     'please_sign_in_again': 'Пожалуйста, войдите снова',
     'no_planned_tasks_date': 'Нет запланированных задач на эту дату.',
     'no_records_date_yet': 'Пока нет записей на эту дату.',

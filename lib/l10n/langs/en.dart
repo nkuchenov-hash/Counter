@@ -483,6 +483,7 @@ const Map<String, String> kEnL10n = {
     'calendar_today': 'Today',
     'calendar_more_tasks': '+%s more',
     'calendar_collapse': 'Back to calendar',
+    'calendar_add_plan': 'Add plan',
     'please_sign_in_again': 'Please Sign In again',
     'no_planned_tasks_date': 'No planned tasks for this date.',
     'no_records_date_yet': 'No records for this date yet.',

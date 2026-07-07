@@ -1,4 +1,3 @@
-import 'package:counter/core/app_colors.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/calendar/calendar_day_events.dart';
 import 'package:counter/features/calendar/calendar_helpers.dart';
@@ -173,28 +172,21 @@ class CalendarWeekCompactStrip extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Material(
-                    color: selected
-                        ? scheme.primaryContainer.withValues(alpha: 0.55)
-                        : isToday
-                            ? AppColors.cardSurface
-                            : scheme.surfaceContainerLow.withValues(alpha: 0.5),
+                    color: isToday && !selected
+                        ? scheme.surfaceContainerLow.withValues(alpha: 0.5)
+                        : Colors.transparent,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: selected
-                          ? BorderSide(color: scheme.primary, width: 1.5)
-                          : isToday
-                              ? BorderSide(
-                                  color: scheme.primary.withValues(alpha: 0.5),
-                                )
-                              : BorderSide(
-                                  color: scheme.outlineVariant.withValues(
-                                    alpha: 0.45,
-                                  ),
-                                ),
+                      side: isToday && !selected
+                          ? BorderSide(
+                              color: scheme.primary.withValues(alpha: 0.45),
+                            )
+                          : BorderSide.none,
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
                       onTap: () => onDayTap(day),
+                      borderRadius: BorderRadius.circular(10),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 4,
@@ -205,6 +197,8 @@ class CalendarWeekCompactStrip extends StatelessWidget {
                           children: [
                             Text(
                               DateFormat.E(loc).format(day),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(context)
                                   .textTheme
                                   .labelSmall
@@ -213,12 +207,30 @@ class CalendarWeekCompactStrip extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
-                            Text(
-                              '${day.day}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            const SizedBox(height: 2),
+                            Container(
+                              width: 32,
+                              height: 32,
+                              alignment: Alignment.center,
+                              decoration: selected
+                                  ? BoxDecoration(
+                                      color: scheme.primaryContainer
+                                          .withValues(alpha: 0.65),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: scheme.primary,
+                                        width: 1.5,
+                                      ),
+                                    )
+                                  : null,
+                              child: Text(
+                                '${day.day}',
+                                maxLines: 1,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
                             ),
                             const SizedBox(height: 4),
                             CalendarDayEventList(
