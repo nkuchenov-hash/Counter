@@ -10,7 +10,6 @@ if (-not (Test-Path $setup)) {
     throw "CounterSetup.exe missing: $setup"
 }
 
-DesktopVoicePipeline = $null
 Write-Host 'DESKTOP_INSTALLER_SILENT_INSTALL_ATTEMPTED'
 $proc = Start-Process -FilePath $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
 if ($proc.ExitCode -ne 0) {
