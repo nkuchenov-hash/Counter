@@ -1,13 +1,35 @@
 import 'package:counter/core/services/desktop_stt_benchmark_harness.dart';
 import 'package:counter/core/services/desktop_stt_cloud_service.dart';
 import 'package:counter/core/services/desktop_stt_engine.dart';
+import 'package:counter/core/services/desktop_stt_quality_evaluation.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
 import 'package:counter/core/services/desktop_voice_recognition_postprocess.dart';
+import 'package:counter/core/services/desktop_voice_wav_stt_benchmark.dart';
 import 'package:counter/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('Desktop Voice STT quality — glossary + postprocess', () {
+  group('Desktop Voice raw STT quality evaluation', () {
+    test('quality mode is raw transcript evaluation — alias not counted', () {
+      expect(
+        DesktopSttQualityEvaluation.sttQualityMode,
+        'raw_transcript_evaluation',
+      );
+      expect(
+        DesktopSttQualityEvaluation.aliasPostprocessUsedForQuality,
+        isFalse,
+      );
+    });
+
+    test('golden manifest stores baseline Solvent transcript', () {
+      expect(
+        DesktopVoiceWavSttBenchmark.baselineTranscriptFromManifest(),
+        'Solvent computer warehouse still model submit',
+      );
+    });
+  });
+
+  group('Desktop Voice STT postprocess — safety fallback only', () {
     final rules = DesktopSttBenchmarkHarness.minimalFixtureRules();
     late DesktopVoiceGlossaryPack glossary;
 
@@ -25,7 +47,7 @@ void main() {
       expect(glossary.terms, contains('Price Reporter'));
     });
 
-    test('Sovent SCW mis-hear repairs to Southern Computer Warehouse DEL MOD Submit',
+    test('Sovent SCW postprocess repairs text but is NOT raw STT quality proof',
         () {
       final post = DesktopVoiceRecognitionPostprocess.apply(
         rawModelText: "Sovent computer warehouse they'll not submit.",
@@ -36,8 +58,8 @@ void main() {
         post.finalCommandText.toLowerCase(),
         contains('southern computer warehouse'),
       );
-      expect(post.finalCommandText.toUpperCase(), contains('DEL MOD'));
-      expect(post.finalCommandText, contains('Submit'));
+      // Raw model text remains the mis-hear — postprocess must not be counted.
+      expect(post.rawModelText.toLowerCase(), contains('sovent'));
       expect(post.rawModelText, isNot(post.finalCommandText));
     });
 

@@ -124,7 +124,7 @@ class DesktopVoiceSettings extends ChangeNotifier {
   bool get showPreviewBeforeConfirm => _showPreviewBeforeConfirm;
   bool get showUndoAfterApply => _showUndoAfterApply;
   DesktopVoiceEngineId? get productionEngine => _productionEngine;
-  DesktopSttMode get sttMode => _sttMode ?? DesktopSttMode.bestQuality;
+  DesktopSttMode get sttMode => _sttMode ?? DesktopSttMode.fastLocal;
   String? get selectedMicDeviceId => _selectedMicDeviceId;
   String? get selectedMicDeviceLabel => _selectedMicDeviceLabel;
   String? get lastBenchmarkSummary => _lastBenchmarkSummary;
@@ -222,7 +222,7 @@ class DesktopVoiceSettings extends ChangeNotifier {
     return DesktopVoiceEngineId.parakeet;
   }
 
-  DesktopSttMode resolveSttMode() => _sttMode ?? DesktopSttMode.bestQuality;
+  DesktopSttMode resolveSttMode() => _sttMode ?? DesktopSttMode.fastLocal;
 
   static DesktopSttMode? _parseSttMode(String? raw) {
     if (raw == null || raw.isEmpty) return null;

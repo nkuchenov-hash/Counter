@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "baseline_transcript": "Solvent computer warehouse still model submit",
+  "post_fix_transcript": "Solvan Computer Warehouse, Delmore, Submit.",
+  "expected_transcript": "Southern Computer Warehouse DEL MOD submit",
+  "cases": [
+    {
+      "id": "scw_delmod_submit_real",
+      "wav": "scw_delmod_submit_real_2026_07_07.wav",
+      "status": "present",
+      "expected_terms": [
+        "Southern Computer Warehouse",
+        "DEL MOD",
+        "Submit"
+      ],
+      "baseline_transcript": "Solvent computer warehouse still model submit",
+      "forbidden_terms": ["still model", "Solvent", "Sovent"]
+    },
+    {
+      "id": "price_reporter_planning",
+      "wav": null,
+      "status": "missing",
+      "expected_terms": ["Planning"],
+      "note": "Add real WAV when captured from installed app"
+    },
+    {
+      "id": "blink_submit",
+      "wav": null,
+      "status": "missing",
+      "expected_terms": ["BLINK", "Submit"],
+      "note": "Add real WAV when captured from installed app"
+    },
+    {
+      "id": "laredo_ts_sin",
+      "wav": null,
+      "status": "missing",
+      "expected_terms": ["Laredo", "SIN"],
+      "note": "Add real WAV when captured from installed app"
+    },
+    {
+      "id": "negative_unrelated",
+      "wav": null,
+      "status": "missing",
+      "expected_terms": [],
+      "note": "Unrelated phrase negative control — add WAV when available"
+    }
+  ]
+}

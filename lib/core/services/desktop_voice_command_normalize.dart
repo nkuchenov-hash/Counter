@@ -48,6 +48,63 @@ bool _mustBlockUnnormalizedTitle(String rawTitle, String normalizedTitle) {
   return false;
 }
 
+int _categoryPathDepth(String? path) {
+  if (path == null || path.trim().isEmpty) return 0;
+  return path.split('>').map((s) => s.trim()).where((s) => s.isNotEmpty).length;
+}
+
+bool _transcriptContainsHint(String lowerTranscript, String hint) {
+  final h = hint.toLowerCase();
+  if (lowerTranscript.contains(h)) return true;
+  if (h == 'del mod') {
+    return RegExp(r'\b(still|deal|dell|del)\s+mod(el)?\b')
+        .hasMatch(lowerTranscript);
+  }
+  return false;
+}
+
+bool _titleResolvesHint(String titleNorm, String hint) {
+  final h = normalizeCategoryLabel(hint);
+  if (titleNorm.contains(h)) return true;
+  if (h == 'delmod' &&
+      RegExp(r'delmod|del mod').hasMatch(titleNorm.replaceAll(' ', ''))) {
+    return true;
+  }
+  return false;
+}
+
+/// Unresolved command tokens in transcript but not in record title → block write.
+bool _hasUnresolvedCommandTokens(
+  String transcript,
+  VoiceCommandParseResult parsed,
+) {
+  const hints = ['del mod', 'add mod', 'add sin', 'planning', 'submit'];
+  final lower = transcript.toLowerCase();
+  final titleNorm = normalizeCategoryLabel(parsed.recordTitle);
+  for (final hint in hints) {
+    if (_transcriptContainsHint(lower, hint) &&
+        !_titleResolvesHint(titleNorm, hint)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/// Parent-only echo: record title repeats category leaf with no distinct task.
+bool _isParentOnlyCategoryEcho(VoiceCommandParseResult parsed) {
+  final path = parsed.matchedCategoryDisplayPath?.trim() ?? '';
+  if (path.isEmpty) return false;
+  final segments =
+      path.split('>').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+  if (segments.isEmpty) return false;
+  final leafNorm = normalizeCategoryLabel(segments.last);
+  final titleNorm = normalizeCategoryLabel(parsed.recordTitle);
+  if (titleNorm.isEmpty) return false;
+  if (titleNorm == leafNorm) return true;
+  if (leafNorm.contains(titleNorm) && titleNorm.length >= 10) return true;
+  return false;
+}
+
 VoiceCommandParseResult _withNormalizedTitle(
   VoiceCommandParseResult parsed,
   String normalizedTitle,
@@ -90,6 +147,18 @@ DesktopVoiceNormalizedCommand? normalizeDesktopVoiceCommand(
       'DESKTOP_VOICE_COMMAND_BLOCKED_LOW_CONFIDENCE',
       parsed.ambiguityReason ?? parsed.confidence.name,
     );
+    return null;
+  }
+
+  final transcript = parsed.originalTranscript.trim();
+  if (_hasUnresolvedCommandTokens(transcript, parsed) &&
+      (_isParentOnlyCategoryEcho(parsed) ||
+          _categoryPathDepth(parsed.matchedCategoryDisplayPath) < 4)) {
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_PARENT_ONLY_RECORD_BLOCKED_WITH_UNRESOLVED_TOKENS',
+      parsed.matchedCategoryDisplayPath ?? parsed.rootLabel,
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_GARBAGE_RECORD');
     return null;
   }
 

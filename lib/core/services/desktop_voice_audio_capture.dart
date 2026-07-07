@@ -139,12 +139,29 @@ class DesktopVoiceAudioCapture {
     _ampController?.add(peak.clamp(0.0, 1.0));
   }
 
+  /// GOLOS/Handy parity — capture trailing phonemes after stop (180 ms + 30 ms drain).
+  static const _manualStopPostRollMs = 180;
+  static const _streamDrainMs = 30;
+
   Future<DesktopVoiceCaptureResult?> stopAndSaveWav({
     String? fileName,
     void Function(List<int> bytes)? onPartial,
   }) async {
     _partialTimer?.cancel();
     _partialTimer = null;
+    // Keep stream open during post-roll so "DEL MOD submit" tail is not clipped.
+    if (_recorder != null && _audioSub != null) {
+      await Future<void>.delayed(
+        const Duration(milliseconds: _manualStopPostRollMs),
+      );
+      await Future<void>.delayed(
+        const Duration(milliseconds: _streamDrainMs),
+      );
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_GOLOS_POST_ROLL_CAPTURED',
+        '${_manualStopPostRollMs + _streamDrainMs}ms',
+      );
+    }
     await _audioSub?.cancel();
     _audioSub = null;
     try {

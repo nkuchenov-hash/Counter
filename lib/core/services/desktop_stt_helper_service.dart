@@ -664,11 +664,6 @@ class DesktopSttHelperService {
         DesktopVoicePipeline.mark('DESKTOP_VOICE_RECOGNIZER_FAILED_NO_RECORD_CHANGE');
         return null;
       }
-      if (pipeline.postprocessRejected) {
-        _lastError = pipeline.postprocessRejectReason ?? 'postprocess_rejected';
-        await _updateDiagnostics(capture: capture, error: _lastError);
-        return null;
-      }
       _lastError = null;
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_TRANSCRIPT_TEXT',
@@ -842,12 +837,17 @@ class DesktopSttHelperService {
 
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_CALLED', endpoint);
     _transcribeCalled = true;
+    final peakBefore = pcm16PeakLevel(pcm);
+    final sttPcm = normalizePcm16PeakForStt(pcm);
+    if (pcm16PeakLevel(sttPcm) > peakBefore + 0.001) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_PCM_PEAK_NORMALIZED');
+    }
     try {
       final r = await http
           .post(
             Uri.parse('$_baseUrl$endpoint'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'audio_base64': base64Encode(pcm)}),
+            body: jsonEncode({'audio_base64': base64Encode(sttPcm)}),
           )
           .timeout(kVoiceProcessingMaxWait);
       _lastTranscribeHttpResult = 'HTTP ${r.statusCode}';

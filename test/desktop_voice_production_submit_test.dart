@@ -21,6 +21,38 @@ CategoryRule _fixtureTree() {
   );
 }
 
+CategoryRule _scwWorkTree() {
+  return CategoryRule(
+    id: 10,
+    name: 'Work',
+    backendRowId: 'workroot1234567',
+    children: [
+      CategoryRule(
+        id: 100,
+        name: 'Price Reporter',
+        backendRowId: 'prroot123456789',
+        children: [
+          CategoryRule(
+            id: 103,
+            name: 'Southern Computer Warehouse',
+            backendRowId: 'scwclient123456',
+            keywords: {
+              'en': ['southern computer warehouse', 'scw'],
+            },
+            children: [
+              CategoryRule(
+                id: 104,
+                name: 'DEL MOD',
+                backendRowId: 'scwdelmod12345',
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 void main() {
   final rules = [_fixtureTree()];
   const dateKey = '2026-06-25';
@@ -113,6 +145,28 @@ void main() {
         writeRecord: (_) async {
           writeCalls++;
           return 'x';
+        },
+      );
+      expect(outcome, isNull);
+      expect(writeCalls, 0);
+    });
+
+    test('SCW parent-only with unresolved DEL MOD submit does not writeRecord',
+        () async {
+      var writeCalls = 0;
+      final scwRules = [_scwWorkTree()];
+      final parsed = parseVoiceCommand(
+        rules: scwRules,
+        transcript: 'Solvent computer warehouse still model submit',
+      );
+      final outcome = await DesktopVoiceRecordSubmit.submitParsed(
+        result: parsed,
+        dateKey: dateKey,
+        localeCode: 'en',
+        planetaryNow: () => fixedNow,
+        writeRecord: (_) async {
+          writeCalls++;
+          return 'pbaccept0000004';
         },
       );
       expect(outcome, isNull);

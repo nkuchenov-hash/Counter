@@ -79,6 +79,28 @@ int pcm16DurationMs(List<int> pcm, {int sampleRate = kVoiceSampleRate}) {
   return (pcm.length ~/ (kVoiceChannels * 2)) * 1000 ~/ sampleRate;
 }
 
+/// STT-only peak normalization — boosts quiet captures without changing capture path.
+List<int> normalizePcm16PeakForStt(
+  List<int> pcm, {
+  double targetPeak = 0.85,
+  double minPeakToBoost = 0.05,
+}) {
+  if (pcm.length < 2) return pcm;
+  final peak = pcm16PeakLevel(pcm);
+  if (peak < minPeakToBoost || peak >= targetPeak) return pcm;
+  final gain = targetPeak / peak;
+  final out = List<int>.from(pcm);
+  for (var i = 0; i + 1 < out.length; i += 2) {
+    final sample = out[i] | (out[i + 1] << 8);
+    final signed = sample >= 0x8000 ? sample - 0x10000 : sample;
+    final scaled = (signed * gain).round().clamp(-32768, 32767);
+    final u = scaled < 0 ? scaled + 0x10000 : scaled;
+    out[i] = u & 0xFF;
+    out[i + 1] = (u >> 8) & 0xFF;
+  }
+  return out;
+}
+
 /// Extract PCM payload from a standard 44-byte-header PCM16 WAV file.
 List<int> extractPcm16FromWav(List<int> wavBytes) {
   if (wavBytes.length <= 44) return const [];

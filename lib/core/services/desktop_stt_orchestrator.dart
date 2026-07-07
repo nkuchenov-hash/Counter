@@ -1,7 +1,7 @@
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
-import 'package:counter/core/services/desktop_stt_cloud_service.dart';
 import 'package:counter/core/services/desktop_stt_engine.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
+import 'package:counter/core/services/desktop_stt_quality_evaluation.dart';
 import 'package:counter/core/services/desktop_voice_audio_capture.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
@@ -63,10 +63,9 @@ abstract final class DesktopSttOrchestrator {
       glossaryPrompt: glossary.toSttPrompt(),
     );
 
+    // Raw STT quality pass: local Parakeet only — no cloud transcription proxy.
     DesktopSttEngineResult? engineResult;
-    if (selectedMode == DesktopSttMode.bestQuality) {
-      engineResult = await _tryCloudThenLocal(ctx);
-    } else if (selectedMode == DesktopSttMode.offlineFallback) {
+    if (selectedMode == DesktopSttMode.offlineFallback) {
       engineResult = await _tryLocalParakeet(ctx) ??
           await _tryWindowsSpeech(ctx);
     } else {
@@ -83,15 +82,25 @@ abstract final class DesktopSttOrchestrator {
       engineResult.engineId,
     );
 
+    final rawText = engineResult.rawTranscript!.trim();
+    DesktopSttQualityEvaluation.markRawEvaluationStarted();
+    DesktopSttQualityEvaluation.logRawFinalSttText(rawText);
+
+    // Safety-only postprocess — logged but NOT used as STT quality or command text.
     final post = DesktopVoiceRecognitionPostprocess.apply(
-      rawModelText: engineResult.rawTranscript!,
+      rawModelText: rawText,
       glossary: glossary,
     );
-
-    return DesktopRecognitionPipelineResult(
-      rawModelText: post.rawModelText,
+    DesktopSttQualityEvaluation.logPostprocessDelta(
+      rawModelText: rawText,
       postprocessedText: post.postprocessedText,
-      finalCommandText: post.finalCommandText,
+    );
+
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_LOCAL_STT_PIPELINE_FIXED');
+    return DesktopRecognitionPipelineResult(
+      rawModelText: rawText,
+      postprocessedText: post.postprocessedText,
+      finalCommandText: rawText,
       sttEngine: engineResult.engineId,
       sttEngineLatencyMs: engineResult.latencyMs,
       finalCommandSource: engineResult.engineId,
@@ -99,22 +108,6 @@ abstract final class DesktopSttOrchestrator {
       postprocessRejectReason: post.rejectReason,
       appliedPostprocessRules: post.appliedRules,
     );
-  }
-
-  static Future<DesktopSttEngineResult?> _tryCloudThenLocal(
-    DesktopSttEngineContext ctx,
-  ) async {
-    final cloud = DesktopSttCloudEngine();
-    if (await cloud.isAvailable()) {
-      final r = await cloud.transcribeCommandWav(ctx);
-      if (r.isSuccess) return r;
-    } else {
-      DesktopVoicePipeline.mark(
-        'DESKTOP_VOICE_BEST_QUALITY_UNAVAILABLE_FALLBACK_LOCAL',
-        'cloud_not_configured',
-      );
-    }
-    return await _tryLocalParakeet(ctx) ?? await _tryWindowsSpeech(ctx);
   }
 
   static Future<DesktopSttEngineResult?> _tryLocalParakeet(
