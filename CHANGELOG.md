@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-07] - P0 Desktop Voice raw STT GOLOS parity [shipped]
+
+* **`lib/core/services/desktop_voice_audio_capture.dart`:** [shipped] GOLOS 180+30 ms post-roll before mic stop so trailing command phonemes are not clipped.
+* **`installer/windows/build_stt_helper_en.ps1`:** [shipped] Patches backend-rs VAD to GOLOS parity (350 ms pad + 700 ms tail keep); rebuilds `counter_stt_helper.exe`.
+* **`lib/core/services/desktop_stt_orchestrator.dart` + `desktop_stt_quality_evaluation.dart`:** [shipped] `stt_quality_mode=raw_transcript_evaluation` — raw Parakeet text is command source; postprocess logged only, not counted as STT quality.
+* **`test/fixtures/desktop_voice_wav/` + `desktop_voice_wav_stt_benchmark.dart`:** [shipped] Real failing SCW WAV replay regression vs baseline `Solvent computer warehouse still model submit`.
+* **`lib/core/services/desktop_voice_command_normalize.dart`:** [shipped] Blocks parent-only SCW records when DEL MOD/Submit tokens stay unresolved (`DESKTOP_VOICE_PARENT_ONLY_RECORD_BLOCKED_WITH_UNRESOLVED_TOKENS`).
+* **`docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`:** [shipped] GOLOS vs Counter pipeline diff audit.
+
 ## [2026-07-07] - P0 Desktop Voice STT quality upgrade [shipped]
 
 * **`lib/core/services/desktop_stt_engine.dart`**, **`desktop_stt_orchestrator.dart`**, **`desktop_stt_cloud_service.dart`:** [feat] STT engine abstraction with Best Quality (cloud PB endpoint) → Fast Local (parakeet) → Offline Fallback ladder; no client-side API secrets.
