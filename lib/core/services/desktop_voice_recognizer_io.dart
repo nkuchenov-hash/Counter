@@ -15,7 +15,6 @@ class DesktopVoiceRecognizerGolosHelper implements DesktopVoiceRecognizer {
 
   @override
   Future<bool> prepare() async {
-    // Recording-first: mic capture must never await helper HTTP warmup.
     _helper.prewarmRecognizerInBackground();
     return true;
   }
@@ -48,23 +47,38 @@ class DesktopVoiceRecognizerGolosHelper implements DesktopVoiceRecognizer {
     }
     if (result == null) {
       final loc = currentLocale.value;
-      final friendly = DesktopVoiceUserError.resolve(
-        message: null,
-        error: _helper.lastError,
+      final kind = DesktopVoiceUserError.classifySttFailure(
+        audioLevelSeen: diag.audioLevelSeen,
+        errorText: _helper.lastError,
+        transcribeErrorKind: diag.transcribeErrorKind,
+        helperExists: diag.helperExists,
+        modelExists: diag.modelExists,
+        helperReady: diag.helperReady,
+        finalTranscribeReady: diag.finalTranscribeReady,
+      );
+      final friendly = DesktopVoiceUserError.fromException(
+        _helper.lastError,
         stage: DesktopVoiceErrorStage.transcribing,
         localeCode: loc,
+        kind: kind,
       );
       return DesktopVoiceRecognitionResult(
         transcript: '',
         engineLabel: diag.engine ?? engine.helperEngineId,
         error: friendly.message,
         audioBytes: _helper.lastCaptureBytes,
+        failureKind: kind,
       );
     }
     return DesktopVoiceRecognitionResult(
-      transcript: result.text,
+      transcript: result.finalCommandText ?? result.text,
       engineLabel: result.engine ?? diag.engine ?? engine.helperEngineId,
       audioBytes: _helper.lastCaptureBytes,
+      rawModelText: result.rawModelText,
+      postprocessedText: result.postprocessedText,
+      finalCommandText: result.finalCommandText,
+      sttEngine: result.engine,
+      sttEngineLatencyMs: result.sttEngineLatencyMs,
     );
   }
 

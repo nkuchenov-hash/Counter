@@ -1,3 +1,5 @@
+﻿import 'package:counter/core/services/desktop_voice_user_error.dart';
+import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 
 /// Final human-facing outcome of a single desktop-voice attempt.
@@ -24,7 +26,7 @@ enum DesktopVoiceAttemptStatus {
   cancelled,
 }
 
-/// Human-readable outcome of one desktop-voice attempt (hotkey → task).
+/// Human-readable outcome of one desktop-voice attempt (hotkey в†’ task).
 ///
 /// Populated stage-by-stage by the desktop-voice overlay widget; the in-app
 /// Voice diagnostics dialog renders the latest attempt with a Copy button so
@@ -59,7 +61,7 @@ class DesktopVoiceAttempt {
   /// Final STT transcript text (empty until transcription completes).
   final String transcript;
 
-  /// Parser verdict: `exact`, `ambiguous`, `noMatch`, or `—` (not parsed yet).
+  /// Parser verdict: `exact`, `ambiguous`, `noMatch`, or `вЂ”` (not parsed yet).
   final String parserConfidence;
 
   /// Matched category / scope display path (e.g.
@@ -106,20 +108,20 @@ class DesktopVoiceAttempt {
   }
 
   /// Plain-text summary safe for clipboard copy / sharing. No internal codes,
-  /// no PocketBase IDs — only what a non-developer can read.
+  /// no PocketBase IDs вЂ” only what a non-developer can read.
   String toPlainText() {
     final buf = StringBuffer()
-      ..writeln('Desktop Voice — last attempt')
+      ..writeln('Desktop Voice вЂ” last attempt')
       ..writeln('Time: ${startedAt.toLocal()}')
       ..writeln('----')
       ..writeln('Hotkey received: ${_yesNo(hotkeyReceived)}')
       ..writeln('Recording started: ${_yesNo(recordingStarted)}')
       ..writeln('Microphone input detected: ${_yesNo(micInputDetected)}')
       ..writeln('Heard: "${transcript.isEmpty ? '(nothing yet)' : transcript}"')
-      ..writeln('Parser: ${parserConfidence.isEmpty ? '—' : parserConfidence}')
-      ..writeln('Matched scope: ${matchedScope.isEmpty ? '—' : matchedScope}')
-      ..writeln('Task title: ${taskTitle.isEmpty ? '—' : taskTitle}')
-      ..writeln('Save result: ${writeRecordResult.isEmpty ? '—' : writeRecordResult}')
+      ..writeln('Parser: ${parserConfidence.isEmpty ? 'вЂ”' : parserConfidence}')
+      ..writeln('Matched scope: ${matchedScope.isEmpty ? 'вЂ”' : matchedScope}')
+      ..writeln('Task title: ${taskTitle.isEmpty ? 'вЂ”' : taskTitle}')
+      ..writeln('Save result: ${writeRecordResult.isEmpty ? 'вЂ”' : writeRecordResult}')
       ..writeln('Final: ${_statusLabel(status)}');
     if (statusDetail.trim().isNotEmpty) {
       buf.writeln('Detail: ${statusDetail.trim()}');
@@ -170,12 +172,12 @@ class DesktopVoiceAttemptLog {
       recordingStarted: false,
       micInputDetected: false,
       transcript: '',
-      parserConfidence: '—',
+      parserConfidence: 'вЂ”',
       matchedScope: '',
       taskTitle: '',
       writeRecordResult: 'not called',
       status: DesktopVoiceAttemptStatus.inProgress,
-      statusDetail: 'Listening…',
+      statusDetail: 'ListeningвЂ¦',
     );
   }
 
@@ -193,7 +195,7 @@ class DesktopVoiceAttemptLog {
             ? DesktopVoiceAttemptStatus.inProgress
             : DesktopVoiceAttemptStatus.micError,
         statusDetail: ok
-            ? 'Listening…'
+            ? 'ListeningвЂ¦'
             : (error?.isNotEmpty == true
                 ? error!
                 : 'Microphone is not receiving audio'),
@@ -211,7 +213,7 @@ class DesktopVoiceAttemptLog {
         transcript: text,
         statusDetail: text.trim().isEmpty
             ? 'No speech recognised.'
-            : 'Heard: "$text". Matching command…',
+            : 'Heard: "$text". Matching commandвЂ¦',
       ),
     );
   }
@@ -223,7 +225,7 @@ class DesktopVoiceAttemptLog {
   }) {
     _update(
       (a) => a.copyWith(
-        parserConfidence: confidence.isEmpty ? '—' : confidence,
+        parserConfidence: confidence.isEmpty ? 'вЂ”' : confidence,
         matchedScope: matchedScope,
         taskTitle: taskTitle,
       ),
@@ -242,14 +244,30 @@ class DesktopVoiceAttemptLog {
     );
   }
 
-  void markSttError(String detail) {
+  void markSttError(String detail, {DesktopVoiceFailureKind? kind}) {
+    final friendly = kind == null
+        ? detail
+        : DesktopVoiceUserError.fromException(
+            detail,
+            stage: DesktopVoiceErrorStage.transcribing,
+            localeCode: currentLocale.value,
+            kind: kind,
+          ).message;
     _update(
       (a) => a.copyWith(
         status: DesktopVoiceAttemptStatus.sttError,
-        statusDetail: detail.isEmpty
+        statusDetail: friendly.isEmpty
             ? 'Speech recognition failed. Try again.'
-            : detail,
+            : friendly,
         writeRecordResult: 'not called',
+      ),
+    );
+  }
+
+  void markWriteRecordPending() {
+    _update(
+      (a) => a.copyWith(
+        writeRecordResult: 'pending',
       ),
     );
   }
@@ -261,7 +279,7 @@ class DesktopVoiceAttemptLog {
           writeRecordResult: 'ok',
           status: DesktopVoiceAttemptStatus.taskCreated,
           statusDetail: 'Started: ${a.matchedScope.isEmpty ? a.taskTitle : a.matchedScope}'
-              '${a.taskTitle.isEmpty ? '' : ' — ${a.taskTitle}'}',
+              '${a.taskTitle.isEmpty ? '' : ' вЂ” ${a.taskTitle}'}',
         ),
       );
     } else {

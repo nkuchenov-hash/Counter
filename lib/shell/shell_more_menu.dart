@@ -1,6 +1,24 @@
 part of 'life_os_dashboard.dart';
 
 mixin ShellMoreMenu on ShellCoreLogic {
+  static bool _moreMenuDiagnosticsMarkerLogged = false;
+
+  bool get _desktopVoiceDevDiagnosticsVisible {
+    const devToolsDefine = bool.fromEnvironment(
+      'DESKTOP_VOICE_DEV_TOOLS',
+      defaultValue: false,
+    );
+    final visible = kDebugMode || devToolsDefine;
+    if (!_moreMenuDiagnosticsMarkerLogged) {
+      _moreMenuDiagnosticsMarkerLogged = true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_MORE_MENU_DIAGNOSTICS_REMOVED');
+      if (visible) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_DEV_ENTRY_GATED', 'dev_only');
+      }
+    }
+    return visible;
+  }
+
   void openMoreMenu({bool secondaryOnly = false}) {
     final loc = currentLocale.value;
     showModalBottomSheet<void>(
@@ -51,7 +69,7 @@ mixin ShellMoreMenu on ShellCoreLogic {
                       );
                     },
                   ),
-                if (DesktopVoiceHotkey.isActive || kIsWeb == false)
+                if (_desktopVoiceDevDiagnosticsVisible)
                   ListTile(
                     leading: const Icon(Icons.graphic_eq_rounded),
                     title: Text(t(loc, 'more_menu_voice_diagnostics')),

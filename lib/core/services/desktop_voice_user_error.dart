@@ -9,15 +9,26 @@ enum DesktopVoiceErrorStage {
   parsing,
 }
 
+/// Product error classification for desktop voice (A–E).
+enum DesktopVoiceFailureKind {
+  micNoSignal,
+  recognizerUnavailable,
+  sttEmptyTranscript,
+  parserRejected,
+  writeFailed,
+}
+
 /// User-safe desktop voice error — technical details stay in diagnostics only.
 class DesktopVoiceUserError {
   const DesktopVoiceUserError({
     required this.message,
     required this.technicalDetail,
+    this.kind,
   });
 
   final String message;
   final String technicalDetail;
+  final DesktopVoiceFailureKind? kind;
 
   static bool looksTechnical(String text) {
     final lower = text.toLowerCase();
@@ -33,11 +44,80 @@ class DesktopVoiceUserError {
     return false;
   }
 
+  static DesktopVoiceFailureKind classifySttFailure({
+    required bool audioLevelSeen,
+    String? errorText,
+    String? transcribeErrorKind,
+    bool helperExists = true,
+    bool modelExists = true,
+    bool helperReady = false,
+    bool finalTranscribeReady = false,
+  }) {
+    if (!audioLevelSeen) {
+      return DesktopVoiceFailureKind.micNoSignal;
+    }
+    final lower = (errorText ?? '').toLowerCase();
+    final kind = (transcribeErrorKind ?? '').toLowerCase();
+
+    if (kind == 'empty_transcript' ||
+        lower.contains('empty transcript') ||
+        lower.contains('stt_empty')) {
+      return DesktopVoiceFailureKind.sttEmptyTranscript;
+    }
+
+    if (!helperExists ||
+        !modelExists ||
+        lower.contains('not found') ||
+        (!finalTranscribeReady && !helperReady) ||
+        lower.contains('did not respond') ||
+        lower.contains('timeout') ||
+        lower.contains('connection closed') ||
+        lower.contains('clientexception') ||
+        lower.contains('socket') ||
+        kind.contains('connection') ||
+        kind.contains('timeout') ||
+        kind.contains('http_status')) {
+      return DesktopVoiceFailureKind.recognizerUnavailable;
+    }
+
+    if (lower.contains('not loaded') ||
+        kind.contains('helper_error') ||
+        !finalTranscribeReady) {
+      return DesktopVoiceFailureKind.recognizerUnavailable;
+    }
+
+    if (lower.contains('not enough audio') || lower.contains('no audio')) {
+      return DesktopVoiceFailureKind.micNoSignal;
+    }
+
+    return DesktopVoiceFailureKind.recognizerUnavailable;
+  }
+
+  static void markFailureKind(DesktopVoiceFailureKind kind) {
+    switch (kind) {
+      case DesktopVoiceFailureKind.micNoSignal:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_MIC_NO_SIGNAL');
+      case DesktopVoiceFailureKind.recognizerUnavailable:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_RECOGNIZER_UNAVAILABLE');
+      case DesktopVoiceFailureKind.sttEmptyTranscript:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_STT_EMPTY_TRANSCRIPT');
+      case DesktopVoiceFailureKind.parserRejected:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_PARSER_REJECTED');
+      case DesktopVoiceFailureKind.writeFailed:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_WRITE_FAILED');
+    }
+  }
+
+  static void markReadinessRace() {
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_READINESS_RACE');
+  }
+
   static DesktopVoiceUserError fromException(
     Object? error, {
     required DesktopVoiceErrorStage stage,
     required String localeCode,
     String? fallbackTechnical,
+    DesktopVoiceFailureKind? kind,
   }) {
     final tech = (error?.toString() ?? fallbackTechnical ?? '').trim();
     if (tech.isNotEmpty && looksTechnical(tech)) {
@@ -45,45 +125,55 @@ class DesktopVoiceUserError {
       DesktopVoiceLog.instance.mark('error_technical', tech);
     }
     DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_MAPPED', stage.name);
-    final message = _messageFor(stage, localeCode, tech);
+    final resolvedKind = kind ?? _inferKind(stage, tech);
+    markFailureKind(resolvedKind);
+    final message = _messageFor(resolvedKind, localeCode, tech);
     DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_FRIENDLY_ERROR_SHOWN', message);
-    return DesktopVoiceUserError(message: message, technicalDetail: tech);
+    return DesktopVoiceUserError(
+      message: message,
+      technicalDetail: tech,
+      kind: resolvedKind,
+    );
+  }
+
+  static DesktopVoiceFailureKind _inferKind(
+    DesktopVoiceErrorStage stage,
+    String technical,
+  ) {
+    final lower = technical.toLowerCase();
+    if (stage == DesktopVoiceErrorStage.listening) {
+      return DesktopVoiceFailureKind.micNoSignal;
+    }
+    if (stage == DesktopVoiceErrorStage.parsing) {
+      return DesktopVoiceFailureKind.parserRejected;
+    }
+    if (lower.contains('empty transcript')) {
+      return DesktopVoiceFailureKind.sttEmptyTranscript;
+    }
+    if (lower.contains('not enough audio') || lower.contains('no audio')) {
+      return DesktopVoiceFailureKind.micNoSignal;
+    }
+    return DesktopVoiceFailureKind.recognizerUnavailable;
   }
 
   static String _messageFor(
-    DesktopVoiceErrorStage stage,
+    DesktopVoiceFailureKind kind,
     String localeCode,
     String technical,
   ) {
     final ru = localeCode == 'ru';
-    final lower = technical.toLowerCase();
-
-    if (stage == DesktopVoiceErrorStage.listening) {
-      if (lower.contains('not enough audio') ||
-          lower.contains('no audio') ||
-          lower.contains('mic')) {
+    switch (kind) {
+      case DesktopVoiceFailureKind.micNoSignal:
         return ru ? 'Микрофон не даёт сигнал' : 'No microphone signal';
-      }
-      return ru ? 'Попробуйте ещё раз' : 'Try again';
-    }
-
-    if (stage == DesktopVoiceErrorStage.transcribing ||
-        stage == DesktopVoiceErrorStage.preparing) {
-      if (lower.contains('not enough audio') ||
-          lower.contains('no audio')) {
-        return ru ? 'Микрофон не даёт сигнал' : 'No microphone signal';
-      }
-      if (lower.contains('empty transcript')) {
+      case DesktopVoiceFailureKind.recognizerUnavailable:
+        return ru ? 'Распознаватель недоступен' : 'Recognizer is unavailable';
+      case DesktopVoiceFailureKind.sttEmptyTranscript:
+        return ru ? 'Не удалось получить текст' : 'Could not get speech text';
+      case DesktopVoiceFailureKind.parserRejected:
         return ru ? 'Не удалось распознать команду' : 'Could not recognize the command';
-      }
-      return ru ? 'Распознаватель недоступен' : 'Recognizer is unavailable';
+      case DesktopVoiceFailureKind.writeFailed:
+        return ru ? 'Не удалось запустить запись' : 'Could not start the record';
     }
-
-    if (stage == DesktopVoiceErrorStage.parsing) {
-      return ru ? 'Не удалось распознать команду' : 'Could not recognize the command';
-    }
-
-    return ru ? 'Попробуйте ещё раз' : 'Try again';
   }
 
   /// Returns [message] if already user-safe; otherwise maps technical text.
@@ -92,12 +182,16 @@ class DesktopVoiceUserError {
     Object? error,
     required DesktopVoiceErrorStage stage,
     required String localeCode,
+    DesktopVoiceFailureKind? kind,
   }) {
     final candidate = (message ?? '').trim();
     if (candidate.isNotEmpty && !looksTechnical(candidate)) {
+      final resolvedKind = kind ?? _inferKind(stage, candidate);
+      markFailureKind(resolvedKind);
       return DesktopVoiceUserError(
         message: candidate,
         technicalDetail: error?.toString() ?? candidate,
+        kind: resolvedKind,
       );
     }
     return fromException(
@@ -105,6 +199,7 @@ class DesktopVoiceUserError {
       stage: stage,
       localeCode: localeCode,
       fallbackTechnical: candidate,
+      kind: kind,
     );
   }
 }

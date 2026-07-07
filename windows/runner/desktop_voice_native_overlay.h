@@ -16,7 +16,8 @@ class DesktopVoiceNativeOverlay {
                    const std::string& secondary,
                    const std::string& state,
                    double level,
-                   const std::string& timer_text);
+                   const std::string& timer_text,
+                   double progress = 0.0);
 
   static void Hide();
 
@@ -49,6 +50,7 @@ class DesktopVoiceNativeOverlay {
   static double target_level_;
   static UINT_PTR anim_timer_id_;
   static std::wstring timer_text_;
+  static double progress_;
 };
 
 #endif  // RUNNER_DESKTOP_VOICE_NATIVE_OVERLAY_H_

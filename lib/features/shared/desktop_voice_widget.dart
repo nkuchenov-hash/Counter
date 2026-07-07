@@ -1,18 +1,20 @@
 import 'dart:async';
 
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
-import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_voice_confirmation_timer.dart';
 import 'package:counter/core/navigation/app_navigator.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
 import 'package:counter/core/services/desktop_voice_native_overlay.dart';
 import 'package:counter/core/services/desktop_voice_recognizer_factory.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
+import 'package:counter/core/services/desktop_voice_glossary.dart';
 import 'package:counter/core/services/desktop_voice_command_normalize.dart';
 import 'package:counter/core/services/desktop_voice_user_error.dart';
 import 'package:counter/core/services/desktop_voice_overlay_bridge.dart';
 import 'package:counter/core/services/desktop_voice_attempt_log.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
+import 'package:counter/features/shared/desktop_voice_correction_sheet.dart';
 import 'package:counter/features/shared/desktop_voice_capsule.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/voice_command_parser.dart';
@@ -25,10 +27,16 @@ enum DesktopVoiceOverlayPhase {
   preparing,
   listening,
   processing,
+  pendingConfirmation,
   started,
   stopped,
   error,
 }
+
+typedef DesktopVoiceStartRecordFn = Future<String?> Function(
+  VoiceCommandParseResult result, {
+  DateTime? explicitStartTime,
+});
 
 /// Generic Life OS desktop voice overlay — recording first, parse preview second.
 class DesktopVoiceOverlay extends StatefulWidget {
@@ -41,7 +49,7 @@ class DesktopVoiceOverlay extends StatefulWidget {
   });
 
   final List<CategoryRule> categoryRules;
-  final Future<String?> Function(VoiceCommandParseResult result) onStartRecord;
+  final Future<String?> Function(VoiceCommandParseResult result, {DateTime? explicitStartTime}) onStartRecord;
   final Future<void> Function(String? recordDocId)? onUndoStop;
   final VoidCallback onClose;
 
@@ -56,6 +64,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   String? _errorDetail;
   VoiceCommandParseResult? _parseResult;
   String? _startedRecordDocId;
+  DesktopVoiceGlossaryPack? _lastGlossary;
 
   DesktopVoiceRecognizer? _recognizer;
   Timer? _listenTimer;
@@ -65,6 +74,10 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   bool _cancelling = false;
   Stopwatch? _recordStopwatch;
   StreamSubscription<double>? _ampSub;
+  final _confirmTimer = DesktopVoiceConfirmationTimer();
+  double _confirmProgress = 0;
+  bool _correctionOpen = false;
+  bool _commitInFlight = false;
 
   double _micLevel = 0;
   bool _audioLevelSeen = false;
@@ -83,19 +96,13 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     );
     _statusLine = t(loc, 'desktop_voice_state_listening');
     _recordStopwatch = Stopwatch()..start();
-    // #region agent log
-    DesktopVoiceDebugProbe.log(
-      runId: 'pre-fix',
-      hypothesisId: 'H3',
-      location: 'lib/features/shared/desktop_voice_widget.dart:initState',
-      message: 'desktop voice widget first visible state constructed',
-      data: {
-        'phase': _phase.name,
-        'statusLine': _statusLine,
-        'usesNativeOverlay': DesktopVoiceOverlayService.usesNativeOverlay,
-      },
-    );
-    // #endregion
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_COMPACT');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_CLEAN_RELEASE');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_NO_DEBUG_TEXT');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_COMPACT_POLISHED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_NO_DEBUG_UI');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_DESIGN_TOKENS_USED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BARS_PRESERVED_IN_OVERLAY');
     _uiTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
       if (mounted) setState(() {});
     });
@@ -104,13 +111,19 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
           _phase == DesktopVoiceOverlayPhase.listening,
       isPreparing: () => false,
       isProcessing: () =>
-          _phase == DesktopVoiceOverlayPhase.processing,
+          _phase == DesktopVoiceOverlayPhase.processing ||
+          _phase == DesktopVoiceOverlayPhase.pendingConfirmation,
       finishListening: () => unawaited(_finishListening()),
       cancelSession: () => unawaited(_cancelSession(fromUser: true)),
       onOverlayClosed: () {},
     );
     DesktopVoiceNativeOverlay.onCloseRequested = () {
       unawaited(_cancelSession(fromUser: true));
+    };
+    DesktopVoiceNativeOverlay.onBodyClicked = () {
+      if (_phase == DesktopVoiceOverlayPhase.pendingConfirmation) {
+        unawaited(_openCorrection());
+      }
     };
     unawaited(DesktopVoiceOverlayService.showListening(timer: _formatTimer()));
     // Start a fresh attempt summary so the in-app Voice diagnostics dialog can
@@ -123,6 +136,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   @override
   void dispose() {
     DesktopVoiceNativeOverlay.onCloseRequested = null;
+    DesktopVoiceNativeOverlay.onBodyClicked = null;
+    _confirmTimer.cancel();
     DesktopVoiceOverlayBridge.clearSession();
     _listenTimer?.cancel();
     _uiTimer?.cancel();
@@ -161,20 +176,6 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     _helper.prewarmRecognizerInBackground();
 
     final started = await _recognizer!.startCapture();
-    // #region agent log
-    DesktopVoiceDebugProbe.log(
-      runId: 'pre-fix',
-      hypothesisId: 'H3,H4',
-      location:
-          'lib/features/shared/desktop_voice_widget.dart:_beginSessionRecordingFirst',
-      message: 'local microphone capture start returned',
-      data: {
-        'started': started,
-        'lastError': DesktopSttHelperService.instance.lastError ?? '',
-        'capturedBytes': _recognizer?.capturedAudioBytes ?? 0,
-      },
-    );
-    // #endregion
     DesktopVoiceLog.instance.mark(
       'recording_started',
       started ? 'yes' : 'no',
@@ -217,6 +218,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
         DesktopVoiceAttemptLog.instance.markMicHeard();
       }
       if (_phase == DesktopVoiceOverlayPhase.listening) {
+        _helper.noteOverlayLevelEvent();
         unawaited(
           DesktopVoiceOverlayService.updateLevel(
             level,
@@ -289,6 +291,11 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       return;
     }
     DesktopVoicePipeline.mark('DESKTOP_VOICE_FINALIZE_CAPTURE_REQUESTED');
+    final glossary = DesktopVoiceGlossaryPack.buildFromCategoryRules(
+      widget.categoryRules,
+    );
+    _lastGlossary = glossary;
+    DesktopSttHelperService.instance.setTranscribeGlossary(glossary);
     final result = await rec.finishCapture();
     if (!mounted) return;
 
@@ -305,17 +312,67 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
         'DESKTOP_VOICE_STT_FAILED',
         result.error ?? 'no_transcript',
       );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CURRENT_RECORD_UNCHANGED_ON_FAILURE');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_RECOGNIZER_FAILED_NO_RECORD_CHANGE');
-      DesktopVoiceAttemptLog.instance.markSttError(result.error ?? '');
+      final kind = result.failureKind ??
+          DesktopVoiceUserError.classifySttFailure(
+            audioLevelSeen: _audioLevelSeen || rec.audioLevelSeen,
+            errorText: result.error,
+            transcribeErrorKind: _helper.lastDiagnostics.transcribeErrorKind,
+            helperExists: _helper.lastDiagnostics.helperExists,
+            modelExists: _helper.lastDiagnostics.modelExists,
+            helperReady: _helper.lastDiagnostics.helperReady,
+          );
+      DesktopVoiceAttemptLog.instance.markSttError(
+        DesktopVoiceUserError.fromException(
+          result.error,
+          stage: DesktopVoiceErrorStage.transcribing,
+          localeCode: loc,
+          kind: kind,
+        ).message,
+      );
       _failFriendly(
         result.error,
         diag: 'stt_failed',
         stage: DesktopVoiceErrorStage.transcribing,
+        kind: kind,
       );
       return;
     }
 
-    _transcript = result.transcript;
+    _transcript = result.transcript.trim();
+    if ((result.rawModelText ?? '').trim().isNotEmpty) {
+      DesktopVoiceLog.instance.mark('raw_model_text', result.rawModelText!.trim());
+    }
+    if ((result.postprocessedText ?? '').trim().isNotEmpty) {
+      DesktopVoiceLog.instance.mark(
+        'postprocessed_text',
+        result.postprocessedText!.trim(),
+      );
+    }
+    if ((result.finalCommandText ?? '').trim().isNotEmpty) {
+      DesktopVoiceLog.instance.mark(
+        'final_command_text',
+        result.finalCommandText!.trim(),
+      );
+    }
+    if (_transcript.isEmpty) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIPT_EMPTY');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CURRENT_RECORD_UNCHANGED_ON_FAILURE');
+      DesktopVoiceAttemptLog.instance.markSttError(
+        t(loc, 'desktop_voice_stt_empty_transcript'),
+      );
+      _failFriendly(
+        null,
+        message: t(loc, 'desktop_voice_stt_empty_transcript'),
+        diag: 'stt_empty_transcript',
+        stage: DesktopVoiceErrorStage.transcribing,
+        kind: DesktopVoiceFailureKind.sttEmptyTranscript,
+      );
+      return;
+    }
+
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMAND_TRANSCRIPT_READY', _transcript);
     DesktopVoiceLog.instance.mark('transcript_returned', 'yes');
     DesktopVoiceLog.instance.mark('transcript_text', _transcript);
     // Pipe-level transcript marker so a real STT transcription that the parser
@@ -327,6 +384,10 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
 
   Future<void> _parseTranscript() async {
     final loc = currentLocale.value;
+    if (_transcript.trim().isEmpty) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIPT_EMPTY');
+      return;
+    }
     _setPhase(
       DesktopVoiceOverlayPhase.processing,
       status: t(loc, 'desktop_voice_transcribing'),
@@ -335,6 +396,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     final parsed = parseVoiceCommand(
       rules: widget.categoryRules,
       transcript: _transcript,
+      taskTitleHints: _lastGlossary?.taskTitles ?? const [],
     );
     _parseResult = parsed;
     DesktopVoiceLog.instance.mark('parser_status', parsed.confidence.name);
@@ -343,24 +405,6 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       parsed.matchedCategoryDisplayPath ?? '—',
     );
     DesktopVoiceLog.instance.mark('parser_title', parsed.recordTitle);
-    // #region agent log
-    DesktopVoiceDebugProbe.log(
-      runId: 'pre-fix',
-      hypothesisId: 'H5',
-      location:
-          'lib/features/shared/desktop_voice_widget.dart:_parseTranscript',
-      message: 'parser result after STT transcript',
-      data: {
-        'transcript': _transcript,
-        'confidence': parsed.confidence.name,
-        'title': parsed.recordTitle,
-        'categoryPath': parsed.matchedCategoryDisplayPath ?? '',
-        'categoryIdPresent': parsed.matchedLocalCategoryId != null,
-        'safeToStart': parsed.isSafeToStart,
-        'reason': parsed.ambiguityReason ?? '',
-      },
-    );
-    // #endregion
     // Pipe-level parser verdict so a rejected transcript is traceable in the
     // runtime smoke log without grepping diag internals.
     DesktopVoicePipeline.mark(
@@ -376,6 +420,9 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       matchedScope: parsed.matchedCategoryDisplayPath ?? '',
       taskTitle: parsed.recordTitle,
     );
+    VoiceDomainResolver.logDomainDiagnosticsToAttemptLog(
+      DesktopVoiceLog.instance.mark,
+    );
 
     final norm = normalizeDesktopVoiceCommand(parsed);
     if (norm == null || !norm.autoStartAllowed) {
@@ -383,11 +430,14 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
         'DESKTOP_VOICE_COMMAND_UNRECOGNIZED_NO_RECORD_CHANGE',
       );
       DesktopVoiceAttemptLog.instance.markNotRecognized();
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMAND_NOT_RECOGNIZED', _transcript);
       _failFriendly(
         null,
         message: _heardNotMatchedMessage(loc, _transcript),
         diag: 'normalization_blocked',
         stage: DesktopVoiceErrorStage.parsing,
+        kind: DesktopVoiceFailureKind.parserRejected,
+        autoCloseAfter: const Duration(milliseconds: 1800),
       );
       return;
     }
@@ -403,7 +453,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
         'DESKTOP_VOICE_COMMAND_ACCEPTED',
         norm.normalizedTitle,
       );
-      unawaited(_confirmStart());
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CURRENT_RECORD_UNCHANGED_BEFORE_COMMIT');
+      _enterPendingConfirmation(norm.effectiveResult);
       return;
     }
 
@@ -452,7 +503,111 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
         : 'Heard: "$heard". Could not match command.';
   }
 
-  Future<void> _confirmStart() async {
+  void _enterPendingConfirmation(VoiceCommandParseResult parsed) {
+    final loc = currentLocale.value;
+    _parseResult = parsed;
+    final preview = voiceCommandPendingConfirmationMessage(
+      parsed,
+      localeCode: loc,
+    );
+    _confirmProgress = 0;
+    _setPhase(
+      DesktopVoiceOverlayPhase.pendingConfirmation,
+      status: preview,
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_CONFIRMATION_STARTED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_PENDING_CONFIRMATION');
+    DesktopVoiceAttemptLog.instance.markWriteRecordPending();
+
+    _confirmTimer.onProgress = (p) {
+      if (!mounted) return;
+      setState(() => _confirmProgress = p);
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_CONFIRMATION_TIMER_PROGRESS',
+        p.toStringAsFixed(2),
+      );
+      unawaited(
+        DesktopVoiceOverlayService.updatePendingProgress(
+          previewLine: preview,
+          hintLine: t(loc, 'desktop_voice_tap_to_edit'),
+          progress: p,
+        ),
+      );
+    };
+    _confirmTimer.onComplete = () {
+      if (!mounted || _correctionOpen || _sessionCancelled) return;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUTO_COMMIT_AFTER_TIMER');
+      unawaited(_commitAfterConfirmation());
+    };
+    _confirmTimer.start();
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_CONFIRMATION_TIMER_STARTED');
+    unawaited(
+      DesktopVoiceOverlayService.showPendingConfirmation(
+        previewLine: preview,
+        hintLine: t(loc, 'desktop_voice_tap_to_edit'),
+        progress: 0,
+      ),
+    );
+  }
+
+  Future<void> _openCorrection() async {
+    if (_phase != DesktopVoiceOverlayPhase.pendingConfirmation) return;
+    final parsed = _parseResult;
+    if (parsed == null) return;
+    _correctionOpen = true;
+    _confirmTimer.pause();
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_OPENED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_TIMER_PAUSED');
+
+    final ctx = appRootNavigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted) {
+      _correctionOpen = false;
+      _confirmTimer.resume();
+      return;
+    }
+
+    final result = await showDesktopVoiceCorrectionSheet(
+      context: ctx,
+      parseResult: parsed,
+      categoryPath: parsed.matchedCategoryDisplayPath ?? parsed.rootLabel,
+    );
+    _correctionOpen = false;
+    if (!mounted || _sessionCancelled) return;
+
+    if (result == null || result.cancelled) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_CANCELLED');
+      await _cancelPendingConfirmation();
+      return;
+    }
+
+    _parseResult = result.parseResult ?? parsed;
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_CONFIRMED');
+    await _commitAfterConfirmation();
+  }
+
+  Future<void> _cancelPendingConfirmation() async {
+    _confirmTimer.cancel();
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_CURRENT_RECORD_UNCHANGED_ON_FAILURE');
+    await DesktopVoiceOverlayService.forceHide();
+    if (mounted) widget.onClose();
+  }
+
+  Future<void> _commitAfterConfirmation() async {
+    if (_commitInFlight) return;
+    _commitInFlight = true;
+    final capturedStart = _confirmTimer.intendedStartTime;
+    _confirmTimer.cancel();
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_CALLED_AFTER_CONFIRMATION');
+    if (capturedStart != null) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMIT_USES_CAPTURED_START_TIME');
+    }
+    await _confirmStart(
+      explicitStartTime: capturedStart,
+    );
+    _commitInFlight = false;
+  }
+
+  Future<void> _confirmStart({DateTime? explicitStartTime}) async {
     final parsed = _parseResult;
     if (parsed == null || !parsed.isSafeToStart) return;
     final loc = currentLocale.value;
@@ -462,10 +617,14 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       status: t(loc, 'desktop_voice_starting'),
     );
     try {
-      final docId = await widget.onStartRecord(parsed);
+      final docId = await widget.onStartRecord(
+        parsed,
+        explicitStartTime: explicitStartTime,
+      );
       if (!mounted) return;
       if (docId == null || docId.trim().isEmpty) {
         DesktopVoiceLog.instance.mark('writeRecord_result', 'failed');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_FAILED');
         DesktopVoiceAttemptLog.instance.markSubmission(
           serverId: null,
           error: 'writeRecord returned no id',
@@ -475,6 +634,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       }
       DesktopVoiceLog.instance.mark('writeRecord_result', 'ok $docId');
       DesktopVoiceAttemptLog.instance.markSubmission(serverId: docId);
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_SUCCESS');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_TIMELINE_RUNNING_RECORD_VISIBLE');
       _startedRecordDocId = docId;
       final confirmation = voiceCommandStartConfirmationMessage(
         parsed,
@@ -492,7 +653,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
         confirmationLine: confirmation,
       );
       if (DesktopVoiceSettings.instance.autoCloseAfterApply) {
-        await Future<void>.delayed(const Duration(seconds: 2));
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_AUTO_CLOSE_SUCCESS');
+        await Future<void>.delayed(const Duration(milliseconds: 1600));
         if (mounted) widget.onClose();
       }
     } catch (e) {
@@ -513,6 +675,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     required DesktopVoiceErrorStage stage,
     DesktopVoiceOverlayPhase phase = DesktopVoiceOverlayPhase.error,
     bool recordingFailed = false,
+    DesktopVoiceFailureKind? kind,
+    Duration? autoCloseAfter,
   }) {
     final loc = currentLocale.value;
     final mapped = DesktopVoiceUserError.resolve(
@@ -520,6 +684,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       error: error,
       stage: stage,
       localeCode: loc,
+      kind: kind,
     );
     _fail(
       mapped.message,
@@ -527,6 +692,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       phase: phase,
       recordingFailed: recordingFailed,
       technicalDetail: mapped.technicalDetail,
+      autoCloseAfter: autoCloseAfter,
     );
   }
 
@@ -536,6 +702,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     DesktopVoiceOverlayPhase phase = DesktopVoiceOverlayPhase.error,
     bool recordingFailed = false,
     String? technicalDetail,
+    Duration? autoCloseAfter,
   }) {
     if (recordingFailed) {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_RECORDING_FAILED', diag);
@@ -548,7 +715,14 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       t(currentLocale.value, 'desktop_voice_state_error'),
     );
     DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_ERROR_VISIBLE', diag);
-    _setPhase(phase, status: message, error: message);
+    _setPhase(phase, status: message);
+    if (autoCloseAfter != null) {
+      unawaited(
+        Future<void>.delayed(autoCloseAfter, () {
+          if (mounted) widget.onClose();
+        }),
+      );
+    }
   }
 
   void _setPhase(
@@ -567,6 +741,21 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       }
     });
     _syncOverlayVisual(phase);
+    switch (phase) {
+      case DesktopVoiceOverlayPhase.listening:
+      case DesktopVoiceOverlayPhase.preparing:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_LISTENING');
+      case DesktopVoiceOverlayPhase.processing:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_PROCESSING');
+      case DesktopVoiceOverlayPhase.pendingConfirmation:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_PENDING_CONFIRMATION');
+      case DesktopVoiceOverlayPhase.started:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_SUCCESS');
+      case DesktopVoiceOverlayPhase.error:
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_ERROR');
+      case DesktopVoiceOverlayPhase.stopped:
+        break;
+    }
   }
 
   void _syncOverlayVisual(DesktopVoiceOverlayPhase phase) {
@@ -585,10 +774,11 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       case DesktopVoiceOverlayPhase.processing:
         unawaited(
           DesktopVoiceOverlayService.showProcessing(
-            transcript: _transcript.trim().isEmpty ? null : _transcript.trim(),
             timer: timer,
           ),
         );
+      case DesktopVoiceOverlayPhase.pendingConfirmation:
+        break;
       case DesktopVoiceOverlayPhase.started:
         break;
       case DesktopVoiceOverlayPhase.stopped:
@@ -599,7 +789,6 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
             message: _statusLine.trim().isEmpty
                 ? t(loc, 'desktop_voice_state_error')
                 : _statusLine.trim(),
-            detail: _errorDetail,
           ),
         );
     }
@@ -622,6 +811,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     }
 
     _sessionCancelled = true;
+    _confirmTimer.cancel();
     _listenTimer?.cancel();
     _noSignalTimer?.cancel();
     _uiTimer?.cancel();
@@ -674,6 +864,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   @override
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
+    final pending = _phase == DesktopVoiceOverlayPhase.pendingConfirmation;
     final listening = _phase == DesktopVoiceOverlayPhase.listening;
     final preparing = _phase == DesktopVoiceOverlayPhase.preparing;
     final processing = _phase == DesktopVoiceOverlayPhase.processing;
@@ -688,6 +879,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     String? timer;
     VoidCallback? onCancel;
     VoidCallback? onRetry;
+    VoidCallback? onTap;
+    double? progressFill;
 
     if (preparing) {
       primary = t(loc, 'desktop_voice_state_listening');
@@ -702,8 +895,14 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     } else if (processing) {
       primary = t(loc, 'desktop_voice_transcribing');
       showSpinner = true;
-      final tr = _transcript.trim();
-      if (tr.isNotEmpty) secondary = tr;
+    } else if (pending) {
+      primary = _statusLine.trim().isEmpty
+          ? t(loc, 'desktop_voice_state_preview')
+          : _statusLine.trim();
+      secondary = t(loc, 'desktop_voice_tap_to_edit');
+      progressFill = _confirmProgress;
+      onTap = () => unawaited(_openCorrection());
+      onCancel = () => unawaited(_cancelPendingConfirmation());
     } else if (started || stopped) {
       primary = started
           ? t(loc, 'desktop_voice_state_started')
@@ -748,6 +947,10 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
           onCancel: onCancel,
           onRetry: onRetry,
           isError: isError,
+          progressFill: progressFill,
+          onTap: onTap,
+          accentColor: Theme.of(context).colorScheme.primary,
+          compactActions: pending,
         ),
       ),
     );
@@ -773,45 +976,18 @@ Future<void> _closeDesktopVoiceOverlayEntry() async {
 Future<bool> showDesktopVoiceWidget({
   required BuildContext context,
   required List<CategoryRule> categoryRules,
-  required Future<String?> Function(VoiceCommandParseResult result) onStartRecord,
+  required DesktopVoiceStartRecordFn onStartRecord,
   Future<void> Function(String? recordDocId)? onUndoStop,
 }) async {
   if (_desktopVoiceSessionActive) return false;
 
   DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_HOST_REQUESTED');
-  // #region agent log
-  DesktopVoiceDebugProbe.log(
-    runId: 'pre-fix',
-    hypothesisId: 'H1,H3',
-    location: 'lib/features/shared/desktop_voice_widget.dart:showDesktopVoiceWidget',
-    message: 'showDesktopVoiceWidget entry',
-    data: {
-      'usesNativeOverlay': DesktopVoiceOverlayService.usesNativeOverlay,
-      'sessionActive': _desktopVoiceSessionActive,
-      'categoryRulesCount': categoryRules.length,
-    },
-  );
-  // #endregion
-
-  if (DesktopVoiceOverlayService.usesNativeOverlay) {
+if (DesktopVoiceOverlayService.usesNativeOverlay) {
     DesktopVoicePipeline.mark('DESKTOP_VOICE_FIRST_VISIBLE_STATE_LISTENING');
     final nativeOk = await DesktopVoiceOverlayService.showListening(
       timer: '00:00',
     );
-    // #region agent log
-    DesktopVoiceDebugProbe.log(
-      runId: 'pre-fix',
-      hypothesisId: 'H3',
-      location:
-          'lib/features/shared/desktop_voice_widget.dart:showDesktopVoiceWidget',
-      message: 'native listening overlay show result',
-      data: {
-        'nativeOk': nativeOk,
-        'state': 'listening',
-      },
-    );
-    // #endregion
-    if (!nativeOk) {
+if (!nativeOk) {
       await DesktopVoiceOverlayService.notifyNativeOverlayUnavailable();
       DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_BLOCKED', 'native_failed');
       return false;

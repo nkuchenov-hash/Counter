@@ -277,11 +277,31 @@ void main() {
       expect(find.byIcon(Icons.error_outline_rounded), findsNothing);
     });
 
-    testWidgets('processing phase shows spinner, not mic', (tester) async {
+    testWidgets('pending confirmation shows progress fill and tap hint', (tester) async {
+      await tester.pumpWidget(harness(
+        capsule: const DesktopVoiceCapsule(
+          primaryLine: 'Start: Price Reporter — Planning',
+          secondaryLine: 'Tap to edit',
+          showMic: false,
+          showSpinner: false,
+          micLevel: 0.0,
+          progressFill: 0.42,
+          compactActions: true,
+          isError: false,
+        ),
+      ));
+      expect(find.text('Start: Price Reporter — Planning'), findsOneWidget);
+      expect(find.text('Tap to edit'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.byIcon(Icons.mic_rounded), findsOneWidget);
+    });
+
+    testWidgets('processing phase shows spinner without transcript debug line',
+        (tester) async {
       await tester.pumpWidget(harness(
         capsule: const DesktopVoiceCapsule(
           primaryLine: 'Transcribing',
-          secondaryLine: 'Price Reporter Planning',
           showMic: false,
           showSpinner: true,
           micLevel: 0.0,
@@ -291,7 +311,6 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.byIcon(Icons.mic_rounded), findsNothing);
       expect(find.text('Transcribing'), findsOneWidget);
-      expect(find.text('Price Reporter Planning'), findsOneWidget);
     });
 
     testWidgets('started phase shows confirmation copy, no spinner, no error', (tester) async {

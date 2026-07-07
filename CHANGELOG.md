@@ -11,6 +11,39 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-07] - P0 Desktop Voice STT quality upgrade [shipped]
+
+* **`lib/core/services/desktop_stt_engine.dart`**, **`desktop_stt_orchestrator.dart`**, **`desktop_stt_cloud_service.dart`:** [feat] STT engine abstraction with Best Quality (cloud PB endpoint) → Fast Local (parakeet) → Offline Fallback ladder; no client-side API secrets.
+* **`lib/core/services/desktop_voice_glossary.dart`**, **`desktop_voice_recognition_postprocess.dart`:** [feat] Live category glossary pack + glossary-biased postprocess (Sovent→Southern Computer Warehouse, they'll not→DEL MOD) before domain resolver.
+* **`pb_hooks/ai.transcribe_command.pb.js`:** [feat] Secure `POST /api/ai/transcribe-command` backend route (OPENAI_API_KEY server env only).
+* **`lib/core/services/desktop_stt_benchmark_harness.dart`**, **`scripts/manual/benchmark_desktop_voice_stt.ps1`**, **`test/desktop_voice_stt_quality_test.dart`:** [test] Golden phrase benchmark with ≥95% quality gate.
+* **`installer/windows/build_stt_helper_en.ps1`:** [fix] Expanded Parakeet initial_prompt with GSA vocabulary.
+
+## [2026-07-07] - P1 Desktop Voice compact overlay UX [shipped]
+
+* **`lib/features/shared/desktop_voice_widget.dart`**, **`desktop_voice_capsule.dart`**, **`desktop_voice_overlay_service.dart`**, **`desktop_voice_confirmation_timer.dart`**, **`desktop_voice_correction_sheet.dart`:** [feat] GOLOS/Handy-style compact overlay with listening mic bars, processing, 3-second pending-confirmation progress fill, click-to-correct sheet, auto-commit with captured start time, and brief success auto-close; no debug UI in release.
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** [feat] Native pending state with progress bar and body-click correction hook.
+* **`test/desktop_voice_confirmation_timer_test.dart`**, **`test/desktop_voice_overlay_state_test.dart`**, **`test/desktop_voice_widget_e2e_test.dart`:** [test] Timer gate, pending UI, and no writeRecord-before-commit coverage.
+
+## [2026-07-07] - P0 Desktop Voice productization [shipped]
+
+* **`backend-rs` / `counter_stt_helper.exe`:** [fix] `/transcribe/stop` always runs final WAV inference; partial returned only as `partial_hint` / `partial_fallback` with `final_transcript_source`, `used_partial_as_final`, `stop_return_reason`, `final_inference_latency_ms` diagnostics (no more fresh-partial shortcut).
+* **`lib/data/voice_domain_resolver.dart`**, **`voice_command_parser.dart`:** [fix] Literal parser and domain resolver candidates compared on every command; deepest live category path wins over shallow exact parent matches (e.g. `Work > Price Reporter > Planning` not parent + wrong title); full-tree BLINK paths; parent rejection and top-5 candidate diagnostics.
+* **`lib/core/services/desktop_stt_helper_service.dart`**, **`desktop_stt_diagnostics.dart`:** [fix] Surfaces `partial_text`, `final_text`, `final_transcript_source`, `used_partial_as_final`, `stop_return_reason`, `final_inference_latency_ms` from helper stop response.
+* **`test/desktop_voice_domain_resolver_test.dart`**, **`test/desktop_voice_command_acceptance_test.dart`:** [fix] Work > Price Reporter > Planning child category, BLINK, and negative no-garbage-record coverage.
+
+* **`backend-rs` / `counter_stt_helper.exe`:** [fix] `/status` exposes `final_transcribe_ready`, `model_loaded`, `warmup_done`, `streaming_ready`, `reason_if_not_ready`; `ready=true` only when weights are in memory; partial inference gated until loaded.
+* **`lib/core/services/desktop_stt_helper_service.dart`:** [fix] Polls `final_transcribe_ready`, waits before transcribe, retries saved WAV on `parakeet not loaded`, Windows System.Speech fallback on saved WAV; WAV duration from file header when diagnostics showed 0ms.
+* **`lib/core/services/desktop_voice_user_error.dart`:** [fix] Readiness race vs empty transcript vs recognizer unavailable classification markers.
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** [fix] Mic bars repositioned inside 72px listening overlay (bars were painted at y=82 and clipped invisible after compact overlay resize).
+* **`lib/core/services/desktop_main_window.dart`:** [fix] Main window always maximizes on launch and tray restore (with retry after window_manager bounds restore).
+* **`lib/data/voice_command_parser.dart`:** [fix] STT repairs `Porter Plenty` / `Importer plenty` → `Price Reporter Planning` before scope parse.
+* **`lib/core/services/desktop_voice_user_error.dart`**, **`desktop_stt_helper_service.dart`**, **`desktop_voice_widget.dart`:** [fix] STT failures classified as mic no signal / recognizer unavailable / empty transcript / parser rejected / write failed; empty Heard no longer shows command-not-recognized; saved WAV sent to helper with full transcribe diagnostics markers.
+* **`lib/shell/shell_more_menu.dart`**, **`lib/features/profile/desktop_voice_settings_desktop.dart`:** [fix] More menu voice diagnostics dev-gated only; release settings show collapsed technical diagnostics with copy/log/WAV/clear support buttons; dev simulate/acceptance buttons hidden in release.
+* **`lib/core/services/desktop_voice_audio_capture.dart`**, **`desktop_voice_overlay_service.dart`:** [fix] Reactive peak-driven mic bars preserved with PCM/RMS/peak diagnostics and overlay level event markers.
+* **`installer/windows/counter.iss`**, **`lib/core/services/desktop_main_window.dart`:** [fix] Installer force-closes `counter.exe` and `counter_stt_helper.exe`; main window defaults to maximized/full-height when saved bounds are tiny or overlay-contaminated.
+* **`scripts/manual/smoke_desktop_voice_installed.ps1`**, **`test/desktop_voice_installed_identity_test.dart`:** [fix] Installed-app smoke and classification regression tests.
+
 ## [2026-07-06] - Category picker create selection handoff [shipped]
 
 * **`lib/data/categories/category_crud.dart`:** [fix] `addNestedCategory` returns created local `CategoryRule.id` from placeholder upgrade (not `bool`); sibling duplicate returns existing id.

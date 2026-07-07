@@ -5,6 +5,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:counter/core/navigation/app_navigator.dart';
 
 import 'package:counter/core/app_build_info.dart';
+import 'package:counter/core/services/desktop_main_window.dart';
 import 'package:counter/core/performance/rebuild_metrics.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/app_shell.dart';
@@ -32,7 +33,6 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:window_manager/window_manager.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:counter/core/diagnostics/runtime_log.dart';
 import 'package:counter/core/diagnostics/platform_log.dart';
@@ -118,8 +118,7 @@ Future<void> _mainAsync() async {
   };
   RebuildMetrics.instance.attachIfNeeded();
   if (!kIsWeb && Platform.isWindows) {
-    await windowManager.ensureInitialized();
-    await windowManager.setMinimumSize(const Size(900, 600));
+    await DesktopMainWindow.ensureInitialized();
   }
   if (!kIsWeb) {
     unawaited(NotificationService.instance.ensureInitialized());
@@ -182,6 +181,11 @@ Future<void> _mainAsync() async {
     print(AppBuildInfo.bootLogLine());
   }
   runApp(const DateTimeTrackerApp());
+  if (!kIsWeb && Platform.isWindows) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(DesktopMainWindow.applyAfterFirstFrame());
+    });
+  }
   if (kIsWeb) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {

@@ -24,6 +24,7 @@ abstract final class DesktopVoiceOverlayService {
     required String state,
     double level = 0,
     String? timer,
+    double progress = 0,
   }) async {
     DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_HOST_REQUESTED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_OVERLAY_UPDATE', state);
@@ -34,6 +35,7 @@ abstract final class DesktopVoiceOverlayService {
       state: state,
       level: level,
       timer: timer,
+      progress: progress,
     );
     if (!ok) {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_OVERLAY_UPDATE_FAILED', state);
@@ -106,7 +108,6 @@ abstract final class DesktopVoiceOverlayService {
     if (usesNativeOverlay) {
       return _showNative(
         primary: t(loc, 'desktop_voice_transcribing'),
-        secondary: transcript,
         state: 'processing',
         timer: timer,
       );
@@ -114,9 +115,41 @@ abstract final class DesktopVoiceOverlayService {
     return true;
   }
 
+  static Future<bool> showPendingConfirmation({
+    required String previewLine,
+    String? hintLine,
+    required double progress,
+  }) async {
+    final loc = currentLocale.value;
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_PENDING_CONFIRMATION');
+    if (usesNativeOverlay) {
+      return _showNative(
+        primary: previewLine,
+        secondary: hintLine ?? t(loc, 'desktop_voice_tap_to_edit'),
+        state: 'pending',
+        timer: '${(progress * 100).round()}%',
+        progress: progress,
+      );
+    }
+    return true;
+  }
+
+  static Future<void> updatePendingProgress({
+    required String previewLine,
+    String? hintLine,
+    required double progress,
+  }) async {
+    if (!usesNativeOverlay || !_visible) return;
+    await showPendingConfirmation(
+      previewLine: previewLine,
+      hintLine: hintLine,
+      progress: progress,
+    );
+  }
+
   static Future<bool> showStarted({
     required String confirmationLine,
-    Duration hold = const Duration(seconds: 2),
+    Duration hold = const Duration(milliseconds: 1600),
   }) async {
     final loc = currentLocale.value;
     if (usesNativeOverlay) {

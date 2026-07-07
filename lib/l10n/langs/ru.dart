@@ -678,6 +678,11 @@ const Map<String, String> kRuL10n = {
     'desktop_voice_mic_no_signal': 'Микрофон не даёт сигнал',
     'desktop_voice_command_not_recognized': 'Не удалось распознать команду',
     'desktop_voice_recognizer_unavailable': 'Распознаватель недоступен',
+    'desktop_voice_stt_no_transcript': 'Не удалось получить текст',
+    'desktop_voice_stt_empty_transcript': 'Не удалось получить текст',
+    'desktop_voice_write_failed': 'Не удалось запустить запись',
+    'desktop_voice_stale_build_warning':
+        'Запущена dev-сборка — установите CounterSetup.exe',
     'desktop_voice_reason_no_root': 'Сначала скажите «Price Reporter», затем клиента и задачу',
     'desktop_voice_reason_no_client': 'Клиент не найден в дереве категорий',
     'desktop_voice_reason_ambiguous_client': 'Несколько клиентов подходят — повторите чётче',
@@ -742,6 +747,12 @@ const Map<String, String> kRuL10n = {
     'desktop_voice_state_no_match': 'Нет совпадения',
     'desktop_voice_state_ambiguous': 'Неоднозначно',
     'desktop_voice_start_record': 'Запустить запись',
+    'desktop_voice_tap_to_edit': 'Нажмите, чтобы изменить',
+    'desktop_voice_confirm_now': 'Подтвердить',
+    'desktop_voice_correction_title': 'Исправить команду',
+    'desktop_voice_correction_cancel': 'Отмена',
+    'desktop_voice_correction_category_hint':
+        'Смена категории здесь недоступна — измените название или отмените.',
     'profile_page_title': 'Профиль',
     'settings_tab_account': 'Аккаунт',
     'settings_tab_preferences': 'Настройки',
@@ -767,7 +778,11 @@ const Map<String, String> kRuL10n = {
     'desktop_voice_diagnostics_title': 'Диагностика',
     'desktop_voice_diagnostics_subtitle':
         'Расширенные данные для отладки (по умолчанию скрыто).',
-    'desktop_voice_diagnostics_expand': 'Показать диагностику',
+    'desktop_voice_diagnostics_expand': 'Техническая диагностика',
+    'desktop_voice_copy_diagnostics': 'Копировать диагностику',
+    'desktop_voice_open_log_folder': 'Открыть папку логов',
+    'desktop_voice_open_wav_folder': 'Открыть папку WAV',
+    'desktop_voice_clear_logs': 'Очистить логи',
     'desktop_voice_acceptance_planning':
         'Проверка: Price Reporter Planning',
     'desktop_voice_acceptance_age_mod':

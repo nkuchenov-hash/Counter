@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:counter/core/performance/runtime_flags.dart';
+import 'package:counter/core/services/desktop_stt_engine.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_hotkey_codec.dart';
 import 'package:flutter/foundation.dart';
@@ -90,6 +91,7 @@ class DesktopVoiceSettings extends ChangeNotifier {
   static const _kShowPreview = 'desktop_voice_show_preview_v1';
   static const _kShowUndo = 'desktop_voice_show_undo_v1';
   static const _kProductionEngine = 'desktop_voice_production_engine_v1';
+  static const _kSttMode = 'desktop_voice_stt_mode_v1';
   static const _kMicDeviceId = 'desktop_voice_mic_device_id_v1';
   static const _kMicDeviceLabel = 'desktop_voice_mic_device_label_v1';
   static const _kLastBenchmark = 'desktop_voice_last_benchmark_v1';
@@ -104,6 +106,7 @@ class DesktopVoiceSettings extends ChangeNotifier {
   bool _showPreviewBeforeConfirm = true;
   bool _showUndoAfterApply = true;
   DesktopVoiceEngineId? _productionEngine;
+  DesktopSttMode? _sttMode;
   String? _selectedMicDeviceId;
   String? _selectedMicDeviceLabel;
   String? _lastBenchmarkSummary;
@@ -121,6 +124,7 @@ class DesktopVoiceSettings extends ChangeNotifier {
   bool get showPreviewBeforeConfirm => _showPreviewBeforeConfirm;
   bool get showUndoAfterApply => _showUndoAfterApply;
   DesktopVoiceEngineId? get productionEngine => _productionEngine;
+  DesktopSttMode get sttMode => _sttMode ?? DesktopSttMode.bestQuality;
   String? get selectedMicDeviceId => _selectedMicDeviceId;
   String? get selectedMicDeviceLabel => _selectedMicDeviceLabel;
   String? get lastBenchmarkSummary => _lastBenchmarkSummary;
@@ -145,6 +149,7 @@ class DesktopVoiceSettings extends ChangeNotifier {
     _productionEngine = DesktopVoiceEngineId.tryParse(
       prefs.getString(_kProductionEngine),
     );
+    _sttMode = _parseSttMode(prefs.getString(_kSttMode));
     _selectedMicDeviceId = prefs.getString(_kMicDeviceId);
     _selectedMicDeviceLabel = prefs.getString(_kMicDeviceLabel);
     _lastBenchmarkSummary = prefs.getString(_kLastBenchmark);
@@ -215,6 +220,23 @@ class DesktopVoiceSettings extends ChangeNotifier {
   DesktopVoiceEngineId resolveProductionEngine() {
     if (_productionEngine != null) return _productionEngine!;
     return DesktopVoiceEngineId.parakeet;
+  }
+
+  DesktopSttMode resolveSttMode() => _sttMode ?? DesktopSttMode.bestQuality;
+
+  static DesktopSttMode? _parseSttMode(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    for (final m in DesktopSttMode.values) {
+      if (m.name == raw) return m;
+    }
+    return null;
+  }
+
+  Future<void> setSttMode(DesktopSttMode mode) async {
+    _sttMode = mode;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kSttMode, mode.name);
   }
 
   Future<void> setProductionEngine(DesktopVoiceEngineId engine) async {

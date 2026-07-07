@@ -67,6 +67,7 @@ abstract final class DesktopVoiceRecordSubmit {
     required String localeCode,
     required DesktopVoiceWriteRecordFn writeRecord,
     required DateTime Function() planetaryNow,
+    DateTime? explicitStartTime,
   }) async {
     final norm = normalizeDesktopVoiceCommand(result);
     if (norm == null || !norm.autoStartAllowed) {
@@ -85,7 +86,13 @@ abstract final class DesktopVoiceRecordSubmit {
     DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_CALLED', '$title · $cid');
     DesktopVoiceLog.instance.mark('writeRecord_args', '$title · cat $cid');
 
-    final now = planetaryNow();
+    final now = explicitStartTime ?? planetaryNow();
+    if (explicitStartTime != null) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_COMMIT_USES_CAPTURED_START_TIME',
+        now.toUtc().toIso8601String(),
+      );
+    }
     final serverId = await writeRecord(
       DesktopVoiceWriteRecordRequest(
         dateKey: dateKey,

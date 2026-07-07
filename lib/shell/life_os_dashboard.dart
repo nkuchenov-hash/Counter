@@ -1,10 +1,8 @@
 // Life OS dashboard — shell state + build chrome.
 
 import 'dart:async';
-import 'dart:io' show exit, File, Platform;
+import 'dart:io' show exit, Platform;
 
-import 'package:counter/core/app_build_info.dart';
-import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
@@ -17,6 +15,7 @@ import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_tray_service.dart';
 import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
 import 'package:counter/core/services/desktop_voice_confirmation.dart';
+import 'package:counter/core/services/desktop_voice_installed_identity.dart';
 import 'package:counter/core/services/desktop_voice_overlay_bridge.dart';
 import 'package:counter/core/services/desktop_voice_overlay_host.dart';
 import 'package:counter/core/services/desktop_voice_record_submit.dart';
@@ -52,7 +51,7 @@ import 'package:counter/shell/shell_bottom_navigation.dart';
 import 'package:counter/shell/shell_offline_banner.dart';
 import 'package:counter/shell/shell_shared.dart';
 import 'package:counter/shell/shell_side_navigation.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';

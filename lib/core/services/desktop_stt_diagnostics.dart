@@ -27,9 +27,16 @@ class DesktopSttDiagnostics {
     this.helperStatusResponseBody,
     this.helperReady = false,
     this.transcribeEndpoint,
+    this.transcribeCalled = false,
     this.transcribeHttpResult,
     this.transcribeErrorKind,
     this.transcribeErrorDetail,
+    this.transcribeResponseBodyTail = '',
+    this.pcmChunksCount = 0,
+    this.rmsMin = 0,
+    this.rmsMax = 0,
+    this.peakMax = 0,
+    this.overlayLevelEventsCount = 0,
     this.latestWavPath,
     this.latestWavExists = false,
     this.latestWavBytes = 0,
@@ -48,6 +55,21 @@ class DesktopSttDiagnostics {
     this.transcript,
     this.error,
     this.latencyMs,
+    this.finalTranscribeReady = false,
+    this.helperModelLoaded = false,
+    this.helperWarmupDone = false,
+    this.reasonIfNotReady = '',
+    this.primarySttEngine,
+    this.primarySttResult,
+    this.fallbackSttAttempted = false,
+    this.fallbackSttEngine,
+    this.fallbackSttResult,
+    this.finalTranscriptSource,
+    this.partialText,
+    this.finalText,
+    this.usedPartialAsFinal = false,
+    this.stopReturnReason,
+    this.finalInferenceLatencyMs,
   });
 
   final String? helperPath;
@@ -71,9 +93,16 @@ class DesktopSttDiagnostics {
   final String? helperStatusResponseBody;
   final bool helperReady;
   final String? transcribeEndpoint;
+  final bool transcribeCalled;
   final String? transcribeHttpResult;
   final String? transcribeErrorKind;
   final String? transcribeErrorDetail;
+  final String transcribeResponseBodyTail;
+  final int pcmChunksCount;
+  final double rmsMin;
+  final double rmsMax;
+  final double peakMax;
+  final int overlayLevelEventsCount;
   final String? latestWavPath;
   final bool latestWavExists;
   final int latestWavBytes;
@@ -92,6 +121,21 @@ class DesktopSttDiagnostics {
   final String? transcript;
   final String? error;
   final int? latencyMs;
+  final bool finalTranscribeReady;
+  final bool helperModelLoaded;
+  final bool helperWarmupDone;
+  final String reasonIfNotReady;
+  final String? primarySttEngine;
+  final String? primarySttResult;
+  final bool fallbackSttAttempted;
+  final String? fallbackSttEngine;
+  final String? fallbackSttResult;
+  final String? finalTranscriptSource;
+  final String? partialText;
+  final String? finalText;
+  final bool usedPartialAsFinal;
+  final String? stopReturnReason;
+  final int? finalInferenceLatencyMs;
 
   List<String> toDiagLines() {
     return [
@@ -116,10 +160,35 @@ class DesktopSttDiagnostics {
       'helper_status_http_result=${helperStatusHttpResult ?? '—'}',
       'helper_status_response_body=${helperStatusResponseBody ?? '—'}',
       'helper_ready=${helperReady ? 'yes' : 'no'}',
+      'final_transcribe_ready=${finalTranscribeReady ? 'yes' : 'no'}',
+      'helper_model_loaded=${helperModelLoaded ? 'yes' : 'no'}',
+      'helper_warmup_done=${helperWarmupDone ? 'yes' : 'no'}',
+      'reason_if_not_ready=${reasonIfNotReady.isEmpty ? '—' : reasonIfNotReady}',
+      'primary_stt_engine=${primarySttEngine ?? '—'}',
+      'primary_stt_result=${primarySttResult ?? '—'}',
+      'fallback_stt_attempted=${fallbackSttAttempted ? 'yes' : 'no'}',
+      'fallback_stt_engine=${fallbackSttEngine ?? '—'}',
+      'fallback_stt_result=${fallbackSttResult ?? '—'}',
+      'final_transcript_source=${finalTranscriptSource ?? '—'}',
+      'partial_text=${partialText ?? '—'}',
+      'final_text=${finalText ?? '—'}',
+      'used_partial_as_final=${usedPartialAsFinal ? 'yes' : 'no'}',
+      'stop_return_reason=${stopReturnReason ?? '—'}',
+      'final_inference_latency_ms=${finalInferenceLatencyMs ?? '—'}',
       'transcribe_endpoint=${transcribeEndpoint ?? '—'}',
+      'transcribe_called=${transcribeCalled ? 'yes' : 'no'}',
       'transcribe_http_result=${transcribeHttpResult ?? '—'}',
       'transcribe_error_kind=${transcribeErrorKind ?? '—'}',
       'transcribe_error_detail=${transcribeErrorDetail ?? '—'}',
+      'transcribe_response_body_tail=${transcribeResponseBodyTail.isEmpty ? '—' : transcribeResponseBodyTail}',
+      'pcm_chunks_count=$pcmChunksCount',
+      'rms_min=${rmsMin.toStringAsFixed(4)}',
+      'rms_max=${rmsMax.toStringAsFixed(4)}',
+      'peak_max=${peakMax.toStringAsFixed(4)}',
+      'overlay_level_events_count=$overlayLevelEventsCount',
+      'stt_error_kind=${transcribeErrorKind ?? '—'}',
+      'stt_error_detail=${transcribeErrorDetail ?? '—'}',
+      'transcript_text=${transcript ?? '—'}',
       'latest_wav_path=${latestWavPath ?? '—'}',
       'latest_wav_exists=${latestWavExists ? 'yes' : 'no'}',
       'latest_wav_bytes=$latestWavBytes',

@@ -27,9 +27,15 @@ abstract final class DesktopVoiceNativeOverlay {
       } else if (call.method == 'overlayEscapePressed') {
         DesktopVoicePipeline.mark('DESKTOP_VOICE_CANCEL_REQUESTED', 'native_escape');
         onCloseRequested?.call();
+      } else if (call.method == 'overlayBodyClicked') {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_OPENED', 'native_tap');
+        onBodyClicked?.call();
       }
     });
   }
+
+  /// Native overlay body click → open correction UI.
+  static void Function()? onBodyClicked;
 
   static Future<bool> show({
     required String primary,
@@ -37,6 +43,7 @@ abstract final class DesktopVoiceNativeOverlay {
     required String state,
     double level = 0,
     String? timer,
+    double progress = 0,
   }) async {
     if (!isSupported) return false;
     _ensureHandler();
@@ -47,6 +54,7 @@ abstract final class DesktopVoiceNativeOverlay {
         'state': state,
         'level': level,
         'timer': timer ?? '',
+        'progress': progress,
       });
       return ok == true;
     } catch (e) {

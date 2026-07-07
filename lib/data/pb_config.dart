@@ -40,6 +40,9 @@ abstract class PbAppApiRoutes {
   /// Body and schema are defined server-side; see POCKETBASE_MANIFEST / deployment docs.
   static const String aiParseTask = '/api/ai/parse-task';
 
+  /// POST: command-mode WAV transcription with glossary context (server-side provider).
+  static const String aiTranscribeCommand = '/api/ai/transcribe-command';
+
   /// POST: safe password-reset lookup/send route.
   /// Body: `{ "email": "..." }`; response never exposes profile data.
   static const String authRequestPasswordReset =

@@ -1,20 +1,24 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform, Process;
 
-import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
+import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
 import 'package:counter/core/services/desktop_tray_service.dart';
+import 'package:counter/core/services/desktop_voice_attempt_log.dart';
+import 'package:counter/core/services/desktop_voice_dev_tools.dart';
 import 'package:counter/core/services/desktop_voice_hotkey.dart';
+import 'package:counter/core/services/desktop_voice_installed_identity.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/widgets/app_button.dart';
 import 'package:counter/core/widgets/app_mic_level_bars.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/features/profile/desktop_voice_settings_section.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:record/record.dart';
 
 /// Desktop Voice tab — mockup-aligned layout (hero + 2×2 grid + tip + footer).
@@ -45,7 +49,7 @@ class _DesktopVoiceSettingsDesktopGridState
   String? _selectedMicId;
 
   List<String> _diagLines = const [];
-  bool _debugDiagnosticsVisibilityLogged = false;
+  bool _diagnosticsMarkersLogged = false;
 
   @override
   void initState() {
@@ -77,11 +81,39 @@ class _DesktopVoiceSettingsDesktopGridState
   Future<void> _refreshDiagnostics() async {
     await _stt.fetchDiagnostics();
     final lines = <String>[
+      ...DesktopVoiceInstalledIdentity.toDiagLines(),
       ..._stt.lastDiagnostics.toDiagLines(),
       ...DesktopVoiceLog.instance.lines,
     ];
     if (!mounted) return;
     setState(() => _diagLines = lines);
+  }
+
+  Future<void> _copyDiagnostics() async {
+    await _refreshDiagnostics();
+    final attempt = DesktopVoiceAttemptLog.instance.current?.toPlainText() ?? '';
+    final text = [
+      if (attempt.isNotEmpty) attempt,
+      if (_diagLines.isNotEmpty) _diagLines.join('\n'),
+    ].join('\n\n');
+    await Clipboard.setData(ClipboardData(text: text));
+  }
+
+  Future<void> _openLogFolder() async {
+    final path = DesktopVoicePipeline.pipelineLogFile.parent.path;
+    await Process.run('explorer', [path], runInShell: true);
+  }
+
+  Future<void> _openWavFolder() async {
+    final wav = _stt.lastWavPath;
+    if (wav == null || wav.isEmpty) return;
+    final dir = File(wav).parent.path;
+    await Process.run('explorer', [dir], runInShell: true);
+  }
+
+  void _clearLogs() {
+    DesktopVoiceLog.instance.clear();
+    setState(() => _diagLines = const []);
   }
 
   Future<void> _startMicMonitor() async {
@@ -133,11 +165,15 @@ class _DesktopVoiceSettingsDesktopGridState
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
     final theme = Theme.of(context);
-    const devToolsDefine = bool.fromEnvironment(
-      'DESKTOP_VOICE_DEV_TOOLS',
-      defaultValue: false,
-    );
-    final devButtonsVisible = kDebugMode || devToolsDefine;
+    final devButtonsVisible = DesktopVoiceDevTools.visible;
+    if (!_diagnosticsMarkersLogged) {
+      _diagnosticsMarkersLogged = true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_DIAGNOSTICS_COLLAPSED');
+      if (!devButtonsVisible) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_RELEASE_DEV_BUTTONS_HIDDEN');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_DIAGNOSTICS_SUPPORT_BUTTONS_ONLY');
+      }
+    }
 
     if (kIsWeb ||
         !Platform.isWindows ||
@@ -271,28 +307,15 @@ class _DesktopVoiceSettingsDesktopGridState
           ),
         ),
         const SizedBox(height: 16),
-        if (!_debugDiagnosticsVisibilityLogged)
-          Builder(
-            builder: (context) {
-              _debugDiagnosticsVisibilityLogged = true;
-              // #region agent log
-              DesktopVoiceDebugProbe.log(
-                runId: 'pre-fix',
-                hypothesisId: 'H2',
-                location:
-                    'lib/features/profile/desktop_voice_settings_desktop.dart:build',
-                message: 'desktop voice diagnostics visibility decision',
-                data: {
-                  'kDebugMode': kDebugMode,
-                  'devToolsDefine': devToolsDefine,
-                  'devButtonsVisible': devButtonsVisible,
-                  'releaseReadOnlyExpected': !devButtonsVisible,
-                },
-              );
-              // #endregion
-              return const SizedBox.shrink();
-            },
+        if (DesktopVoiceInstalledIdentity.staleBuildWarning) ...[
+          Text(
+            t(loc, 'desktop_voice_stale_build_warning'),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
           ),
+          const SizedBox(height: 8),
+        ],
         Card(
           elevation: 0,
           margin: EdgeInsets.zero,
@@ -319,33 +342,54 @@ class _DesktopVoiceSettingsDesktopGridState
                 AppSettingsActionRow(
                   children: [
                     AppButton.secondary(
-                      label: t(loc, 'desktop_voice_simulate_hotkey'),
-                      onPressed: () {
-                        DesktopVoiceAcceptanceBridge.simulateHotkeyToggle?.call();
-                      },
+                      label: t(loc, 'desktop_voice_copy_diagnostics'),
+                      onPressed: () => unawaited(_copyDiagnostics()),
                     ),
                     AppButton.secondary(
-                      label: t(loc, 'desktop_voice_acceptance_planning'),
-                      onPressed: () => unawaited(
-                        _runAcceptanceCommand(
-                          'Price Reporter Planning',
-                        ),
-                      ),
+                      label: t(loc, 'desktop_voice_open_log_folder'),
+                      onPressed: () => unawaited(_openLogFolder()),
                     ),
                     AppButton.secondary(
-                      label: t(loc, 'desktop_voice_acceptance_age_mod'),
-                      onPressed: () => unawaited(
-                        _runAcceptanceCommand(
-                          'Price Reporter AGE SOLUTIONS ADD MOD',
-                        ),
-                      ),
+                      label: t(loc, 'desktop_voice_open_wav_folder'),
+                      onPressed: () => unawaited(_openWavFolder()),
                     ),
                     AppButton.secondary(
-                      label: t(loc, 'desktop_voice_refresh_diagnostics'),
-                      onPressed: () => unawaited(_refreshDiagnostics()),
+                      label: t(loc, 'desktop_voice_clear_logs'),
+                      onPressed: _clearLogs,
                     ),
                   ],
                 ),
+                if (devButtonsVisible) ...[
+                  const SizedBox(height: 12),
+                  AppSettingsActionRow(
+                    children: [
+                      AppButton.secondary(
+                        label: t(loc, 'desktop_voice_simulate_hotkey'),
+                        onPressed: () {
+                          DesktopVoiceAcceptanceBridge.simulateHotkeyToggle?.call();
+                        },
+                      ),
+                      AppButton.secondary(
+                        label: t(loc, 'desktop_voice_acceptance_planning'),
+                        onPressed: () => unawaited(
+                          _runAcceptanceCommand('Price Reporter Planning'),
+                        ),
+                      ),
+                      AppButton.secondary(
+                        label: t(loc, 'desktop_voice_acceptance_age_mod'),
+                        onPressed: () => unawaited(
+                          _runAcceptanceCommand(
+                            'Price Reporter AGE SOLUTIONS ADD MOD',
+                          ),
+                        ),
+                      ),
+                      AppButton.secondary(
+                        label: t(loc, 'desktop_voice_refresh_diagnostics'),
+                        onPressed: () => unawaited(_refreshDiagnostics()),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 12),
                 ..._diagLines.map(
                   (line) => Padding(

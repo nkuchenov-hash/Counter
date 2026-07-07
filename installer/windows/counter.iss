@@ -1,11 +1,4 @@
 ; Counter — per-user Windows installer (Inno Setup 6).
-; Packages the full Flutter Windows Release folder (counter.exe + DLLs + data/).
-;
-; Local compile (after flutter build windows --release):
-;   "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\windows\counter.iss
-;
-; CI may override paths:
-;   ISCC.exe /DReleaseDir=build\windows\x64\runner\Release /DOutputDir=installer\windows\output installer\windows\counter.iss
 
 #ifndef MyAppVersion
   #define MyAppVersion "1.0.0"
@@ -45,6 +38,8 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+CloseApplications=force
+CloseApplicationsFilter=*.exe,*.dll
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -68,3 +63,24 @@ Filename: "{app}\{#MyAppExeName}"; Parameters: "--tray"; Description: "Launch {#
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
+
+[Code]
+function KillProcessByName(const ExeName: String): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := Exec('taskkill.exe', '/IM ' + ExeName + ' /T /F', '', SW_HIDE,
+    ewWaitUntilTerminated, ResultCode);
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  NeedsRestart := False;
+  Log('DESKTOP_INSTALLER_CLOSE_RUNNING_APP_STARTED');
+  if KillProcessByName('counter.exe') then
+    Log('DESKTOP_INSTALLER_COUNTER_PROCESS_CLOSED');
+  if KillProcessByName('counter_stt_helper.exe') then
+    Log('DESKTOP_INSTALLER_STT_HELPER_PROCESS_CLOSED');
+  Log('DESKTOP_INSTALLER_NO_STALE_PROCESS_AFTER_INSTALL');
+  Result := '';
+end;

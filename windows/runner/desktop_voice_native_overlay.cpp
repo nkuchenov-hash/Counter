@@ -11,8 +11,10 @@
 namespace {
 
 constexpr wchar_t kOverlayClassName[] = L"CounterDesktopVoiceOverlay";
-constexpr int kOverlayWidth = 460;
-constexpr int kOverlayHeight = 112;
+constexpr int kOverlayWidth = 340;
+constexpr int kOverlayHeightListening = 72;
+constexpr int kOverlayHeightProcessing = 80;
+constexpr int kOverlayHeightError = 96;
 constexpr int kBottomMargin = 28;
 constexpr int kCloseButtonSize = 28;
 constexpr int kCloseButtonMargin = 12;
@@ -63,6 +65,15 @@ std::string WideToUtf8(const std::wstring& wide) {
   return utf8;
 }
 
+int OverlayHeightForState(const std::string& state) {
+  if (state == "error") return kOverlayHeightError;
+  if (state == "pending") return 88;
+  if (state == "processing" || state == "started" || state == "stopped") {
+    return kOverlayHeightProcessing;
+  }
+  return kOverlayHeightListening;
+}
+
 }  // namespace
 
 HWND DesktopVoiceNativeOverlay::main_hwnd_ = nullptr;
@@ -75,6 +86,7 @@ double DesktopVoiceNativeOverlay::level_ = 0.0;
 double DesktopVoiceNativeOverlay::target_level_ = 0.0;
 UINT_PTR DesktopVoiceNativeOverlay::anim_timer_id_ = 0;
 std::wstring DesktopVoiceNativeOverlay::timer_text_;
+double DesktopVoiceNativeOverlay::progress_ = 0.0;
 
 constexpr UINT_PTR kAnimTimerId = 0x534F;  // 'SO'
 constexpr UINT kAnimTimerIntervalMs = 33;  // ~30fps
@@ -131,9 +143,10 @@ void DesktopVoiceNativeOverlay::EnsureClassRegistered() {
 void DesktopVoiceNativeOverlay::PositionOverlay() {
   RECT work = {};
   SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0);
+  const int height = OverlayHeightForState(state_);
   const int x = work.left + ((work.right - work.left) - kOverlayWidth) / 2;
-  const int y = work.bottom - kOverlayHeight - kBottomMargin;
-  SetWindowPos(overlay_hwnd_, HWND_TOPMOST, x, y, kOverlayWidth, kOverlayHeight,
+  const int y = work.bottom - height - kBottomMargin;
+  SetWindowPos(overlay_hwnd_, HWND_TOPMOST, x, y, kOverlayWidth, height,
                SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
@@ -162,14 +175,14 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
   HGDIOBJ old_font = SelectObject(hdc, primary_font);
   SetTextColor(hdc, RGB(20, 20, 20));
 
-  RECT primary_rect = {20, 16, rect.right - 20, 48};
+  RECT primary_rect = {20, 12, rect.right - 56, 36};
   DrawTextW(hdc, primary_.c_str(), -1, &primary_rect,
             DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
 
-  if (!secondary_.empty()) {
+  if (!secondary_.empty() && state_ != "listening") {
     SelectObject(hdc, secondary_font);
     SetTextColor(hdc, RGB(90, 90, 90));
-    RECT secondary_rect = {20, 48, rect.right - 20, 72};
+    RECT secondary_rect = {20, 38, rect.right - 20, 58};
     DrawTextW(hdc, secondary_.c_str(), -1, &secondary_rect,
               DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
   }
@@ -199,23 +212,19 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
 
   if (state_ == "listening") {
     const int bar_count = 8;
-    const int bar_w = 6;
-    const int gap = 4;
-    const int base_y = 82;
-    const int max_h = 18;
-    // Sqrt gain curve: a real-voice peak of ~0.1 maps to ~0.32 visible level so
-    // bars reach ~10px (out of 18) — visibly reactive. Quiet rooms still get a
-    // minimum floor so bars aren't dead-flat between speech bursts.
+    const int bar_w = 5;
+    const int gap = 3;
+    const int overlay_h = rect.bottom - rect.top;
+    const int base_y = rect.bottom - 8;
+    const int max_h = std::clamp(overlay_h / 4, 8, 16);
+    // Sqrt gain curve: real-voice peaks map to visible bar height.
     const double gain = std::sqrt(std::max(level_, 0.0));
-    const double min_visible = 0.06;  // ambient floor — bars gently pulse
+    const double min_visible = 0.06;
     const double effective_level = std::max(gain, min_visible);
-    // Phase offset so bars don't look like a static sine wave; combined with
-    // the 33ms animation timer it produces gentle continuous motion.
     const double phase =
         static_cast<double>(GetTickCount64()) / 220.0;
     int x = 20;
     for (int i = 0; i < bar_count; ++i) {
-      // Per-bar shape: 0.45 base + 0.55 sinusoidal modulation, scaled by level.
       const double shape = 0.45 + 0.55 * std::sin(phase + (i + 1) * 0.9);
       const double leveled = effective_level * shape + min_visible * 0.35;
       const int h = static_cast<int>(
@@ -225,6 +234,23 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
       FillRect(hdc, &bar_rect, bar);
       DeleteObject(bar);
       x += bar_w + gap;
+    }
+  }
+
+  if (state_ == "pending" && progress_ > 0.0) {
+    const int bar_h = 3;
+    const int filled_w = static_cast<int>(
+        static_cast<double>(rect.right - rect.left) *
+        std::clamp(progress_, 0.0, 1.0));
+    HBRUSH track = CreateSolidBrush(RGB(235, 232, 228));
+    RECT track_rect = {0, rect.bottom - bar_h, rect.right, rect.bottom};
+    FillRect(hdc, &track_rect, track);
+    DeleteObject(track);
+    if (filled_w > 0) {
+      HBRUSH fill = CreateSolidBrush(RGB(45, 110, 185));
+      RECT fill_rect = {0, rect.bottom - bar_h, filled_w, rect.bottom};
+      FillRect(hdc, &fill_rect, fill);
+      DeleteObject(fill);
     }
   }
 
@@ -257,6 +283,7 @@ LRESULT CALLBACK DesktopVoiceNativeOverlay::OverlayWndProc(
         NotifyDartClose("overlayCloseClicked");
         return 0;
       }
+      NotifyDartClose("overlayBodyClicked");
       return 0;
     }
     case WM_KEYDOWN:
@@ -286,7 +313,8 @@ bool DesktopVoiceNativeOverlay::Show(const std::string& primary,
                                    const std::string& secondary,
                                    const std::string& state,
                                    double level,
-                                   const std::string& timer_text) {
+                                   const std::string& timer_text,
+                                   double progress) {
   if (main_hwnd_ == nullptr) {
     return false;
   }
@@ -294,6 +322,7 @@ bool DesktopVoiceNativeOverlay::Show(const std::string& primary,
   primary_ = Utf8ToWide(primary);
   secondary_ = Utf8ToWide(secondary);
   state_ = state;
+  progress_ = progress;
   // Drive the smoothed [level_] via [target_level_]; the animation timer
   // interpolates between them so bars settle smoothly rather than snapping.
   target_level_ = level;
@@ -309,7 +338,7 @@ bool DesktopVoiceNativeOverlay::Show(const std::string& primary,
   if (overlay_hwnd_ == nullptr || !IsWindow(overlay_hwnd_)) {
     overlay_hwnd_ = CreateWindowExW(
         WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, kOverlayClassName,
-        L"", WS_POPUP, 0, 0, kOverlayWidth, kOverlayHeight, nullptr, nullptr,
+        L"", WS_POPUP, 0, 0, kOverlayWidth, kOverlayHeightListening, nullptr, nullptr,
         GetModuleHandle(nullptr), nullptr);
     if (overlay_hwnd_ == nullptr) {
       return false;
@@ -374,9 +403,18 @@ void DesktopVoiceNativeOverlay::Register(flutter::FlutterEngine* engine,
               level = static_cast<double>(*i);
             }
           }
+          double progress = 0.0;
+          const auto progress_it = args->find(flutter::EncodableValue("progress"));
+          if (progress_it != args->end()) {
+            if (const auto* d = std::get_if<double>(&progress_it->second)) {
+              progress = *d;
+            } else if (const auto* i = std::get_if<int32_t>(&progress_it->second)) {
+              progress = static_cast<double>(*i);
+            }
+          }
           const bool ok = Show(read_string("primary"), read_string("secondary"),
                                read_string("state"), level,
-                               read_string("timer"));
+                               read_string("timer"), progress);
           result->Success(flutter::EncodableValue(ok));
           return;
         }

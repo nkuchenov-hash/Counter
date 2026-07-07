@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
 import 'package:record/record.dart';
@@ -28,10 +27,17 @@ class DesktopVoiceAudioCapture {
   String? _lastWavPath;
   String? _lastError;
   bool _levelMarkerLogged = false;
-  bool _debugAudioThresholdLogged = false;
+  int _pcmChunksCount = 0;
+  double _rmsMin = 1.0;
+  double _rmsMax = 0;
+  double _peakMax = 0;
 
   Stream<double>? get amplitudeStream => _ampController?.stream;
   int get capturedBytes => _buffer.length;
+  int get pcmChunksCount => _pcmChunksCount;
+  double get rmsMin => _pcmChunksCount == 0 ? 0 : _rmsMin;
+  double get rmsMax => _rmsMax;
+  double get peakMax => _peakMax;
   bool get audioLevelSeen => _audioLevelSeen;
   double get maxAmplitude => _maxAmplitude;
   double get rmsAmplitude => _rmsAmplitude;
@@ -64,7 +70,10 @@ class DesktopVoiceAudioCapture {
       _lastWavPath = null;
       _lastError = null;
       _levelMarkerLogged = false;
-      _debugAudioThresholdLogged = false;
+      _pcmChunksCount = 0;
+      _rmsMin = 1.0;
+      _rmsMax = 0;
+      _peakMax = 0;
       _ampController = StreamController<double>.broadcast();
 
       _recorder = AudioRecorder();
@@ -94,20 +103,7 @@ class DesktopVoiceAudioCapture {
 
       final stream = await _recorder!.startStream(config);
       _audioSub = stream.listen(_onChunk);
-      // #region agent log
-      DesktopVoiceDebugProbe.log(
-        runId: 'pre-fix',
-        hypothesisId: 'H3',
-        location: 'lib/core/services/desktop_voice_audio_capture.dart:start',
-        message: 'pcm recorder stream started',
-        data: {
-          'deviceIdSelected': (deviceId ?? '').isNotEmpty,
-          'deviceLabel': _deviceLabel ?? '',
-          'sampleRate': kVoiceSampleRate,
-          'channels': kVoiceChannels,
-        },
-      );
-      // #endregion
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BARS_REAL_AUDIO_PRESERVED');
       return true;
     } catch (e) {
       _lastError = e.toString();
@@ -117,55 +113,24 @@ class DesktopVoiceAudioCapture {
 
   void _onChunk(List<int> chunk) {
     _buffer.addAll(chunk);
+    _pcmChunksCount++;
     final rms = pcm16RmsLevel(chunk);
     final peak = pcm16PeakLevel(chunk);
+    if (rms < _rmsMin) _rmsMin = rms;
+    if (rms > _rmsMax) _rmsMax = rms;
+    if (peak > _peakMax) _peakMax = peak;
     if (rms > _rmsAmplitude) _rmsAmplitude = rms;
     if (peak > _maxAmplitude) _maxAmplitude = peak;
     if (rms >= _levelThreshold || peak >= _levelThreshold) {
       _audioLevelSeen = true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_SEEN');
     }
     if (!_levelMarkerLogged) {
       _levelMarkerLogged = true;
-      // #region agent log
-      DesktopVoiceDebugProbe.log(
-        runId: 'pre-fix',
-        hypothesisId: 'H3',
-        location:
-            'lib/core/services/desktop_voice_audio_capture.dart:_onChunk',
-        message: 'first pcm chunk received',
-        data: {
-          'chunkBytes': chunk.length,
-          'bufferBytes': _buffer.length,
-          'rms': rms,
-          'peak': peak,
-          'threshold': _levelThreshold,
-          'audioLevelSeen': _audioLevelSeen,
-        },
-      );
-      // #endregion
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_UPDATE');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_RMS', rms.toStringAsFixed(4));
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_PEAK', peak.toStringAsFixed(4));
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_WAVEFORM_UPDATE');
-    }
-    if (_audioLevelSeen && !_debugAudioThresholdLogged) {
-      _debugAudioThresholdLogged = true;
-      // #region agent log
-      DesktopVoiceDebugProbe.log(
-        runId: 'pre-fix',
-        hypothesisId: 'H3',
-        location:
-            'lib/core/services/desktop_voice_audio_capture.dart:_onChunk',
-        message: 'real audio threshold crossed',
-        data: {
-          'chunkBytes': chunk.length,
-          'bufferBytes': _buffer.length,
-          'rms': rms,
-          'peak': peak,
-          'threshold': _levelThreshold,
-        },
-      );
-      // #endregion
     }
     // Mic-bar visual source: PEAK (not RMS). RMS mathematically under-reports
     // transient speech bursts (typical RMS ~0.02 vs peak ~0.15), so RMS-only
@@ -215,23 +180,6 @@ class DesktopVoiceAudioCapture {
     final path = '${dir.path}${Platform.pathSeparator}$name';
     await writePcm16WavFile(pcm: pcm, path: path);
     _lastWavPath = path;
-    // #region agent log
-    DesktopVoiceDebugProbe.log(
-      runId: 'pre-fix',
-      hypothesisId: 'H3,H4',
-      location:
-          'lib/core/services/desktop_voice_audio_capture.dart:stopAndSaveWav',
-      message: 'wav saved before stt',
-      data: {
-        'wavPath': path,
-        'audioBytes': pcm.length,
-        'durationMs': pcm16DurationMs(pcm),
-        'maxAmplitude': _maxAmplitude,
-        'rmsAmplitude': _rmsAmplitude,
-        'audioLevelSeen': _audioLevelSeen,
-      },
-    );
-    // #endregion
     onPartial?.call(pcm);
 
     return DesktopVoiceCaptureResult(

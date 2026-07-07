@@ -21,7 +21,7 @@ $content = Get-Content -Raw $backup
 $content = $content -replace 'params\.set_language\(Some\("ru"\)\);', 'params.set_language(Some("en"));'
 $content = $content -replace 'params\.set_initial_prompt\([\s\S]*?\);', @'
 params.set_initial_prompt(
-        "Price Reporter, AGE SOLUTIONS, ADD MOD, client, task, record, timeline."
+        "Price Reporter, Planning, Southern Computer Warehouse, SCW, DEL MOD, ADD MOD, ADD SIN, Submit, BLINK, Laredo Technical Services, Laredo TS, AGE SOLUTIONS, client, task, record, timeline."
     );
 '@
 Set-Content -Encoding UTF8 -NoNewline -Path $mainRs -Value $content

@@ -2,7 +2,7 @@ import 'package:counter/data/models.dart';
 import 'package:counter/data/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-CategoryRule _fixtureTree() {
+CategoryRule _flatFixtureTree() {
   return CategoryRule(
     id: 100,
     name: 'Price Reporter',
@@ -20,58 +20,131 @@ CategoryRule _fixtureTree() {
   );
 }
 
+CategoryRule _workPlanningFixtureTree() {
+  return CategoryRule(
+    id: 10,
+    name: 'Work',
+    backendRowId: 'workroot1234567',
+    children: [
+      CategoryRule(
+        id: 100,
+        name: 'Price Reporter',
+        backendRowId: 'prroot123456789',
+        children: [
+          CategoryRule(
+            id: 102,
+            name: 'Planning',
+            backendRowId: 'planningcat1234',
+          ),
+          CategoryRule(
+            id: 101,
+            name: 'AGE SOLUTIONS',
+            backendRowId: 'ageclient123456',
+            keywords: {
+              'en': ['age solutions'],
+            },
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 void main() {
   group('P0 desktop voice acceptance — command grammar', () {
-    final rules = [_fixtureTree()];
+    final flatRules = [_flatFixtureTree()];
+    final workRules = [_workPlanningFixtureTree()];
 
-    test('Case A: Price Reporter Planning → root path + Planning title', () {
-      final r = parseVoiceCommand(
-        rules: rules,
-        transcript: 'Price Reporter Planning',
-      );
-      expect(r.confidence, VoiceCommandMatchConfidence.exact);
-      expect(r.isSafeToStart, isTrue);
-      expect(r.matchedCategoryDisplayPath, 'Price Reporter');
-      expect(r.matchedLocalCategoryId, 100);
-      expect(r.matchedCategoryPocketBaseId, 'prroot123456789');
-      expect(r.recordTitle, 'Planning');
+    group('flat tree (no Planning child category)', () {
+      test('Case A: Price Reporter Planning → root path + Planning title', () {
+        final r = parseVoiceCommand(
+          rules: flatRules,
+          transcript: 'Price Reporter Planning',
+        );
+        expect(r.confidence, VoiceCommandMatchConfidence.exact);
+        expect(r.isSafeToStart, isTrue);
+        expect(r.matchedCategoryDisplayPath, 'Price Reporter');
+        expect(r.matchedLocalCategoryId, 100);
+        expect(r.matchedCategoryPocketBaseId, 'prroot123456789');
+        expect(r.recordTitle, 'Planning');
+      });
+
+      test('Case B: Price Reporter AGE SOLUTIONS ADD MOD', () {
+        final r = parseVoiceCommand(
+          rules: flatRules,
+          transcript: 'Price Reporter AGE SOLUTIONS ADD MOD',
+        );
+        expect(r.confidence, VoiceCommandMatchConfidence.exact);
+        expect(r.isSafeToStart, isTrue);
+        expect(r.matchedCategoryDisplayPath, contains('AGE SOLUTIONS'));
+        expect(r.matchedLocalCategoryId, 101);
+        expect(r.recordTitle, 'ADD MOD');
+      });
     });
 
-    test('Case B: Price Reporter AGE SOLUTIONS ADD MOD', () {
-      final r = parseVoiceCommand(
-        rules: rules,
-        transcript: 'Price Reporter AGE SOLUTIONS ADD MOD',
-      );
-      expect(r.confidence, VoiceCommandMatchConfidence.exact);
-      expect(r.isSafeToStart, isTrue);
-      expect(r.matchedCategoryDisplayPath, contains('AGE SOLUTIONS'));
-      expect(r.matchedLocalCategoryId, 101);
-      expect(r.recordTitle, 'ADD MOD');
-    });
+    group('Work > Price Reporter > Planning child category', () {
+      test('Case A: Price Reporter Planning → Planning child category', () {
+        final r = parseVoiceCommand(
+          rules: workRules,
+          transcript: 'Price Reporter Planning',
+        );
+        expect(r.confidence, VoiceCommandMatchConfidence.exact);
+        expect(r.isSafeToStart, isTrue);
+        expect(r.matchedCategoryDisplayPath, 'Work > Price Reporter > Planning');
+        expect(r.matchedLocalCategoryId, 102);
+        expect(r.matchedCategoryPocketBaseId, 'planningcat1234');
+        expect(r.recordTitle, 'Planning');
+        expect(r.recordTitle, isNot('Price Reporter'));
+      });
 
-    test('STT near-miss aliases still map to Case A', () {
-      const aliases = [
-        'press reporter Planning',
-        'prize reporter Planning',
-        'price rep Planning',
-        'price report Planning',
-        'райсфер Planning',
-        'прайс репортер Planning',
-      ];
-      for (final phrase in aliases) {
-        final r = parseVoiceCommand(rules: rules, transcript: phrase);
-        expect(
-          r.confidence,
-          VoiceCommandMatchConfidence.exact,
-          reason: 'alias failed: $phrase',
+      test('must not write to parent when Planning child exists', () {
+        final r = parseVoiceCommand(
+          rules: workRules,
+          transcript: 'Price Reporter Planning',
         );
-        expect(r.recordTitle, 'Planning', reason: 'alias failed: $phrase');
-        expect(
-          r.matchedCategoryDisplayPath,
-          'Price Reporter',
-          reason: 'alias failed: $phrase',
-        );
-      }
+        expect(r.matchedLocalCategoryId, isNot(100));
+        expect(r.matchedCategoryDisplayPath, isNot('Work > Price Reporter'));
+      });
+
+      test('STT near-miss aliases map to Planning child', () {
+        const aliases = [
+          'press reporter Planning',
+          'prize reporter Planning',
+          'price rep Planning',
+          'price report Planning',
+          'rice reporter planning.',
+        ];
+        for (final phrase in aliases) {
+          final r = parseVoiceCommand(rules: workRules, transcript: phrase);
+          expect(r.isSafeToStart, isTrue, reason: phrase);
+          expect(
+            r.matchedCategoryDisplayPath,
+            'Work > Price Reporter > Planning',
+            reason: phrase,
+          );
+          expect(r.recordTitle, 'Planning', reason: phrase);
+        }
+      });
+
+      test('Porter Plenty STT mis-hear maps to Planning child', () {
+        for (final phrase in [
+          'Porter Plenty.',
+          'Porter Plenty',
+          'Importer plenty.',
+        ]) {
+          final r = parseVoiceCommand(
+            rules: workRules,
+            transcript: phrase,
+          );
+          expect(r.isSafeToStart, isTrue, reason: phrase);
+          expect(
+            r.matchedCategoryDisplayPath,
+            'Work > Price Reporter > Planning',
+            reason: phrase,
+          );
+          expect(r.recordTitle, 'Planning', reason: phrase);
+        }
+      });
     });
 
     test('play STT near-miss maps to Planning at Price Reporter root', () {
@@ -86,7 +159,7 @@ void main() {
         'rice reporter play',
       ];
       for (final phrase in aliases) {
-        final r = parseVoiceCommand(rules: rules, transcript: phrase);
+        final r = parseVoiceCommand(rules: flatRules, transcript: phrase);
         expect(r.isSafeToStart, isTrue, reason: phrase);
         expect(r.confidence, VoiceCommandMatchConfidence.exact, reason: phrase);
         expect(r.matchedCategoryDisplayPath, 'Price Reporter', reason: phrase);
@@ -96,7 +169,7 @@ void main() {
 
     test('STT near-miss price report maps to Case B', () {
       final r = parseVoiceCommand(
-        rules: rules,
+        rules: flatRules,
         transcript: 'price report AGE SOLUTIONS ADD MOD',
       );
       expect(r.confidence, VoiceCommandMatchConfidence.exact);
@@ -106,7 +179,7 @@ void main() {
 
     test('child-only command uses display name as record title', () {
       final r = parseVoiceCommand(
-        rules: rules,
+        rules: flatRules,
         transcript: 'Price Reporter AGE SOLUTIONS',
       );
       expect(r.confidence, VoiceCommandMatchConfidence.exact);
@@ -116,7 +189,7 @@ void main() {
 
     test('Price Reporter Plenty STT mis-hear maps to Planning', () {
       for (final phrase in ['Price Reporter Plenty', 'Price Reporter plenty']) {
-        final r = parseVoiceCommand(rules: rules, transcript: phrase);
+        final r = parseVoiceCommand(rules: flatRules, transcript: phrase);
         expect(r.confidence, VoiceCommandMatchConfidence.exact, reason: phrase);
         expect(r.isSafeToStart, isTrue, reason: phrase);
         expect(r.recordTitle, 'Planning', reason: phrase);
@@ -126,7 +199,7 @@ void main() {
 
     test('low confidence unsupported command does not start record', () {
       final r = parseVoiceCommand(
-        rules: rules,
+        rules: flatRules,
         transcript: 'start random task now',
       );
       expect(r.isSafeToStart, isFalse);
@@ -135,7 +208,7 @@ void main() {
 
     test('unknown client text falls back to root record title', () {
       final r = parseVoiceCommand(
-        rules: rules,
+        rules: flatRules,
         transcript: 'Price Reporter UNKNOWN CLIENT ADD MOD',
       );
       expect(r.isSafeToStart, isTrue);
@@ -146,9 +219,9 @@ void main() {
   });
 
   group('P0 desktop voice acceptance — confirmation copy', () {
-    test('EN confirmation for Case A', () {
+    test('EN confirmation for Case A flat tree', () {
       final r = parseVoiceCommand(
-        rules: [_fixtureTree()],
+        rules: [_flatFixtureTree()],
         transcript: 'Price Reporter Planning',
       );
       expect(
@@ -157,9 +230,20 @@ void main() {
       );
     });
 
+    test('EN confirmation for Planning child path', () {
+      final r = parseVoiceCommand(
+        rules: [_workPlanningFixtureTree()],
+        transcript: 'Price Reporter Planning',
+      );
+      expect(
+        voiceCommandStartConfirmationMessage(r, localeCode: 'en'),
+        'Started: Work > Price Reporter > Planning — Planning',
+      );
+    });
+
     test('RU confirmation for Case B', () {
       final r = parseVoiceCommand(
-        rules: [_fixtureTree()],
+        rules: [_flatFixtureTree()],
         transcript: 'Price Reporter AGE SOLUTIONS ADD MOD',
       );
       expect(

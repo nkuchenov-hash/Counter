@@ -1,6 +1,7 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:io';
 
+import 'package:counter/core/services/desktop_main_window.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -109,6 +110,7 @@ Future<void> hideDesktopMainWindow() async {
 }
 
 Future<void> showDesktopMainWindow() async {
+  await DesktopMainWindow.ensureSaneSizeOnShow();
   await windowManager.show();
   await windowManager.focus();
 }

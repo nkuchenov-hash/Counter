@@ -1,6 +1,11 @@
+import 'dart:math' show max, min;
+
+import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/price_reporter_client_match.dart';
+
+part 'voice_domain_resolver.dart';
 
 /// Deterministic structured desktop voice command parser.
 ///
@@ -286,6 +291,9 @@ const List<String> kPriceReporterScopeNormPrefixes = [
   'прайс репортер',
   'райсфер',
   'присрепорт',
+  'porter reporter',
+  'porter plenty',
+  'importer plenty',
 ];
 
 /// Explicit STT mis-hearings of category names that the dynamic name/keyword
@@ -322,6 +330,12 @@ String repairVoiceCommandTranscript(String transcript) {
       caseSensitive: false,
       unicode: true,
     ): 'Price Reporter',
+    RegExp(r'\bporter\s+plenty\b', caseSensitive: false): 'Price Reporter Planning',
+    RegExp(r'\bimporter\s+plenty\b', caseSensitive: false): 'Price Reporter Planning',
+    RegExp(r'^\s*porter\s+plenty\.?\s*$', caseSensitive: false):
+        'Price Reporter Planning',
+    RegExp(r'^\s*importer\s+plenty\.?\s*$', caseSensitive: false):
+        'Price Reporter Planning',
     // Laredo Technical Services — STT often collapses / splits the full name.
     // NOTE: "laredo ts" is intentionally NOT rewritten here — it stays as-is
     // so the inner "Laredo TS" client category (whose keyword is "laredo ts")
@@ -441,6 +455,20 @@ String voiceCommandStartConfirmationMessage(
   return 'Started: $path — $title';
 }
 
+/// Pending confirmation line before auto-commit (EN/RU).
+String voiceCommandPendingConfirmationMessage(
+  VoiceCommandParseResult result, {
+  required String localeCode,
+}) {
+  final path =
+      (result.matchedCategoryDisplayPath ?? result.rootLabel).trim();
+  final title = result.recordTitle.trim();
+  if (localeCode == 'ru') {
+    return 'Запустить: $path — $title';
+  }
+  return 'Start: $path — $title';
+}
+
 /// User-facing confirmation after hotkey stop of a running record (EN/RU templates).
 String voiceCommandStopConfirmationMessage({
   String? path,
@@ -456,16 +484,34 @@ String voiceCommandStopConfirmationMessage({
 
 /// Generic voice command entry — multi-scope: Price Reporter, Laredo Technical
 /// Services, and every other top-level app category. Routes the repaired
-/// transcript through [parseScopedVoiceCommand]. Out-of-scope phrases return
-/// `unsupported_command` (preserving the pre-existing Price Reporter gate for
-/// non-app users / random dictation).
+/// transcript through [parseScopedVoiceCommand], then [VoiceDomainResolver]
+/// with candidate comparison (deepest safe path wins over shallow exact).
 VoiceCommandParseResult parseVoiceCommand({
   required List<CategoryRule> rules,
   required String transcript,
+  List<String> taskTitleHints = const [],
 }) {
+  final raw = transcript.trim();
+  if (raw.isEmpty) {
+    VoiceDomainResolver.lastResolution = null;
+    VoiceCommandParseComparison.clear();
+    return VoiceCommandParseResult(
+      rootLabel: '',
+      matchedCategoryPocketBaseId: null,
+      matchedCategoryDisplayPath: null,
+      matchedLocalCategoryId: null,
+      recordTitle: '',
+      confidence: VoiceCommandMatchConfidence.noMatch,
+      originalTranscript: raw,
+      ambiguityReason: 'empty_transcript',
+    );
+  }
+
   final repaired = repairVoiceCommandTranscript(transcript);
   final index = VoiceCommandCategoryIndex.fromCategoryRules(rules);
   if (index == null) {
+    VoiceDomainResolver.lastResolution = null;
+    VoiceCommandParseComparison.clear();
     return VoiceCommandParseResult(
       rootLabel: '',
       matchedCategoryPocketBaseId: null,
@@ -473,23 +519,42 @@ VoiceCommandParseResult parseVoiceCommand({
       matchedLocalCategoryId: null,
       recordTitle: repaired,
       confidence: VoiceCommandMatchConfidence.noMatch,
-      originalTranscript: transcript.trim(),
+      originalTranscript: raw,
       ambiguityReason: 'unsupported_command',
     );
   }
-  if (!transcriptMentionsKnownScope(repaired, index)) {
-    return VoiceCommandParseResult(
+
+  VoiceCommandParseResult literal;
+  if (transcriptMentionsKnownScope(repaired, index)) {
+    literal = parseScopedVoiceCommand(index: index, transcript: repaired);
+  } else {
+    literal = VoiceCommandParseResult(
       rootLabel: '',
       matchedCategoryPocketBaseId: null,
       matchedCategoryDisplayPath: null,
       matchedLocalCategoryId: null,
       recordTitle: repaired,
       confidence: VoiceCommandMatchConfidence.noMatch,
-      originalTranscript: transcript.trim(),
+      originalTranscript: raw,
       ambiguityReason: 'unsupported_command',
     );
   }
-  return parseScopedVoiceCommand(index: index, transcript: repaired);
+
+  final resolved = VoiceDomainResolver.resolve(
+    transcript: raw,
+    repairedTranscript: repaired,
+    index: index,
+    rules: rules,
+    taskTitleHints: taskTitleHints,
+    literalCandidate: literal,
+  );
+
+  return _selectBestParseCandidate(
+    literal: literal,
+    domain: resolved,
+    raw: raw,
+    repaired: repaired,
+  );
 }
 
 /// Maps internal parser reason codes to l10n keys (never show raw codes in UI).

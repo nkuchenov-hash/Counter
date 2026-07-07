@@ -539,6 +539,11 @@ const Map<String, String> kEnL10n = {
     'desktop_voice_mic_no_signal': 'Microphone is not receiving audio',
     'desktop_voice_command_not_recognized': 'Could not recognize the command',
     'desktop_voice_recognizer_unavailable': 'Recognizer is unavailable',
+    'desktop_voice_stt_no_transcript': 'Could not get transcript text',
+    'desktop_voice_stt_empty_transcript': 'Could not get transcript text',
+    'desktop_voice_write_failed': 'Could not start the record',
+    'desktop_voice_stale_build_warning':
+        'Dev build running — install CounterSetup.exe for production voice',
     'desktop_voice_reason_no_root': 'Say “Price Reporter” first, then client and task',
     'desktop_voice_reason_no_client': 'Client not found in your category tree',
     'desktop_voice_reason_ambiguous_client': 'Several clients match — try again more clearly',
@@ -603,6 +608,12 @@ const Map<String, String> kEnL10n = {
     'desktop_voice_state_no_match': 'No match',
     'desktop_voice_state_ambiguous': 'Ambiguous',
     'desktop_voice_start_record': 'Start record',
+    'desktop_voice_tap_to_edit': 'Tap to edit',
+    'desktop_voice_confirm_now': 'Confirm now',
+    'desktop_voice_correction_title': 'Correct command',
+    'desktop_voice_correction_cancel': 'Cancel',
+    'desktop_voice_correction_category_hint':
+        'Category change is not available here — edit the title or cancel.',
     'profile_page_title': 'Profile',
     'settings_tab_account': 'Account',
     'settings_tab_preferences': 'Preferences',
@@ -628,7 +639,11 @@ const Map<String, String> kEnL10n = {
     'desktop_voice_diagnostics_title': 'Diagnostics',
     'desktop_voice_diagnostics_subtitle':
         'Advanced details for troubleshooting (collapsed by default).',
-    'desktop_voice_diagnostics_expand': 'Show diagnostics',
+    'desktop_voice_diagnostics_expand': 'Technical diagnostics',
+    'desktop_voice_copy_diagnostics': 'Copy diagnostics',
+    'desktop_voice_open_log_folder': 'Open log folder',
+    'desktop_voice_open_wav_folder': 'Open latest WAV folder',
+    'desktop_voice_clear_logs': 'Clear logs',
     'desktop_voice_acceptance_planning': 'Run acceptance: Price Reporter Planning',
     'desktop_voice_acceptance_age_mod':
         'Run acceptance: Price Reporter AGE SOLUTIONS ADD MOD',

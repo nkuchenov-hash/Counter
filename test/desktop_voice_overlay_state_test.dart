@@ -61,5 +61,19 @@ void main() {
       expect(finished, isFalse);
       DesktopVoiceOverlayBridge.clearSession();
     });
+
+    test('processing hotkey (includes pending confirmation) resolves to cancelOverlay',
+        () {
+      expect(
+        resolveDesktopVoiceHotkeyAction(
+          overlayOpen: true,
+          overlayListening: false,
+          overlayPreparing: false,
+          overlayProcessing: true,
+          hasRunningRecord: false,
+        ),
+        DesktopVoiceHotkeyAction.cancelOverlay,
+      );
+    });
   });
 }

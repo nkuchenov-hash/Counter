@@ -1,3 +1,5 @@
+import 'package:counter/core/services/desktop_voice_user_error.dart';
+
 /// Desktop one-shot voice recognition result.
 class DesktopVoiceRecognitionResult {
   const DesktopVoiceRecognitionResult({
@@ -5,12 +7,24 @@ class DesktopVoiceRecognitionResult {
     required this.engineLabel,
     this.error,
     this.audioBytes,
+    this.failureKind,
+    this.rawModelText,
+    this.postprocessedText,
+    this.finalCommandText,
+    this.sttEngine,
+    this.sttEngineLatencyMs,
   });
 
   final String transcript;
   final String engineLabel;
   final String? error;
   final int? audioBytes;
+  final DesktopVoiceFailureKind? failureKind;
+  final String? rawModelText;
+  final String? postprocessedText;
+  final String? finalCommandText;
+  final String? sttEngine;
+  final int? sttEngineLatencyMs;
 
   bool get isSuccess => transcript.isNotEmpty && error == null;
 }

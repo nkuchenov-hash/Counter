@@ -47,13 +47,25 @@ void main() {
       expect(err.message, 'Try again');
     });
 
-    test('no mic signal stage', () {
+    test('empty transcript maps to stt empty message not parser reject', () {
       final err = DesktopVoiceUserError.fromException(
-        'Not enough audio',
-        stage: DesktopVoiceErrorStage.listening,
-        localeCode: 'en',
+        'Empty transcript',
+        stage: DesktopVoiceErrorStage.transcribing,
+        localeCode: 'ru',
+        kind: DesktopVoiceFailureKind.sttEmptyTranscript,
       );
-      expect(err.message, 'No microphone signal');
+      expect(err.message, 'Не удалось получить текст');
+      expect(err.message, isNot(contains('распознать команду')));
+    });
+
+    test('parser stage maps to command not recognized', () {
+      final err = DesktopVoiceUserError.fromException(
+        '',
+        stage: DesktopVoiceErrorStage.parsing,
+        localeCode: 'en',
+        kind: DesktopVoiceFailureKind.parserRejected,
+      );
+      expect(err.message, 'Could not recognize the command');
     });
   });
 }

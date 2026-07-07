@@ -78,3 +78,24 @@ int pcm16DurationMs(List<int> pcm, {int sampleRate = kVoiceSampleRate}) {
   if (pcm.isEmpty) return 0;
   return (pcm.length ~/ (kVoiceChannels * 2)) * 1000 ~/ sampleRate;
 }
+
+/// Extract PCM payload from a standard 44-byte-header PCM16 WAV file.
+List<int> extractPcm16FromWav(List<int> wavBytes) {
+  if (wavBytes.length <= 44) return const [];
+  return wavBytes.sublist(44);
+}
+
+/// Duration in ms from a PCM16 LE mono WAV file on disk or bytes.
+int wavBytesDurationMs(List<int> wavBytes) {
+  final pcm = extractPcm16FromWav(wavBytes);
+  if (pcm.isNotEmpty) {
+    return pcm16DurationMs(pcm);
+  }
+  return 0;
+}
+
+Future<int> wavFileDurationMs(String path) async {
+  final file = File(path);
+  if (!file.existsSync()) return 0;
+  return wavBytesDurationMs(await file.readAsBytes());
+}
