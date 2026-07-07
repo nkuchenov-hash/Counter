@@ -97,6 +97,15 @@
 * **`scripts/manual/structure_doc_file_guides.py`:** [shipped] Guide entry for final audit report; fixed `FINAL_STRUCTURE_PARITY` `what` field.
 * **`docs/APP_STRUCTURE_DETAILED.md`:** [shipped] Regenerated (538 files, quality gate OK).
 
+## [2026-07-07] - P0 iPhone bottom nav + radial menu viewport clamp [shipped]
+
+* **Root cause:** Material `NavigationBar` with 5 labeled destinations wraps/clips on ~390px (worse on iOS web text scaling); `ListsSemicircleMenuOverlay` / `SemicirclePlanningMenuOverlay` used a fixed 300px canvas with `Clip.none`, so satellites overflowed when the card menu anchor was near the right edge.
+* **`lib/shell/shell_bottom_navigation.dart`:** [shipped] `ShellCompactBottomNav` — equal-width columns, `maxLines: 1` labels, `MediaQuery.withClampedTextScaling(maxScaleFactor: 1.0)`, compact l10n keys below 420px; replaces `NavigationBar` on phone shell (APK + mobile web).
+* **`lib/core/widgets/radial_menu_viewport.dart`:** [shipped] `RadialMenuViewport.clampCanvasTopLeft()` shifts menu hub inside safe bounds using `MediaQuery.viewPadding`.
+* **`lists_card.dart`**, **`planning_menu_overlay.dart`:** [shipped] viewport-clamped canvas position + `Clip.hardEdge`; action labels single-line.
+* **`lib/l10n/langs/en.dart`**, **`ru.dart`:** [shipped] `tab_*_compact` / `tab_calendar_compact` short nav labels.
+* **Verification:** analyze + test + web + APK green.
+
 ## [2026-07-06] - P0 mobile web / APK layout parity + iPhone PWA shell [shipped]
 
 * **`web/index.html`:** [shipped] Added `viewport` (`width=device-width`, `viewport-fit=cover`), `apple-mobile-web-app-capable`, shell CSS (`#FAFAF8` full-bleed, no double safe-area padding), `theme-color` `#111111`, and `icons/Icon-180.png` apple-touch-icon — fixes mobile browser ~980px layout width (side nav at phone size) and iPhone PWA white bars.

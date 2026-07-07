@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_diagnostics.dart';
@@ -343,6 +344,26 @@ class DesktopSttHelperService {
     final modelDir = modelPathFor(engine);
     final modelExistsOnDisk =
         modelDir != null && Directory(modelDir).existsSync();
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H4',
+      location:
+          'lib/core/services/desktop_stt_helper_service.dart:_configureAndWaitReady',
+      message: 'helper model path check',
+      data: {
+        'engine': engine.helperEngineId,
+        'resolvedExecutable': Platform.resolvedExecutable,
+        'helperPath': helperPath ?? '',
+        'helperExists': (helperPath != null && File(helperPath!).existsSync()),
+        'modelDir': modelDir ?? '',
+        'modelExists': modelExistsOnDisk,
+        'settingsPath': helperSettingsPath ?? '',
+        'settingsExists': (helperSettingsPath != null &&
+            File(helperSettingsPath!).existsSync()),
+      },
+    );
+    // #endregion
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_HELPER_MODEL_CHECK',
       '${engine.helperEngineId} exists=${modelExistsOnDisk ? 'yes' : 'no'}'
@@ -393,6 +414,20 @@ class DesktopSttHelperService {
           .timeout(const Duration(seconds: 2));
       _lastStatusHttpResult = 'HTTP ${r.statusCode}';
       _lastStatusBody = r.body.length > 400 ? '${r.body.substring(0, 400)}…' : r.body;
+      // #region agent log
+      DesktopVoiceDebugProbe.log(
+        runId: 'pre-fix',
+        hypothesisId: 'H4',
+        location:
+            'lib/core/services/desktop_stt_helper_service.dart:_refreshRemoteStatus',
+        message: 'helper status response',
+        data: {
+          'statusCode': r.statusCode,
+          'bodyPrefix':
+              r.body.length > 300 ? r.body.substring(0, 300) : r.body,
+        },
+      );
+      // #endregion
       if (r.statusCode != 200) {
         DesktopVoicePipeline.mark(
           'DESKTOP_VOICE_HELPER_STATUS_FAILED',
@@ -502,6 +537,24 @@ class DesktopSttHelperService {
 
     DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_USING_SAVED_WAV', capture.wavPath);
     DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_HTTP_REQUEST_STARTED_AFTER_RECORDING');
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H3,H4',
+      location:
+          'lib/core/services/desktop_stt_helper_service.dart:stopAndTranscribe',
+      message: 'stt chain about to start after saved wav',
+      data: {
+        'wavPath': capture.wavPath,
+        'audioBytes': capture.pcmBytes.length,
+        'durationMs': capture.durationMs,
+        'audioLevelSeen': capture.audioLevelSeen,
+        'maxAmplitude': capture.maxAmplitude,
+        'rmsAmplitude': capture.rmsAmplitude,
+        'engine': resolveProductionEngine().helperEngineId,
+      },
+    );
+    // #endregion
 
     final engine = resolveProductionEngine();
     final t0 = DateTime.now();
@@ -617,6 +670,21 @@ class DesktopSttHelperService {
     );
 
     try {
+      // #region agent log
+      DesktopVoiceDebugProbe.log(
+        runId: 'pre-fix',
+        hypothesisId: 'H4',
+        location:
+            'lib/core/services/desktop_stt_helper_service.dart:_transcribePcm',
+        message: 'transcribe request starting',
+        data: {
+          'endpoint': endpoint,
+          'pcmBytes': pcm.length,
+          'helperPath': helperPath ?? '',
+          'helperPid': helperPid,
+        },
+      );
+      // #endregion
       final r = await http
           .post(
             Uri.parse('$_baseUrl$endpoint'),
@@ -625,6 +693,20 @@ class DesktopSttHelperService {
           )
           .timeout(kVoiceProcessingMaxWait);
       _lastTranscribeHttpResult = 'HTTP ${r.statusCode}';
+      // #region agent log
+      DesktopVoiceDebugProbe.log(
+        runId: 'pre-fix',
+        hypothesisId: 'H4,H5',
+        location:
+            'lib/core/services/desktop_stt_helper_service.dart:_transcribePcm',
+        message: 'transcribe response received',
+        data: {
+          'statusCode': r.statusCode,
+          'bodyPrefix':
+              r.body.length > 300 ? r.body.substring(0, 300) : r.body,
+        },
+      );
+      // #endregion
       if (r.statusCode != 200) {
         _lastError = 'STT HTTP ${r.statusCode}';
         _lastTranscribeErrorKind = 'http_status';

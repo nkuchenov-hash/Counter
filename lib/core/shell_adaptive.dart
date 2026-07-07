@@ -17,6 +17,9 @@ bool shellUsesSideNavigation(double width) =>
 bool shellUsesCompactPhoneLayout(double width) =>
     width < kShellDesktopNavBreakpoint;
 
+/// Use shorter bottom-nav labels below this width (iPhone 14 class).
+const double kShellCompactNavLabelBreakpoint = 420;
+
 /// Calendar day cells use event pills when the viewport is wide enough.
 const double kCalendarEventPillBreakpoint = 600;
 

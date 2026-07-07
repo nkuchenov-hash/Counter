@@ -1,8 +1,10 @@
 // Life OS dashboard — shell state + build chrome.
 
 import 'dart:async';
-import 'dart:io' show exit, Platform;
+import 'dart:io' show exit, File, Platform;
 
+import 'package:counter/core/app_build_info.dart';
+import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
@@ -46,6 +48,7 @@ import 'package:counter/features/shared/voice_input_sheet.dart';
 import 'package:counter/features/timeline/timeline_view.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/shell/shell_bottom_navigation.dart';
 import 'package:counter/shell/shell_offline_banner.dart';
 import 'package:counter/shell/shell_shared.dart';
 import 'package:counter/shell/shell_side_navigation.dart';
@@ -476,39 +479,11 @@ class ShellDashboardState extends State<LifeOSDashboard> with ShellDashboardBase
                     }
                     return SafeArea(
                       top: false,
-                      child: NavigationBar(
-                      selectedIndex: navBarSelectedIndex,
-                      onDestinationSelected: onShellTabSelected,
-                      destinations: [
-                        NavigationDestination(
-                          icon: const Icon(Icons.timeline_outlined),
-                          selectedIcon: const Icon(Icons.timeline_rounded),
-                          label: t(currentLocale.value, 'tab_timeline'),
-                        ),
-                        NavigationDestination(
-                          icon: const Icon(Icons.checklist_outlined),
-                          selectedIcon: const Icon(Icons.checklist_rounded),
-                          label: t(currentLocale.value, 'tab_planning'),
-                        ),
-                        NavigationDestination(
-                          icon: const Icon(Icons.calendar_month_outlined),
-                          selectedIcon: const Icon(Icons.calendar_month_rounded),
-                          label: t(currentLocale.value, 'calendar'),
-                        ),
-                        NavigationDestination(
-                          icon: const Icon(Icons.format_list_bulleted_outlined),
-                          selectedIcon: const Icon(
-                            Icons.format_list_bulleted_rounded,
-                          ),
-                          label: t(currentLocale.value, 'tab_lists'),
-                        ),
-                        NavigationDestination(
-                          icon: const Icon(Icons.menu_rounded),
-                          selectedIcon: const Icon(Icons.menu_rounded),
-                          label: t(currentLocale.value, 'tab_more'),
-                        ),
-                      ],
-                    ),
+                      child: ShellCompactBottomNav(
+                        viewportWidth: constraints.maxWidth,
+                        selectedIndex: navBarSelectedIndex,
+                        onDestinationSelected: onShellTabSelected,
+                      ),
                     );
                   },
                 ),

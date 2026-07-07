@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
 import 'package:record/record.dart';
@@ -27,6 +28,7 @@ class DesktopVoiceAudioCapture {
   String? _lastWavPath;
   String? _lastError;
   bool _levelMarkerLogged = false;
+  bool _debugAudioThresholdLogged = false;
 
   Stream<double>? get amplitudeStream => _ampController?.stream;
   int get capturedBytes => _buffer.length;
@@ -62,6 +64,7 @@ class DesktopVoiceAudioCapture {
       _lastWavPath = null;
       _lastError = null;
       _levelMarkerLogged = false;
+      _debugAudioThresholdLogged = false;
       _ampController = StreamController<double>.broadcast();
 
       _recorder = AudioRecorder();
@@ -91,6 +94,20 @@ class DesktopVoiceAudioCapture {
 
       final stream = await _recorder!.startStream(config);
       _audioSub = stream.listen(_onChunk);
+      // #region agent log
+      DesktopVoiceDebugProbe.log(
+        runId: 'pre-fix',
+        hypothesisId: 'H3',
+        location: 'lib/core/services/desktop_voice_audio_capture.dart:start',
+        message: 'pcm recorder stream started',
+        data: {
+          'deviceIdSelected': (deviceId ?? '').isNotEmpty,
+          'deviceLabel': _deviceLabel ?? '',
+          'sampleRate': kVoiceSampleRate,
+          'channels': kVoiceChannels,
+        },
+      );
+      // #endregion
       return true;
     } catch (e) {
       _lastError = e.toString();
@@ -109,10 +126,46 @@ class DesktopVoiceAudioCapture {
     }
     if (!_levelMarkerLogged) {
       _levelMarkerLogged = true;
+      // #region agent log
+      DesktopVoiceDebugProbe.log(
+        runId: 'pre-fix',
+        hypothesisId: 'H3',
+        location:
+            'lib/core/services/desktop_voice_audio_capture.dart:_onChunk',
+        message: 'first pcm chunk received',
+        data: {
+          'chunkBytes': chunk.length,
+          'bufferBytes': _buffer.length,
+          'rms': rms,
+          'peak': peak,
+          'threshold': _levelThreshold,
+          'audioLevelSeen': _audioLevelSeen,
+        },
+      );
+      // #endregion
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_UPDATE');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_RMS', rms.toStringAsFixed(4));
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_PEAK', peak.toStringAsFixed(4));
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_WAVEFORM_UPDATE');
+    }
+    if (_audioLevelSeen && !_debugAudioThresholdLogged) {
+      _debugAudioThresholdLogged = true;
+      // #region agent log
+      DesktopVoiceDebugProbe.log(
+        runId: 'pre-fix',
+        hypothesisId: 'H3',
+        location:
+            'lib/core/services/desktop_voice_audio_capture.dart:_onChunk',
+        message: 'real audio threshold crossed',
+        data: {
+          'chunkBytes': chunk.length,
+          'bufferBytes': _buffer.length,
+          'rms': rms,
+          'peak': peak,
+          'threshold': _levelThreshold,
+        },
+      );
+      // #endregion
     }
     // Mic-bar visual source: PEAK (not RMS). RMS mathematically under-reports
     // transient speech bursts (typical RMS ~0.02 vs peak ~0.15), so RMS-only
@@ -162,6 +215,23 @@ class DesktopVoiceAudioCapture {
     final path = '${dir.path}${Platform.pathSeparator}$name';
     await writePcm16WavFile(pcm: pcm, path: path);
     _lastWavPath = path;
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H3,H4',
+      location:
+          'lib/core/services/desktop_voice_audio_capture.dart:stopAndSaveWav',
+      message: 'wav saved before stt',
+      data: {
+        'wavPath': path,
+        'audioBytes': pcm.length,
+        'durationMs': pcm16DurationMs(pcm),
+        'maxAmplitude': _maxAmplitude,
+        'rmsAmplitude': _rmsAmplitude,
+        'audioLevelSeen': _audioLevelSeen,
+      },
+    );
+    // #endregion
     onPartial?.call(pcm);
 
     return DesktopVoiceCaptureResult(

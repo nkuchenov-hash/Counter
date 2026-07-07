@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
+import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/navigation/app_navigator.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
@@ -82,6 +83,19 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     );
     _statusLine = t(loc, 'desktop_voice_state_listening');
     _recordStopwatch = Stopwatch()..start();
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H3',
+      location: 'lib/features/shared/desktop_voice_widget.dart:initState',
+      message: 'desktop voice widget first visible state constructed',
+      data: {
+        'phase': _phase.name,
+        'statusLine': _statusLine,
+        'usesNativeOverlay': DesktopVoiceOverlayService.usesNativeOverlay,
+      },
+    );
+    // #endregion
     _uiTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
       if (mounted) setState(() {});
     });
@@ -147,6 +161,20 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     _helper.prewarmRecognizerInBackground();
 
     final started = await _recognizer!.startCapture();
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H3,H4',
+      location:
+          'lib/features/shared/desktop_voice_widget.dart:_beginSessionRecordingFirst',
+      message: 'local microphone capture start returned',
+      data: {
+        'started': started,
+        'lastError': DesktopSttHelperService.instance.lastError ?? '',
+        'capturedBytes': _recognizer?.capturedAudioBytes ?? 0,
+      },
+    );
+    // #endregion
     DesktopVoiceLog.instance.mark(
       'recording_started',
       started ? 'yes' : 'no',
@@ -315,6 +343,24 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       parsed.matchedCategoryDisplayPath ?? '—',
     );
     DesktopVoiceLog.instance.mark('parser_title', parsed.recordTitle);
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H5',
+      location:
+          'lib/features/shared/desktop_voice_widget.dart:_parseTranscript',
+      message: 'parser result after STT transcript',
+      data: {
+        'transcript': _transcript,
+        'confidence': parsed.confidence.name,
+        'title': parsed.recordTitle,
+        'categoryPath': parsed.matchedCategoryDisplayPath ?? '',
+        'categoryIdPresent': parsed.matchedLocalCategoryId != null,
+        'safeToStart': parsed.isSafeToStart,
+        'reason': parsed.ambiguityReason ?? '',
+      },
+    );
+    // #endregion
     // Pipe-level parser verdict so a rejected transcript is traceable in the
     // runtime smoke log without grepping diag internals.
     DesktopVoicePipeline.mark(
@@ -733,12 +779,38 @@ Future<bool> showDesktopVoiceWidget({
   if (_desktopVoiceSessionActive) return false;
 
   DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_HOST_REQUESTED');
+  // #region agent log
+  DesktopVoiceDebugProbe.log(
+    runId: 'pre-fix',
+    hypothesisId: 'H1,H3',
+    location: 'lib/features/shared/desktop_voice_widget.dart:showDesktopVoiceWidget',
+    message: 'showDesktopVoiceWidget entry',
+    data: {
+      'usesNativeOverlay': DesktopVoiceOverlayService.usesNativeOverlay,
+      'sessionActive': _desktopVoiceSessionActive,
+      'categoryRulesCount': categoryRules.length,
+    },
+  );
+  // #endregion
 
   if (DesktopVoiceOverlayService.usesNativeOverlay) {
     DesktopVoicePipeline.mark('DESKTOP_VOICE_FIRST_VISIBLE_STATE_LISTENING');
     final nativeOk = await DesktopVoiceOverlayService.showListening(
       timer: '00:00',
     );
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H3',
+      location:
+          'lib/features/shared/desktop_voice_widget.dart:showDesktopVoiceWidget',
+      message: 'native listening overlay show result',
+      data: {
+        'nativeOk': nativeOk,
+        'state': 'listening',
+      },
+    );
+    // #endregion
     if (!nativeOk) {
       await DesktopVoiceOverlayService.notifyNativeOverlayUnavailable();
       DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_BLOCKED', 'native_failed');

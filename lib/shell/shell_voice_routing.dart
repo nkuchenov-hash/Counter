@@ -18,6 +18,35 @@ mixin ShellVoiceRouting on ShellCoreLogic {
     await DesktopVoiceSettings.instance.loadIfNeeded();
     if (!mounted) return;
 
+    // #region agent log
+    final localAppData = Platform.environment['LOCALAPPDATA'] ?? '';
+    final expectedInstalledExe = localAppData.isEmpty
+        ? ''
+        : '$localAppData\\Programs\\Counter\\counter.exe';
+    final expectedHelper = localAppData.isEmpty
+        ? ''
+        : '$localAppData\\Programs\\Counter\\stt_helper\\counter_stt_helper.exe';
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H1,H4',
+      location: 'lib/shell/shell_voice_routing.dart:initDesktopVoiceLayer',
+      message: 'desktop voice identity and installed helper paths',
+      data: {
+        'runningExePath': Platform.resolvedExecutable,
+        'expectedInstalledExe': expectedInstalledExe,
+        'isExpectedInstalledExe': Platform.resolvedExecutable.toLowerCase() ==
+            expectedInstalledExe.toLowerCase(),
+        'buildSha': AppBuildInfo.gitCommit,
+        'buildTime': AppBuildInfo.builtAt,
+        'voiceEnabled': DesktopVoiceSettings.instance.enabled,
+        'hotkeyActive': DesktopVoiceHotkey.isActive,
+        'expectedHelperPath': expectedHelper,
+        'expectedHelperExists':
+            expectedHelper.isNotEmpty && File(expectedHelper).existsSync(),
+      },
+    );
+    // #endregion
+
     if (await DesktopTrayService.shouldStartHidden()) {
       unawaited(DesktopTrayService.hideMainWindow());
     }
@@ -446,6 +475,21 @@ mixin ShellVoiceRouting on ShellCoreLogic {
   }
 
   Future<String?> desktopVoiceSubmitParsed(VoiceCommandParseResult result) async {
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H5',
+      location: 'lib/shell/shell_voice_routing.dart:desktopVoiceSubmitParsed',
+      message: 'voice parsed command reached Brain submit boundary',
+      data: {
+        'confidence': result.confidence.name,
+        'title': result.recordTitle,
+        'categoryIdPresent': result.matchedLocalCategoryId != null,
+        'categoryPath': result.matchedCategoryDisplayPath ?? '',
+        'safeToStart': result.isSafeToStart,
+      },
+    );
+    // #endregion
     final outcome = await DesktopVoiceRecordSubmit.submitParsed(
       result: result,
       dateKey: timelineVoiceDateKey,
@@ -454,6 +498,19 @@ mixin ShellVoiceRouting on ShellCoreLogic {
       writeRecord: (req) async {
         unawaited(stopAnyActiveTask());
         try {
+          // #region agent log
+          DesktopVoiceDebugProbe.log(
+            runId: 'pre-fix',
+            hypothesisId: 'H5',
+            location: 'lib/shell/shell_voice_routing.dart:writeRecord',
+            message: 'calling DatabaseService.writeRecord from desktop voice',
+            data: {
+              'title': req.title,
+              'categoryId': req.categoryId,
+              'dateKey': req.dateKey,
+            },
+          );
+          // #endregion
           return await DatabaseService.instance.writeRecord(
             req.dateKey,
             req.title,
@@ -482,6 +539,19 @@ mixin ShellVoiceRouting on ShellCoreLogic {
         }
       },
     );
+    // #region agent log
+    DesktopVoiceDebugProbe.log(
+      runId: 'pre-fix',
+      hypothesisId: 'H5',
+      location: 'lib/shell/shell_voice_routing.dart:desktopVoiceSubmitParsed',
+      message: 'desktop voice Brain submit outcome',
+      data: {
+        'outcomePresent': outcome != null,
+        'serverIdPresent': (outcome?.serverId.trim().isNotEmpty ?? false),
+        'writeRecordCalled': outcome?.writeRecordCalled ?? false,
+      },
+    );
+    // #endregion
     if (outcome == null) {
       if (result.isSafeToStart && mounted) {
         final cid = result.matchedLocalCategoryId;

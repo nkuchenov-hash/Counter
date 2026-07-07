@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:counter/core/diagnostics/desktop_voice_debug_probe.dart';
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_voice_acceptance_bridge.dart';
@@ -12,7 +13,7 @@ import 'package:counter/core/widgets/app_mic_level_bars.dart';
 import 'package:counter/core/widgets/app_settings_layout.dart';
 import 'package:counter/features/profile/desktop_voice_settings_section.dart';
 import 'package:counter/l10n/dictionary.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:record/record.dart';
 
@@ -44,6 +45,7 @@ class _DesktopVoiceSettingsDesktopGridState
   String? _selectedMicId;
 
   List<String> _diagLines = const [];
+  bool _debugDiagnosticsVisibilityLogged = false;
 
   @override
   void initState() {
@@ -131,6 +133,11 @@ class _DesktopVoiceSettingsDesktopGridState
   Widget build(BuildContext context) {
     final loc = currentLocale.value;
     final theme = Theme.of(context);
+    const devToolsDefine = bool.fromEnvironment(
+      'DESKTOP_VOICE_DEV_TOOLS',
+      defaultValue: false,
+    );
+    final devButtonsVisible = kDebugMode || devToolsDefine;
 
     if (kIsWeb ||
         !Platform.isWindows ||
@@ -264,6 +271,28 @@ class _DesktopVoiceSettingsDesktopGridState
           ),
         ),
         const SizedBox(height: 16),
+        if (!_debugDiagnosticsVisibilityLogged)
+          Builder(
+            builder: (context) {
+              _debugDiagnosticsVisibilityLogged = true;
+              // #region agent log
+              DesktopVoiceDebugProbe.log(
+                runId: 'pre-fix',
+                hypothesisId: 'H2',
+                location:
+                    'lib/features/profile/desktop_voice_settings_desktop.dart:build',
+                message: 'desktop voice diagnostics visibility decision',
+                data: {
+                  'kDebugMode': kDebugMode,
+                  'devToolsDefine': devToolsDefine,
+                  'devButtonsVisible': devButtonsVisible,
+                  'releaseReadOnlyExpected': !devButtonsVisible,
+                },
+              );
+              // #endregion
+              return const SizedBox.shrink();
+            },
+          ),
         Card(
           elevation: 0,
           margin: EdgeInsets.zero,

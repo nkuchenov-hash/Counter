@@ -1,4 +1,12 @@
-import 'dart:async';import 'dart:math' as math;import 'package:counter/l10n/dictionary.dart';import 'package:flutter/material.dart';import 'package:flutter/services.dart';/// Expanding semi-circle FAB menu: primary at [anchorCenter], three satellites with labels.
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:counter/core/widgets/radial_menu_viewport.dart';
+import 'package:counter/l10n/dictionary.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+/// Expanding semi-circle FAB menu: primary at [anchorCenter], three satellites with labels.
 class SemicirclePlanningMenuOverlay extends StatefulWidget {
   const SemicirclePlanningMenuOverlay({
     required this.anchorCenter,
@@ -106,8 +114,9 @@ class SemicirclePlanningMenuOverlayState
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  softWrap: false,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w600,
@@ -127,9 +136,13 @@ class SemicirclePlanningMenuOverlayState
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
 
-    // Hub center must align exactly with the menu button center (no clamp — that broke anchoring).
-    final stackLeft = widget.anchorCenter.dx - _canvas / 2;
-    final stackTop = widget.anchorCenter.dy - _canvas / 2;
+    final canvasTopLeft = RadialMenuViewport.clampCanvasTopLeft(
+      context: context,
+      anchorCenter: widget.anchorCenter,
+      canvasSize: _canvas,
+      orbitRadius: _orbit,
+      satelliteDiameter: _satellite,
+    );
 
     final hubAnim = CurvedAnimation(
       parent: _controller,
@@ -148,12 +161,12 @@ class SemicirclePlanningMenuOverlayState
             ),
           ),
           Positioned(
-            left: stackLeft,
-            top: stackTop,
+            left: canvasTopLeft.dx,
+            top: canvasTopLeft.dy,
             width: _canvas,
             height: _canvas,
             child: Stack(
-              clipBehavior: Clip.none,
+              clipBehavior: Clip.hardEdge,
               children: [
                 // Left semicircle: up-left → Edit, mid-left → Select, down-left → Delete (thumb-friendly).
                 _labeledAction(

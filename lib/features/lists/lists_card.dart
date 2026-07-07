@@ -6,6 +6,7 @@ import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/l10n/category_db_display.dart';
+import 'package:counter/core/widgets/radial_menu_viewport.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -337,8 +338,9 @@ class ListsSemicircleMenuOverlayState
                 child: Text(
                   label,
                   textAlign: TextAlign.center,
-                  maxLines: 2,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  softWrap: false,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w600,
@@ -358,8 +360,13 @@ class ListsSemicircleMenuOverlayState
     final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
 
-    final stackLeft = widget.anchorCenter.dx - _canvas / 2;
-    final stackTop = widget.anchorCenter.dy - _canvas / 2;
+    final canvasTopLeft = RadialMenuViewport.clampCanvasTopLeft(
+      context: context,
+      anchorCenter: widget.anchorCenter,
+      canvasSize: _canvas,
+      orbitRadius: _orbit,
+      satelliteDiameter: _satellite,
+    );
 
     final hubAnim = CurvedAnimation(
       parent: _controller,
@@ -382,12 +389,12 @@ class ListsSemicircleMenuOverlayState
             ),
           ),
           Positioned(
-            left: stackLeft,
-            top: stackTop,
+            left: canvasTopLeft.dx,
+            top: canvasTopLeft.dy,
             width: _canvas,
             height: _canvas,
             child: Stack(
-              clipBehavior: Clip.none,
+              clipBehavior: Clip.hardEdge,
               children: [
                 _labeledAction(
                   index: 0,
