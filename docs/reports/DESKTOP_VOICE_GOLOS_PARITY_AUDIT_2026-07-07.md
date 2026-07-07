@@ -1,108 +1,84 @@
-# Desktop Voice GOLOS Parity Audit — 2026-07-07
+# Desktop Voice GOLOS Parity Audit — 2026-07-07 (same-WAV verified)
 
-**Markers:** `DESKTOP_VOICE_GOLOS_PIPELINE_FOUND` · `DESKTOP_VOICE_GOLOS_PARITY_DIFFS_LOGGED` · `DESKTOP_VOICE_COUNTER_PIPELINE_MATCHED_TO_GOLOS`
+**Markers:** `DESKTOP_VOICE_GOLOS_PIPELINE_FOUND` · `DESKTOP_VOICE_GOLOS_EQUIVALENT_SAME_WAV_RUNNER_READY` · `DESKTOP_VOICE_GOLOS_PARITY_DIFFS_LOGGED`
 
-## Summary
+## Executive result
 
-Counter Desktop Voice and GOLOS/Handy share the same **backend-rs** inference stack (Parakeet / Whisper local engines). Recognition quality gaps on the failing SCW command were traced to **audio capture endpointing** and **VAD trim**, not a different model file. This pass aligns Counter with GOLOS-native settings and separates raw STT quality from alias/postprocess safety.
+Same fixture WAV + same Parakeet int8 model checksum (`6139D2FA7E1B0860`) + GOLOS-equivalent VAD produces:
 
----
+**`Solvan Computer Warehouse, Delmore, Submit.`**
 
-## GOLOS Pipeline (found)
+This is the **model ceiling** for this WAV without glossary/postprocess. Counter must match this exactly. Strict domain terms **Southern** / **DEL MOD** are **not** produced by Parakeet on this audio — GOLOS-equivalent pipeline does not either.
 
-**Source:** `C:\Users\nkuch\Development\Apps\golos_flutter\src-tauri\src\`
-
-| Setting | GOLOS value | File |
-|---------|-------------|------|
-| Manual stop post-roll | 180 ms | `audio.rs` `MANUAL_STOP_POST_ROLL_MS` |
-| Stream drain after stop | 30 ms | `audio.rs` `STREAM_DRAIN_MS` |
-| VAD pad | 350 ms | `transcribe.rs` `VAD_PAD_MS` |
-| VAD tail keep | 700 ms | `transcribe.rs` `VAD_TAIL_KEEP_MS` |
-| VAD window | 30 ms | `transcribe.rs` |
-| VAD RMS threshold | 0.01 | `transcribe.rs` |
-| Sample rate (inference) | 16 kHz mono | backend-rs |
-| Partial interval | ~200–250 ms | GOLOS incremental path |
-| Pre-roll (partials) | ~700 ms | GOLOS audio buffer |
-
-**Prebuilt GOLOS helper on machine:** not found (`golos-backend.exe` absent). Same-WAV GOLOS-side transcript comparison deferred; settings comparison is from source.
-
-`DESKTOP_VOICE_GOLOS_PIPELINE_FOUND`
+Handy/GOLOS perceived quality for domain terms is **glossary/postprocess** (`glossary.rs` — DEL mod, SCW expansions), not raw Parakeet.
 
 ---
 
-## Counter Pipeline (before)
+## Same-WAV replay (`wav_stt_replay`)
 
-| Setting | Counter (before) | File |
-|---------|------------------|------|
-| Post-roll at stop | **0 ms** | `desktop_voice_audio_capture.dart` |
-| VAD pad | **200 ms** | backend-rs `main.rs` |
-| VAD tail keep | **none** | backend-rs |
-| STT mode default | bestQuality (cloud ladder) | `desktop_voice_settings.dart` |
-| Command text source | postprocessed (alias repair) | `desktop_stt_orchestrator.dart` |
-| Partial timer | 400 ms | `desktop_voice_audio_capture.dart` |
-| Capture | PCM16 16 kHz mono | `record` package |
-| Helper | `counter_stt_helper.exe` from backend-rs | EN prompt patch in build script |
-| Model | Parakeet (same backend-rs weights path) | `%LOCALAPPDATA%\Counter\stt_models` |
+Fixture: `test/fixtures/desktop_voice_wav/scw_delmod_submit_real_2026_07_07.wav`  
+Model: `golos_flutter/Release/models/parakeet` (identical SHA256 to Counter installed model)
 
----
+| Pipeline | VAD | Peak norm | Raw transcript |
+|----------|-----|-----------|----------------|
+| **golos_equivalent** | 350ms pad + 700ms tail | **no** | **Solvan Computer Warehouse, Delmore, Submit.** |
+| golos_equivalent_peak_norm | 350ms + 700ms tail | yes | Solvent computer warehouse, Delmore, Submit. |
+| counter_legacy_vad | 200ms pad only | no | Sov and Computer Warehouse, Del Mall, Submit. |
+| counter_helper_current (before fix) | golos VAD | yes | Solvent computer warehouse, Delmore, Submit. |
+| no_vad | none | no | Solvent Computer Warehouse, Del Mall, Submit. |
 
-## Differences (root cause)
+**Baseline (old Counter live):** `Solvent computer warehouse still model submit`
 
-1. **Missing post-roll (180+30 ms)** — Counter stopped mic immediately; trailing “DEL MOD submit” phonemes were clipped before WAV save.
-2. **Weaker VAD** — 200 ms pad, no 700 ms tail preservation; final inference saw truncated audio vs GOLOS.
-3. **Quality counted postprocess** — alias/glossary repair masked raw Parakeet errors in acceptance criteria.
-4. **Cloud STT ladder** — not used by GOLOS; removed from default transcribe path for this pass.
-
-`DESKTOP_VOICE_GOLOS_PARITY_DIFFS_LOGGED`
+Runner: `installer/windows/wav_stt_replay/`  
+Script: `scripts/manual/compare_desktop_voice_wav_stt.ps1`
 
 ---
 
-## Changes Made to Counter
+## Exact setting diffs (Counter vs GOLOS native)
 
-| Change | Location |
-|--------|----------|
-| GOLOS post-roll 180+30 ms before mic stop | `lib/core/services/desktop_voice_audio_capture.dart` |
-| VAD 350 ms pad + 700 ms tail keep in helper build | `installer/windows/build_stt_helper_en.ps1` |
-| Raw STT quality mode; postprocess logged only | `lib/core/services/desktop_stt_quality_evaluation.dart`, `desktop_stt_orchestrator.dart` |
-| Default STT mode → fastLocal (local Parakeet) | `desktop_voice_settings.dart` |
-| Parent-only + unresolved token block | `desktop_voice_command_normalize.dart` |
-| Real WAV fixture + golden manifest | `test/fixtures/desktop_voice_wav/` |
-| WAV replay benchmark | `lib/core/services/desktop_voice_wav_stt_benchmark.dart`, `scripts/manual/benchmark_desktop_voice_stt.ps1` |
-
-`DESKTOP_VOICE_COUNTER_PIPELINE_MATCHED_TO_GOLOS`
-
----
-
-## Same-WAV Test
-
-| Field | Value |
-|-------|-------|
-| WAV | `test/fixtures/desktop_voice_wav/scw_delmod_submit_real_2026_07_07.wav` |
-| Source | `%LOCALAPPDATA%\Counter\voice_samples\latest_command.wav` |
-| Baseline raw STT | `Solvent computer warehouse still model submit` |
-| Expected | `Southern Computer Warehouse DEL MOD submit` |
-
-Run: `scripts/manual/benchmark_desktop_voice_stt.ps1` (requires rebuilt helper).
-
-`DESKTOP_VOICE_SAME_WAV_COMPARISON_READY`
+| Setting | GOLOS (`transcribe.rs` / `audio.rs`) | Counter (after fix) | Counter (before) |
+|---------|--------------------------------------|---------------------|------------------|
+| Model | parakeet int8 ONNX | parakeet int8 ONNX | same |
+| Model SHA256 (encoder) | 6139D2FA7E1B0860 | same | same |
+| Inference lib | transcribe-rs 0.3 ParakeetParams::default() | same via backend-rs | same |
+| Language (Parakeet) | none / model default | none | none |
+| Whisper prompt | N/A for Parakeet | N/A | EN prompt patched (Whisper only) |
+| VAD pad | 350 ms | 350 ms | 200 ms |
+| VAD tail keep | 700 ms | 700 ms | 0 ms |
+| VAD RMS threshold | 0.01 | 0.01 | 0.01 |
+| Post-roll capture | 180+30 ms (live only) | 180+30 ms | 0 ms |
+| STT peak normalization | **none** | **removed** | Dart normalizePcm16PeakForStt (harmful) |
+| Resample | native→16k linear (`audio.rs`) | 16k capture fixed | 16k capture |
+| Glossary after STT | yes (`glossary::correct_text`) | not counted for raw quality | postprocess path |
+| Cloud STT | optional groq/salute | disabled for raw pass | bestQuality ladder |
 
 ---
 
-## Remaining Unknowns
+## Counter changes (this pass)
 
-- Live GOLOS binary transcript on identical WAV (no prebuilt helper on disk).
-- Whether GOLOS native resampling (device-native → 16 kHz) vs Counter fixed 16 kHz capture affects this specific mic/device.
-- Parakeet vs Whisper selection in GOLOS for short commands (Counter production uses Parakeet).
+1. **Removed STT peak normalization** — proven to degrade same-WAV output.
+2. **GOLOS VAD** in helper build (already applied).
+3. **GOLOS post-roll** in capture (live recordings; does not affect old fixture WAV).
+4. **`wav_stt_replay`** benchmark harness for A/B without golos-backend.exe HTTP.
+5. **Parity pass criterion** = match `golos_equivalent_raw_transcript` on same WAV.
 
 ---
 
-## Quality Evaluation Contract (this pass)
+## Strict domain pass — honest assessment
 
-```
-stt_quality_mode=raw_transcript_evaluation
-alias_postprocess_used_for_quality=false
-```
+| Term | Required | GOLOS-equivalent raw | Strict pass |
+|------|----------|----------------------|-------------|
+| Southern Computer Warehouse | exact | Solvan Computer Warehouse | **NO** |
+| DEL MOD | exact | Delmore | **NO** |
+| Submit | present | Submit | **YES** |
 
-Raw pass criteria: `raw_model_text` / `final_stt_text` only — not `postprocessed_text` or parser repair.
+**Conclusion:** Same-model parity is achievable and must match GOLOS-equivalent output. Strict Southern/DEL MOD on **this pre-fixture WAV** exceeds Parakeet raw capability. New live captures with post-roll may improve trailing phonemes; re-capture WAV after install for regression update.
 
-Markers: `DESKTOP_VOICE_RAW_STT_QUALITY_EVALUATION` · `DESKTOP_VOICE_POSTPROCESS_NOT_COUNTED_AS_STT_QUALITY` · `DESKTOP_VOICE_RAW_FINAL_STT_TEXT_LOGGED`
+GOLOS/Handy user-visible quality for SCW/DEL MOD likely includes **glossary** (`glossary.rs` CORRECTIONS + builtin GSA terms), not raw STT alone.
+
+---
+
+## Remaining unknowns
+
+- Live GOLOS Tauri dictation on same WAV file (not HTTP) — replay uses identical math.
+- Whether Handy uses a different runtime binary than `golos_flutter/Release/golos.exe` for Parakeet.

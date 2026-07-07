@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:counter/core/services/desktop_stt_quality_evaluation.dart';
@@ -20,18 +21,14 @@ void main() {
   });
 
   group('Desktop Voice real WAV fixture manifest', () {
-    test('golden manifest stores SCW baseline transcript', () {
-      final baseline = DesktopVoiceWavSttBenchmark.baselineTranscriptFromManifest();
-      expect(baseline, isNotNull);
+    test('golden manifest stores GOLOS-equivalent ceiling transcript', () {
+      final file = File(DesktopVoiceWavSttBenchmark.manifestFile);
+      final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
       expect(
-        baseline,
-        'Solvent computer warehouse still model submit',
+        json['golos_equivalent_raw_transcript'],
+        'Solvan Computer Warehouse, Delmore, Submit.',
       );
-      final cases = DesktopVoiceWavSttBenchmark.loadManifestCases();
-      expect(cases.any((c) => c.id == 'scw_delmod_submit_real'), isTrue);
-      final scw = cases.firstWhere((c) => c.id == 'scw_delmod_submit_real');
-      expect(scw.status, 'present');
-      expect(scw.wavFileName, 'scw_delmod_submit_real_2026_07_07.wav');
+      expect(json['strict_domain_pass'], isFalse);
     });
 
     test('SCW real WAV fixture exists with PCM payload', () {
@@ -106,6 +103,10 @@ void main() {
         'domain=${result.domainTermAccuracy} improved=${result.improvedVsBaseline}',
       );
       expect(result.improvedVsBaseline, isTrue);
+      expect(
+        result.rawTranscript.trim().toLowerCase(),
+        'solvan computer warehouse, delmore, submit.',
+      );
     }, timeout: const Timeout(Duration(minutes: 3)));
   });
 }

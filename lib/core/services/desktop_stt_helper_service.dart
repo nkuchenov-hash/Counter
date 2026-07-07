@@ -837,17 +837,14 @@ class DesktopSttHelperService {
 
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_CALLED', endpoint);
     _transcribeCalled = true;
-    final peakBefore = pcm16PeakLevel(pcm);
-    final sttPcm = normalizePcm16PeakForStt(pcm);
-    if (pcm16PeakLevel(sttPcm) > peakBefore + 0.001) {
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_PCM_PEAK_NORMALIZED');
-    }
+    // GOLOS parity: no STT peak normalization — same-WAV replay proved peak norm
+    // degrades Parakeet output (Solvan→Solvent on SCW fixture).
     try {
       final r = await http
           .post(
             Uri.parse('$_baseUrl$endpoint'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'audio_base64': base64Encode(sttPcm)}),
+            body: jsonEncode({'audio_base64': base64Encode(pcm)}),
           )
           .timeout(kVoiceProcessingMaxWait);
       _lastTranscribeHttpResult = 'HTTP ${r.statusCode}';

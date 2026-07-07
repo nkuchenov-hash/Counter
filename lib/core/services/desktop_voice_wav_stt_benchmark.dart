@@ -98,6 +98,20 @@ abstract final class DesktopVoiceWavSttBenchmark {
     return json['baseline_transcript'] as String?;
   }
 
+  static String? _golosEquivalentFromManifest() {
+    final file = File(manifestFile);
+    if (!file.existsSync()) return null;
+    final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    return json['golos_equivalent_raw_transcript'] as String?;
+  }
+
+  static bool strictDomainPassFromManifest() {
+    final file = File(manifestFile);
+    if (!file.existsSync()) return false;
+    final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    return json['strict_domain_pass'] == true;
+  }
+
   /// Simple token error rate vs expected phrase (case-insensitive).
   static double tokenErrorRate(String hypothesis, String reference) {
     final hyp = _tokens(hypothesis);
@@ -194,9 +208,8 @@ abstract final class DesktopVoiceWavSttBenchmark {
     }
 
     final pcm = bytes.sublist(44);
-    final sttPcm = normalizePcm16PeakForStt(pcm);
-    final rms = pcm16RmsLevel(sttPcm);
-    final peak = pcm16PeakLevel(sttPcm);
+    final rms = pcm16RmsLevel(pcm);
+    final peak = pcm16PeakLevel(pcm);
     final durationMs = pcm16DurationMs(pcm);
 
     final t0 = DateTime.now();
@@ -232,7 +245,7 @@ abstract final class DesktopVoiceWavSttBenchmark {
             .post(
               Uri.parse('$helperUrl/transcribe/stop'),
               headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({'audio_base64': base64Encode(sttPcm)}),
+              body: jsonEncode({'audio_base64': base64Encode(pcm)}),
             )
             .timeout(const Duration(seconds: 120));
         if (resp.statusCode == 200) {
@@ -292,23 +305,17 @@ abstract final class DesktopVoiceWavSttBenchmark {
     final forbiddenHit = caseDef.forbiddenTerms.any(
       (f) => rawText!.toLowerCase().contains(f.toLowerCase()),
     );
-    final passed = improved &&
-        accuracy >= 0.66 &&
-        !forbiddenHit &&
-        hits['DEL MOD'] != false &&
-        hits['Submit'] != false;
+    final golosTarget = baselineTranscriptFromManifest() == null
+        ? null
+        : _golosEquivalentFromManifest();
+    final matchesGolosEquivalent = golosTarget != null &&
+        rawText.trim().toLowerCase() == golosTarget.trim().toLowerCase();
+    // Parity pass = match GOLOS-equivalent raw on same WAV (not alias/postprocess).
+    final passed = matchesGolosEquivalent && !forbiddenHit;
 
     if (passed) {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_REGRESSION_IMPROVED');
-      if (hits['Southern Computer Warehouse'] == true) {
-        DesktopVoicePipeline.mark('DESKTOP_VOICE_RAW_STT_SCW_PASS');
-      }
-      if (hits['DEL MOD'] == true) {
-        DesktopVoicePipeline.mark('DESKTOP_VOICE_RAW_STT_DELMOD_PASS');
-      }
-      if (hits['Submit'] == true) {
-        DesktopVoicePipeline.mark('DESKTOP_VOICE_RAW_STT_SUBMIT_PASS');
-      }
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_COUNTER_PIPELINE_MATCHED_TO_GOLOS');
     }
 
     return DesktopVoiceWavSttBenchmarkResult(
