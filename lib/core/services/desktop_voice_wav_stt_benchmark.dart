@@ -62,6 +62,29 @@ class DesktopVoiceWavSttBenchmarkResult {
   final String? error;
 }
 
+/// Three-way capture-parity comparison result (Handy vs old vs new Counter).
+class CapabilityParityReport {
+  const CapabilityParityReport({
+    required this.handyTranscript,
+    required this.oldCounterTranscript,
+    required this.newCounterTranscript,
+    required this.oldDomainAccuracy,
+    required this.newDomainAccuracy,
+    required this.handyDomainAccuracy,
+    required this.improvedTowardHandy,
+  });
+
+  final String? handyTranscript;
+  final String? oldCounterTranscript;
+  final String? newCounterTranscript;
+  final double oldDomainAccuracy;
+  final double? newDomainAccuracy;
+  final double handyDomainAccuracy;
+  final bool improvedTowardHandy;
+
+  bool get newCaptureAvailable => newCounterTranscript != null;
+}
+
 abstract final class DesktopVoiceWavSttBenchmark {
   static const fixtureDir = 'test/fixtures/desktop_voice_wav';
   static const manifestFile = '$fixtureDir/golden_manifest.json';
@@ -103,6 +126,69 @@ abstract final class DesktopVoiceWavSttBenchmark {
     if (!file.existsSync()) return null;
     final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
     return json['golos_equivalent_raw_transcript'] as String?;
+  }
+
+  /// Handy black-box reference transcript (same phrase, Handy-captured WAV).
+  static String? handyReferenceTranscript() {
+    final file = File(manifestFile);
+    if (!file.existsSync()) return null;
+    final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    return json['handy_reference_transcript'] as String?;
+  }
+
+  /// Benchmark-selected command VAD mode (see wav_stt_replay comparison).
+  static String? commandVadSelectedByBenchmark() {
+    final file = File(manifestFile);
+    if (!file.existsSync()) return null;
+    final json = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    return json['command_vad_selected_by_benchmark'] as String?;
+  }
+
+  /// Domain-term accuracy of an arbitrary transcript vs the SCW command terms.
+  static double domainAccuracy(String transcript) {
+    const terms = ['Southern Computer Warehouse', 'DEL MOD', 'Submit'];
+    final hits = domainTermHits(transcript, terms);
+    return hits.values.where((v) => v).length / terms.length;
+  }
+
+  /// Three-way capture-parity comparison: Handy vs old Counter vs new Counter.
+  ///
+  /// Uses each case's recorded `no_vad_transcript` (raw Parakeet, benchmark VAD)
+  /// so the report is reproducible without a live helper. `improvedTowardHandy`
+  /// is true when new-capture domain accuracy >= old-capture accuracy AND the
+  /// new capture recovered "Del Mod" tokens the old capture missed.
+  static CapabilityParityReport captureParityReport() {
+    final file = File(manifestFile);
+    final json = file.existsSync()
+        ? jsonDecode(file.readAsStringSync()) as Map<String, dynamic>
+        : <String, dynamic>{};
+    final cases = (json['cases'] as List<dynamic>? ?? const [])
+        .cast<Map<String, dynamic>>();
+    String? txt(String id) {
+      final c = cases.firstWhere(
+        (m) => m['id'] == id,
+        orElse: () => const <String, dynamic>{},
+      );
+      return c['no_vad_transcript'] as String?;
+    }
+
+    final handy = json['handy_reference_transcript'] as String? ??
+        txt('scw_delmod_submit_handy');
+    final oldCounter = txt('scw_delmod_submit_real');
+    final newCounter = txt('scw_delmod_submit_counter_native');
+
+    final oldAcc = oldCounter == null ? 0.0 : domainAccuracy(oldCounter);
+    final newAcc = newCounter == null ? null : domainAccuracy(newCounter);
+    final improved = newAcc != null && newAcc >= oldAcc;
+    return CapabilityParityReport(
+      handyTranscript: handy,
+      oldCounterTranscript: oldCounter,
+      newCounterTranscript: newCounter,
+      oldDomainAccuracy: oldAcc,
+      newDomainAccuracy: newAcc,
+      handyDomainAccuracy: handy == null ? 0.0 : domainAccuracy(handy),
+      improvedTowardHandy: improved,
+    );
   }
 
   static bool strictDomainPassFromManifest() {

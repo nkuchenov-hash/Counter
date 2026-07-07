@@ -1,16 +1,21 @@
 {
-  "version": 2,
+  "version": 3,
   "baseline_transcript": "Solvent computer warehouse still model submit",
   "golos_equivalent_raw_transcript": "Solvan Computer Warehouse, Delmore, Submit.",
   "counter_target_raw_transcript": "Solvan Computer Warehouse, Delmore, Submit.",
   "expected_transcript": "Southern Computer Warehouse DEL MOD submit",
+  "handy_reference_transcript": "Southern Computer Warehouse Del Mod, submit.",
+  "handy_reference_wav": "scw_delmod_submit_handy_2026_07_07.wav",
+  "new_native_capture_wav": "scw_delmod_submit_counter_native_capture_2026_07_07.wav",
+  "command_vad_selected_by_benchmark": "no_vad",
   "strict_domain_pass": false,
-  "model_ceiling_note": "Same Parakeet int8 model + GOLOS VAD on this fixture WAV cannot emit exact Southern/DEL MOD without glossary. GOLOS-equivalent replay verified via wav_stt_replay.",
+  "model_ceiling_note": "Same Parakeet int8 model + GOLOS VAD on this fixture WAV cannot emit exact Southern/DEL MOD without glossary. GOLOS-equivalent replay verified via wav_stt_replay. Capture parity (48 kHz native -> float mono -> HQ resample) targets the acoustic gap; command VAD = no_vad by benchmark.",
   "cases": [
     {
       "id": "scw_delmod_submit_real",
       "wav": "scw_delmod_submit_real_2026_07_07.wav",
       "status": "present",
+      "role": "old_counter_pre_parity",
       "expected_terms": [
         "Southern Computer Warehouse",
         "DEL MOD",
@@ -18,7 +23,37 @@
       ],
       "baseline_transcript": "Solvent computer warehouse still model submit",
       "golos_equivalent_transcript": "Solvan Computer Warehouse, Delmore, Submit.",
+      "no_vad_transcript": "Solvent Computer Warehouse, Del Mall, Submit.",
       "forbidden_terms": ["still model"]
+    },
+    {
+      "id": "scw_delmod_submit_handy",
+      "wav": "scw_delmod_submit_handy_2026_07_07.wav",
+      "status": "present",
+      "role": "handy_reference",
+      "expected_terms": [
+        "Southern Computer Warehouse",
+        "DEL MOD",
+        "Submit"
+      ],
+      "baseline_transcript": "Solvent computer warehouse still model submit",
+      "golos_equivalent_transcript": "Southern Computer Warehouse Dell Mod, submit.",
+      "no_vad_transcript": "Southern Computer Warehouse Del Mod, submit.",
+      "forbidden_terms": ["still model"]
+    },
+    {
+      "id": "scw_delmod_submit_counter_native",
+      "wav": "scw_delmod_submit_counter_native_capture_2026_07_07.wav",
+      "status": "missing",
+      "role": "new_counter_native_capture",
+      "expected_terms": [
+        "Southern Computer Warehouse",
+        "DEL MOD",
+        "Submit"
+      ],
+      "baseline_transcript": "Solvent computer warehouse still model submit",
+      "forbidden_terms": ["still model"],
+      "note": "Live re-capture after native-capture fix; 48 kHz stereo native -> 16 kHz mono processed WAV. Add when recorded."
     },
     {
       "id": "price_reporter_planning",

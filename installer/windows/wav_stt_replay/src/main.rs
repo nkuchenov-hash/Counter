@@ -15,6 +15,7 @@ const VAD_RMS_THRESHOLD: f32 = 0.01;
 enum VadMode {
     Golos,
     CounterLegacy,
+    LightEndpoint,
     None,
 }
 
@@ -32,6 +33,14 @@ fn vad_config(mode: VadMode) -> Option<VadConfig> {
         VadMode::CounterLegacy => Some(VadConfig {
             pad_ms: 200,
             tail_keep_ms: 0,
+        }),
+        // Light endpointing: trim only gross leading/trailing silence with a
+        // generous 300 ms guard and a 900 ms tail keep so final words ("DEL
+        // MOD" / "Submit") are never cut. Analog of Handy's capture-time VAD
+        // for Counter WAVs that still contain raw leading/trailing silence.
+        VadMode::LightEndpoint => Some(VadConfig {
+            pad_ms: 300,
+            tail_keep_ms: 900,
         }),
         VadMode::None => None,
     }
@@ -195,6 +204,7 @@ fn run_pipeline(
         vad_mode: match vad_mode {
             VadMode::Golos => "golos_350pad_700tail",
             VadMode::CounterLegacy => "counter_legacy_200pad",
+            VadMode::LightEndpoint => "light_endpoint_300pad_900tail",
             VadMode::None => "none",
         }
         .to_string(),
@@ -246,6 +256,7 @@ fn main() {
         ("golos_equivalent_peak_norm", VadMode::Golos, true),
         ("counter_legacy_vad", VadMode::CounterLegacy, false),
         ("counter_helper_current", VadMode::Golos, true), // current counter: golos vad + peak norm
+        ("light_endpoint", VadMode::LightEndpoint, false),
         ("no_vad", VadMode::None, false),
     ];
 

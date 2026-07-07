@@ -1,6 +1,6 @@
 # Desktop Voice STT Parity Audit — 2026-07-07 (revised)
 
-**Status:** Counter matches extracted GOLOS-equivalent Parakeet pipeline on Counter’s fixture WAV. **Actual Handy parity remains unproven.** Handy black-box baseline collected 2026-07-07.
+**Status:** Counter matches extracted GOLOS-equivalent Parakeet pipeline on Counter’s fixture WAV. **Actual Handy parity remains unproven pending live re-capture.** Handy black-box baseline collected 2026-07-07. Capture-parity engineering pass (native 48 kHz capture + float downmix + HQ resample + no_vad command VAD) implemented + unit-tested 2026-07-07; live re-capture and clean-tree installer build still pending.
 
 ---
 
@@ -99,12 +99,43 @@ Do **not** claim Handy quality comes from glossary/postprocess unless directly p
 
 ---
 
-## Next proposed fix (technical focus)
+## Capture-parity pass (implemented 2026-07-07)
 
-1. **Match Handy audio capture:** native device rate, F32, stereo/mono downmix, linear resample to 16 kHz (not fixed 16 kHz PCM16 at ADC).
-2. **Revisit VAD for short command clips:** Handy WAV + no VAD matches Handy log; GOLOS tail-trim may be wrong for command-length audio.
-3. **Re-capture regression WAV** after capture change; add Handy WAV as secondary golden reference.
-4. **Optional:** inspect Handy open-source `audio_toolkit` / transcription manager for decode params (separate from GOLOS `golos_flutter` source).
+### Capture path (Handy-style native capture)
+- Counter now requests **48 kHz stereo PCM16** from the mic (device-native) instead of fixed 16 kHz mono, avoiding Media Foundation's forced 16 kHz downsample at the ADC boundary.
+- Backend decision: **`record` package at native rate**, not a new WASAPI/cpal helper. `record_windows` (`record_mediatype.cpp` `CreateAudioProfileIn`) hardcodes `MFAudioFormat_PCM` 16-bit, so F32 capture is not available through it; rate and channels are configurable, which is the dominant delta. Escalation to a WASAPI/cpal F32 helper is documented if live recapture proves I16 insufficient.
+- Processing chain (`processNativeCaptureForStt`, pure/unit-tested): PCM16 → float → **mono downmix (channel average)** → **high-quality windowed-sinc (Hann, 16 zero-crossings) resample to 16 kHz** → PCM16. **No peak normalization** (proven harmful: `Solvan → Solvent` on old Counter WAV).
+- Two files saved per capture: `latest_command_raw.wav` (native 48 kHz stereo, diagnostics) and `latest_command.wav` (processed 16 kHz mono, STT).
+- Remaining diff vs Handy: Handy captures **F32** native; Counter captures **I16** native (record_windows limitation). Resampler is windowed-sinc vs Handy's `rubato`. Both acoustically minor for 16-bit speech.
+
+### Command VAD — selected by benchmark (`wav_stt_replay`, all pipelines)
+
+Handy WAV (already capture-endpointed by Handy Silero VAD):
+
+| Pipeline | Raw transcript |
+|----------|----------------|
+| golos 350/700 | Southern Computer Warehouse **Dell** Mod, submit. |
+| light_endpoint 300/900 | Southern Computer Warehouse **Dell** Mod, Submit. |
+| **no_vad** | Southern Computer Warehouse **Del Mod**, submit. |
+
+Old Counter WAV (fixed 16 kHz, pre-parity):
+
+| Pipeline | Raw transcript |
+|----------|----------------|
+| golos 350/700 | Solvan Computer Warehouse, Delmore, Submit. |
+| golos + peak_norm | **Solvent** … (peak norm degrades) |
+| light_endpoint 300/900 | Solvent … **still mod** submit. (worse) |
+| **no_vad** | Solvent Computer Warehouse, **Del Mall**, Submit. |
+
+**Selected: `no_vad`** for command-length audio — best DEL MOD accuracy on both WAVs, matches Handy's own app output, never cuts final words. Production helper build (`build_stt_helper_en.ps1`) patched so `trim_silence` is a no-op. Light endpointing tested and rejected.
+
+### Still pending (hard-blocked on live mic + clean-tree build)
+1. **Live re-capture** of "Southern Computer Warehouse DEL MOD submit" through the new native path → save `scw_delmod_submit_counter_native_capture_2026_07_07.wav` (raw + processed), replay via `wav_stt_replay`, compare to Handy. Parity is **not** claimed until this is done.
+2. **Rebuild** STT helper (no-VAD), Windows release, and Inno installer from a **clean committed SHA** (`build_sha != dev`); silent install + installed smoke.
+
+### Tooling
+- `scripts/manual/compare_desktop_voice_vad_modes.ps1` — full pipeline × fixture matrix (Handy / old Counter / new native when present).
+- `DesktopVoiceWavSttBenchmark.captureParityReport()` — three-way Handy vs old vs new domain-accuracy comparison.
 
 ---
 
@@ -121,3 +152,19 @@ Do **not** claim Handy quality comes from glossary/postprocess unless directly p
 - `DESKTOP_VOICE_HANDY_BASELINE_COLLECTED` (log + WAV)
 - `DESKTOP_VOICE_SAME_WAV_HANDY_VS_COUNTER_NOT_IDENTICAL` (different recordings)
 - `DESKTOP_VOICE_COUNTER_PIPELINE_MATCHED_TO_GOLOS` (on Counter fixture only)
+
+### Capture-parity pass markers
+- `DESKTOP_VOICE_CAPTURE_PARITY_PASS_STARTED`
+- `DESKTOP_VOICE_NO_ALIAS_FIX_FOR_CAPTURE_PARITY`
+- `DESKTOP_VOICE_RAW_STT_QUALITY_TARGET`
+- `DESKTOP_VOICE_NATIVE_RATE_CAPTURE` / `DESKTOP_VOICE_F32_CAPTURE_IF_AVAILABLE` (unavailable, record_windows pcm16-only)
+- `DESKTOP_VOICE_RAW_CAPTURE_WAV_SAVED` / `DESKTOP_VOICE_STT_READY_WAV_CREATED` / `DESKTOP_VOICE_HIGH_QUALITY_RESAMPLE_USED`
+- `DESKTOP_VOICE_NO_HARMFUL_PEAK_NORMALIZATION` / `DESKTOP_VOICE_HANDY_PREPROCESSING_MATCHED` / `DESKTOP_VOICE_REMAINING_AUDIO_DIFFS_LOGGED`
+- `DESKTOP_VOICE_COMMAND_VAD_EVALUATED` / `DESKTOP_VOICE_NO_VAD_TRIM_OPTION_TESTED` / `DESKTOP_VOICE_COMMAND_VAD_SELECTED_BY_BENCHMARK` (no_vad) / `DESKTOP_VOICE_FINAL_WORDS_NOT_CUT`
+- `DESKTOP_VOICE_HANDY_WAV_FIXTURE_ADDED` / `DESKTOP_VOICE_NEW_COUNTER_NATIVE_CAPTURE_FIXTURE_ADDED` (on recapture) / `DESKTOP_VOICE_CAPTURE_PARITY_BENCHMARK_UPDATED`
+- Safety (existing, verified by test): `DESKTOP_VOICE_PARENT_ONLY_RECORD_BLOCKED_WITH_UNRESOLVED_TOKENS`, `DESKTOP_VOICE_NO_GARBAGE_RECORD`, `DESKTOP_VOICE_LOW_CONFIDENCE_NO_RECORD`, `DESKTOP_VOICE_AMBIGUOUS_NO_RECORD`
+
+### Pending markers (emitted on live recapture / build)
+- `DESKTOP_VOICE_COUNTER_RECATURE_AFTER_CAPTURE_FIX`
+- `DESKTOP_VOICE_COUNTER_RAW_STT_AFTER_CAPTURE_FIX`
+- `DESKTOP_VOICE_HANDY_BASELINE_COMPARISON_UPDATED`

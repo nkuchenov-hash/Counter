@@ -1,6 +1,32 @@
+import 'package:counter/core/services/desktop_voice_command_normalize.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+CategoryRule _scwFixtureTree() {
+  return CategoryRule(
+    id: 10,
+    name: 'Work',
+    backendRowId: 'workroot1234567',
+    children: [
+      CategoryRule(
+        id: 100,
+        name: 'Price Reporter',
+        backendRowId: 'prroot123456789',
+        children: [
+          CategoryRule(
+            id: 103,
+            name: 'SOUTHERN COMPUTER WAREHOUSE',
+            backendRowId: 'scwclient123456',
+            keywords: {
+              'en': ['southern computer warehouse', 'scw'],
+            },
+          ),
+        ],
+      ),
+    ],
+  );
+}
 
 CategoryRule _flatFixtureTree() {
   return CategoryRule(
@@ -215,6 +241,57 @@ void main() {
       expect(r.confidence, VoiceCommandMatchConfidence.exact);
       expect(r.matchedLocalCategoryId, 100);
       expect(r.recordTitle, 'UNKNOWN CLIENT ADD MOD');
+    });
+  });
+
+  group('Capture-parity safety — raw garbage STT must not write a record', () {
+    final scwRules = [_scwFixtureTree()];
+
+    test('"Solvan Computer Warehouse, Delmore, Submit." is blocked', () {
+      // Raw Parakeet output for the SCW phrase on the pre-parity capture.
+      // Even if fuzzy matching reaches the SOUTHERN COMPUTER WAREHOUSE client,
+      // the unresolved DEL MOD / parent-only echo gate must return null.
+      final parsed = parseVoiceCommand(
+        rules: scwRules,
+        transcript: 'Solvan Computer Warehouse, Delmore, Submit.',
+      );
+      final normalized = normalizeDesktopVoiceCommand(parsed);
+      expect(
+        normalized,
+        isNull,
+        reason: 'no parent-only / low-confidence record from garbage STT',
+      );
+    });
+
+    test('empty / noise transcript is blocked', () {
+      for (final phrase in ['', '   ', 'uh um hmm', 'the and to']) {
+        final parsed = parseVoiceCommand(rules: scwRules, transcript: phrase);
+        expect(normalizeDesktopVoiceCommand(parsed), isNull, reason: phrase);
+      }
+    });
+
+    test('parent-only client echo (task lost) is blocked', () {
+      // Parser matched the client but the "ADD MOD" task was not extracted,
+      // so the title echoes the client leaf — must not write a parent-only
+      // record while a command token stays unresolved.
+      final parsed = parseVoiceCommand(
+        rules: scwRules,
+        transcript: 'Price Reporter SOUTHERN COMPUTER WAREHOUSE ADD MOD',
+      );
+      expect(parsed.recordTitle, 'SOUTHERN COMPUTER WAREHOUSE');
+      expect(normalizeDesktopVoiceCommand(parsed), isNull);
+    });
+
+    test('clean command with resolved task is allowed (not over-blocked)', () {
+      // Same gate must still pass a cleanly parsed task so the parity work does
+      // not regress into blocking everything.
+      final parsed = parseVoiceCommand(
+        rules: [_flatFixtureTree()],
+        transcript: 'Price Reporter AGE SOLUTIONS ADD MOD',
+      );
+      final normalized = normalizeDesktopVoiceCommand(parsed);
+      expect(normalized, isNotNull);
+      expect(normalized!.effectiveResult.recordTitle, 'ADD MOD');
     });
   });
 

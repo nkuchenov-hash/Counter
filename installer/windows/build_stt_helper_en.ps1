@@ -25,38 +25,30 @@ params.set_initial_prompt(
         "Price Reporter, Planning, Southern Computer Warehouse, SCW, DEL MOD, ADD MOD, ADD SIN, Submit, BLINK, Laredo Technical Services, Laredo TS, AGE SOLUTIONS, client, task, record, timeline."
     );
 '@
-$content = $content -replace 'const VAD_PAD_MS:\s*usize = 200;', 'const VAD_PAD_MS:        usize = 350;'
-$content = $content -replace 'const VAD_RMS_THRESHOLD: f32   = 0.01;', @'
-const VAD_TAIL_KEEP_MS:  usize = 700;
-const VAD_RMS_THRESHOLD: f32   = 0.01;
-'@
+# Command-VAD parity: benchmark (wav_stt_replay, Handy + old Counter WAVs)
+# selected NO VAD trim for command-length audio. GOLOS 350/700 tail-trim
+# degraded short commands ("Del Mod" -> "Dell Mod"); light endpointing was
+# worse on the old Counter WAV; no_vad matched Handy's own app output.
 $trimStart = $content.IndexOf('/// Trim leading/trailing silence with 200 ms padding')
 if ($trimStart -lt 0) { throw 'trim_silence block not found in main.rs.bak_counter_en' }
 $whisperIdx = $content.IndexOf('fn whisper_transcribe', $trimStart)
 if ($whisperIdx -lt 0) { throw 'whisper anchor not found after trim_silence' }
 $trimEnd = $content.LastIndexOf("`n`n", $whisperIdx)
 if ($trimEnd -lt $trimStart) { throw 'trim_silence end anchor not found' }
-$golosTrimFn = @'
-/// Trim leading/trailing silence - GOLOS parity (350 ms pad + 700 ms tail keep).
+$noVadTrimFn = @'
+/// Command-length audio: NO VAD trim (benchmark-selected, Handy parity).
+/// GOLOS tail-trim degraded short commands (Del Mod -> Dell Mod); no_vad
+/// matched Handy app output on the Handy WAV and preserved final words.
+#[allow(dead_code)]
 fn trim_silence(audio: &[f32]) -> &[f32] {
-    let pad = VAD_PAD_MS * VAD_SAMPLE_RATE / 1000;
-    let tail_keep = VAD_TAIL_KEEP_MS * VAD_SAMPLE_RATE / 1000;
-    match vad_find_speech(audio) {
-        None => audio,
-        Some((start, end)) => {
-            let s = start.saturating_sub(pad);
-            let preserve_from = audio.len().saturating_sub(tail_keep);
-            let e = (end + pad).max(preserve_from).min(audio.len());
-            &audio[s..e]
-        }
-    }
+    audio
 }
 '@
-$content = $content.Substring(0, $trimStart) + $golosTrimFn + $content.Substring($trimEnd)
-if ($content -notmatch 'VAD_TAIL_KEEP_MS \* VAD_SAMPLE_RATE') {
-    throw 'GOLOS VAD trim_silence patch did not apply'
+$content = $content.Substring(0, $trimStart) + $noVadTrimFn + $content.Substring($trimEnd)
+if ($content -notmatch 'NO VAD trim \(benchmark-selected') {
+    throw 'no_vad trim_silence patch did not apply'
 }
-Write-Host 'DESKTOP_VOICE_COUNTER_PIPELINE_MATCHED_TO_GOLOS (VAD 350ms pad + 700ms tail keep)'
+Write-Host 'DESKTOP_VOICE_COMMAND_VAD_SELECTED_BY_BENCHMARK (no_vad; final words preserved)'
 
 Set-Content -Encoding UTF8 -NoNewline -Path $mainRs -Value $content
 

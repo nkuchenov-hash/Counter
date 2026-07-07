@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-07] - P0 Desktop Voice capture/VAD parity with Handy [engineering; live-recapture + installer pending]
+
+* **`lib/core/services/pcm_audio_utils.dart`:** [engineering] Added Handy-parity capture preprocessing as pure, unit-tested functions — `pcm16BytesToFloat`/`floatToPcm16Bytes`, `downmixInterleavedFloatToMono`, high-quality windowed-sinc (Hann, 16 zero-crossings) `resampleFloatHighQuality`, channel-aware `pcm16ToWavBytesFull`, and `processNativeCaptureForStt` (native PCM16 → float mono downmix → HQ resample to 16 kHz → PCM16, **no peak normalization**).
+* **`lib/core/services/desktop_voice_audio_capture.dart`:** [engineering] Captures device-native **48 kHz stereo PCM16** (avoids Media Foundation forced 16 kHz downsample) with safe fallback to 16 kHz mono; saves `latest_command_raw.wav` (native) + processed `latest_command.wav` (16 kHz mono STT); full capture-parity diagnostics + markers (`DESKTOP_VOICE_NATIVE_RATE_CAPTURE`, `RAW_CAPTURE_WAV_SAVED`, `STT_READY_WAV_CREATED`, `HIGH_QUALITY_RESAMPLE_USED`, `NO_HARMFUL_PEAK_NORMALIZATION`).
+* **`installer/windows/wav_stt_replay/src/main.rs` + `build_stt_helper_en.ps1`:** [engineering] Added `light_endpoint` VAD mode to the replay matrix; benchmark across Handy + old Counter WAVs selected **`no_vad`** for command-length audio (best DEL MOD, matches Handy app, no cut words) — production helper `trim_silence` patched to no-op.
+* **`scripts/manual/compare_desktop_voice_vad_modes.ps1`:** [engineering] Full pipeline × fixture VAD comparison; `golden_manifest.json` + `desktop_voice_wav_stt_benchmark.dart` add Handy reference fixture + `captureParityReport()` (Handy vs old vs new Counter).
+* **`test/desktop_voice_audio_pipeline_test.dart` + `desktop_voice_command_acceptance_test.dart`:** [engineering] Resampler/downmix/no-peak-norm/native-metadata + three-way benchmark tests; safety tests block raw garbage STT (`Solvan Computer Warehouse, Delmore, Submit.`) from creating a parent-only record. `flutter analyze` 0 errors; full `flutter test` 354 pass.
+* **Pending (hard-blocked):** live re-capture of the SCW phrase through the new path (needs mic) and clean-tree helper/release/installer rebuild (`build_sha != dev`). Parity is **not** claimed until the new native-capture WAV is replayed vs Handy.
+
 ## [2026-07-07] - Category picker create → immediate attach [shipped]
 
 * **`lib/features/shared/planning_task_edit_sheet.dart` + `lib/features/categories/create_category_from_picker.dart`:** [shipped] Newly created picker categories stay selected on the plan/list draft — removed `pairs.first` fallback that overwrote explicit handoff ids; `resolveEditFieldCategoryIdValues` preserves picker/create selection.

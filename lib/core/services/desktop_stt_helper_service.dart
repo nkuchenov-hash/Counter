@@ -591,9 +591,17 @@ class DesktopSttHelperService {
     final engine = resolveProductionEngine();
     if (engine != DesktopVoiceEngineId.windowsSpeech) {
       prewarmRecognizerInBackground();
-      _capture.attachPartialTimer((bytes) {
-        if (_finalTranscribeReady) unawaited(_sendPartialAudio(bytes));
-      });
+      // Partial audio endpoint expects 16 kHz mono PCM16. In Handy-parity
+      // native capture (48 kHz stereo) the raw buffer is not that shape, so
+      // only stream partials in the legacy 16 kHz mono fallback path. The
+      // authoritative final transcribe always uses the processed 16 kHz WAV.
+      final is16kMono = _capture.captureSampleRate == kVoiceSampleRate &&
+          _capture.captureChannels == kVoiceChannels;
+      if (is16kMono) {
+        _capture.attachPartialTimer((bytes) {
+          if (_finalTranscribeReady) unawaited(_sendPartialAudio(bytes));
+        });
+      }
     }
     return true;
   }
