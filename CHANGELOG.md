@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-07] - P0 Desktop Voice GOLOS same-WAV parity verified [shipped]
+
+* **`installer/windows/wav_stt_replay/`:** [shipped] Standalone same-WAV Parakeet replay — proves GOLOS-equivalent raw ceiling `Solvan Computer Warehouse, Delmore, Submit.` on SCW fixture; peak normalization harms output.
+* **`lib/core/services/desktop_stt_helper_service.dart`:** [shipped] Removed STT peak normalization; Counter HTTP helper now matches GOLOS-equivalent transcript on same WAV.
+* **`scripts/manual/compare_desktop_voice_wav_stt.ps1`:** [shipped] A/B Counter helper vs GOLOS-equivalent pipelines.
+* **`scripts/manual/build_counter_installer.ps1`:** [shipped] ISCC discovery includes `%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`.
+* **`docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`:** [shipped] Exact same-WAV matrix + strict domain ceiling documented (Southern/DEL MOD not in raw Parakeet on this WAV).
+
 ## [2026-07-07] - P0 Desktop Voice raw STT GOLOS parity [shipped]
 
 * **`lib/core/services/desktop_voice_audio_capture.dart`:** [shipped] GOLOS 180+30 ms post-roll before mic stop so trailing command phonemes are not clipped.
