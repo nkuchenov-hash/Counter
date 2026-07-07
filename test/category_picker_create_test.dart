@@ -197,14 +197,34 @@ void main() {
       );
     });
 
-    test('falls back to first pair only when id missing from tree and pairs', () {
+    test('preserves explicit picker handoff id when tree momentarily stale', () {
       expect(
         resolveEditFieldCategoryIdValues(
           categoryId: 999,
           existsInTree: false,
           knownPairIds: const [1, 2, 3],
         ),
-        1,
+        999,
+      );
+    });
+
+    test('does not substitute pairs.first for explicit create handoff', () {
+      const createdId = 501;
+      expect(
+        resolveEditFieldCategoryIdValues(
+          categoryId: createdId,
+          existsInTree: false,
+          knownPairIds: const [10, 20],
+        ),
+        createdId,
+      );
+      expect(
+        resolveEditFieldCategoryIdValues(
+          categoryId: createdId,
+          existsInTree: false,
+          knownPairIds: const [10, 20],
+        ),
+        isNot(10),
       );
     });
 
@@ -216,6 +236,39 @@ void main() {
           knownPairIds: const [],
         ),
         999,
+      );
+    });
+  });
+
+  group('category picker create → plan draft handoff', () {
+    test('draft category id matches picker create result without reopen', () async {
+      const createdId = 777;
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        return createdId;
+      };
+
+      final fromCreate = await createCategoryFromPickerSubmit(
+        name: 'Instant Attach',
+        target: const CategoryPickerCreateTarget.root(),
+      );
+      expect(fromCreate, createdId);
+
+      final draftCategoryId = resolveEditFieldCategoryIdValues(
+        categoryId: fromCreate!,
+        existsInTree: true,
+        knownPairIds: const [10, 20],
+      );
+      expect(draftCategoryId, createdId);
+    });
+
+    test('existing category selection still resolves when in tree', () {
+      expect(
+        resolveEditFieldCategoryIdValues(
+          categoryId: 10,
+          existsInTree: true,
+          knownPairIds: const [10, 20],
+        ),
+        10,
       );
     });
   });

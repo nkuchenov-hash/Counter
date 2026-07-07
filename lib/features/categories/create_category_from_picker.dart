@@ -104,8 +104,7 @@ int resolveEditFieldCategoryIdValues({
 }) {
   if (existsInTree) return categoryId;
   if (knownPairIds.contains(categoryId)) return categoryId;
-  final known = knownPairIds.toList(growable: false);
-  if (known.isNotEmpty) return known.first;
+  // Keep explicit picker/create handoff id — never substitute pairs.first.
   return categoryId;
 }
 

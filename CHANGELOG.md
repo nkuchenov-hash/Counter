@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-07] - Category picker create → immediate attach [shipped]
+
+* **`lib/features/shared/planning_task_edit_sheet.dart` + `lib/features/categories/create_category_from_picker.dart`:** [shipped] Newly created picker categories stay selected on the plan/list draft — removed `pairs.first` fallback that overwrote explicit handoff ids; `resolveEditFieldCategoryIdValues` preserves picker/create selection.
+* **`lib/data/categories/category_crud.dart`:** [shipped] Post-create local id now matches `_buildCategoryTreeFromFlat` (biz slug hash, not PB row hash); skip immediate full category refetch after create so optimistic tree is not wiped before attach.
+* **`test/category_picker_create_test.dart`:** [shipped] Regression tests for create→select→draft handoff without reopen/refetch.
+
 ## [2026-07-07] - P0 Desktop Voice GOLOS same-WAV parity verified [shipped]
 
 * **`installer/windows/wav_stt_replay/`:** [shipped] Standalone same-WAV Parakeet replay — proves GOLOS-equivalent raw ceiling `Solvan Computer Warehouse, Delmore, Submit.` on SCW fixture; peak normalization harms output.

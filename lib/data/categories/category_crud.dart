@@ -736,21 +736,26 @@ extension CategoryCrudExtension on DatabaseService {
   int _categoryDisplayIdFromServerPk(
     String rawPk, {
     required String tagFallback,
+    String? bizCategoryId,
+    String? normalizedId,
   }) {
     final trimmed = rawPk.trim();
-    if (trimmed.isEmpty) {
+    final asInt = CategoryTreeExtension._rowInt(trimmed);
+    if (asInt != 0) return asInt;
+    final biz = (bizCategoryId ?? '').trim();
+    if (biz.isNotEmpty) {
       return CategoryTreeExtension._hashStringToPositiveIntForCategoryTreeLocalIdOnly(
-        tagFallback.trim(),
+        biz,
         1,
       );
     }
-    final asInt = CategoryTreeExtension._rowInt(trimmed);
-    if (asInt != 0) return asInt;
-    final h = CategoryTreeExtension._hashStringToPositiveIntForCategoryTreeLocalIdOnly(
-      trimmed,
-      0,
-    );
-    if (h != 0) return h;
+    final norm = (normalizedId ?? '').trim();
+    if (norm.isNotEmpty) {
+      return CategoryTreeExtension._hashStringToPositiveIntForCategoryTreeLocalIdOnly(
+        norm,
+        1,
+      );
+    }
     return CategoryTreeExtension._hashStringToPositiveIntForCategoryTreeLocalIdOnly(
       tagFallback.trim(),
       1,
@@ -767,7 +772,12 @@ extension CategoryCrudExtension on DatabaseService {
       if (rowId.isEmpty) return null;
       final wantTag = displayName.trim();
       final biz = created.data['category_id']?.toString();
-      final newId = _categoryDisplayIdFromServerPk(rowId, tagFallback: wantTag);
+      final newId = _categoryDisplayIdFromServerPk(
+        rowId,
+        tagFallback: wantTag,
+        bizCategoryId: biz,
+        normalizedId: created.data['normalized_id']?.toString(),
+      );
       CategoryRule upgraded(CategoryRule old) {
         return CategoryRule(
           id: newId,
@@ -925,7 +935,6 @@ extension CategoryCrudExtension on DatabaseService {
           created: created,
         );
         _categoryController.add(List.from(_rules));
-        unawaited(_loadRulesFromNoco());
         return createdLocalId ??
             findCreatedCategoryLocalIdUnderParent(
               parentLocalId: parentId,

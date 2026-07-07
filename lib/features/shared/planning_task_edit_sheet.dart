@@ -584,7 +584,6 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
 
   @override
   Widget build(BuildContext context) {
-    final pairs = DatabaseService.instance.allCategoryIdPathPairs;
     final dropdownValue = resolveEditFieldCategoryId(
       db: DatabaseService.instance,
       categoryId: _categoryId,
@@ -644,9 +643,7 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
               compactChrome ? 2 : 4,
             ),
             child: CategoryTreeFormField(
-              value: pairs.any((p) => p.id == dropdownValue)
-                  ? dropdownValue
-                  : (pairs.isNotEmpty ? pairs.first.id : null),
+              value: dropdownValue,
               decoration: InputDecoration(
                 labelText: t(currentLocale.value, 'category_label'),
               ),
