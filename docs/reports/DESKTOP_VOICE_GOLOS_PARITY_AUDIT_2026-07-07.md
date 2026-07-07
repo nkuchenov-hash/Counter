@@ -1,84 +1,123 @@
-# Desktop Voice GOLOS Parity Audit — 2026-07-07 (same-WAV verified)
+# Desktop Voice STT Parity Audit — 2026-07-07 (revised)
 
-**Markers:** `DESKTOP_VOICE_GOLOS_PIPELINE_FOUND` · `DESKTOP_VOICE_GOLOS_EQUIVALENT_SAME_WAV_RUNNER_READY` · `DESKTOP_VOICE_GOLOS_PARITY_DIFFS_LOGGED`
-
-## Executive result
-
-Same fixture WAV + same Parakeet int8 model checksum (`6139D2FA7E1B0860`) + GOLOS-equivalent VAD produces:
-
-**`Solvan Computer Warehouse, Delmore, Submit.`**
-
-This is the **model ceiling** for this WAV without glossary/postprocess. Counter must match this exactly. Strict domain terms **Southern** / **DEL MOD** are **not** produced by Parakeet on this audio — GOLOS-equivalent pipeline does not either.
-
-Handy/GOLOS perceived quality for domain terms is **glossary/postprocess** (`glossary.rs` — DEL mod, SCW expansions), not raw Parakeet.
+**Status:** Counter matches extracted GOLOS-equivalent Parakeet pipeline on Counter’s fixture WAV. **Actual Handy parity remains unproven.** Handy black-box baseline collected 2026-07-07.
 
 ---
 
-## Same-WAV replay (`wav_stt_replay`)
+## Accepted phrasing
 
-Fixture: `test/fixtures/desktop_voice_wav/scw_delmod_submit_real_2026_07_07.wav`  
-Model: `golos_flutter/Release/models/parakeet` (identical SHA256 to Counter installed model)
+> Counter now matches the extracted GOLOS-equivalent local Parakeet pipeline on the same WAV. Actual Handy parity remains unproven.
 
-| Pipeline | VAD | Peak norm | Raw transcript |
-|----------|-----|-----------|----------------|
-| **golos_equivalent** | 350ms pad + 700ms tail | **no** | **Solvan Computer Warehouse, Delmore, Submit.** |
-| golos_equivalent_peak_norm | 350ms + 700ms tail | yes | Solvent computer warehouse, Delmore, Submit. |
-| counter_legacy_vad | 200ms pad only | no | Sov and Computer Warehouse, Del Mall, Submit. |
-| counter_helper_current (before fix) | golos VAD | yes | Solvent computer warehouse, Delmore, Submit. |
-| no_vad | none | no | Solvent Computer Warehouse, Del Mall, Submit. |
-
-**Baseline (old Counter live):** `Solvent computer warehouse still model submit`
-
-Runner: `installer/windows/wav_stt_replay/`  
-Script: `scripts/manual/compare_desktop_voice_wav_stt.ps1`
+Do **not** claim Handy quality comes from glossary/postprocess unless directly proven for a given session.
 
 ---
 
-## Exact setting diffs (Counter vs GOLOS native)
+## What is proven
 
-| Setting | GOLOS (`transcribe.rs` / `audio.rs`) | Counter (after fix) | Counter (before) |
-|---------|--------------------------------------|---------------------|------------------|
-| Model | parakeet int8 ONNX | parakeet int8 ONNX | same |
-| Model SHA256 (encoder) | 6139D2FA7E1B0860 | same | same |
-| Inference lib | transcribe-rs 0.3 ParakeetParams::default() | same via backend-rs | same |
-| Language (Parakeet) | none / model default | none | none |
-| Whisper prompt | N/A for Parakeet | N/A | EN prompt patched (Whisper only) |
-| VAD pad | 350 ms | 350 ms | 200 ms |
-| VAD tail keep | 700 ms | 700 ms | 0 ms |
-| VAD RMS threshold | 0.01 | 0.01 | 0.01 |
-| Post-roll capture | 180+30 ms (live only) | 180+30 ms | 0 ms |
-| STT peak normalization | **none** | **removed** | Dart normalizePcm16PeakForStt (harmful) |
-| Resample | native→16k linear (`audio.rs`) | 16k capture fixed | 16k capture |
-| Glossary after STT | yes (`glossary::correct_text`) | not counted for raw quality | postprocess path |
-| Cloud STT | optional groq/salute | disabled for raw pass | bestQuality ladder |
+| Claim | Evidence |
+|-------|----------|
+| Counter raw STT matches GOLOS-equivalent pipeline on Counter fixture WAV | `wav_stt_replay` + HTTP helper: both → `Solvan Computer Warehouse, Delmore, Submit.` |
+| Same Parakeet int8 encoder weights (Handy / GOLOS / Counter) | SHA256 prefix `6139D2FA7E1B0860`, size 652,183,999 |
+| Handy user-visible transcript for same spoken phrase (approximate live session) | `handy.log` 2026-07-07 15:14:54 |
+| Handy session used `transcribe` binding, not post-process | Log: `TranscribeAction::stop` for `transcribe`; settings: `post_process_enabled: false` |
+| Handy WAV replay through no-VAD Parakeet matches Handy log text | See same-WAV matrix below |
 
 ---
 
-## Counter changes (this pass)
+## Handy black-box baseline (collected)
 
-1. **Removed STT peak normalization** — proven to degrade same-WAV output.
-2. **GOLOS VAD** in helper build (already applied).
-3. **GOLOS post-roll** in capture (live recordings; does not affect old fixture WAV).
-4. **`wav_stt_replay`** benchmark harness for A/B without golos-backend.exe HTTP.
-5. **Parity pass criterion** = match `golos_equivalent_raw_transcript` on same WAV.
+**Source:** [Handy](https://github.com/cjpais/Handy) (`com.pais.handy`), log + saved recording.
 
----
-
-## Strict domain pass — honest assessment
-
-| Term | Required | GOLOS-equivalent raw | Strict pass |
-|------|----------|----------------------|-------------|
-| Southern Computer Warehouse | exact | Solvan Computer Warehouse | **NO** |
-| DEL MOD | exact | Delmore | **NO** |
-| Submit | present | Submit | **YES** |
-
-**Conclusion:** Same-model parity is achievable and must match GOLOS-equivalent output. Strict Southern/DEL MOD on **this pre-fixture WAV** exceeds Parakeet raw capability. New live captures with post-roll may improve trailing phonemes; re-capture WAV after install for regression update.
-
-GOLOS/Handy user-visible quality for SCW/DEL MOD likely includes **glossary** (`glossary.rs` CORRECTIONS + builtin GSA terms), not raw STT alone.
+| Field | Value |
+|-------|-------|
+| Date/time | 2026-07-07 15:14:54 (local) |
+| Spoken phrase (user intent) | Southern Computer Warehouse DEL MOD submit |
+| Handy visible transcript | `Southern Computer Warehouse Del Mod, submit.` |
+| Model | `parakeet-tdt-0.6b-v3` |
+| Post-process | **off** (`post_process_enabled: false`) |
+| Capture (device) | 48 kHz, 2 ch, F32 (`Realtek` mic) |
+| Processed audio length | 66,720 samples (16 kHz mono equivalent ≈ 4.17 s) |
+| Saved WAV | `%APPDATA%\com.pais.handy\recordings\handy-1783437294.wav` |
+| Fixture copy | `test/fixtures/desktop_voice_wav/scw_delmod_submit_handy_2026_07_07.wav` |
 
 ---
 
-## Remaining unknowns
+## Counter baseline (same phrase, different recording)
 
-- Live GOLOS Tauri dictation on same WAV file (not HTTP) — replay uses identical math.
-- Whether Handy uses a different runtime binary than `golos_flutter/Release/golos.exe` for Parakeet.
+| Field | Value |
+|-------|-------|
+| Date/time | 2026-07-07 ~11:48 (Counter `latest_command.wav`) |
+| Counter raw STT (GOLOS-equivalent pipeline) | `Solvan Computer Warehouse, Delmore, Submit.` |
+| Counter final command text | Parser-dependent; parent-only garbage blocked |
+| Fixture | `test/fixtures/desktop_voice_wav/scw_delmod_submit_real_2026_07_07.wav` |
+| Capture | 16 kHz PCM16 mono (`record` package) |
+
+**Comparison type:** approximate same-phrase live — **not** the same WAV file. Handy WAV is 133,484 bytes; Counter fixture is 140,142 bytes; timestamps ~34 minutes apart.
+
+---
+
+## Same-WAV replay matrix (`wav_stt_replay`, shared Parakeet model)
+
+### Handy WAV (`scw_delmod_submit_handy_2026_07_07.wav`)
+
+| Pipeline | Raw transcript |
+|----------|----------------|
+| golos_equivalent (350 ms pad + 700 ms tail VAD) | Southern Computer Warehouse **Dell** Mod, submit. |
+| **no_vad** | Southern Computer Warehouse **Del Mod**, submit. |
+| Handy app log (black box) | Southern Computer Warehouse **Del Mod**, submit. |
+
+### Counter fixture WAV (`scw_delmod_submit_real_2026_07_07.wav`)
+
+| Pipeline | Raw transcript |
+|----------|----------------|
+| golos_equivalent VAD | **Solvan** Computer Warehouse, **Delmore**, Submit. |
+| no_vad | Solvent Computer Warehouse, Del Mall, Submit. |
+
+**Interpretation:** On Handy’s own WAV, Parakeet + no VAD ≈ Handy app output. Counter’s fixture WAV is a **worse acoustic capture** of the same phrase; pipeline parity with GOLOS does not fix that file.
+
+---
+
+## Confirmed differences (Handy vs Counter today)
+
+| Area | Handy (observed) | Counter (observed) |
+|------|------------------|---------------------|
+| Model encoder | parakeet-tdt-0.6b-v3 int8, SHA256 6139D2FA… | Same weights via GOLOS Release bundle |
+| Device capture | 48 kHz F32 stereo → internal resample | Fixed 16 kHz PCM16 mono |
+| VAD before inference | Unknown in closed app; replay suggests **minimal/no trim** | GOLOS-style 350 ms + 700 ms tail in helper |
+| Post-process / LLM | Off for this session | Cloud/postprocess not on raw path |
+| Glossary / word correction | `custom_words: []`; `word_correction_threshold: 0.18` — **effect on this transcript unproven** | Separate Counter postprocess (not counted as raw STT) |
+| Recording | `handy-1783437294.wav` | `latest_command.wav` (different take) |
+
+---
+
+## Unproven assumptions (do not state as fact)
+
+- That Handy uses `glossary.rs` or GOLOS glossary for this result
+- That postprocess/glossary is why Handy “sounds better”
+- That Counter equals Handy
+- That GOLOS native app would match Handy on either WAV (GOLOS live baseline not collected for this phrase)
+
+---
+
+## Next proposed fix (technical focus)
+
+1. **Match Handy audio capture:** native device rate, F32, stereo/mono downmix, linear resample to 16 kHz (not fixed 16 kHz PCM16 at ADC).
+2. **Revisit VAD for short command clips:** Handy WAV + no VAD matches Handy log; GOLOS tail-trim may be wrong for command-length audio.
+3. **Re-capture regression WAV** after capture change; add Handy WAV as secondary golden reference.
+4. **Optional:** inspect Handy open-source `audio_toolkit` / transcription manager for decode params (separate from GOLOS `golos_flutter` source).
+
+---
+
+## Tools
+
+- `installer/windows/wav_stt_replay/` — offline Parakeet replay
+- `scripts/manual/compare_desktop_voice_wav_stt.ps1` — Counter helper vs replay pipelines
+
+---
+
+## Markers
+
+- `DESKTOP_VOICE_GOLOS_EQUIVALENT_SAME_WAV_RUNNER_READY`
+- `DESKTOP_VOICE_HANDY_BASELINE_COLLECTED` (log + WAV)
+- `DESKTOP_VOICE_SAME_WAV_HANDY_VS_COUNTER_NOT_IDENTICAL` (different recordings)
+- `DESKTOP_VOICE_COUNTER_PIPELINE_MATCHED_TO_GOLOS` (on Counter fixture only)

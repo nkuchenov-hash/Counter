@@ -23,7 +23,7 @@
 * **`lib/core/services/desktop_stt_helper_service.dart`:** [shipped] Removed STT peak normalization; Counter HTTP helper now matches GOLOS-equivalent transcript on same WAV.
 * **`scripts/manual/compare_desktop_voice_wav_stt.ps1`:** [shipped] A/B Counter helper vs GOLOS-equivalent pipelines.
 * **`scripts/manual/build_counter_installer.ps1`:** [shipped] ISCC discovery includes `%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe`.
-* **`docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`:** [shipped] Exact same-WAV matrix + strict domain ceiling documented (Southern/DEL MOD not in raw Parakeet on this WAV).
+* **`docs/reports/DESKTOP_VOICE_GOLOS_PARITY_AUDIT_2026-07-07.md`:** [shipped] Handy black-box baseline from log+WAV; same-model replay; glossary mechanism explicitly **unproven**.
 
 ## [2026-07-07] - P0 Desktop Voice raw STT GOLOS parity [shipped]
 
