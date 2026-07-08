@@ -308,6 +308,8 @@ extension CategoryLookupExtension on DatabaseService {
   }
 
   String? _categoryRelationIdForPlanPatch(int? localCategoryId) {
+    // Non-concrete / `-1` must never emit a relation — that made Save appear to
+    // "succeed" while silently keeping the previous plan category on PB.
     if (!_planLocalCategoryIdIsConcrete(localCategoryId)) return null;
     final rule = getCategoryRuleById(localCategoryId!);
     if (rule == null || rule.isArchived) return null;

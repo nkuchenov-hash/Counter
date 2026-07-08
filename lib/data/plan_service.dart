@@ -2517,7 +2517,7 @@ extension PlanServiceExtension on DatabaseService {
     return best;
   }
 
-  /// True when [id] is a real category (not uncategorized / unset).
+  /// True when [id] is a real category (not uncategorized / unset / create placeholder `-1`).
   bool _planLocalCategoryIdIsConcrete(int? id) {
     if (id == null) return false;
     if (id == 0) return false;

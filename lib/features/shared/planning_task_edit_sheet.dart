@@ -465,14 +465,13 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
       );
       return;
     }
+    // Explicit Save owns this draft snapshot (incl. newly created category).
+    // Do not rebuild inside flush — autosave must not race with an older snapshot.
     _applyPlanDraftLocally(updated);
     if (_isPersistedPlan) {
       _planAutosaveGate.flush(
         () {
-          final latest = _buildDraftTask();
-          if (latest != null) {
-            unawaited(_syncPlanDraftToNetwork(latest));
-          }
+          unawaited(_syncPlanDraftToNetwork(updated));
         },
         force: true,
       );
@@ -488,9 +487,12 @@ class PlanningTaskEditSheetState extends State<PlanningTaskEditSheet>
   PlanningTask? _buildDraftTask() {
     final title = _titleController.text.trim();
     if (title.isEmpty) return null;
-    final catId = resolveEditFieldCategoryId(
-      db: DatabaseService.instance,
-      categoryId: _categoryId,
+    final catId = resolvePlanningEditDraftCategoryId(
+      draftCategoryId: _categoryId,
+      originalTaskCategoryId: widget.task.categoryId,
+      existsInTree: DatabaseService.instance.categoryExists(_categoryId),
+      knownPairIds:
+          DatabaseService.instance.allCategoryIdPathPairs.map((p) => p.id),
     );
     final newDateKey = _dateKeyFromDate(_date);
     syncChecklistDoneLength(_checklistControllers, _checklistDone);

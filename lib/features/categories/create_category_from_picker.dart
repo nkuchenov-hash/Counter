@@ -95,6 +95,15 @@ int? findCreatedCategoryLocalIdUnderParent({
 Future<int?> Function(int? parentLocalId, CategoryRule child)?
     categoryPickerAddNestedCategoryOverride;
 
+/// True when [id] cannot be used as a concrete plan/record category (incl. create placeholder `-1`).
+@visibleForTesting
+bool isNonPersistableCategoryLocalId(int? id) {
+  if (id == null) return true;
+  if (id == 0) return true;
+  if (id == CategoryRule.uncategorizedSyntheticId) return true;
+  return false;
+}
+
 /// Resolves category id for edit fields — prefer in-memory tree over stale pair lists.
 @visibleForTesting
 int resolveEditFieldCategoryIdValues({
@@ -118,6 +127,40 @@ int resolveEditFieldCategoryId({
     existsInTree: db.categoryExists(categoryId),
     knownPairIds: db.allCategoryIdPathPairs.map((p) => p.id),
   );
+}
+
+/// Canonical draft category for edit Save — explicit picker/create id owns the draft.
+/// Never fall back to [originalTaskCategoryId] when an explicit selection exists.
+@visibleForTesting
+int resolvePlanningEditDraftCategoryId({
+  required int draftCategoryId,
+  required int originalTaskCategoryId,
+  required bool existsInTree,
+  required Iterable<int> knownPairIds,
+}) {
+  final resolved = resolveEditFieldCategoryIdValues(
+    categoryId: draftCategoryId,
+    existsInTree: existsInTree,
+    knownPairIds: knownPairIds,
+  );
+  // Explicit draft wins even when tree/pairs are momentarily stale after create.
+  if (!isNonPersistableCategoryLocalId(resolved)) return resolved;
+  // Only if draft is unusable, keep original (legacy empty picker).
+  return originalTaskCategoryId;
+}
+
+/// Whether a plan PATCH body should include `category_id` for [localCategoryId].
+@visibleForTesting
+bool planPatchShouldIncludeCategoryRelation({
+  required int? localCategoryId,
+  required String? pocketBaseCategoryRowId,
+}) {
+  if (isNonPersistableCategoryLocalId(localCategoryId)) return false;
+  final pb = (pocketBaseCategoryRowId ?? '').trim();
+  if (pb.isEmpty) return false;
+  if (pb.length < 14 || pb.length > 17) return false;
+  if (pb.contains('-')) return false;
+  return RegExp(r'^[a-z0-9]+$').hasMatch(pb);
 }
 
 /// Creates a category under [target.parentLocalId] (root when null).
@@ -150,6 +193,8 @@ Future<int?> createCategoryFromPickerSubmit({
       ? await categoryPickerAddNestedCategoryOverride!(parentId, child)
       : await db.addNestedCategory(parentId, child);
   if (createdId == null) return null;
+  // Create must return a persistable local id — never `-1` / uncategorized.
+  if (isNonPersistableCategoryLocalId(createdId)) return null;
 
   assert(() {
     if (categoryPickerAddNestedCategoryOverride != null) return true;

@@ -249,13 +249,21 @@ extension CategoryCrudExtension on DatabaseService {
   void _patchPlaceholderCategoryBizId(
     int? parentId,
     String displayName,
-    String newCategoryId,
-  ) {
+    String newCategoryId, {
+    int? placeholderLocalId,
+  }) {
     final wantTag = displayName.trim();
+    final placeholderId = placeholderLocalId;
+    bool matchesPlaceholder(CategoryRule r) {
+      if (placeholderId != null) return r.id == placeholderId;
+      return r.id == CategoryRule.uncategorizedSyntheticId &&
+          r.name.trim() == wantTag;
+    }
+
     void patchIn(List<CategoryRule> rules) {
       for (var i = 0; i < rules.length; i++) {
         final r = rules[i];
-        if (r.id == -1 && r.name.trim() == wantTag) {
+        if (matchesPlaceholder(r)) {
           rules[i] = r.copyWith(normalizedId: newCategoryId);
           return;
         }
@@ -280,12 +288,23 @@ extension CategoryCrudExtension on DatabaseService {
     }
   }
 
-  void _removeFailedPlaceholderCategory(int? parentId, String tag) {
+  void _removeFailedPlaceholderCategory(
+    int? parentId,
+    String tag, {
+    int? placeholderLocalId,
+  }) {
     final wantTag = tag.trim();
+    final placeholderId = placeholderLocalId;
+    bool matchesPlaceholder(CategoryRule r) {
+      if (placeholderId != null) return r.id == placeholderId;
+      return r.id == CategoryRule.uncategorizedSyntheticId &&
+          r.name.trim() == wantTag;
+    }
+
     bool removeFrom(List<CategoryRule> rules) {
       for (var i = 0; i < rules.length; i++) {
         final r = rules[i];
-        if (r.id == -1 && r.name.trim() == wantTag) {
+        if (matchesPlaceholder(r)) {
           rules.removeAt(i);
           return true;
         }
@@ -766,6 +785,7 @@ extension CategoryCrudExtension on DatabaseService {
     required int? parentId,
     required String displayName,
     required RecordModel created,
+    required int placeholderLocalId,
   }) {
     try {
       final rowId = created.id.trim();
@@ -796,10 +816,21 @@ extension CategoryCrudExtension on DatabaseService {
         );
       }
 
+      bool matchesPlaceholder(CategoryRule r) => r.id == placeholderLocalId;
+
       if (parentId == null) {
         for (var i = 0; i < _rules.length; i++) {
           final r = _rules[i];
-          if (r.id == -1 && r.name.trim() == wantTag) {
+          if (matchesPlaceholder(r)) {
+            _rules[i] = upgraded(r);
+            return newId;
+          }
+        }
+        // Name fallback for legacy `-1` placeholder only.
+        for (var i = 0; i < _rules.length; i++) {
+          final r = _rules[i];
+          if (r.id == CategoryRule.uncategorizedSyntheticId &&
+              r.name.trim() == wantTag) {
             _rules[i] = upgraded(r);
             return newId;
           }
@@ -814,7 +845,15 @@ extension CategoryCrudExtension on DatabaseService {
             if (ch == null) return false;
             for (var j = 0; j < ch.length; j++) {
               final c = ch[j];
-              if (c.id == -1 && c.name.trim() == wantTag) {
+              if (matchesPlaceholder(c)) {
+                ch[j] = upgraded(c);
+                return true;
+              }
+            }
+            for (var j = 0; j < ch.length; j++) {
+              final c = ch[j];
+              if (c.id == CategoryRule.uncategorizedSyntheticId &&
+                  c.name.trim() == wantTag) {
                 ch[j] = upgraded(c);
                 return true;
               }
@@ -835,8 +874,12 @@ extension CategoryCrudExtension on DatabaseService {
     }
   }
 
-  /// UI-first: add child to _rules (temp id -1), push; then PocketBase create.
-  /// Returns the created category's local [CategoryRule.id], or null on failure.
+  /// UI-first: add child to _rules with a unique negative temp id (never `-1`),
+  /// push; then PocketBase create. Returns the created category's local
+  /// [CategoryRule.id], or null on failure.
+  ///
+  /// Temp id must not be [CategoryRule.uncategorizedSyntheticId] (`-1`): that
+  /// collision made Save omit `plans.category_id` and leave the old category.
   Future<int?> addNestedCategory(int? parentId, CategoryRule child) async {
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) {
       return null;
@@ -869,8 +912,19 @@ extension CategoryCrudExtension on DatabaseService {
 
     final nextOrder = _nextCategoryOrderAmongSiblings(parentId);
 
+    // Prefer caller temp id (picker uses [DatabaseService.newId]); never `-1`.
+    var placeholderLocalId = child.id;
+    if (placeholderLocalId == 0 ||
+        placeholderLocalId == CategoryRule.uncategorizedSyntheticId ||
+        placeholderLocalId > 0) {
+      placeholderLocalId = newId();
+    }
+    if (placeholderLocalId == CategoryRule.uncategorizedSyntheticId) {
+      placeholderLocalId = newId();
+    }
+
     final placeholder = CategoryRule(
-      id: -1,
+      id: placeholderLocalId,
       name: child.name,
       normalizedId: categoryId,
       children: null,
@@ -922,7 +976,11 @@ extension CategoryCrudExtension on DatabaseService {
           DatabaseService._log(
             'ADD_CATEGORY: POST blocked — category_id missing in fields map',
           );
-          _removeFailedPlaceholderCategory(parentId, child.name);
+          _removeFailedPlaceholderCategory(
+            parentId,
+            child.name,
+            placeholderLocalId: placeholderLocalId,
+          );
           return null;
         }
         await ensurePocketBaseReady();
@@ -933,13 +991,45 @@ extension CategoryCrudExtension on DatabaseService {
           parentId: parentId,
           displayName: child.name,
           created: created,
+          placeholderLocalId: placeholderLocalId,
         );
         _categoryController.add(List.from(_rules));
-        return createdLocalId ??
+        final resolvedId = createdLocalId ??
             findCreatedCategoryLocalIdUnderParent(
               parentLocalId: parentId,
               displayName: child.name,
             );
+        // Never hand off a display-only id: Save must be able to PATCH plans.category_id.
+        if (resolvedId == null ||
+            !_planLocalCategoryIdIsConcrete(resolvedId)) {
+          DatabaseService._log(
+            'ADD_CATEGORY: handoff blocked — missing concrete local id '
+            'name=${child.name.trim()}',
+          );
+          _removeFailedPlaceholderCategory(
+            parentId,
+            child.name,
+            placeholderLocalId: placeholderLocalId,
+          );
+          return null;
+        }
+        final rule = getCategoryRuleById(resolvedId);
+        final pb = _categoryBackendRowIdStrict(rule);
+        if (pb == null ||
+            pb.isEmpty ||
+            !DatabaseService._isLikelyPocketBaseRowId(pb)) {
+          DatabaseService._log(
+            'ADD_CATEGORY: handoff blocked — missing PB row id for local=$resolvedId '
+            'name=${child.name.trim()}',
+          );
+          _removeFailedPlaceholderCategory(
+            parentId,
+            child.name,
+            placeholderLocalId: placeholderLocalId,
+          );
+          return null;
+        }
+        return resolvedId;
       } on ClientException catch (e) {
         debugPrint('[SERVER_ERROR_BODY] ${e.response}');
         if (attempt == 0 && _pbErrorLooksLikeUniqueCategoryCollision(e)) {
@@ -955,7 +1045,12 @@ extension CategoryCrudExtension on DatabaseService {
             '[CATEGORY_RECOVERY] Retrying creation with unique slug: $newSlug',
           );
           categoryId = newSlug;
-          _patchPlaceholderCategoryBizId(parentId, child.name, categoryId);
+          _patchPlaceholderCategoryBizId(
+            parentId,
+            child.name,
+            categoryId,
+            placeholderLocalId: placeholderLocalId,
+          );
           _categoryController.add(List.from(_rules));
           continue;
         }
@@ -966,7 +1061,11 @@ extension CategoryCrudExtension on DatabaseService {
         break;
       }
     }
-    _removeFailedPlaceholderCategory(parentId, child.name);
+    _removeFailedPlaceholderCategory(
+      parentId,
+      child.name,
+      placeholderLocalId: placeholderLocalId,
+    );
     return null;
   }
 

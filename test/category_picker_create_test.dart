@@ -1,6 +1,7 @@
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/categories/create_category_from_picker.dart';
+import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -270,6 +271,185 @@ void main() {
         ),
         10,
       );
+    });
+
+    test('rejects create handoff id -1 (uncategorized collision)', () async {
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        return CategoryRule.uncategorizedSyntheticId;
+      };
+
+      final fromCreate = await createCategoryFromPickerSubmit(
+        name: 'RGH Products',
+        target: const CategoryPickerCreateTarget.child(
+          parentLocalId: 100,
+          parentDisplayName: 'Price Reporter',
+        ),
+      );
+      expect(fromCreate, isNull);
+    });
+  });
+
+  group('create → select → explicit Save persists new category', () {
+    test('nested create under Price Reporter wins over original Жизнь on Save',
+        () async {
+      const lifeCategoryId = 42; // existing plan category "Жизнь"
+      const priceReporterId = 100;
+      const rghProductsId = 501;
+      const rghPbRowId = 'rghproductscat1'; // 15-char PB id
+
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        expect(parentId, priceReporterId);
+        expect(child.name, 'RGH Products');
+        // Simulate successful create handoff (unique temp id upgraded).
+        expect(child.id, isNot(CategoryRule.uncategorizedSyntheticId));
+        return rghProductsId;
+      };
+
+      final fromCreate = await createCategoryFromPickerSubmit(
+        name: 'RGH Products',
+        target: const CategoryPickerCreateTarget.child(
+          parentLocalId: priceReporterId,
+          parentDisplayName: 'Price Reporter',
+        ),
+      );
+      expect(fromCreate, rghProductsId);
+      expect(fromCreate, isNot(lifeCategoryId));
+
+      // Sheet visible selection / draft owner (_categoryId) after picker callback.
+      final sheetCategoryId = fromCreate!;
+      final draftCategoryId = resolvePlanningEditDraftCategoryId(
+        draftCategoryId: sheetCategoryId,
+        originalTaskCategoryId: lifeCategoryId,
+        existsInTree: true,
+        knownPairIds: const [lifeCategoryId, priceReporterId],
+      );
+      expect(draftCategoryId, rghProductsId);
+      expect(draftCategoryId, isNot(lifeCategoryId));
+
+      // Explicit Save uses the same draft snapshot (not original task category).
+      final savedTask = PlanningTask(
+        id: 1,
+        planRowId: 'plan-uuid-life',
+        pocketRecordId: 'pbplanrow000001',
+        title: 'Existing task',
+        categoryId: draftCategoryId,
+        isDone: false,
+        dateKey: '2026-07-08',
+        order: 0,
+      );
+      expect(savedTask.categoryId, rghProductsId);
+      expect(savedTask.categoryId, isNot(lifeCategoryId));
+
+      // Plan PATCH must include the new category relation (not silently omit).
+      expect(
+        planPatchShouldIncludeCategoryRelation(
+          localCategoryId: savedTask.categoryId,
+          pocketBaseCategoryRowId: rghPbRowId,
+        ),
+        isTrue,
+      );
+      expect(
+        planPatchShouldIncludeCategoryRelation(
+          localCategoryId: CategoryRule.uncategorizedSyntheticId,
+          pocketBaseCategoryRowId: rghPbRowId,
+        ),
+        isFalse,
+      );
+    });
+
+    test('draft does not fall back to original when create id is in tree', () {
+      const life = 42;
+      const rgh = 501;
+      expect(
+        resolvePlanningEditDraftCategoryId(
+          draftCategoryId: rgh,
+          originalTaskCategoryId: life,
+          existsInTree: true,
+          knownPairIds: const [life],
+        ),
+        rgh,
+      );
+    });
+
+    test('draft keeps created id when tree momentarily stale after create', () {
+      const life = 42;
+      const rgh = 501;
+      expect(
+        resolvePlanningEditDraftCategoryId(
+          draftCategoryId: rgh,
+          originalTaskCategoryId: life,
+          existsInTree: false,
+          knownPairIds: const [life],
+        ),
+        rgh,
+      );
+      expect(
+        resolvePlanningEditDraftCategoryId(
+          draftCategoryId: rgh,
+          originalTaskCategoryId: life,
+          existsInTree: false,
+          knownPairIds: const [life],
+        ),
+        isNot(life),
+      );
+    });
+
+    test('legacy -1 draft falls back to original so Save is not a silent no-op',
+        () {
+      const life = 42;
+      expect(
+        resolvePlanningEditDraftCategoryId(
+          draftCategoryId: CategoryRule.uncategorizedSyntheticId,
+          originalTaskCategoryId: life,
+          existsInTree: false,
+          knownPairIds: const [life],
+        ),
+        life,
+      );
+    });
+
+    test('existing category selection still persists on Save draft', () {
+      const life = 42;
+      const work = 10;
+      expect(
+        resolvePlanningEditDraftCategoryId(
+          draftCategoryId: work,
+          originalTaskCategoryId: life,
+          existsInTree: true,
+          knownPairIds: const [life, work],
+        ),
+        work,
+      );
+    });
+
+    test('Save flush uses fire-time draft snapshot category not stale rebuild',
+        () {
+      final gate = EditSheetAutosaveGate();
+      var syncCategoryId = 0;
+      // Prior autosave scheduled with old category in a closure.
+      gate.schedule(() => syncCategoryId = 42);
+
+      const rgh = 501;
+      final fireTimeDraft = PlanningTask(
+        id: 1,
+        planRowId: 'plan-uuid',
+        pocketRecordId: 'pbplanrow000002',
+        title: 'Task',
+        categoryId: rgh,
+        isDone: false,
+        dateKey: '2026-07-08',
+        order: 0,
+      );
+      // Explicit Save: flush the snapshot captured at Save press.
+      gate.flush(
+        () {
+          syncCategoryId = fireTimeDraft.categoryId;
+        },
+        force: true,
+      );
+      expect(syncCategoryId, rgh);
+      expect(syncCategoryId, isNot(42));
+      gate.dispose();
     });
   });
 

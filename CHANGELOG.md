@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - Category picker create → Save persists new category [shipped]
+
+* **Root cause (post-e5d8291):** create placeholder used local id `-1` (same as uncategorized). After create→select the sheet could show “RGH Products”, but Save’s `plans.category_id` PATCH was omitted (`_categoryRelationIdForPlanPatch` rejects `-1`), so PocketBase kept the original category (“Жизнь”).
+* **`lib/data/categories/category_crud.dart`:** [shipped] Create uses a unique negative temp id (`newId()`), never `-1`; upgrade/remove/patch track that placeholder; handoff returns only after a concrete local id + PB row id are attached.
+* **`lib/features/shared/planning_task_edit_sheet.dart` + `create_category_from_picker.dart`:** [shipped] Explicit Save flushes the fire-time draft snapshot (category included); draft ownership via `resolvePlanningEditDraftCategoryId` so picker/create overrides the original task category.
+* **`test/category_picker_create_test.dart`:** [shipped] Regression: Жизнь → create nested RGH Products → Save draft/payload uses RGH, not Жизнь; `-1` handoff rejected; existing selection still persists.
+
 ## [2026-07-08] - P0 Desktop Voice: CPAL/WASAPI F32 capture replaces quiet MF 48k path [engineering; live-recapture pending]
 
 * **Root cause of f69fb1b fail:** `record_windows` Media Foundation 48 kHz stereo PCM16 captured ~−10 dB quieter than Handy (and quieter than old 16 kHz mono). STT collapsed to `Computer warehouse subvailable submitted.`
