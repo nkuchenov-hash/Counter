@@ -46,6 +46,11 @@ extension RecordCrudExtension on DatabaseService {
       if (pair != null) {
         updates['category_id'] = pair.relationId;
         updates['category_link'] = pair.relationId;
+      } else if (categoryId != null) {
+        // Explicit picker/create selection must not silently drop category from PATCH.
+        DatabaseService._log(
+          'RECORD_CATEGORY_PATCH_UNRESOLVED localId=$categoryForPatch',
+        );
       }
     }
     if (note != null) updates['note'] = note;
@@ -541,17 +546,24 @@ extension RecordCrudExtension on DatabaseService {
   ) {
     final pair = _recordCategoryDualityForLocalId(categoryId);
     if (pair == null) {
-      row.remove('category_id');
-      row.remove('category_link');
-      row.remove('_expanded_category');
+      // Do NOT strip an existing category when a newly selected id is not yet
+      // resolvable — that forced the card breadcrumb back to "Life".
       return;
     }
-    row['category_id'] = pair.businessId;
+    // Mirror PATCH shape: both relation fields are the 15-char PB category id.
+    row['category_id'] = pair.relationId;
     row['category_link'] = pair.relationId;
+    row['categoryId'] = categoryId;
     row['_expanded_category'] = <String, dynamic>{
       'id': pair.relationId,
       'category_id': pair.businessId,
+      'name': getCategoryRuleById(categoryId)?.name,
     };
+  }
+
+  /// True when [localCategoryId] can be written to records.category_id / category_link.
+  bool canResolveRecordCategoryForPbPatch(int? localCategoryId) {
+    return _recordCategoryDualityForLocalId(localCategoryId) != null;
   }
 
   void _applyCachedRecordCategoryAt(int index, int categoryId) {

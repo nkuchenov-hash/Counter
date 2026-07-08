@@ -627,6 +627,24 @@ class TimelineRecordSheetContentState
       );
       assert(draft.endUtcIsNull);
       assert(draft.statusRemainsRunning);
+
+      final originalCat = widget.record.categoryId;
+      final requestedCat = draft.categoryId;
+      final categoryOk = requestedCat == null ||
+          DatabaseService.instance.canResolveRecordCategoryForPbPatch(
+            requestedCat,
+          );
+      final uiOutcome = runningRecordCategorySaveUiOutcome(
+        originalCategoryId: originalCat,
+        requestedCategoryId: requestedCat,
+        categoryResolvableForPbPatch: categoryOk,
+      );
+      if (uiOutcome == RunningRecordCategorySaveUiOutcome.categoryUnresolved) {
+        // Do not show false success while card would keep Life / old category.
+        AppSnack.failed();
+        return;
+      }
+
       _applyRecordLocalEdit(
         title: draft.title,
         noteText: noteText,

@@ -27,6 +27,13 @@
 * **Diagnostics:** F32/stereo WAV duration via fmt-aware parse (`DESKTOP_VOICE_RAW_F32_WAV_DURATION_FIXED`); level/gain/overlay font fields in `last_attempt_diag`.
 * **Offline note:** Whisper-tiny recovered `Southern Computer Warehouse, DEL MOD, Submit.` on the same quiet WAV where Parakeet stayed on `Tell them…`; capture still ~−10 dB vs Handy — device/volume instrumentation next, not aliases.
 
+## [2026-07-08] - Newly-created category persists on running Timeline record Save [shipped]
+
+* **Root cause:** After create→select on a running record, `_recordCategoryDualityForLocalId` often failed (biz-slug required + `_categoryPbRowIdKnownInRules` race). Optimistic apply then cleared category fields or wrote business slug into `records.category_id`, so breadcrumb fell back to “Life” while Save still showed success.
+* **`category_record_bridge.dart` + `record_crud.dart`:** [shipped] Duality requires only a valid 15-char PB category row id; both `category_id` and `category_link` get that relation id; local cache keeps `categoryId` for display; unresolved explicit selection no longer strips the prior category.
+* **`timeline_record_edit_sheet.dart` + `record_edit_save_policy.dart`:** [shipped] Success toast gated — no “saved” when a newly selected/created category cannot be patched; running Save still keeps `end_time` null.
+* **`test/timeline_record_edit_save_test.dart`:** [shipped] Regression for create→select→running Save persistence, dual relation PATCH shape, and false-success guard.
+
 ## [2026-07-08] - Running Timeline record metadata/category Save no longer requires end_time [shipped]
 
 * **Root cause:** Save used `isCreate = record.id.isEmpty`. Active/optimistic rows whose `id` was filtered as a hyphenated business UUID looked “empty”, so Save took the past-date create path and showed `edit_save_time_required` (“Укажите время начала и окончания…”) even when only category changed on a running record (`end_time` null).

@@ -148,3 +148,65 @@ RunningRecordMetadataSaveDraft buildRunningRecordMetadataSaveDraft({
     statusRemainsRunning: true,
   );
 }
+
+/// Outcome gate for "Changes saved" after a running-record category edit.
+enum RunningRecordCategorySaveUiOutcome {
+  /// Category actually applied (or no category change requested).
+  saved,
+
+  /// User selected/created a category that cannot be patched yet — do not toast success.
+  categoryUnresolved,
+}
+
+/// When [requestedCategoryId] differs from [originalCategoryId], Save may only
+/// show success if [categoryResolvableForPbPatch] is true (both relation fields
+/// can be built). Otherwise toast would lie while Life stayed on the card.
+@visibleForTesting
+RunningRecordCategorySaveUiOutcome runningRecordCategorySaveUiOutcome({
+  required int? originalCategoryId,
+  required int? requestedCategoryId,
+  required bool categoryResolvableForPbPatch,
+}) {
+  if (requestedCategoryId == null) {
+    return RunningRecordCategorySaveUiOutcome.saved;
+  }
+  if (originalCategoryId != null && requestedCategoryId == originalCategoryId) {
+    return RunningRecordCategorySaveUiOutcome.saved;
+  }
+  if (!categoryResolvableForPbPatch) {
+    return RunningRecordCategorySaveUiOutcome.categoryUnresolved;
+  }
+  return RunningRecordCategorySaveUiOutcome.saved;
+}
+
+/// Shape of records category PATCH keys after duality resolve.
+@visibleForTesting
+({String? categoryId, String? categoryLink})?
+    recordCategoryPatchFieldsFromRelationId({
+  required String? pocketBaseCategoryRowId,
+}) {
+  final pb = (pocketBaseCategoryRowId ?? '').trim();
+  if (pb.isEmpty) return null;
+  if (pb.length < 14 || pb.length > 17) return null;
+  if (pb.contains('-')) return null;
+  if (!RegExp(r'^[a-z0-9]+$').hasMatch(pb)) return null;
+  return (categoryId: pb, categoryLink: pb);
+}
+
+/// Local cache row category after optimistic apply must use the same PB relation
+/// id for both columns (not business slug in category_id).
+@visibleForTesting
+bool optimisticRecordCategoryRowMatchesSelection({
+  required int selectedLocalCategoryId,
+  required int? cacheLocalCategoryId,
+  required String? cacheCategoryIdField,
+  required String? cacheCategoryLinkField,
+  required String? selectedPocketBaseCategoryRowId,
+}) {
+  if (cacheLocalCategoryId != selectedLocalCategoryId) return false;
+  final pb = (selectedPocketBaseCategoryRowId ?? '').trim();
+  if (pb.isEmpty) return false;
+  final idField = (cacheCategoryIdField ?? '').trim();
+  final linkField = (cacheCategoryLinkField ?? '').trim();
+  return idField == pb && linkField == pb;
+}

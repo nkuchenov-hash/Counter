@@ -185,21 +185,27 @@ extension CategoryRecordBridgeExtension on DatabaseService {
     return c;
   }
 
-  /// Records POST/PATCH category duality (@DATA_MAP): business `category_id` + relation `category_link`.
+  /// Records POST/PATCH category duality (@DATA_MAP): both fields are
+  /// PocketBase **relation** ids → `categories.id` (15-char). Business slug is
+  /// metadata only; never send slug alone into `records.category_id`.
   ({String businessId, String relationId})? _recordCategoryDualityForLocalId(
     int? localCategoryId,
   ) {
     if (!_planLocalCategoryIdIsConcrete(localCategoryId)) return null;
     final rule = getCategoryRuleById(localCategoryId!);
     if (rule == null || rule.isArchived) return null;
-    final biz = _categoryStringPkForApi(rule);
     final rel = _categoryBackendRowIdStrict(rule);
-    if (biz == null || biz.isEmpty || biz == 'uncategorized') return null;
     if (rel == null ||
         rel.isEmpty ||
-        !DatabaseService._isLikelyPocketBaseRowId(rel) ||
-        !_categoryPbRowIdKnownInRules(rel)) {
+        !DatabaseService._isLikelyPocketBaseRowId(rel)) {
       return null;
+    }
+    // Prefer business slug when present; otherwise derive a stable non-empty key.
+    // Relation id is the only value safe for records.category_id / category_link.
+    var biz = _categoryStringPkForApi(rule);
+    if (biz == null || biz.isEmpty || biz == 'uncategorized') {
+      final slug = _slugifyCategoryDisplayName(rule.name);
+      biz = slug.isNotEmpty ? slug : rel;
     }
     return (businessId: biz, relationId: rel);
   }

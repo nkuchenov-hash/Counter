@@ -412,11 +412,22 @@ extension RecordServiceExtension on DatabaseService {
   /// Maps stored `category_id` (number, slug, UUID, link expand) to [CategoryRule.id].
   int? categoryIdFromRecordRow(Map<String, dynamic> row) {
     try {
+      // Optimistic edit may stamp local [categoryId] alongside PB relation fields.
+      final localStamp = row['categoryId'];
+      if (localStamp is int &&
+          localStamp != 0 &&
+          localStamp != CategoryRule.uncategorizedSyntheticId) {
+        if (getCategoryRuleById(localStamp) != null) return localStamp;
+      }
       dynamic v = row['category_id'] ?? row['Category_id'] ?? row['categoryId'];
       v = normalizeLinkScalar(v);
       if (v != null) {
         final s = v.toString().trim();
         if (s.isNotEmpty) {
+          if (DatabaseService._isLikelyPocketBaseRowId(s)) {
+            final fromPb = getCategoryRuleByBackendRowId(s)?.id;
+            if (fromPb != null) return fromPb;
+          }
           final asInt = CategoryServiceExtension._rowInt(v);
           if (asInt != 0) return asInt;
           final fromKey = findCategoryIdForStoredCategoryKey(s);
