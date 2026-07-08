@@ -182,6 +182,10 @@ class DatabaseService {
   DatabaseService._();
   static final DatabaseService instance = DatabaseService._();
 
+  /// Unit/integration tests only — bypasses PocketBase auth for Brain record paths.
+  @visibleForTesting
+  static String? debugAuthUserIdForTests;
+
   /// Offline queue + sync indicator (O1). Updated by outbox enqueue/flush and [SyncManager].
   final OfflineSyncController offlineSync = OfflineSyncController();
 
@@ -654,6 +658,8 @@ class DatabaseService {
 
   /// PocketBase **signed-in auth record id** only (same value as child-row `user_id`). No int surrogate.
   String? get _userIdForWhere {
+    final testId = (debugAuthUserIdForTests ?? '').trim();
+    if (testId.isNotEmpty) return testId;
     try {
       final id = _pocketBase?.authStore.record?.id.trim() ?? '';
       if (id.isEmpty) return null;

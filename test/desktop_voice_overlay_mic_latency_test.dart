@@ -14,9 +14,9 @@ void main() {
       expect(DesktopVoiceOverlayConstants.listeningWidthPx, inInclusiveRange(300, 360));
       expect(DesktopVoiceOverlayConstants.listeningHeightPx, inInclusiveRange(64, 72));
       expect(DesktopVoiceOverlayConstants.errorWidthPx, inInclusiveRange(420, 520));
-      expect(DesktopVoiceOverlayConstants.errorHeightPx, inInclusiveRange(120, 150));
+      expect(DesktopVoiceOverlayConstants.errorMinHeightPx, inInclusiveRange(120, 150));
       expect(DesktopVoiceOverlayConstants.pendingWidthPx, inInclusiveRange(420, 520));
-      expect(DesktopVoiceOverlayConstants.pendingHeightPx, inInclusiveRange(110, 140));
+      expect(DesktopVoiceOverlayConstants.pendingMinHeightPx, inInclusiveRange(110, 140));
       expect(DesktopVoiceOverlayConstants.closeHitPx, greaterThanOrEqualTo(32));
     });
   });

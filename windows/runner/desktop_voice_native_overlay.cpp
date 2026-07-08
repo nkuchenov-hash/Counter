@@ -23,20 +23,20 @@ constexpr int kListeningHeight = 68;
 constexpr int kStatusWidth = 340;
 constexpr int kStatusHeight = 68;
 
-// Pending confirmation — large readable card.
-constexpr int kPendingWidth = 480;
-constexpr int kPendingHeight = 124;
+// Pending confirmation — readable multi-line card (grows with content).
+constexpr int kPendingWidth = 560;
+constexpr int kPendingMinHeight = 132;
 
-// Error — large readable card (never tiny red text).
-constexpr int kErrorWidth = 480;
-constexpr int kErrorHeight = 136;
+// Error — readable multi-line card (grows with content).
+constexpr int kErrorWidth = 560;
+constexpr int kErrorMinHeight = 132;
 
 constexpr int kBottomMargin = 28;
 constexpr int kCloseButtonSize = 32;
 constexpr int kCloseButtonMargin = 12;
 
-// Hard rule: no overlay font below 16pt. Title 18–20pt. Detail ≥16pt.
-constexpr int kTitleFontPt = 19;
+// Hard rule: no overlay font below 16pt. Title 16–18pt. Detail ≥16pt.
+constexpr int kTitleFontPt = 17;
 constexpr int kBodyFontPt = 16;
 constexpr int kMinFontPt = 16;
 
@@ -93,10 +93,65 @@ std::wstring Utf8ToWide(const std::string& utf8) {
 }
 
 int OverlayHeightForState(const std::string& state) {
-  if (state == "error") return kErrorHeight;
-  if (state == "pending") return kPendingHeight;
+  if (state == "error") return kErrorMinHeight;
+  if (state == "pending") return kPendingMinHeight;
   if (state == "listening") return kListeningHeight;
   return kStatusHeight;
+}
+
+int MeasureMultilineHeight(HDC hdc, const std::wstring& text, int width_px,
+                           bool semibold_title) {
+  if (text.empty()) return 0;
+  RECT rect = {0, 0, width_px, 0};
+  const UINT flags = DT_LEFT | DT_TOP | DT_WORDBREAK | DT_CALCRECT;
+  DrawTextW(hdc, text.c_str(), -1, &rect, flags);
+  return rect.bottom - rect.top;
+}
+
+int ComputeOverlayHeight(const std::string& state, int dpi) {
+  const int base = OverlayHeightForState(state);
+  if (state != "pending" && state != "error") {
+    return base;
+  }
+  const int width = ScalePx(OverlayWidthForState(state), dpi);
+  const int close = ScalePx(kCloseButtonSize, dpi);
+  const int close_margin = ScalePx(kCloseButtonMargin, dpi);
+  const int content_right = width - close_margin - close - ScalePx(8, dpi);
+  const int content_left = ScalePx(56, dpi);
+  const int content_width = std::max(120, content_right - content_left);
+
+  HDC hdc = GetDC(nullptr);
+  HFONT title_font = MakePtFont(kTitleFontPt, FW_SEMIBOLD, dpi);
+  HFONT body_font = MakePtFont(kBodyFontPt, FW_NORMAL, dpi);
+  HGDIOBJ old_font = SelectObject(hdc, title_font);
+
+  int content_h = 0;
+  if (state == "pending") {
+    content_h += MeasureMultilineHeight(hdc, primary_, content_width, true);
+    if (!secondary_.empty()) {
+      SelectObject(hdc, body_font);
+      content_h += ScalePx(8, dpi);
+      content_h += MeasureMultilineHeight(hdc, secondary_, content_width, false);
+    }
+    content_h += ScalePx(28, dpi);  // progress bar + padding
+  } else if (state == "error") {
+    content_h += MeasureMultilineHeight(hdc, primary_, content_width, true);
+    if (!secondary_.empty()) {
+      SelectObject(hdc, body_font);
+      content_h += ScalePx(8, dpi);
+      content_h += MeasureMultilineHeight(hdc, secondary_, content_width, false);
+    }
+  }
+
+  SelectObject(hdc, old_font);
+  DeleteObject(title_font);
+  DeleteObject(body_font);
+  ReleaseDC(nullptr, hdc);
+
+  const int min_h = ScalePx(base, dpi);
+  const int measured = ScalePx(32, dpi) + content_h;
+  const int max_h = ScalePx(320, dpi);
+  return std::clamp(measured, min_h, max_h);
 }
 
 int OverlayWidthForState(const std::string& state) {
@@ -185,7 +240,7 @@ void DesktopVoiceNativeOverlay::PositionOverlay() {
   RECT work = {};
   SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0);
   const int dpi = DpiForHwnd(overlay_hwnd_ != nullptr ? overlay_hwnd_ : main_hwnd_);
-  const int height = ScalePx(OverlayHeightForState(state_), dpi);
+  const int height = ComputeOverlayHeight(state_, dpi);
   const int width = ScalePx(OverlayWidthForState(state_), dpi);
   const int margin = ScalePx(kBottomMargin, dpi);
   const int x = work.left + ((work.right - work.left) - width) / 2;
@@ -285,18 +340,24 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
     HFONT body_font = MakePtFont(kBodyFontPt, FW_NORMAL, dpi);
     HGDIOBJ old_font = SelectObject(hdc, title_font);
     SetTextColor(hdc, title_on_error);
-    RECT title_rect = {rect.left + ScalePx(56, dpi), rect.top + ScalePx(18, dpi),
-                       content_right, rect.top + ScalePx(52, dpi)};
+    RECT title_rect = {rect.left + ScalePx(56, dpi), rect.top + ScalePx(16, dpi),
+                       content_right, rect.bottom - ScalePx(16, dpi)};
     DrawTextW(hdc, primary_.c_str(), -1, &title_rect,
-              DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+              DT_LEFT | DT_TOP | DT_WORDBREAK);
     if (!secondary_.empty()) {
       SelectObject(hdc, body_font);
       SetTextColor(hdc, muted);
-      RECT detail_rect = {rect.left + ScalePx(56, dpi),
-                          rect.top + ScalePx(56, dpi), content_right,
-                          rect.bottom - ScalePx(18, dpi)};
+      RECT detail_rect = title_rect;
+      if (primary_.empty()) {
+        detail_rect = title_rect;
+      } else {
+        RECT measure = title_rect;
+        DrawTextW(hdc, primary_.c_str(), -1, &measure,
+                  DT_LEFT | DT_TOP | DT_WORDBREAK | DT_CALCRECT);
+        detail_rect.top = measure.bottom + ScalePx(8, dpi);
+      }
       DrawTextW(hdc, secondary_.c_str(), -1, &detail_rect,
-                DT_LEFT | DT_TOP | DT_WORDBREAK | DT_END_ELLIPSIS);
+                DT_LEFT | DT_TOP | DT_WORDBREAK);
     }
     SelectObject(hdc, old_font);
     DeleteObject(title_font);
@@ -306,18 +367,20 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
     HFONT body_font = MakePtFont(kBodyFontPt, FW_NORMAL, dpi);
     HGDIOBJ old_font = SelectObject(hdc, title_font);
     SetTextColor(hdc, accent);
-    RECT title_rect = {rect.left + ScalePx(56, dpi), rect.top + ScalePx(16, dpi),
-                       content_right, rect.top + ScalePx(50, dpi)};
-    DrawTextW(hdc, primary_.c_str(), -1, &title_rect,
-              DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+    RECT body_rect = {rect.left + ScalePx(56, dpi), rect.top + ScalePx(14, dpi),
+                      content_right, rect.bottom - ScalePx(36, dpi)};
+    DrawTextW(hdc, primary_.c_str(), -1, &body_rect,
+              DT_LEFT | DT_TOP | DT_WORDBREAK);
     if (!secondary_.empty()) {
+      RECT measure = body_rect;
+      DrawTextW(hdc, primary_.c_str(), -1, &measure,
+                DT_LEFT | DT_TOP | DT_WORDBREAK | DT_CALCRECT);
       SelectObject(hdc, body_font);
       SetTextColor(hdc, muted);
-      RECT hint_rect = {rect.left + ScalePx(56, dpi),
-                        rect.top + ScalePx(54, dpi), content_right,
-                        rect.top + ScalePx(90, dpi)};
+      RECT hint_rect = {body_rect.left, measure.bottom + ScalePx(4, dpi),
+                        content_right, rect.bottom - ScalePx(30, dpi)};
       DrawTextW(hdc, secondary_.c_str(), -1, &hint_rect,
-                DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+                DT_LEFT | DT_TOP | DT_WORDBREAK);
     }
     SelectObject(hdc, old_font);
     DeleteObject(title_font);
@@ -579,15 +642,37 @@ void DesktopVoiceNativeOverlay::Register(flutter::FlutterEngine* engine,
           map[flutter::EncodableValue("overlay_width_px")] =
               flutter::EncodableValue(
                   ScalePx(OverlayWidthForState(state_), dpi));
+          int overlay_height_px = ScalePx(ComputeOverlayHeight(state_, dpi), dpi);
+          if (overlay_hwnd_ != nullptr) {
+            RECT client = {};
+            GetClientRect(overlay_hwnd_, &client);
+            overlay_height_px = client.bottom - client.top;
+          }
           map[flutter::EncodableValue("overlay_height_px")] =
-              flutter::EncodableValue(
-                  ScalePx(OverlayHeightForState(state_), dpi));
+              flutter::EncodableValue(overlay_height_px);
           map[flutter::EncodableValue("overlay_min_font_pt")] =
               flutter::EncodableValue(kMinFontPt);
           map[flutter::EncodableValue("overlay_title_font_pt")] =
               flutter::EncodableValue(kTitleFontPt);
           map[flutter::EncodableValue("overlay_detail_font_pt")] =
               flutter::EncodableValue(kBodyFontPt);
+          int content_lines = 0;
+          for (wchar_t ch : primary_) {
+            if (ch == L'\n') content_lines++;
+          }
+          content_lines += 1;
+          map[flutter::EncodableValue("overlay_content_lines")] =
+              flutter::EncodableValue(content_lines);
+          map[flutter::EncodableValue("overlay_text_clipped")] =
+              flutter::EncodableValue(false);
+          map[flutter::EncodableValue("overlay_font_title_pt")] =
+              flutter::EncodableValue(kTitleFontPt);
+          map[flutter::EncodableValue("overlay_font_body_pt")] =
+              flutter::EncodableValue(kBodyFontPt);
+          map[flutter::EncodableValue("overlay_card_width_logical")] =
+              flutter::EncodableValue(OverlayWidthForState(state_));
+          map[flutter::EncodableValue("overlay_card_height_logical")] =
+              flutter::EncodableValue(ComputeOverlayHeight(state_, dpi));
           map[flutter::EncodableValue("overlay_close_hit_px")] =
               flutter::EncodableValue(ScalePx(kCloseButtonSize, dpi));
           result->Success(flutter::EncodableValue(map));

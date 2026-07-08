@@ -174,6 +174,20 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     if (_sessionCancelled || !mounted) return;
 
     _helper.prewarmRecognizerInBackground();
+    _helper.evaluateCommandCandidate = (text) {
+      final parsed = parseVoiceCommand(
+        rules: widget.categoryRules,
+        transcript: text,
+        taskTitleHints: _lastGlossary?.taskTitles ?? const [],
+      );
+      final useful = parsed.isSafeToStart &&
+          parsed.confidence == VoiceCommandMatchConfidence.exact;
+      return (
+        useful: useful,
+        parseStatus:
+            '${parsed.confidence.name}${parsed.ambiguityReason == null ? '' : ':${parsed.ambiguityReason}'}',
+      );
+    };
 
     final started = await _recognizer!.startCapture();
     DesktopVoiceLog.instance.mark(
@@ -235,8 +249,12 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       if (_audioLevelSeen || _audioBytes > 4800) return;
       DesktopVoiceLog.instance.mark('audio_level_seen', 'no');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_MIC_SIGNAL_VISIBLE');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_DETECTED');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_ERROR_CLASSIFIED');
+      unawaited(_recognizer?.cancelCapture());
       _failFriendly(
         t(loc, 'desktop_voice_mic_no_signal'),
+        message: t(loc, 'desktop_voice_mic_no_signal'),
         diag: 'no_audio_signal',
         stage: DesktopVoiceErrorStage.listening,
       );
@@ -512,10 +530,11 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   void _enterPendingConfirmation(VoiceCommandParseResult parsed) {
     final loc = currentLocale.value;
     _parseResult = parsed;
-    final preview = voiceCommandPendingConfirmationMessage(
+    final previewLines = voiceCommandPendingConfirmationLines(
       parsed,
       localeCode: loc,
     );
+    final preview = previewLines.join('\n');
     _confirmProgress = 0;
     _setPhase(
       DesktopVoiceOverlayPhase.pendingConfirmation,
@@ -523,6 +542,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     );
     DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_CONFIRMATION_STARTED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_PENDING_CONFIRMATION');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_FULL_COMMAND_VISIBLE');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_COMMAND_TEXT_CLIPPING');
     DesktopVoicePipeline.mark(
       't_pending_confirmation_visible',
       '${DateTime.now().millisecondsSinceEpoch}',
@@ -799,9 +820,10 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       case DesktopVoiceOverlayPhase.error:
         unawaited(
           DesktopVoiceOverlayService.showError(
-            message: _statusLine.trim().isEmpty
-                ? t(loc, 'desktop_voice_state_error')
-                : _statusLine.trim(),
+            message: loc == 'ru' ? 'Не удалось распознать' : 'Could not recognize',
+            detail: _transcript.trim().isNotEmpty
+                ? _transcript.trim()
+                : (_errorDetail ?? _statusLine.trim()),
           ),
         );
     }

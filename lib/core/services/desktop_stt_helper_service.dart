@@ -92,6 +92,14 @@ class DesktopSttHelperService {
   String? _engineUsedForFirstCandidate;
   String? _engineUsedForFinalText;
   int? _stopToPendingConfirmationMs;
+  String? _candidateText;
+  String? _candidateParseStatus;
+  bool _candidateUseful = false;
+  bool _candidateVisibleToUser = false;
+  int? _stopToUsefulCandidateMs;
+  /// When set, gates first-candidate latency metrics to parseable commands only.
+  ({bool useful, String parseStatus}) Function(String text)?
+      evaluateCommandCandidate;
   void Function(String text, String engineId)? onFirstCandidate;
   DesktopSttDiagnostics _lastDiagnostics = const DesktopSttDiagnostics();
   DesktopVoiceGlossaryPack? _transcribeGlossary;
@@ -716,9 +724,36 @@ class DesktopSttHelperService {
 
   void _emitFirstCandidate(String text, String engineId) {
     if (text.trim().isEmpty) return;
+    final trimmed = text.trim();
+    _candidateText = trimmed;
+    final eval = evaluateCommandCandidate?.call(trimmed);
+    _candidateParseStatus = eval?.parseStatus ?? 'not_evaluated';
+    _candidateUseful = eval?.useful ?? false;
+    DesktopVoicePipeline.mark('candidate_text', trimmed);
+    DesktopVoicePipeline.mark(
+      'candidate_parse_status',
+      _candidateParseStatus ?? '—',
+    );
+    DesktopVoicePipeline.mark(
+      'candidate_useful',
+      _candidateUseful ? 'yes' : 'no',
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_USEFUL_CANDIDATE_METRIC_ADDED');
+
+    if (!_candidateUseful) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_BAD_PARTIAL_NOT_COUNTED_AS_SUCCESS',
+        trimmed,
+      );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_FAKE_LATENCY_PASS');
+      return;
+    }
+
     if (_tFirstCandidateVisible != null) return;
     _tFirstCandidateVisible = DateTime.now();
+    _candidateVisibleToUser = true;
     _engineUsedForFirstCandidate = engineId;
+    DesktopVoicePipeline.mark('candidate_visible_to_user', 'yes');
     DesktopVoicePipeline.mark(
       't_first_candidate_visible',
       '${_tFirstCandidateVisible!.millisecondsSinceEpoch}',
@@ -728,17 +763,25 @@ class DesktopSttHelperService {
       _stopToFirstCandidateMs = _tFirstCandidateVisible!
           .difference(_tRecordingStopped!)
           .inMilliseconds;
+      _stopToUsefulCandidateMs = _stopToFirstCandidateMs;
       DesktopVoicePipeline.mark(
         'stop_to_first_candidate_ms',
         '$_stopToFirstCandidateMs',
       );
-      if (_stopToFirstCandidateMs! <= 500) {
+      DesktopVoicePipeline.mark(
+        'stop_to_useful_candidate_ms',
+        '$_stopToUsefulCandidateMs',
+      );
+      if (_stopToUsefulCandidateMs! <= 500) {
         DesktopVoicePipeline.mark(
           'DESKTOP_VOICE_STOP_TO_FIRST_CANDIDATE_UNDER_500MS',
         );
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_STOP_TO_USEFUL_CANDIDATE_UNDER_500MS',
+        );
       }
     }
-    onFirstCandidate?.call(text.trim(), engineId);
+    onFirstCandidate?.call(trimmed, engineId);
   }
 
   Future<DesktopSttTranscript?> stopAndTranscribe() async {
@@ -776,6 +819,11 @@ class DesktopSttHelperService {
     _engineUsedForFirstCandidate = null;
     _engineUsedForFinalText = null;
     _stopToPendingConfirmationMs = null;
+    _candidateText = null;
+    _candidateParseStatus = null;
+    _candidateUseful = false;
+    _candidateVisibleToUser = false;
+    _stopToUsefulCandidateMs = null;
 
     // Mark stop + grab mid-listen partial immediately (do not wait for WAV finalize).
     _tRecordingStopped = DateTime.now();
@@ -1709,6 +1757,11 @@ class DesktopSttHelperService {
       finalInferenceLatencyMs: _finalInferenceLatencyMs,
       stopToFirstCandidateMs: _stopToFirstCandidateMs,
       stopToFinalTextMs: _stopToFinalTextMs,
+      stopToUsefulCandidateMs: _stopToUsefulCandidateMs,
+      candidateText: _candidateText,
+      candidateParseStatus: _candidateParseStatus,
+      candidateUseful: _candidateUseful,
+      candidateVisibleToUser: _candidateVisibleToUser,
       audioDurationMsUsedForInference: _audioDurationMsUsedForInference,
       levelMeterRms: _capture.levelMeterRms,
       levelMeterDisplayLevel: _capture.levelMeterDisplayLevel,
@@ -1726,8 +1779,16 @@ class DesktopSttHelperService {
       sttTranscriptWithGain: _sttTranscriptWithGain,
       sttGainRejectedReason: _sttGainRejectedReason,
       overlayMinFontPt: 16,
-      overlayTitleFontPt: 19,
+      overlayTitleFontPt: 17,
       overlayDetailFontPt: 16,
+      captureStreamStarted: _capture.captureStreamStarted,
+      firstAudioFrameReceived: _capture.firstAudioFrameReceived,
+      firstNonSilentFrameMs: _capture.firstNonSilentFrameMs,
+      noSignalDetected: _capture.noSignalDetected,
+      noSignalReason: _capture.noSignalReason,
+      captureStreamError: _capture.captureStreamError,
+      levelSource: _capture.levelSource,
+      levelStreamConnected: _capture.levelStreamConnected,
     );
     unawaited(
       DesktopVoiceLastAttemptStore.write(

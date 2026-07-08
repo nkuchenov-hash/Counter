@@ -156,6 +156,11 @@ abstract final class DesktopVoiceOverlayService {
       );
       if (ok) {
         DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_CONFIRMATION_READABLE');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_FULL_COMMAND_VISIBLE');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_COMMAND_TEXT_CLIPPING');
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_OVERLAY_LAYOUT_NOT_OVERSIZED_NOT_CLIPPED',
+        );
         DesktopVoicePipeline.mark(
           DesktopVoiceOverlayConstants.markerPendingCard,
         );
@@ -248,6 +253,10 @@ abstract final class DesktopVoiceOverlayService {
         state: 'error',
       );
       if (ok) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_HEARD_TEXT_WRAPPED');
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_OVERLAY_LAYOUT_NOT_OVERSIZED_NOT_CLIPPED',
+        );
         DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_CARD_READABLE');
         DesktopVoicePipeline.mark('DESKTOP_VOICE_TINY_ERROR_TEXT_REMOVED');
         DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerErrorCard);

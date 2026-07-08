@@ -117,8 +117,23 @@ class DesktopSttDiagnostics {
     this.overlayWidthPx,
     this.overlayHeightPx,
     this.overlayMinFontPt = 16,
-    this.overlayTitleFontPt = 19,
+    this.overlayTitleFontPt = 17,
     this.overlayDetailFontPt = 16,
+    this.candidateText,
+    this.candidateParseStatus,
+    this.candidateUseful = false,
+    this.candidateVisibleToUser = false,
+    this.stopToUsefulCandidateMs,
+    this.captureStreamStarted = false,
+    this.firstAudioFrameReceived = false,
+    this.firstNonSilentFrameMs,
+    this.noSignalDetected = false,
+    this.noSignalReason,
+    this.captureStreamError,
+    this.levelSource = '—',
+    this.levelStreamConnected = false,
+    this.overlayTextClipped = false,
+    this.overlayContentLines = 0,
   });
 
   final String? helperPath;
@@ -234,6 +249,21 @@ class DesktopSttDiagnostics {
   final double overlayMinFontPt;
   final double overlayTitleFontPt;
   final double overlayDetailFontPt;
+  final String? candidateText;
+  final String? candidateParseStatus;
+  final bool candidateUseful;
+  final bool candidateVisibleToUser;
+  final int? stopToUsefulCandidateMs;
+  final bool captureStreamStarted;
+  final bool firstAudioFrameReceived;
+  final int? firstNonSilentFrameMs;
+  final bool noSignalDetected;
+  final String? noSignalReason;
+  final String? captureStreamError;
+  final String levelSource;
+  final bool levelStreamConnected;
+  final bool overlayTextClipped;
+  final int overlayContentLines;
 
   List<String> toDiagLines() {
     return [
@@ -274,6 +304,11 @@ class DesktopSttDiagnostics {
       'stop_return_reason=${stopReturnReason ?? '—'}',
       'final_inference_latency_ms=${finalInferenceLatencyMs ?? '—'}',
       'stop_to_first_candidate_ms=${stopToFirstCandidateMs ?? '—'}',
+      'stop_to_useful_candidate_ms=${stopToUsefulCandidateMs ?? '—'}',
+      'candidate_text=${candidateText ?? '—'}',
+      'candidate_parse_status=${candidateParseStatus ?? '—'}',
+      'candidate_useful=${candidateUseful ? 'yes' : 'no'}',
+      'candidate_visible_to_user=${candidateVisibleToUser ? 'yes' : 'no'}',
       'stop_to_final_text_ms=${stopToFinalTextMs ?? '—'}',
       'audio_duration_ms_used_for_inference=${audioDurationMsUsedForInference ?? '—'}',
       'level_meter_rms=${levelMeterRms.toStringAsFixed(4)}',
@@ -298,6 +333,16 @@ class DesktopSttDiagnostics {
       'overlay_min_font_pt=$overlayMinFontPt',
       'overlay_title_font_pt=$overlayTitleFontPt',
       'overlay_detail_font_pt=$overlayDetailFontPt',
+      'capture_stream_started=${captureStreamStarted ? 'yes' : 'no'}',
+      'first_audio_frame_received=${firstAudioFrameReceived ? 'yes' : 'no'}',
+      'first_non_silent_frame_ms=${firstNonSilentFrameMs ?? '—'}',
+      'no_signal_detected=${noSignalDetected ? 'yes' : 'no'}',
+      'no_signal_reason=${noSignalReason ?? '—'}',
+      'capture_stream_error=${captureStreamError ?? '—'}',
+      'level_source=$levelSource',
+      'level_stream_connected=${levelStreamConnected ? 'yes' : 'no'}',
+      'overlay_text_clipped=${overlayTextClipped ? 'yes' : 'no'}',
+      'overlay_content_lines=$overlayContentLines',
       'transcribe_endpoint=${transcribeEndpoint ?? '—'}',
       'transcribe_called=${transcribeCalled ? 'yes' : 'no'}',
       'transcribe_http_result=${transcribeHttpResult ?? '—'}',

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:counter/data/models.dart';
+
 /// How [TimelineRecord] edit Save validates and patches times.
 enum RecordEditSaveMode {
   /// Past-date create: require start+end, write completed interval.
@@ -158,9 +160,41 @@ enum RunningRecordCategorySaveUiOutcome {
   categoryUnresolved,
 }
 
+/// Outcome of applying a record edit to local Brain caches (flat + pending).
+/// Defined in [RecordOptimisticApplyResult] (`lib/data/models/record.dart`).
+
 /// When [requestedCategoryId] differs from [originalCategoryId], Save may only
-/// show success if [categoryResolvableForPbPatch] is true (both relation fields
-/// can be built). Otherwise toast would lie while Life stayed on the card.
+/// show success if resolver, local apply, and visible category all agree.
+@visibleForTesting
+RunningRecordCategorySaveUiOutcome recordCategorySaveUiOutcomeAfterApply({
+  required int? originalCategoryId,
+  required int? requestedCategoryId,
+  required bool categoryResolvableForPbPatch,
+  required RecordOptimisticApplyResult applyResult,
+  required int? visibleCategoryAfterApply,
+}) {
+  if (requestedCategoryId == null) {
+    return RunningRecordCategorySaveUiOutcome.saved;
+  }
+  if (originalCategoryId != null && requestedCategoryId == originalCategoryId) {
+    return RunningRecordCategorySaveUiOutcome.saved;
+  }
+  if (!categoryResolvableForPbPatch) {
+    return RunningRecordCategorySaveUiOutcome.categoryUnresolved;
+  }
+  if (!applyResult.success) {
+    return RunningRecordCategorySaveUiOutcome.categoryUnresolved;
+  }
+  if (!applyResult.categoryApplied) {
+    return RunningRecordCategorySaveUiOutcome.categoryUnresolved;
+  }
+  if (visibleCategoryAfterApply != requestedCategoryId) {
+    return RunningRecordCategorySaveUiOutcome.categoryUnresolved;
+  }
+  return RunningRecordCategorySaveUiOutcome.saved;
+}
+
+/// Legacy resolver-only gate (superseded by [recordCategorySaveUiOutcomeAfterApply]).
 @visibleForTesting
 RunningRecordCategorySaveUiOutcome runningRecordCategorySaveUiOutcome({
   required int? originalCategoryId,

@@ -73,6 +73,19 @@ bool _titleResolvesHint(String titleNorm, String hint) {
   return false;
 }
 
+bool _pathResolvesHint(String? displayPath, String hint) {
+  if (displayPath == null || displayPath.trim().isEmpty) return false;
+  final h = normalizeCategoryLabel(hint);
+  if (h.isEmpty) return false;
+  for (final segment in displayPath.split('>')) {
+    final segNorm = normalizeCategoryLabel(segment);
+    if (segNorm == h || segNorm.contains(h) || h.contains(segNorm)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /// Unresolved command tokens in transcript but not in record title → block write.
 bool _hasUnresolvedCommandTokens(
   String transcript,
@@ -83,7 +96,8 @@ bool _hasUnresolvedCommandTokens(
   final titleNorm = normalizeCategoryLabel(parsed.recordTitle);
   for (final hint in hints) {
     if (_transcriptContainsHint(lower, hint) &&
-        !_titleResolvesHint(titleNorm, hint)) {
+        !_titleResolvesHint(titleNorm, hint) &&
+        !_pathResolvesHint(parsed.matchedCategoryDisplayPath, hint)) {
       return true;
     }
   }
@@ -151,9 +165,17 @@ DesktopVoiceNormalizedCommand? normalizeDesktopVoiceCommand(
   }
 
   final transcript = parsed.originalTranscript.trim();
+  if (_isParentOnlyCategoryEcho(parsed)) {
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_PARENT_ONLY_RECORD_BLOCKED',
+      parsed.matchedCategoryDisplayPath ?? parsed.rootLabel,
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_GARBAGE_RECORD');
+    return null;
+  }
+
   if (_hasUnresolvedCommandTokens(transcript, parsed) &&
-      (_isParentOnlyCategoryEcho(parsed) ||
-          _categoryPathDepth(parsed.matchedCategoryDisplayPath) < 4)) {
+      _categoryPathDepth(parsed.matchedCategoryDisplayPath) < 4) {
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_PARENT_ONLY_RECORD_BLOCKED_WITH_UNRESOLVED_TOKENS',
       parsed.matchedCategoryDisplayPath ?? parsed.rootLabel,

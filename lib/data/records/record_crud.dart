@@ -468,7 +468,7 @@ extension RecordCrudExtension on DatabaseService {
   }
 
   /// In-memory cache patch so timeline UI can refresh immediately when the record sheet closes.
-  void applyOptimisticRecordRowEdit({
+  RecordOptimisticApplyResult applyOptimisticRecordRowEdit({
     required String recordId,
     String? title,
     DateTime? startTime,
@@ -481,57 +481,122 @@ extension RecordCrudExtension on DatabaseService {
     bool clearSourcePlan = false,
     String? sourcePlanPocketRecordId,
   }) {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    const noop = RecordOptimisticApplyResult(
+      updatedFlatCache: false,
+      updatedPendingMap: false,
+      categoryApplied: false,
+    );
+    if (!_isInitialized || !_hasAuthenticatedUserId) return noop;
     final originalInput = recordId.trim();
-    if (originalInput.isEmpty) return;
+    if (originalInput.isEmpty) return noop;
     final resolved =
         _tryResolveRecordIdFromCacheOnly(originalInput) ?? originalInput;
+    var updatedFlat = false;
+    var updatedPending = false;
+    var categoryApplied = false;
+    String? dayKey;
+
     final idx = _indexOfCachedRecordRow(resolved, originalInput);
-    if (idx < 0) return;
-    final row = _cachedFlatRecords[idx];
-    if (title != null) row['title'] = title;
-    if (startTime != null) {
-      row['start_time'] = startTime.toUtc().toIso8601String();
-      if (endTime == null) row['status'] = 'running';
-    }
-    if (endTime != null) {
-      row['end_time'] = endTime.toUtc().toIso8601String();
-      row['status'] = 'stopped';
-    }
-    var resolvedCategoryId = categoryId;
-    var shouldWriteCategory = categoryId != null;
-    if (syncSourcePlan && !clearSourcePlan) {
-      final sp = DatabaseService.pocketRelationIdOrNull(
-        sourcePlanPocketRecordId,
-      );
-      if (sp != null) {
-        final ic = _tryResolveCategoryIdFromSourcePlanPbIdSync(sp);
-        if (_planLocalCategoryIdIsConcrete(ic)) {
-          resolvedCategoryId = ic;
-          shouldWriteCategory = true;
-        }
+    if (idx >= 0) {
+      final row = _cachedFlatRecords[idx];
+      if (title != null) row['title'] = title;
+      if (startTime != null) {
+        row['start_time'] = startTime.toUtc().toIso8601String();
+        if (endTime == null) row['status'] = 'running';
       }
-    }
-    if (shouldWriteCategory && resolvedCategoryId != null) {
-      _applyLocalRecordCategoryDualityToRow(row, resolvedCategoryId);
-    }
-    if (note != null) row['note'] = note;
-    if (tags != null) {
-      final t = tags.trim();
-      if (t.isNotEmpty) row['tags'] = t;
-    }
-    if (checklist != null) row['checklist'] = checklist;
-    if (syncSourcePlan) {
-      if (clearSourcePlan) {
-        row['source_plan_id'] = null;
-      } else {
+      if (endTime != null) {
+        row['end_time'] = endTime.toUtc().toIso8601String();
+        row['status'] = 'stopped';
+      }
+      var resolvedCategoryId = categoryId;
+      var shouldWriteCategory = categoryId != null;
+      if (syncSourcePlan && !clearSourcePlan) {
         final sp = DatabaseService.pocketRelationIdOrNull(
           sourcePlanPocketRecordId,
         );
-        if (sp != null) row['source_plan_id'] = sp;
+        if (sp != null) {
+          final ic = _tryResolveCategoryIdFromSourcePlanPbIdSync(sp);
+          if (_planLocalCategoryIdIsConcrete(ic)) {
+            resolvedCategoryId = ic;
+            shouldWriteCategory = true;
+          }
+        }
       }
+      if (shouldWriteCategory && resolvedCategoryId != null) {
+        categoryApplied =
+            _applyLocalRecordCategoryDualityToRow(row, resolvedCategoryId) ||
+            categoryApplied;
+      }
+      if (note != null) row['note'] = note;
+      if (tags != null) {
+        final t = tags.trim();
+        if (t.isNotEmpty) row['tags'] = t;
+      }
+      if (checklist != null) row['checklist'] = checklist;
+      if (syncSourcePlan) {
+        if (clearSourcePlan) {
+          row['source_plan_id'] = null;
+        } else {
+          final sp = DatabaseService.pocketRelationIdOrNull(
+            sourcePlanPocketRecordId,
+          );
+          if (sp != null) row['source_plan_id'] = sp;
+        }
+      }
+      updatedFlat = true;
+      dayKey ??= _recordEditCalendarDayKeyFromRow(row);
     }
-    _notifyTimelineAfterRecordCacheMutation();
+
+    final pend = _optimisticPendingStartRecordMap;
+    if (pend != null &&
+        _pendingStartRecordMatchesKey(pend, originalInput, resolved)) {
+      if (title != null) pend['title'] = title;
+      if (startTime != null) {
+        pend['startTime'] = startTime.toUtc();
+        if (endTime == null) pend['status'] = 'running';
+      }
+      if (endTime != null) {
+        pend['endTime'] = endTime.toUtc();
+        pend['status'] = 'stopped';
+      } else {
+        pend['endTime'] = null;
+      }
+      var resolvedCategoryId = categoryId;
+      var shouldWriteCategory = categoryId != null;
+      if (syncSourcePlan && !clearSourcePlan) {
+        final sp = DatabaseService.pocketRelationIdOrNull(
+          sourcePlanPocketRecordId,
+        );
+        if (sp != null) {
+          final ic = _tryResolveCategoryIdFromSourcePlanPbIdSync(sp);
+          if (_planLocalCategoryIdIsConcrete(ic)) {
+            resolvedCategoryId = ic;
+            shouldWriteCategory = true;
+          }
+        }
+      }
+      if (shouldWriteCategory && resolvedCategoryId != null) {
+        categoryApplied =
+            _applyTimelineRecordMapCategory(pend, resolvedCategoryId) ||
+            categoryApplied;
+      }
+      updatedPending = true;
+      dayKey ??= (pend['calendarDayStr'] ?? '').toString().trim();
+      _optimisticPendingStartRecordMap = pend;
+    }
+
+    if (updatedFlat || updatedPending) {
+      _invalidateTimelineReadCachesAfterRecordEdit(
+        dayKey: dayKey?.isNotEmpty == true ? dayKey : null,
+      );
+      _notifyTimelineAfterRecordCacheMutation();
+    }
+
+    return RecordOptimisticApplyResult(
+      updatedFlatCache: updatedFlat,
+      updatedPendingMap: updatedPending,
+      categoryApplied: categoryApplied,
+    );
   }
 
   String? _cachedRecordSourcePlanId(Map<String, dynamic> row) {
@@ -540,17 +605,13 @@ extension RecordCrudExtension on DatabaseService {
     return DatabaseService.pocketRelationIdOrNull(raw?.toString());
   }
 
-  void _applyLocalRecordCategoryDualityToRow(
+  /// Returns true when category fields were written.
+  bool _applyLocalRecordCategoryDualityToRow(
     Map<String, dynamic> row,
     int categoryId,
   ) {
     final pair = _recordCategoryDualityForLocalId(categoryId);
-    if (pair == null) {
-      // Do NOT strip an existing category when a newly selected id is not yet
-      // resolvable — that forced the card breadcrumb back to "Life".
-      return;
-    }
-    // Mirror PATCH shape: both relation fields are the 15-char PB category id.
+    if (pair == null) return false;
     row['category_id'] = pair.relationId;
     row['category_link'] = pair.relationId;
     row['categoryId'] = categoryId;
@@ -559,11 +620,51 @@ extension RecordCrudExtension on DatabaseService {
       'category_id': pair.businessId,
       'name': getCategoryRuleById(categoryId)?.name,
     };
+    return true;
+  }
+
+  String? _recordEditCalendarDayKeyFromRow(Map<String, dynamic> row) {
+    final stUtc = CategoryServiceExtension._parseDateTimeUtc(row['start_time']);
+    if (stUtc != null) {
+      return _timelineDeviceLocalDayKeyFromUtc(stUtc);
+    }
+    final timelineStart = row['startTime'];
+    if (timelineStart is DateTime) {
+      return _timelineDeviceLocalDayKeyFromUtc(timelineStart.toUtc());
+    }
+    final cd = (row['calendarDayStr'] ?? '').toString().trim();
+    if (cd.length >= 10) return cd.substring(0, 10);
+    return null;
   }
 
   /// True when [localCategoryId] can be written to records.category_id / category_link.
   bool canResolveRecordCategoryForPbPatch(int? localCategoryId) {
     return _recordCategoryDualityForLocalId(localCategoryId) != null;
+  }
+
+  /// Dual PB relation fields for an explicit local category selection (PATCH body).
+  ({String categoryId, String categoryLink})? recordDualCategoryRelationFields(
+    int? localCategoryId,
+  ) {
+    final pair = _recordCategoryDualityForLocalId(localCategoryId);
+    if (pair == null) return null;
+    return (categoryId: pair.relationId, categoryLink: pair.relationId);
+  }
+
+  /// Visible local category id for a record key (flat cache, then pending map).
+  int? visibleRecordCategoryLocalIdForKey(String recordKey) {
+    final key = recordKey.trim();
+    if (key.isEmpty) return null;
+    final resolved = _tryResolveRecordIdFromCacheOnly(key) ?? key;
+    final idx = _indexOfCachedRecordRow(resolved, key);
+    if (idx >= 0) {
+      return categoryIdFromRecordRow(_cachedFlatRecords[idx]);
+    }
+    final pend = _optimisticPendingStartRecordMap;
+    if (pend != null && _pendingStartRecordMatchesKey(pend, key, resolved)) {
+      return resolvedCategoryIdForRecord(pend);
+    }
+    return null;
   }
 
   void _applyCachedRecordCategoryAt(int index, int categoryId) {

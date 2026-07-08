@@ -563,6 +563,22 @@ class Task {
   factory Task.fromJson(Map<String, dynamic> json) => Task.fromMap(json);
 }
 
+/// Result of applying a record edit to Brain flat/pending caches.
+@immutable
+class RecordOptimisticApplyResult {
+  const RecordOptimisticApplyResult({
+    required this.updatedFlatCache,
+    required this.updatedPendingMap,
+    required this.categoryApplied,
+  });
+
+  final bool updatedFlatCache;
+  final bool updatedPendingMap;
+  final bool categoryApplied;
+
+  bool get success => updatedFlatCache || updatedPendingMap;
+}
+
 /// Precomputed Brain-side row for Timeline list (no map parsing in card [build]).
 class TimelineRecordRowVm {
   const TimelineRecordRowVm({

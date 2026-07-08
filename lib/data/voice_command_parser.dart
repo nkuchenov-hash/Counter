@@ -439,6 +439,243 @@ bool transcriptMentionsKnownScope(
   return false;
 }
 
+/// Splits comma/semicolon-separated STT command segments (punctuation-insensitive).
+List<String> splitVoiceCommandSegments(String transcript) {
+  final trimmed = transcript.trim();
+  if (trimmed.isEmpty) return const [];
+  return trimmed
+      .split(RegExp(r'[,;]+'))
+      .map((s) => s.trim().replaceAll(RegExp(r'[.!?]+$'), '').trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+}
+
+/// True when transcript starts with a known client leaf phrase (no parent prefix).
+bool transcriptMentionsKnownClientLeaf(
+  String transcript,
+  VoiceCommandCategoryIndex index,
+) {
+  final norm = normalizeCategoryLabel(repairVoiceCommandTranscript(transcript));
+  if (norm.isEmpty) return false;
+  for (final scope in index.roots) {
+    for (final client in scope.candidates) {
+      for (final phrase in client.normalizedPhrases) {
+        if (phrase.isEmpty) continue;
+        if (norm == phrase || norm.startsWith('$phrase ')) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/// Scope root OR client-leaf prefix — enables SCW/DEL MOD without "Price Reporter".
+bool transcriptMentionsKnownClientOrScope(
+  String transcript,
+  VoiceCommandCategoryIndex index,
+) {
+  return transcriptMentionsKnownScope(transcript, index) ||
+      transcriptMentionsKnownClientLeaf(transcript, index);
+}
+
+/// Exact command task titles (grammar tokens, not fuzzy aliases).
+const Set<String> kVoiceCommandTaskTitleNorms = {
+  'submit',
+  'add mod',
+  'add sin',
+  'planning',
+};
+
+Set<String> _normalizedPhrasesForCategoryRule(CategoryRule rule) {
+  final phrases = <String>{};
+  void addPhrase(String raw) {
+    final n = normalizeCategoryLabel(raw);
+    if (n.isNotEmpty) phrases.add(n);
+  }
+
+  addPhrase(rule.name);
+  final normId = (rule.normalizedId ?? '').trim();
+  if (normId.isNotEmpty) addPhrase(normId);
+  if (rule.localizedNames != null) {
+    for (final v in rule.localizedNames!.values) {
+      addPhrase(v);
+    }
+  }
+  if (rule.keywords != null) {
+    for (final list in rule.keywords!.values) {
+      for (final kw in list) {
+        addPhrase(kw);
+      }
+    }
+  }
+  return phrases;
+}
+
+bool _segmentMatchesCategoryRule(String segment, CategoryRule rule) {
+  final norm = normalizeCategoryLabel(segment);
+  if (norm.isEmpty) return false;
+  return _normalizedPhrasesForCategoryRule(rule).contains(norm);
+}
+
+class _SegmentPathMatch {
+  const _SegmentPathMatch({
+    required this.displayPath,
+    required this.localCategoryId,
+    required this.pocketBaseId,
+    required this.rootLabel,
+    required this.recordTitle,
+    required this.depth,
+  });
+
+  final String displayPath;
+  final int localCategoryId;
+  final String pocketBaseId;
+  final String rootLabel;
+  final String recordTitle;
+  final int depth;
+}
+
+_SegmentPathMatch? _matchSegmentsDeepest({
+  required CategoryRule rule,
+  required List<String> pathParts,
+  required String rootLabel,
+  required List<String> segments,
+  required int segIndex,
+}) {
+  if (rule.isArchived) return null;
+  if (segIndex >= segments.length) return null;
+  if (!_segmentMatchesCategoryRule(segments[segIndex], rule)) return null;
+
+  final name = rule.name.trim();
+  if (name.isEmpty) return null;
+  final nextPath = [...pathParts, name];
+  final root = rootLabel.isEmpty ? name : rootLabel;
+  final pb = (rule.backendRowId ?? '').trim();
+
+  _SegmentPathMatch? deepest;
+  final children = rule.children ?? const <CategoryRule>[];
+  for (final child in children) {
+    final deeper = _matchSegmentsDeepest(
+      rule: child,
+      pathParts: nextPath,
+      rootLabel: root,
+      segments: segments,
+      segIndex: segIndex + 1,
+    );
+    if (deeper != null &&
+        (deepest == null || deeper.depth > deepest.depth)) {
+      deepest = deeper;
+    }
+  }
+
+  if (deepest != null) return deepest;
+
+  if (!_isLikelyPocketBaseRowId(pb)) return null;
+
+  final titleParts = segments.sublist(segIndex + 1);
+  final title = titleParts
+      .map((s) => s.trim().replaceAll(RegExp(r'[.,!?;:]+$'), '').trim())
+      .where((s) => s.isNotEmpty)
+      .join(' ')
+      .trim();
+  if (title.isEmpty) return null;
+
+  return _SegmentPathMatch(
+    displayPath: nextPath.join(' > '),
+    localCategoryId: rule.id,
+    pocketBaseId: pb,
+    rootLabel: root,
+    recordTitle: repairPriceReporterRecordTitle(title),
+    depth: nextPath.length,
+  );
+}
+
+_SegmentPathMatch? _searchSegmentMatchInTree({
+  required CategoryRule rule,
+  required List<String> pathParts,
+  required String rootLabel,
+  required List<String> segments,
+}) {
+  if (rule.isArchived) return null;
+  final name = rule.name.trim();
+  final nextPath = name.isEmpty ? pathParts : [...pathParts, name];
+  final root = rootLabel.isEmpty && name.isNotEmpty ? name : rootLabel;
+
+  _SegmentPathMatch? best;
+
+  if (segments.isNotEmpty && _segmentMatchesCategoryRule(segments.first, rule)) {
+    final hit = _matchSegmentsDeepest(
+      rule: rule,
+      pathParts: pathParts,
+      rootLabel: rootLabel,
+      segments: segments,
+      segIndex: 0,
+    );
+    best = hit;
+  }
+
+  for (final child in rule.children ?? const <CategoryRule>[]) {
+    final deeper = _searchSegmentMatchInTree(
+      rule: child,
+      pathParts: nextPath,
+      rootLabel: root,
+      segments: segments,
+    );
+    if (deeper != null && (best == null || deeper.depth > best.depth)) {
+      best = deeper;
+    }
+  }
+  return best;
+}
+
+/// Comma-segment exact grammar: client/child path without parent prefix.
+VoiceCommandParseResult? parseSegmentedLeafVoiceCommand({
+  required List<CategoryRule> rules,
+  required String transcript,
+}) {
+  final raw = transcript.trim();
+  final segments = splitVoiceCommandSegments(raw);
+  if (segments.isEmpty) return null;
+
+  _SegmentPathMatch? best;
+  for (final root in rules) {
+    final hit = _searchSegmentMatchInTree(
+      rule: root,
+      pathParts: const [],
+      rootLabel: '',
+      segments: segments,
+    );
+    if (hit != null && (best == null || hit.depth > best.depth)) {
+      best = hit;
+    }
+  }
+
+  if (best == null) return null;
+
+  DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMA_SEGMENTS_PARSED', raw);
+  DesktopVoicePipeline.mark(
+    'DESKTOP_VOICE_LEAF_CATEGORY_MATCH_WITHOUT_PARENT_PREFIX',
+    best.displayPath,
+  );
+  DesktopVoicePipeline.mark(
+    'DESKTOP_VOICE_DEEPEST_SAFE_PATH_SELECTED',
+    best.displayPath,
+  );
+  if (best.displayPath.toLowerCase().contains('southern computer warehouse') &&
+      best.recordTitle.toLowerCase().contains('submit')) {
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_EXACT_SCW_DELMOD_SUBMIT_PARSED');
+  }
+
+  return VoiceCommandParseResult(
+    rootLabel: best.rootLabel,
+    matchedCategoryPocketBaseId: best.pocketBaseId,
+    matchedCategoryDisplayPath: best.displayPath,
+    matchedLocalCategoryId: best.localCategoryId,
+    recordTitle: best.recordTitle,
+    confidence: VoiceCommandMatchConfidence.exact,
+    originalTranscript: raw,
+  );
+}
+
 const String kPriceReporterScopeCanonical = 'price reporter';
 
 /// User-facing confirmation after a voice-started record (EN/RU templates).
@@ -460,13 +697,45 @@ String voiceCommandPendingConfirmationMessage(
   VoiceCommandParseResult result, {
   required String localeCode,
 }) {
+  return voiceCommandPendingConfirmationLines(
+    result,
+    localeCode: localeCode,
+  ).join('\n');
+}
+
+/// Multi-line pending overlay body — full command visible, no ellipsis.
+List<String> voiceCommandPendingConfirmationLines(
+  VoiceCommandParseResult result, {
+  required String localeCode,
+}) {
   final path =
       (result.matchedCategoryDisplayPath ?? result.rootLabel).trim();
   final title = result.recordTitle.trim();
-  if (localeCode == 'ru') {
-    return 'Запустить: $path — $title';
+  final parts = path
+      .split('>')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+  // Drop generic wrapper folders when deeper path exists.
+  final displayParts = parts.length > 2 &&
+          normalizeCategoryLabel(parts.first) == 'work'
+      ? parts.sublist(1)
+      : parts;
+
+  final lines = <String>[
+    localeCode == 'ru' ? 'Запустить' : 'Start',
+    ...displayParts,
+  ];
+  if (title.isNotEmpty) {
+    final leafNorm = displayParts.isEmpty
+        ? ''
+        : normalizeCategoryLabel(displayParts.last);
+    final titleNorm = normalizeCategoryLabel(title);
+    if (leafNorm.isEmpty || leafNorm != titleNorm) {
+      lines.add(title);
+    }
   }
-  return 'Start: $path — $title';
+  return lines;
 }
 
 /// User-facing confirmation after hotkey stop of a running record (EN/RU templates).
@@ -524,8 +793,13 @@ VoiceCommandParseResult parseVoiceCommand({
     );
   }
 
+  final segmentedLeaf = parseSegmentedLeafVoiceCommand(
+    rules: rules,
+    transcript: raw,
+  );
+
   VoiceCommandParseResult literal;
-  if (transcriptMentionsKnownScope(repaired, index)) {
+  if (transcriptMentionsKnownClientOrScope(repaired, index)) {
     literal = parseScopedVoiceCommand(index: index, transcript: repaired);
   } else {
     literal = VoiceCommandParseResult(
@@ -538,6 +812,17 @@ VoiceCommandParseResult parseVoiceCommand({
       originalTranscript: raw,
       ambiguityReason: 'unsupported_command',
     );
+  }
+
+  if (segmentedLeaf != null && segmentedLeaf.isSafeToStart) {
+    if (!literal.isSafeToStart ||
+        _pathDepth(segmentedLeaf.matchedCategoryDisplayPath) >
+            _pathDepth(literal.matchedCategoryDisplayPath) ||
+        (_pathDepth(segmentedLeaf.matchedCategoryDisplayPath) ==
+                _pathDepth(literal.matchedCategoryDisplayPath) &&
+            splitVoiceCommandSegments(raw).length > 1)) {
+      literal = segmentedLeaf;
+    }
   }
 
   final resolved = VoiceDomainResolver.resolve(

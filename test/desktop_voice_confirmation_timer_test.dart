@@ -203,11 +203,11 @@ void main() {
       expect(parsed.isSafeToStart, isTrue);
       expect(
         voiceCommandPendingConfirmationMessage(parsed, localeCode: 'ru'),
-        'Запустить: Price Reporter > Planning — Planning',
+        'Запустить\nPrice Reporter\nPlanning',
       );
       expect(
         voiceCommandPendingConfirmationMessage(parsed, localeCode: 'en'),
-        'Start: Price Reporter > Planning — Planning',
+        'Start\nPrice Reporter\nPlanning',
       );
     });
   });

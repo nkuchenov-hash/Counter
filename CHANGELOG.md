@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - Timeline record newly-created category persistence [shipped]
+
+* Fixed Timeline record newly-created category persistence by replacing stale previous-category retention with explicit selected-category apply, updating pending/flat record optimistic caches, invalidating Timeline read caches, and blocking false success when category apply fails.
+* **`record_crud.dart` + `record_optimistic.dart`:** [shipped] `applyOptimisticRecordRowEdit` returns `RecordOptimisticApplyResult`; updates flat cache and `_optimisticPendingStartRecordMap`; fixed `_pendingStartRecordMatchesKey` tautology that matched any non-empty key.
+* **`record_timeline_vm.dart`:** [shipped] `_invalidateTimelineReadCachesAfterRecordEdit` clears day view/index/lazy VM and refreshes warm snapshots on category-only edits.
+* **`timeline_record_edit_sheet.dart` + `record_edit_save_policy.dart`:** [shipped] Success toast gated on `recordCategorySaveUiOutcomeAfterApply` (PB resolve + local apply + visible category match).
+* **`test/record_category_edit_brain_test.dart`:** [shipped] Brain-path regression tests A–E (flat cache, pending map, PATCH dual fields, cache invalidation, Plans control).
+
 ## [2026-07-08] - Fixed record-specific newly-created category linking; Plans path was already working [shipped]
 
 * **Root cause (post-d9f9fdc):** Timeline record PATCH re-normalized category with Life/default fallback, and `_upsertFlatRecordFromPbModel` restored the prior category whenever the server id differed from cache — so create→select→Save could toast success while the card stayed on Life. Plans never used that path.
@@ -18,6 +26,13 @@
 * **`record_service.dart`:** [shipped] Upsert preserves prior category only when the server row cannot resolve a concrete local id — intentional category changes hydrate through.
 * **`timeline_record_edit_sheet.dart` + `record_edit_save_policy.dart`:** [shipped] Fire-time draft ownership via `resolvePlanningEditDraftCategoryId`; Save passes that snapshot into optimistic + `updateRecord`; success toast still gated on PB relation resolve.
 * **`test/timeline_record_edit_save_test.dart`:** [shipped] Separate Plans vs Records create→Save proofs (dual PATCH fields, upsert preserve rule, normalize verbatim keep).
+
+## [2026-07-08] - P0 Desktop Voice: SCW comma parser, overlay layout, honest latency [engineering]
+
+* **Parser:** Comma-segment leaf grammar accepts `Southern Computer Warehouse, DEL MOD, Submit.` without `Price Reporter` prefix; deepest safe path + `Submit` title; markers `DESKTOP_VOICE_EXACT_SCW_DELMOD_SUBMIT_PARSED`, `COMMA_SEGMENTS_PARSED`, `LEAF_CATEGORY_MATCH_WITHOUT_PARENT_PREFIX`.
+* **Overlay:** Native pending/error cards 560px wide, 17pt title / 16pt body, multi-line word-wrap (no command ellipsis); pending lines: Запустить / path / title.
+* **Latency:** `candidate_useful` gate — bad partials (e.g. `So then, compute theware.`) no longer count toward `<500ms` success; `stop_to_useful_candidate_ms` diagnostic added.
+* **Capture:** `capture_stream_started`, `first_audio_frame_received`, `no_signal_detected` diagnostics; stream reset after no-signal; mic error does not call STT.
 
 ## [2026-07-08] - P0 Desktop Voice: whisper-tiny is command STT primary [engineering]
 

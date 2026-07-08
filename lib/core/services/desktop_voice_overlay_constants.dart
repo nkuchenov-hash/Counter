@@ -3,17 +3,17 @@
 /// Hard rule: no Desktop Voice overlay text below 16pt equivalent.
 abstract final class DesktopVoiceOverlayConstants {
   static const double minFontPt = 16;
-  static const double titleFontPt = 19;
+  static const double titleFontPt = 17;
   static const double detailFontPt = 16;
 
   static const int listeningWidthPx = 340;
   static const int listeningHeightPx = 68;
   static const int processingWidthPx = 340;
   static const int processingHeightPx = 68;
-  static const int errorWidthPx = 480;
-  static const int errorHeightPx = 136;
-  static const int pendingWidthPx = 480;
-  static const int pendingHeightPx = 124;
+  static const int errorWidthPx = 560;
+  static const int errorMinHeightPx = 132;
+  static const int pendingWidthPx = 560;
+  static const int pendingMinHeightPx = 132;
   static const int closeHitPx = 32;
 
   static const String markerMinFont16 =

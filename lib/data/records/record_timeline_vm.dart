@@ -12,9 +12,38 @@ extension RecordTimelineVmExtension on DatabaseService {
 
   static const int _kTimelineIndexMaxSyncRecords = 480;
 
-  void _markTimelineDayIndexDirty() {
+  void _markTimelineDayIndexDirty({String? dayKey}) {
     _timelineDayIndexDirty = true;
     _timelineLazyRowVmByDay.clear();
+    if (dayKey != null && dayKey.trim().isNotEmpty) {
+      final k = dayKey.trim();
+      _timelineDayViewCache.remove(k);
+      _timelineRecordsDayIndex.remove(k);
+      _timelineLazyRowVmByDay.remove(k);
+    } else {
+      _timelineDayViewCache.clear();
+      _timelineRecordsDayIndex.clear();
+    }
+  }
+
+  /// After in-place record edit: rebuild warm snapshots even when flat count unchanged.
+  void _refreshTimelineWarmSnapshotsAfterRecordMutation({String? dayKey}) {
+    if (_timelineWarm.center == null) return;
+    if (dayKey != null && dayKey.trim().isNotEmpty) {
+      final k = dayKey.trim();
+      final day = WarmSnapshotWindow.parseDateKey(k);
+      _timelineWarm.put(k, _buildTimelineDaySnapshot(day));
+      return;
+    }
+    for (final key in _timelineWarm.dateKeys.toList()) {
+      final day = WarmSnapshotWindow.parseDateKey(key);
+      _timelineWarm.put(key, _buildTimelineDaySnapshot(day));
+    }
+  }
+
+  void _invalidateTimelineReadCachesAfterRecordEdit({String? dayKey}) {
+    _markTimelineDayIndexDirty(dayKey: dayKey);
+    _refreshTimelineWarmSnapshotsAfterRecordMutation(dayKey: dayKey);
   }
 
   void _ensureTimelineDayIndex() {

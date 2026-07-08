@@ -129,7 +129,7 @@ class TimelineRecordSheetContentState
     );
   }
 
-  void _applyRecordLocalEdit({
+  RecordOptimisticApplyResult _applyRecordLocalEdit({
     required String title,
     required String noteText,
     required List<Map<String, dynamic>> checklistPayload,
@@ -138,8 +138,13 @@ class TimelineRecordSheetContentState
     DateTime? endUtc,
     int? categoryId,
   }) {
-    if (!_isPersistedRecord) return;
-    DatabaseService.instance.applyOptimisticRecordRowEdit(
+    const noop = RecordOptimisticApplyResult(
+      updatedFlatCache: false,
+      updatedPendingMap: false,
+      categoryApplied: false,
+    );
+    if (!_isPersistedRecord) return noop;
+    return DatabaseService.instance.applyOptimisticRecordRowEdit(
       recordId: _recordUpdateKey,
       title: title,
       startTime: startUtc,
@@ -650,18 +655,7 @@ class TimelineRecordSheetContentState
           DatabaseService.instance.canResolveRecordCategoryForPbPatch(
             requestedCat,
           );
-      final uiOutcome = runningRecordCategorySaveUiOutcome(
-        originalCategoryId: originalCat,
-        requestedCategoryId: requestedCat,
-        categoryResolvableForPbPatch: categoryOk,
-      );
-      if (uiOutcome == RunningRecordCategorySaveUiOutcome.categoryUnresolved) {
-        // Do not show false success while card would keep Life / old category.
-        AppSnack.failed();
-        return;
-      }
-
-      _applyRecordLocalEdit(
+      final applyResult = _applyRecordLocalEdit(
         title: draft.title,
         noteText: noteText,
         checklistPayload: checklistPayload,
@@ -670,6 +664,21 @@ class TimelineRecordSheetContentState
         endUtc: null,
         categoryId: draft.categoryId,
       );
+      final visibleCat = DatabaseService.instance.visibleRecordCategoryLocalIdForKey(
+        _recordUpdateKey,
+      );
+      final uiOutcome = recordCategorySaveUiOutcomeAfterApply(
+        originalCategoryId: originalCat,
+        requestedCategoryId: requestedCat,
+        categoryResolvableForPbPatch: categoryOk,
+        applyResult: applyResult,
+        visibleCategoryAfterApply: visibleCat,
+      );
+      if (uiOutcome == RunningRecordCategorySaveUiOutcome.categoryUnresolved) {
+        AppSnack.failed();
+        return;
+      }
+
       final optimistic = _buildOptimisticRecord(
         title: draft.title,
         noteText: noteText,
@@ -711,17 +720,7 @@ class TimelineRecordSheetContentState
         DatabaseService.instance.canResolveRecordCategoryForPbPatch(
           saveCategoryId,
         );
-    final uiOutcomeStopped = runningRecordCategorySaveUiOutcome(
-      originalCategoryId: originalCatStopped,
-      requestedCategoryId: saveCategoryId,
-      categoryResolvableForPbPatch: categoryOkStopped,
-    );
-    if (uiOutcomeStopped ==
-        RunningRecordCategorySaveUiOutcome.categoryUnresolved) {
-      AppSnack.failed();
-      return;
-    }
-    _applyRecordLocalEdit(
+    final applyStopped = _applyRecordLocalEdit(
       title: title,
       noteText: noteText,
       checklistPayload: checklistPayload,
@@ -730,6 +729,22 @@ class TimelineRecordSheetContentState
       endUtc: endUtc,
       categoryId: saveCategoryId,
     );
+    final visibleCatStopped =
+        DatabaseService.instance.visibleRecordCategoryLocalIdForKey(
+      _recordUpdateKey,
+    );
+    final uiOutcomeStopped = recordCategorySaveUiOutcomeAfterApply(
+      originalCategoryId: originalCatStopped,
+      requestedCategoryId: saveCategoryId,
+      categoryResolvableForPbPatch: categoryOkStopped,
+      applyResult: applyStopped,
+      visibleCategoryAfterApply: visibleCatStopped,
+    );
+    if (uiOutcomeStopped ==
+        RunningRecordCategorySaveUiOutcome.categoryUnresolved) {
+      AppSnack.failed();
+      return;
+    }
     final optimisticStopped = _buildOptimisticRecord(
       title: title,
       noteText: noteText,

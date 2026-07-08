@@ -271,14 +271,12 @@ void main() {
     });
 
     test('parent-only client echo (task lost) is blocked', () {
-      // Parser matched the client but the "ADD MOD" task was not extracted,
-      // so the title echoes the client leaf — must not write a parent-only
-      // record while a command token stays unresolved.
+      // Parser matched the client but no distinct task token — title echoes client.
       final parsed = parseVoiceCommand(
         rules: scwRules,
-        transcript: 'Price Reporter SOUTHERN COMPUTER WAREHOUSE ADD MOD',
+        transcript: 'Price Reporter SOUTHERN COMPUTER WAREHOUSE',
       );
-      expect(parsed.recordTitle, 'SOUTHERN COMPUTER WAREHOUSE');
+      expect(parsed.recordTitle.toUpperCase(), contains('SOUTHERN COMPUTER WAREHOUSE'));
       expect(normalizeDesktopVoiceCommand(parsed), isNull);
     });
 

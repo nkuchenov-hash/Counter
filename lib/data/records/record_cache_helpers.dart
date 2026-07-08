@@ -118,3 +118,88 @@ extension RecordCacheProjectionExtension on DatabaseService {
     }
   }
 }
+
+/// @visibleForTesting Brain harness for record category edit integration tests.
+extension RecordBrainTestBridge on DatabaseService {
+  @visibleForTesting
+  void debugResetRecordBrainTestHarness() {
+    DatabaseService.debugAuthUserIdForTests = null;
+    _cachedFlatRecords = [];
+    _optimisticPendingStartRecordMap = null;
+    _timelineDayIndexDirty = true;
+    _timelineDayViewCache.clear();
+    _timelineLazyRowVmByDay.clear();
+    _timelineRecordsDayIndex.clear();
+    _rules = [];
+    _isInitialized = false;
+    currentProfileId = null;
+  }
+
+  @visibleForTesting
+  void debugActivateRecordBrainTestHarness({
+    required String userId,
+    required List<CategoryRule> categories,
+  }) {
+    DatabaseService.debugAuthUserIdForTests = userId;
+    currentProfileId = userId;
+    _isInitialized = true;
+    _rules = List<CategoryRule>.from(categories);
+    _categoryController.add(List.from(_rules));
+  }
+
+  @visibleForTesting
+  void debugSeedFlatRecordRowForTest(Map<String, dynamic> row) {
+    _cachedFlatRecords = [..._cachedFlatRecords, Map<String, dynamic>.from(row)];
+    _markTimelineDayIndexDirty();
+  }
+
+  @visibleForTesting
+  void debugSeedPendingStartRecordForTest(Map<String, dynamic> timelineRow) {
+    _optimisticPendingStartRecordMap = Map<String, dynamic>.from(timelineRow);
+  }
+
+  @visibleForTesting
+  Map<String, dynamic>? debugFlatRecordRowForTestKey(String recordKey) {
+    final key = recordKey.trim();
+    if (key.isEmpty) return null;
+    final resolved = _tryResolveRecordIdFromCacheOnly(key) ?? key;
+    final idx = _indexOfCachedRecordRow(resolved, key);
+    if (idx < 0) return null;
+    return Map<String, dynamic>.from(_cachedFlatRecords[idx]);
+  }
+
+  @visibleForTesting
+  Map<String, dynamic>? debugPendingStartRecordForTest() {
+    final p = _optimisticPendingStartRecordMap;
+    if (p == null) return null;
+    return Map<String, dynamic>.from(p);
+  }
+
+  @visibleForTesting
+  String categoryDisplayPathForRecordKeyOnDay({
+    required String recordKey,
+    required DateTime day,
+  }) {
+    final rows = peekTimelineRecordsForDate(day);
+    final key = recordKey.trim();
+    for (final row in rows) {
+      final biz = (row['record_id'] ?? '').toString().trim();
+      final id = (row['id'] ?? '').toString().trim();
+      if (biz == key || id == key || 'optimistic-$biz' == key) {
+        return categoryDisplayPathForRecordData(row);
+      }
+    }
+    return '';
+  }
+
+  @visibleForTesting
+  Future<Map<String, dynamic>> debugRecordPatchUpdatesForCategory({
+    required int localCategoryId,
+    String title = 'test',
+  }) async {
+    return _buildRecordPatchUpdates(
+      title: title,
+      categoryId: localCategoryId,
+    );
+  }
+}

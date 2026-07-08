@@ -61,6 +61,26 @@ class DesktopVoiceAudioCapture {
   double _levelMeterDisplay = 0;
   double _levelMeterPeakHold = 0;
   int _overlayLevelEventsCount = 0;
+  bool _captureStreamStarted = false;
+  bool _firstAudioFrameReceived = false;
+  int? _firstNonSilentFrameMs;
+  DateTime? _captureStreamStartedAt;
+  bool _noSignalDetected = false;
+  String? _noSignalReason;
+  String? _captureStreamError;
+  String _levelSource = '—';
+
+  bool get captureStreamStarted => _captureStreamStarted;
+  bool get firstAudioFrameReceived => _firstAudioFrameReceived;
+  int? get firstNonSilentFrameMs => _firstNonSilentFrameMs;
+  bool get noSignalDetected => _noSignalDetected;
+  String? get noSignalReason => _noSignalReason;
+  String? get captureStreamError => _captureStreamError;
+  String get levelSource => _levelSource;
+  bool get levelStreamConnected =>
+      _usingHelperCapture
+          ? _helperLevelTimer != null
+          : _audioSub != null;
 
   Stream<double>? get amplitudeStream => _ampController?.stream;
   int get capturedBytes => _buffer.length;
@@ -126,13 +146,21 @@ class DesktopVoiceAudioCapture {
       _levelMeterDisplay = 0;
       _levelMeterPeakHold = 0;
       _overlayLevelEventsCount = 0;
+      _captureStreamStarted = false;
+      _firstAudioFrameReceived = false;
+      _firstNonSilentFrameMs = null;
+      _captureStreamStartedAt = null;
+      _noSignalDetected = false;
+      _noSignalReason = null;
+      _captureStreamError = null;
+      _levelSource = '—';
+      _usingHelperCapture = false;
       _rawCaptureRms = 0;
       _rawCapturePeak = 0;
       _processedWavRms = 0;
       _processedWavPeak = 0;
       _sessionVolume = null;
       _endpointVolume = null;
-      _usingHelperCapture = false;
       _ampController = StreamController<double>.broadcast();
 
       // Primary: Handy-like CPAL/WASAPI F32 via STT helper.
@@ -174,6 +202,9 @@ class DesktopVoiceAudioCapture {
         return false;
       }
       _usingHelperCapture = true;
+      _captureStreamStarted = true;
+      _captureStreamStartedAt = DateTime.now();
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CAPTURE_STREAM_STARTED');
       _captureBackend = (body['capture_backend'] as String?) ?? 'cpal_wasapi';
       _captureApi = (body['capture_api'] as String?) ?? 'Wasapi';
       _rawCaptureFormat = (body['raw_capture_format'] as String?) ?? 'F32';
@@ -213,8 +244,11 @@ class DesktopVoiceAudioCapture {
       _helperLevelTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
         unawaited(_pollHelperLevel());
       });
+      _levelSource = 'cpal_wasapi_active_capture';
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_LEVEL_SOURCE_ACTIVE_CAPTURE');
       return true;
     } catch (e) {
+      _captureStreamError = e.toString();
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_CPAL_CAPTURE_START_FAILED',
         e.toString(),
@@ -242,6 +276,17 @@ class DesktopVoiceAudioCapture {
 
   void _onLevel({required double peak, required double rms}) {
     _pcmChunksCount++;
+    if (!_firstAudioFrameReceived) {
+      _firstAudioFrameReceived = true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_FIRST_AUDIO_FRAME_RECEIVED');
+    }
+    if (!_audioLevelSeen &&
+        (rms >= _levelThreshold || peak >= _levelThreshold) &&
+        _captureStreamStartedAt != null) {
+      _firstNonSilentFrameMs = DateTime.now()
+          .difference(_captureStreamStartedAt!)
+          .inMilliseconds;
+    }
     if (rms < _rmsMin) _rmsMin = rms;
     if (rms > _rmsMax) _rmsMax = rms;
     if (peak > _peakMax) _peakMax = peak;
@@ -320,6 +365,11 @@ class DesktopVoiceAudioCapture {
       ),
     );
     _audioSub = stream.listen(_onChunk);
+    _captureStreamStarted = true;
+    _captureStreamStartedAt = DateTime.now();
+    _levelSource = 'record_windows_16k_mono_fallback';
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_CAPTURE_STREAM_STARTED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_LEVEL_SOURCE_ACTIVE_CAPTURE');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BARS_REAL_AUDIO_PRESERVED');
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_F32_CAPTURE_IF_AVAILABLE',
@@ -566,6 +616,10 @@ class DesktopVoiceAudioCapture {
 
     if (pcm.length < 3200) {
       _lastError = 'Not enough audio';
+      _noSignalDetected = true;
+      _noSignalReason = 'not_enough_audio';
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_DETECTED');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_ERROR_CLASSIFIED');
       return null;
     }
 
@@ -638,8 +692,15 @@ class DesktopVoiceAudioCapture {
         await http
             .post(Uri.parse('$_helperBase/capture/cancel'))
             .timeout(const Duration(seconds: 2));
-      } catch (_) {}
+      } catch (e) {
+        _captureStreamError ??= e.toString();
+      }
       _usingHelperCapture = false;
+      if (_noSignalDetected) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_CAPTURE_STREAM_RESET_AFTER_NO_SIGNAL',
+        );
+      }
     }
     try {
       await _audioSub?.cancel();

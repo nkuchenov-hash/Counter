@@ -129,4 +129,42 @@ extension RecordOptimisticExtension on DatabaseService {
       DatabaseService._log(st.toString());
     }
   }
+
+  bool _pendingStartRecordMatchesKey(
+    Map<String, dynamic> pending,
+    String originalInput,
+    String resolved,
+  ) {
+    final o = originalInput.trim();
+    final r = resolved.trim();
+    if (o.isEmpty && r.isEmpty) return false;
+    final biz = (pending['record_id'] ?? '').toString().trim();
+    final id =
+        (pending['id'] ?? pending['backendRestPathId'] ?? '').toString().trim();
+    final keys = <String>[
+      if (biz.isNotEmpty) biz,
+      if (id.isNotEmpty) id,
+      if (biz.isNotEmpty) 'optimistic-$biz',
+    ];
+    if (o.isNotEmpty && keys.any((k) => k == o)) return true;
+    if (r.isNotEmpty && r != o && keys.any((k) => k == r)) return true;
+    return false;
+  }
+
+  /// Timeline VM row shape (pending start overlay) — uses camelCase categoryId.
+  bool _applyTimelineRecordMapCategory(
+    Map<String, dynamic> row,
+    int categoryId,
+  ) {
+    final pair = _recordCategoryDualityForLocalId(categoryId);
+    if (pair == null) return false;
+    row['categoryId'] = categoryId;
+    row['categoryKey'] = pair.relationId;
+    row['_expanded_category'] = <String, dynamic>{
+      'id': pair.relationId,
+      'category_id': pair.businessId,
+      'name': getCategoryRuleById(categoryId)?.name,
+    };
+    return true;
+  }
 }

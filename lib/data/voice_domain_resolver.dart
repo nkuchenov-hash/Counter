@@ -638,6 +638,27 @@ abstract final class VoiceDomainResolver {
     for (final entry in _collectCategoryPathEntries(rules)) {
       addPathPhrases(entry);
 
+      // Path + known task title suffixes (Submit, ADD MOD, …) for comma-segment STT.
+      final pathNorm =
+          entry.pathParts.map(normalizeCategoryLabel).join(' ');
+      for (final taskNorm in kVoiceCommandTaskTitleNorms) {
+        add(
+          phrase: '$pathNorm $taskNorm',
+          displayPath: entry.displayPath,
+          localCategoryId: entry.localCategoryId,
+          pocketBaseId: entry.pocketBaseId,
+          rootLabel: entry.pathParts.first,
+          recordTitle: repairPriceReporterRecordTitle(
+            taskNorm == 'add mod'
+                ? 'ADD MOD'
+                : taskNorm == 'add sin'
+                    ? 'ADD SIN'
+                    : taskNorm[0].toUpperCase() + taskNorm.substring(1),
+          ),
+          depth: entry.depth,
+        );
+      }
+
       final isPlanningLeaf =
           normalizeCategoryLabel(entry.categoryName) == 'planning';
       final underPriceReporter = entry.pathParts.any(
@@ -851,6 +872,13 @@ VoiceCommandParseResult _selectBestParseCandidate({
 
       final literalExact = literal.confidence == VoiceCommandMatchConfidence.exact &&
           literal.isSafeToStart;
+
+      // Prefer deeper segmented/literal exact over shallow domain fuzzy match.
+      if (literalExact && domainDepth < literalDepth) {
+        VoiceCommandParseComparison.selectedCandidatePath = literalPath;
+        VoiceCommandParseComparison.selectedCandidateReason = 'literal_deeper_than_domain';
+        return literal;
+      }
 
       if (literalExact &&
           domainDepth > literalDepth &&

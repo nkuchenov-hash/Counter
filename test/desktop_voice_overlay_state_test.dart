@@ -35,7 +35,7 @@ void main() {
       );
       expect(
         DesktopVoiceOverlayConstants.titleFontPt,
-        inInclusiveRange(18, 20),
+        inInclusiveRange(16, 18),
       );
       expect(
         DesktopVoiceOverlayConstants.detailFontPt,
@@ -51,19 +51,19 @@ void main() {
       );
       expect(
         DesktopVoiceOverlayConstants.errorWidthPx,
-        inInclusiveRange(420, 520),
+        inInclusiveRange(520, 680),
       );
       expect(
-        DesktopVoiceOverlayConstants.errorHeightPx,
-        inInclusiveRange(120, 150),
+        DesktopVoiceOverlayConstants.errorMinHeightPx,
+        inInclusiveRange(120, 200),
       );
       expect(
         DesktopVoiceOverlayConstants.pendingWidthPx,
-        inInclusiveRange(420, 520),
+        inInclusiveRange(520, 680),
       );
       expect(
-        DesktopVoiceOverlayConstants.pendingHeightPx,
-        inInclusiveRange(110, 140),
+        DesktopVoiceOverlayConstants.pendingMinHeightPx,
+        inInclusiveRange(110, 200),
       );
       expect(
         DesktopVoiceOverlayConstants.closeHitPx,
