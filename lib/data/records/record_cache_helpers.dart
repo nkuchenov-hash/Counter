@@ -65,9 +65,25 @@ extension RecordCacheProjectionExtension on DatabaseService {
           '${u.year}-${u.month}-${u.day}T${u.hour}:${u.minute}:${u.second}',
         );
       }
+      // Category-only edits do not change length/times/title — must bust stream dedupe.
+      b.write('|');
+      final catLocal = r['categoryId'];
+      if (catLocal != null) {
+        b.write(catLocal.toString());
+      } else {
+        b.write(
+          (r['category_id'] ?? r['categoryKey'] ?? '').toString().trim(),
+        );
+      }
       b.write(';');
     }
     return b.toString();
+  }
+
+  /// @visibleForTesting Stream dedupe fingerprint for a calendar day.
+  @visibleForTesting
+  String debugTimelineRecordsStreamSignatureForDay(DateTime day) {
+    return _timelineRecordsStreamDistinctSignature(peekTimelineRecordsForDate(day));
   }
 
   /// Per-call **async\*** stream: one subscription per [TimelinePage] (recreated on date change only).
@@ -144,6 +160,13 @@ extension RecordBrainTestBridge on DatabaseService {
     currentProfileId = userId;
     _isInitialized = true;
     _rules = List<CategoryRule>.from(categories);
+    _categoryController.add(List.from(_rules));
+  }
+
+  /// Simulates a successful picker create POST (category now in tree with PB id).
+  @visibleForTesting
+  void debugAddCategoryRuleForTest(CategoryRule rule) {
+    _rules = [..._rules, rule];
     _categoryController.add(List.from(_rules));
   }
 

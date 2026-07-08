@@ -164,7 +164,7 @@ enum RunningRecordCategorySaveUiOutcome {
 /// Defined in [RecordOptimisticApplyResult] (`lib/data/models/record.dart`).
 
 /// When [requestedCategoryId] differs from [originalCategoryId], Save may only
-/// show success if resolver, local apply, and visible category all agree.
+/// show success if resolver, local apply, visible category, and PATCH fields agree.
 @visibleForTesting
 RunningRecordCategorySaveUiOutcome recordCategorySaveUiOutcomeAfterApply({
   required int? originalCategoryId,
@@ -172,6 +172,7 @@ RunningRecordCategorySaveUiOutcome recordCategorySaveUiOutcomeAfterApply({
   required bool categoryResolvableForPbPatch,
   required RecordOptimisticApplyResult applyResult,
   required int? visibleCategoryAfterApply,
+  required bool patchDualFieldsAvailable,
 }) {
   if (requestedCategoryId == null) {
     return RunningRecordCategorySaveUiOutcome.saved;
@@ -180,6 +181,9 @@ RunningRecordCategorySaveUiOutcome recordCategorySaveUiOutcomeAfterApply({
     return RunningRecordCategorySaveUiOutcome.saved;
   }
   if (!categoryResolvableForPbPatch) {
+    return RunningRecordCategorySaveUiOutcome.categoryUnresolved;
+  }
+  if (!patchDualFieldsAvailable) {
     return RunningRecordCategorySaveUiOutcome.categoryUnresolved;
   }
   if (!applyResult.success) {

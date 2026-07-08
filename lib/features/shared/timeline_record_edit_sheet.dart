@@ -667,12 +667,19 @@ class TimelineRecordSheetContentState
       final visibleCat = DatabaseService.instance.visibleRecordCategoryLocalIdForKey(
         _recordUpdateKey,
       );
+      final patchDualOk = requestedCat == null ||
+          requestedCat == originalCat ||
+          DatabaseService.instance.recordDualCategoryRelationFields(
+                requestedCat,
+              ) !=
+              null;
       final uiOutcome = recordCategorySaveUiOutcomeAfterApply(
         originalCategoryId: originalCat,
         requestedCategoryId: requestedCat,
         categoryResolvableForPbPatch: categoryOk,
         applyResult: applyResult,
         visibleCategoryAfterApply: visibleCat,
+        patchDualFieldsAvailable: patchDualOk,
       );
       if (uiOutcome == RunningRecordCategorySaveUiOutcome.categoryUnresolved) {
         AppSnack.failed();
@@ -733,12 +740,19 @@ class TimelineRecordSheetContentState
         DatabaseService.instance.visibleRecordCategoryLocalIdForKey(
       _recordUpdateKey,
     );
+    final patchDualOkStopped = saveCategoryId == null ||
+        saveCategoryId == originalCatStopped ||
+        DatabaseService.instance.recordDualCategoryRelationFields(
+              saveCategoryId,
+            ) !=
+            null;
     final uiOutcomeStopped = recordCategorySaveUiOutcomeAfterApply(
       originalCategoryId: originalCatStopped,
       requestedCategoryId: saveCategoryId,
       categoryResolvableForPbPatch: categoryOkStopped,
       applyResult: applyStopped,
       visibleCategoryAfterApply: visibleCatStopped,
+      patchDualFieldsAvailable: patchDualOkStopped,
     );
     if (uiOutcomeStopped ==
         RunningRecordCategorySaveUiOutcome.categoryUnresolved) {

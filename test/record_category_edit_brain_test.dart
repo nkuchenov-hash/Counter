@@ -6,8 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 const _testUserId = 'testuserbrain01';
 const _oldCatA = 101;
+const _existingCatB = 202;
 const _newCat = 777;
 const _oldPbA = 'oldcategory00001';
+const _existingPbB = 'existingcatb0001';
 const _newPb = 'newcategory00001';
 const _recordPbId = 'recpbrow0000001';
 const _recordBizId = '11111111-2222-4333-8444-555555555555';
@@ -28,7 +30,56 @@ void main() {
     db.debugResetRecordBrainTestHarness();
   });
 
-  group('A — flat cache running record + newly-created category', () {
+  group('A — existing category B (pre-seeded, not create)', () {
+    setUp(() {
+      db.debugActivateRecordBrainTestHarness(
+        userId: _testUserId,
+        categories: [
+          _cat(_oldCatA, 'Old Category A', _oldPbA),
+          _cat(_existingCatB, 'Existing Category B', _existingPbB),
+        ],
+      );
+      db.debugSeedFlatRecordRowForTest(<String, dynamic>{
+        'id': _recordPbId,
+        'record_id': _recordBizId,
+        'user_id': _testUserId,
+        'title': 'Running task',
+        'status': 'running',
+        'start_time': '2026-07-08T13:00:00.000Z',
+        'category_id': _oldPbA,
+        'category_link': _oldPbA,
+        'categoryId': _oldCatA,
+      });
+    });
+
+    test('select Existing B updates flat row and timeline read model immediately',
+        () {
+      final day = DateTime.utc(2026, 7, 8);
+      final sigBefore = db.debugTimelineRecordsStreamSignatureForDay(day);
+      expect(sigBefore, contains(_oldCatA.toString()));
+
+      final result = db.applyOptimisticRecordRowEdit(
+        recordId: _recordPbId,
+        title: 'Running task',
+        categoryId: _existingCatB,
+      );
+      expect(result.success, isTrue);
+      expect(result.categoryApplied, isTrue);
+
+      final sigAfter = db.debugTimelineRecordsStreamSignatureForDay(day);
+      expect(sigAfter, isNot(sigBefore));
+      expect(sigAfter, contains(_existingCatB.toString()));
+
+      final path = db.categoryDisplayPathForRecordKeyOnDay(
+        recordKey: _recordPbId,
+        day: day,
+      );
+      expect(path, contains('Existing Category B'));
+      expect(path, isNot(contains('Old Category A')));
+    });
+  });
+
+  group('B — flat cache running record + newly-created category C', () {
     setUp(() {
       db.debugActivateRecordBrainTestHarness(
         userId: _testUserId,
@@ -92,13 +143,100 @@ void main() {
           categoryResolvableForPbPatch: true,
           applyResult: apply,
           visibleCategoryAfterApply: visible,
+          patchDualFieldsAvailable: true,
         ),
         RunningRecordCategorySaveUiOutcome.saved,
       );
     });
   });
 
-  group('B — pending optimistic start row + newly-created category', () {
+  group('C — picker create handoff then Save (category C added to tree)', () {
+    setUp(() {
+      db.debugActivateRecordBrainTestHarness(
+        userId: _testUserId,
+        categories: [
+          _cat(_oldCatA, 'Old Category A', _oldPbA),
+        ],
+      );
+      db.debugSeedFlatRecordRowForTest(<String, dynamic>{
+        'id': _recordPbId,
+        'record_id': _recordBizId,
+        'user_id': _testUserId,
+        'title': 'Running task',
+        'status': 'running',
+        'start_time': '2026-07-08T13:00:00.000Z',
+        'category_id': _oldPbA,
+        'category_link': _oldPbA,
+        'categoryId': _oldCatA,
+      });
+    });
+
+    test('after create POST, New Category C binds with dual PB PATCH fields', () {
+      // Simulate successful picker create (category not in tree until POST returns).
+      db.debugAddCategoryRuleForTest(
+        _cat(_newCat, 'New Category C', _newPb, slug: 'new_category_c'),
+      );
+      expect(db.canResolveRecordCategoryForPbPatch(_newCat), isTrue);
+
+      final dual = db.recordDualCategoryRelationFields(_newCat);
+      expect(dual?.categoryId, _newPb);
+      expect(dual?.categoryLink, _newPb);
+
+      final result = db.applyOptimisticRecordRowEdit(
+        recordId: _recordPbId,
+        categoryId: _newCat,
+      );
+      expect(result.categoryApplied, isTrue);
+
+      final path = db.categoryDisplayPathForRecordKeyOnDay(
+        recordKey: _recordPbId,
+        day: DateTime.utc(2026, 7, 8),
+      );
+      expect(path, contains('New Category C'));
+      expect(
+        recordCategorySaveUiOutcomeAfterApply(
+          originalCategoryId: _oldCatA,
+          requestedCategoryId: _newCat,
+          categoryResolvableForPbPatch: true,
+          applyResult: result,
+          visibleCategoryAfterApply:
+              db.visibleRecordCategoryLocalIdForKey(_recordPbId),
+          patchDualFieldsAvailable: dual != null,
+        ),
+        RunningRecordCategorySaveUiOutcome.saved,
+      );
+    });
+
+    test('blocks success when created category lacks PB row id', () {
+      const orphanLocal = 999;
+      db.debugAddCategoryRuleForTest(
+        CategoryRule(
+          id: orphanLocal,
+          name: 'Orphan No PB',
+          normalizedId: 'orphan_no_pb',
+        ),
+      );
+      expect(db.canResolveRecordCategoryForPbPatch(orphanLocal), isFalse);
+      expect(db.recordDualCategoryRelationFields(orphanLocal), isNull);
+      expect(
+        recordCategorySaveUiOutcomeAfterApply(
+          originalCategoryId: _oldCatA,
+          requestedCategoryId: orphanLocal,
+          categoryResolvableForPbPatch: false,
+          applyResult: const RecordOptimisticApplyResult(
+            updatedFlatCache: false,
+            updatedPendingMap: false,
+            categoryApplied: false,
+          ),
+          visibleCategoryAfterApply: _oldCatA,
+          patchDualFieldsAvailable: false,
+        ),
+        RunningRecordCategorySaveUiOutcome.categoryUnresolved,
+      );
+    });
+  });
+
+  group('D — pending optimistic start row + newly-created category', () {
     setUp(() {
       db.debugActivateRecordBrainTestHarness(
         userId: _testUserId,
@@ -163,13 +301,14 @@ void main() {
           categoryResolvableForPbPatch: true,
           applyResult: result,
           visibleCategoryAfterApply: null,
+          patchDualFieldsAvailable: true,
         ),
         RunningRecordCategorySaveUiOutcome.categoryUnresolved,
       );
     });
   });
 
-  group('C — PATCH payload dual PB relation fields', () {
+  group('E — PATCH payload dual PB relation fields', () {
     setUp(() {
       db.debugActivateRecordBrainTestHarness(
         userId: _testUserId,
@@ -197,7 +336,7 @@ void main() {
     });
   });
 
-  group('D — Timeline cache invalidation after category edit', () {
+  group('F — Timeline cache invalidation after category edit', () {
     setUp(() {
       db.debugActivateRecordBrainTestHarness(
         userId: _testUserId,
@@ -241,7 +380,7 @@ void main() {
     });
   });
 
-  group('E — Plans control (unchanged)', () {
+  group('G — Plans control (unchanged)', () {
     test('plan create→Save draft still uses new category id', () {
       const oldPlanCat = 42;
       const newPlanCat = 501;

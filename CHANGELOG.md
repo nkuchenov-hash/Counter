@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - Timeline record category Save: immediate UI + new-category bind [shipped]
+
+* Fixed Timeline record category Save: existing category changes now update local Timeline UI immediately, newly-created categories now bind to records, stale previous-category retention removed, and false success blocked.
+* **`record_cache_helpers.dart`:** [shipped] `recordsStream` dedupe signature now includes category id/key so category-only edits emit a timeline refresh without page reload.
+* **`record_crud.dart` + `record_optimistic.dart` + `record_timeline_vm.dart`:** [shipped] Optimistic apply updates flat cache and pending map, invalidates day view/index/lazy VM, returns `RecordOptimisticApplyResult`.
+* **`timeline_record_edit_sheet.dart` + `record_edit_save_policy.dart`:** [shipped] Success toast gated on PB resolve + local apply + visible category + dual PATCH fields availability.
+* **`test/record_category_edit_brain_test.dart`:** [shipped] Separate flows A–G: existing category B, create handoff category C, pending map, stream signature bust, PATCH dual fields, Plans control.
+
 ## [2026-07-08] - Timeline record newly-created category persistence [shipped]
 
 * Fixed Timeline record newly-created category persistence by replacing stale previous-category retention with explicit selected-category apply, updating pending/flat record optimistic caches, invalidating Timeline read caches, and blocking false success when category apply fails.
