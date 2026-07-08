@@ -513,7 +513,15 @@ Set<String> _normalizedPhrasesForCategoryRule(CategoryRule rule) {
 bool _segmentMatchesCategoryRule(String segment, CategoryRule rule) {
   final norm = normalizeCategoryLabel(segment);
   if (norm.isEmpty) return false;
-  return _normalizedPhrasesForCategoryRule(rule).contains(norm);
+  if (!_normalizedPhrasesForCategoryRule(rule).contains(norm)) return false;
+  // Truncated client tokens must not bind SCW without "Southern" (df696fc live).
+  final ruleNorm = normalizeCategoryLabel(rule.name);
+  if (ruleNorm.contains('southern computer warehouse') &&
+      !RegExp(r'\bsouthern\b').hasMatch(norm)) {
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_TRUNCATED_CLIENT_SAFE_REJECT');
+    return false;
+  }
+  return true;
 }
 
 class _SegmentPathMatch {
@@ -834,12 +842,138 @@ VoiceCommandParseResult parseVoiceCommand({
     literalCandidate: literal,
   );
 
-  return _selectBestParseCandidate(
-    literal: literal,
-    domain: resolved,
-    raw: raw,
-    repaired: repaired,
+  return _guardTruncatedScwClient(
+    _selectBestParseCandidate(
+      literal: literal,
+      domain: resolved,
+      raw: raw,
+      repaired: repaired,
+    ),
+    raw,
   );
+}
+
+/// Rejects SCW binds when STT drops the required "Southern" token (df696fc live).
+VoiceCommandParseResult _guardTruncatedScwClient(
+  VoiceCommandParseResult result,
+  String raw,
+) {
+  if (!result.isSafeToStart) return result;
+  final lower = raw.toLowerCase();
+  final path = (result.matchedCategoryDisplayPath ?? '').toLowerCase();
+  if (!path.contains('southern computer warehouse')) return result;
+  final hasSouthern = RegExp(r'\bsouthern\b').hasMatch(lower);
+  final hasComputerWarehouse =
+      RegExp(r'\bcomputer\s+warehouse\b').hasMatch(lower);
+  if (hasComputerWarehouse && !hasSouthern) {
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_TRUNCATED_CLIENT_SAFE_REJECT');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_PARENT_ONLY_GARBAGE');
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_REJECT_REASON_EXPLAINS_MISSING_CLIENT_TOKEN',
+      'Southern',
+    );
+    return VoiceCommandParseResult(
+      rootLabel: result.rootLabel,
+      matchedCategoryPocketBaseId: null,
+      matchedCategoryDisplayPath: null,
+      matchedLocalCategoryId: null,
+      recordTitle: '',
+      confidence: VoiceCommandMatchConfidence.noMatch,
+      originalTranscript: raw,
+      ambiguityReason: 'unsupported_command',
+    );
+  }
+  return result;
+}
+
+/// Diagnostics when a command transcript is rejected (never for alias repair).
+class VoiceCommandRejectAnalysis {
+  const VoiceCommandRejectAnalysis({
+    required this.parserRejectReason,
+    required this.missingRequiredTokens,
+    required this.ambiguousLeafMatches,
+    required this.rejectedReason,
+    this.selectedCandidatePath,
+  });
+
+  final String parserRejectReason;
+  final List<String> missingRequiredTokens;
+  final List<String> ambiguousLeafMatches;
+  final String rejectedReason;
+  final String? selectedCandidatePath;
+}
+
+/// Explains safe rejects for truncated/ambiguous client tokens (diagnostics only).
+VoiceCommandRejectAnalysis? analyzeVoiceCommandReject({
+  required String transcript,
+  required VoiceCommandParseResult result,
+}) {
+  if (result.isSafeToStart) return null;
+
+  final lower = transcript.toLowerCase();
+  final missing = <String>[];
+  final ambiguous = <String>[];
+
+  final hasSouthern = RegExp(r'\bsouthern\b').hasMatch(lower);
+  final hasComputerWarehouse =
+      RegExp(r'\bcomputer\s+warehouse\b').hasMatch(lower);
+  final hasDelMod = RegExp(r'\b(still|deal|dell|del)\s+mod\b').hasMatch(lower) ||
+      lower.contains('del mod');
+  final hasSubmit = lower.contains('submit');
+
+  if (hasComputerWarehouse && !hasSouthern) {
+    missing.add('Southern');
+    ambiguous.add('Computer Warehouse');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_TRUNCATED_CLIENT_SAFE_REJECT');
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_REJECT_REASON_EXPLAINS_MISSING_CLIENT_TOKEN',
+      'Southern',
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_PARENT_ONLY_GARBAGE');
+    return VoiceCommandRejectAnalysis(
+      parserRejectReason: 'missing_required_client_token:southern',
+      missingRequiredTokens: missing,
+      ambiguousLeafMatches: ambiguous,
+      rejectedReason:
+          'truncated_client_computer_warehouse_without_southern_not_unique',
+      selectedCandidatePath: result.matchedCategoryDisplayPath,
+    );
+  }
+
+  if (hasDelMod && hasSubmit && !hasSouthern && !hasComputerWarehouse) {
+    missing.add('Southern Computer Warehouse');
+    return VoiceCommandRejectAnalysis(
+      parserRejectReason: 'missing_required_client_token:scw',
+      missingRequiredTokens: missing,
+      ambiguousLeafMatches: ambiguous,
+      rejectedReason: 'task_tokens_without_client_path',
+      selectedCandidatePath: result.matchedCategoryDisplayPath,
+    );
+  }
+
+  if (result.ambiguityReason == 'ambiguous_client_prefix') {
+    ambiguous.addAll(result.ambiguousCandidates);
+    return VoiceCommandRejectAnalysis(
+      parserRejectReason: 'ambiguous_client_prefix',
+      missingRequiredTokens: missing,
+      ambiguousLeafMatches: ambiguous,
+      rejectedReason: 'ambiguous_client_prefix',
+      selectedCandidatePath: result.matchedCategoryDisplayPath,
+    );
+  }
+
+  if (result.confidence == VoiceCommandMatchConfidence.noMatch &&
+      result.ambiguityReason == 'unsupported_command') {
+    return VoiceCommandRejectAnalysis(
+      parserRejectReason: 'unsupported_command',
+      missingRequiredTokens: missing,
+      ambiguousLeafMatches: ambiguous,
+      rejectedReason: 'out_of_scope_or_unknown_client',
+      selectedCandidatePath: result.matchedCategoryDisplayPath,
+    );
+  }
+
+  return null;
 }
 
 /// Maps internal parser reason codes to l10n keys (never show raw codes in UI).

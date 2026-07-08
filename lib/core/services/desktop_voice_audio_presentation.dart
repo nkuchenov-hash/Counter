@@ -35,11 +35,18 @@ abstract final class DesktopVoiceSttGain {
   static const double peakCeiling = 0.90;
 
   /// Applied only when offline benchmark proves domain-term improvement.
-  /// For the 32ed528 SCW take, gain did **not** change the transcript — reject.
+  /// Parakeet 32ed528 take: gain did **not** change transcript — reject for Parakeet.
   static const bool applyCalibratedGainInProduction = false;
 
+  /// Whisper-tiny quiet-live target (df696fc RMS ~0.0135). Selected only when
+  /// offline bench on `scw_delmod_submit_df696fc_live_quiet.wav` improves transcript.
+  static const double whisperQuietTargetRms = 0.040;
+
   static const String rejectedReason =
-      'offline_replay_identical_transcript_after_rms_target_gain';
+      'offline_replay_identical_transcript_after_rms_target_gain_parakeet_baseline';
+
+  static const String whisperGainRejectedReason =
+      'whisper_tiny_df696fc_all_stt_gain_variants_missing_southern';
 }
 
 /// Light energy-based trim for command-length audio. Keeps speech body plus

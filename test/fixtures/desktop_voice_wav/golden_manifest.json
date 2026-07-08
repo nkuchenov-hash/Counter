@@ -1,20 +1,64 @@
 {
-  "version": 3,
+  "version": 4,
   "baseline_transcript": "Solvent computer warehouse still model submit",
   "golos_equivalent_raw_transcript": "Solvan Computer Warehouse, Delmore, Submit.",
   "counter_target_raw_transcript": "Solvan Computer Warehouse, Delmore, Submit.",
   "expected_transcript": "Southern Computer Warehouse DEL MOD submit",
   "handy_reference_transcript": "Southern Computer Warehouse Del Mod, submit.",
   "handy_reference_wav": "scw_delmod_submit_handy_2026_07_07.wav",
+  "handy_reference_capture_rms": 0.058,
   "new_native_capture_wav": "scw_delmod_submit_counter_native_capture_2026_07_08.wav",
   "cpal_4f9c984_wav": "scw_delmod_submit_cpal_4f9c984.wav",
+  "df696fc_live_quiet_wav": "scw_delmod_submit_df696fc_live_quiet.wav",
+  "df696fc_live_quiet_raw_wav": "scw_delmod_submit_df696fc_live_quiet_raw.wav",
+  "df696fc_live_quiet_diag": "last_attempt_diag_df696fc_live_quiet.txt",
   "command_stt_primary_engine": "whisper-tiny",
   "fallback_engine": "parakeet",
   "engine_selection_reason": "offline_bench_whisper_recovers_SCW_DEL_MOD_on_quiet_cpal_where_parakeet_fails",
   "command_vad_selected_by_benchmark": "no_vad",
   "strict_domain_pass": false,
-  "model_ceiling_note": "Same Parakeet int8 model + GOLOS VAD on this fixture WAV cannot emit exact Southern/DEL MOD without glossary. GOLOS-equivalent replay verified via wav_stt_replay. Capture parity (48 kHz native -> float mono -> HQ resample) targets the acoustic gap; command VAD = no_vad by benchmark.",
+  "df696fc_offline_blocker": "whisper_tiny_df696fc_all_stt_gain_variants_missing_southern",
+  "model_ceiling_note": "df696fc live quiet (RMS 0.0135) loses Southern even after whisper RMS gain to 0.055 — capture level ~4x below Handy (0.058), not STT-only fixable.",
+  "markers": [
+    "DESKTOP_VOICE_DF696FC_LIVE_QUIET_FIXTURE_ARCHIVED",
+    "DESKTOP_VOICE_LIVE_QUIET_FAILURE_REPRODUCED_OFFLINE"
+  ],
   "cases": [
+    {
+      "id": "scw_delmod_submit_df696fc_live_quiet",
+      "wav": "scw_delmod_submit_df696fc_live_quiet.wav",
+      "raw_wav": "scw_delmod_submit_df696fc_live_quiet_raw.wav",
+      "diag": "last_attempt_diag_df696fc_live_quiet.txt",
+      "status": "present",
+      "role": "df696fc_live_quiet_failure",
+      "phrase": "Southern Computer Warehouse DEL MOD submit",
+      "observed_final_text": "Computer Warehouse, DEL MOD, Submit.",
+      "expected_final_text": "Southern Computer Warehouse, DEL MOD, Submit.",
+      "expected_command": "SCW / DEL MOD / Submit",
+      "must_not_create_parent_only_record": true,
+      "must_not_count_bad_partial_as_latency_success": true,
+      "build_sha": "df696fc",
+      "capture_rms": 0.0135,
+      "handy_baseline_rms": 0.058,
+      "partial_text": "here.",
+      "candidate_useful": false,
+      "stop_to_useful_candidate_ms": null,
+      "stop_to_final_text_ms": 15572,
+      "whisper_final_inference_ms": 6800,
+      "expected_terms": [
+        "Southern Computer Warehouse",
+        "DEL MOD",
+        "Submit"
+      ],
+      "offline_whisper_transcripts": {
+        "current": "Computer Warehouse, DEL MOD, Submit.",
+        "whisperRmsTarget055": "Computer Warehouse, DEL MOD, Submit.",
+        "whisperRmsTarget040": "Computer Warehouse, DEL MOD, Submit.",
+        "whisperRmsTarget030": "Computer Warehouse, DEL MOD, Submit."
+      },
+      "southern_recovered_offline": false,
+      "forbidden_terms": ["still model"]
+    },
     {
       "id": "scw_delmod_submit_real",
       "wav": "scw_delmod_submit_real_2026_07_07.wav",
@@ -43,6 +87,20 @@
       "baseline_transcript": "Solvent computer warehouse still model submit",
       "golos_equivalent_transcript": "Southern Computer Warehouse Dell Mod, submit.",
       "no_vad_transcript": "Southern Computer Warehouse Del Mod, submit.",
+      "capture_rms": 0.058,
+      "forbidden_terms": ["still model"]
+    },
+    {
+      "id": "scw_delmod_submit_cpal_4f9c984",
+      "wav": "scw_delmod_submit_cpal_4f9c984.wav",
+      "status": "present",
+      "role": "cpal_quiet_whisper_pass",
+      "expected_terms": [
+        "Southern Computer Warehouse",
+        "DEL MOD",
+        "Submit"
+      ],
+      "no_vad_transcript": "Southern Computer Warehouse, DEL MOD, Submit.",
       "forbidden_terms": ["still model"]
     },
     {

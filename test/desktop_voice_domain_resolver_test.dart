@@ -260,4 +260,46 @@ void main() {
       );
     });
   });
+
+  group('SCW truncated client — safe reject diagnostics', () {
+    final scwRules = [
+      CategoryRule(
+        id: 100,
+        name: 'Price Reporter',
+        backendRowId: 'prroot123456789',
+        children: [
+          CategoryRule(
+            id: 103,
+            name: 'Southern Computer Warehouse',
+            backendRowId: 'scwclient123456',
+            keywords: {
+              'en': ['southern computer warehouse'],
+            },
+            children: [
+              CategoryRule(
+                id: 104,
+                name: 'DEL MOD',
+                backendRowId: 'scwdelmod123456',
+              ),
+            ],
+          ),
+        ],
+      ),
+    ];
+
+    test('df696fc truncated transcript rejects without parent-only record', () {
+      const truncated = 'Computer Warehouse, DEL MOD, Submit.';
+      final r = parseVoiceCommand(rules: scwRules, transcript: truncated);
+      expect(r.isSafeToStart, isFalse);
+      final reject = analyzeVoiceCommandReject(transcript: truncated, result: r);
+      expect(reject, isNotNull);
+      expect(reject!.missingRequiredTokens, contains('Southern'));
+      expect(reject.ambiguousLeafMatches, contains('Computer Warehouse'));
+      expect(
+        reject.rejectedReason,
+        contains('truncated_client_computer_warehouse_without_southern'),
+      );
+      expect(reject.parserRejectReason, contains('missing_required_client_token'));
+    });
+  });
 }

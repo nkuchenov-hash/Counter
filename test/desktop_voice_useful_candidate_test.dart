@@ -41,6 +41,9 @@ void main() {
         );
       };
 
+      final herePartial = helper.evaluateCommandCandidate!('here.');
+      expect(herePartial.useful, isFalse);
+
       // Simulate internal gate via public evaluate callback contract.
       final garbage = helper.evaluateCommandCandidate!(
         'So then, compute theware.',

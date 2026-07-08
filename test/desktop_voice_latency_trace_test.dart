@@ -1,5 +1,6 @@
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_overlay_constants.dart';
+import 'package:counter/core/services/desktop_voice_stt_processing.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -31,6 +32,8 @@ void main() {
         'candidate_visible_to_user',
         'DESKTOP_VOICE_STOP_TO_FIRST_CANDIDATE_UNDER_500MS',
         'DESKTOP_VOICE_STOP_TO_USEFUL_CANDIDATE_UNDER_500MS',
+        'DESKTOP_VOICE_STOP_TO_USEFUL_CANDIDATE_UNDER_500MS_OR_BLOCKER',
+        'DESKTOP_VOICE_LATENCY_ROOT_CAUSE_LOGGED',
         'DESKTOP_VOICE_BAD_PARTIAL_NOT_COUNTED_AS_SUCCESS',
         'DESKTOP_VOICE_NO_FAKE_LATENCY_PASS',
         'DESKTOP_VOICE_USEFUL_CANDIDATE_METRIC_ADDED',
@@ -48,6 +51,18 @@ void main() {
       }
       // Sanity: pipeline mark is callable without throwing in tests.
       DesktopVoicePipeline.mark('DESKTOP_VOICE_LATENCY_TRACE_WRITTEN', 'unit');
+    });
+
+    test('df696fc offline latency blocker documented', () {
+      expect(
+        DesktopVoiceSttProcessingPolicy.offlineBlocker,
+        contains('missing_southern'),
+      );
+      expect(scoreScwCommandTranscript('here.'), lessThan(0));
+      expect(
+        scoreScwCommandTranscript('Computer Warehouse, DEL MOD, Submit.'),
+        40,
+      );
     });
   });
 }

@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - P0 Desktop Voice: df696fc live quiet offline proof + capture diagnostics [engineering]
+
+* **`test/fixtures/desktop_voice_wav/`:** Archived `scw_delmod_submit_df696fc_live_quiet*.wav` + `last_attempt_diag_df696fc_live_quiet.txt`; `golden_manifest.json` v4 documents offline whisper blocker (RMS gain variants do not recover "Southern").
+* **`desktop_voice_stt_processing.dart` + `scripts/manual/benchmark_df696fc_quiet_whisper.ps1`:** STT-only variant bench on df696fc fixture — current/RMS055/040/030 all → `Computer Warehouse, DEL MOD, Submit.`; production gain stays OFF.
+* **`desktop_voice_windows_audio_diagnostics.dart` + `desktop_voice_audio_capture.dart`:** Windows MMDevice endpoint volume logging; Counter vs Handy RMS ratio markers.
+* **`voice_command_parser.dart` + `desktop_voice_widget.dart`:** `analyzeVoiceCommandReject` surfaces missing Southern / ambiguous Computer Warehouse in diag (no alias guess).
+* **`desktop_stt_helper_service.dart`:** Useful-candidate latency blocker logged when `candidate_useful=no`; partial gate requires ≥1.5s + RMS≥0.012.
+
 ## [2026-07-08] - P0 Desktop Voice: intermittent mic no-signal classified separately [engineering]
 
 * **`desktop_voice_audio_capture.dart`:** `noteCaptureStartFailed` vs `noteIntermittentListeningNoSignal` set distinct `no_signal_reason` values for `last_attempt_diag`; markers `DESKTOP_VOICE_CAPTURE_START_NO_SIGNAL` / `DESKTOP_VOICE_INTERMITTENT_MIC_NO_SIGNAL`.

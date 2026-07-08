@@ -236,4 +236,24 @@ void main() {
       }
     });
   });
+
+  group('df696fc live quiet capture parity', () {
+    test('fixture exists and is much quieter than Handy reference', () {
+      const quiet =
+          'test/fixtures/desktop_voice_wav/scw_delmod_submit_df696fc_live_quiet.wav';
+      const handy =
+          'test/fixtures/desktop_voice_wav/scw_delmod_submit_handy_2026_07_07.wav';
+      expect(File(quiet).existsSync(), isTrue);
+      final qRms = pcm16RmsLevel(
+        extractPcm16FromWav(File(quiet).readAsBytesSync()),
+      );
+      if (File(handy).existsSync()) {
+        final hRms = pcm16RmsLevel(
+          extractPcm16FromWav(File(handy).readAsBytesSync()),
+        );
+        expect(qRms, lessThan(hRms * 0.5));
+      }
+      expect(qRms, closeTo(0.0135, 0.004));
+    });
+  });
 }

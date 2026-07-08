@@ -455,6 +455,30 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_COMMAND_UNRECOGNIZED_NO_RECORD_CHANGE',
       );
+      final reject = analyzeVoiceCommandReject(
+        transcript: _transcript,
+        result: parsed,
+      );
+      if (reject != null) {
+        DesktopVoicePipeline.mark('parser_reject_reason', reject.parserRejectReason);
+        DesktopVoicePipeline.mark(
+          'missing_required_tokens',
+          reject.missingRequiredTokens.join(','),
+        );
+        DesktopVoicePipeline.mark(
+          'ambiguous_leaf_matches',
+          reject.ambiguousLeafMatches.join(','),
+        );
+        DesktopVoicePipeline.mark('rejected_reason', reject.rejectedReason);
+        DesktopVoicePipeline.mark(
+          'selected_candidate_path',
+          reject.selectedCandidatePath ?? '—',
+        );
+        DesktopVoiceAttemptLog.instance.markParserReject(
+          rejectReason: reject.rejectedReason,
+          missingTokens: reject.missingRequiredTokens,
+        );
+      }
       DesktopVoiceAttemptLog.instance.markNotRecognized();
       DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMAND_NOT_RECOGNIZED', _transcript);
       _failFriendly(

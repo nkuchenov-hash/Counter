@@ -232,6 +232,21 @@ class DesktopVoiceAttemptLog {
     );
   }
 
+  void markParserReject({
+    required String rejectReason,
+    List<String> missingTokens = const [],
+  }) {
+    final missing = missingTokens.isEmpty
+        ? ''
+        : ' Missing: ${missingTokens.join(', ')}.';
+    _update(
+      (a) => a.copyWith(
+        statusDetail:
+            'Heard: "${a.transcript}". $rejectReason.$missing',
+      ),
+    );
+  }
+
   void markNotRecognized() {
     _update(
       (a) => a.copyWith(

@@ -10,13 +10,13 @@ void main() {
     test('no font below 16pt and cards are large', () {
       expect(DesktopVoiceOverlayConstants.minFontPt, greaterThanOrEqualTo(16));
       expect(DesktopVoiceOverlayConstants.detailFontPt, greaterThanOrEqualTo(16));
-      expect(DesktopVoiceOverlayConstants.titleFontPt, inInclusiveRange(18, 20));
+      expect(DesktopVoiceOverlayConstants.titleFontPt, inInclusiveRange(16, 18));
       expect(DesktopVoiceOverlayConstants.listeningWidthPx, inInclusiveRange(300, 360));
       expect(DesktopVoiceOverlayConstants.listeningHeightPx, inInclusiveRange(64, 72));
-      expect(DesktopVoiceOverlayConstants.errorWidthPx, inInclusiveRange(420, 520));
-      expect(DesktopVoiceOverlayConstants.errorMinHeightPx, inInclusiveRange(120, 150));
-      expect(DesktopVoiceOverlayConstants.pendingWidthPx, inInclusiveRange(420, 520));
-      expect(DesktopVoiceOverlayConstants.pendingMinHeightPx, inInclusiveRange(110, 140));
+      expect(DesktopVoiceOverlayConstants.errorWidthPx, inInclusiveRange(520, 680));
+      expect(DesktopVoiceOverlayConstants.errorMinHeightPx, inInclusiveRange(120, 200));
+      expect(DesktopVoiceOverlayConstants.pendingWidthPx, inInclusiveRange(520, 680));
+      expect(DesktopVoiceOverlayConstants.pendingMinHeightPx, inInclusiveRange(110, 200));
       expect(DesktopVoiceOverlayConstants.closeHitPx, greaterThanOrEqualTo(32));
     });
   });

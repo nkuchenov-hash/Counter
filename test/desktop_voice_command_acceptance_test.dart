@@ -327,4 +327,65 @@ void main() {
       );
     });
   });
+
+  group('SCW DEL MOD Submit — df696fc live quiet acceptance', () {
+    final scwRules = [
+      CategoryRule(
+        id: 10,
+        name: 'Work',
+        backendRowId: 'workroot1234567',
+        children: [
+          CategoryRule(
+            id: 100,
+            name: 'Price Reporter',
+            backendRowId: 'prroot123456789',
+            children: [
+              CategoryRule(
+                id: 103,
+                name: 'Southern Computer Warehouse',
+                backendRowId: 'scwclient123456',
+                keywords: {
+                  'en': ['southern computer warehouse'],
+                },
+                children: [
+                  CategoryRule(
+                    id: 104,
+                    name: 'DEL MOD',
+                    backendRowId: 'scwdelmod123456',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ];
+
+    test('exact full SCW comma transcript parses', () {
+      final r = parseVoiceCommand(
+        rules: scwRules,
+        transcript: 'Southern Computer Warehouse, DEL MOD, Submit.',
+      );
+      expect(r.isSafeToStart, isTrue);
+      expect(r.recordTitle, 'Submit');
+      expect(
+        r.matchedCategoryDisplayPath,
+        contains('Southern Computer Warehouse'),
+      );
+    });
+
+    test('truncated df696fc final text does not start record', () {
+      final r = parseVoiceCommand(
+        rules: scwRules,
+        transcript: 'Computer Warehouse, DEL MOD, Submit.',
+      );
+      expect(r.isSafeToStart, isFalse);
+      expect(normalizeDesktopVoiceCommand(r), isNull);
+    });
+
+    test('bad partial here. is not useful command', () {
+      final r = parseVoiceCommand(rules: scwRules, transcript: 'here.');
+      expect(r.isSafeToStart, isFalse);
+    });
+  });
 }

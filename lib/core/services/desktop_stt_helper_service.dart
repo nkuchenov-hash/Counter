@@ -13,6 +13,7 @@ import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
 import 'package:counter/core/services/desktop_voice_last_attempt_store.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
+import 'package:counter/core/services/desktop_voice_stt_processing.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/desktop_win_speech_service.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
@@ -694,7 +695,9 @@ class DesktopSttHelperService {
   }
 
   Future<void> _sendPartialAudio(List<int> bytes) async {
-    if (bytes.length < 3200 || !_ready) return;
+    if (bytes.length < 48000 || !_ready) return;
+    final rms = pcm16RmsLevel(bytes);
+    if (rms < 0.012) return;
     try {
       await http
           .post(
@@ -903,20 +906,94 @@ class DesktopSttHelperService {
     }
     _audioDurationMsUsedForInference = pcm16DurationMs(pcmForStt);
 
-    // Calibrated RMS gain is OFF in production after offline replay proved
-    // identical transcript (+marker). Keep diagnostics explicit.
-    _sttGainMode = 'rejected';
-    _sttGainRejectedReason = DesktopVoiceSttGain.rejectedReason;
-    _rawRmsBeforeGain = capture.processedWavRms;
-    _rawPeakBeforeGain = capture.processedWavPeak;
-    _processedRmsAfterGain = capture.processedWavRms;
-    _processedPeakAfterGain = capture.processedWavPeak;
-    _clippedSamplesAfterGain = 0;
-    _sttGainDb = 0;
+    // Whisper-tiny STT-only processing (raw WAV untouched). Parakeet gain remains off.
+    var sttPcm = pcmForStt;
+    final processing = applyProductionWhisperSttProcessing(pcmForStt);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_LIVE_QUIET_AUDIO_BENCHMARK_RUN');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_WHISPER_GAIN_BENCHMARK_RUN');
+    if (processing.compressorEnabled || processing.agcEnabled) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_AGC_BENCHMARK_RUN');
+    }
+    DesktopVoicePipeline.mark('stt_processing_variant', processing.variant.name);
+    DesktopVoicePipeline.mark('input_rms', processing.inputRms.toStringAsFixed(4));
+    DesktopVoicePipeline.mark('input_peak', processing.inputPeak.toStringAsFixed(4));
+    DesktopVoicePipeline.mark('output_rms', processing.outputRms.toStringAsFixed(4));
+    DesktopVoicePipeline.mark('output_peak', processing.outputPeak.toStringAsFixed(4));
+    DesktopVoicePipeline.mark('gain_db', processing.gainDb.toStringAsFixed(2));
+    DesktopVoicePipeline.mark(
+      'compressor_enabled',
+      processing.compressorEnabled ? 'yes' : 'no',
+    );
+    DesktopVoicePipeline.mark(
+      'agc_enabled',
+      processing.agcEnabled ? 'yes' : 'no',
+    );
+    DesktopVoicePipeline.mark(
+      'clipped_samples',
+      '${processing.clippedSamples}',
+    );
+    if (processing.applied) {
+      sttPcm = processing.pcm;
+      DesktopVoicePipeline.mark(
+        'selected_processing_variant',
+        processing.variant.name,
+      );
+      DesktopVoicePipeline.mark(
+        'selected_reason',
+        'offline_whisper_bench_improved_transcript',
+      );
+      capture = DesktopVoiceCaptureResult(
+        wavPath: capture.wavPath,
+        pcmBytes: sttPcm,
+        sampleRate: capture.sampleRate,
+        channels: capture.channels,
+        durationMs: pcm16DurationMs(sttPcm),
+        maxAmplitude: capture.maxAmplitude,
+        rmsAmplitude: processing.outputRms,
+        audioLevelSeen: capture.audioLevelSeen,
+        deviceLabel: capture.deviceLabel,
+        deviceId: capture.deviceId,
+        rawWavPath: capture.rawWavPath,
+        captureBackend: capture.captureBackend,
+        captureApi: capture.captureApi,
+        rawCaptureFormat: capture.rawCaptureFormat,
+        rawSampleRate: capture.rawSampleRate,
+        rawChannels: capture.rawChannels,
+        rawDurationMs: capture.rawDurationMs,
+        rawRms: capture.rawRms,
+        rawPeak: capture.rawPeak,
+        processedWavRms: processing.outputRms,
+        processedWavPeak: processing.outputPeak,
+        sessionVolume: capture.sessionVolume,
+        endpointVolume: capture.endpointVolume,
+        resamplerUsed: capture.resamplerUsed,
+        downmixUsed: capture.downmixUsed,
+      );
+    } else {
+      DesktopVoicePipeline.mark('selected_processing_variant', 'current');
+      DesktopVoicePipeline.mark(
+        'selected_reason',
+        DesktopVoiceSttProcessingPolicy.productionSelectionReason,
+      );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_HARMFUL_PEAK_NORMALIZATION');
+    }
+
+    // Calibrated RMS gain is OFF for Parakeet after offline replay proved
+    // identical transcript. Whisper path uses [applyProductionWhisperSttProcessing].
+    _sttGainMode = processing.applied ? processing.variant.name : 'rejected';
+    _sttGainRejectedReason = processing.applied
+        ? null
+        : DesktopVoiceSttGain.whisperGainRejectedReason;
+    _rawRmsBeforeGain = processing.inputRms;
+    _rawPeakBeforeGain = processing.inputPeak;
+    _processedRmsAfterGain = processing.outputRms;
+    _processedPeakAfterGain = processing.outputPeak;
+    _clippedSamplesAfterGain = processing.clippedSamples;
+    _sttGainDb = processing.gainDb;
     DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_GAIN_BENCHMARK_RUN');
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_STT_GAIN_REJECTED_REASON',
-      _sttGainRejectedReason!,
+      _sttGainRejectedReason ?? '—',
     );
     DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_HARMFUL_PEAK_NORMALIZATION');
 
@@ -1164,6 +1241,7 @@ class DesktopSttHelperService {
     );
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_SUCCESS', text.trim());
     _emitFirstCandidate(text.trim(), engine.helperEngineId);
+    _logLatencyBlockerIfNeeded(capture);
     await _updateDiagnostics(
       capture: capture,
       engine: engine,
@@ -1174,6 +1252,27 @@ class DesktopSttHelperService {
       text: text.trim(),
       durationSec: capture.durationMs / 1000.0,
       engine: engine.helperEngineId,
+    );
+  }
+
+  void _logLatencyBlockerIfNeeded(DesktopVoiceCaptureResult capture) {
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_USEFUL_CANDIDATE_METRIC_ENFORCED');
+    if (_candidateUseful &&
+        (_stopToUsefulCandidateMs ?? 9999) <= 500) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_STOP_TO_USEFUL_CANDIDATE_UNDER_500MS',
+      );
+      return;
+    }
+    final inference = _finalInferenceLatencyMs ?? 0;
+    final blocker =
+        'no_useful_candidate;whisper_final_inference_ms=$inference;'
+        'capture_rms=${capture.rawRms.toStringAsFixed(4)};'
+        'partial=${_partialText ?? '—'}';
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_LATENCY_ROOT_CAUSE_LOGGED', blocker);
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_STOP_TO_USEFUL_CANDIDATE_UNDER_500MS_OR_BLOCKER',
+      blocker,
     );
   }
 

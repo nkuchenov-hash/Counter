@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_audio_presentation.dart';
+import 'package:counter/core/services/desktop_voice_windows_audio_diagnostics.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
@@ -266,6 +267,7 @@ class DesktopVoiceAudioCapture {
       });
       _levelSource = 'cpal_wasapi_active_capture';
       DesktopVoicePipeline.mark('DESKTOP_VOICE_LEVEL_SOURCE_ACTIVE_CAPTURE');
+      unawaited(_logWindowsEndpointDiagnostics());
       return true;
     } catch (e) {
       _captureStreamError = e.toString();
@@ -466,6 +468,11 @@ class DesktopVoiceAudioCapture {
       _rmsAmplitude = _rawCaptureRms;
       _peakMax = _rawCapturePeak;
       _rmsMax = _rawCaptureRms;
+
+      unawaited(_logWindowsEndpointDiagnostics());
+      DesktopVoiceWindowsAudioDiagnostics.logCounterVsHandyRmsDiff(
+        captureRms: _rawCaptureRms,
+      );
 
       final rawPathFromHelper = (body['raw_wav_path'] as String?)?.trim();
       final sttPathFromHelper = (body['stt_wav_path'] as String?)?.trim();
@@ -778,6 +785,21 @@ class DesktopVoiceAudioCapture {
       if (pcm.length < 4800 * 2) return; // <300ms @16k
       onPartial(pcm);
     } catch (_) {}
+  }
+
+  Future<void> _logWindowsEndpointDiagnostics() async {
+    final snap =
+        await DesktopVoiceWindowsAudioDiagnostics.readDefaultCaptureEndpoint();
+    if (snap == null) return;
+    _endpointVolume ??= snap.endpointVolume;
+    _sessionVolume ??= snap.communicationsVolume;
+    DesktopVoicePipeline.mark('capture_endpoint_device_id', snap.deviceId);
+    DesktopVoicePipeline.mark('capture_endpoint_device_name', snap.deviceFriendlyName);
+    DesktopVoicePipeline.mark('capture_endpoint_role', snap.endpointRole);
+    DesktopVoicePipeline.mark(
+      'capture_endpoint_muted',
+      snap.endpointMuted ? 'yes' : 'no',
+    );
   }
 }
 
