@@ -178,10 +178,10 @@ class DesktopVoiceCapsule extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           child: ConstrainedBox(
             constraints: const BoxConstraints(
-              minWidth: 300,
-              maxWidth: 360,
-              minHeight: 56,
-              maxHeight: 104,
+              minWidth: 260,
+              maxWidth: 420,
+              minHeight: 52,
+              maxHeight: 120,
             ),
             child: capsule,
           ),

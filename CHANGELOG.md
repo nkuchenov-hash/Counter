@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - P0 Desktop Voice: readable overlay + last-attempt diag file [engineering]
+
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** Readable listening pill **260×52**; error expands to **380×96** card with title “Не удалось распознать” / “Could not recognize” (no tiny red one-liner); pending **380×92** with readable hint + visible progress; close hit **28×28**; title font **16px**.
+* **`desktop_voice_last_attempt_store.dart`:** Persists `voice_samples/last_attempt_diag.txt` after each STT diag update so live captures can be pulled without reading overlay text.
+* **Live WAV from installed 3c4abc1 (analyzed, not parity claim):** raw 48 kHz stereo + processed 16 kHz mono (~6820 ms); Parakeet `no_vad` → `So then computer warehouse Delmod Submit` (Handy still `Southern Computer Warehouse Del Mod, submit.`). User UX fail was unreadably tiny error text → fixed here.
+
 ## [2026-07-08] - P0 Desktop Voice: delayed transcribe after helper cold-start + Handy dark pill overlay [engineering; live-recapture pending]
 
 * **`lib/core/services/desktop_voice_delayed_transcribe.dart` + `desktop_stt_helper_service.dart`:** [engineering] If recording stops while the STT helper is still loading, the saved WAV is queued as pending; post-stop wait extends to **45s cold-start**; once `final_transcribe_ready`, delayed `/transcribe/stop` runs on the saved PCM — no re-speak, no false “Recognizer unavailable” when helper becomes ready.

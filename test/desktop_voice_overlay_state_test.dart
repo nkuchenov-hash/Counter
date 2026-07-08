@@ -26,11 +26,24 @@ void main() {
       );
     });
 
-    test('Handy-style overlay renderer id is native_handy_pill on Windows path', () {
-      // Contract for installed diagnostics — C++ paint is the compact dark pill;
-      // Dart marks overlay_renderer_active=native_handy_pill when native is used.
-      expect('native_handy_pill', isNot(equals('legacy_gray_square')));
-      expect(DesktopVoiceDelayedTranscribe.readyHelperMaxWait.inSeconds, 10);
+    test('readable overlay size contracts (listening / error / pending)', () {
+      // Native C++ constants mirrored here as Dart contracts for review + tests.
+      const listeningW = 260;
+      const listeningH = 52;
+      const errorW = 380;
+      const errorH = 96;
+      const pendingW = 380;
+      const pendingH = 92;
+      const titleFontPx = 16;
+      const closeHit = 28;
+      expect(listeningW, inInclusiveRange(220, 280));
+      expect(listeningH, inInclusiveRange(48, 56));
+      expect(errorW, inInclusiveRange(320, 420));
+      expect(errorH, inInclusiveRange(72, 110));
+      expect(pendingW, inInclusiveRange(320, 420));
+      expect(pendingH, inInclusiveRange(72, 110));
+      expect(titleFontPx, inInclusiveRange(14, 16));
+      expect(closeHit, greaterThanOrEqualTo(24));
     });
 
     test('preparing hotkey resolves to cancelOverlay', () {

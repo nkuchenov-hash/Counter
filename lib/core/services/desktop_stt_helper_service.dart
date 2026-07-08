@@ -10,6 +10,7 @@ import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
 import 'package:counter/core/services/desktop_stt_orchestrator.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
+import 'package:counter/core/services/desktop_voice_last_attempt_store.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/desktop_win_speech_service.dart';
@@ -1438,6 +1439,12 @@ class DesktopSttHelperService {
       usedPartialAsFinal: _usedPartialAsFinal,
       stopReturnReason: _stopReturnReason,
       finalInferenceLatencyMs: _finalInferenceLatencyMs,
+    );
+    unawaited(
+      DesktopVoiceLastAttemptStore.write(
+        diag: _lastDiagnostics,
+        friendlyError: error ?? _lastError,
+      ),
     );
   }
 

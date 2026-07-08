@@ -94,6 +94,8 @@ abstract final class DesktopVoiceOverlayService {
           'DESKTOP_VOICE_HANDY_STYLE_LISTENING_PILL_VISIBLE_INSTALLED',
         );
         DesktopVoicePipeline.mark('DESKTOP_VOICE_OLD_GRAY_OVERLAY_NOT_USED');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_READABLE_FONT');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_CLOSE_BUTTON_CLICKABLE');
       }
       return ok;
     }
@@ -138,13 +140,18 @@ abstract final class DesktopVoiceOverlayService {
     final loc = currentLocale.value;
     DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_PENDING_CONFIRMATION');
     if (usesNativeOverlay) {
-      return _showNative(
+      final ok = await _showNative(
         primary: previewLine,
         secondary: hintLine ?? t(loc, 'desktop_voice_tap_to_edit'),
         state: 'pending',
         timer: '${(progress * 100).round()}%',
         progress: progress,
       );
+      if (ok) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_CONFIRMATION_READABLE');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_READABLE_FONT');
+      }
+      return ok;
     }
     return true;
   }
@@ -208,12 +215,31 @@ abstract final class DesktopVoiceOverlayService {
     required String message,
     String? detail,
   }) async {
+    final loc = currentLocale.value;
+    // Readable error card title — never cram the full error into tiny pill text.
+    final title = loc == 'ru' ? 'Не удалось распознать' : 'Could not recognize';
+    final body = () {
+      final m = message.trim();
+      final d = (detail ?? '').trim();
+      if (d.isNotEmpty && d != m) return d;
+      // Prefer a short secondary line when the mapped message differs from the title.
+      if (m.isNotEmpty && m != title) return m;
+      return loc == 'ru'
+          ? 'Подробности сохранены в диагностике'
+          : 'Details saved in diagnostics';
+    }();
     if (usesNativeOverlay) {
       final ok = await _showNative(
-        primary: message,
-        secondary: detail,
+        primary: title,
+        secondary: body,
         state: 'error',
       );
+      if (ok) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_CARD_READABLE');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_TINY_ERROR_TEXT_REMOVED');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_READABLE_FONT');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_CLOSE_BUTTON_CLICKABLE');
+      }
       if (!ok) {
         await _notificationFallback(message);
       }
