@@ -82,4 +82,18 @@ abstract final class DesktopVoiceNativeOverlay {
       return true;
     }
   }
+
+  /// DPI / size / font diagnostics from the native overlay HWND.
+  static Future<Map<String, Object?>?> overlayMetrics() async {
+    if (!isSupported) return null;
+    try {
+      final v = await _channel.invokeMethod<dynamic>('overlayMetrics');
+      if (v is Map) {
+        return v.map((k, val) => MapEntry('$k', val));
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 }

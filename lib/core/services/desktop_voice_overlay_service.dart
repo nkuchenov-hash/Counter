@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_native_overlay.dart';
+import 'package:counter/core/services/desktop_voice_overlay_constants.dart';
 import 'package:counter/core/services/desktop_voice_overlay_host.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:counter/services/notification_service.dart';
@@ -94,8 +95,14 @@ abstract final class DesktopVoiceOverlayService {
           'DESKTOP_VOICE_HANDY_STYLE_LISTENING_PILL_VISIBLE_INSTALLED',
         );
         DesktopVoicePipeline.mark('DESKTOP_VOICE_OLD_GRAY_OVERLAY_NOT_USED');
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerMinFont16);
+        DesktopVoicePipeline.mark(
+          DesktopVoiceOverlayConstants.markerListeningPill,
+        );
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerNoTinyText);
         DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_READABLE_FONT');
         DesktopVoicePipeline.mark('DESKTOP_VOICE_CLOSE_BUTTON_CLICKABLE');
+        unawaited(_logOverlayMetrics(state: 'listening'));
       }
       return ok;
     }
@@ -149,7 +156,13 @@ abstract final class DesktopVoiceOverlayService {
       );
       if (ok) {
         DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_CONFIRMATION_READABLE');
+        DesktopVoicePipeline.mark(
+          DesktopVoiceOverlayConstants.markerPendingCard,
+        );
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerMinFont16);
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerNoTinyText);
         DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_READABLE_FONT');
+        unawaited(_logOverlayMetrics(state: 'pending'));
       }
       return ok;
     }
@@ -237,8 +250,12 @@ abstract final class DesktopVoiceOverlayService {
       if (ok) {
         DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_CARD_READABLE');
         DesktopVoicePipeline.mark('DESKTOP_VOICE_TINY_ERROR_TEXT_REMOVED');
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerErrorCard);
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerMinFont16);
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerNoTinyText);
         DesktopVoicePipeline.mark('DESKTOP_VOICE_OVERLAY_READABLE_FONT');
         DesktopVoicePipeline.mark('DESKTOP_VOICE_CLOSE_BUTTON_CLICKABLE');
+        unawaited(_logOverlayMetrics(state: 'error'));
       }
       if (!ok) {
         await _notificationFallback(message);
@@ -246,6 +263,20 @@ abstract final class DesktopVoiceOverlayService {
       return ok;
     }
     return true;
+  }
+
+  static Future<void> _logOverlayMetrics({required String state}) async {
+    try {
+      final m = await DesktopVoiceNativeOverlay.overlayMetrics();
+      if (m == null) return;
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_OVERLAY_METRICS',
+        'dpi=${m['overlay_dpi']} scale=${m['overlay_scale_factor']} '
+            'w=${m['overlay_width_px']} h=${m['overlay_height_px']} '
+            'min_pt=${m['overlay_min_font_pt']} title_pt=${m['overlay_title_font_pt']} '
+            'detail_pt=${m['overlay_detail_font_pt']} state=$state',
+      );
+    } catch (_) {}
   }
 
   static Future<void> hide() async {

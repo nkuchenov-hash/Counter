@@ -11,6 +11,15 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - P0 Desktop Voice: ≥16pt overlay, perceptual mic bars, latency trim, duration fix [engineering]
+
+* **Overlay:** Native Win32 pill/cards DPI-scaled; min font **16pt**, title **19pt**, detail **16pt**; listening **340×68**, error/pending **480×136/124**, close hit **32×32**. Markers: `DESKTOP_VOICE_OVERLAY_MIN_FONT_16PT`, `*_CARD_LARGE_READABLE`, `NO_TINY_TEXT_ANYWHERE`.
+* **Mic bars:** Perceptual/log display meter (not raw linear RMS); peak-hold + decay; visible for RMS ≈0.019. Markers: `MIC_BARS_PERCEPTUAL_SCALE`, `VISIBLE_FOR_LOW_RMS`, `NOT_RAW_LINEAR`.
+* **STT gain:** Offline RMS-target (+7.9 dB, peak ceil 0.90) on live CPAL WAV → **identical** Parakeet transcript → **rejected** (`DESKTOP_VOICE_STT_GAIN_REJECTED_REASON`); no harmful peak-norm.
+* **Latency:** Command silence trim (~690 ms on live take); latency markers `t_*` / `stop_to_first_candidate_ms`; Parakeet hot-path replay ≈200–270 ms (helper HTTP was the 2s wall when cold).
+* **Diagnostics:** F32/stereo WAV duration via fmt-aware parse (`DESKTOP_VOICE_RAW_F32_WAV_DURATION_FIXED`); level/gain/overlay font fields in `last_attempt_diag`.
+* **Offline note:** Whisper-tiny recovered `Southern Computer Warehouse, DEL MOD, Submit.` on the same quiet WAV where Parakeet stayed on `Tell them…`; capture still ~−10 dB vs Handy — device/volume instrumentation next, not aliases.
+
 ## [2026-07-08] - Category picker create → Save persists new category [shipped]
 
 * **Root cause (post-e5d8291):** create placeholder used local id `-1` (same as uncategorized). After create→select the sheet could show “RGH Products”, but Save’s `plans.category_id` PATCH was omitted (`_categoryRelationIdForPlanPatch` rejects `-1`), so PocketBase kept the original category (“Жизнь”).

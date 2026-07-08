@@ -94,6 +94,31 @@ class DesktopSttDiagnostics {
     this.usedPartialAsFinal = false,
     this.stopReturnReason,
     this.finalInferenceLatencyMs,
+    this.stopToFirstCandidateMs,
+    this.stopToFinalTextMs,
+    this.audioDurationMsUsedForInference,
+    this.levelMeterRms = 0,
+    this.levelMeterDisplayLevel = 0,
+    this.levelMeterGain = 0,
+    this.levelMeterPeakHold = 0,
+    this.sttGainMode = 'none',
+    this.sttGainDb = 0,
+    this.targetRms = 0,
+    this.rawRmsBeforeGain = 0,
+    this.rawPeakBeforeGain = 0,
+    this.processedRmsAfterGain = 0,
+    this.processedPeakAfterGain = 0,
+    this.clippedSamplesAfterGain = 0,
+    this.sttTranscriptWithoutGain,
+    this.sttTranscriptWithGain,
+    this.sttGainRejectedReason,
+    this.overlayDpi,
+    this.overlayScaleFactor,
+    this.overlayWidthPx,
+    this.overlayHeightPx,
+    this.overlayMinFontPt = 16,
+    this.overlayTitleFontPt = 19,
+    this.overlayDetailFontPt = 16,
   });
 
   final String? helperPath;
@@ -184,6 +209,31 @@ class DesktopSttDiagnostics {
   final bool usedPartialAsFinal;
   final String? stopReturnReason;
   final int? finalInferenceLatencyMs;
+  final int? stopToFirstCandidateMs;
+  final int? stopToFinalTextMs;
+  final int? audioDurationMsUsedForInference;
+  final double levelMeterRms;
+  final double levelMeterDisplayLevel;
+  final double levelMeterGain;
+  final double levelMeterPeakHold;
+  final String sttGainMode;
+  final double sttGainDb;
+  final double targetRms;
+  final double rawRmsBeforeGain;
+  final double rawPeakBeforeGain;
+  final double processedRmsAfterGain;
+  final double processedPeakAfterGain;
+  final int clippedSamplesAfterGain;
+  final String? sttTranscriptWithoutGain;
+  final String? sttTranscriptWithGain;
+  final String? sttGainRejectedReason;
+  final int? overlayDpi;
+  final double? overlayScaleFactor;
+  final int? overlayWidthPx;
+  final int? overlayHeightPx;
+  final double overlayMinFontPt;
+  final double overlayTitleFontPt;
+  final double overlayDetailFontPt;
 
   List<String> toDiagLines() {
     return [
@@ -223,6 +273,31 @@ class DesktopSttDiagnostics {
       'used_partial_as_final=${usedPartialAsFinal ? 'yes' : 'no'}',
       'stop_return_reason=${stopReturnReason ?? '—'}',
       'final_inference_latency_ms=${finalInferenceLatencyMs ?? '—'}',
+      'stop_to_first_candidate_ms=${stopToFirstCandidateMs ?? '—'}',
+      'stop_to_final_text_ms=${stopToFinalTextMs ?? '—'}',
+      'audio_duration_ms_used_for_inference=${audioDurationMsUsedForInference ?? '—'}',
+      'level_meter_rms=${levelMeterRms.toStringAsFixed(4)}',
+      'level_meter_display_level=${levelMeterDisplayLevel.toStringAsFixed(4)}',
+      'level_meter_gain=${levelMeterGain.toStringAsFixed(2)}',
+      'level_meter_peak_hold=${levelMeterPeakHold.toStringAsFixed(4)}',
+      'stt_gain_mode=$sttGainMode',
+      'stt_gain_db=${sttGainDb.toStringAsFixed(2)}',
+      'target_rms=${targetRms.toStringAsFixed(4)}',
+      'raw_rms_before_gain=${rawRmsBeforeGain.toStringAsFixed(4)}',
+      'raw_peak_before_gain=${rawPeakBeforeGain.toStringAsFixed(4)}',
+      'processed_rms_after_gain=${processedRmsAfterGain.toStringAsFixed(4)}',
+      'processed_peak_after_gain=${processedPeakAfterGain.toStringAsFixed(4)}',
+      'clipped_samples_after_gain=$clippedSamplesAfterGain',
+      'stt_transcript_without_gain=${sttTranscriptWithoutGain ?? '—'}',
+      'stt_transcript_with_gain=${sttTranscriptWithGain ?? '—'}',
+      'stt_gain_rejected_reason=${sttGainRejectedReason ?? '—'}',
+      'overlay_dpi=${overlayDpi ?? '—'}',
+      'overlay_scale_factor=${overlayScaleFactor?.toStringAsFixed(3) ?? '—'}',
+      'overlay_width_px=${overlayWidthPx ?? '—'}',
+      'overlay_height_px=${overlayHeightPx ?? '—'}',
+      'overlay_min_font_pt=$overlayMinFontPt',
+      'overlay_title_font_pt=$overlayTitleFontPt',
+      'overlay_detail_font_pt=$overlayDetailFontPt',
       'transcribe_endpoint=${transcribeEndpoint ?? '—'}',
       'transcribe_called=${transcribeCalled ? 'yes' : 'no'}',
       'transcribe_http_result=${transcribeHttpResult ?? '—'}',

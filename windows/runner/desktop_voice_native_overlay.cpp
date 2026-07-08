@@ -8,41 +8,65 @@
 #include <memory>
 #include <string>
 
+#ifndef USER_DEFAULT_SCREEN_DPI
+#define USER_DEFAULT_SCREEN_DPI 96
+#endif
+
 namespace {
 
 constexpr wchar_t kOverlayClassName[] = L"CounterDesktopVoiceOverlay";
 
-// Readable compact listening pill (not tiny).
-constexpr int kListeningWidth = 260;
-constexpr int kListeningHeight = 52;
+// Logical sizes (100% / 96 DPI). Scaled at paint/position by monitor DPI.
+// Listening/processing: readable compact pill (not Handy-tiny).
+constexpr int kListeningWidth = 340;
+constexpr int kListeningHeight = 68;
+constexpr int kStatusWidth = 340;
+constexpr int kStatusHeight = 68;
 
-// Processing / started / stopped — readable compact bar.
-constexpr int kStatusWidth = 320;
-constexpr int kStatusHeight = 56;
+// Pending confirmation — large readable card.
+constexpr int kPendingWidth = 480;
+constexpr int kPendingHeight = 124;
 
-// Pending confirmation — readable category/task + hint + progress.
-constexpr int kPendingWidth = 380;
-constexpr int kPendingHeight = 92;
-
-// Error card — never use tiny red text in the listening pill.
-constexpr int kErrorWidth = 380;
-constexpr int kErrorHeight = 96;
+// Error — large readable card (never tiny red text).
+constexpr int kErrorWidth = 480;
+constexpr int kErrorHeight = 136;
 
 constexpr int kBottomMargin = 28;
-constexpr int kCloseButtonSize = 28;
+constexpr int kCloseButtonSize = 32;
 constexpr int kCloseButtonMargin = 12;
 
-// Title / body fonts (logical px ≈ screen px at 100% DPI; ClearType).
-constexpr int kTitleFontPx = 16;
-constexpr int kBodyFontPx = 14;
+// Hard rule: no overlay font below 16pt. Title 18–20pt. Detail ≥16pt.
+constexpr int kTitleFontPt = 19;
+constexpr int kBodyFontPt = 16;
+constexpr int kMinFontPt = 16;
 
 std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> g_overlay_channel;
 
-bool PointInCloseButton(int x, int y, const RECT& rect) {
-  const int left = rect.right - kCloseButtonMargin - kCloseButtonSize;
-  const int top = kCloseButtonMargin;
-  const int right = left + kCloseButtonSize;
-  const int bottom = top + kCloseButtonSize;
+int DpiForHwnd(HWND hwnd) {
+  if (hwnd == nullptr) {
+    return USER_DEFAULT_SCREEN_DPI;
+  }
+  const UINT dpi = GetDpiForWindow(hwnd);
+  return dpi == 0 ? USER_DEFAULT_SCREEN_DPI : static_cast<int>(dpi);
+}
+
+int ScalePx(int logical_px, int dpi) {
+  return MulDiv(logical_px, dpi, USER_DEFAULT_SCREEN_DPI);
+}
+
+int PtToPx(int pt, int dpi) {
+  // Negative lfHeight = character height in device pixels for CreateFont.
+  const int px = MulDiv(std::max(pt, kMinFontPt), dpi, 72);
+  return -std::max(px, ScalePx(kMinFontPt, dpi));
+}
+
+bool PointInCloseButton(int x, int y, const RECT& rect, int dpi) {
+  const int close = ScalePx(kCloseButtonSize, dpi);
+  const int margin = ScalePx(kCloseButtonMargin, dpi);
+  const int left = rect.right - margin - close;
+  const int top = margin;
+  const int right = left + close;
+  const int bottom = top + close;
   return x >= left && x <= right && y >= top && y <= bottom;
 }
 
@@ -82,15 +106,17 @@ int OverlayWidthForState(const std::string& state) {
   return kStatusWidth;
 }
 
-int CornerRadiusForState(const std::string& state) {
-  if (state == "error" || state == "pending") return 20;
-  return OverlayHeightForState(state);  // stadium pill
+int CornerRadiusForState(const std::string& state, int dpi) {
+  if (state == "error" || state == "pending") {
+    return ScalePx(20, dpi);
+  }
+  return OverlayHeightForState(state);  // stadium before DPI (scaled by caller)
 }
 
-HFONT MakeFont(int px, int weight) {
-  return CreateFontW(px, 0, 0, 0, weight, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-                     OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
-                     DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
+HFONT MakePtFont(int pt, int weight, int dpi) {
+  return CreateFontW(PtToPx(pt, dpi), 0, 0, 0, weight, FALSE, FALSE, FALSE,
+                     DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                     CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
 }
 
 }  // namespace
@@ -127,7 +153,7 @@ void DesktopVoiceNativeOverlay::StopAnimationTimer() {
 
 void DesktopVoiceNativeOverlay::TickAnimation() {
   constexpr double kAttack = 0.55;
-  constexpr double kRelease = 0.18;
+  constexpr double kRelease = 0.22;
   constexpr double kEpsilon = 0.001;
   const double diff = target_level_ - level_;
   if (std::abs(diff) < kEpsilon && level_ < kEpsilon) {
@@ -158,15 +184,18 @@ void DesktopVoiceNativeOverlay::EnsureClassRegistered() {
 void DesktopVoiceNativeOverlay::PositionOverlay() {
   RECT work = {};
   SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0);
-  const int height = OverlayHeightForState(state_);
-  const int width = OverlayWidthForState(state_);
+  const int dpi = DpiForHwnd(overlay_hwnd_ != nullptr ? overlay_hwnd_ : main_hwnd_);
+  const int height = ScalePx(OverlayHeightForState(state_), dpi);
+  const int width = ScalePx(OverlayWidthForState(state_), dpi);
+  const int margin = ScalePx(kBottomMargin, dpi);
   const int x = work.left + ((work.right - work.left) - width) / 2;
-  const int y = work.bottom - height - kBottomMargin;
+  const int y = work.bottom - height - margin;
   SetWindowPos(overlay_hwnd_, HWND_TOPMOST, x, y, width, height,
                SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
 void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
+  const int dpi = DpiForHwnd(overlay_hwnd_);
   const COLORREF bg_color = RGB(28, 28, 30);
   const COLORREF accent = RGB(236, 236, 240);
   const COLORREF muted = RGB(170, 170, 178);
@@ -177,7 +206,10 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
   HPEN border = CreatePen(PS_SOLID, 1, RGB(55, 55, 60));
   HGDIOBJ old_pen = SelectObject(hdc, border);
   HGDIOBJ old_brush = SelectObject(hdc, bg);
-  const int radius = CornerRadiusForState(state_);
+  int radius = CornerRadiusForState(state_, dpi);
+  if (state_ != "error" && state_ != "pending") {
+    radius = ScalePx(OverlayHeightForState(state_), dpi);
+  }
   RoundRect(hdc, rect.left, rect.top, rect.right, rect.bottom, radius, radius);
   SelectObject(hdc, old_pen);
   SelectObject(hdc, old_brush);
@@ -188,14 +220,15 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
 
   const int h = rect.bottom - rect.top;
   const int cy = rect.top + h / 2;
-  const int content_right = rect.right - kCloseButtonMargin - kCloseButtonSize - 8;
+  const int close = ScalePx(kCloseButtonSize, dpi);
+  const int close_margin = ScalePx(kCloseButtonMargin, dpi);
+  const int content_right = rect.right - close_margin - close - ScalePx(8, dpi);
+  const int icon_cx = rect.left + ScalePx(28, dpi);
 
-  // Left icon
-  const int icon_cx = rect.left + 24;
   if (state_ == "error") {
     HPEN err_pen = CreatePen(PS_SOLID, 2, error_accent);
     HGDIOBJ old_err = SelectObject(hdc, err_pen);
-    const int d = 6;
+    const int d = ScalePx(7, dpi);
     MoveToEx(hdc, icon_cx - d, cy - d, nullptr);
     LineTo(hdc, icon_cx + d, cy + d);
     MoveToEx(hdc, icon_cx + d, cy - d, nullptr);
@@ -204,41 +237,43 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
     DeleteObject(err_pen);
   } else if (state_ == "listening") {
     HBRUSH mic = CreateSolidBrush(accent);
-    RECT mic_body = {icon_cx - 4, cy - 9, icon_cx + 4, cy + 4};
+    RECT mic_body = {icon_cx - ScalePx(5, dpi), cy - ScalePx(11, dpi),
+                     icon_cx + ScalePx(5, dpi), cy + ScalePx(5, dpi)};
     FillRect(hdc, &mic_body, mic);
     DeleteObject(mic);
     HPEN mic_pen = CreatePen(PS_SOLID, 2, accent);
     HGDIOBJ old_mic = SelectObject(hdc, mic_pen);
-    MoveToEx(hdc, icon_cx - 6, cy + 4, nullptr);
-    LineTo(hdc, icon_cx + 6, cy + 4);
-    MoveToEx(hdc, icon_cx, cy + 4, nullptr);
-    LineTo(hdc, icon_cx, cy + 9);
+    MoveToEx(hdc, icon_cx - ScalePx(7, dpi), cy + ScalePx(5, dpi), nullptr);
+    LineTo(hdc, icon_cx + ScalePx(7, dpi), cy + ScalePx(5, dpi));
+    MoveToEx(hdc, icon_cx, cy + ScalePx(5, dpi), nullptr);
+    LineTo(hdc, icon_cx, cy + ScalePx(11, dpi));
     SelectObject(hdc, old_mic);
     DeleteObject(mic_pen);
   } else {
     HBRUSH dot = CreateSolidBrush(accent);
-    RECT dr = {icon_cx - 5, cy - 5, icon_cx + 5, cy + 5};
+    RECT dr = {icon_cx - ScalePx(6, dpi), cy - ScalePx(6, dpi),
+               icon_cx + ScalePx(6, dpi), cy + ScalePx(6, dpi)};
     FillRect(hdc, &dr, dot);
     DeleteObject(dot);
   }
 
   if (state_ == "listening") {
-    // Center mic bars only — no tiny status text.
+    // Dart sends perceptual 0..1 already — do not sqrt again.
     const int bar_count = 5;
-    const int bar_w = 4;
-    const int gap = 5;
-    const int max_h = 22;
-    const double gain = std::sqrt(std::max(level_, 0.0));
-    const double min_visible = 0.10;
-    const double effective_level = std::max(gain, min_visible);
+    const int bar_w = ScalePx(5, dpi);
+    const int gap = ScalePx(6, dpi);
+    const int max_h = ScalePx(30, dpi);
+    const double min_visible = 0.12;
+    const double effective_level = std::max(std::max(level_, 0.0), min_visible);
     const double phase = static_cast<double>(GetTickCount64()) / 220.0;
     const int total_w = bar_count * bar_w + (bar_count - 1) * gap;
     int x = (rect.left + rect.right - total_w) / 2;
     for (int i = 0; i < bar_count; ++i) {
       const double shape = 0.45 + 0.55 * std::sin(phase + (i + 1) * 0.9);
-      const double leveled = effective_level * shape + min_visible * 0.35;
+      const double leveled = effective_level * shape + min_visible * 0.25;
       const int bh = static_cast<int>(
-          std::clamp(leveled * max_h, 5.0, static_cast<double>(max_h)));
+          std::clamp(leveled * max_h, static_cast<double>(ScalePx(6, dpi)),
+                     static_cast<double>(max_h)));
       HBRUSH bar = CreateSolidBrush(accent);
       RECT bar_rect = {x, cy - bh / 2, x + bar_w, cy + bh / 2};
       FillRect(hdc, &bar_rect, bar);
@@ -246,18 +281,20 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
       x += bar_w + gap;
     }
   } else if (state_ == "error") {
-    // Readable error card: clear title + detail (not tiny red one-liner).
-    HFONT title_font = MakeFont(kTitleFontPx, FW_SEMIBOLD);
-    HFONT body_font = MakeFont(kBodyFontPx, FW_NORMAL);
+    HFONT title_font = MakePtFont(kTitleFontPt, FW_SEMIBOLD, dpi);
+    HFONT body_font = MakePtFont(kBodyFontPt, FW_NORMAL, dpi);
     HGDIOBJ old_font = SelectObject(hdc, title_font);
     SetTextColor(hdc, title_on_error);
-    RECT title_rect = {rect.left + 46, rect.top + 14, content_right, rect.top + 38};
+    RECT title_rect = {rect.left + ScalePx(56, dpi), rect.top + ScalePx(18, dpi),
+                       content_right, rect.top + ScalePx(52, dpi)};
     DrawTextW(hdc, primary_.c_str(), -1, &title_rect,
               DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
     if (!secondary_.empty()) {
       SelectObject(hdc, body_font);
       SetTextColor(hdc, muted);
-      RECT detail_rect = {rect.left + 46, rect.top + 42, content_right, rect.bottom - 14};
+      RECT detail_rect = {rect.left + ScalePx(56, dpi),
+                          rect.top + ScalePx(56, dpi), content_right,
+                          rect.bottom - ScalePx(18, dpi)};
       DrawTextW(hdc, secondary_.c_str(), -1, &detail_rect,
                 DT_LEFT | DT_TOP | DT_WORDBREAK | DT_END_ELLIPSIS);
     }
@@ -265,17 +302,20 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
     DeleteObject(title_font);
     DeleteObject(body_font);
   } else if (state_ == "pending") {
-    HFONT title_font = MakeFont(kTitleFontPx, FW_SEMIBOLD);
-    HFONT body_font = MakeFont(kBodyFontPx, FW_NORMAL);
+    HFONT title_font = MakePtFont(kTitleFontPt, FW_SEMIBOLD, dpi);
+    HFONT body_font = MakePtFont(kBodyFontPt, FW_NORMAL, dpi);
     HGDIOBJ old_font = SelectObject(hdc, title_font);
     SetTextColor(hdc, accent);
-    RECT title_rect = {rect.left + 46, rect.top + 12, content_right, rect.top + 38};
+    RECT title_rect = {rect.left + ScalePx(56, dpi), rect.top + ScalePx(16, dpi),
+                       content_right, rect.top + ScalePx(50, dpi)};
     DrawTextW(hdc, primary_.c_str(), -1, &title_rect,
               DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
     if (!secondary_.empty()) {
       SelectObject(hdc, body_font);
       SetTextColor(hdc, muted);
-      RECT hint_rect = {rect.left + 46, rect.top + 40, content_right, rect.top + 64};
+      RECT hint_rect = {rect.left + ScalePx(56, dpi),
+                        rect.top + ScalePx(54, dpi), content_right,
+                        rect.top + ScalePx(90, dpi)};
       DrawTextW(hdc, secondary_.c_str(), -1, &hint_rect,
                 DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
     }
@@ -283,11 +323,10 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
     DeleteObject(title_font);
     DeleteObject(body_font);
 
-    // Visible 3s progress track.
-    const int bar_h = 4;
-    const int track_top = rect.bottom - bar_h - 8;
-    const int track_left = rect.left + 16;
-    const int track_right = rect.right - 16;
+    const int bar_h = ScalePx(5, dpi);
+    const int track_top = rect.bottom - bar_h - ScalePx(14, dpi);
+    const int track_left = rect.left + ScalePx(20, dpi);
+    const int track_right = rect.right - ScalePx(20, dpi);
     const int track_w = track_right - track_left;
     const int filled_w = static_cast<int>(
         static_cast<double>(track_w) * std::clamp(progress_, 0.0, 1.0));
@@ -303,22 +342,27 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
       DeleteObject(fill);
     }
   } else {
-    // processing / started / stopped — single readable title (+ optional detail).
-    HFONT title_font = MakeFont(kTitleFontPx, FW_SEMIBOLD);
-    HFONT body_font = MakeFont(kBodyFontPx, FW_NORMAL);
+    HFONT title_font = MakePtFont(kTitleFontPt, FW_SEMIBOLD, dpi);
+    HFONT body_font = MakePtFont(kBodyFontPt, FW_NORMAL, dpi);
     HGDIOBJ old_font = SelectObject(hdc, title_font);
     SetTextColor(hdc, accent);
     if (!secondary_.empty()) {
-      RECT title_rect = {rect.left + 46, rect.top + 8, content_right, rect.top + 30};
+      RECT title_rect = {rect.left + ScalePx(56, dpi),
+                         rect.top + ScalePx(12, dpi), content_right,
+                         rect.top + ScalePx(42, dpi)};
       DrawTextW(hdc, primary_.c_str(), -1, &title_rect,
                 DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
       SelectObject(hdc, body_font);
       SetTextColor(hdc, muted);
-      RECT detail_rect = {rect.left + 46, rect.top + 30, content_right, rect.bottom - 8};
+      RECT detail_rect = {rect.left + ScalePx(56, dpi),
+                          rect.top + ScalePx(42, dpi), content_right,
+                          rect.bottom - ScalePx(12, dpi)};
       DrawTextW(hdc, secondary_.c_str(), -1, &detail_rect,
                 DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
     } else {
-      RECT title_rect = {rect.left + 46, rect.top + 8, content_right, rect.bottom - 8};
+      RECT title_rect = {rect.left + ScalePx(56, dpi),
+                         rect.top + ScalePx(12, dpi), content_right,
+                         rect.bottom - ScalePx(12, dpi)};
       DrawTextW(hdc, primary_.c_str(), -1, &title_rect,
                 DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
     }
@@ -327,14 +371,13 @@ void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
     DeleteObject(body_font);
   }
 
-  // Close button — clickable 28x28 hit target.
-  const int close_left = rect.right - kCloseButtonMargin - kCloseButtonSize;
-  const int close_top = kCloseButtonMargin;
+  const int close_left = rect.right - close_margin - close;
+  const int close_top = close_margin;
   HPEN close_pen = CreatePen(PS_SOLID, 2, muted);
   HGDIOBJ old_close_pen = SelectObject(hdc, close_pen);
-  const int cx = close_left + kCloseButtonSize / 2;
-  const int cyy = close_top + kCloseButtonSize / 2;
-  const int d = 6;
+  const int cx = close_left + close / 2;
+  const int cyy = close_top + close / 2;
+  const int d = ScalePx(7, dpi);
   MoveToEx(hdc, cx - d, cyy - d, nullptr);
   LineTo(hdc, cx + d, cyy + d);
   MoveToEx(hdc, cx + d, cyy - d, nullptr);
@@ -363,9 +406,10 @@ LRESULT CALLBACK DesktopVoiceNativeOverlay::OverlayWndProc(
     case WM_LBUTTONDOWN: {
       RECT rect;
       GetClientRect(hwnd, &rect);
+      const int dpi = DpiForHwnd(hwnd);
       const int x = LOWORD(lparam);
       const int y = HIWORD(lparam);
-      if (PointInCloseButton(x, y, rect)) {
+      if (PointInCloseButton(x, y, rect, dpi)) {
         NotifyDartClose("overlayCloseClicked");
         return 0;
       }
@@ -384,6 +428,11 @@ LRESULT CALLBACK DesktopVoiceNativeOverlay::OverlayWndProc(
         return 0;
       }
       return DefWindowProcW(hwnd, message, wparam, lparam);
+    }
+    case WM_DPICHANGED: {
+      PositionOverlay();
+      InvalidateRect(hwnd, nullptr, TRUE);
+      return 0;
     }
     case WM_ERASEBKGND:
       return 1;
@@ -512,6 +561,36 @@ void DesktopVoiceNativeOverlay::Register(flutter::FlutterEngine* engine,
           }
           const bool visible = IsWindowVisible(main_hwnd_) != FALSE;
           result->Success(flutter::EncodableValue(visible));
+          return;
+        }
+        if (method == "overlayMetrics") {
+          const int dpi = DpiForHwnd(
+              overlay_hwnd_ != nullptr ? overlay_hwnd_ : main_hwnd_);
+          const double scale = static_cast<double>(dpi) / USER_DEFAULT_SCREEN_DPI;
+          flutter::EncodableMap map;
+          map[flutter::EncodableValue("overlay_dpi")] =
+              flutter::EncodableValue(dpi);
+          map[flutter::EncodableValue("overlay_scale_factor")] =
+              flutter::EncodableValue(scale);
+          map[flutter::EncodableValue("overlay_renderer")] =
+              flutter::EncodableValue(std::string("native_handy_pill"));
+          map[flutter::EncodableValue("overlay_state")] =
+              flutter::EncodableValue(state_);
+          map[flutter::EncodableValue("overlay_width_px")] =
+              flutter::EncodableValue(
+                  ScalePx(OverlayWidthForState(state_), dpi));
+          map[flutter::EncodableValue("overlay_height_px")] =
+              flutter::EncodableValue(
+                  ScalePx(OverlayHeightForState(state_), dpi));
+          map[flutter::EncodableValue("overlay_min_font_pt")] =
+              flutter::EncodableValue(kMinFontPt);
+          map[flutter::EncodableValue("overlay_title_font_pt")] =
+              flutter::EncodableValue(kTitleFontPt);
+          map[flutter::EncodableValue("overlay_detail_font_pt")] =
+              flutter::EncodableValue(kBodyFontPt);
+          map[flutter::EncodableValue("overlay_close_hit_px")] =
+              flutter::EncodableValue(ScalePx(kCloseButtonSize, dpi));
+          result->Success(flutter::EncodableValue(map));
           return;
         }
         result->NotImplemented();

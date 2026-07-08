@@ -17,6 +17,7 @@ struct ActiveCapture {
     raw_f32: Arc<Mutex<Vec<f32>>>,
     running: Arc<AtomicBool>,
     level: Arc<Mutex<f32>>,
+    level_rms: Arc<Mutex<f32>>,
     sample_rate: u32,
     channels: u16,
     sample_format: String,
@@ -127,13 +128,21 @@ fn default_voice_samples_dir() -> std::path::PathBuf {
     std::path::PathBuf::from(base).join("Counter").join("voice_samples")
 }
 
-fn append_converted(raw: &Arc<Mutex<Vec<f32>>>, level: &Arc<Mutex<f32>>, converted: &[f32]) {
+fn append_converted(
+    raw: &Arc<Mutex<Vec<f32>>>,
+    level_peak: &Arc<Mutex<f32>>,
+    level_rms: &Arc<Mutex<f32>>,
+    converted: &[f32],
+) {
     if converted.is_empty() {
         return;
     }
-    let (_, peak) = float_rms_peak(converted);
-    if let Ok(mut v) = level.lock() {
+    let (rms, peak) = float_rms_peak(converted);
+    if let Ok(mut v) = level_peak.lock() {
         *v = peak.clamp(0.0, 1.0);
+    }
+    if let Ok(mut v) = level_rms.lock() {
+        *v = rms.clamp(0.0, 1.0);
     }
     if let Ok(mut buf) = raw.lock() {
         buf.extend_from_slice(converted);
@@ -166,16 +175,18 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
     )));
     let running = Arc::new(AtomicBool::new(true));
     let level = Arc::new(Mutex::new(0.0f32));
+    let level_rms = Arc::new(Mutex::new(0.0f32));
     let format_name = format!("{sample_format:?}");
 
     let stream = match sample_format {
         SampleFormat::F32 => {
             let buf = Arc::clone(&raw_f32);
             let lvl = Arc::clone(&level);
+            let lvl_rms = Arc::clone(&level_rms);
             device.build_input_stream(
                 &config,
                 move |input: &[f32], _| {
-                    append_converted(&buf, &lvl, input);
+                    append_converted(&buf, &lvl, &lvl_rms, input);
                 },
                 |err| eprintln!("[cpal] stream error: {err}"),
                 None,
@@ -184,6 +195,7 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
         SampleFormat::I16 => {
             let buf = Arc::clone(&raw_f32);
             let lvl = Arc::clone(&level);
+            let lvl_rms = Arc::clone(&level_rms);
             device.build_input_stream(
                 &config,
                 move |input: &[i16], _| {
@@ -191,7 +203,7 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
                         .iter()
                         .map(|s| (*s as f32 / i16::MAX as f32).clamp(-1.0, 1.0))
                         .collect();
-                    append_converted(&buf, &lvl, &converted);
+                    append_converted(&buf, &lvl, &lvl_rms, &converted);
                 },
                 |err| eprintln!("[cpal] stream error: {err}"),
                 None,
@@ -200,6 +212,7 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
         SampleFormat::U16 => {
             let buf = Arc::clone(&raw_f32);
             let lvl = Arc::clone(&level);
+            let lvl_rms = Arc::clone(&level_rms);
             device.build_input_stream(
                 &config,
                 move |input: &[u16], _| {
@@ -207,7 +220,7 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
                         .iter()
                         .map(|s| ((*s as f32 / u16::MAX as f32) * 2.0 - 1.0).clamp(-1.0, 1.0))
                         .collect();
-                    append_converted(&buf, &lvl, &converted);
+                    append_converted(&buf, &lvl, &lvl_rms, &converted);
                 },
                 |err| eprintln!("[cpal] stream error: {err}"),
                 None,
@@ -226,6 +239,7 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
         raw_f32,
         running,
         level,
+        level_rms,
         sample_rate: native_rate,
         channels,
         sample_format: format_name,
@@ -298,15 +312,20 @@ pub async fn capture_level() -> HttpResponse {
     match slot.as_ref() {
         Some(s) => {
             let level = s.level.lock().map(|v| *v).unwrap_or(0.0);
+            let rms = s.level_rms.lock().map(|v| *v).unwrap_or(0.0);
             HttpResponse::Ok().json(json!({
                 "ok": true,
                 "level": level,
+                "peak": level,
+                "rms": rms,
                 "capturing": s.running.load(Ordering::Relaxed),
             }))
         }
         None => HttpResponse::Ok().json(json!({
             "ok": false,
             "level": 0.0,
+            "peak": 0.0,
+            "rms": 0.0,
             "capturing": false,
         })),
     }

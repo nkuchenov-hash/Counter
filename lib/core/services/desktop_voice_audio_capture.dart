@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_voice_audio_presentation.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
@@ -55,6 +57,10 @@ class DesktopVoiceAudioCapture {
   double _rmsMin = 1.0;
   double _rmsMax = 0;
   double _peakMax = 0;
+  double _levelMeterRms = 0;
+  double _levelMeterDisplay = 0;
+  double _levelMeterPeakHold = 0;
+  int _overlayLevelEventsCount = 0;
 
   Stream<double>? get amplitudeStream => _ampController?.stream;
   int get capturedBytes => _buffer.length;
@@ -62,6 +68,11 @@ class DesktopVoiceAudioCapture {
   double get rmsMin => _pcmChunksCount == 0 ? 0 : _rmsMin;
   double get rmsMax => _rmsMax;
   double get peakMax => _peakMax;
+  double get levelMeterRms => _levelMeterRms;
+  double get levelMeterDisplayLevel => _levelMeterDisplay;
+  double get levelMeterPeakHold => _levelMeterPeakHold;
+  double get levelMeterGain => DesktopVoiceAudioPresentation.levelMeterGain;
+  int get overlayLevelEventsCount => _overlayLevelEventsCount;
   bool get audioLevelSeen => _audioLevelSeen;
   double get maxAmplitude => _maxAmplitude;
   double get rmsAmplitude => _rmsAmplitude;
@@ -111,6 +122,10 @@ class DesktopVoiceAudioCapture {
       _rmsMin = 1.0;
       _rmsMax = 0;
       _peakMax = 0;
+      _levelMeterRms = 0;
+      _levelMeterDisplay = 0;
+      _levelMeterPeakHold = 0;
+      _overlayLevelEventsCount = 0;
       _rawCaptureRms = 0;
       _rawCapturePeak = 0;
       _processedWavRms = 0;
@@ -217,19 +232,35 @@ class DesktopVoiceAudioCapture {
       if (r.statusCode != 200) return;
       final body = jsonDecode(r.body);
       if (body is! Map) return;
-      final level = (body['level'] as num?)?.toDouble() ?? 0;
-      _onLevel(level);
+      final peak = (body['peak'] as num?)?.toDouble() ??
+          (body['level'] as num?)?.toDouble() ??
+          0;
+      final rms = (body['rms'] as num?)?.toDouble() ?? peak;
+      _onLevel(peak: peak, rms: rms);
     } catch (_) {}
   }
 
-  void _onLevel(double peak) {
+  void _onLevel({required double peak, required double rms}) {
     _pcmChunksCount++;
-    final rms = peak; // helper reports peak; keep peak for bars.
     if (rms < _rmsMin) _rmsMin = rms;
     if (rms > _rmsMax) _rmsMax = rms;
     if (peak > _peakMax) _peakMax = peak;
     if (rms > _rmsAmplitude) _rmsAmplitude = rms;
     if (peak > _maxAmplitude) _maxAmplitude = peak;
+    _levelMeterRms = rms;
+    final display = DesktopVoiceAudioPresentation.perceptualLevel(
+      peak: peak,
+      rms: rms,
+    );
+    // Peak-hold with decay so bars move clearly without locking at max.
+    if (display >= _levelMeterPeakHold) {
+      _levelMeterPeakHold = display;
+    } else {
+      _levelMeterPeakHold = (_levelMeterPeakHold * 0.82).clamp(0.0, 1.0);
+    }
+    _levelMeterDisplay =
+        math.max(display, _levelMeterPeakHold * 0.55).clamp(0.0, 1.0);
+    _overlayLevelEventsCount++;
     if (rms >= _levelThreshold || peak >= _levelThreshold) {
       _audioLevelSeen = true;
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_SEEN');
@@ -239,9 +270,19 @@ class DesktopVoiceAudioCapture {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_UPDATE');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_RMS', rms.toStringAsFixed(4));
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_PEAK', peak.toStringAsFixed(4));
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BARS_PERCEPTUAL_SCALE');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BARS_NOT_RAW_LINEAR');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_WAVEFORM_UPDATE');
+      if (rms >= 0.015 && rms <= 0.03) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BARS_VISIBLE_FOR_LOW_RMS');
+      }
     }
-    _ampController?.add(peak.clamp(0.0, 1.0));
+    _ampController?.add(_levelMeterDisplay);
+  }
+
+  void _onChunk(List<int> chunk) {
+    _buffer.addAll(chunk);
+    _onLevel(peak: pcm16PeakLevel(chunk), rms: pcm16RmsLevel(chunk));
   }
 
   Future<bool> _startLegacy16kMonoFallback({String? deviceId}) async {
@@ -285,30 +326,6 @@ class DesktopVoiceAudioCapture {
       'unavailable_fallback_16k_mono',
     );
     return true;
-  }
-
-  void _onChunk(List<int> chunk) {
-    _buffer.addAll(chunk);
-    _pcmChunksCount++;
-    final rms = pcm16RmsLevel(chunk);
-    final peak = pcm16PeakLevel(chunk);
-    if (rms < _rmsMin) _rmsMin = rms;
-    if (rms > _rmsMax) _rmsMax = rms;
-    if (peak > _peakMax) _peakMax = peak;
-    if (rms > _rmsAmplitude) _rmsAmplitude = rms;
-    if (peak > _maxAmplitude) _maxAmplitude = peak;
-    if (rms >= _levelThreshold || peak >= _levelThreshold) {
-      _audioLevelSeen = true;
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_SEEN');
-    }
-    if (!_levelMarkerLogged) {
-      _levelMarkerLogged = true;
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_UPDATE');
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_RMS', rms.toStringAsFixed(4));
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_PEAK', peak.toStringAsFixed(4));
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_WAVEFORM_UPDATE');
-    }
-    _ampController?.add(peak.clamp(0.0, 1.0));
   }
 
   static const _manualStopPostRollMs = 180;
@@ -382,7 +399,16 @@ class DesktopVoiceAudioCapture {
 
       final rawPathFromHelper = (body['raw_wav_path'] as String?)?.trim();
       final sttPathFromHelper = (body['stt_wav_path'] as String?)?.trim();
-      final durationMs = (body['duration_ms'] as num?)?.toInt() ?? 0;
+      var durationMs = (body['duration_ms'] as num?)?.toInt() ?? 0;
+      if (durationMs <= 0 &&
+          rawPathFromHelper != null &&
+          rawPathFromHelper.isNotEmpty &&
+          File(rawPathFromHelper).existsSync()) {
+        durationMs = await wavFileDurationMs(rawPathFromHelper);
+        if (durationMs > 0) {
+          DesktopVoicePipeline.mark('DESKTOP_VOICE_RAW_F32_WAV_DURATION_FIXED');
+        }
+      }
 
       List<int> sttPcm = const [];
       final sttB64 = (body['stt_pcm16_base64'] as String?) ?? '';
@@ -588,7 +614,7 @@ class DesktopVoiceAudioCapture {
   void injectSmokeLevelBurst() {
     if (Platform.environment['COUNTER_DESKTOP_VOICE_SMOKE'] != '1') return;
     if (_usingHelperCapture) {
-      _onLevel(0.4);
+      _onLevel(peak: 0.4, rms: 0.08);
       DesktopVoicePipeline.mark('DESKTOP_VOICE_SMOKE_AUDIO_INJECTED');
       return;
     }

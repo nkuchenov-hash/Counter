@@ -2,6 +2,7 @@ import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
 import 'package:counter/core/services/desktop_voice_hotkey.dart';
 import 'package:counter/core/services/desktop_voice_overlay_bridge.dart';
+import 'package:counter/core/services/desktop_voice_overlay_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -27,23 +28,47 @@ void main() {
     });
 
     test('readable overlay size contracts (listening / error / pending)', () {
-      // Native C++ constants mirrored here as Dart contracts for review + tests.
-      const listeningW = 260;
-      const listeningH = 52;
-      const errorW = 380;
-      const errorH = 96;
-      const pendingW = 380;
-      const pendingH = 92;
-      const titleFontPx = 16;
-      const closeHit = 28;
-      expect(listeningW, inInclusiveRange(220, 280));
-      expect(listeningH, inInclusiveRange(48, 56));
-      expect(errorW, inInclusiveRange(320, 420));
-      expect(errorH, inInclusiveRange(72, 110));
-      expect(pendingW, inInclusiveRange(320, 420));
-      expect(pendingH, inInclusiveRange(72, 110));
-      expect(titleFontPx, inInclusiveRange(14, 16));
-      expect(closeHit, greaterThanOrEqualTo(24));
+      // Mirrors windows/runner/desktop_voice_native_overlay.cpp + Dart constants.
+      expect(
+        DesktopVoiceOverlayConstants.minFontPt,
+        greaterThanOrEqualTo(16),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.titleFontPt,
+        inInclusiveRange(18, 20),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.detailFontPt,
+        greaterThanOrEqualTo(16),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.listeningWidthPx,
+        inInclusiveRange(300, 360),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.listeningHeightPx,
+        inInclusiveRange(64, 72),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.errorWidthPx,
+        inInclusiveRange(420, 520),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.errorHeightPx,
+        inInclusiveRange(120, 150),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.pendingWidthPx,
+        inInclusiveRange(420, 520),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.pendingHeightPx,
+        inInclusiveRange(110, 140),
+      );
+      expect(
+        DesktopVoiceOverlayConstants.closeHitPx,
+        greaterThanOrEqualTo(32),
+      );
     });
 
     test('preparing hotkey resolves to cancelOverlay', () {

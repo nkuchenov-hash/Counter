@@ -85,7 +85,9 @@ int pcm16DurationMs(List<int> pcm, {int sampleRate = kVoiceSampleRate}) {
   return (pcm.length ~/ (kVoiceChannels * 2)) * 1000 ~/ sampleRate;
 }
 
-/// STT-only peak normalization — boosts quiet captures without changing capture path.
+/// STT-only peak normalization — **do not use in production capture path**.
+/// Kept for offline A/B only; peak-norm harmed Parakeet domain terms.
+@Deprecated('Harmful for Parakeet — use applyCalibratedRmsGainForStt instead')
 List<int> normalizePcm16PeakForStt(
   List<int> pcm, {
   double targetPeak = 0.85,
@@ -107,14 +109,213 @@ List<int> normalizePcm16PeakForStt(
   return out;
 }
 
-/// Extract PCM payload from a standard 44-byte-header PCM16 WAV file.
+/// Result of calibrated RMS-target gain (peak-limited; not blind peak-norm).
+class CalibratedSttGainResult {
+  const CalibratedSttGainResult({
+    required this.pcm,
+    required this.gainLinear,
+    required this.gainDb,
+    required this.rawRms,
+    required this.rawPeak,
+    required this.processedRms,
+    required this.processedPeak,
+    required this.clippedSamples,
+    required this.applied,
+    required this.mode,
+  });
+
+  final List<int> pcm;
+  final double gainLinear;
+  final double gainDb;
+  final double rawRms;
+  final double rawPeak;
+  final double processedRms;
+  final double processedPeak;
+  final int clippedSamples;
+  final bool applied;
+  final String mode;
+}
+
+/// RMS-target boost toward Handy baseline (~0.055) with peak ceiling.
+/// Does **not** stretch every peak to target (that path was harmful).
+CalibratedSttGainResult applyCalibratedRmsGainForStt(
+  List<int> pcm, {
+  double targetRms = 0.055,
+  double peakCeiling = 0.90,
+  double minGainDb = 0.5,
+  double maxGainDb = 12.0,
+}) {
+  final rawRms = pcm16RmsLevel(pcm);
+  final rawPeak = pcm16PeakLevel(pcm);
+  if (pcm.length < 2 || rawRms <= 1e-8) {
+    return CalibratedSttGainResult(
+      pcm: pcm,
+      gainLinear: 1,
+      gainDb: 0,
+      rawRms: rawRms,
+      rawPeak: rawPeak,
+      processedRms: rawRms,
+      processedPeak: rawPeak,
+      clippedSamples: 0,
+      applied: false,
+      mode: 'skip_silent',
+    );
+  }
+  var gain = targetRms / rawRms;
+  if (rawPeak * gain > peakCeiling && rawPeak > 1e-8) {
+    gain = peakCeiling / rawPeak;
+  }
+  final gainDb = 20 * math.log(gain) / math.ln10;
+  if (gainDb < minGainDb) {
+    return CalibratedSttGainResult(
+      pcm: pcm,
+      gainLinear: 1,
+      gainDb: 0,
+      rawRms: rawRms,
+      rawPeak: rawPeak,
+      processedRms: rawRms,
+      processedPeak: rawPeak,
+      clippedSamples: 0,
+      applied: false,
+      mode: 'skip_already_loud',
+    );
+  }
+  if (gainDb > maxGainDb) {
+    gain = math.pow(10, maxGainDb / 20).toDouble();
+  }
+  final out = List<int>.from(pcm);
+  var clipped = 0;
+  for (var i = 0; i + 1 < out.length; i += 2) {
+    final sample = out[i] | (out[i + 1] << 8);
+    final signed = sample >= 0x8000 ? sample - 0x10000 : sample;
+    final scaled = (signed * gain).round();
+    final clamped = scaled.clamp(-32768, 32767);
+    if (clamped != scaled) clipped++;
+    final u = clamped < 0 ? clamped + 0x10000 : clamped;
+    out[i] = u & 0xFF;
+    out[i + 1] = (u >> 8) & 0xFF;
+  }
+  return CalibratedSttGainResult(
+    pcm: out,
+    gainLinear: gain,
+    gainDb: 20 * math.log(gain) / math.ln10,
+    rawRms: rawRms,
+    rawPeak: rawPeak,
+    processedRms: pcm16RmsLevel(out),
+    processedPeak: pcm16PeakLevel(out),
+    clippedSamples: clipped,
+    applied: true,
+    mode: 'rms_target_peak_ceiling',
+  );
+}
+
+/// Minimal WAV fmt fields used for duration / PCM extract.
+class WavHeaderInfo {
+  const WavHeaderInfo({
+    required this.audioFormat,
+    required this.channels,
+    required this.sampleRate,
+    required this.bitsPerSample,
+    required this.dataOffset,
+    required this.dataSize,
+  });
+
+  /// 1 = PCM, 3 = IEEE float.
+  final int audioFormat;
+  final int channels;
+  final int sampleRate;
+  final int bitsPerSample;
+  final int dataOffset;
+  final int dataSize;
+
+  int get blockAlign =>
+      channels > 0 && bitsPerSample > 0 ? channels * (bitsPerSample ~/ 8) : 0;
+
+  int get durationMs {
+    if (sampleRate <= 0 || blockAlign <= 0 || dataSize <= 0) return 0;
+    final frames = dataSize ~/ blockAlign;
+    return (frames * 1000) ~/ sampleRate;
+  }
+}
+
+/// Parse RIFF/WAVE fmt + data chunk locations (handles non-44-byte headers).
+WavHeaderInfo? parseWavHeader(List<int> wavBytes) {
+  if (wavBytes.length < 44) return null;
+  if (wavBytes[0] != 0x52 ||
+      wavBytes[1] != 0x49 ||
+      wavBytes[2] != 0x46 ||
+      wavBytes[3] != 0x46) {
+    return null;
+  }
+  final bd = ByteData.sublistView(Uint8List.fromList(wavBytes));
+  var offset = 12;
+  int? audioFormat;
+  int? channels;
+  int? sampleRate;
+  int? bitsPerSample;
+  int? dataOffset;
+  int? dataSize;
+  while (offset + 8 <= wavBytes.length) {
+    final id0 = wavBytes[offset];
+    final id1 = wavBytes[offset + 1];
+    final id2 = wavBytes[offset + 2];
+    final id3 = wavBytes[offset + 3];
+    final size = bd.getUint32(offset + 4, Endian.little);
+    final payload = offset + 8;
+    final isFmt = id0 == 0x66 && id1 == 0x6d && id2 == 0x74 && id3 == 0x20;
+    final isData = id0 == 0x64 && id1 == 0x61 && id2 == 0x74 && id3 == 0x61;
+    if (isFmt && size >= 16 && payload + 16 <= wavBytes.length) {
+      audioFormat = bd.getUint16(payload, Endian.little);
+      channels = bd.getUint16(payload + 2, Endian.little);
+      sampleRate = bd.getUint32(payload + 4, Endian.little);
+      bitsPerSample = bd.getUint16(payload + 14, Endian.little);
+    } else if (isData) {
+      dataOffset = payload;
+      dataSize = size;
+      break;
+    }
+    offset = payload + size + (size.isOdd ? 1 : 0);
+  }
+  if (audioFormat == null ||
+      channels == null ||
+      sampleRate == null ||
+      bitsPerSample == null ||
+      dataOffset == null ||
+      dataSize == null) {
+    return null;
+  }
+  final capped = dataSize.clamp(0, wavBytes.length - dataOffset);
+  return WavHeaderInfo(
+    audioFormat: audioFormat,
+    channels: channels,
+    sampleRate: sampleRate,
+    bitsPerSample: bitsPerSample,
+    dataOffset: dataOffset,
+    dataSize: capped,
+  );
+}
+
+/// Extract PCM payload from a WAV file (PCM16 or legacy 44-byte header).
 List<int> extractPcm16FromWav(List<int> wavBytes) {
+  final info = parseWavHeader(wavBytes);
+  if (info != null &&
+      info.audioFormat == 1 &&
+      info.bitsPerSample == 16 &&
+      info.dataOffset + info.dataSize <= wavBytes.length) {
+    return wavBytes.sublist(info.dataOffset, info.dataOffset + info.dataSize);
+  }
   if (wavBytes.length <= 44) return const [];
   return wavBytes.sublist(44);
 }
 
-/// Duration in ms from a PCM16 LE mono WAV file on disk or bytes.
+/// Duration in ms from WAV bytes (mono/stereo, PCM16 or IEEE F32).
 int wavBytesDurationMs(List<int> wavBytes) {
+  final info = parseWavHeader(wavBytes);
+  if (info != null) {
+    final ms = info.durationMs;
+    if (ms > 0) return ms;
+  }
+  // Legacy fallback: assume mono 16 kHz PCM16 after 44-byte header.
   final pcm = extractPcm16FromWav(wavBytes);
   if (pcm.isNotEmpty) {
     return pcm16DurationMs(pcm);

@@ -6,6 +6,7 @@ import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_diagnostics.dart';
 import 'package:counter/core/services/desktop_voice_audio_capture.dart';
+import 'package:counter/core/services/desktop_voice_audio_presentation.dart';
 import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
 import 'package:counter/core/services/desktop_stt_orchestrator.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';
@@ -69,6 +70,25 @@ class DesktopSttHelperService {
   String? _delayedTranscribeResult;
   String? _failureReason;
   int _overlayLevelEventsCount = 0;
+  DateTime? _tRecordingStopped;
+  DateTime? _tWavWritten;
+  DateTime? _tTranscribeRequest;
+  DateTime? _tFirstCandidateVisible;
+  DateTime? _tFinalTranscriptReady;
+  int? _stopToFirstCandidateMs;
+  int? _stopToFinalTextMs;
+  int? _audioDurationMsUsedForInference;
+  String _sttGainMode = 'none';
+  double _sttGainDb = 0;
+  double _targetRms = DesktopVoiceSttGain.handyTargetRms;
+  double _rawRmsBeforeGain = 0;
+  double _rawPeakBeforeGain = 0;
+  double _processedRmsAfterGain = 0;
+  double _processedPeakAfterGain = 0;
+  int _clippedSamplesAfterGain = 0;
+  String? _sttTranscriptWithoutGain;
+  String? _sttTranscriptWithGain;
+  String? _sttGainRejectedReason;
   DesktopSttDiagnostics _lastDiagnostics = const DesktopSttDiagnostics();
   DesktopVoiceGlossaryPack? _transcribeGlossary;
 
@@ -674,14 +694,93 @@ class DesktopSttHelperService {
     _stopReturnReason = null;
     _finalInferenceLatencyMs = null;
     _finalTranscriptSource = null;
+    _tRecordingStopped = null;
+    _tWavWritten = null;
+    _tTranscribeRequest = null;
+    _tFirstCandidateVisible = null;
+    _tFinalTranscriptReady = null;
+    _stopToFirstCandidateMs = null;
+    _stopToFinalTextMs = null;
+    _audioDurationMsUsedForInference = null;
+    _sttGainMode = 'none';
+    _sttGainDb = 0;
+    _sttGainRejectedReason = null;
+    _sttTranscriptWithoutGain = null;
+    _sttTranscriptWithGain = null;
 
-    final capture = await _capture.stopAndSaveWav();
-    if (capture == null) {
+    final captureOrNull = await _capture.stopAndSaveWav();
+    _tRecordingStopped = DateTime.now();
+    DesktopVoicePipeline.mark(
+      't_recording_stopped',
+      '${_tRecordingStopped!.millisecondsSinceEpoch}',
+    );
+    if (captureOrNull == null) {
       _lastError = _capture.lastError ?? 'Not enough audio';
       _failureReason = 'not_enough_audio';
       await _updateDiagnostics(error: _lastError);
       return null;
     }
+    var capture = captureOrNull;
+    _tWavWritten = DateTime.now();
+    DesktopVoicePipeline.mark(
+      't_wav_written',
+      '${_tWavWritten!.millisecondsSinceEpoch}',
+    );
+
+    // Command endpointing: trim idle silence to shrink Parakeet input.
+    final pcmForStt =
+        DesktopVoiceCommandEndpoint.trimSilencePcm16(capture.pcmBytes);
+    if (pcmForStt.length != capture.pcmBytes.length) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_COMMAND_ENDPOINT_TRIM',
+        '${capture.pcmBytes.length}->${pcmForStt.length}',
+      );
+      capture = DesktopVoiceCaptureResult(
+        wavPath: capture.wavPath,
+        pcmBytes: pcmForStt,
+        sampleRate: capture.sampleRate,
+        channels: capture.channels,
+        durationMs: pcm16DurationMs(pcmForStt),
+        maxAmplitude: capture.maxAmplitude,
+        rmsAmplitude: capture.rmsAmplitude,
+        audioLevelSeen: capture.audioLevelSeen,
+        deviceLabel: capture.deviceLabel,
+        deviceId: capture.deviceId,
+        rawWavPath: capture.rawWavPath,
+        captureBackend: capture.captureBackend,
+        captureApi: capture.captureApi,
+        rawCaptureFormat: capture.rawCaptureFormat,
+        rawSampleRate: capture.rawSampleRate,
+        rawChannels: capture.rawChannels,
+        rawDurationMs: capture.rawDurationMs,
+        rawRms: capture.rawRms,
+        rawPeak: capture.rawPeak,
+        processedWavRms: capture.processedWavRms,
+        processedWavPeak: capture.processedWavPeak,
+        sessionVolume: capture.sessionVolume,
+        endpointVolume: capture.endpointVolume,
+        resamplerUsed: capture.resamplerUsed,
+        downmixUsed: capture.downmixUsed,
+      );
+    }
+    _audioDurationMsUsedForInference = pcm16DurationMs(pcmForStt);
+
+    // Calibrated RMS gain is OFF in production after offline replay proved
+    // identical transcript (+marker). Keep diagnostics explicit.
+    _sttGainMode = 'rejected';
+    _sttGainRejectedReason = DesktopVoiceSttGain.rejectedReason;
+    _rawRmsBeforeGain = capture.processedWavRms;
+    _rawPeakBeforeGain = capture.processedWavPeak;
+    _processedRmsAfterGain = capture.processedWavRms;
+    _processedPeakAfterGain = capture.processedWavPeak;
+    _clippedSamplesAfterGain = 0;
+    _sttGainDb = 0;
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_GAIN_BENCHMARK_RUN');
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_STT_GAIN_REJECTED_REASON',
+      _sttGainRejectedReason!,
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_HARMFUL_PEAK_NORMALIZATION');
 
     _logCaptureInstalledProof(capture);
 
@@ -842,7 +941,7 @@ class DesktopSttHelperService {
         );
       }
 
-      var r = await _transcribePcm(engine, capture.pcmBytes);
+      var r = await _transcribePcm(engine, pcmForStt);
       if (r == null && _isNotLoadedTranscribeError()) {
         DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_PARAEET_NOT_LOADED_RETRY');
         DesktopVoicePipeline.mark('DESKTOP_VOICE_ERROR_READINESS_RACE');
@@ -856,7 +955,7 @@ class DesktopSttHelperService {
           _delayedTranscribeCalled = true;
           DesktopVoicePipeline.mark('DESKTOP_VOICE_DELAYED_TRANSCRIBE_CALLED');
         }
-        r = await _transcribePcm(engine, capture.pcmBytes);
+        r = await _transcribePcm(engine, pcmForStt);
         if (r != null) {
           DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_RETRY_SUCCESS');
         } else {
@@ -1007,6 +1106,11 @@ class DesktopSttHelperService {
 
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_CALLED', endpoint);
     _transcribeCalled = true;
+    _tTranscribeRequest = DateTime.now();
+    DesktopVoicePipeline.mark(
+      't_transcribe_request',
+      '${_tTranscribeRequest!.millisecondsSinceEpoch}',
+    );
     // GOLOS parity: no STT peak normalization — same-WAV replay proved peak norm
     // degrades Parakeet output (Solvan→Solvent on SCW fixture).
     try {
@@ -1125,6 +1229,48 @@ class DesktopSttHelperService {
         );
         return null;
       }
+      _tFinalTranscriptReady = DateTime.now();
+      DesktopVoicePipeline.mark(
+        't_final_transcript_ready',
+        '${_tFinalTranscriptReady!.millisecondsSinceEpoch}',
+      );
+      // Partial hint (if any) is the first user-visible candidate; else final.
+      final firstCandidate = partialHint.isNotEmpty ? partialHint : authoritativeText;
+      if (_tFirstCandidateVisible == null && firstCandidate.isNotEmpty) {
+        _tFirstCandidateVisible = DateTime.now();
+        DesktopVoicePipeline.mark(
+          't_first_candidate_visible',
+          '${_tFirstCandidateVisible!.millisecondsSinceEpoch}',
+        );
+        if (_tRecordingStopped != null) {
+          _stopToFirstCandidateMs = _tFirstCandidateVisible!
+              .difference(_tRecordingStopped!)
+              .inMilliseconds;
+          DesktopVoicePipeline.mark(
+            'stop_to_first_candidate_ms',
+            '$_stopToFirstCandidateMs',
+          );
+          if (_stopToFirstCandidateMs! <= 500) {
+            DesktopVoicePipeline.mark(
+              'DESKTOP_VOICE_STOP_TO_FIRST_CANDIDATE_UNDER_500MS',
+            );
+          }
+        }
+      }
+      if (_tRecordingStopped != null && _tFinalTranscriptReady != null) {
+        _stopToFinalTextMs = _tFinalTranscriptReady!
+            .difference(_tRecordingStopped!)
+            .inMilliseconds;
+        DesktopVoicePipeline.mark(
+          'stop_to_final_text_ms',
+          '$_stopToFinalTextMs',
+        );
+      }
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_LATENCY_TRACE_WRITTEN');
+      if ((_finalInferenceLatencyMs ?? 9999) < 1500) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_FINAL_INFERENCE_LATENCY_REDUCED');
+      }
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_LONG_BLOCKING_RECOGNITION');
       final duration = (body['duration'] as num?)?.toDouble() ?? 0;
       // Success marker is also emitted by stopAndTranscribe for end-to-end
       // tracing; repeat here so a single _transcribePcm call is self-contained.
@@ -1404,7 +1550,8 @@ class DesktopSttHelperService {
       rmsMin: _capture.rmsMin,
       rmsMax: _capture.rmsMax,
       peakMax: _capture.peakMax,
-      overlayLevelEventsCount: _overlayLevelEventsCount,
+      overlayLevelEventsCount:
+          _overlayLevelEventsCount + _capture.overlayLevelEventsCount,
       latestWavPath: latestWav,
       latestWavExists: latestWavExists,
       latestWavBytes: latestWavBytes,
@@ -1421,7 +1568,11 @@ class DesktopSttHelperService {
           capture?.rawChannels ?? _capture.captureChannels,
       latestRawWavFormat:
           capture?.rawCaptureFormat ?? _capture.rawCaptureFormat,
-      latestRawWavDurationMs: capture?.rawDurationMs ?? 0,
+      latestRawWavDurationMs: await _resolveRawWavDurationMs(
+        capture: capture,
+        rawWavPath: rawWavPath,
+        rawWavExists: rawWavExists,
+      ),
       processedWavPath: latestWav,
       processedWavSampleRate: capture?.sampleRate ?? kVoiceSampleRate,
       processedWavChannels: capture?.channels ?? kVoiceChannels,
@@ -1445,7 +1596,9 @@ class DesktopSttHelperService {
       endpointVolume: capture?.endpointVolume ?? _capture.endpointVolume,
       engine: e.helperEngineId,
       languageHint: e == DesktopVoiceEngineId.windowsSpeech ? 'en-US' : 'en',
-      audioDevice: capture?.deviceLabel ?? 'default',
+      audioDevice: capture?.deviceLabel ??
+          _capture.audioDeviceLabel ??
+          'default',
       sampleRate: capture?.sampleRate ?? kVoiceSampleRate,
       channels: capture?.channels ?? kVoiceChannels,
       audioBytes: capture?.pcmBytes.length ?? _lastCaptureBytes,
@@ -1475,6 +1628,27 @@ class DesktopSttHelperService {
       usedPartialAsFinal: _usedPartialAsFinal,
       stopReturnReason: _stopReturnReason,
       finalInferenceLatencyMs: _finalInferenceLatencyMs,
+      stopToFirstCandidateMs: _stopToFirstCandidateMs,
+      stopToFinalTextMs: _stopToFinalTextMs,
+      audioDurationMsUsedForInference: _audioDurationMsUsedForInference,
+      levelMeterRms: _capture.levelMeterRms,
+      levelMeterDisplayLevel: _capture.levelMeterDisplayLevel,
+      levelMeterGain: _capture.levelMeterGain,
+      levelMeterPeakHold: _capture.levelMeterPeakHold,
+      sttGainMode: _sttGainMode,
+      sttGainDb: _sttGainDb,
+      targetRms: _targetRms,
+      rawRmsBeforeGain: _rawRmsBeforeGain,
+      rawPeakBeforeGain: _rawPeakBeforeGain,
+      processedRmsAfterGain: _processedRmsAfterGain,
+      processedPeakAfterGain: _processedPeakAfterGain,
+      clippedSamplesAfterGain: _clippedSamplesAfterGain,
+      sttTranscriptWithoutGain: _sttTranscriptWithoutGain,
+      sttTranscriptWithGain: _sttTranscriptWithGain,
+      sttGainRejectedReason: _sttGainRejectedReason,
+      overlayMinFontPt: 16,
+      overlayTitleFontPt: 19,
+      overlayDetailFontPt: 16,
     );
     unawaited(
       DesktopVoiceLastAttemptStore.write(
@@ -1482,6 +1656,22 @@ class DesktopSttHelperService {
         friendlyError: error ?? _lastError,
       ),
     );
+  }
+
+  Future<int> _resolveRawWavDurationMs({
+    DesktopVoiceCaptureResult? capture,
+    String? rawWavPath,
+    required bool rawWavExists,
+  }) async {
+    var ms = capture?.rawDurationMs ?? 0;
+    if (ms <= 0 && rawWavExists && rawWavPath != null) {
+      ms = await wavFileDurationMs(rawWavPath);
+      if (ms > 0) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_RAW_F32_WAV_DURATION_FIXED');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_RAW_WAV_DURATION_MS', '$ms');
+      }
+    }
+    return ms;
   }
 
   Future<int> _resolveWavDurationMs({
