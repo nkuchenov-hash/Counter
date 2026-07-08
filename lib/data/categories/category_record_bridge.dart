@@ -251,6 +251,18 @@ extension CategoryRecordBridgeExtension on DatabaseService {
 
     if (localId == null || !_categoryIdResolvableForPbRecordPost(localId)) {
       if (!allowFallback) {
+        // Record edit PATCH may already carry dual 15-char relation ids from
+        // `_buildRecordPatchUpdates`. Keep them verbatim — do NOT strip or
+        // Life-fallback (that left newly created categories unlinked).
+        final cat = beforeCat?.toString().trim() ?? '';
+        final link = beforeLink?.toString().trim() ?? '';
+        if (cat.isNotEmpty &&
+            cat == link &&
+            DatabaseService._isLikelyPocketBaseRowId(cat)) {
+          merged['category_id'] = cat;
+          merged['category_link'] = cat;
+          return true;
+        }
         merged.remove('category_id');
         merged.remove('category_link');
         return false;
@@ -267,6 +279,17 @@ extension CategoryRecordBridgeExtension on DatabaseService {
 
     final pair = _recordCategoryDualityForLocalId(localId);
     if (pair == null) {
+      if (!allowFallback) {
+        final cat = beforeCat?.toString().trim() ?? '';
+        final link = beforeLink?.toString().trim() ?? '';
+        if (cat.isNotEmpty &&
+            cat == link &&
+            DatabaseService._isLikelyPocketBaseRowId(cat)) {
+          merged['category_id'] = cat;
+          merged['category_link'] = cat;
+          return true;
+        }
+      }
       merged.remove('category_id');
       merged.remove('category_link');
       return false;
@@ -379,7 +402,10 @@ extension CategoryRecordBridgeExtension on DatabaseService {
       final merged = _recordsPatchFieldsJsonStrings(
         _nocoFieldsForPatch(mergedRaw),
       );
-      _normalizeRecordCategoryFieldsForPbApi(merged);
+      // Explicit record PATCH must never silent-fallback to Life / default:
+      // that rewrote newly-created category relations back to the old category.
+      // Create/outbox cold-start keep allowFallback (default true).
+      _normalizeRecordCategoryFieldsForPbApi(merged, allowFallback: false);
       merged['user_id'] = _pidForPbFilter;
       payloadForError = merged;
       _logRecordsPatchDispatch(rid);

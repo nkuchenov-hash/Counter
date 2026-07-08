@@ -210,3 +210,55 @@ bool optimisticRecordCategoryRowMatchesSelection({
   final linkField = (cacheCategoryLinkField ?? '').trim();
   return idField == pb && linkField == pb;
 }
+
+/// After records PATCH hydrate: preserve prior category ONLY when the server
+/// row cannot resolve a concrete local category. Never restore an older
+/// category over a different concrete server id (create→Save new category).
+@visibleForTesting
+bool shouldPreservePriorRecordCategoryOnUpsert({
+  required bool priorLocalIsConcrete,
+  required bool mergedLocalIsConcrete,
+  required int? priorLocalId,
+  required int? mergedLocalId,
+}) {
+  if (!priorLocalIsConcrete) return false;
+  if (!mergedLocalIsConcrete) return true;
+  // Distinct concrete ids → honor server (intentional category change).
+  return false;
+}
+
+/// Pure mirror of record PATCH dual category keys (before PocketBase write).
+@visibleForTesting
+Map<String, String>? recordPatchCategoryFieldsForResolvedLocal({
+  required int? localCategoryId,
+  required String? pocketBaseCategoryRowId,
+}) {
+  if (localCategoryId == null) return null;
+  if (localCategoryId == 0) return null;
+  if (localCategoryId == -1) return null;
+  final fields = recordCategoryPatchFieldsFromRelationId(
+    pocketBaseCategoryRowId: pocketBaseCategoryRowId,
+  );
+  if (fields == null) return null;
+  return <String, String>{
+    'category_id': fields.categoryId!,
+    'category_link': fields.categoryLink!,
+  };
+}
+
+/// When normalize cannot re-resolve local id but PATCH already carries dual
+/// 15-char relation ids, keep them (no Life fallback / strip).
+@visibleForTesting
+bool keepVerbatimRecordCategoryRelationIds({
+  required bool allowFallback,
+  required String? categoryIdField,
+  required String? categoryLinkField,
+}) {
+  if (allowFallback) return false;
+  final cat = (categoryIdField ?? '').trim();
+  final link = (categoryLinkField ?? '').trim();
+  if (cat.isEmpty || cat != link) return false;
+  if (cat.length < 14 || cat.length > 17) return false;
+  if (cat.contains('-')) return false;
+  return RegExp(r'^[a-z0-9]+$').hasMatch(cat);
+}

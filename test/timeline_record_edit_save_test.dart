@@ -3,6 +3,9 @@ import 'package:counter/features/categories/create_category_from_picker.dart';
 import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+// resolvePlanningEditDraftCategoryId / planPatchShouldIncludeCategoryRelation
+// live in create_category_from_picker.dart (imported above).
+
 void main() {
   group('classifyRecordEditSaveMode', () {
     test('running with null end uses metadata mode even without system id', () {
@@ -335,6 +338,185 @@ void main() {
         pocketBaseCategoryRowId: 'workcategory001',
       );
       expect(fields?.categoryId, fields?.categoryLink);
+    });
+  });
+
+  group('Timeline record create→Save PATCH vs Plans (separate proofs)', () {
+    const lifeLocalId = 42;
+    const lifePbId = 'lifecategory0001'; // 15-char
+    const newLocalId = 777;
+    const newPbCategoryId = 'newcatpbrow00001'; // 15-char
+
+    test('Plans path: create handoff → plan PATCH includes new relation',
+        () async {
+      // Control case — must remain green; do not share with record assertion.
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        return newLocalId;
+      };
+      categoryCreateFromPickerAllowedOverride = () => true;
+
+      final fromCreate = await createCategoryFromPickerSubmit(
+        name: 'RGH Products',
+        target: const CategoryPickerCreateTarget.child(
+          parentLocalId: 100,
+          parentDisplayName: 'Price Reporter',
+        ),
+      );
+      expect(fromCreate, newLocalId);
+
+      final draftCategoryId = resolvePlanningEditDraftCategoryId(
+        draftCategoryId: fromCreate!,
+        originalTaskCategoryId: lifeLocalId,
+        existsInTree: true,
+        knownPairIds: const [lifeLocalId],
+      );
+      expect(draftCategoryId, newLocalId);
+      expect(
+        planPatchShouldIncludeCategoryRelation(
+          localCategoryId: draftCategoryId,
+          pocketBaseCategoryRowId: newPbCategoryId,
+        ),
+        isTrue,
+      );
+
+      categoryPickerAddNestedCategoryOverride = null;
+      categoryCreateFromPickerAllowedOverride = null;
+    });
+
+    test(
+        'Records path: create→Save must emit dual PB relation ids (not Life)',
+        () async {
+      categoryPickerAddNestedCategoryOverride = (parentId, child) async {
+        return newLocalId;
+      };
+      categoryCreateFromPickerAllowedOverride = () => true;
+
+      final created = await createCategoryFromPickerSubmit(
+        name: 'New Client Nested',
+        target: const CategoryPickerCreateTarget.child(
+          parentLocalId: 100,
+          parentDisplayName: 'Price Reporter',
+        ),
+      );
+      expect(created, newLocalId);
+
+      // Fire-time draft (Timeline Save) — same ownership helper as Plans.
+      final draftCat = resolvePlanningEditDraftCategoryId(
+        draftCategoryId: created!,
+        originalTaskCategoryId: lifeLocalId,
+        existsInTree: true,
+        knownPairIds: const [lifeLocalId],
+      );
+      expect(draftCat, newLocalId);
+      expect(draftCat, isNot(lifeLocalId));
+
+      final runningDraft = buildRunningRecordMetadataSaveDraft(
+        title: '4U Mobility Sales reporting',
+        categoryId: draftCat,
+        startUtc: DateTime.utc(2026, 7, 8, 13, 0),
+      );
+      expect(runningDraft.categoryId, newLocalId);
+      expect(runningDraft.endUtcIsNull, isTrue);
+
+      // Record-specific PATCH shape (not plan-only prove).
+      final patch = recordPatchCategoryFieldsForResolvedLocal(
+        localCategoryId: runningDraft.categoryId,
+        pocketBaseCategoryRowId: newPbCategoryId,
+      );
+      expect(patch, isNotNull);
+      expect(patch!['category_id'], newPbCategoryId);
+      expect(patch['category_link'], newPbCategoryId);
+      expect(patch['category_id'], isNot(lifePbId));
+      expect(patch['category_id'], isNot('life'));
+
+      // Optimistic cache must match before toast success.
+      expect(
+        optimisticRecordCategoryRowMatchesSelection(
+          selectedLocalCategoryId: newLocalId,
+          cacheLocalCategoryId: newLocalId,
+          cacheCategoryIdField: newPbCategoryId,
+          cacheCategoryLinkField: newPbCategoryId,
+          selectedPocketBaseCategoryRowId: newPbCategoryId,
+        ),
+        isTrue,
+      );
+
+      // Toast gate: unresolved → fail (no false success).
+      expect(
+        runningRecordCategorySaveUiOutcome(
+          originalCategoryId: lifeLocalId,
+          requestedCategoryId: newLocalId,
+          categoryResolvableForPbPatch: false,
+        ),
+        RunningRecordCategorySaveUiOutcome.categoryUnresolved,
+      );
+      expect(
+        runningRecordCategorySaveUiOutcome(
+          originalCategoryId: lifeLocalId,
+          requestedCategoryId: newLocalId,
+          categoryResolvableForPbPatch: true,
+        ),
+        RunningRecordCategorySaveUiOutcome.saved,
+      );
+
+      categoryPickerAddNestedCategoryOverride = null;
+      categoryCreateFromPickerAllowedOverride = null;
+    });
+
+    test(
+        'Records hydrate upsert must NOT restore Life over a concrete new category',
+        () {
+      // Prior Life + server returns new category → keep server (bug was restore).
+      expect(
+        shouldPreservePriorRecordCategoryOnUpsert(
+          priorLocalIsConcrete: true,
+          mergedLocalIsConcrete: true,
+          priorLocalId: lifeLocalId,
+          mergedLocalId: newLocalId,
+        ),
+        isFalse,
+      );
+      // Prior Life + server cannot resolve → preserve prior (expand lag).
+      expect(
+        shouldPreservePriorRecordCategoryOnUpsert(
+          priorLocalIsConcrete: true,
+          mergedLocalIsConcrete: false,
+          priorLocalId: lifeLocalId,
+          mergedLocalId: null,
+        ),
+        isTrue,
+      );
+    });
+
+    test(
+        'PATCH normalize with allowFallback:false keeps dual PB ids verbatim',
+        () {
+      expect(
+        keepVerbatimRecordCategoryRelationIds(
+          allowFallback: false,
+          categoryIdField: newPbCategoryId,
+          categoryLinkField: newPbCategoryId,
+        ),
+        isTrue,
+      );
+      // Must not keep slug / Life fallback shapes.
+      expect(
+        keepVerbatimRecordCategoryRelationIds(
+          allowFallback: false,
+          categoryIdField: 'life',
+          categoryLinkField: 'life',
+        ),
+        isFalse,
+      );
+      // allowFallback true → create/outbox path owns fallback logic.
+      expect(
+        keepVerbatimRecordCategoryRelationIds(
+          allowFallback: true,
+          categoryIdField: newPbCategoryId,
+          categoryLinkField: newPbCategoryId,
+        ),
+        isFalse,
+      );
     });
   });
 

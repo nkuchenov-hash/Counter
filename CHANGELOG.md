@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - Fixed record-specific newly-created category linking; Plans path was already working [shipped]
+
+* **Root cause (post-d9f9fdc):** Timeline record PATCH re-normalized category with Life/default fallback, and `_upsertFlatRecordFromPbModel` restored the prior category whenever the server id differed from cache — so create→select→Save could toast success while the card stayed on Life. Plans never used that path.
+* **`category_record_bridge.dart`:** [shipped] Record PATCH uses `allowFallback: false`; already-valid dual 15-char `category_id`/`category_link` are kept verbatim (no strip / Life rewrite).
+* **`record_service.dart`:** [shipped] Upsert preserves prior category only when the server row cannot resolve a concrete local id — intentional category changes hydrate through.
+* **`timeline_record_edit_sheet.dart` + `record_edit_save_policy.dart`:** [shipped] Fire-time draft ownership via `resolvePlanningEditDraftCategoryId`; Save passes that snapshot into optimistic + `updateRecord`; success toast still gated on PB relation resolve.
+* **`test/timeline_record_edit_save_test.dart`:** [shipped] Separate Plans vs Records create→Save proofs (dual PATCH fields, upsert preserve rule, normalize verbatim keep).
+
 ## [2026-07-08] - P0 Desktop Voice: whisper-tiny is command STT primary [engineering]
 
 * **Offline engine bench (real WAVs):** On quiet CPAL `latest_command.wav`, Parakeet → `Tell them computer warehouse download submit.`; **whisper-tiny → `Southern Computer Warehouse, DEL MOD, Submit.`** Same whisper win on old Counter; Parakeet only matches Handy on the loud Handy WAV. Windows Speech unavailable (no en-US culture). Marker: `DESKTOP_VOICE_LOCAL_ENGINE_BENCHMARK_RUN`.

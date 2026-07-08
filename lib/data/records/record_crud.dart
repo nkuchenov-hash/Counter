@@ -47,7 +47,7 @@ extension RecordCrudExtension on DatabaseService {
         updates['category_id'] = pair.relationId;
         updates['category_link'] = pair.relationId;
       } else if (categoryId != null) {
-        // Explicit picker/create selection must not silently drop category from PATCH.
+        // Explicit picker/create selection must not silently drop / Life-fallback.
         DatabaseService._log(
           'RECORD_CATEGORY_PATCH_UNRESOLVED localId=$categoryForPatch',
         );

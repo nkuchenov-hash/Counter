@@ -172,9 +172,13 @@ extension RecordServiceExtension on DatabaseService {
             }
             final priorLocal = categoryIdFromRecordRow(row);
             final mergedLocal = categoryIdFromRecordRow(m);
+            // Preserve ONLY when the server row cannot resolve a concrete
+            // category (expand lag / partial response). Never restore an old
+            // category when the server returns a *different* concrete id —
+            // that wiped create→select→Save of a new Timeline category back
+            // to Life after a successful PATCH.
             if (_planLocalCategoryIdIsConcrete(priorLocal) &&
-                (!_planLocalCategoryIdIsConcrete(mergedLocal) ||
-                    mergedLocal != priorLocal)) {
+                !_planLocalCategoryIdIsConcrete(mergedLocal)) {
               m['category_id'] = row['category_id'];
               if (row['category_link'] != null) {
                 m['category_link'] = row['category_link'];
@@ -182,6 +186,16 @@ extension RecordServiceExtension on DatabaseService {
               if (row['_expanded_category'] != null) {
                 m['_expanded_category'] = row['_expanded_category'];
               }
+              if (row['categoryId'] != null) {
+                m['categoryId'] = row['categoryId'];
+              }
+            } else if (row['categoryId'] is int &&
+                _planLocalCategoryIdIsConcrete(row['categoryId'] as int) &&
+                m['categoryId'] == null &&
+                _planLocalCategoryIdIsConcrete(mergedLocal) &&
+                mergedLocal == row['categoryId']) {
+              // Keep optimistic local stamp across hydrate when PB relations match.
+              m['categoryId'] = row['categoryId'];
             }
           }
           final silent =

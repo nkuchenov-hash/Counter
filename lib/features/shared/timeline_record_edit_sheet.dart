@@ -136,6 +136,7 @@ class TimelineRecordSheetContentState
     required ({bool sync, bool clear, String? id}) planPatch,
     DateTime? startUtc,
     DateTime? endUtc,
+    int? categoryId,
   }) {
     if (!_isPersistedRecord) return;
     DatabaseService.instance.applyOptimisticRecordRowEdit(
@@ -143,7 +144,7 @@ class TimelineRecordSheetContentState
       title: title,
       startTime: startUtc,
       endTime: endUtc,
-      categoryId: _categoryId,
+      categoryId: categoryId ?? _categoryId,
       note: noteText,
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
@@ -159,6 +160,7 @@ class TimelineRecordSheetContentState
     required ({bool sync, bool clear, String? id}) planPatch,
     DateTime? startUtc,
     DateTime? endUtc,
+    int? categoryId,
   }) async {
     if (!_isPersistedRecord) return;
     await DatabaseService.instance.updateRecord(
@@ -166,7 +168,7 @@ class TimelineRecordSheetContentState
       title: title,
       startTime: startUtc,
       endTime: endUtc,
-      categoryId: _categoryId,
+      categoryId: categoryId ?? _categoryId,
       note: noteText,
       checklist: checklistPayload,
       syncSourcePlan: planPatch.sync,
@@ -615,6 +617,20 @@ class TimelineRecordSheetContentState
       return;
     }
 
+    // Fire-time category snapshot (picker/create), same ownership rule as Plans.
+    final int? saveCategoryId = _categoryId == null
+        ? null
+        : resolvePlanningEditDraftCategoryId(
+            draftCategoryId: _categoryId!,
+            originalTaskCategoryId:
+                widget.record.categoryId ??
+                CategoryRule.uncategorizedSyntheticId,
+            existsInTree:
+                DatabaseService.instance.categoryExists(_categoryId!),
+            knownPairIds: DatabaseService.instance.allCategoryIdPathPairs
+                .map((p) => p.id),
+          );
+
     // Running active record: metadata/category Save — end_time stays null.
     if (mode == RecordEditSaveMode.runningMetadata) {
       final startUtc = _startDisplay != null
@@ -622,7 +638,7 @@ class TimelineRecordSheetContentState
           : null;
       final draft = buildRunningRecordMetadataSaveDraft(
         title: title,
-        categoryId: _categoryId,
+        categoryId: saveCategoryId,
         startUtc: startUtc,
       );
       assert(draft.endUtcIsNull);
@@ -652,6 +668,7 @@ class TimelineRecordSheetContentState
         planPatch: planPatch,
         startUtc: draft.startUtc,
         endUtc: null,
+        categoryId: draft.categoryId,
       );
       final optimistic = _buildOptimisticRecord(
         title: draft.title,
@@ -674,6 +691,7 @@ class TimelineRecordSheetContentState
               planPatch: planPatch,
               startUtc: draft.startUtc,
               endUtc: null,
+              categoryId: draft.categoryId,
             ),
           );
         },
@@ -688,6 +706,21 @@ class TimelineRecordSheetContentState
     final startUtc = validation.startUtc!;
     final endUtc = validation.endUtc!;
     final planPatchStopped = _sourcePlanPatchArgs();
+    final originalCatStopped = widget.record.categoryId;
+    final categoryOkStopped = saveCategoryId == null ||
+        DatabaseService.instance.canResolveRecordCategoryForPbPatch(
+          saveCategoryId,
+        );
+    final uiOutcomeStopped = runningRecordCategorySaveUiOutcome(
+      originalCategoryId: originalCatStopped,
+      requestedCategoryId: saveCategoryId,
+      categoryResolvableForPbPatch: categoryOkStopped,
+    );
+    if (uiOutcomeStopped ==
+        RunningRecordCategorySaveUiOutcome.categoryUnresolved) {
+      AppSnack.failed();
+      return;
+    }
     _applyRecordLocalEdit(
       title: title,
       noteText: noteText,
@@ -695,6 +728,7 @@ class TimelineRecordSheetContentState
       planPatch: planPatchStopped,
       startUtc: startUtc,
       endUtc: endUtc,
+      categoryId: saveCategoryId,
     );
     final optimisticStopped = _buildOptimisticRecord(
       title: title,
@@ -703,7 +737,7 @@ class TimelineRecordSheetContentState
       planPatch: planPatchStopped,
       startUtc: startUtc,
       endUtc: endUtc,
-    );
+    ).copyWith(categoryId: saveCategoryId);
     _recordAutosaveGate.flush(
       () {
         unawaited(
@@ -714,6 +748,7 @@ class TimelineRecordSheetContentState
             planPatch: planPatchStopped,
             startUtc: startUtc,
             endUtc: endUtc,
+            categoryId: saveCategoryId,
           ),
         );
       },
