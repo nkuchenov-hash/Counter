@@ -75,11 +75,14 @@ extension RecordOptimisticExtension on DatabaseService {
     int? categoryId,
   }) {
     final calendarDayStr = _timelineDeviceLocalDayKeyFromUtc(startUtc);
-    final rid = clientRecordId.trim();
+    final biz = clientRecordId.trim();
+    // REST map `id` must be a timeline rest key (PB / int / optimistic-*), never a bare UUID —
+    // otherwise TimelineRecord.fromMap drops id → empty → edit Save falsely took create path.
+    final restKey = biz.startsWith('optimistic-') ? biz : 'optimistic-$biz';
     return <String, dynamic>{
-      'id': rid,
-      'backendRestPathId': rid,
-      'record_id': rid,
+      'id': restKey,
+      'backendRestPathId': restKey,
+      'record_id': biz,
       'backendNumericId': null,
       'docId': 0,
       'title': title,

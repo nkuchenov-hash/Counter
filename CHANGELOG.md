@@ -20,6 +20,13 @@
 * **Diagnostics:** F32/stereo WAV duration via fmt-aware parse (`DESKTOP_VOICE_RAW_F32_WAV_DURATION_FIXED`); level/gain/overlay font fields in `last_attempt_diag`.
 * **Offline note:** Whisper-tiny recovered `Southern Computer Warehouse, DEL MOD, Submit.` on the same quiet WAV where Parakeet stayed on `Tell them…`; capture still ~−10 dB vs Handy — device/volume instrumentation next, not aliases.
 
+## [2026-07-08] - Running Timeline record metadata/category Save no longer requires end_time [shipped]
+
+* **Root cause:** Save used `isCreate = record.id.isEmpty`. Active/optimistic rows whose `id` was filtered as a hyphenated business UUID looked “empty”, so Save took the past-date create path and showed `edit_save_time_required` (“Укажите время начала и окончания…”) even when only category changed on a running record (`end_time` null).
+* **`lib/features/shared/edit_sheet/record_edit_save_policy.dart` + `timeline_record_edit_sheet.dart`:** [shipped] Split Save modes (create / running metadata / stopped interval). Running metadata Save requires start only, keeps `end_time` null, does not stop the record. Updatable key accepts system id **or** business `record_id`.
+* **`lib/data/records/record_crud.dart`:** [shipped] Category PATCH sends the same 15-char PB id to `records.category_id` and `records.category_link` (not business slug alone).
+* **`test/timeline_record_edit_save_test.dart`:** [shipped] Regression: running category-only Save with null end succeeds; empty id+running no longer forces create time error; stopped interval validation intact.
+
 ## [2026-07-08] - Category picker create → Save persists new category [shipped]
 
 * **Root cause (post-e5d8291):** create placeholder used local id `-1` (same as uncategorized). After create→select the sheet could show “RGH Products”, but Save’s `plans.category_id` PATCH was omitted (`_categoryRelationIdForPlanPatch` rejects `-1`), so PocketBase kept the original category (“Жизнь”).

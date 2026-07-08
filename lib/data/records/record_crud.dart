@@ -40,9 +40,13 @@ extension RecordCrudExtension on DatabaseService {
       }
     }
     if (shouldPatchCategory && categoryForPatch != null) {
-      updates['category_id'] = _recordCategoryBusinessPkForApi(
-        categoryForPatch,
-      );
+      // @DATA_MAP: records.category_id AND records.category_link are BOTH
+      // PocketBase relations → categories.id (15-char). Never send business slug alone.
+      final pair = _recordCategoryDualityForLocalId(categoryForPatch);
+      if (pair != null) {
+        updates['category_id'] = pair.relationId;
+        updates['category_link'] = pair.relationId;
+      }
     }
     if (note != null) updates['note'] = note;
     if (tags != null) {

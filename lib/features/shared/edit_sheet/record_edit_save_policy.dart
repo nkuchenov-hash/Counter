@@ -1,0 +1,150 @@
+import 'package:flutter/foundation.dart';
+
+/// How [TimelineRecord] edit Save validates and patches times.
+enum RecordEditSaveMode {
+  /// Past-date create: require start+end, write completed interval.
+  createCompletedInterval,
+
+  /// Active running row: metadata/category save; end_time may stay null.
+  runningMetadata,
+
+  /// Stopped/completed interval: require valid start+end when saving times.
+  stoppedInterval,
+}
+
+/// Result of [validateRecordEditSave].
+@immutable
+class RecordEditSaveValidation {
+  const RecordEditSaveValidation.ok(this.mode)
+      : errorKey = null,
+        startUtc = null,
+        endUtc = null;
+
+  const RecordEditSaveValidation.okWithTimes({
+    required this.mode,
+    required this.startUtc,
+    required this.endUtc,
+  }) : errorKey = null;
+
+  const RecordEditSaveValidation.error(this.errorKey)
+      : mode = null,
+        startUtc = null,
+        endUtc = null;
+
+  final RecordEditSaveMode? mode;
+  final String? errorKey;
+  final DateTime? startUtc;
+  final DateTime? endUtc;
+
+  bool get isOk => errorKey == null && mode != null;
+}
+
+/// Classify Save path from record identity + running state — **not** from
+/// whether `id` happens to look empty after UUID→REST id filtering.
+@visibleForTesting
+RecordEditSaveMode classifyRecordEditSaveMode({
+  required bool hasPersistedOrClientRecordId,
+  required bool endTimeIsNull,
+  required String status,
+}) {
+  final running =
+      endTimeIsNull && (status.trim().isEmpty || status.trim() == 'running');
+  if (!hasPersistedOrClientRecordId && !running) {
+    return RecordEditSaveMode.createCompletedInterval;
+  }
+  if (running) return RecordEditSaveMode.runningMetadata;
+  return RecordEditSaveMode.stoppedInterval;
+}
+
+/// True when the sheet has a usable row key for update (PB id, optimistic-*,
+/// or legacy business `record_id` UUID). Empty synthetic create has none.
+@visibleForTesting
+bool recordEditHasUpdatableRecordKey({
+  required String systemOrOptimisticId,
+  required String? businessRecordId,
+}) {
+  if (systemOrOptimisticId.trim().isNotEmpty) return true;
+  final biz = (businessRecordId ?? '').trim();
+  return biz.isNotEmpty;
+}
+
+/// Validation for explicit Save. Running metadata saves require start only.
+@visibleForTesting
+RecordEditSaveValidation validateRecordEditSave({
+  required String title,
+  required bool hasUpdatableRecordKey,
+  required bool recordEndTimeIsNull,
+  required String recordStatus,
+  required DateTime? draftStartDisplay,
+  required DateTime? draftEndDisplay,
+  required DateTime Function(DateTime display) displayToUtc,
+}) {
+  if (title.trim().isEmpty) {
+    return const RecordEditSaveValidation.error('edit_save_title_required');
+  }
+  final mode = classifyRecordEditSaveMode(
+    hasPersistedOrClientRecordId: hasUpdatableRecordKey,
+    endTimeIsNull: recordEndTimeIsNull,
+    status: recordStatus,
+  );
+
+  switch (mode) {
+    case RecordEditSaveMode.runningMetadata:
+      if (draftStartDisplay == null) {
+        // Running row must keep a start; missing start is a real time error.
+        return const RecordEditSaveValidation.error('edit_save_time_required');
+      }
+      // end_time may be null — do not require end for category/metadata Save.
+      return RecordEditSaveValidation.ok(mode);
+
+    case RecordEditSaveMode.createCompletedInterval:
+    case RecordEditSaveMode.stoppedInterval:
+      if (draftStartDisplay == null || draftEndDisplay == null) {
+        return const RecordEditSaveValidation.error('edit_save_time_required');
+      }
+      final startUtc = displayToUtc(draftStartDisplay);
+      final endUtc = displayToUtc(draftEndDisplay);
+      if (endUtc.isBefore(startUtc) || endUtc.isAtSameMomentAs(startUtc)) {
+        return const RecordEditSaveValidation.error('end_time_after_start');
+      }
+      return RecordEditSaveValidation.okWithTimes(
+        mode: mode,
+        startUtc: startUtc,
+        endUtc: endUtc,
+      );
+  }
+}
+
+/// Local optimistic + network payload snapshot for a running metadata Save.
+@immutable
+class RunningRecordMetadataSaveDraft {
+  const RunningRecordMetadataSaveDraft({
+    required this.title,
+    required this.categoryId,
+    required this.startUtc,
+    required this.endUtcIsNull,
+    required this.statusRemainsRunning,
+  });
+
+  final String title;
+  final int? categoryId;
+  final DateTime? startUtc;
+  final bool endUtcIsNull;
+  final bool statusRemainsRunning;
+}
+
+/// Build the draft that Save applies for a running record (category/title/etc.).
+@visibleForTesting
+RunningRecordMetadataSaveDraft buildRunningRecordMetadataSaveDraft({
+  required String title,
+  required int? categoryId,
+  required DateTime? startUtc,
+}) {
+  return RunningRecordMetadataSaveDraft(
+    title: title.trim(),
+    categoryId: categoryId,
+    startUtc: startUtc,
+    endUtcIsNull: true,
+    statusRemainsRunning: true,
+  );
+}

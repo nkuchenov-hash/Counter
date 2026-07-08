@@ -22,8 +22,16 @@ import 'package:intl/intl.dart';
 import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
-import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';import 'package:counter/features/shared/edit_sheet/quill_toolbar_config.dart';import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';import 'package:counter/features/shared/edit_sheet/sheet_time_picker.dart';class TimelineRecordSheetContent extends StatefulWidget {
+import 'package:counter/features/shared/edit_sheet/checklist_helpers.dart';
+import 'package:counter/features/shared/edit_sheet/parallel_record_panels.dart';
+import 'package:counter/features/shared/edit_sheet/quill_link_launcher.dart';
+import 'package:counter/features/shared/edit_sheet/quill_toolbar_config.dart';
+import 'package:counter/features/shared/edit_sheet/record_edit_save_policy.dart';
+import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
+import 'package:counter/features/shared/edit_sheet/sheet_time_helpers.dart';
+import 'package:counter/features/shared/edit_sheet/sheet_time_picker.dart';
+
+class TimelineRecordSheetContent extends StatefulWidget {
   const TimelineRecordSheetContent({
     required this.record,
     required this.scrollController,
@@ -64,7 +72,19 @@ class TimelineRecordSheetContentState
   final EditSheetAutosaveGate _recordAutosaveGate = EditSheetAutosaveGate();
   StreamSubscription<DocChange>? _recordQuillChangesSub;
 
-  bool get _isPersistedRecord => widget.record.id.trim().isNotEmpty;
+  /// True when Save/autosave can PATCH an existing/optimistic row (not past-date create).
+  /// Prefer [record.id]; fall back to business `record_id` when fromMap dropped a UUID id.
+  bool get _isPersistedRecord => recordEditHasUpdatableRecordKey(
+        systemOrOptimisticId: widget.record.id,
+        businessRecordId: widget.record.recordId,
+      );
+
+  /// Prefer REST system / optimistic id; UUID `record_id` keeps updates working when id was filtered.
+  String get _recordUpdateKey {
+    final id = widget.record.id.trim();
+    if (id.isNotEmpty) return id;
+    return (widget.record.recordId ?? '').trim();
+  }
 
   List<Map<String, dynamic>> _checklistForApi() {
     syncChecklistDoneLength(_checklistControllers, _checklistDone);
@@ -119,7 +139,7 @@ class TimelineRecordSheetContentState
   }) {
     if (!_isPersistedRecord) return;
     DatabaseService.instance.applyOptimisticRecordRowEdit(
-      recordId: widget.record.id,
+      recordId: _recordUpdateKey,
       title: title,
       startTime: startUtc,
       endTime: endUtc,
@@ -142,7 +162,7 @@ class TimelineRecordSheetContentState
   }) async {
     if (!_isPersistedRecord) return;
     await DatabaseService.instance.updateRecord(
-      recordId: widget.record.id,
+      recordId: _recordUpdateKey,
       title: title,
       startTime: startUtc,
       endTime: endUtc,
@@ -532,42 +552,33 @@ class TimelineRecordSheetContentState
 
   Future<void> _save() async {
     final title = _titleController.text.trim();
-    if (title.isEmpty) {
-      AppSnack.warning(
-        t(currentLocale.value, 'edit_save_title_required'),
-      );
-      return;
-    }
     final noteText = _recordQuillController.document
         .toPlainText()
         .replaceAll('\u200b', '')
         .trim();
     final checklistPayload = _checklistForApi();
-    final isRunning = widget.record.endTime == null;
-    final isCreate = widget.record.id.isEmpty;
     final planPatch = _sourcePlanPatchArgs();
 
-    // CREATE path (past-date "New Record" entry): no existing row id.
-    // Single shared edit sheet — no separate EditRecordSheet for past dates.
-    if (isCreate) {
-      if (_startDisplay == null || _endDisplay == null) {
-        AppSnack.warning(
-          t(currentLocale.value, 'edit_save_time_required'),
-        );
-        return;
-      }
-      final startUtc = displayToUtc(_startDisplay!);
-      final endUtc = displayToUtc(_endDisplay!);
-      if (endUtc.isBefore(startUtc) || endUtc.isAtSameMomentAs(startUtc)) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(t(currentLocale.value, 'end_time_after_start')),
-            ),
-          );
-        }
-        return;
-      }
+    final validation = validateRecordEditSave(
+      title: title,
+      hasUpdatableRecordKey: _isPersistedRecord,
+      recordEndTimeIsNull: widget.record.endTime == null,
+      recordStatus: widget.record.status,
+      draftStartDisplay: _startDisplay,
+      draftEndDisplay: _endDisplay,
+      displayToUtc: displayToUtc,
+    );
+    if (!validation.isOk) {
+      AppSnack.warning(t(currentLocale.value, validation.errorKey!));
+      return;
+    }
+
+    final mode = validation.mode!;
+
+    // CREATE path (past-date "New Record" entry): no existing row key.
+    if (mode == RecordEditSaveMode.createCompletedInterval) {
+      final startUtc = validation.startUtc!;
+      final endUtc = validation.endUtc!;
       final overlap = await DatabaseService.instance
           .checkOverlapWithExistingRecords(startUtc, endUtc);
       if (overlap && mounted) {
@@ -604,33 +615,47 @@ class TimelineRecordSheetContentState
       return;
     }
 
-    if (isRunning) {
+    // Running active record: metadata/category Save — end_time stays null.
+    if (mode == RecordEditSaveMode.runningMetadata) {
       final startUtc = _startDisplay != null
           ? displayToUtc(_startDisplay!)
           : null;
-      _applyRecordLocalEdit(
+      final draft = buildRunningRecordMetadataSaveDraft(
         title: title,
-        noteText: noteText,
-        checklistPayload: checklistPayload,
-        planPatch: planPatch,
+        categoryId: _categoryId,
         startUtc: startUtc,
       );
-      final optimistic = _buildOptimisticRecord(
-        title: title,
+      assert(draft.endUtcIsNull);
+      assert(draft.statusRemainsRunning);
+      _applyRecordLocalEdit(
+        title: draft.title,
         noteText: noteText,
         checklistPayload: checklistPayload,
         planPatch: planPatch,
-        startUtc: startUtc,
+        startUtc: draft.startUtc,
+        endUtc: null,
+      );
+      final optimistic = _buildOptimisticRecord(
+        title: draft.title,
+        noteText: noteText,
+        checklistPayload: checklistPayload,
+        planPatch: planPatch,
+        startUtc: draft.startUtc,
+        endUtc: null,
+      ).copyWith(
+        status: 'running',
+        categoryId: draft.categoryId,
       );
       _recordAutosaveGate.flush(
         () {
           unawaited(
             _syncRecordToNetwork(
-              title: title,
+              title: draft.title,
               noteText: noteText,
               checklistPayload: checklistPayload,
               planPatch: planPatch,
-              startUtc: startUtc,
+              startUtc: draft.startUtc,
+              endUtc: null,
             ),
           );
         },
@@ -641,18 +666,9 @@ class TimelineRecordSheetContentState
       return;
     }
 
-    if (_startDisplay == null || _endDisplay == null) {
-      AppSnack.warning(
-        t(currentLocale.value, 'edit_save_time_required'),
-      );
-      return;
-    }
-    final startUtc = displayToUtc(_startDisplay!);
-    final endUtc = displayToUtc(_endDisplay!);
-    if (endUtc.isBefore(startUtc) || endUtc.isAtSameMomentAs(startUtc)) {
-      AppSnack.warning(t(currentLocale.value, 'end_time_after_start'));
-      return;
-    }
+    // Stopped/completed interval Save.
+    final startUtc = validation.startUtc!;
+    final endUtc = validation.endUtc!;
     final planPatchStopped = _sourcePlanPatchArgs();
     _applyRecordLocalEdit(
       title: title,
@@ -693,7 +709,7 @@ class TimelineRecordSheetContentState
             .findFirstOverlappingRecordInCache(
               startUtc,
               endUtc,
-              excludeRecordId: widget.record.id,
+              excludeRecordId: _recordUpdateKey,
             );
         if (!mounted || conflict == null) return;
         final loc = currentLocale.value;
@@ -709,6 +725,7 @@ class TimelineRecordSheetContentState
   @override
   Widget build(BuildContext context) {
     final pairs = DatabaseService.instance.allCategoryIdPathPairs;
+    // ACTIVE_STATUS_LAW: running ⇔ end_time null (UI mirrors Brain).
     final isRunning = widget.record.endTime == null;
     final int catVal = _categoryId != null
         ? resolveEditFieldCategoryId(
