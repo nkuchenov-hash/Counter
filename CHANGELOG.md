@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - P0 Desktop Voice: CPAL/WASAPI F32 capture replaces quiet MF 48k path [engineering; live-recapture pending]
+
+* **Root cause of f69fb1b fail:** `record_windows` Media Foundation 48 kHz stereo PCM16 captured ~−10 dB quieter than Handy (and quieter than old 16 kHz mono). STT collapsed to `Computer warehouse subvailable submitted.`
+* **`installer/windows/stt_helper_src/capture.rs` + `build_stt_helper_en.ps1`:** Helper now exposes `/capture/start|stop|level|cancel` via **cpal → WASAPI**, preferring **F32** at device-native rate/channels; writes raw+STT WAVs; no peak norm.
+* **`desktop_voice_audio_capture.dart`:** Primary path = helper CPAL capture; **MF 48k stereo path disabled**; only safety fallback is old louder **16 kHz mono**. Diagnostics include `capture_backend` / `capture_api` / RMS/peak.
+* Smoke: `capture_backend=cpal_wasapi`, `F32`, `48000×2` confirmed on device. Live SCW phrase still required before parity acceptance.
+
 ## [2026-07-08] - P0 Desktop Voice: readable overlay + last-attempt diag file [engineering]
 
 * **`windows/runner/desktop_voice_native_overlay.cpp`:** Readable listening pill **260×52**; error expands to **380×96** card with title “Не удалось распознать” / “Could not recognize” (no tiny red one-liner); pending **380×92** with readable hint + visible progress; close hit **28×28**; title font **16px**.

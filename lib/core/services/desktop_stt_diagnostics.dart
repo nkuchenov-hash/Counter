@@ -56,6 +56,15 @@ class DesktopSttDiagnostics {
     this.delayedTranscribeResult,
     this.failureReason,
     this.overlayRendererActive,
+    this.captureBackend,
+    this.captureApi,
+    this.rawCaptureFormat,
+    this.rawCaptureRms = 0,
+    this.rawCapturePeak = 0,
+    this.processedWavRms = 0,
+    this.processedWavPeak = 0,
+    this.sessionVolume,
+    this.endpointVolume,
     this.engine,
     this.languageHint = 'en-US',
     this.audioDevice = 'default',
@@ -137,6 +146,15 @@ class DesktopSttDiagnostics {
   final String? delayedTranscribeResult;
   final String? failureReason;
   final String? overlayRendererActive;
+  final String? captureBackend;
+  final String? captureApi;
+  final String? rawCaptureFormat;
+  final double rawCaptureRms;
+  final double rawCapturePeak;
+  final double processedWavRms;
+  final double processedWavPeak;
+  final double? sessionVolume;
+  final double? endpointVolume;
   final String? engine;
   final String languageHint;
   final String audioDevice;
@@ -238,6 +256,16 @@ class DesktopSttDiagnostics {
       'delayed_transcribe_result=${delayedTranscribeResult ?? '—'}',
       'failure_reason=${failureReason ?? '—'}',
       'overlay_renderer_active=${overlayRendererActive ?? '—'}',
+      'capture_backend=${captureBackend ?? '—'}',
+      'capture_api=${captureApi ?? '—'}',
+      'raw_capture_format=${rawCaptureFormat ?? '—'}',
+      'raw_capture_rms=${rawCaptureRms.toStringAsFixed(4)}',
+      'raw_capture_peak=${rawCapturePeak.toStringAsFixed(4)}',
+      'processed_wav_rms=${processedWavRms.toStringAsFixed(4)}',
+      'processed_wav_peak=${processedWavPeak.toStringAsFixed(4)}',
+      'session_volume=${sessionVolume?.toStringAsFixed(3) ?? '—'}',
+      'endpoint_volume=${endpointVolume?.toStringAsFixed(3) ?? '—'}',
+      'device_name=$audioDevice',
       'engine=${engine ?? '—'}',
       'language_hint=$languageHint',
       'audio_device=$audioDevice',

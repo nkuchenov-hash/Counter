@@ -583,8 +583,31 @@ class DesktopSttHelperService {
   Future<List<InputDevice>> listInputDevices() =>
       _capture.listInputDevices();
 
+  /// Spawns the helper HTTP server if needed (for CPAL `/capture/*`) without
+  /// waiting for Parakeet model load — model prewarm stays background.
+  Future<bool> ensureHelperHttpReady({
+    Duration maxWait = const Duration(seconds: 4),
+  }) async {
+    final engine = resolveProductionEngine();
+    if (engine == DesktopVoiceEngineId.windowsSpeech) return true;
+    if (await _ping()) {
+      _ready = true;
+      return true;
+    }
+    final deadline = DateTime.now().add(maxWait);
+    final ok = await _ensureHelperRunning(deadline, engine);
+    return ok || await _ping();
+  }
+
   Future<bool> startListening({String? deviceId, String? deviceLabel}) async {
-    // Recording-first: local mic capture never awaits helper HTTP.
+    // CPAL capture lives in the helper — bring HTTP up first (do not wait on
+    // model load). Mic UI must still appear quickly; spawn is local.
+    final engine = resolveProductionEngine();
+    if (engine != DesktopVoiceEngineId.windowsSpeech) {
+      await ensureHelperHttpReady();
+      prewarmRecognizerInBackground();
+    }
+
     final ok = await _capture.start(deviceId: deviceId, deviceLabel: deviceLabel);
     if (!ok) {
       _lastError = _capture.lastError;
@@ -592,6 +615,10 @@ class DesktopSttHelperService {
     }
     DesktopVoicePipeline.mark('DESKTOP_VOICE_LOCAL_AUDIO_CAPTURE_STARTED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_BUFFER_STARTED');
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_CAPTURE_BACKEND_ACTIVE',
+      _capture.captureBackend,
+    );
 
     if (Platform.environment['COUNTER_DESKTOP_VOICE_SMOKE'] == '1') {
       unawaited(
@@ -601,14 +628,10 @@ class DesktopSttHelperService {
       );
     }
 
-    final engine = resolveProductionEngine();
     if (engine != DesktopVoiceEngineId.windowsSpeech) {
-      prewarmRecognizerInBackground();
-      // Partial audio endpoint expects 16 kHz mono PCM16. In Handy-parity
-      // native capture (48 kHz stereo) the raw buffer is not that shape, so
-      // only stream partials in the legacy 16 kHz mono fallback path. The
-      // authoritative final transcribe always uses the processed 16 kHz WAV.
-      final is16kMono = _capture.captureSampleRate == kVoiceSampleRate &&
+      // Partials only for legacy 16 kHz mono record-package fallback.
+      final is16kMono = !_capture.captureBackend.startsWith('cpal') &&
+          _capture.captureSampleRate == kVoiceSampleRate &&
           _capture.captureChannels == kVoiceChannels;
       if (is16kMono) {
         _capture.attachPartialTimer((bytes) {
@@ -1396,7 +1419,8 @@ class DesktopSttHelperService {
           capture?.rawSampleRate ?? _capture.captureSampleRate,
       latestRawWavChannels:
           capture?.rawChannels ?? _capture.captureChannels,
-      latestRawWavFormat: 'pcm16',
+      latestRawWavFormat:
+          capture?.rawCaptureFormat ?? _capture.rawCaptureFormat,
       latestRawWavDurationMs: capture?.rawDurationMs ?? 0,
       processedWavPath: latestWav,
       processedWavSampleRate: capture?.sampleRate ?? kVoiceSampleRate,
@@ -1407,6 +1431,18 @@ class DesktopSttHelperService {
       delayedTranscribeResult: _delayedTranscribeResult,
       failureReason: _failureReason ?? error ?? _lastError,
       overlayRendererActive: overlayRenderer,
+      captureBackend: capture?.captureBackend ?? _capture.captureBackend,
+      captureApi: capture?.captureApi ?? _capture.captureApi,
+      rawCaptureFormat:
+          capture?.rawCaptureFormat ?? _capture.rawCaptureFormat,
+      rawCaptureRms: capture?.rawRms ?? _capture.rawCaptureRms,
+      rawCapturePeak: capture?.rawPeak ?? _capture.rawCapturePeak,
+      processedWavRms:
+          capture?.processedWavRms ?? _capture.processedWavRms,
+      processedWavPeak:
+          capture?.processedWavPeak ?? _capture.processedWavPeak,
+      sessionVolume: capture?.sessionVolume ?? _capture.sessionVolume,
+      endpointVolume: capture?.endpointVolume ?? _capture.endpointVolume,
       engine: e.helperEngineId,
       languageHint: e == DesktopVoiceEngineId.windowsSpeech ? 'en-US' : 'en',
       audioDevice: capture?.deviceLabel ?? 'default',

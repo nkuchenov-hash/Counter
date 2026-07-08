@@ -1,24 +1,33 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
+import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
 
-/// Live microphone capture for desktop voice — native-rate PCM16 capture,
-/// float mono downmix + high-quality resample to 16 kHz mono for STT.
+/// Live microphone capture for desktop voice.
+///
+/// Windows primary path: STT helper CPAL/WASAPI F32 native capture
+/// (`/capture/start` + `/capture/stop`). The bad Media Foundation 48 kHz
+/// stereo PCM16 path is disabled — it measured ~10 dB quieter than Handy and
+/// worse than the old 16 kHz mono path.
+///
+/// Fallback only: legacy `record` 16 kHz mono PCM16 (pre-f69fb1b loudness).
 class DesktopVoiceAudioCapture {
   DesktopVoiceAudioCapture._();
 
   static final DesktopVoiceAudioCapture instance = DesktopVoiceAudioCapture._();
 
   static const _levelThreshold = 0.008;
+  static const _helperBase = 'http://127.0.0.1:8765';
 
   AudioRecorder? _recorder;
   StreamSubscription<List<int>>? _audioSub;
   StreamController<double>? _ampController;
   Timer? _partialTimer;
+  Timer? _helperLevelTimer;
   final List<int> _buffer = [];
 
   String? _deviceLabel;
@@ -30,7 +39,16 @@ class DesktopVoiceAudioCapture {
   String? _rawWavPath;
   int _captureSampleRate = kNativeCaptureSampleRate;
   int _captureChannels = kNativeCaptureChannels;
-  String _captureBackend = 'record_windows_mf_pcm16';
+  String _captureBackend = 'cpal_wasapi';
+  String _captureApi = 'Wasapi';
+  String _rawCaptureFormat = 'F32';
+  double _rawCaptureRms = 0;
+  double _rawCapturePeak = 0;
+  double _processedWavRms = 0;
+  double _processedWavPeak = 0;
+  double? _sessionVolume;
+  double? _endpointVolume;
+  bool _usingHelperCapture = false;
   String? _lastError;
   bool _levelMarkerLogged = false;
   int _pcmChunksCount = 0;
@@ -54,8 +72,16 @@ class DesktopVoiceAudioCapture {
   int get captureSampleRate => _captureSampleRate;
   int get captureChannels => _captureChannels;
   String get captureBackend => _captureBackend;
+  String get captureApi => _captureApi;
+  String get rawCaptureFormat => _rawCaptureFormat;
+  double get rawCaptureRms => _rawCaptureRms;
+  double get rawCapturePeak => _rawCapturePeak;
+  double get processedWavRms => _processedWavRms;
+  double get processedWavPeak => _processedWavPeak;
+  double? get sessionVolume => _sessionVolume;
+  double? get endpointVolume => _endpointVolume;
   String? get lastError => _lastError;
-  bool get isCapturing => _recorder != null;
+  bool get isCapturing => _usingHelperCapture || _recorder != null;
 
   Future<List<InputDevice>> listInputDevices() async {
     try {
@@ -85,92 +111,180 @@ class DesktopVoiceAudioCapture {
       _rmsMin = 1.0;
       _rmsMax = 0;
       _peakMax = 0;
+      _rawCaptureRms = 0;
+      _rawCapturePeak = 0;
+      _processedWavRms = 0;
+      _processedWavPeak = 0;
+      _sessionVolume = null;
+      _endpointVolume = null;
+      _usingHelperCapture = false;
       _ampController = StreamController<double>.broadcast();
 
-      _recorder = AudioRecorder();
-      if (!await _recorder!.hasPermission()) {
-        _lastError = 'Microphone permission denied';
+      // Primary: Handy-like CPAL/WASAPI F32 via STT helper.
+      if (await _startHelperCapture()) {
+        return true;
+      }
+
+      // Safety fallback: old louder 16 kHz mono Media Foundation path.
+      // Do NOT use the rejected 48 kHz stereo MF path (f69fb1b, ~-10 dB).
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_RECORD_WINDOWS_MF_48K_DISABLED',
+        'rejected_quieter_than_old_and_handy',
+      );
+      return _startLegacy16kMonoFallback(deviceId: deviceId);
+    } catch (e) {
+      _lastError = e.toString();
+      return false;
+    }
+  }
+
+  Future<bool> _startHelperCapture() async {
+    try {
+      final r = await http
+          .post(Uri.parse('$_helperBase/capture/start'))
+          .timeout(const Duration(seconds: 3));
+      if (r.statusCode != 200) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_CPAL_CAPTURE_START_FAILED',
+          'HTTP ${r.statusCode}',
+        );
         return false;
       }
-
-      InputDevice? device;
-      if (deviceId != null && deviceId.isNotEmpty) {
-        final devices = await _recorder!.listInputDevices();
-        for (final d in devices) {
-          if (d.id == deviceId) {
-            device = d;
-            _deviceLabel = d.label;
-            break;
-          }
-        }
+      final body = jsonDecode(r.body);
+      if (body is! Map || body['ok'] != true) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_CPAL_CAPTURE_START_FAILED',
+          '${body is Map ? body['error'] : 'bad_json'}',
+        );
+        return false;
       }
-
-      // Handy parity: request device-native 48 kHz stereo PCM16 so Media
-      // Foundation does NOT force a 16 kHz downsample at capture. We then do
-      // the mono downmix + high-quality resample ourselves (see stopAndSaveWav).
-      // record_windows exposes PCM16 only (no F32), so bit depth stays 16-bit.
-      _captureSampleRate = kNativeCaptureSampleRate;
-      _captureChannels = kNativeCaptureChannels;
-      _captureBackend = 'record_windows_mf_pcm16';
-      Stream<Uint8List>? stream;
-      try {
-        stream = await _recorder!.startStream(
-          RecordConfig(
-            encoder: AudioEncoder.pcm16bits,
-            sampleRate: kNativeCaptureSampleRate,
-            numChannels: kNativeCaptureChannels,
-            device: device,
-          ),
-        );
-        DesktopVoicePipeline.mark(
-          'DESKTOP_VOICE_NATIVE_RATE_CAPTURE',
-          '${kNativeCaptureSampleRate}Hz x${kNativeCaptureChannels}ch pcm16',
-        );
-        DesktopVoicePipeline.mark(
-          'DESKTOP_VOICE_F32_CAPTURE_IF_AVAILABLE',
-          'unavailable_record_windows_pcm16_only',
-        );
-      } catch (e) {
-        // Fallback: some devices reject 48 kHz stereo. Never break capture —
-        // drop to the legacy fixed 16 kHz mono path.
-        _captureSampleRate = kVoiceSampleRate;
-        _captureChannels = kVoiceChannels;
-        _captureBackend = 'record_windows_mf_pcm16_fallback_16k_mono';
-        DesktopVoicePipeline.mark(
-          'DESKTOP_VOICE_NATIVE_CAPTURE_FALLBACK_16K_MONO',
-          e.toString(),
-        );
-        stream = await _recorder!.startStream(
-          RecordConfig(
-            encoder: AudioEncoder.pcm16bits,
-            sampleRate: kVoiceSampleRate,
-            numChannels: kVoiceChannels,
-            device: device,
-          ),
-        );
-      }
-      _audioSub = stream.listen(_onChunk);
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BARS_REAL_AUDIO_PRESERVED');
-      // Capture/VAD parity pass provenance (not a parser/alias change).
+      _usingHelperCapture = true;
+      _captureBackend = (body['capture_backend'] as String?) ?? 'cpal_wasapi';
+      _captureApi = (body['capture_api'] as String?) ?? 'Wasapi';
+      _rawCaptureFormat = (body['raw_capture_format'] as String?) ?? 'F32';
+      _captureSampleRate =
+          (body['raw_capture_sample_rate'] as num?)?.toInt() ??
+              kNativeCaptureSampleRate;
+      _captureChannels =
+          (body['raw_capture_channels'] as num?)?.toInt() ??
+              kNativeCaptureChannels;
+      _deviceLabel =
+          (body['device_name'] as String?)?.trim().isNotEmpty == true
+              ? (body['device_name'] as String)
+              : (_deviceLabel ?? 'default');
+      final f32 = body['f32_available'] == true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CPAL_WASAPI_CAPTURE_ACTIVE');
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_NATIVE_RATE_CAPTURE',
+        '${_captureSampleRate}Hz x${_captureChannels}ch $_rawCaptureFormat',
+      );
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_F32_CAPTURE_IF_AVAILABLE',
+        f32 ? 'yes_cpal_f32' : 'cpal_non_f32_$_rawCaptureFormat',
+      );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_RECORD_WINDOWS_MF_PATH_BYPASSED');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_CAPTURE_PARITY_PASS_STARTED');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_ALIAS_FIX_FOR_CAPTURE_PARITY');
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_RAW_STT_QUALITY_TARGET',
         'Southern Computer Warehouse Del Mod, submit.',
       );
-      // Handy preprocessing = native-rate capture + float mono downmix +
-      // high-quality resample, no peak normalization.
       DesktopVoicePipeline.mark('DESKTOP_VOICE_HANDY_PREPROCESSING_MATCHED');
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_REMAINING_AUDIO_DIFFS_LOGGED',
-        'handy=f32_native; counter=pcm16_native(record_windows no f32); '
-            'downmix=avg; resample=windowed_sinc_hann vs rubato',
+        'backend=cpal_wasapi; mf_48k_stereo=disabled',
       );
+      _helperLevelTimer?.cancel();
+      _helperLevelTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+        unawaited(_pollHelperLevel());
+      });
       return true;
     } catch (e) {
-      _lastError = e.toString();
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_CPAL_CAPTURE_START_FAILED',
+        e.toString(),
+      );
       return false;
     }
+  }
+
+  Future<void> _pollHelperLevel() async {
+    if (!_usingHelperCapture) return;
+    try {
+      final r = await http
+          .get(Uri.parse('$_helperBase/capture/level'))
+          .timeout(const Duration(milliseconds: 400));
+      if (r.statusCode != 200) return;
+      final body = jsonDecode(r.body);
+      if (body is! Map) return;
+      final level = (body['level'] as num?)?.toDouble() ?? 0;
+      _onLevel(level);
+    } catch (_) {}
+  }
+
+  void _onLevel(double peak) {
+    _pcmChunksCount++;
+    final rms = peak; // helper reports peak; keep peak for bars.
+    if (rms < _rmsMin) _rmsMin = rms;
+    if (rms > _rmsMax) _rmsMax = rms;
+    if (peak > _peakMax) _peakMax = peak;
+    if (rms > _rmsAmplitude) _rmsAmplitude = rms;
+    if (peak > _maxAmplitude) _maxAmplitude = peak;
+    if (rms >= _levelThreshold || peak >= _levelThreshold) {
+      _audioLevelSeen = true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_SEEN');
+    }
+    if (!_levelMarkerLogged) {
+      _levelMarkerLogged = true;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_LEVEL_UPDATE');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_RMS', rms.toStringAsFixed(4));
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_PEAK', peak.toStringAsFixed(4));
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_WAVEFORM_UPDATE');
+    }
+    _ampController?.add(peak.clamp(0.0, 1.0));
+  }
+
+  Future<bool> _startLegacy16kMonoFallback({String? deviceId}) async {
+    _recorder = AudioRecorder();
+    if (!await _recorder!.hasPermission()) {
+      _lastError = 'Microphone permission denied';
+      return false;
+    }
+    InputDevice? device;
+    if (deviceId != null && deviceId.isNotEmpty) {
+      final devices = await _recorder!.listInputDevices();
+      for (final d in devices) {
+        if (d.id == deviceId) {
+          device = d;
+          _deviceLabel = d.label;
+          break;
+        }
+      }
+    }
+    _captureSampleRate = kVoiceSampleRate;
+    _captureChannels = kVoiceChannels;
+    _captureBackend = 'record_windows_mf_pcm16_fallback_16k_mono';
+    _captureApi = 'MediaFoundation';
+    _rawCaptureFormat = 'pcm16';
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_NATIVE_CAPTURE_FALLBACK_16K_MONO',
+      'cpal_unavailable_using_old_louder_path',
+    );
+    final stream = await _recorder!.startStream(
+      RecordConfig(
+        encoder: AudioEncoder.pcm16bits,
+        sampleRate: kVoiceSampleRate,
+        numChannels: kVoiceChannels,
+        device: device,
+      ),
+    );
+    _audioSub = stream.listen(_onChunk);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BARS_REAL_AUDIO_PRESERVED');
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_F32_CAPTURE_IF_AVAILABLE',
+      'unavailable_fallback_16k_mono',
+    );
+    return true;
   }
 
   void _onChunk(List<int> chunk) {
@@ -194,14 +308,9 @@ class DesktopVoiceAudioCapture {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_PEAK', peak.toStringAsFixed(4));
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NATIVE_WAVEFORM_UPDATE');
     }
-    // Mic-bar visual source: PEAK (not RMS). RMS mathematically under-reports
-    // transient speech bursts (typical RMS ~0.02 vs peak ~0.15), so RMS-only
-    // bars look dead. Peak tracks what the user actually hears. We emit on
-    // every chunk so the overlay animates per-frame, not only on loud frames.
     _ampController?.add(peak.clamp(0.0, 1.0));
   }
 
-  /// GOLOS/Handy parity — capture trailing phonemes after stop (180 ms + 30 ms drain).
   static const _manualStopPostRollMs = 180;
   static const _streamDrainMs = 30;
 
@@ -211,7 +320,155 @@ class DesktopVoiceAudioCapture {
   }) async {
     _partialTimer?.cancel();
     _partialTimer = null;
-    // Keep stream open during post-roll so "DEL MOD submit" tail is not clipped.
+    _helperLevelTimer?.cancel();
+    _helperLevelTimer = null;
+
+    if (_usingHelperCapture) {
+      return _stopHelperCaptureAndSave(fileName: fileName, onPartial: onPartial);
+    }
+    return _stopRecordPackageAndSave(fileName: fileName, onPartial: onPartial);
+  }
+
+  Future<DesktopVoiceCaptureResult?> _stopHelperCaptureAndSave({
+    String? fileName,
+    void Function(List<int> bytes)? onPartial,
+  }) async {
+    try {
+      final r = await http
+          .post(Uri.parse('$_helperBase/capture/stop'))
+          .timeout(const Duration(seconds: 8));
+      _usingHelperCapture = false;
+      await _ampController?.close();
+      _ampController = null;
+      if (r.statusCode != 200) {
+        _lastError = 'capture/stop HTTP ${r.statusCode}';
+        return null;
+      }
+      final body = jsonDecode(r.body);
+      if (body is! Map || body['ok'] != true) {
+        _lastError = body is Map ? '${body['error']}' : 'capture/stop failed';
+        return null;
+      }
+
+      _captureBackend = (body['capture_backend'] as String?) ?? _captureBackend;
+      _captureApi = (body['capture_api'] as String?) ?? _captureApi;
+      _rawCaptureFormat =
+          (body['raw_capture_format'] as String?) ?? _rawCaptureFormat;
+      _captureSampleRate =
+          (body['raw_capture_sample_rate'] as num?)?.toInt() ??
+              _captureSampleRate;
+      _captureChannels =
+          (body['raw_capture_channels'] as num?)?.toInt() ?? _captureChannels;
+      _rawCaptureRms =
+          (body['raw_capture_rms'] as num?)?.toDouble() ?? 0;
+      _rawCapturePeak =
+          (body['raw_capture_peak'] as num?)?.toDouble() ?? 0;
+      _processedWavRms =
+          (body['processed_wav_rms'] as num?)?.toDouble() ?? 0;
+      _processedWavPeak =
+          (body['processed_wav_peak'] as num?)?.toDouble() ?? 0;
+      _sessionVolume = (body['session_volume'] as num?)?.toDouble();
+      _endpointVolume = (body['endpoint_volume'] as num?)?.toDouble();
+      _deviceLabel =
+          (body['device_name'] as String?)?.trim().isNotEmpty == true
+              ? (body['device_name'] as String)
+              : (_deviceLabel ?? 'default');
+      _audioLevelSeen = body['audio_level_seen'] == true ||
+          _rawCapturePeak >= _levelThreshold;
+      _maxAmplitude = _rawCapturePeak;
+      _rmsAmplitude = _rawCaptureRms;
+      _peakMax = _rawCapturePeak;
+      _rmsMax = _rawCaptureRms;
+
+      final rawPathFromHelper = (body['raw_wav_path'] as String?)?.trim();
+      final sttPathFromHelper = (body['stt_wav_path'] as String?)?.trim();
+      final durationMs = (body['duration_ms'] as num?)?.toInt() ?? 0;
+
+      List<int> sttPcm = const [];
+      final sttB64 = (body['stt_pcm16_base64'] as String?) ?? '';
+      if (sttB64.isNotEmpty) {
+        sttPcm = base64Decode(sttB64);
+      } else if (sttPathFromHelper != null &&
+          sttPathFromHelper.isNotEmpty &&
+          File(sttPathFromHelper).existsSync()) {
+        final bytes = await File(sttPathFromHelper).readAsBytes();
+        sttPcm = extractPcm16FromWav(bytes);
+      }
+
+      if (sttPcm.length < 3200) {
+        _lastError = 'Not enough audio';
+        return null;
+      }
+
+      if (rawPathFromHelper != null &&
+          rawPathFromHelper.isNotEmpty &&
+          File(rawPathFromHelper).existsSync()) {
+        _rawWavPath = rawPathFromHelper;
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_RAW_CAPTURE_WAV_SAVED',
+          rawPathFromHelper,
+        );
+      }
+      final path = (sttPathFromHelper != null &&
+              sttPathFromHelper.isNotEmpty &&
+              File(sttPathFromHelper).existsSync())
+          ? sttPathFromHelper
+          : '${(await _samplesDir()).path}${Platform.pathSeparator}'
+              '${fileName ?? 'latest_command.wav'}';
+      if (path != sttPathFromHelper) {
+        await writePcm16WavFile(pcm: sttPcm, path: path);
+      }
+      _lastWavPath = path;
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_READY_WAV_CREATED', path);
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_HARMFUL_PEAK_NORMALIZATION');
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_CAPTURE_GAIN_DIAG',
+        'raw_rms=${_rawCaptureRms.toStringAsFixed(4)} '
+            'raw_peak=${_rawCapturePeak.toStringAsFixed(4)} '
+            'stt_rms=${_processedWavRms.toStringAsFixed(4)} '
+            'stt_peak=${_processedWavPeak.toStringAsFixed(4)} '
+            'backend=$_captureBackend api=$_captureApi fmt=$_rawCaptureFormat',
+      );
+      onPartial?.call(sttPcm);
+
+      return DesktopVoiceCaptureResult(
+        wavPath: path,
+        rawWavPath: _rawWavPath,
+        captureBackend: _captureBackend,
+        captureApi: _captureApi,
+        rawCaptureFormat: _rawCaptureFormat,
+        rawSampleRate: _captureSampleRate,
+        rawChannels: _captureChannels,
+        rawDurationMs: durationMs,
+        rawRms: _rawCaptureRms,
+        rawPeak: _rawCapturePeak,
+        processedWavRms: _processedWavRms,
+        processedWavPeak: _processedWavPeak,
+        sessionVolume: _sessionVolume,
+        endpointVolume: _endpointVolume,
+        resamplerUsed: 'helper_linear_16k',
+        downmixUsed: _captureChannels > 1,
+        pcmBytes: sttPcm,
+        sampleRate: kVoiceSampleRate,
+        channels: kVoiceChannels,
+        durationMs: pcm16DurationMs(sttPcm),
+        maxAmplitude: _maxAmplitude,
+        rmsAmplitude: _rmsAmplitude,
+        audioLevelSeen: _audioLevelSeen,
+        deviceLabel: _deviceLabel ?? 'default',
+        deviceId: _deviceId,
+      );
+    } catch (e) {
+      _usingHelperCapture = false;
+      _lastError = e.toString();
+      return null;
+    }
+  }
+
+  Future<DesktopVoiceCaptureResult?> _stopRecordPackageAndSave({
+    String? fileName,
+    void Function(List<int> bytes)? onPartial,
+  }) async {
     if (_recorder != null && _audioSub != null) {
       await Future<void>.delayed(
         const Duration(milliseconds: _manualStopPostRollMs),
@@ -236,7 +493,6 @@ class DesktopVoiceAudioCapture {
     await _ampController?.close();
     _ampController = null;
 
-    // Raw native capture buffer (device rate / channels, PCM16).
     final rawPcm = List<int>.from(_buffer);
     _buffer.clear();
 
@@ -252,13 +508,13 @@ class DesktopVoiceAudioCapture {
 
     final rawRms = pcm16RmsLevel(rawPcm);
     final rawPeak = pcm16PeakLevel(rawPcm);
+    _rawCaptureRms = rawRms;
+    _rawCapturePeak = rawPeak;
     final rawDurationMs = rawPcm.isEmpty
         ? 0
         : (rawPcm.length ~/ (_captureChannels * 2)) * 1000 ~/ _captureSampleRate;
 
     final dir = await _samplesDir();
-
-    // Preserve the raw native-rate/stereo capture for diagnostics + benchmark.
     final rawName = 'latest_command_raw.wav';
     final rawPath = '${dir.path}${Platform.pathSeparator}$rawName';
     if (rawPcm.isNotEmpty) {
@@ -272,14 +528,14 @@ class DesktopVoiceAudioCapture {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_RAW_CAPTURE_WAV_SAVED', rawPath);
     }
 
-    // Handy-parity processing: downmix to mono + high-quality resample to
-    // 16 kHz + PCM16. NO peak normalization (proven to degrade Parakeet).
     final processed = processNativeCaptureForStt(
       nativePcm16: rawPcm,
       sampleRate: _captureSampleRate,
       channels: _captureChannels,
     );
     final pcm = processed.sttPcm16;
+    _processedWavRms = pcm16RmsLevel(pcm);
+    _processedWavPeak = pcm16PeakLevel(pcm);
     DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_HARMFUL_PEAK_NORMALIZATION');
 
     if (pcm.length < 3200) {
@@ -304,11 +560,17 @@ class DesktopVoiceAudioCapture {
       wavPath: path,
       rawWavPath: _rawWavPath,
       captureBackend: _captureBackend,
+      captureApi: _captureApi,
+      rawCaptureFormat: _rawCaptureFormat,
       rawSampleRate: _captureSampleRate,
       rawChannels: _captureChannels,
       rawDurationMs: rawDurationMs,
       rawRms: rawRms,
       rawPeak: rawPeak,
+      processedWavRms: _processedWavRms,
+      processedWavPeak: _processedWavPeak,
+      sessionVolume: _sessionVolume,
+      endpointVolume: _endpointVolume,
       resamplerUsed: processed.resamplerUsed,
       downmixUsed: processed.downmixUsed,
       pcmBytes: pcm,
@@ -325,11 +587,14 @@ class DesktopVoiceAudioCapture {
 
   void injectSmokeLevelBurst() {
     if (Platform.environment['COUNTER_DESKTOP_VOICE_SMOKE'] != '1') return;
+    if (_usingHelperCapture) {
+      _onLevel(0.4);
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_SMOKE_AUDIO_INJECTED');
+      return;
+    }
     if (_recorder == null) return;
-    // Large enough that the post-resample (48 kHz stereo -> 16 kHz mono) STT
-    // buffer still clears the 3200-byte minimum.
     final chunk = <int>[];
-    for (var i = 0; i < 48000; i++) {
+    for (var i = 0; i < 16000; i++) {
       chunk.add(0x00);
       chunk.add(0x60);
     }
@@ -340,6 +605,16 @@ class DesktopVoiceAudioCapture {
   Future<void> cancel() async {
     _partialTimer?.cancel();
     _partialTimer = null;
+    _helperLevelTimer?.cancel();
+    _helperLevelTimer = null;
+    if (_usingHelperCapture) {
+      try {
+        await http
+            .post(Uri.parse('$_helperBase/capture/cancel'))
+            .timeout(const Duration(seconds: 2));
+      } catch (_) {}
+      _usingHelperCapture = false;
+    }
     try {
       await _audioSub?.cancel();
       _audioSub = null;
@@ -387,12 +662,18 @@ class DesktopVoiceCaptureResult {
     required this.deviceLabel,
     this.deviceId,
     this.rawWavPath,
-    this.captureBackend = 'record_windows_mf_pcm16',
+    this.captureBackend = 'cpal_wasapi',
+    this.captureApi = 'Wasapi',
+    this.rawCaptureFormat = 'F32',
     this.rawSampleRate = kNativeCaptureSampleRate,
     this.rawChannels = kNativeCaptureChannels,
     this.rawDurationMs = 0,
     this.rawRms = 0,
     this.rawPeak = 0,
+    this.processedWavRms = 0,
+    this.processedWavPeak = 0,
+    this.sessionVolume,
+    this.endpointVolume,
     this.resamplerUsed = 'none',
     this.downmixUsed = false,
   });
@@ -408,29 +689,39 @@ class DesktopVoiceCaptureResult {
   final String deviceLabel;
   final String? deviceId;
 
-  // Handy-parity capture diagnostics.
   final String? rawWavPath;
   final String captureBackend;
+  final String captureApi;
+  final String rawCaptureFormat;
   final int rawSampleRate;
   final int rawChannels;
   final int rawDurationMs;
   final double rawRms;
   final double rawPeak;
+  final double processedWavRms;
+  final double processedWavPeak;
+  final double? sessionVolume;
+  final double? endpointVolume;
   final String resamplerUsed;
   final bool downmixUsed;
 
   List<String> captureDiagLines() {
     return [
       'audio_device=$deviceLabel',
-      // Capture parity diagnostics (raw native capture vs STT-ready copy).
       'capture_backend=$captureBackend',
+      'capture_api=$captureApi',
+      'raw_capture_format=$rawCaptureFormat',
       'raw_capture_path=${rawWavPath ?? '—'}',
       'raw_capture_sample_rate=$rawSampleRate',
       'raw_capture_channels=$rawChannels',
-      'raw_capture_bit_depth_or_format=pcm16',
+      'raw_capture_bit_depth_or_format=$rawCaptureFormat',
       'raw_capture_duration_ms=$rawDurationMs',
       'raw_capture_rms=${rawRms.toStringAsFixed(4)}',
       'raw_capture_peak=${rawPeak.toStringAsFixed(4)}',
+      'processed_wav_rms=${processedWavRms.toStringAsFixed(4)}',
+      'processed_wav_peak=${processedWavPeak.toStringAsFixed(4)}',
+      'session_volume=${sessionVolume?.toStringAsFixed(3) ?? '—'}',
+      'endpoint_volume=${endpointVolume?.toStringAsFixed(3) ?? '—'}',
       'stt_wav_path=$wavPath',
       'stt_wav_sample_rate=$sampleRate',
       'stt_wav_channels=$channels',
