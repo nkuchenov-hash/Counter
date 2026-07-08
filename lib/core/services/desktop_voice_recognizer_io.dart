@@ -55,6 +55,9 @@ class DesktopVoiceRecognizerGolosHelper implements DesktopVoiceRecognizer {
         modelExists: diag.modelExists,
         helperReady: diag.helperReady,
         finalTranscribeReady: diag.finalTranscribeReady,
+        pendingWavAfterStop: diag.pendingWavAfterStop,
+        helperReadyAfterRecording: diag.helperReadyAfterRecording,
+        delayedTranscribeCalled: diag.delayedTranscribeCalled,
       );
       final friendly = DesktopVoiceUserError.fromException(
         _helper.lastError,

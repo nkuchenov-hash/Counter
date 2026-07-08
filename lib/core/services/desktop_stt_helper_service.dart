@@ -6,9 +6,11 @@ import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_diagnostics.dart';
 import 'package:counter/core/services/desktop_voice_audio_capture.dart';
+import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
 import 'package:counter/core/services/desktop_stt_orchestrator.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
+import 'package:counter/core/services/desktop_voice_overlay_service.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/desktop_win_speech_service.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
@@ -60,6 +62,11 @@ class DesktopSttHelperService {
   String? _lastTranscribeErrorDetail;
   String _lastTranscribeResponseBodyTail = '';
   bool _transcribeCalled = false;
+  bool _pendingWavAfterStop = false;
+  bool _helperReadyAfterRecording = false;
+  bool _delayedTranscribeCalled = false;
+  String? _delayedTranscribeResult;
+  String? _failureReason;
   int _overlayLevelEventsCount = 0;
   DesktopSttDiagnostics _lastDiagnostics = const DesktopSttDiagnostics();
   DesktopVoiceGlossaryPack? _transcribeGlossary;
@@ -151,8 +158,13 @@ class DesktopSttHelperService {
   /// Voice-overlay warmup — hard 5s cap; never blocks mic capture.
   static const Duration kVoiceOverlayWarmupMax = Duration(seconds: 5);
 
-  /// Max wait for STT HTTP after recording finishes.
-  static const Duration kVoiceProcessingMaxWait = Duration(seconds: 10);
+  /// Max wait for STT HTTP after recording finishes when helper is already ready.
+  static const Duration kVoiceProcessingMaxWait =
+      DesktopVoiceDelayedTranscribe.readyHelperMaxWait;
+
+  /// Cold-start budget after stop when a valid WAV is already saved.
+  static const Duration kVoiceColdStartMaxWait =
+      DesktopVoiceDelayedTranscribe.coldStartMaxWait;
 
   bool _restartAttemptedThisTranscribe = false;
   final List<String> _helperStdoutTail = [];
@@ -627,13 +639,27 @@ class DesktopSttHelperService {
     _lastTranscribeErrorDetail = null;
     _lastTranscribeResponseBodyTail = '';
     _transcribeCalled = false;
+    _pendingWavAfterStop = false;
+    _helperReadyAfterRecording = false;
+    _delayedTranscribeCalled = false;
+    _delayedTranscribeResult = null;
+    _failureReason = null;
+    _partialText = null;
+    _finalText = null;
+    _usedPartialAsFinal = false;
+    _stopReturnReason = null;
+    _finalInferenceLatencyMs = null;
+    _finalTranscriptSource = null;
 
     final capture = await _capture.stopAndSaveWav();
     if (capture == null) {
       _lastError = _capture.lastError ?? 'Not enough audio';
+      _failureReason = 'not_enough_audio';
       await _updateDiagnostics(error: _lastError);
       return null;
     }
+
+    _logCaptureInstalledProof(capture);
 
     DesktopVoicePipeline.mark('DESKTOP_VOICE_RECORDING_FINISHED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_SAMPLE_SAVED', capture.wavPath);
@@ -647,9 +673,17 @@ class DesktopSttHelperService {
 
     _lastCaptureBytes = capture.pcmBytes.length;
 
-    if (!capture.audioLevelSeen ||
-        capture.maxAmplitude < _levelThreshold) {
+    final wavExists = File(capture.wavPath).existsSync();
+    final hasValidPending = DesktopVoiceDelayedTranscribe.hasValidPendingWav(
+      wavExists: wavExists,
+      pcmByteLength: capture.pcmBytes.length,
+      audioLevelSeen: capture.audioLevelSeen &&
+          capture.maxAmplitude >= _levelThreshold,
+    );
+
+    if (!hasValidPending) {
       _lastError = 'Not enough audio';
+      _failureReason = 'not_enough_audio';
       await _updateDiagnostics(capture: capture, error: _lastError);
       return null;
     }
@@ -668,11 +702,14 @@ class DesktopSttHelperService {
       final latencyMs = DateTime.now().difference(t0).inMilliseconds;
       if (pipeline == null) {
         _lastError = _lastError ?? 'Recognition pipeline failed';
+        _failureReason = 'pipeline_failed';
         await _updateDiagnostics(capture: capture, error: _lastError);
         DesktopVoicePipeline.mark('DESKTOP_VOICE_RECOGNIZER_FAILED_NO_RECORD_CHANGE');
         return null;
       }
       _lastError = null;
+      _finalText = pipeline.finalCommandText;
+      _finalTranscriptSource = pipeline.finalCommandSource;
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_TRANSCRIPT_TEXT',
         pipeline.finalCommandText,
@@ -712,6 +749,10 @@ class DesktopSttHelperService {
     if (engine == DesktopVoiceEngineId.windowsSpeech) {
       text = await DesktopWinSpeechService.instance.transcribeWav(capture.wavPath);
       error = DesktopWinSpeechService.instance.lastError;
+      if (text != null && text.trim().isNotEmpty) {
+        _finalTranscriptSource = 'windows_speech';
+        _finalText = text.trim();
+      }
     } else {
       _primarySttEngine = engine.helperEngineId;
       _finalTranscriptSource = engine.helperEngineId;
@@ -720,20 +761,62 @@ class DesktopSttHelperService {
       _fallbackSttResult = null;
       _primarySttResult = null;
 
-      final deadline = DateTime.now().add(kVoiceProcessingMaxWait);
-      if (!await ensureStarted(
+      final helperReadyAtStop = _ready && _finalTranscribeReady;
+      _pendingWavAfterStop =
+          DesktopVoiceDelayedTranscribe.shouldQueuePendingWav(
+        hasValidPendingWav: hasValidPending,
+        helperFinalReadyAtStop: helperReadyAtStop,
+      );
+      if (_pendingWavAfterStop) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_PENDING_WAV_QUEUED_WHILE_HELPER_LOADING',
+          capture.wavPath,
+        );
+      }
+
+      final waitBudget = DesktopVoiceDelayedTranscribe.waitBudget(
+        pendingWavQueued: _pendingWavAfterStop,
+      );
+      final deadline = DateTime.now().add(waitBudget);
+
+      // Keep waiting through cold-start; never abandon a valid saved WAV early.
+      final started = await ensureStarted(
         engine: engine,
-        maxWait: kVoiceProcessingMaxWait,
+        maxWait: waitBudget,
         allowRestart: true,
-      )) {
+      );
+      final ready = started
+          ? await _waitForFinalTranscribeReady(engine, deadline)
+          : false;
+      _helperReadyAfterRecording = ready && _finalTranscribeReady;
+      if (_helperReadyAfterRecording) {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_READY_AFTER_RECORDING');
+      }
+
+      if (!_helperReadyAfterRecording) {
+        _failureReason = started
+            ? 'helper_not_final_ready_after_wait'
+            : 'helper_ensure_started_failed';
+        // Valid WAV exists but helper never became ready within cold-start.
         await _noteSttFriendlyFailure(
           capture: capture,
-          stage: 'ensure_started',
+          stage: _pendingWavAfterStop
+              ? 'pending_wav_helper_cold_start_timeout'
+              : 'ensure_started',
           endpoint: '/status',
         );
         return null;
       }
-      await _waitForFinalTranscribeReady(engine, deadline);
+
+      final delayedPath = _pendingWavAfterStop;
+      if (delayedPath) {
+        _delayedTranscribeCalled = true;
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_DELAYED_TRANSCRIBE_CALLED');
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_REPLAYING_SAVED_WAV_AFTER_READY',
+          capture.wavPath,
+        );
+      }
 
       var r = await _transcribePcm(engine, capture.pcmBytes);
       if (r == null && _isNotLoadedTranscribeError()) {
@@ -745,6 +828,10 @@ class DesktopSttHelperService {
           capture.wavPath,
         );
         DesktopVoicePipeline.mark('DESKTOP_VOICE_STT_USING_SAVED_WAV', capture.wavPath);
+        if (delayedPath || _pendingWavAfterStop) {
+          _delayedTranscribeCalled = true;
+          DesktopVoicePipeline.mark('DESKTOP_VOICE_DELAYED_TRANSCRIBE_CALLED');
+        }
         r = await _transcribePcm(engine, capture.pcmBytes);
         if (r != null) {
           DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_RETRY_SUCCESS');
@@ -757,14 +844,36 @@ class DesktopSttHelperService {
         _primarySttResult = 'success';
         text = r.text;
         error = null;
+        if (delayedPath) {
+          _delayedTranscribeResult = 'success';
+          DesktopVoicePipeline.mark('DESKTOP_VOICE_DELAYED_TRANSCRIBE_SUCCESS');
+          DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_FALSE_RECOGNIZER_UNAVAILABLE');
+        }
       } else {
         _primarySttResult = 'failed';
+        if (delayedPath) {
+          _delayedTranscribeResult = 'failed';
+        }
         final fb = await _attemptWindowsFallbackStt(capture.wavPath);
         if (fb != null) {
           text = fb;
           error = null;
+          if (delayedPath) {
+            _delayedTranscribeResult = 'fallback_success';
+            DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_FALSE_RECOGNIZER_UNAVAILABLE');
+          }
         } else {
           error = _lastError ?? DesktopWinSpeechService.instance.lastError;
+          if (DesktopVoiceDelayedTranscribe.suppressFalseRecognizerUnavailable(
+                hasValidPendingWav: hasValidPending,
+                helperReadyAfterRecording: _helperReadyAfterRecording,
+              ) &&
+              delayedPath) {
+            // Helper was ready and WAV valid — surface empty/failed transcript,
+            // never a false cold-start "recognizer unavailable".
+            DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_FALSE_RECOGNIZER_UNAVAILABLE');
+            _failureReason = 'transcribe_failed_after_ready';
+          }
         }
       }
     }
@@ -775,6 +884,7 @@ class DesktopSttHelperService {
       _lastError = error ?? 'Empty transcript';
       _lastTranscribeErrorKind ??= 'empty_transcript';
       _lastTranscribeErrorDetail ??= 'stt_empty_transcript';
+      _failureReason ??= 'empty_transcript';
       await _updateDiagnostics(capture: capture, error: _lastError);
       DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIPT_EMPTY', _lastTranscribeResponseBodyTail);
       DesktopVoicePipeline.mark('DESKTOP_VOICE_RECOGNIZER_FAILED_NO_RECORD_CHANGE');
@@ -782,6 +892,8 @@ class DesktopSttHelperService {
     }
 
     _lastError = null;
+    _failureReason = null;
+    _finalText = text.trim();
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIPT_TEXT', text.trim());
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_FINAL_TRANSCRIPT_SOURCE',
@@ -801,12 +913,38 @@ class DesktopSttHelperService {
     );
   }
 
+  void _logCaptureInstalledProof(DesktopVoiceCaptureResult capture) {
+    final rawPath = capture.rawWavPath;
+    final rawExists =
+        rawPath != null && rawPath.isNotEmpty && File(rawPath).existsSync();
+    final processedExists = File(capture.wavPath).existsSync();
+    if (rawExists) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_RAW_CAPTURE_WAV_SAVED_INSTALLED',
+        rawPath,
+      );
+    }
+    if (processedExists) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_PROCESSED_STT_WAV_SAVED_INSTALLED',
+        capture.wavPath,
+      );
+    }
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_NATIVE_CAPTURE_DIAGNOSTICS_LOGGED',
+      'raw_sr=${capture.rawSampleRate} raw_ch=${capture.rawChannels} '
+      'stt_sr=${capture.sampleRate} stt_ch=${capture.channels} '
+      'raw_exists=${rawExists ? 'yes' : 'no'}',
+    );
+  }
+
   Future<void> _noteSttFriendlyFailure({
     DesktopVoiceCaptureResult? capture,
     required String stage,
     required String endpoint,
   }) async {
     final err = (_lastError ?? '').trim();
+    _failureReason ??= stage;
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_RAW_EXCEPTION_SUPPRESSED',
       err.isEmpty ? stage : err,
@@ -1200,6 +1338,16 @@ class DesktopSttHelperService {
         latestWav != null && File(latestWav).existsSync();
     final latestWavBytes =
         latestWavExists ? await File(latestWav).length() : 0;
+    final rawWavPath = capture?.rawWavPath ?? _capture.lastRawWavPath;
+    final rawWavExists =
+        rawWavPath != null && File(rawWavPath).existsSync();
+    final overlayRenderer = DesktopVoiceOverlayService.usesNativeOverlay
+        ? 'native_handy_pill'
+        : 'flutter_capsule';
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_OVERLAY_RENDERER_ACTIVE',
+      overlayRenderer,
+    );
     _lastDiagnostics = DesktopSttDiagnostics(
       helperPath: helperExe,
       helperExists: helperExeExists,
@@ -1241,6 +1389,23 @@ class DesktopSttHelperService {
         latestWav: latestWav,
         latestWavExists: latestWavExists,
       ),
+      latestRawWavPath: rawWavPath,
+      latestRawWavExists: rawWavExists,
+      latestRawWavSampleRate:
+          capture?.rawSampleRate ?? _capture.captureSampleRate,
+      latestRawWavChannels:
+          capture?.rawChannels ?? _capture.captureChannels,
+      latestRawWavFormat: 'pcm16',
+      latestRawWavDurationMs: capture?.rawDurationMs ?? 0,
+      processedWavPath: latestWav,
+      processedWavSampleRate: capture?.sampleRate ?? kVoiceSampleRate,
+      processedWavChannels: capture?.channels ?? kVoiceChannels,
+      pendingWavAfterStop: _pendingWavAfterStop,
+      helperReadyAfterRecording: _helperReadyAfterRecording,
+      delayedTranscribeCalled: _delayedTranscribeCalled,
+      delayedTranscribeResult: _delayedTranscribeResult,
+      failureReason: _failureReason ?? error ?? _lastError,
+      overlayRendererActive: overlayRenderer,
       engine: e.helperEngineId,
       languageHint: e == DesktopVoiceEngineId.windowsSpeech ? 'en-US' : 'en',
       audioDevice: capture?.deviceLabel ?? 'default',
@@ -1269,7 +1434,7 @@ class DesktopSttHelperService {
       fallbackSttResult: _fallbackSttResult,
       finalTranscriptSource: _finalTranscriptSource,
       partialText: _partialText,
-      finalText: _finalText,
+      finalText: _finalText ?? transcript,
       usedPartialAsFinal: _usedPartialAsFinal,
       stopReturnReason: _stopReturnReason,
       finalInferenceLatencyMs: _finalInferenceLatencyMs,

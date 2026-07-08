@@ -11,21 +11,22 @@
 namespace {
 
 constexpr wchar_t kOverlayClassName[] = L"CounterDesktopVoiceOverlay";
-constexpr int kOverlayWidth = 340;
-constexpr int kOverlayHeightListening = 72;
-constexpr int kOverlayHeightProcessing = 80;
-constexpr int kOverlayHeightError = 96;
+// Handy-style compact dark pill (listening): ~180x40.
+constexpr int kPillWidth = 180;
+constexpr int kPillHeight = 40;
+// Slightly taller for processing / error / pending (still compact).
+constexpr int kPillHeightExpanded = 44;
 constexpr int kBottomMargin = 28;
-constexpr int kCloseButtonSize = 28;
-constexpr int kCloseButtonMargin = 12;
+constexpr int kCloseButtonSize = 18;
+constexpr int kCloseButtonMargin = 10;
 
 std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> g_overlay_channel;
 
 bool PointInCloseButton(int x, int y, const RECT& rect) {
   const int left = rect.right - kCloseButtonMargin - kCloseButtonSize;
-  const int top = kCloseButtonMargin;
-  const int right = rect.right - kCloseButtonMargin;
-  const int bottom = kCloseButtonMargin + kCloseButtonSize;
+  const int top = (rect.bottom - rect.top - kCloseButtonSize) / 2;
+  const int right = left + kCloseButtonSize;
+  const int bottom = top + kCloseButtonSize;
   return x >= left && x <= right && y >= top && y <= bottom;
 }
 
@@ -66,12 +67,14 @@ std::string WideToUtf8(const std::wstring& wide) {
 }
 
 int OverlayHeightForState(const std::string& state) {
-  if (state == "error") return kOverlayHeightError;
-  if (state == "pending") return 88;
-  if (state == "processing" || state == "started" || state == "stopped") {
-    return kOverlayHeightProcessing;
-  }
-  return kOverlayHeightListening;
+  if (state == "listening") return kPillHeight;
+  return kPillHeightExpanded;
+}
+
+int OverlayWidthForState(const std::string& state) {
+  if (state == "listening") return kPillWidth;
+  // Slightly wider when showing a short status line.
+  return 220;
 }
 
 }  // namespace
@@ -106,13 +109,9 @@ void DesktopVoiceNativeOverlay::StopAnimationTimer() {
   anim_timer_id_ = 0;
 }
 
-// Smoothly step [level_] toward [target_level_] and force a repaint. Called on
-// every 33ms tick. Asymmetric: rises fast (audible reaction), decays slower
-// (organic settling), so quiet rooms still produce gentle motion rather than
-// a dead flat row of bars.
 void DesktopVoiceNativeOverlay::TickAnimation() {
-  constexpr double kAttack = 0.55;   // fraction of remaining gap per tick (up)
-  constexpr double kRelease = 0.18;  // fraction per tick (down)
+  constexpr double kAttack = 0.55;
+  constexpr double kRelease = 0.18;
   constexpr double kEpsilon = 0.001;
   const double diff = target_level_ - level_;
   if (std::abs(diff) < kEpsilon && level_ < kEpsilon) {
@@ -144,119 +143,145 @@ void DesktopVoiceNativeOverlay::PositionOverlay() {
   RECT work = {};
   SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0);
   const int height = OverlayHeightForState(state_);
-  const int x = work.left + ((work.right - work.left) - kOverlayWidth) / 2;
+  const int width = OverlayWidthForState(state_);
+  const int x = work.left + ((work.right - work.left) - width) / 2;
   const int y = work.bottom - height - kBottomMargin;
-  SetWindowPos(overlay_hwnd_, HWND_TOPMOST, x, y, kOverlayWidth, height,
+  SetWindowPos(overlay_hwnd_, HWND_TOPMOST, x, y, width, height,
                SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
 void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
-  HBRUSH bg = CreateSolidBrush(RGB(250, 250, 248));
-  FillRect(hdc, &rect, bg);
-  DeleteObject(bg);
+  // Handy-style compact dark pill. No light gray square panel.
+  const COLORREF bg_color = RGB(28, 28, 30);
+  const COLORREF accent = RGB(236, 236, 240);
+  const COLORREF muted = RGB(160, 160, 168);
+  const COLORREF error_color = RGB(255, 120, 120);
 
-  HPEN border = CreatePen(PS_SOLID, 1, RGB(230, 226, 220));
+  HBRUSH bg = CreateSolidBrush(bg_color);
+  // Soft round pill with fill + subtle border.
+  HPEN border = CreatePen(PS_SOLID, 1, RGB(55, 55, 60));
   HGDIOBJ old_pen = SelectObject(hdc, border);
-  HGDIOBJ old_brush = SelectObject(hdc, GetStockObject(NULL_BRUSH));
-  RoundRect(hdc, rect.left, rect.top, rect.right, rect.bottom, 24, 24);
+  HGDIOBJ old_brush = SelectObject(hdc, bg);
+  const int radius = (rect.bottom - rect.top);
+  RoundRect(hdc, rect.left, rect.top, rect.right, rect.bottom, radius, radius);
   SelectObject(hdc, old_pen);
   SelectObject(hdc, old_brush);
   DeleteObject(border);
+  DeleteObject(bg);
 
   SetBkMode(hdc, TRANSPARENT);
-  HFONT primary_font =
-      CreateFontW(18, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-                  OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
-                  DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
-  HFONT secondary_font =
-      CreateFontW(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-                  OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
-                  DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
-  HGDIOBJ old_font = SelectObject(hdc, primary_font);
-  SetTextColor(hdc, RGB(20, 20, 20));
 
-  RECT primary_rect = {20, 12, rect.right - 56, 36};
-  DrawTextW(hdc, primary_.c_str(), -1, &primary_rect,
-            DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+  const int h = rect.bottom - rect.top;
+  const int cy = rect.top + h / 2;
 
-  if (!secondary_.empty() && state_ != "listening") {
-    SelectObject(hdc, secondary_font);
-    SetTextColor(hdc, RGB(90, 90, 90));
-    RECT secondary_rect = {20, 38, rect.right - 20, 58};
-    DrawTextW(hdc, secondary_.c_str(), -1, &secondary_rect,
-              DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+  // Left mic / status icon (listening = filled circle accent; error = X-ish).
+  const int icon_cx = rect.left + 18;
+  if (state_ == "error") {
+    HPEN err_pen = CreatePen(PS_SOLID, 2, error_color);
+    HGDIOBJ old_err = SelectObject(hdc, err_pen);
+    const int d = 5;
+    MoveToEx(hdc, icon_cx - d, cy - d, nullptr);
+    LineTo(hdc, icon_cx + d, cy + d);
+    MoveToEx(hdc, icon_cx + d, cy - d, nullptr);
+    LineTo(hdc, icon_cx - d, cy + d);
+    SelectObject(hdc, old_err);
+    DeleteObject(err_pen);
+  } else if (state_ == "processing" || state_ == "started" || state_ == "stopped" ||
+             state_ == "pending") {
+    // Spinner-ish small arcs: filled accent dot.
+    HBRUSH dot = CreateSolidBrush(accent);
+    RECT dr = {icon_cx - 4, cy - 4, icon_cx + 4, cy + 4};
+    FillRect(hdc, &dr, dot);
+    DeleteObject(dot);
+  } else {
+    // Mic capsule: small rounded vertical bar + base.
+    HBRUSH mic = CreateSolidBrush(accent);
+    RECT mic_body = {icon_cx - 3, cy - 7, icon_cx + 3, cy + 3};
+    FillRect(hdc, &mic_body, mic);
+    DeleteObject(mic);
+    HPEN mic_pen = CreatePen(PS_SOLID, 1, accent);
+    HGDIOBJ old_mic = SelectObject(hdc, mic_pen);
+    MoveToEx(hdc, icon_cx - 5, cy + 3, nullptr);
+    LineTo(hdc, icon_cx + 5, cy + 3);
+    MoveToEx(hdc, icon_cx, cy + 3, nullptr);
+    LineTo(hdc, icon_cx, cy + 7);
+    SelectObject(hdc, old_mic);
+    DeleteObject(mic_pen);
   }
 
-  if (!timer_text_.empty()) {
-    SelectObject(hdc, primary_font);
-    SetTextColor(hdc, RGB(20, 20, 20));
-    RECT timer_rect = {rect.right - 90, 16, rect.right - 56, 48};
-    DrawTextW(hdc, timer_text_.c_str(), -1, &timer_rect,
-              DT_RIGHT | DT_VCENTER | DT_SINGLELINE);
-  }
-
-  // Close (X) button — top-right; always dismissible.
-  const int close_left = rect.right - kCloseButtonMargin - kCloseButtonSize;
-  const int close_top = kCloseButtonMargin;
-  HPEN close_pen = CreatePen(PS_SOLID, 2, RGB(120, 120, 120));
-  HGDIOBJ old_close_pen = SelectObject(hdc, close_pen);
-  const int cx = close_left + kCloseButtonSize / 2;
-  const int cy = close_top + kCloseButtonSize / 2;
-  const int d = 6;
-  MoveToEx(hdc, cx - d, cy - d, nullptr);
-  LineTo(hdc, cx + d, cy + d);
-  MoveToEx(hdc, cx + d, cy - d, nullptr);
-  LineTo(hdc, cx - d, cy + d);
-  SelectObject(hdc, old_close_pen);
-  DeleteObject(close_pen);
-
+  // Center: listening = mic level bars only (no debug / status text).
+  // Other states: short primary line (compact).
   if (state_ == "listening") {
-    const int bar_count = 8;
-    const int bar_w = 5;
-    const int gap = 3;
-    const int overlay_h = rect.bottom - rect.top;
-    const int base_y = rect.bottom - 8;
-    const int max_h = std::clamp(overlay_h / 4, 8, 16);
-    // Sqrt gain curve: real-voice peaks map to visible bar height.
+    const int bar_count = 5;
+    const int bar_w = 3;
+    const int gap = 4;
+    const int max_h = 14;
     const double gain = std::sqrt(std::max(level_, 0.0));
-    const double min_visible = 0.06;
+    const double min_visible = 0.08;
     const double effective_level = std::max(gain, min_visible);
-    const double phase =
-        static_cast<double>(GetTickCount64()) / 220.0;
-    int x = 20;
+    const double phase = static_cast<double>(GetTickCount64()) / 220.0;
+    const int total_w = bar_count * bar_w + (bar_count - 1) * gap;
+    int x = (rect.left + rect.right - total_w) / 2;
     for (int i = 0; i < bar_count; ++i) {
       const double shape = 0.45 + 0.55 * std::sin(phase + (i + 1) * 0.9);
       const double leveled = effective_level * shape + min_visible * 0.35;
-      const int h = static_cast<int>(
+      const int bh = static_cast<int>(
           std::clamp(leveled * max_h, 3.0, static_cast<double>(max_h)));
-      HBRUSH bar = CreateSolidBrush(RGB(30, 30, 30));
-      RECT bar_rect = {x, base_y - h, x + bar_w, base_y};
+      HBRUSH bar = CreateSolidBrush(accent);
+      RECT bar_rect = {x, cy - bh / 2, x + bar_w, cy + bh / 2};
       FillRect(hdc, &bar_rect, bar);
       DeleteObject(bar);
       x += bar_w + gap;
     }
-  }
+  } else {
+    HFONT font =
+        CreateFontW(13, 0, 0, 0, FW_SEMIBOLD, FALSE, FALSE, FALSE,
+                    DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                    CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
+    HGDIOBJ old_font = SelectObject(hdc, font);
+    SetTextColor(hdc, state_ == "error" ? error_color : accent);
+    RECT text_rect = {rect.left + 34, rect.top + 2, rect.right - 36, rect.bottom - 2};
+    DrawTextW(hdc, primary_.c_str(), -1, &text_rect,
+              DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+    SelectObject(hdc, old_font);
+    DeleteObject(font);
 
-  if (state_ == "pending" && progress_ > 0.0) {
-    const int bar_h = 3;
-    const int filled_w = static_cast<int>(
-        static_cast<double>(rect.right - rect.left) *
-        std::clamp(progress_, 0.0, 1.0));
-    HBRUSH track = CreateSolidBrush(RGB(235, 232, 228));
-    RECT track_rect = {0, rect.bottom - bar_h, rect.right, rect.bottom};
-    FillRect(hdc, &track_rect, track);
-    DeleteObject(track);
-    if (filled_w > 0) {
-      HBRUSH fill = CreateSolidBrush(RGB(45, 110, 185));
-      RECT fill_rect = {0, rect.bottom - bar_h, filled_w, rect.bottom};
-      FillRect(hdc, &fill_rect, fill);
-      DeleteObject(fill);
+    if (state_ == "pending" && progress_ > 0.0) {
+      const int bar_h = 2;
+      const int filled_w = static_cast<int>(
+          static_cast<double>(rect.right - rect.left) *
+          std::clamp(progress_, 0.0, 1.0));
+      HBRUSH track = CreateSolidBrush(RGB(50, 50, 54));
+      RECT track_rect = {0, rect.bottom - bar_h, rect.right, rect.bottom};
+      FillRect(hdc, &track_rect, track);
+      DeleteObject(track);
+      if (filled_w > 0) {
+        HBRUSH fill = CreateSolidBrush(RGB(90, 150, 255));
+        RECT fill_rect = {0, rect.bottom - bar_h, filled_w, rect.bottom};
+        FillRect(hdc, &fill_rect, fill);
+        DeleteObject(fill);
+      }
     }
   }
 
-  SelectObject(hdc, old_font);
-  DeleteObject(primary_font);
-  DeleteObject(secondary_font);
+  // Right close (X) — always.
+  const int close_left = rect.right - kCloseButtonMargin - kCloseButtonSize;
+  const int close_top = (h - kCloseButtonSize) / 2;
+  HPEN close_pen = CreatePen(PS_SOLID, 2, muted);
+  HGDIOBJ old_close_pen = SelectObject(hdc, close_pen);
+  const int cx = close_left + kCloseButtonSize / 2;
+  const int cyy = close_top + kCloseButtonSize / 2;
+  const int d = 4;
+  MoveToEx(hdc, cx - d, cyy - d, nullptr);
+  LineTo(hdc, cx + d, cyy + d);
+  MoveToEx(hdc, cx + d, cyy - d, nullptr);
+  LineTo(hdc, cx - d, cyy + d);
+  SelectObject(hdc, old_close_pen);
+  DeleteObject(close_pen);
+
+  // Silence unused secondary / timer for listening (no debug text).
+  (void)secondary_;
+  (void)timer_text_;
 }
 
 LRESULT CALLBACK DesktopVoiceNativeOverlay::OverlayWndProc(
@@ -323,11 +348,7 @@ bool DesktopVoiceNativeOverlay::Show(const std::string& primary,
   secondary_ = Utf8ToWide(secondary);
   state_ = state;
   progress_ = progress;
-  // Drive the smoothed [level_] via [target_level_]; the animation timer
-  // interpolates between them so bars settle smoothly rather than snapping.
   target_level_ = level;
-  // First-ever show: seed [level_] from the incoming value so we don't ramp
-  // up from 0 on every fresh overlay.
   if (anim_timer_id_ == 0) {
     level_ = level;
   }
@@ -338,7 +359,7 @@ bool DesktopVoiceNativeOverlay::Show(const std::string& primary,
   if (overlay_hwnd_ == nullptr || !IsWindow(overlay_hwnd_)) {
     overlay_hwnd_ = CreateWindowExW(
         WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, kOverlayClassName,
-        L"", WS_POPUP, 0, 0, kOverlayWidth, kOverlayHeightListening, nullptr, nullptr,
+        L"", WS_POPUP, 0, 0, kPillWidth, kPillHeight, nullptr, nullptr,
         GetModuleHandle(nullptr), nullptr);
     if (overlay_hwnd_ == nullptr) {
       return false;

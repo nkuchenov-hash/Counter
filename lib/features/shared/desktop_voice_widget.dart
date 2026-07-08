@@ -322,6 +322,12 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
             helperExists: _helper.lastDiagnostics.helperExists,
             modelExists: _helper.lastDiagnostics.modelExists,
             helperReady: _helper.lastDiagnostics.helperReady,
+            finalTranscribeReady: _helper.lastDiagnostics.finalTranscribeReady,
+            pendingWavAfterStop: _helper.lastDiagnostics.pendingWavAfterStop,
+            helperReadyAfterRecording:
+                _helper.lastDiagnostics.helperReadyAfterRecording,
+            delayedTranscribeCalled:
+                _helper.lastDiagnostics.delayedTranscribeCalled,
           );
       DesktopVoiceAttemptLog.instance.markSttError(
         DesktopVoiceUserError.fromException(

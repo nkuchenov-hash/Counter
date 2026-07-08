@@ -1,5 +1,6 @@
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
 
 /// Stage of the desktop voice overlay when an error occurred.
 enum DesktopVoiceErrorStage {
@@ -52,6 +53,9 @@ class DesktopVoiceUserError {
     bool modelExists = true,
     bool helperReady = false,
     bool finalTranscribeReady = false,
+    bool pendingWavAfterStop = false,
+    bool helperReadyAfterRecording = false,
+    bool delayedTranscribeCalled = false,
   }) {
     if (!audioLevelSeen) {
       return DesktopVoiceFailureKind.micNoSignal;
@@ -62,6 +66,26 @@ class DesktopVoiceUserError {
     if (kind == 'empty_transcript' ||
         lower.contains('empty transcript') ||
         lower.contains('stt_empty')) {
+      return DesktopVoiceFailureKind.sttEmptyTranscript;
+    }
+
+    if (lower.contains('not enough audio') || lower.contains('no audio')) {
+      return DesktopVoiceFailureKind.micNoSignal;
+    }
+
+    // Valid WAV was kept pending and helper became ready — never classify a
+    // cold-start race as "Recognizer unavailable" when delayed transcribe ran
+    // (or should have run). Prefer empty-transcript / parser-style outcomes.
+    if (DesktopVoiceDelayedTranscribe.suppressFalseRecognizerUnavailable(
+          hasValidPendingWav: pendingWavAfterStop,
+          helperReadyAfterRecording: helperReadyAfterRecording,
+        ) ||
+        (delayedTranscribeCalled && helperReadyAfterRecording)) {
+      if (lower.contains('empty') || kind == 'empty_transcript') {
+        return DesktopVoiceFailureKind.sttEmptyTranscript;
+      }
+      // Transcribe was attempted after ready; treat as empty rather than
+      // falsely claiming the recognizer is unavailable.
       return DesktopVoiceFailureKind.sttEmptyTranscript;
     }
 
@@ -84,10 +108,6 @@ class DesktopVoiceUserError {
         kind.contains('helper_error') ||
         !finalTranscribeReady) {
       return DesktopVoiceFailureKind.recognizerUnavailable;
-    }
-
-    if (lower.contains('not enough audio') || lower.contains('no audio')) {
-      return DesktopVoiceFailureKind.micNoSignal;
     }
 
     return DesktopVoiceFailureKind.recognizerUnavailable;

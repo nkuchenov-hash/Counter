@@ -41,6 +41,21 @@ class DesktopSttDiagnostics {
     this.latestWavExists = false,
     this.latestWavBytes = 0,
     this.latestWavDurationMs = 0,
+    this.latestRawWavPath,
+    this.latestRawWavExists = false,
+    this.latestRawWavSampleRate = 0,
+    this.latestRawWavChannels = 0,
+    this.latestRawWavFormat = '',
+    this.latestRawWavDurationMs = 0,
+    this.processedWavPath,
+    this.processedWavSampleRate = 0,
+    this.processedWavChannels = 0,
+    this.pendingWavAfterStop = false,
+    this.helperReadyAfterRecording = false,
+    this.delayedTranscribeCalled = false,
+    this.delayedTranscribeResult,
+    this.failureReason,
+    this.overlayRendererActive,
     this.engine,
     this.languageHint = 'en-US',
     this.audioDevice = 'default',
@@ -107,6 +122,21 @@ class DesktopSttDiagnostics {
   final bool latestWavExists;
   final int latestWavBytes;
   final int latestWavDurationMs;
+  final String? latestRawWavPath;
+  final bool latestRawWavExists;
+  final int latestRawWavSampleRate;
+  final int latestRawWavChannels;
+  final String latestRawWavFormat;
+  final int latestRawWavDurationMs;
+  final String? processedWavPath;
+  final int processedWavSampleRate;
+  final int processedWavChannels;
+  final bool pendingWavAfterStop;
+  final bool helperReadyAfterRecording;
+  final bool delayedTranscribeCalled;
+  final String? delayedTranscribeResult;
+  final String? failureReason;
+  final String? overlayRendererActive;
   final String? engine;
   final String languageHint;
   final String audioDevice;
@@ -193,6 +223,21 @@ class DesktopSttDiagnostics {
       'latest_wav_exists=${latestWavExists ? 'yes' : 'no'}',
       'latest_wav_bytes=$latestWavBytes',
       'latest_wav_duration_ms=$latestWavDurationMs',
+      'latest_raw_wav_path=${latestRawWavPath ?? '—'}',
+      'latest_raw_wav_exists=${latestRawWavExists ? 'yes' : 'no'}',
+      'latest_raw_wav_sample_rate=$latestRawWavSampleRate',
+      'latest_raw_wav_channels=$latestRawWavChannels',
+      'latest_raw_wav_format=${latestRawWavFormat.isEmpty ? '—' : latestRawWavFormat}',
+      'latest_raw_wav_duration_ms=$latestRawWavDurationMs',
+      'processed_wav_path=${processedWavPath ?? '—'}',
+      'processed_wav_sample_rate=$processedWavSampleRate',
+      'processed_wav_channels=$processedWavChannels',
+      'pending_wav_after_stop=${pendingWavAfterStop ? 'yes' : 'no'}',
+      'helper_ready_after_recording=${helperReadyAfterRecording ? 'yes' : 'no'}',
+      'delayed_transcribe_called=${delayedTranscribeCalled ? 'yes' : 'no'}',
+      'delayed_transcribe_result=${delayedTranscribeResult ?? '—'}',
+      'failure_reason=${failureReason ?? '—'}',
+      'overlay_renderer_active=${overlayRendererActive ?? '—'}',
       'engine=${engine ?? '—'}',
       'language_hint=$languageHint',
       'audio_device=$audioDevice',

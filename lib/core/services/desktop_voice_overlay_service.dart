@@ -79,13 +79,28 @@ abstract final class DesktopVoiceOverlayService {
   static Future<bool> showListening({String? timer, double level = 0}) async {
     final loc = currentLocale.value;
     if (usesNativeOverlay) {
-      return _showNative(
+      final ok = await _showNative(
         primary: t(loc, 'desktop_voice_state_listening'),
         state: 'listening',
         level: level,
         timer: timer,
       );
+      if (ok) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_OVERLAY_RENDERER_ACTIVE',
+          'native_handy_pill',
+        );
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_HANDY_STYLE_LISTENING_PILL_VISIBLE_INSTALLED',
+        );
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_OLD_GRAY_OVERLAY_NOT_USED');
+      }
+      return ok;
     }
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_OVERLAY_RENDERER_ACTIVE',
+      'flutter_capsule',
+    );
     return true;
   }
 

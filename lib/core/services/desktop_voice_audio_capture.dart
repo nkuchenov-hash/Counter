@@ -78,6 +78,7 @@ class DesktopVoiceAudioCapture {
       _maxAmplitude = 0;
       _rmsAmplitude = 0;
       _lastWavPath = null;
+      _rawWavPath = null;
       _lastError = null;
       _levelMarkerLogged = false;
       _pcmChunksCount = 0;

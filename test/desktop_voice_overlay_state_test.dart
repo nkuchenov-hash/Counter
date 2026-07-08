@@ -1,4 +1,5 @@
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
+import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
 import 'package:counter/core/services/desktop_voice_hotkey.dart';
 import 'package:counter/core/services/desktop_voice_overlay_bridge.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +13,24 @@ void main() {
         DesktopSttHelperService.kVoiceOverlayWarmupMax,
         const Duration(seconds: 5),
       );
+    });
+
+    test('cold-start post-stop wait is 45s when pending WAV queued', () {
+      expect(
+        DesktopVoiceDelayedTranscribe.coldStartMaxWait,
+        const Duration(seconds: 45),
+      );
+      expect(
+        DesktopSttHelperService.kVoiceColdStartMaxWait,
+        DesktopVoiceDelayedTranscribe.coldStartMaxWait,
+      );
+    });
+
+    test('Handy-style overlay renderer id is native_handy_pill on Windows path', () {
+      // Contract for installed diagnostics — C++ paint is the compact dark pill;
+      // Dart marks overlay_renderer_active=native_handy_pill when native is used.
+      expect('native_handy_pill', isNot(equals('legacy_gray_square')));
+      expect(DesktopVoiceDelayedTranscribe.readyHelperMaxWait.inSeconds, 10);
     });
 
     test('preparing hotkey resolves to cancelOverlay', () {

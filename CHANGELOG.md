@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - P0 Desktop Voice: delayed transcribe after helper cold-start + Handy dark pill overlay [engineering; live-recapture pending]
+
+* **`lib/core/services/desktop_voice_delayed_transcribe.dart` + `desktop_stt_helper_service.dart`:** [engineering] If recording stops while the STT helper is still loading, the saved WAV is queued as pending; post-stop wait extends to **45s cold-start**; once `final_transcribe_ready`, delayed `/transcribe/stop` runs on the saved PCM — no re-speak, no false “Recognizer unavailable” when helper becomes ready.
+* **`desktop_stt_diagnostics.dart` + classifier:** [engineering] Diagnostics now include `pending_wav_after_stop`, `helper_ready_after_recording`, `delayed_transcribe_*`, raw+processed WAV paths/rates/channels, `overlay_renderer_active`, `failure_reason` / `final_text` / `final_transcript_source`.
+* **`windows/runner/desktop_voice_native_overlay.cpp`:** [engineering] Replaced old light 340×72 gray panel with Handy-style compact dark pill (~180×40 listening: left mic, center bars, right close, no debug text).
+* **Tests:** `desktop_voice_delayed_transcribe_test.dart` + overlay state contracts; full `flutter test` 361 pass. Live capture still required before parity claim.
+
 ## [2026-07-07] - P0 Desktop Voice capture/VAD parity with Handy [engineering; live-recapture + installer pending]
 
 * **`lib/core/services/pcm_audio_utils.dart`:** [engineering] Added Handy-parity capture preprocessing as pure, unit-tested functions — `pcm16BytesToFloat`/`floatToPcm16Bytes`, `downmixInterleavedFloatToMono`, high-quality windowed-sinc (Hann, 16 zero-crossings) `resampleFloatHighQuality`, channel-aware `pcm16ToWavBytesFull`, and `processNativeCaptureForStt` (native PCM16 → float mono downmix → HQ resample to 16 kHz → PCM16, **no peak normalization**).
