@@ -82,6 +82,26 @@ class DesktopVoiceAudioCapture {
           ? _helperLevelTimer != null
           : _audioSub != null;
 
+  /// Capture never started (helper/legacy start returned false).
+  void noteCaptureStartFailed([String? detail]) {
+    _noSignalDetected = true;
+    _noSignalReason = detail == null || detail.trim().isEmpty
+        ? 'capture_start_failed'
+        : 'capture_start_failed:${detail.trim()}';
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_CAPTURE_START_NO_SIGNAL');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_DETECTED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_ERROR_CLASSIFIED');
+  }
+
+  /// Stream started but no audible level during the listening window.
+  void noteIntermittentListeningNoSignal() {
+    _noSignalDetected = true;
+    _noSignalReason = 'intermittent_no_level_during_listening';
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_INTERMITTENT_MIC_NO_SIGNAL');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_DETECTED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_ERROR_CLASSIFIED');
+  }
+
   Stream<double>? get amplitudeStream => _ampController?.stream;
   int get capturedBytes => _buffer.length;
   int get pcmChunksCount => _pcmChunksCount;

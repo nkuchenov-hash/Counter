@@ -111,6 +111,10 @@ class DesktopSttHelperService {
   int get lastCaptureBytes => _lastCaptureBytes;
   int get capturedAudioBytes => _capture.capturedBytes;
   bool get audioLevelSeen => _capture.audioLevelSeen;
+  void noteCaptureStartFailed([String? detail]) =>
+      _capture.noteCaptureStartFailed(detail);
+  void noteIntermittentListeningNoSignal() =>
+      _capture.noteIntermittentListeningNoSignal();
   double get maxAmplitude => _capture.maxAmplitude;
   double get rmsAmplitude => _capture.rmsAmplitude;
   Stream<double>? get amplitudeStream => _capture.amplitudeStream;

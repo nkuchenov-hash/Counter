@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - P0 Desktop Voice: intermittent mic no-signal classified separately [engineering]
+
+* **`desktop_voice_audio_capture.dart`:** `noteCaptureStartFailed` vs `noteIntermittentListeningNoSignal` set distinct `no_signal_reason` values for `last_attempt_diag`; markers `DESKTOP_VOICE_CAPTURE_START_NO_SIGNAL` / `DESKTOP_VOICE_INTERMITTENT_MIC_NO_SIGNAL`.
+* **`desktop_voice_widget.dart`:** Listening timeout calls intermittent classifier; capture-start failure calls start-failed classifier (not lumped with STT errors).
+
 ## [2026-07-08] - Timeline record category Save: immediate UI + new-category bind [shipped]
 
 * Fixed Timeline record category Save: existing category changes now update local Timeline UI immediately, newly-created categories now bind to records, stale previous-category retention removed, and false success blocked.

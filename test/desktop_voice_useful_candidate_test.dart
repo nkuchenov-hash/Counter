@@ -63,5 +63,16 @@ void main() {
       expect(cap.levelStreamConnected, isA<bool>());
       expect(cap.levelSource, isA<String>());
     });
+
+    test('intermittent vs capture-start no-signal reasons differ', () {
+      final cap = DesktopVoiceAudioCapture.instance;
+      cap.noteCaptureStartFailed('cpal_start_failed');
+      expect(cap.noSignalDetected, isTrue);
+      expect(cap.noSignalReason, 'capture_start_failed:cpal_start_failed');
+
+      cap.noteIntermittentListeningNoSignal();
+      expect(cap.noSignalReason, 'intermittent_no_level_during_listening');
+      expect(cap.noSignalDetected, isTrue);
+    });
   });
 }

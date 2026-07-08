@@ -201,6 +201,9 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
         'DESKTOP_VOICE_CAPTURE_START_FAILED',
         DesktopSttHelperService.instance.lastError ?? 'unknown',
       );
+      _helper.noteCaptureStartFailed(
+        DesktopSttHelperService.instance.lastError,
+      );
       DesktopVoiceAttemptLog.instance.markRecordingStarted(
         false,
         error: DesktopSttHelperService.instance.lastError,
@@ -248,9 +251,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       if (_phase != DesktopVoiceOverlayPhase.listening) return;
       if (_audioLevelSeen || _audioBytes > 4800) return;
       DesktopVoiceLog.instance.mark('audio_level_seen', 'no');
+      _helper.noteIntermittentListeningNoSignal();
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_MIC_SIGNAL_VISIBLE');
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_DETECTED');
-      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_SIGNAL_ERROR_CLASSIFIED');
       unawaited(_recognizer?.cancelCapture());
       _failFriendly(
         t(loc, 'desktop_voice_mic_no_signal'),
