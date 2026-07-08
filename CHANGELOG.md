@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-08] - P0 Desktop Voice: whisper-tiny is command STT primary [engineering]
+
+* **Offline engine bench (real WAVs):** On quiet CPAL `latest_command.wav`, Parakeet → `Tell them computer warehouse download submit.`; **whisper-tiny → `Southern Computer Warehouse, DEL MOD, Submit.`** Same whisper win on old Counter; Parakeet only matches Handy on the loud Handy WAV. Windows Speech unavailable (no en-US culture). Marker: `DESKTOP_VOICE_LOCAL_ENGINE_BENCHMARK_RUN`.
+* **Policy:** `DesktopVoiceCommandSttPolicy` + `resolveProductionEngine()` default = **whisper-tiny**; Parakeet = fallback only (`DESKTOP_VOICE_WHISPER_TINY_PRIMARY_IF_BEST`, `DESKTOP_VOICE_PARAKEET_NOT_PRIMARY_IF_WORSE`).
+* **Latency:** App/hotkey prewarm keeps whisper hot; CPAL mid-listen `/capture/partial_pcm` → `/transcribe/partial_audio` + `/transcribe/last_partial` for first candidate; full whisper final still ~1.3–1.5s hot — refinement may finish inside confirmation timer; no `writeRecord` before timer.
+* **UI/safety:** Prior ≥16pt overlay + perceptual mic bars + safety gates unchanged.
+
 ## [2026-07-08] - P0 Desktop Voice: ≥16pt overlay, perceptual mic bars, latency trim, duration fix [engineering]
 
 * **Overlay:** Native Win32 pill/cards DPI-scaled; min font **16pt**, title **19pt**, detail **16pt**; listening **340×68**, error/pending **480×136/124**, close hit **32×32**. Markers: `DESKTOP_VOICE_OVERLAY_MIN_FONT_16PT`, `*_CARD_LARGE_READABLE`, `NO_TINY_TEXT_ANYWHERE`.

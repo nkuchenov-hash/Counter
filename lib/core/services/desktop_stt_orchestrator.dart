@@ -3,6 +3,7 @@ import 'package:counter/core/services/desktop_stt_engine.dart';
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_stt_quality_evaluation.dart';
 import 'package:counter/core/services/desktop_voice_audio_capture.dart';
+import 'package:counter/core/services/desktop_voice_command_stt_policy.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
 import 'package:counter/core/services/desktop_voice_recognition_postprocess.dart';
@@ -63,13 +64,14 @@ abstract final class DesktopSttOrchestrator {
       glossaryPrompt: glossary.toSttPrompt(),
     );
 
-    // Raw STT quality pass: local Parakeet only — no cloud transcription proxy.
+    // Command STT primary = evidence-selected engine (whisper-tiny).
     DesktopSttEngineResult? engineResult;
     if (selectedMode == DesktopSttMode.offlineFallback) {
-      engineResult = await _tryLocalParakeet(ctx) ??
+      engineResult = await _tryPrimaryCommandEngine(ctx) ??
           await _tryWindowsSpeech(ctx);
     } else {
-      engineResult = await _tryLocalParakeet(ctx) ??
+      engineResult = await _tryPrimaryCommandEngine(ctx) ??
+          await _tryFallbackParakeet(ctx) ??
           await _tryWindowsSpeech(ctx);
     }
 
@@ -110,12 +112,15 @@ abstract final class DesktopSttOrchestrator {
     );
   }
 
-  static Future<DesktopSttEngineResult?> _tryLocalParakeet(
+  static Future<DesktopSttEngineResult?> _tryPrimaryCommandEngine(
     DesktopSttEngineContext ctx,
   ) async {
     DesktopVoicePipeline.mark('DESKTOP_VOICE_LOCAL_ENGINE_QUALITY_AUDIT');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMAND_STT_PRIMARY_SELECTED');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_WHISPER_TINY_PRIMARY_IF_BEST');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_PARAKEET_NOT_PRIMARY_IF_WORSE');
     final helper = DesktopSttHelperService.instance;
-    final engine = DesktopVoiceEngineId.parakeet;
+    final engine = DesktopVoiceCommandSttPolicy.primaryEngine;
     final t0 = DateTime.now();
     final r = await helper.transcribeCaptureForOrchestrator(
       engine: engine,
@@ -125,8 +130,30 @@ abstract final class DesktopSttOrchestrator {
     if (r == null || r.text.trim().isEmpty) return null;
     return DesktopSttEngineResult(
       engineId: engine.helperEngineId,
-      displayName: 'Local Parakeet',
+      displayName: 'Local Whisper-tiny (command primary)',
       qualityTier: DesktopSttQualityTier.fast,
+      rawTranscript: r.text.trim(),
+      latencyMs: DateTime.now().difference(t0).inMilliseconds,
+      supportsGlossary: false,
+    );
+  }
+
+  static Future<DesktopSttEngineResult?> _tryFallbackParakeet(
+    DesktopSttEngineContext ctx,
+  ) async {
+    final helper = DesktopSttHelperService.instance;
+    final engine = DesktopVoiceCommandSttPolicy.fallbackEngine;
+    final t0 = DateTime.now();
+    final r = await helper.transcribeCaptureForOrchestrator(
+      engine: engine,
+      pcmBytes: ctx.pcmBytes,
+      wavPath: ctx.wavPath,
+    );
+    if (r == null || r.text.trim().isEmpty) return null;
+    return DesktopSttEngineResult(
+      engineId: engine.helperEngineId,
+      displayName: 'Local Parakeet (fallback)',
+      qualityTier: DesktopSttQualityTier.fallback,
       rawTranscript: r.text.trim(),
       latencyMs: DateTime.now().difference(t0).inMilliseconds,
       supportsGlossary: false,

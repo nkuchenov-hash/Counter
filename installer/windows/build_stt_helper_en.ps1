@@ -68,7 +68,43 @@ if ($content -notmatch 'capture::configure') {
     if ($content.IndexOf($needle) -lt 0) { throw 'route anchor for capture::configure not found' }
     $content = $content.Replace($needle, $insert)
 }
+# Expose last mid-listen partial for Dart first-candidate (<500ms) path.
+if ($content -notmatch 'async fn transcribe_last_partial') {
+    $partialFn = @'
+
+/// GET last mid-listen partial cache (first-candidate fast path).
+async fn transcribe_last_partial(state: web::Data<Arc<AppState>>) -> HttpResponse {
+    let g = state.last_partial.lock().unwrap();
+    match g.as_ref() {
+        Some((text, at)) => HttpResponse::Ok().json(serde_json::json!({
+            "ok": true,
+            "text": text,
+            "age_ms": at.elapsed().as_millis() as u64,
+        })),
+        None => HttpResponse::Ok().json(serde_json::json!({
+            "ok": true,
+            "text": "",
+            "age_ms": null,
+        })),
+    }
+}
+'@
+    $anchor = 'async fn transcribe_partial_audio('
+    $idx = $content.IndexOf($anchor)
+    if ($idx -lt 0) { throw 'transcribe_partial_audio anchor not found for last_partial inject' }
+    $content = $content.Insert($idx, $partialFn)
+}
+if ($content -notmatch 'web::get\(\)\.to\(transcribe_last_partial\)') {
+    $needle2 = '.route("/transcribe/partial_audio",    web::post().to(transcribe_partial_audio))'
+    $insert2 = @'
+.route("/transcribe/partial_audio",    web::post().to(transcribe_partial_audio))
+            .route("/transcribe/last_partial",       web::get().to(transcribe_last_partial))
+'@
+    if ($content.IndexOf($needle2) -lt 0) { throw 'partial_audio route anchor not found' }
+    $content = $content.Replace($needle2, $insert2)
+}
 Write-Host 'DESKTOP_VOICE_CPAL_WASAPI_CAPTURE_INJECTED'
+Write-Host 'DESKTOP_VOICE_LAST_PARTIAL_ROUTE_INJECTED'
 
 Set-Content -Encoding UTF8 -NoNewline -Path $mainRs -Value $content
 Copy-Item -Force $captureSrc $captureDst

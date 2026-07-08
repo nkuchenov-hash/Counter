@@ -673,6 +673,31 @@ class DesktopVoiceAudioCapture {
       onPartial(List<int>.from(_buffer));
     });
   }
+
+  /// CPAL live buffer → /capture/partial_pcm → mid-listen /transcribe/partial_audio.
+  void attachCpalPartialPoll(void Function(List<int> bytes) onPartial) {
+    _partialTimer?.cancel();
+    _partialTimer = Timer.periodic(const Duration(milliseconds: 700), (_) {
+      if (!_usingHelperCapture) return;
+      unawaited(_pollCpalPartialPcm(onPartial));
+    });
+  }
+
+  Future<void> _pollCpalPartialPcm(void Function(List<int> bytes) onPartial) async {
+    try {
+      final r = await http
+          .get(Uri.parse('$_helperBase/capture/partial_pcm'))
+          .timeout(const Duration(milliseconds: 800));
+      if (r.statusCode != 200) return;
+      final body = jsonDecode(r.body);
+      if (body is! Map || body['ok'] != true) return;
+      final b64 = (body['pcm16_base64'] as String?) ?? '';
+      if (b64.isEmpty) return;
+      final pcm = base64Decode(b64);
+      if (pcm.length < 4800 * 2) return; // <300ms @16k
+      onPartial(pcm);
+    } catch (_) {}
+  }
 }
 
 class DesktopVoiceCaptureResult {

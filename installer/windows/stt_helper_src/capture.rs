@@ -2,6 +2,7 @@
 //! Handy/GOLOS parity: device-native F32 (preferred) via cpal default host (WASAPI on Windows).
 
 use actix_web::{web, HttpResponse};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{BufferSize, SampleFormat, StreamConfig};
 use serde::Serialize;
@@ -331,6 +332,50 @@ pub async fn capture_level() -> HttpResponse {
     }
 }
 
+/// Snapshot of current capture → 16 kHz mono PCM16 for mid-listen partial STT.
+/// Used so whisper-tiny can produce an early candidate before stop.
+pub async fn capture_partial_pcm() -> HttpResponse {
+    let slot = capture_slot().lock().unwrap_or_else(|e| e.into_inner());
+    let Some(s) = slot.as_ref() else {
+        return HttpResponse::Ok().json(json!({
+            "ok": false,
+            "pcm16_base64": "",
+            "samples": 0,
+        }));
+    };
+    let raw = s
+        .raw_f32
+        .lock()
+        .map(|v| v.clone())
+        .unwrap_or_default();
+    let sample_rate = s.sample_rate;
+    let channels = s.channels;
+    drop(slot);
+    if raw.is_empty() || sample_rate == 0 || channels == 0 {
+        return HttpResponse::Ok().json(json!({
+            "ok": true,
+            "pcm16_base64": "",
+            "samples": 0,
+        }));
+    }
+    let mono = downmix_interleaved_avg(&raw, channels);
+    let stt = resample_linear(&mono, sample_rate, 16_000);
+    // Cap to last ~4.5s so mid-listen partial stays command-sized.
+    let max_samples = 16_000 * 45 / 10;
+    let trimmed = if stt.len() > max_samples {
+        stt[stt.len() - max_samples..].to_vec()
+    } else {
+        stt
+    };
+    let pcm = float_to_pcm16_bytes(&trimmed);
+    HttpResponse::Ok().json(json!({
+        "ok": true,
+        "pcm16_base64": STANDARD.encode(&pcm),
+        "samples": trimmed.len(),
+        "sample_rate": 16000,
+    }))
+}
+
 pub async fn capture_stop() -> HttpResponse {
     let session = {
         let mut slot = capture_slot().lock().unwrap_or_else(|e| e.into_inner());
@@ -404,7 +449,7 @@ pub async fn capture_stop() -> HttpResponse {
         endpoint_volume: None,
         raw_wav_path: raw_path.display().to_string(),
         stt_wav_path: stt_path.display().to_string(),
-        stt_pcm16_base64: String::new(),
+        stt_pcm16_base64: STANDARD.encode(&stt_pcm16),
         stt_sample_rate: 16_000,
         stt_channels: 1,
         duration_ms,
@@ -426,5 +471,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.route("/capture/start", web::post().to(capture_start))
         .route("/capture/stop", web::post().to(capture_stop))
         .route("/capture/level", web::get().to(capture_level))
+        .route("/capture/partial_pcm", web::get().to(capture_partial_pcm))
         .route("/capture/cancel", web::post().to(capture_cancel));
 }

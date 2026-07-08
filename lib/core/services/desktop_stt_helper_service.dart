@@ -89,6 +89,10 @@ class DesktopSttHelperService {
   String? _sttTranscriptWithoutGain;
   String? _sttTranscriptWithGain;
   String? _sttGainRejectedReason;
+  String? _engineUsedForFirstCandidate;
+  String? _engineUsedForFinalText;
+  int? _stopToPendingConfirmationMs;
+  void Function(String text, String engineId)? onFirstCandidate;
   DesktopSttDiagnostics _lastDiagnostics = const DesktopSttDiagnostics();
   DesktopVoiceGlossaryPack? _transcribeGlossary;
 
@@ -194,12 +198,25 @@ class DesktopSttHelperService {
   void prewarmRecognizerInBackground() {
     final engine = resolveProductionEngine();
     if (engine == DesktopVoiceEngineId.windowsSpeech) return;
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_ENGINE_PREWARMED', engine.helperEngineId);
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_COMMAND_STT_PRIMARY_SELECTED',
+      engine.helperEngineId,
+    );
+    if (engine == DesktopVoiceEngineId.whisperTiny) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_WHISPER_TINY_PRIMARY_IF_BEST');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_PARAKEET_NOT_PRIMARY_IF_WORSE');
+    }
     unawaited(
       ensureStarted(
         engine: engine,
         maxWait: kVoiceOverlayWarmupMax,
         allowRestart: true,
-      ),
+      ).then((ok) {
+        if (ok && _finalTranscribeReady) {
+          DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_COLD_START_ON_FIRST_COMMAND');
+        }
+      }),
     );
   }
 
@@ -649,11 +666,13 @@ class DesktopSttHelperService {
     }
 
     if (engine != DesktopVoiceEngineId.windowsSpeech) {
-      // Partials only for legacy 16 kHz mono record-package fallback.
-      final is16kMono = !_capture.captureBackend.startsWith('cpal') &&
-          _capture.captureSampleRate == kVoiceSampleRate &&
-          _capture.captureChannels == kVoiceChannels;
-      if (is16kMono) {
+      // Mid-listen partials for command STT so stop can surface a warm
+      // partial_hint as the first candidate (<500ms when already cached).
+      if (_capture.captureBackend.startsWith('cpal')) {
+        _capture.attachCpalPartialPoll((bytes) {
+          if (_finalTranscribeReady) unawaited(_sendPartialAudio(bytes));
+        });
+      } else {
         _capture.attachPartialTimer((bytes) {
           if (_finalTranscribeReady) unawaited(_sendPartialAudio(bytes));
         });
@@ -673,6 +692,53 @@ class DesktopSttHelperService {
           )
           .timeout(const Duration(seconds: 10));
     } catch (_) {}
+  }
+
+  /// Instant first-candidate read from mid-listen cache (no full WAV wait).
+  Future<String?> _fetchLastPartialHint() async {
+    try {
+      final r = await http
+          .get(Uri.parse('$_baseUrl/transcribe/last_partial'))
+          .timeout(const Duration(milliseconds: 400));
+      if (r.statusCode != 200) return null;
+      final body = jsonDecode(r.body);
+      if (body is! Map) return null;
+      final text = (body['text'] as String?)?.trim() ?? '';
+      if (text.isEmpty) return null;
+      final age = (body['age_ms'] as num?)?.toInt();
+      // Stale partial (>4s) is ignored — prefer fresh mid-listen.
+      if (age != null && age > 4000) return null;
+      return text;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _emitFirstCandidate(String text, String engineId) {
+    if (text.trim().isEmpty) return;
+    if (_tFirstCandidateVisible != null) return;
+    _tFirstCandidateVisible = DateTime.now();
+    _engineUsedForFirstCandidate = engineId;
+    DesktopVoicePipeline.mark(
+      't_first_candidate_visible',
+      '${_tFirstCandidateVisible!.millisecondsSinceEpoch}',
+    );
+    DesktopVoicePipeline.mark('engine_used_for_first_candidate', engineId);
+    if (_tRecordingStopped != null) {
+      _stopToFirstCandidateMs = _tFirstCandidateVisible!
+          .difference(_tRecordingStopped!)
+          .inMilliseconds;
+      DesktopVoicePipeline.mark(
+        'stop_to_first_candidate_ms',
+        '$_stopToFirstCandidateMs',
+      );
+      if (_stopToFirstCandidateMs! <= 500) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_STOP_TO_FIRST_CANDIDATE_UNDER_500MS',
+        );
+      }
+    }
+    onFirstCandidate?.call(text.trim(), engineId);
   }
 
   Future<DesktopSttTranscript?> stopAndTranscribe() async {
@@ -707,13 +773,33 @@ class DesktopSttHelperService {
     _sttGainRejectedReason = null;
     _sttTranscriptWithoutGain = null;
     _sttTranscriptWithGain = null;
+    _engineUsedForFirstCandidate = null;
+    _engineUsedForFinalText = null;
+    _stopToPendingConfirmationMs = null;
 
-    final captureOrNull = await _capture.stopAndSaveWav();
+    // Mark stop + grab mid-listen partial immediately (do not wait for WAV finalize).
     _tRecordingStopped = DateTime.now();
     DesktopVoicePipeline.mark(
       't_recording_stopped',
       '${_tRecordingStopped!.millisecondsSinceEpoch}',
     );
+    final earlyPartialFuture = _fetchLastPartialHint();
+    final captureFuture = _capture.stopAndSaveWav();
+
+    final earlyPartial = await earlyPartialFuture;
+    if (earlyPartial != null && earlyPartial.isNotEmpty) {
+      _partialText = earlyPartial;
+      _emitFirstCandidate(
+        earlyPartial,
+        resolveProductionEngine().helperEngineId,
+      );
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_FIRST_CANDIDATE_FROM_MID_LISTEN_PARTIAL',
+        earlyPartial,
+      );
+    }
+
+    final captureOrNull = await captureFuture;
     if (captureOrNull == null) {
       _lastError = _capture.lastError ?? 'Not enough audio';
       _failureReason = 'not_enough_audio';
@@ -1017,12 +1103,15 @@ class DesktopSttHelperService {
     _lastError = null;
     _failureReason = null;
     _finalText = text.trim();
+    _engineUsedForFinalText = engine.helperEngineId;
+    DesktopVoicePipeline.mark('engine_used_for_final_text', engine.helperEngineId);
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIPT_TEXT', text.trim());
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_FINAL_TRANSCRIPT_SOURCE',
       _finalTranscriptSource ?? engine.helperEngineId,
     );
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIBE_SUCCESS', text.trim());
+    _emitFirstCandidate(text.trim(), engine.helperEngineId);
     await _updateDiagnostics(
       capture: capture,
       engine: engine,
@@ -1194,7 +1283,7 @@ class DesktopSttHelperService {
         _finalTranscriptSource = 'partial_fallback';
         DesktopVoicePipeline.mark('DESKTOP_VOICE_PARTIAL_FALLBACK_USED');
       } else {
-        _finalTranscriptSource = 'parakeet_final';
+        _finalTranscriptSource = resolveProductionEngine().helperEngineId;
         DesktopVoicePipeline.mark('DESKTOP_VOICE_PARTIAL_NOT_USED_AS_FINAL');
       }
       DesktopVoicePipeline.mark('DESKTOP_VOICE_STOP_FINAL_INFERENCE_USED');
@@ -1204,6 +1293,10 @@ class DesktopSttHelperService {
       );
       if (partialHint.isNotEmpty) {
         DesktopVoicePipeline.mark('partial_text', partialHint);
+        _emitFirstCandidate(
+          partialHint,
+          resolveProductionEngine().helperEngineId,
+        );
       }
       if (_finalText != null) {
         DesktopVoicePipeline.mark('final_text', _finalText!);
@@ -1230,33 +1323,19 @@ class DesktopSttHelperService {
         return null;
       }
       _tFinalTranscriptReady = DateTime.now();
+      _engineUsedForFinalText = resolveProductionEngine().helperEngineId;
       DesktopVoicePipeline.mark(
         't_final_transcript_ready',
         '${_tFinalTranscriptReady!.millisecondsSinceEpoch}',
       );
-      // Partial hint (if any) is the first user-visible candidate; else final.
-      final firstCandidate = partialHint.isNotEmpty ? partialHint : authoritativeText;
-      if (_tFirstCandidateVisible == null && firstCandidate.isNotEmpty) {
-        _tFirstCandidateVisible = DateTime.now();
-        DesktopVoicePipeline.mark(
-          't_first_candidate_visible',
-          '${_tFirstCandidateVisible!.millisecondsSinceEpoch}',
-        );
-        if (_tRecordingStopped != null) {
-          _stopToFirstCandidateMs = _tFirstCandidateVisible!
-              .difference(_tRecordingStopped!)
-              .inMilliseconds;
-          DesktopVoicePipeline.mark(
-            'stop_to_first_candidate_ms',
-            '$_stopToFirstCandidateMs',
-          );
-          if (_stopToFirstCandidateMs! <= 500) {
-            DesktopVoicePipeline.mark(
-              'DESKTOP_VOICE_STOP_TO_FIRST_CANDIDATE_UNDER_500MS',
-            );
-          }
-        }
-      }
+      DesktopVoicePipeline.mark(
+        'engine_used_for_final_text',
+        _engineUsedForFinalText!,
+      );
+      _emitFirstCandidate(
+        authoritativeText,
+        resolveProductionEngine().helperEngineId,
+      );
       if (_tRecordingStopped != null && _tFinalTranscriptReady != null) {
         _stopToFinalTextMs = _tFinalTranscriptReady!
             .difference(_tRecordingStopped!)

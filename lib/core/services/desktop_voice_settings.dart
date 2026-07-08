@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:counter/core/performance/runtime_flags.dart';
 import 'package:counter/core/services/desktop_stt_engine.dart';
+import 'package:counter/core/services/desktop_voice_command_stt_policy.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_hotkey_codec.dart';
 import 'package:flutter/foundation.dart';
@@ -216,10 +217,12 @@ class DesktopVoiceSettings extends ChangeNotifier {
     await prefs.setBool(_kShowPreview, value);
   }
 
-  /// Production recognizer — parakeet default; whisper-tiny never auto-selected.
+  /// Production recognizer — evidence-selected command primary (whisper-tiny).
+  /// Parakeet remains fallback only when explicitly useful; never preferred on
+  /// quiet CPAL command WAVs where it loses domain terms.
   DesktopVoiceEngineId resolveProductionEngine() {
     if (_productionEngine != null) return _productionEngine!;
-    return DesktopVoiceEngineId.parakeet;
+    return DesktopVoiceCommandSttPolicy.primaryEngine;
   }
 
   DesktopSttMode resolveSttMode() => _sttMode ?? DesktopSttMode.fastLocal;

@@ -523,6 +523,13 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     );
     DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_CONFIRMATION_STARTED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_STATE_PENDING_CONFIRMATION');
+    DesktopVoicePipeline.mark(
+      't_pending_confirmation_visible',
+      '${DateTime.now().millisecondsSinceEpoch}',
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_WRITE_BEFORE_TIMER');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_THROUGH_BRAIN');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_GARBAGE_RECORD');
     DesktopVoiceAttemptLog.instance.markWriteRecordPending();
 
     _confirmTimer.onProgress = (p) {
