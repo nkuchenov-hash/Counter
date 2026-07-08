@@ -108,7 +108,22 @@ int MeasureMultilineHeight(HDC hdc, const std::wstring& text, int width_px,
   return rect.bottom - rect.top;
 }
 
-int ComputeOverlayHeight(const std::string& state, int dpi) {
+int OverlayWidthForState(const std::string& state) {
+  if (state == "error") return kErrorWidth;
+  if (state == "pending") return kPendingWidth;
+  if (state == "listening") return kListeningWidth;
+  return kStatusWidth;
+}
+
+HFONT MakePtFont(int pt, int weight, int dpi) {
+  return CreateFontW(PtToPx(pt, dpi), 0, 0, 0, weight, FALSE, FALSE, FALSE,
+                     DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+                     CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
+}
+
+int ComputeOverlayHeight(const std::string& state, int dpi,
+                         const std::wstring& primary,
+                         const std::wstring& secondary) {
   const int base = OverlayHeightForState(state);
   if (state != "pending" && state != "error") {
     return base;
@@ -127,19 +142,19 @@ int ComputeOverlayHeight(const std::string& state, int dpi) {
 
   int content_h = 0;
   if (state == "pending") {
-    content_h += MeasureMultilineHeight(hdc, primary_, content_width, true);
-    if (!secondary_.empty()) {
+    content_h += MeasureMultilineHeight(hdc, primary, content_width, true);
+    if (!secondary.empty()) {
       SelectObject(hdc, body_font);
       content_h += ScalePx(8, dpi);
-      content_h += MeasureMultilineHeight(hdc, secondary_, content_width, false);
+      content_h += MeasureMultilineHeight(hdc, secondary, content_width, false);
     }
     content_h += ScalePx(28, dpi);  // progress bar + padding
   } else if (state == "error") {
-    content_h += MeasureMultilineHeight(hdc, primary_, content_width, true);
-    if (!secondary_.empty()) {
+    content_h += MeasureMultilineHeight(hdc, primary, content_width, true);
+    if (!secondary.empty()) {
       SelectObject(hdc, body_font);
       content_h += ScalePx(8, dpi);
-      content_h += MeasureMultilineHeight(hdc, secondary_, content_width, false);
+      content_h += MeasureMultilineHeight(hdc, secondary, content_width, false);
     }
   }
 
@@ -154,24 +169,11 @@ int ComputeOverlayHeight(const std::string& state, int dpi) {
   return std::clamp(measured, min_h, max_h);
 }
 
-int OverlayWidthForState(const std::string& state) {
-  if (state == "error") return kErrorWidth;
-  if (state == "pending") return kPendingWidth;
-  if (state == "listening") return kListeningWidth;
-  return kStatusWidth;
-}
-
 int CornerRadiusForState(const std::string& state, int dpi) {
   if (state == "error" || state == "pending") {
     return ScalePx(20, dpi);
   }
   return OverlayHeightForState(state);  // stadium before DPI (scaled by caller)
-}
-
-HFONT MakePtFont(int pt, int weight, int dpi) {
-  return CreateFontW(PtToPx(pt, dpi), 0, 0, 0, weight, FALSE, FALSE, FALSE,
-                     DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-                     CLEARTYPE_QUALITY, DEFAULT_PITCH | FF_SWISS, L"Segoe UI");
 }
 
 }  // namespace
@@ -240,7 +242,7 @@ void DesktopVoiceNativeOverlay::PositionOverlay() {
   RECT work = {};
   SystemParametersInfoW(SPI_GETWORKAREA, 0, &work, 0);
   const int dpi = DpiForHwnd(overlay_hwnd_ != nullptr ? overlay_hwnd_ : main_hwnd_);
-  const int height = ComputeOverlayHeight(state_, dpi);
+  const int height = ComputeOverlayHeight(state_, dpi, primary_, secondary_);
   const int width = ScalePx(OverlayWidthForState(state_), dpi);
   const int margin = ScalePx(kBottomMargin, dpi);
   const int x = work.left + ((work.right - work.left) - width) / 2;
@@ -642,7 +644,8 @@ void DesktopVoiceNativeOverlay::Register(flutter::FlutterEngine* engine,
           map[flutter::EncodableValue("overlay_width_px")] =
               flutter::EncodableValue(
                   ScalePx(OverlayWidthForState(state_), dpi));
-          int overlay_height_px = ScalePx(ComputeOverlayHeight(state_, dpi), dpi);
+          int overlay_height_px = ScalePx(
+              ComputeOverlayHeight(state_, dpi, primary_, secondary_), dpi);
           if (overlay_hwnd_ != nullptr) {
             RECT client = {};
             GetClientRect(overlay_hwnd_, &client);
@@ -672,7 +675,8 @@ void DesktopVoiceNativeOverlay::Register(flutter::FlutterEngine* engine,
           map[flutter::EncodableValue("overlay_card_width_logical")] =
               flutter::EncodableValue(OverlayWidthForState(state_));
           map[flutter::EncodableValue("overlay_card_height_logical")] =
-              flutter::EncodableValue(ComputeOverlayHeight(state_, dpi));
+              flutter::EncodableValue(
+                  ComputeOverlayHeight(state_, dpi, primary_, secondary_));
           map[flutter::EncodableValue("overlay_close_hit_px")] =
               flutter::EncodableValue(ScalePx(kCloseButtonSize, dpi));
           result->Success(flutter::EncodableValue(map));
