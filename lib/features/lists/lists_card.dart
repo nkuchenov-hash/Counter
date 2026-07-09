@@ -98,6 +98,7 @@ class BacklogPlanCard extends StatelessWidget {
     required this.onToggleDone,
     required this.onDelete,
     required this.onOpenMenu,
+    this.onLongPressOpenInNotes,
   });
 
   final PlanningTask task;
@@ -109,6 +110,10 @@ class BacklogPlanCard extends StatelessWidget {
   final void Function(bool toDone) onToggleDone;
   final VoidCallback onDelete;
   final void Function(BuildContext anchorContext) onOpenMenu;
+
+  /// Optional long-press handler that opens the Apple-Notes-style editor.
+  /// When null, long-press is a no-op (legacy behavior preserved).
+  final VoidCallback? onLongPressOpenInNotes;
 
   static Iterable<Tag> _listDomainTags(PlanningTask task) sync* {
     for (final tag in task.tags) {
@@ -130,6 +135,7 @@ class BacklogPlanCard extends StatelessWidget {
           : null,
       child: InkWell(
         onTap: onBodyTap,
+        onLongPress: onLongPressOpenInNotes,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
           child: Row(

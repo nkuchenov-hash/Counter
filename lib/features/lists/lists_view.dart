@@ -28,6 +28,7 @@ import 'package:counter/features/lists/lists_bulk_actions.dart';
 import 'package:counter/features/lists/lists_empty_state.dart';
 import 'package:counter/features/lists/lists_filters.dart';
 import 'package:counter/features/lists/lists_inline_add.dart';
+import 'package:counter/features/shared/notes_editor/notes_editor_launcher.dart';
 
 /// Backlog screen: grouped headers by category path, Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
@@ -703,6 +704,21 @@ class _ListsPageState extends State<ListsPage>
           widget.onEditTask?.call(task);
         }
       },
+      onLongPressOpenInNotes: task.planRowIdForBackend.startsWith('optimistic-')
+          ? null
+          : () {
+              unawaited(
+                showNotesEditorSheet(
+                  context: context,
+                  task: task,
+                  onSaved: (updated) {
+                    // Brain already applied optimistically + notified; just
+                    // refresh the local snapshot so frequency chips update.
+                    _applyBacklogFromBrainSnapshot();
+                  },
+                ),
+              );
+            },
       onToggleDone: (done) => _onListToggleDone(task, done),
       onDelete: () => unawaited(_confirmAndDelete(task)),
       onOpenMenu: (anchorCtx) => _showListsRadialMenu(anchorCtx, task, key),
