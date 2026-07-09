@@ -86,6 +86,11 @@ class _ListsPageState extends State<ListsPage>
   final Set<String> _selectedListKeys = <String>{};
   bool _listsArchiveSectionExpanded = true;
 
+  // Notes library search (local, in-memory; filters the displayed snapshot).
+  String _notesSearchQuery = '';
+  final TextEditingController _notesSearchController = TextEditingController();
+  final FocusNode _notesSearchFocus = FocusNode();
+
   /// Stable key for backlog rows (matches Planning bulk selection).
   static String _listKey(PlanningTask t) {
     final p = t.planRowIdForBackend.trim();
@@ -108,6 +113,19 @@ class _ListsPageState extends State<ListsPage>
       ];
     }
     return out;
+  }
+
+  /// [Notes Library] local search over the current snapshot. Matches title +
+  /// notes_plain. Empty query returns the input unchanged.
+  List<PlanningTask> _applyNotesSearch(List<PlanningTask> in_) {
+    final q = _notesSearchQuery.trim().toLowerCase();
+    if (q.isEmpty) return in_;
+    return [
+      for (final t in in_)
+        if (t.title.toLowerCase().contains(q) ||
+            (t.notesPlain ?? '').toLowerCase().contains(q))
+          t,
+    ];
   }
 
   void _syncListsShellFabBulkReserve() {
@@ -581,6 +599,8 @@ class _ListsPageState extends State<ListsPage>
     _tagFilterScrollController.dispose();
     _inlineController.dispose();
     _inlineFocus.dispose();
+    _notesSearchController.dispose();
+    _notesSearchFocus.dispose();
     super.dispose();
   }
 
@@ -917,7 +937,7 @@ class _ListsPageState extends State<ListsPage>
           valueListenable: CategoryVisibilityPrefs.hiddenIds,
           builder: (context, _, _) {
             final chipIds = _chipIdsForBar();
-            final flat = _displayFlat;
+            final flat = _applyNotesSearch(_displayFlat);
             final hasActiveTagFilter =
                 (_filterTagPbId?.trim() ?? '').isNotEmpty;
             final forGrouping = listBeh == 'archive'
@@ -947,9 +967,20 @@ class _ListsPageState extends State<ListsPage>
                         onToggleSelectAllVisible: () =>
                             _toggleSelectAllVisibleLists(flat),
                       )
-                    else
-                      ListsFilterToolbarRow(
+                    else ...[
+                      _NotesLibraryHeader(
                         locale: loc,
+                        notesCount: forGrouping.length,
+                        searchController: _notesSearchController,
+                        searchFocus: _notesSearchFocus,
+                        searchQuery: _notesSearchQuery,
+                        onSearchChanged: (v) =>
+                            setState(() => _notesSearchQuery = v),
+                        onClearSearch: () {
+                          _notesSearchController.clear();
+                          setState(() => _notesSearchQuery = '');
+                        },
+                        onOpenSettings: _openChipBarSettingsSheet,
                         showExport: filterId != null,
                         onExport: () => unawaited(
                           exportVisibleListAsText(
@@ -958,8 +989,8 @@ class _ListsPageState extends State<ListsPage>
                             visible: forGrouping,
                           ),
                         ),
-                        onOpenSettings: _openChipBarSettingsSheet,
                       ),
+                    ],
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1001,9 +1032,14 @@ class _ListsPageState extends State<ListsPage>
                                 : RefreshIndicator(
                                     onRefresh: _reload,
                                     child: listBodyEmpty
-                                        ? ListsFilteredEmptyPanel(
-                                            locale: loc,
-                                          )
+                                        ? (_notesSearchQuery.trim().isNotEmpty
+                                            ? _NotesLibraryEmptyState(
+                                                locale: loc,
+                                                noResults: true,
+                                              )
+                                            : ListsFilteredEmptyPanel(
+                                                locale: loc,
+                                              ))
                                         : CustomScrollView(
                                             physics:
                                                 const AlwaysScrollableScrollPhysics(),
@@ -1114,6 +1150,187 @@ class _ListsPageState extends State<ListsPage>
           },
         );
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Notes Library header + empty state — product visual pass for the Lists tab.
+// Pure presentational widgets composed by [_ListsPageState]. No Brain imports
+// beyond what the page already owns.
+// ---------------------------------------------------------------------------
+
+class _NotesLibraryHeader extends StatelessWidget {
+  const _NotesLibraryHeader({
+    required this.locale,
+    required this.notesCount,
+    required this.searchController,
+    required this.searchFocus,
+    required this.searchQuery,
+    required this.onSearchChanged,
+    required this.onClearSearch,
+    required this.onOpenSettings,
+    required this.showExport,
+    required this.onExport,
+  });
+
+  final String locale;
+  final int notesCount;
+  final TextEditingController searchController;
+  final FocusNode searchFocus;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
+  final VoidCallback onOpenSettings;
+  final bool showExport;
+  final VoidCallback onExport;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  t(locale, 'notes_library_title'),
+                  style: (theme.textTheme.headlineSmall ??
+                          const TextStyle())
+                      .copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
+                ),
+              ),
+              if (showExport)
+                IconButton(
+                  tooltip: t(locale, 'lists_export_text'),
+                  icon: const Icon(Icons.ios_share_rounded, size: 20),
+                  visualDensity: VisualDensity.compact,
+                  color: scheme.onSurfaceVariant,
+                  onPressed: onExport,
+                ),
+              IconButton(
+                tooltip: t(locale, 'notes_editor_more_tooltip'),
+                icon: const Icon(Icons.tune_rounded, size: 20),
+                visualDensity: VisualDensity.compact,
+                color: scheme.onSurfaceVariant,
+                onPressed: onOpenSettings,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Search field — calm, rounded, no heavy chrome.
+          TextField(
+            controller: searchController,
+            focusNode: searchFocus,
+            textInputAction: TextInputAction.search,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: onSearchChanged,
+            style: theme.textTheme.bodyMedium,
+            decoration: InputDecoration(
+              hintText: t(locale, 'notes_library_search_hint'),
+              hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurface.withValues(alpha: 0.4),
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: scheme.onSurfaceVariant,
+              ),
+              suffixIcon: searchQuery.trim().isNotEmpty
+                  ? IconButton(
+                      tooltip: t(locale, 'cancel'),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      visualDensity: VisualDensity.compact,
+                      splashRadius: 16,
+                      onPressed: onClearSearch,
+                    )
+                  : null,
+              filled: true,
+              fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: scheme.outlineVariant.withValues(alpha: 0.4),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: scheme.primary.withValues(alpha: 0.6),
+                ),
+              ),
+            ),
+          ),
+          if (notesCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 2),
+              child: Text(
+                t(locale, 'notes_library_count').replaceAll('{n}', '$notesCount'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotesLibraryEmptyState extends StatelessWidget {
+  const _NotesLibraryEmptyState({required this.locale, this.noResults = false});
+
+  final String locale;
+  final bool noResults;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final title = noResults
+        ? t(locale, 'notes_library_no_results')
+        : t(locale, 'notes_library_empty');
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 32),
+      children: [
+        Icon(
+          noResults
+              ? Icons.search_off_rounded
+              : Icons.note_add_outlined,
+          size: 56,
+          color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (!noResults) ...[
+          const SizedBox(height: 6),
+          Text(
+            t(locale, 'notes_library_empty_sub'),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

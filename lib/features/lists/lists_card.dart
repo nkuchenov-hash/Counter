@@ -150,130 +150,187 @@ class BacklogPlanCard extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final listTags = _listDomainTags(task).toList();
+    final catRule =
+        DatabaseService.instance.getCategoryRuleById(task.categoryId);
+    final catColor = catRule?.colorOrDefault ?? scheme.outline;
+    final previewText = _notePreview(task);
+    final titleText = task.title.trim().isEmpty
+        ? t(locale, 'notes_library_untitled')
+        : task.title;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
+      elevation: 0,
       color: isSelected
-          ? scheme.primaryContainer.withValues(alpha: 0.35)
-          : null,
+          ? scheme.primaryContainer.withValues(alpha: 0.30)
+          : scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: isSelected
+              ? scheme.primary.withValues(alpha: 0.5)
+              : scheme.outlineVariant.withValues(alpha: 0.35),
+          width: 1,
+        ),
+      ),
       child: InkWell(
         onTap: onBodyTap,
         onLongPress: onLongPress,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              selectionMode
-                  ? Checkbox(value: isSelected, onChanged: (_) => onBodyTap())
-                  : Checkbox(
-                      value: task.isDone,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      onChanged:
-                          task.planRowIdForBackend.startsWith('optimistic-')
-                          ? null
-                          : (v) {
-                              if (v == null) return;
-                              onToggleDone(v);
-                            },
-                    ),
+              // Leading category color rail — makes notes feel like notes,
+              // not checkbox task rows. In selection mode we still show a
+              // checkbox so multi-select stays obvious.
+              if (selectionMode)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 10, top: 2),
+                  child: Checkbox(
+                    value: isSelected,
+                    onChanged: (_) => onBodyTap(),
+                  ),
+                )
+              else
+                Container(
+                  width: 3,
+                  margin: const EdgeInsets.only(right: 12, top: 4),
+                  decoration: BoxDecoration(
+                    color: catColor.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        task.title.trim().isEmpty
-                            ? t(locale, 'notes_editor_title_hint')
-                            : task.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: task.isDone
-                            ? const TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              )
-                            : const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Subtle circular done toggle for non-optimistic notes.
+                        // Compact, never the dominant visual.
+                        if (!selectionMode &&
+                            !task.planRowIdForBackend.startsWith('optimistic-'))
+                          Padding(
+                            padding:
+                                const EdgeInsetsDirectional.only(end: 8),
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: Checkbox(
+                                value: task.isDone,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                                onChanged: (v) {
+                                  if (v == null) return;
+                                  onToggleDone(v);
+                                },
                               ),
-                      ),
-                      // Notes preview line — makes the row feel like a note,
-                      // not a thin task row. Strips the LIFEOS_LINK:: prefix.
-                      if (_notePreview(task).isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          _notePreview(task),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            height: 1.35,
-                            color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        Expanded(
+                          child: Text(
+                            titleText,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: (theme.textTheme.titleMedium ??
+                                    const TextStyle())
+                                .copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.25,
+                                  decoration: task.isDone
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                  color: task.isDone
+                                      ? scheme.onSurface.withValues(alpha: 0.55)
+                                      : scheme.onSurface,
+                                ),
                           ),
                         ),
                       ],
-                      if (showTagsStrip && listTags.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: StreamBuilder<UserSettings>(
-                            stream: DatabaseService.instance.userSettingsStream,
-                            initialData: DatabaseService.instance.settings,
-                            builder: (context, snap) {
-                              final mode =
-                                  snap.data?.tagDisplayMode ??
-                                  CategoryDisplayMode.letterChip;
-                              final sch = Theme.of(context).colorScheme;
-                              return Wrap(
-                                alignment: WrapAlignment.start,
-                                crossAxisAlignment: WrapCrossAlignment.start,
-                                spacing: 6,
-                                runSpacing: 4,
-                                children: [
-                                  for (final tag in listTags)
-                                    CategoryChip(
-                                      mode: mode,
-                                      label: tag.name.trim().isNotEmpty
-                                          ? tag.name.trim()
-                                          : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
-                                      color:
-                                          parseTagHexColor(tag.color) ??
-                                          sch.primary,
-                                      icon: iconForTagKey(tag.icon),
-                                      compactGlyphLayout: true,
-                                      syntheticNoTagsMonochrome:
-                                          tag.tagId == -1,
-                                    ),
-                                ],
-                              );
-                            },
-                          ),
+                    ),
+                    if (previewText.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        previewText,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          height: 1.4,
+                          color: scheme.onSurfaceVariant,
                         ),
+                      ),
+                    ] else if (!task.isDone) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        t(locale, 'notes_library_no_text'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontStyle: FontStyle.italic,
+                          color: scheme.onSurface.withValues(alpha: 0.35),
+                        ),
+                      ),
                     ],
-                  ),
+                    if (showTagsStrip && listTags.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: StreamBuilder<UserSettings>(
+                          stream: DatabaseService.instance.userSettingsStream,
+                          initialData: DatabaseService.instance.settings,
+                          builder: (context, snap) {
+                            final mode =
+                                snap.data?.tagDisplayMode ??
+                                CategoryDisplayMode.letterChip;
+                            final sch = Theme.of(context).colorScheme;
+                            return Wrap(
+                              alignment: WrapAlignment.start,
+                              crossAxisAlignment: WrapCrossAlignment.start,
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: [
+                                for (final tag in listTags)
+                                  CategoryChip(
+                                    mode: mode,
+                                    label: tag.name.trim().isNotEmpty
+                                        ? tag.name.trim()
+                                        : '#${tag.tagId != 0 ? tag.tagId : tag.wrapperRowId}',
+                                    color:
+                                        parseTagHexColor(tag.color) ??
+                                        sch.primary,
+                                    icon: iconForTagKey(tag.icon),
+                                    compactGlyphLayout: true,
+                                    syntheticNoTagsMonochrome:
+                                        tag.tagId == -1,
+                                  ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                  ],
                 ),
               ),
+              // Subtle `...` trailing affordance — replaced the large round
+              // task menu button. Compact, calm, opens the row menu.
               if (!selectionMode)
                 Builder(
                   builder: (menuCtx) {
                     return IconButton(
-                      tooltip: t(locale, 'plan_radial_menu_tip'),
-                      style: IconButton.styleFrom(
-                        splashFactory: NoSplash.splashFactory,
-                        hoverColor: Colors.transparent,
-                        backgroundColor: scheme.secondaryContainer.withValues(
-                          alpha: 0.92,
-                        ),
-                        foregroundColor: scheme.onSecondaryContainer,
-                        minimumSize: const Size(44, 44),
-                        padding: EdgeInsets.zero,
-                        shape: const CircleBorder(),
+                      tooltip: t(locale, 'notes_editor_more_tooltip'),
+                      icon: const Icon(Icons.more_horiz_rounded, size: 20),
+                      color: scheme.onSurfaceVariant,
+                      splashRadius: 18,
+                      visualDensity: VisualDensity.compact,
+                      constraints: const BoxConstraints(
+                        minWidth: 34,
+                        minHeight: 34,
                       ),
-                      icon: const Icon(Icons.menu_open_rounded, size: 24),
+                      padding: EdgeInsets.zero,
                       onPressed: () => onOpenMenu(menuCtx),
                     );
                   },
