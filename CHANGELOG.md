@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-09] - P0 Desktop Voice: live UX fail — cue / overlay / correction [engineering]
+
+* **`desktop_voice_ready_cue.dart` + native `PlayReadyCue`:** Replaced silent PowerShell `[console]::beep` with Win32 `PlaySound` WAV click; `ready_cue_played=yes` only when `output_ok`; installed smoke self-test.
+* **`desktop_voice_native_overlay.cpp`:** `WS_EX_LAYERED` + `LWA_COLORKEY` so corners outside the pill are transparent (no black rectangular backdrop).
+* **`desktop_voice_correction_flow.dart` + `desktop_voice_widget.dart`:** Single-instance correction; hide native overlay before sheet; reparse + write after confirm; cancel clears pending with no write; silent confirm no-op blocked.
+* **Latency:** Useful-candidate &lt;500ms gate unchanged; live 592ms remains an honest blocker (not a pass).
+
 ## [2026-07-09] - P0 Desktop Voice: capture-ready cue + pre-roll start guard [engineering]
 
 * **`desktop_voice_capture_ready_policy.dart` + `desktop_voice_ready_cue.dart`:** Short 45ms ready click after first audio callback (recording already started); cue not counted as speech/latency; STT leading pad + start-trim guard preserve first phonemes.
