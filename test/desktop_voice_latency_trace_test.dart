@@ -1,4 +1,5 @@
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
 import 'package:counter/core/services/desktop_voice_overlay_constants.dart';
 import 'package:counter/core/services/desktop_voice_stt_processing.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +38,8 @@ void main() {
         'DESKTOP_VOICE_BAD_PARTIAL_NOT_COUNTED_AS_SUCCESS',
         'DESKTOP_VOICE_NO_FAKE_LATENCY_PASS',
         'DESKTOP_VOICE_USEFUL_CANDIDATE_METRIC_ADDED',
+        'DESKTOP_VOICE_USEFUL_CANDIDATE_METRIC_ENFORCED',
+        'DESKTOP_VOICE_READY_CUE_NOT_USED_AS_LATENCY_PASS',
         'DESKTOP_VOICE_ENGINE_PREWARMED',
         'DESKTOP_VOICE_NO_COLD_START_ON_FIRST_COMMAND',
         'DESKTOP_VOICE_NO_WRITE_BEFORE_TIMER',
@@ -51,6 +54,13 @@ void main() {
       }
       // Sanity: pipeline mark is callable without throwing in tests.
       DesktopVoicePipeline.mark('DESKTOP_VOICE_LATENCY_TRACE_WRITTEN', 'unit');
+    });
+
+    test('ready cue is not counted as latency success', () {
+      expect(
+        DesktopVoiceCaptureReadyPolicy.isCueCountedAsLatencyPass(),
+        isFalse,
+      );
     });
 
     test('df696fc offline latency blocker documented', () {

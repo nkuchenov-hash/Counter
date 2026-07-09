@@ -77,6 +77,30 @@ abstract final class DesktopVoiceOverlayService {
     return showListening(timer: timer);
   }
 
+  static Future<bool> showSpeakReady({String? timer, double level = 0}) async {
+    final loc = currentLocale.value;
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_SPEAK_READY_STATE');
+    if (usesNativeOverlay) {
+      final ok = await _showNative(
+        primary: t(loc, 'desktop_voice_state_speak'),
+        state: 'listening',
+        level: level,
+        timer: timer,
+      );
+      if (ok) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_OVERLAY_RENDERER_ACTIVE',
+          'native_handy_pill',
+        );
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerMinFont16);
+        DesktopVoicePipeline.mark(DesktopVoiceOverlayConstants.markerNoTinyText);
+        unawaited(_logOverlayMetrics(state: 'listening'));
+      }
+      return ok;
+    }
+    return true;
+  }
+
   static Future<bool> showListening({String? timer, double level = 0}) async {
     final loc = currentLocale.value;
     if (usesNativeOverlay) {

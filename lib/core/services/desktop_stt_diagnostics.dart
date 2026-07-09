@@ -1,3 +1,5 @@
+import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
+
 /// Last STT / voice capture diagnostic snapshot for Settings display.
 ///
 /// Carries every field a non-developer-facing diagnostics view needs to
@@ -143,6 +145,23 @@ class DesktopSttDiagnostics {
     this.levelStreamConnected = false,
     this.overlayTextClipped = false,
     this.overlayContentLines = 0,
+    this.readyCueEnabled = true,
+    this.readyCueDurationMs =
+        DesktopVoiceCaptureReadyPolicy.readyCueDurationMs,
+    this.readyCuePlayed = false,
+    this.readyCueOutputOk = false,
+    this.readyCueDetectedInInput = 'unknown',
+    this.readyCueTrimmedFromSttCopy = false,
+    this.preRollMsConfigured = DesktopVoiceCaptureReadyPolicy.preRollMs,
+    this.leadingPadMsInSttCopy = 0,
+    this.trimStartMs,
+    this.trimRemovedLeadingAudioMs,
+    this.startTrimGuardApplied = false,
+    this.hotkeyToCaptureStreamMs,
+    this.captureStreamToFirstAudioCallbackMs,
+    this.firstAudioCallbackToReadyCueMs,
+    this.readyCueToFirstSpeechMs,
+    this.leadingAudioPreservedMs,
   });
 
   final String? helperPath;
@@ -282,6 +301,22 @@ class DesktopSttDiagnostics {
   final bool levelStreamConnected;
   final bool overlayTextClipped;
   final int overlayContentLines;
+  final bool readyCueEnabled;
+  final int readyCueDurationMs;
+  final bool readyCuePlayed;
+  final bool readyCueOutputOk;
+  final String readyCueDetectedInInput;
+  final bool readyCueTrimmedFromSttCopy;
+  final int preRollMsConfigured;
+  final int leadingPadMsInSttCopy;
+  final int? trimStartMs;
+  final int? trimRemovedLeadingAudioMs;
+  final bool startTrimGuardApplied;
+  final int? hotkeyToCaptureStreamMs;
+  final int? captureStreamToFirstAudioCallbackMs;
+  final int? firstAudioCallbackToReadyCueMs;
+  final int? readyCueToFirstSpeechMs;
+  final int? leadingAudioPreservedMs;
 
   List<String> toDiagLines() {
     return [
@@ -361,6 +396,22 @@ class DesktopSttDiagnostics {
       'level_stream_connected=${levelStreamConnected ? 'yes' : 'no'}',
       'overlay_text_clipped=${overlayTextClipped ? 'yes' : 'no'}',
       'overlay_content_lines=$overlayContentLines',
+      'ready_cue_enabled=${readyCueEnabled ? 'yes' : 'no'}',
+      'ready_cue_duration_ms=$readyCueDurationMs',
+      'ready_cue_played=${readyCuePlayed ? 'yes' : 'no'}',
+      'ready_cue_output_ok=${readyCueOutputOk ? 'yes' : 'no'}',
+      'ready_cue_detected_in_input=$readyCueDetectedInInput',
+      'ready_cue_trimmed_from_stt_copy=${readyCueTrimmedFromSttCopy ? 'yes' : 'no'}',
+      'pre_roll_ms_configured=$preRollMsConfigured',
+      'leading_pad_ms_in_stt_copy=$leadingPadMsInSttCopy',
+      'trim_start_ms=${trimStartMs ?? '—'}',
+      'trim_removed_leading_audio_ms=${trimRemovedLeadingAudioMs ?? '—'}',
+      'start_trim_guard_applied=${startTrimGuardApplied ? 'yes' : 'no'}',
+      'hotkey_to_capture_stream_ms=${hotkeyToCaptureStreamMs ?? '—'}',
+      'capture_stream_to_first_audio_callback_ms=${captureStreamToFirstAudioCallbackMs ?? '—'}',
+      'first_audio_callback_to_ready_cue_ms=${firstAudioCallbackToReadyCueMs ?? '—'}',
+      'ready_cue_to_first_speech_ms=${readyCueToFirstSpeechMs ?? '—'}',
+      'leading_audio_preserved_ms=${leadingAudioPreservedMs ?? '—'}',
       'transcribe_endpoint=${transcribeEndpoint ?? '—'}',
       'transcribe_called=${transcribeCalled ? 'yes' : 'no'}',
       'transcribe_http_result=${transcribeHttpResult ?? '—'}',

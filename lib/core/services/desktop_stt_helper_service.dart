@@ -14,7 +14,9 @@ import 'package:counter/core/services/desktop_voice_glossary.dart';
 import 'package:counter/core/services/desktop_voice_last_attempt_store.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
 import 'package:counter/core/services/desktop_voice_capture_endpoint.dart';
+import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
 import 'package:counter/core/services/desktop_voice_stt_processing.dart';
+import 'package:counter/core/services/desktop_voice_ready_cue.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/desktop_win_speech_service.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
@@ -892,14 +894,30 @@ class DesktopSttHelperService {
       '${_tWavWritten!.millisecondsSinceEpoch}',
     );
 
-    // Command endpointing: trim idle silence to shrink Parakeet input.
-    final pcmForStt =
+    // Command endpointing: trim idle silence with start-trim guard.
+    var pcmForStt =
         DesktopVoiceCommandEndpoint.trimSilencePcm16(capture.pcmBytes);
     if (pcmForStt.length != capture.pcmBytes.length) {
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_COMMAND_ENDPOINT_TRIM',
         '${capture.pcmBytes.length}->${pcmForStt.length}',
       );
+    }
+    // Leading silence pad for STT context (raw WAV unchanged).
+    final beforePad = pcmForStt.length;
+    pcmForStt = DesktopVoiceCaptureReadyPolicy.prependLeadingSilencePcm16(
+      pcmForStt,
+    );
+    if (pcmForStt.length != beforePad) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_STT_LEADING_PAD_MS',
+        '${DesktopVoiceCaptureReadyPolicy.sttLeadingPadMs}',
+      );
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCaptureReadyPolicy.markerLeadingAudioPreserved,
+      );
+    }
+    if (pcmForStt.length != capture.pcmBytes.length) {
       capture = DesktopVoiceCaptureResult(
         wavPath: capture.wavPath,
         pcmBytes: pcmForStt,
@@ -1928,6 +1946,32 @@ class DesktopSttHelperService {
       captureStreamError: _capture.captureStreamError,
       levelSource: _capture.levelSource,
       levelStreamConnected: _capture.levelStreamConnected,
+      readyCueEnabled: DesktopVoiceReadyCue.enabled,
+      readyCueDurationMs:
+          DesktopVoiceCaptureReadyPolicy.readyCueDurationMs,
+      readyCuePlayed: DesktopVoiceReadyCue.playedThisSession,
+      readyCueOutputOk: DesktopVoiceReadyCue.outputOk,
+      readyCueDetectedInInput: 'unknown',
+      readyCueTrimmedFromSttCopy: false,
+      preRollMsConfigured: DesktopVoiceCaptureReadyPolicy.preRollMs,
+      leadingPadMsInSttCopy: DesktopVoiceCaptureReadyPolicy.sttLeadingPadMs,
+      startTrimGuardApplied: true,
+      hotkeyToCaptureStreamMs: _msBetween(
+        _capture.hotkeyReceivedAt,
+        _capture.captureStreamStartedAt,
+      ),
+      captureStreamToFirstAudioCallbackMs: _msBetween(
+        _capture.captureStreamStartedAt,
+        _capture.firstAudioCallbackAt,
+      ),
+      firstAudioCallbackToReadyCueMs: _msBetween(
+        _capture.firstAudioCallbackAt,
+        _capture.readyCuePlayedAt,
+      ),
+      readyCueToFirstSpeechMs: _readyCueToSpeechMs(),
+      leadingAudioPreservedMs:
+          DesktopVoiceCaptureReadyPolicy.preRollMs +
+              DesktopVoiceCaptureReadyPolicy.sttLeadingPadMs,
     );
     unawaited(
       DesktopVoiceLastAttemptStore.write(
@@ -2079,6 +2123,20 @@ class DesktopSttHelperService {
     unawaited(_capture.cancel());
     _killHelperProcess();
     _engineReady.clear();
+  }
+
+  static int? _msBetween(DateTime? a, DateTime? b) {
+    if (a == null || b == null) return null;
+    return b.difference(a).inMilliseconds;
+  }
+
+  int? _readyCueToSpeechMs() {
+    final cue = _capture.readyCuePlayedAt;
+    final started = _capture.captureStreamStartedAt;
+    final speechMs = _capture.firstNonSilentFrameMs;
+    if (cue == null || started == null || speechMs == null) return null;
+    final speechAt = started.add(Duration(milliseconds: speechMs));
+    return speechAt.difference(cue).inMilliseconds;
   }
 }
 

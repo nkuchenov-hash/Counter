@@ -35,8 +35,14 @@ abstract final class DesktopVoiceSttProcessingPolicy {
 
   /// Offline whisper-tiny bench (2026-07-08): RMS gain variants do **not**
   /// recover "Southern" on df696fc live quiet fixture — capture level gap.
+  /// fefb502 live quiet (2026-07-09): mangled to "All-in-computer Warehouse…"
+  /// at RMS 0.015 — still STT-only unrecoverable; ready-cue/pre-roll is the
+  /// first-word timing experiment, not a fake gain fix.
   static const String offlineBlocker =
       'whisper_tiny_df696fc_all_stt_gain_variants_missing_southern';
+
+  static const String fefb502OfflineBlocker =
+      'whisper_tiny_fefb502_all_in_computer_missing_southern_rms_0_015';
 
   static const String productionSelectionReason = offlineBlocker;
 
@@ -48,7 +54,12 @@ abstract final class DesktopVoiceSttProcessingPolicy {
     'whisperRmsTarget030': 'Computer Warehouse, DEL MOD, Submit.',
   };
 
+  static const Map<String, String> fefb502OfflineBenchmarkTranscripts = {
+    'current': 'All-in-computer Warehouse, DEL MOD, Submit.',
+  };
+
   static const double df696fcFixtureInputRms = 0.0135;
+  static const double fefb502FixtureInputRms = 0.0150;
   static const double handyReferenceCaptureRms = 0.058;
 
   static const DesktopVoiceSttProcessingVariant productionVariant =

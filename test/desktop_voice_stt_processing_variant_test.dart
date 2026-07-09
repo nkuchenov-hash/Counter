@@ -75,5 +75,24 @@ void main() {
       expect(prod.variant, DesktopVoiceSttProcessingVariant.current);
       expect(prod.applied, isFalse);
     });
+
+    test('fefb502 mangled transcript does not recover Southern', () {
+      const mangled = 'All-in-computer Warehouse, DEL MOD, Submit.';
+      expect(transcriptRecoversSouthern(mangled), isFalse);
+      expect(
+        scoreScwCommandTranscript(mangled),
+        lessThan(scoreScwCommandTranscript(
+          'Southern Computer Warehouse, DEL MOD, Submit.',
+        )),
+      );
+      expect(
+        DesktopVoiceSttProcessingPolicy.fefb502FixtureInputRms,
+        closeTo(0.015, 0.001),
+      );
+      expect(
+        DesktopVoiceSttProcessingPolicy.fefb502OfflineBenchmarkTranscripts['current'],
+        mangled,
+      );
+    });
   });
 }

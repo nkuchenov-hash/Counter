@@ -6,8 +6,10 @@ import 'dart:math' as math;
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_audio_presentation.dart';
 import 'package:counter/core/services/desktop_voice_capture_endpoint.dart';
+import 'package:counter/core/services/desktop_voice_ready_cue.dart';
 import 'package:counter/core/services/desktop_voice_windows_audio_diagnostics.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:record/record.dart';
 
@@ -68,6 +70,11 @@ class DesktopVoiceAudioCapture {
   bool _firstAudioFrameReceived = false;
   int? _firstNonSilentFrameMs;
   DateTime? _captureStreamStartedAt;
+  DateTime? _firstAudioCallbackAt;
+  DateTime? _readyCuePlayedAt;
+  DateTime? _hotkeyReceivedAt;
+  DateTime? _captureStartRequestedAt;
+  VoidCallback? onReadyCuePlayed;
   bool _noSignalDetected = false;
   String? _noSignalReason;
   String? _captureStreamError;
@@ -75,6 +82,17 @@ class DesktopVoiceAudioCapture {
 
   bool get captureStreamStarted => _captureStreamStarted;
   bool get firstAudioFrameReceived => _firstAudioFrameReceived;
+  DateTime? get captureStreamStartedAt => _captureStreamStartedAt;
+  DateTime? get firstAudioCallbackAt => _firstAudioCallbackAt;
+  DateTime? get readyCuePlayedAt => _readyCuePlayedAt;
+  DateTime? get hotkeyReceivedAt => _hotkeyReceivedAt;
+  DateTime? get captureStartRequestedAt => _captureStartRequestedAt;
+  bool get readyCuePlayed => DesktopVoiceReadyCue.playedThisSession;
+  bool get readyCueOutputOk => DesktopVoiceReadyCue.outputOk;
+
+  void noteHotkeyReceived() {
+    _hotkeyReceivedAt = DateTime.now();
+  }
   int? get firstNonSilentFrameMs => _firstNonSilentFrameMs;
   bool get noSignalDetected => _noSignalDetected;
   String? get noSignalReason => _noSignalReason;
@@ -174,6 +192,10 @@ class DesktopVoiceAudioCapture {
       _firstAudioFrameReceived = false;
       _firstNonSilentFrameMs = null;
       _captureStreamStartedAt = null;
+      _firstAudioCallbackAt = null;
+      _readyCuePlayedAt = null;
+      _captureStartRequestedAt = DateTime.now();
+      DesktopVoiceReadyCue.resetSession();
       _noSignalDetected = false;
       _noSignalReason = null;
       _captureStreamError = null;
@@ -321,7 +343,17 @@ class DesktopVoiceAudioCapture {
     _pcmChunksCount++;
     if (!_firstAudioFrameReceived) {
       _firstAudioFrameReceived = true;
+      _firstAudioCallbackAt = DateTime.now();
       DesktopVoicePipeline.mark('DESKTOP_VOICE_FIRST_AUDIO_FRAME_RECEIVED');
+      // Recording already started; arm short ready cue after first callback.
+      DesktopVoiceReadyCue.armAfterFirstAudio(
+        captureStreamStarted: _captureStreamStarted,
+        firstAudioCallbackReceived: true,
+        onPlayed: () {
+          _readyCuePlayedAt = DateTime.now();
+          onReadyCuePlayed?.call();
+        },
+      );
     }
     if (!_audioLevelSeen &&
         (rms >= _levelThreshold || peak >= _levelThreshold) &&
@@ -737,6 +769,7 @@ class DesktopVoiceAudioCapture {
   }
 
   Future<void> cancel() async {
+    DesktopVoiceReadyCue.cancelArm();
     _partialTimer?.cancel();
     _partialTimer = null;
     _helperLevelTimer?.cancel();

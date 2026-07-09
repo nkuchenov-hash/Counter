@@ -1,5 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
+
 /// Perceptual / command-latency / STT-gain helpers for Desktop Voice.
 ///
 /// UI level meters may amplify for visibility; STT gain must be benchmarked and
@@ -53,12 +56,13 @@ abstract final class DesktopVoiceSttGain {
 /// pads so final words (Submit / Del Mod) are not clipped. Used to cut
 /// 5s+ idle audio before Parakeet without GOLOS VAD damage.
 abstract final class DesktopVoiceCommandEndpoint {
-  static const int prePadMs = 250;
+  static const int prePadMs = DesktopVoiceCaptureReadyPolicy.preRollMs;
   static const int postPadMs = 350;
   static const double rmsThreshold = 0.008;
   static const int frameMs = 20;
 
   /// Returns a sublist of [pcm16] (16 kHz mono) covering speech + pads.
+  /// Start trim is guarded so first phonemes ("Southern") are not cut.
   /// If speech cannot be found or span is almost full, returns [pcm16] unchanged.
   static List<int> trimSilencePcm16(
     List<int> pcm16, {
@@ -94,10 +98,29 @@ abstract final class DesktopVoiceCommandEndpoint {
     }
     if (firstSpeech == null || lastSpeech == null) return pcm16;
 
-    final pre = (sampleRate * prePadMs) ~/ 1000;
+    DesktopVoicePipeline.mark(
+      DesktopVoiceCaptureReadyPolicy.markerPreRoll,
+      '${prePadMs}ms',
+    );
+    DesktopVoicePipeline.mark(
+      DesktopVoiceCaptureReadyPolicy.markerStartTrimGuard,
+    );
+
     final post = (sampleRate * postPadMs) ~/ 1000;
-    final a = (firstSpeech - pre).clamp(0, samples);
+    final a = DesktopVoiceCaptureReadyPolicy.guardedTrimStartSample(
+      firstSpeechSample: firstSpeech,
+      sampleRate: sampleRate,
+      prePadMs: prePadMs,
+    );
     final b = (lastSpeech + post).clamp(0, samples);
+    if (a == 0) {
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCaptureReadyPolicy.markerFirstPhonemeNotTrimmed,
+      );
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCaptureReadyPolicy.markerLeadingAudioPreserved,
+      );
+    }
     if (b - a < sampleRate ~/ 2) return pcm16; // keep at least ~0.5s
     // Always apply end-silence trim when it removes ≥120ms (latency win).
     if ((samples - (b - a)) < (sampleRate * 120) ~/ 1000) return pcm16;

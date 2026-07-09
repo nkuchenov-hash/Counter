@@ -13,6 +13,7 @@ import 'package:counter/core/services/desktop_voice_command_normalize.dart';
 import 'package:counter/core/services/desktop_voice_user_error.dart';
 import 'package:counter/core/services/desktop_voice_overlay_bridge.dart';
 import 'package:counter/core/services/desktop_voice_attempt_log.dart';
+import 'package:counter/core/services/desktop_voice_audio_capture.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/features/shared/desktop_voice_correction_sheet.dart';
 import 'package:counter/features/shared/desktop_voice_capsule.dart';
@@ -135,6 +136,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
 
   @override
   void dispose() {
+    DesktopVoiceAudioCapture.instance.onReadyCuePlayed = null;
     DesktopVoiceNativeOverlay.onCloseRequested = null;
     DesktopVoiceNativeOverlay.onBodyClicked = null;
     _confirmTimer.cancel();
@@ -169,6 +171,22 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       }
     }
     if (!mounted || _sessionCancelled) return;
+
+    DesktopVoiceAudioCapture.instance.noteHotkeyReceived();
+    DesktopVoiceAudioCapture.instance.onReadyCuePlayed = () {
+      if (!mounted || _sessionCancelled) return;
+      if (_phase != DesktopVoiceOverlayPhase.listening) return;
+      final loc = currentLocale.value;
+      setState(() {
+        _statusLine = t(loc, 'desktop_voice_state_speak');
+      });
+      unawaited(
+        DesktopVoiceOverlayService.showSpeakReady(
+          timer: _formatTimer(),
+          level: _micLevel,
+        ),
+      );
+    };
 
     _recognizer = await createDesktopVoiceRecognizer();
     if (_sessionCancelled || !mounted) return;

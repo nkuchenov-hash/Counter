@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-09] - P0 Desktop Voice: capture-ready cue + pre-roll start guard [engineering]
+
+* **`desktop_voice_capture_ready_policy.dart` + `desktop_voice_ready_cue.dart`:** Short 45ms ready click after first audio callback (recording already started); cue not counted as speech/latency; STT leading pad + start-trim guard preserve first phonemes.
+* **`desktop_voice_audio_capture.dart` / overlay / diagnostics:** Arm cue on first level frame; overlay switches to “Говорите” / Speak after cue; `last_attempt_diag` gains ready-cue and pre-roll timing fields.
+* **Fixtures:** Archived `scw_delmod_submit_fefb502_live_quiet*.wav`; STT-only gain remains rejected (`NO_FAKE_GAIN_FIX`).
+
 ## [2026-07-09] - P0 Desktop Voice: install identity fix + smoke SHA guard [engineering]
 
 * **`scripts/manual/install_desktop_voice_release.ps1`:** Stops counter+helper, builds with `GIT_COMMIT`/`BUILD_TIME`, robocopy full Release tree (app+helper), verifies `app.so` embeds current SHA — blocks mixed helper-only installs.

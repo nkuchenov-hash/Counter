@@ -738,6 +738,8 @@ const Map<String, String> kRuL10n = {
     'desktop_voice_mobile_unavailable': 'Комбинации клавиш недоступны на этом устройстве.',
     'desktop_voice_diag_title': 'Шаги последней голосовой команды',
     'desktop_voice_state_ready': 'Готово',
+    'desktop_voice_state_speak': 'Говорите',
+    'desktop_voice_state_mic_preparing': 'Готовлю микрофон…',
     'desktop_voice_state_listening': 'Слушаю…',
     'desktop_voice_state_processing': 'Обработка',
     'desktop_voice_state_preview': 'Предпросмотр',
@@ -878,4 +880,17 @@ const Map<String, String> kRuL10n = {
     'notes_editor_future_summary': 'Скоро: Конвертация, ИИ, Поделиться, Вложения',
     'notes_editor_show_future': 'Показать скоро',
     'notes_editor_hide_future': 'Скрыть',
+
+    // Библиотека заметок (редизайн Lists) — продуктовый проход
+    'notes_library_title': 'Заметки',
+    'notes_library_search_hint': 'Поиск заметок',
+    'notes_library_empty': 'Пока нет заметок',
+    'notes_library_empty_sub': 'Нажмите на поле выше, чтобы добавить первую заметку.',
+    'notes_library_no_results': 'Ничего не найдено',
+    'notes_library_count': '{n} заметок',
+    'notes_library_updated_label': 'Обновлено {when}',
+    'notes_library_untitled': 'Новая заметка',
+    'notes_library_no_text': 'Без дополнительного текста',
+    'notes_library_add_placeholder': 'Новая заметка…',
+    'notes_route_close_tooltip': 'Назад к заметкам',
 };
