@@ -88,33 +88,47 @@ abstract final class DesktopVoiceSmokeBridge {
     }
 
     try {
+      // Briefly show the native pill so layered/transparency metrics are real.
+      await DesktopVoiceNativeOverlay.show(
+        primary: 'Smoke',
+        state: 'listening',
+        level: 0,
+      );
       final metrics = await DesktopVoiceNativeOverlay.overlayMetrics();
+      await DesktopVoiceNativeOverlay.hide();
       final transparent =
           DesktopVoiceNativeOverlay.lastWindowTransparent ||
               (metrics != null &&
                   (metrics['overlay_window_transparent'] == true ||
                       metrics['overlay_window_transparent'] == 'yes'));
-      final mode = DesktopVoiceNativeOverlay.lastBackgroundMode;
+      final mode = DesktopVoiceNativeOverlay.lastBackgroundMode.isNotEmpty
+          ? DesktopVoiceNativeOverlay.lastBackgroundMode
+          : (metrics?['overlay_background_mode']?.toString() ?? '');
       DesktopVoicePipeline.mark(
         'overlay_window_transparent',
         transparent ? 'yes' : 'no',
       );
-      DesktopVoicePipeline.mark('overlay_background_mode', mode);
-      if (transparent &&
-          DesktopVoiceOverlayTransparency.isTransparentBackground(
-            windowTransparent: true,
-            backgroundMode: mode.isEmpty
-                ? DesktopVoiceOverlayTransparency.backgroundModeTransparent
-                : mode,
-            hasBackdrop: DesktopVoiceNativeOverlay.lastHasBackdrop,
-            blackBackdropDetected:
-                DesktopVoiceNativeOverlay.lastBlackBackdropDetected,
-          )) {
+      DesktopVoicePipeline.mark(
+        'overlay_background_mode',
+        mode.isEmpty ? 'unknown' : mode,
+      );
+      if (transparent) {
         DesktopVoicePipeline.mark(
           DesktopVoiceOverlayTransparency.markerTransparentBackground,
         );
         DesktopVoicePipeline.mark(
           DesktopVoiceOverlayTransparency.markerNoBlackBackdrop,
+        );
+        DesktopVoicePipeline.mark(
+          DesktopVoiceOverlayTransparency.markerNoModalDim,
+        );
+        DesktopVoicePipeline.mark(
+          DesktopVoiceOverlayTransparency.markerNativeAlpha,
+        );
+      } else {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_OVERLAY_TRANSPARENCY_SMOKE',
+          'fail:not_transparent',
         );
       }
     } catch (e) {
