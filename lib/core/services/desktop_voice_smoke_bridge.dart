@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
+import 'package:counter/core/services/desktop_voice_native_overlay.dart';
+import 'package:counter/core/services/desktop_voice_overlay_transparency.dart';
+import 'package:counter/core/services/desktop_voice_ready_cue.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:flutter/foundation.dart';
 
@@ -58,6 +62,66 @@ abstract final class DesktopVoiceSmokeBridge {
     if (!DesktopVoiceSettings.instance.enabled) {
       await DesktopVoiceSettings.instance.setEnabled(true);
       DesktopVoicePipeline.mark('DESKTOP_VOICE_SMOKE_FORCE_ENABLED');
+    }
+    // Defer UX self-checks slightly so the native channel is bound.
+    unawaited(
+      Future<void>.delayed(const Duration(milliseconds: 800), () {
+        unawaited(runInstalledUxSmokeChecks());
+      }),
+    );
+  }
+
+  /// Cue playback + overlay transparency self-checks for installed smoke.
+  static Future<void> runInstalledUxSmokeChecks() async {
+    if (!isActive) return;
+    try {
+      final cueOk = await DesktopVoiceReadyCue.runPlaybackSmoke();
+      DesktopVoicePipeline.mark(
+        'cue_playback_smoke_pass',
+        cueOk ? 'yes' : 'no',
+      );
+    } catch (e) {
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCaptureReadyPolicy.markerCuePlaybackSmoke,
+        'fail:$e',
+      );
+    }
+
+    try {
+      final metrics = await DesktopVoiceNativeOverlay.overlayMetrics();
+      final transparent =
+          DesktopVoiceNativeOverlay.lastWindowTransparent ||
+              (metrics != null &&
+                  (metrics['overlay_window_transparent'] == true ||
+                      metrics['overlay_window_transparent'] == 'yes'));
+      final mode = DesktopVoiceNativeOverlay.lastBackgroundMode;
+      DesktopVoicePipeline.mark(
+        'overlay_window_transparent',
+        transparent ? 'yes' : 'no',
+      );
+      DesktopVoicePipeline.mark('overlay_background_mode', mode);
+      if (transparent &&
+          DesktopVoiceOverlayTransparency.isTransparentBackground(
+            windowTransparent: true,
+            backgroundMode: mode.isEmpty
+                ? DesktopVoiceOverlayTransparency.backgroundModeTransparent
+                : mode,
+            hasBackdrop: DesktopVoiceNativeOverlay.lastHasBackdrop,
+            blackBackdropDetected:
+                DesktopVoiceNativeOverlay.lastBlackBackdropDetected,
+          )) {
+        DesktopVoicePipeline.mark(
+          DesktopVoiceOverlayTransparency.markerTransparentBackground,
+        );
+        DesktopVoicePipeline.mark(
+          DesktopVoiceOverlayTransparency.markerNoBlackBackdrop,
+        );
+      }
+    } catch (e) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_OVERLAY_TRANSPARENCY_SMOKE',
+        'fail:$e',
+      );
     }
   }
 

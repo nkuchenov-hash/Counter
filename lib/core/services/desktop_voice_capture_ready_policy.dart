@@ -30,6 +30,14 @@ abstract final class DesktopVoiceCaptureReadyPolicy {
       'DESKTOP_VOICE_FIRST_AUDIO_CALLBACK_BEFORE_CUE';
   static const String markerCueAfterCaptureReady =
       'DESKTOP_VOICE_READY_CUE_PLAYED_AFTER_CAPTURE_READY';
+  static const String markerCuePlayRequested =
+      'DESKTOP_VOICE_READY_CUE_PLAY_REQUESTED';
+  static const String markerCueAudibleOrError =
+      'DESKTOP_VOICE_READY_CUE_AUDIBLE_OR_ERROR';
+  static const String markerCuePlaybackSmoke =
+      'DESKTOP_VOICE_READY_CUE_PLAYBACK_SMOKE';
+  static const String markerCueNotSilentlySkipped =
+      'DESKTOP_VOICE_READY_CUE_NOT_SILENTLY_SKIPPED';
   static const String markerLeadingAudioPreserved =
       'DESKTOP_VOICE_LEADING_AUDIO_PRESERVED';
   static const String markerCueShort = 'DESKTOP_VOICE_READY_CUE_SHORT';

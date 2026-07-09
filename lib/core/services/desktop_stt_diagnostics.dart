@@ -148,10 +148,24 @@ class DesktopSttDiagnostics {
     this.readyCueEnabled = true,
     this.readyCueDurationMs =
         DesktopVoiceCaptureReadyPolicy.readyCueDurationMs,
+    this.readyCuePlayRequested = false,
     this.readyCuePlayed = false,
     this.readyCueOutputOk = false,
+    this.readyCueOutputDevice = 'default',
+    this.readyCueError,
+    this.readyCuePlayedMs,
     this.readyCueDetectedInInput = 'unknown',
     this.readyCueTrimmedFromSttCopy = false,
+    this.firstAudioCallbackBeforeCue = false,
+    this.captureReadyBeforeCue = false,
+    this.cuePlaybackSmokePass,
+    this.overlayWindowTransparent = false,
+    this.overlayBackgroundMode = 'opaque_popup',
+    this.overlayRootBackgroundColor = '—',
+    this.overlayCardBackgroundColor = '—',
+    this.overlayHasBackdrop = true,
+    this.overlayBlackBackdropDetected = true,
+    this.overlayWindowFlags = '',
     this.preRollMsConfigured = DesktopVoiceCaptureReadyPolicy.preRollMs,
     this.leadingPadMsInSttCopy = 0,
     this.trimStartMs,
@@ -303,10 +317,24 @@ class DesktopSttDiagnostics {
   final int overlayContentLines;
   final bool readyCueEnabled;
   final int readyCueDurationMs;
+  final bool readyCuePlayRequested;
   final bool readyCuePlayed;
   final bool readyCueOutputOk;
+  final String readyCueOutputDevice;
+  final String? readyCueError;
+  final int? readyCuePlayedMs;
   final String readyCueDetectedInInput;
   final bool readyCueTrimmedFromSttCopy;
+  final bool firstAudioCallbackBeforeCue;
+  final bool captureReadyBeforeCue;
+  final bool? cuePlaybackSmokePass;
+  final bool overlayWindowTransparent;
+  final String overlayBackgroundMode;
+  final String overlayRootBackgroundColor;
+  final String overlayCardBackgroundColor;
+  final bool overlayHasBackdrop;
+  final bool overlayBlackBackdropDetected;
+  final String overlayWindowFlags;
   final int preRollMsConfigured;
   final int leadingPadMsInSttCopy;
   final int? trimStartMs;
@@ -398,10 +426,24 @@ class DesktopSttDiagnostics {
       'overlay_content_lines=$overlayContentLines',
       'ready_cue_enabled=${readyCueEnabled ? 'yes' : 'no'}',
       'ready_cue_duration_ms=$readyCueDurationMs',
+      'ready_cue_play_requested=${readyCuePlayRequested ? 'yes' : 'no'}',
       'ready_cue_played=${readyCuePlayed ? 'yes' : 'no'}',
       'ready_cue_output_ok=${readyCueOutputOk ? 'yes' : 'no'}',
+      'ready_cue_output_device=$readyCueOutputDevice',
+      'ready_cue_error=${readyCueError ?? '—'}',
+      'ready_cue_played_ms=${readyCuePlayedMs ?? '—'}',
       'ready_cue_detected_in_input=$readyCueDetectedInInput',
       'ready_cue_trimmed_from_stt_copy=${readyCueTrimmedFromSttCopy ? 'yes' : 'no'}',
+      'first_audio_callback_before_cue=${firstAudioCallbackBeforeCue ? 'yes' : 'no'}',
+      'capture_ready_before_cue=${captureReadyBeforeCue ? 'yes' : 'no'}',
+      'cue_playback_smoke_pass=${cuePlaybackSmokePass == null ? '—' : (cuePlaybackSmokePass! ? 'yes' : 'no')}',
+      'overlay_window_transparent=${overlayWindowTransparent ? 'yes' : 'no'}',
+      'overlay_background_mode=$overlayBackgroundMode',
+      'overlay_root_background_color=$overlayRootBackgroundColor',
+      'overlay_card_background_color=$overlayCardBackgroundColor',
+      'overlay_has_backdrop=${overlayHasBackdrop ? 'yes' : 'no'}',
+      'overlay_black_backdrop_detected=${overlayBlackBackdropDetected ? 'yes' : 'no'}',
+      'overlay_window_flags=${overlayWindowFlags.isEmpty ? '—' : overlayWindowFlags}',
       'pre_roll_ms_configured=$preRollMsConfigured',
       'leading_pad_ms_in_stt_copy=$leadingPadMsInSttCopy',
       'trim_start_ms=${trimStartMs ?? '—'}',

@@ -23,8 +23,13 @@ class DesktopVoiceNativeOverlay {
 
   static bool IsVisible();
 
+  // Short ready click on the default output device (non-blocking).
+  static bool PlayReadyCue(int frequency_hz, int duration_ms,
+                           std::string* error_out);
+
  private:
   static void EnsureClassRegistered();
+  static void EnsureLayeredTransparency();
   static void PositionOverlay();
   static void PaintOverlay(HDC hdc, const RECT& rect);
   static LRESULT CALLBACK OverlayWndProc(HWND hwnd,

@@ -1,5 +1,6 @@
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
+import 'package:counter/core/services/desktop_voice_install_smoke_policy.dart';
 import 'package:counter/core/services/desktop_voice_overlay_constants.dart';
 import 'package:counter/core/services/desktop_voice_stt_processing.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -59,6 +60,30 @@ void main() {
     test('ready cue is not counted as latency success', () {
       expect(
         DesktopVoiceCaptureReadyPolicy.isCueCountedAsLatencyPass(),
+        isFalse,
+      );
+    });
+
+    test('>500ms useful candidate is not a latency pass', () {
+      expect(
+        DesktopVoiceInstallSmokePolicy.isUsefulCandidateLatencyPass(
+          candidateUseful: true,
+          stopToUsefulCandidateMs: 592,
+        ),
+        isFalse,
+      );
+      expect(
+        DesktopVoiceInstallSmokePolicy.isUsefulCandidateLatencyPass(
+          candidateUseful: true,
+          stopToUsefulCandidateMs: 499,
+        ),
+        isTrue,
+      );
+      expect(
+        DesktopVoiceInstallSmokePolicy.isUsefulCandidateLatencyPass(
+          candidateUseful: false,
+          stopToUsefulCandidateMs: 200,
+        ),
         isFalse,
       );
     });

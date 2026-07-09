@@ -14,6 +14,7 @@ import 'package:counter/core/services/desktop_voice_user_error.dart';
 import 'package:counter/core/services/desktop_voice_overlay_bridge.dart';
 import 'package:counter/core/services/desktop_voice_attempt_log.dart';
 import 'package:counter/core/services/desktop_voice_audio_capture.dart';
+import 'package:counter/core/services/desktop_voice_correction_flow.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/features/shared/desktop_voice_correction_sheet.dart';
 import 'package:counter/features/shared/desktop_voice_capsule.dart';
@@ -79,6 +80,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   double _confirmProgress = 0;
   bool _correctionOpen = false;
   bool _commitInFlight = false;
+  DesktopVoiceCorrectionSession? _correctionSession;
+  String? _pendingCommandId;
 
   double _micLevel = 0;
   bool _audioLevelSeen = false;
@@ -574,6 +577,10 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   void _enterPendingConfirmation(VoiceCommandParseResult parsed) {
     final loc = currentLocale.value;
     _parseResult = parsed;
+    _pendingCommandId =
+        'pending_${DateTime.now().millisecondsSinceEpoch}';
+    _correctionSession = null;
+    _correctionOpen = false;
     final previewLines = voiceCommandPendingConfirmationLines(
       parsed,
       localeCode: loc,
@@ -629,18 +636,90 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   }
 
   Future<void> _openCorrection() async {
-    if (_phase != DesktopVoiceOverlayPhase.pendingConfirmation) return;
+    if (!DesktopVoiceCorrectionFlow.mayOpenCorrection(
+      pendingVisible: _phase == DesktopVoiceOverlayPhase.pendingConfirmation,
+      correctionAlreadyOpen: _correctionOpen,
+      sessionCancelled: _sessionCancelled,
+    )) {
+      if (_correctionOpen) {
+        _correctionSession?.duplicateBlocked = true;
+        DesktopVoicePipeline.mark(
+          DesktopVoiceCorrectionFlow.markerDuplicateBlocked,
+        );
+      }
+      return;
+    }
+
     final parsed = _parseResult;
     if (parsed == null) return;
+
+    // Synchronous re-entry guard before any await (duplicate taps).
     _correctionOpen = true;
     _confirmTimer.pause();
+
+    final session = DesktopVoiceCorrectionSession(
+      pendingCommandId: _pendingCommandId ?? 'pending_unknown',
+    );
+    if (!session.tryBeginOpen()) {
+      _correctionOpen = false;
+      _confirmTimer.resume();
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerDuplicateBlocked,
+      );
+      return;
+    }
+    _correctionSession = session;
+
+    DesktopVoicePipeline.mark(
+      DesktopVoiceCorrectionFlow.markerSingleInstance,
+      session.sessionId,
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_OPEN_REQUESTED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_OPENED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_TIMER_PAUSED');
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_CORRECTION_PANEL_COUNT',
+      '${session.panelCount}',
+    );
+
+    // Hide native topmost overlay so the Flutter sheet is in front.
+    if (DesktopVoiceCorrectionFlow.shouldHideOverlayForCorrection(
+      correctionOpenRequested: true,
+    )) {
+      await DesktopVoiceOverlayService.forceHide();
+      session.markOverlayHidden();
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerOverlayHidden,
+      );
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerOpensInFront,
+      );
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerNoXRequired,
+      );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_Z_ORDER_FRONT');
+    }
 
     final ctx = appRootNavigatorKey.currentContext;
     if (ctx == null || !ctx.mounted) {
       _correctionOpen = false;
+      session.markCancelled();
       _confirmTimer.resume();
+      // Restore pending overlay if we still have a pending command.
+      if (_phase == DesktopVoiceOverlayPhase.pendingConfirmation &&
+          !_sessionCancelled) {
+        final preview = voiceCommandPendingConfirmationLines(
+          parsed,
+          localeCode: currentLocale.value,
+        ).join('\n');
+        unawaited(
+          DesktopVoiceOverlayService.showPendingConfirmation(
+            previewLine: preview,
+            hintLine: t(currentLocale.value, 'desktop_voice_tap_to_edit'),
+            progress: _confirmProgress,
+          ),
+        );
+      }
       return;
     }
 
@@ -650,28 +729,145 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       categoryPath: parsed.matchedCategoryDisplayPath ?? parsed.rootLabel,
     );
     _correctionOpen = false;
-    if (!mounted || _sessionCancelled) return;
+    if (!mounted || _sessionCancelled) {
+      session.pendingStateCleared = true;
+      return;
+    }
 
     if (result == null || result.cancelled) {
+      session.markCancelled();
       DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_CANCELLED');
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerCancelNoWrite,
+      );
       await _cancelPendingConfirmation();
       return;
     }
 
-    _parseResult = result.parseResult ?? parsed;
+    // Re-parse / normalize corrected command; sheet preserves category IDs.
+    final fromSheet = result.parseResult ?? parsed;
+    final withTitle = VoiceCommandParseResult(
+      rootLabel: fromSheet.rootLabel,
+      matchedCategoryPocketBaseId: fromSheet.matchedCategoryPocketBaseId,
+      matchedCategoryDisplayPath: fromSheet.matchedCategoryDisplayPath,
+      matchedLocalCategoryId: fromSheet.matchedLocalCategoryId,
+      recordTitle: result.title.trim().isNotEmpty
+          ? result.title.trim()
+          : fromSheet.recordTitle,
+      confidence: fromSheet.confidence,
+      originalTranscript: fromSheet.originalTranscript,
+      ambiguityReason: fromSheet.ambiguityReason,
+      ambiguousCandidates: fromSheet.ambiguousCandidates,
+    );
+
+    // Full-command reparse when the user typed a multi-segment command;
+    // otherwise re-normalize the title-edited pending result.
+    final reparseTranscript = result.title.trim().contains(',')
+        ? result.title.trim()
+        : parsed.originalTranscript;
+    final reparsed = parseVoiceCommand(
+      rules: widget.categoryRules,
+      transcript: reparseTranscript,
+    );
+    DesktopVoicePipeline.mark(
+      DesktopVoiceCorrectionFlow.markerReparsed,
+      reparsed.recordTitle.isNotEmpty
+          ? reparsed.recordTitle
+          : withTitle.recordTitle,
+    );
+
+    final norm = normalizeDesktopVoiceCommand(
+      reparsed.isSafeToStart ? reparsed : withTitle,
+    );
+    final toCommit = (norm != null && norm.autoStartAllowed)
+        ? VoiceCommandParseResult(
+            rootLabel: norm.effectiveResult.rootLabel,
+            matchedCategoryPocketBaseId:
+                norm.effectiveResult.matchedCategoryPocketBaseId,
+            matchedCategoryDisplayPath:
+                norm.effectiveResult.matchedCategoryDisplayPath,
+            matchedLocalCategoryId:
+                norm.effectiveResult.matchedLocalCategoryId,
+            recordTitle: result.title.trim().isNotEmpty
+                ? result.title.trim()
+                : norm.normalizedTitle,
+            confidence: norm.effectiveResult.confidence,
+            originalTranscript: reparseTranscript,
+            ambiguityReason: norm.effectiveResult.ambiguityReason,
+            ambiguousCandidates: norm.effectiveResult.ambiguousCandidates,
+          )
+        : withTitle;
+
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_CORRECTED_PARSER_RESULT',
+      toCommit.confidence.name,
+    );
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_CORRECTED_SELECTED_PATH',
+      toCommit.matchedCategoryDisplayPath ?? toCommit.rootLabel,
+    );
+
+    session.markConfirmed(
+      text: reparseTranscript,
+      title: toCommit.recordTitle,
+      path: toCommit.matchedCategoryDisplayPath,
+      parserResult: toCommit.confidence.name,
+    );
+
+    if (!toCommit.isSafeToStart) {
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerConfirmNotNoop,
+        'unsafe_after_correction',
+      );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_CONFIRM_NOOP_BLOCKED');
+      _fail(
+        t(currentLocale.value, 'desktop_voice_command_not_recognized'),
+        diag: 'correction_unsafe',
+      );
+      return;
+    }
+
+    DesktopVoicePipeline.mark(
+      DesktopVoiceCorrectionFlow.markerNoLostPending,
+      session.pendingCommandId,
+    );
     DesktopVoicePipeline.mark('DESKTOP_VOICE_CORRECTION_CONFIRMED');
+    DesktopVoicePipeline.mark(
+      DesktopVoiceCorrectionFlow.markerWritesAfterConfirm,
+    );
+    DesktopVoicePipeline.mark(
+      DesktopVoiceCorrectionFlow.markerConfirmNotNoop,
+      'write_requested',
+    );
+
+    _parseResult = toCommit;
+    session.markWrite(success: false);
     await _commitAfterConfirmation();
+    session.markWrite(success: _startedRecordDocId != null);
+    if (_startedRecordDocId != null) {
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerNoDuplicateWrite,
+      );
+    }
   }
 
   Future<void> _cancelPendingConfirmation() async {
     _confirmTimer.cancel();
+    _correctionOpen = false;
+    _correctionSession?.pendingStateCleared = true;
     DesktopVoicePipeline.mark('DESKTOP_VOICE_CURRENT_RECORD_UNCHANGED_ON_FAILURE');
     await DesktopVoiceOverlayService.forceHide();
     if (mounted) widget.onClose();
   }
 
   Future<void> _commitAfterConfirmation() async {
-    if (_commitInFlight) return;
+    if (_commitInFlight) {
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerNoDuplicateWrite,
+        'blocked_inflight',
+      );
+      return;
+    }
     _commitInFlight = true;
     final capturedStart = _confirmTimer.intendedStartTime;
     _confirmTimer.cancel();
@@ -687,7 +883,23 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
 
   Future<void> _confirmStart({DateTime? explicitStartTime}) async {
     final parsed = _parseResult;
-    if (parsed == null || !parsed.isSafeToStart) return;
+    if (parsed == null || !parsed.isSafeToStart) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_CORRECTION_CONFIRM_NOOP_BLOCKED',
+        'unsafe_or_null',
+      );
+      DesktopVoicePipeline.mark(
+        DesktopVoiceCorrectionFlow.markerConfirmNotNoop,
+        'blocked',
+      );
+      if (mounted) {
+        _fail(
+          t(currentLocale.value, 'desktop_voice_command_not_recognized'),
+          diag: 'confirm_unsafe',
+        );
+      }
+      return;
+    }
     final loc = currentLocale.value;
     DesktopVoiceLog.instance.mark('writeRecord_called', 'yes');
     _setPhase(
@@ -714,6 +926,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       DesktopVoiceAttemptLog.instance.markSubmission(serverId: docId);
       DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_SUCCESS');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_TIMELINE_RUNNING_RECORD_VISIBLE');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_WRITE_RECORD_THROUGH_BRAIN');
       _startedRecordDocId = docId;
       final confirmation = voiceCommandStartConfirmationMessage(
         parsed,

@@ -15,6 +15,7 @@ import 'package:counter/core/services/desktop_voice_last_attempt_store.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
 import 'package:counter/core/services/desktop_voice_capture_endpoint.dart';
 import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
+import 'package:counter/core/services/desktop_voice_native_overlay.dart';
 import 'package:counter/core/services/desktop_voice_stt_processing.dart';
 import 'package:counter/core/services/desktop_voice_ready_cue.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
@@ -1949,10 +1950,40 @@ class DesktopSttHelperService {
       readyCueEnabled: DesktopVoiceReadyCue.enabled,
       readyCueDurationMs:
           DesktopVoiceCaptureReadyPolicy.readyCueDurationMs,
+      readyCuePlayRequested: DesktopVoiceReadyCue.playRequested,
       readyCuePlayed: DesktopVoiceReadyCue.playedThisSession,
       readyCueOutputOk: DesktopVoiceReadyCue.outputOk,
+      readyCueOutputDevice: DesktopVoiceReadyCue.outputDevice,
+      readyCueError: DesktopVoiceReadyCue.lastError,
+      readyCuePlayedMs: DesktopVoiceReadyCue.playedAtMs,
       readyCueDetectedInInput: 'unknown',
       readyCueTrimmedFromSttCopy: false,
+      firstAudioCallbackBeforeCue: DesktopVoiceCaptureReadyPolicy
+          .firstAudioBeforeCue(
+        firstAudioCallbackMs:
+            _capture.firstAudioCallbackAt?.millisecondsSinceEpoch,
+        readyCuePlayedMs: DesktopVoiceReadyCue.playedAtMs,
+      ),
+      captureReadyBeforeCue: DesktopVoiceCaptureReadyPolicy
+          .recordingStartedBeforeCue(
+        captureStreamStartedMs:
+            _capture.captureStreamStartedAt?.millisecondsSinceEpoch,
+        readyCuePlayedMs: DesktopVoiceReadyCue.playedAtMs,
+      ),
+      cuePlaybackSmokePass: DesktopVoiceReadyCue.cuePlaybackSmokePass,
+      overlayWindowTransparent:
+          DesktopVoiceNativeOverlay.lastWindowTransparent,
+      overlayBackgroundMode:
+          DesktopVoiceNativeOverlay.lastBackgroundMode,
+      overlayRootBackgroundColor: DesktopVoiceNativeOverlay
+              .lastWindowTransparent
+          ? 'transparent_colorkey_black'
+          : 'opaque',
+      overlayCardBackgroundColor: 'rgb(28,28,30)',
+      overlayHasBackdrop: DesktopVoiceNativeOverlay.lastHasBackdrop,
+      overlayBlackBackdropDetected:
+          DesktopVoiceNativeOverlay.lastBlackBackdropDetected,
+      overlayWindowFlags: DesktopVoiceNativeOverlay.lastWindowFlags,
       preRollMsConfigured: DesktopVoiceCaptureReadyPolicy.preRollMs,
       leadingPadMsInSttCopy: DesktopVoiceCaptureReadyPolicy.sttLeadingPadMs,
       startTrimGuardApplied: true,

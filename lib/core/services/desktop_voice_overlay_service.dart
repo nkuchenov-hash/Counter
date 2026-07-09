@@ -309,6 +309,31 @@ abstract final class DesktopVoiceOverlayService {
             'min_pt=${m['overlay_min_font_pt']} title_pt=${m['overlay_title_font_pt']} '
             'detail_pt=${m['overlay_detail_font_pt']} state=$state',
       );
+      final transparent =
+          m['overlay_window_transparent'] == true ||
+              m['overlay_window_transparent'] == 'yes';
+      final mode = m['overlay_background_mode']?.toString() ?? '';
+      DesktopVoicePipeline.mark(
+        'overlay_window_transparent',
+        transparent ? 'yes' : 'no',
+      );
+      if (mode.isNotEmpty) {
+        DesktopVoicePipeline.mark('overlay_background_mode', mode);
+      }
+      if (transparent) {
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_OVERLAY_TRANSPARENT_BACKGROUND',
+        );
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_NO_BLACK_OVERLAY_BACKDROP',
+        );
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_NO_MODAL_DIM_BACKDROP',
+        );
+        DesktopVoicePipeline.mark(
+          'DESKTOP_VOICE_NATIVE_OVERLAY_ALPHA_ENABLED',
+        );
+      }
     } catch (_) {}
   }
 

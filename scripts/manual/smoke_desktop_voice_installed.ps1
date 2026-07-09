@@ -188,9 +188,24 @@ try {
         exit 9
     }
 
+    # Cue playback + overlay transparency self-checks (logged by smoke bridge).
+    $null = Wait-LogMarker 'DESKTOP_VOICE_READY_CUE_PLAYBACK_SMOKE' 20
+    if (Test-Path $logPath) { $logText = Get-Content $logPath -Raw }
+
+    $cueSmokePass = $logText -match 'DESKTOP_VOICE_READY_CUE_PLAYBACK_SMOKE\s+pass|cue_playback_smoke_pass\s+yes'
+    $overlayTransparent = $logText -match 'DESKTOP_VOICE_OVERLAY_TRANSPARENT_BACKGROUND|overlay_window_transparent\s+yes|overlay_background_mode\s+layered_colorkey'
+    Write-Host "cue_playback_smoke_pass=$($cueSmokePass.ToString().ToLower())"
+    Write-Host "overlay_transparency_diag_present=$($overlayTransparent.ToString().ToLower())"
+
+    if (-not $cueSmokePass) {
+        Write-Host 'INSTALLED_SMOKE_FAIL reason=cue_playback_smoke_missing_or_fail'
+        exit 10
+    }
+
     $installIdentityPass = $true
     Write-Host 'DESKTOP_VOICE_INSTALLED_SMOKE_IDENTITY_PASS'
     Write-Host 'DESKTOP_VOICE_BUILD_SHA_MATCHES_RUNNING_APP'
+    Write-Host 'DESKTOP_VOICE_READY_CUE_PLAYBACK_SMOKE'
     Write-Host 'install_identity_pass=yes'
     Write-Host 'INSTALLED_SMOKE_PASS'
     exit 0

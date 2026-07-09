@@ -350,7 +350,9 @@ class DesktopVoiceAudioCapture {
         captureStreamStarted: _captureStreamStarted,
         firstAudioCallbackReceived: true,
         onPlayed: () {
-          _readyCuePlayedAt = DateTime.now();
+          if (DesktopVoiceReadyCue.outputOk) {
+            _readyCuePlayedAt = DateTime.now();
+          }
           onReadyCuePlayed?.call();
         },
       );

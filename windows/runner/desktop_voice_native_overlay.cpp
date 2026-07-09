@@ -3,10 +3,16 @@
 #include <flutter/method_channel.h>
 #include <flutter/standard_method_codec.h>
 
+#include <mmsystem.h>
+
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
+
+#pragma comment(lib, "winmm.lib")
 
 #ifndef USER_DEFAULT_SCREEN_DPI
 #define USER_DEFAULT_SCREEN_DPI 96
@@ -232,10 +238,127 @@ void DesktopVoiceNativeOverlay::EnsureClassRegistered() {
   wc.lpfnWndProc = OverlayWndProc;
   wc.hInstance = GetModuleHandle(nullptr);
   wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-  wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+  // Null brush — layered color-key paints transparency; avoid opaque fill.
+  wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(NULL_BRUSH));
   wc.lpszClassName = kOverlayClassName;
   RegisterClassExW(&wc);
   class_registered_ = true;
+}
+
+void DesktopVoiceNativeOverlay::EnsureLayeredTransparency() {
+  if (overlay_hwnd_ == nullptr || !IsWindow(overlay_hwnd_)) {
+    return;
+  }
+  // Color-key black: corners outside RoundRect stay fully transparent.
+  // Card fill must NOT use pure black (see PaintOverlay bg_color).
+  SetLayeredWindowAttributes(overlay_hwnd_, RGB(0, 0, 0), 0, LWA_COLORKEY);
+}
+
+bool DesktopVoiceNativeOverlay::PlayReadyCue(int frequency_hz, int duration_ms,
+                                             std::string* error_out) {
+  if (frequency_hz < 200 || frequency_hz > 8000) {
+    if (error_out != nullptr) {
+      *error_out = "ready_cue_bad_frequency";
+    }
+    return false;
+  }
+  if (duration_ms < 20 || duration_ms > 80) {
+    if (error_out != nullptr) {
+      *error_out = "ready_cue_bad_duration";
+    }
+    return false;
+  }
+
+  // Generate a short mono PCM WAV in memory and play via PlaySoundW so the
+  // cue goes through the normal Windows output device (not console Beep).
+  constexpr int kSampleRate = 22050;
+  const int sample_count =
+      (kSampleRate * duration_ms) / 1000;
+  if (sample_count <= 0) {
+    if (error_out != nullptr) {
+      *error_out = "ready_cue_zero_samples";
+    }
+    return false;
+  }
+
+  const size_t data_bytes =
+      static_cast<size_t>(sample_count) * sizeof(int16_t);
+  const size_t wav_bytes = 44 + data_bytes;
+  std::vector<uint8_t> wav(wav_bytes, 0);
+
+  auto write_u16 = [&](size_t off, uint16_t v) {
+    wav[off] = static_cast<uint8_t>(v & 0xff);
+    wav[off + 1] = static_cast<uint8_t>((v >> 8) & 0xff);
+  };
+  auto write_u32 = [&](size_t off, uint32_t v) {
+    wav[off] = static_cast<uint8_t>(v & 0xff);
+    wav[off + 1] = static_cast<uint8_t>((v >> 8) & 0xff);
+    wav[off + 2] = static_cast<uint8_t>((v >> 16) & 0xff);
+    wav[off + 3] = static_cast<uint8_t>((v >> 24) & 0xff);
+  };
+
+  // RIFF header
+  wav[0] = 'R';
+  wav[1] = 'I';
+  wav[2] = 'F';
+  wav[3] = 'F';
+  write_u32(4, static_cast<uint32_t>(wav_bytes - 8));
+  wav[8] = 'W';
+  wav[9] = 'A';
+  wav[10] = 'V';
+  wav[11] = 'E';
+  wav[12] = 'f';
+  wav[13] = 'm';
+  wav[14] = 't';
+  wav[15] = ' ';
+  write_u32(16, 16);
+  write_u16(20, 1);  // PCM
+  write_u16(22, 1);  // mono
+  write_u32(24, kSampleRate);
+  write_u32(28, kSampleRate * 2);
+  write_u16(32, 2);
+  write_u16(34, 16);
+  wav[36] = 'd';
+  wav[37] = 'a';
+  wav[38] = 't';
+  wav[39] = 'a';
+  write_u32(40, static_cast<uint32_t>(data_bytes));
+
+  // Soft click: short sine with attack/release envelope (not a long beep).
+  const double two_pi_f =
+      2.0 * 3.14159265358979323846 * static_cast<double>(frequency_hz) /
+      static_cast<double>(kSampleRate);
+  int16_t* samples =
+      reinterpret_cast<int16_t*>(wav.data() + 44);
+  for (int i = 0; i < sample_count; ++i) {
+    const double t = static_cast<double>(i) / sample_count;
+    double env = 1.0;
+    if (t < 0.15) {
+      env = t / 0.15;
+    } else if (t > 0.55) {
+      env = (1.0 - t) / 0.45;
+    }
+    if (env < 0.0) env = 0.0;
+    const double s = std::sin(two_pi_f * i) * env * 0.35;
+    samples[i] = static_cast<int16_t>(s * 32767.0);
+  }
+
+  // Copy buffer for async play — PlaySound needs stable memory until done.
+  // Use SND_MEMORY | SND_ASYNC | SND_NODEFAULT. Keep a static last buffer
+  // so the memory stays alive for the short cue duration.
+  static std::vector<uint8_t> g_last_cue_wav;
+  g_last_cue_wav = std::move(wav);
+
+  const BOOL played = PlaySoundW(
+      reinterpret_cast<LPCWSTR>(g_last_cue_wav.data()), nullptr,
+      SND_MEMORY | SND_ASYNC | SND_NODEFAULT);
+  if (!played) {
+    if (error_out != nullptr) {
+      *error_out = "PlaySoundW_failed";
+    }
+    return false;
+  }
+  return true;
 }
 
 void DesktopVoiceNativeOverlay::PositionOverlay() {
@@ -253,11 +376,18 @@ void DesktopVoiceNativeOverlay::PositionOverlay() {
 
 void DesktopVoiceNativeOverlay::PaintOverlay(HDC hdc, const RECT& rect) {
   const int dpi = DpiForHwnd(overlay_hwnd_);
+  // Color-key is pure black (transparent). Card must never use RGB(0,0,0).
+  const COLORREF color_key = RGB(0, 0, 0);
   const COLORREF bg_color = RGB(28, 28, 30);
   const COLORREF accent = RGB(236, 236, 240);
   const COLORREF muted = RGB(170, 170, 178);
   const COLORREF error_accent = RGB(255, 140, 140);
   const COLORREF title_on_error = RGB(255, 220, 220);
+
+  // Fill full HWND with color-key so corners outside the pill are transparent.
+  HBRUSH key_brush = CreateSolidBrush(color_key);
+  FillRect(hdc, &rect, key_brush);
+  DeleteObject(key_brush);
 
   HBRUSH bg = CreateSolidBrush(bg_color);
   HPEN border = CreatePen(PS_SOLID, 1, RGB(55, 55, 60));
@@ -533,12 +663,20 @@ bool DesktopVoiceNativeOverlay::Show(const std::string& primary,
 
   if (overlay_hwnd_ == nullptr || !IsWindow(overlay_hwnd_)) {
     overlay_hwnd_ = CreateWindowExW(
-        WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, kOverlayClassName,
-        L"", WS_POPUP, 0, 0, kListeningWidth, kListeningHeight, nullptr, nullptr,
-        GetModuleHandle(nullptr), nullptr);
+        WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_LAYERED,
+        kOverlayClassName, L"", WS_POPUP, 0, 0, kListeningWidth,
+        kListeningHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
     if (overlay_hwnd_ == nullptr) {
       return false;
     }
+    EnsureLayeredTransparency();
+  } else {
+    // Existing HWND from older session — ensure layered + color-key.
+    LONG_PTR ex = GetWindowLongPtrW(overlay_hwnd_, GWL_EXSTYLE);
+    if ((ex & WS_EX_LAYERED) == 0) {
+      SetWindowLongPtrW(overlay_hwnd_, GWL_EXSTYLE, ex | WS_EX_LAYERED);
+    }
+    EnsureLayeredTransparency();
   }
 
   PositionOverlay();
@@ -619,6 +757,41 @@ void DesktopVoiceNativeOverlay::Register(flutter::FlutterEngine* engine,
           result->Success();
           return;
         }
+        if (method == "playReadyCue") {
+          const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
+          int freq = 1400;
+          int dur = 45;
+          if (args != nullptr) {
+            const auto f_it = args->find(flutter::EncodableValue("frequencyHz"));
+            if (f_it != args->end()) {
+              if (const auto* i = std::get_if<int32_t>(&f_it->second)) {
+                freq = *i;
+              } else if (const auto* d = std::get_if<double>(&f_it->second)) {
+                freq = static_cast<int>(*d);
+              }
+            }
+            const auto d_it = args->find(flutter::EncodableValue("durationMs"));
+            if (d_it != args->end()) {
+              if (const auto* i = std::get_if<int32_t>(&d_it->second)) {
+                dur = *i;
+              } else if (const auto* d = std::get_if<double>(&d_it->second)) {
+                dur = static_cast<int>(*d);
+              }
+            }
+          }
+          std::string err;
+          const bool ok = PlayReadyCue(freq, dur, &err);
+          flutter::EncodableMap map;
+          map[flutter::EncodableValue("ok")] = flutter::EncodableValue(ok);
+          map[flutter::EncodableValue("output_device")] =
+              flutter::EncodableValue(std::string("default_wave_out"));
+          if (!ok) {
+            map[flutter::EncodableValue("error")] =
+                flutter::EncodableValue(err);
+          }
+          result->Success(flutter::EncodableValue(map));
+          return;
+        }
         if (method == "isMainWindowVisible") {
           if (main_hwnd_ == nullptr) {
             result->Success(flutter::EncodableValue(false));
@@ -679,6 +852,33 @@ void DesktopVoiceNativeOverlay::Register(flutter::FlutterEngine* engine,
                   ComputeOverlayHeight(state_, dpi, primary_, secondary_));
           map[flutter::EncodableValue("overlay_close_hit_px")] =
               flutter::EncodableValue(ScalePx(kCloseButtonSize, dpi));
+
+          bool layered = false;
+          if (overlay_hwnd_ != nullptr && IsWindow(overlay_hwnd_)) {
+            const LONG_PTR ex = GetWindowLongPtrW(overlay_hwnd_, GWL_EXSTYLE);
+            layered = (ex & WS_EX_LAYERED) != 0;
+          }
+          map[flutter::EncodableValue("overlay_window_transparent")] =
+              flutter::EncodableValue(layered);
+          map[flutter::EncodableValue("overlay_background_mode")] =
+              flutter::EncodableValue(
+                  layered ? std::string("layered_colorkey")
+                          : std::string("opaque_popup"));
+          map[flutter::EncodableValue("overlay_root_background_color")] =
+              flutter::EncodableValue(std::string("transparent_colorkey_black"));
+          map[flutter::EncodableValue("overlay_card_background_color")] =
+              flutter::EncodableValue(std::string("rgb(28,28,30)"));
+          map[flutter::EncodableValue("overlay_has_backdrop")] =
+              flutter::EncodableValue(false);
+          map[flutter::EncodableValue("overlay_black_backdrop_detected")] =
+              flutter::EncodableValue(!layered);
+          map[flutter::EncodableValue("overlay_window_flags")] =
+              flutter::EncodableValue(
+                  layered ? std::string(
+                                "WS_EX_TOPMOST|WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE|"
+                                "WS_EX_LAYERED|LWA_COLORKEY")
+                          : std::string(
+                                "WS_EX_TOPMOST|WS_EX_TOOLWINDOW|WS_EX_NOACTIVATE"));
           result->Success(flutter::EncodableValue(map));
           return;
         }
