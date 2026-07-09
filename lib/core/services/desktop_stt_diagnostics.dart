@@ -72,6 +72,8 @@ class DesktopSttDiagnostics {
     this.captureGainMode,
     this.captureGainDb,
     this.selectedGainReason,
+    this.selectedCaptureEndpoint,
+    this.captureMixFormat,
     this.engine,
     this.languageHint = 'en-US',
     this.audioDevice = 'default',
@@ -209,6 +211,8 @@ class DesktopSttDiagnostics {
   final String? captureGainMode;
   final double? captureGainDb;
   final String? selectedGainReason;
+  final String? selectedCaptureEndpoint;
+  final String? captureMixFormat;
   final String? engine;
   final String languageHint;
   final String audioDevice;
@@ -406,6 +410,8 @@ class DesktopSttDiagnostics {
       'capture_gain_mode=${captureGainMode ?? '—'}',
       'capture_gain_db=${captureGainDb?.toStringAsFixed(2) ?? '—'}',
       'selected_gain_reason=${selectedGainReason ?? '—'}',
+      'selected_capture_endpoint=${selectedCaptureEndpoint ?? audioDevice}',
+      'capture_mix_format=${captureMixFormat ?? '—'}',
       'device_name=$audioDevice',
       'engine=${engine ?? '—'}',
       'language_hint=$languageHint',

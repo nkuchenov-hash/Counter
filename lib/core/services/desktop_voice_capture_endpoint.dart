@@ -51,7 +51,10 @@ abstract final class DesktopVoiceCaptureEndpointPolicy {
       '${body['mix_channels'] ?? '—'}ch '
       '${body['mix_sample_format'] ?? '—'}',
     );
-    DesktopVoicePipeline.mark('DESKTOP_VOICE_MIC_BOOST_OR_EFFECTS_CHECKED');
+    DesktopVoicePipeline.mark(
+      'DESKTOP_VOICE_SELECTED_CAPTURE_ENDPOINT_LOGGED',
+      '${body['device_name'] ?? body['selected_device_name'] ?? '—'}',
+    );
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_COUNTER_HANDY_DEVICE_DIFFS_LOGGED',
       'console=$console communications=$comm',

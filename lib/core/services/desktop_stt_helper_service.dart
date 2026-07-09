@@ -803,7 +803,7 @@ class DesktopSttHelperService {
         'stop_to_useful_candidate_ms',
         '$_stopToUsefulCandidateMs',
       );
-      if (_stopToUsefulCandidateMs! <= 500) {
+      if (_candidateUseful && _stopToUsefulCandidateMs! <= 500) {
         DesktopVoicePipeline.mark(
           'DESKTOP_VOICE_STOP_TO_FIRST_CANDIDATE_UNDER_500MS',
         );
@@ -1856,6 +1856,10 @@ class DesktopSttHelperService {
       captureGainMode: _capture.endpointSnapshot?.captureGainMode,
       captureGainDb: _capture.endpointSnapshot?.captureGainDb,
       selectedGainReason: _capture.endpointSnapshot?.selectedGainReason,
+      selectedCaptureEndpoint: capture?.deviceLabel ??
+          _capture.audioDeviceLabel ??
+          _capture.endpointSnapshot?.consoleDefaultDevice,
+      captureMixFormat: _formatCaptureMix(_capture.endpointSnapshot),
       engine: e.helperEngineId,
       languageHint: e == DesktopVoiceEngineId.windowsSpeech ? 'en-US' : 'en',
       audioDevice: capture?.deviceLabel ??
@@ -2061,6 +2065,15 @@ class DesktopSttHelperService {
   /// Stop capture and save WAV without running STT (benchmark / diagnostics).
   Future<DesktopVoiceCaptureResult?> stopCaptureSaveWav({String? fileName}) =>
       _capture.stopAndSaveWav(fileName: fileName);
+
+  static String? _formatCaptureMix(DesktopVoiceCaptureEndpointSnapshot? snap) {
+    if (snap == null) return null;
+    final rate = snap.mixSampleRate;
+    final ch = snap.mixChannels;
+    final fmt = snap.mixSampleFormat;
+    if (rate == null && ch == null && (fmt == null || fmt.isEmpty)) return null;
+    return '${rate ?? '—'}Hz ${ch ?? '—'}ch ${fmt ?? '—'}';
+  }
 
   void dispose() {
     unawaited(_capture.cancel());

@@ -56,14 +56,20 @@ abstract final class DesktopVoiceInstalledIdentity {
 
   static void logBootMarkers() {
     DesktopVoicePipeline.mark('DESKTOP_VOICE_RUNNING_EXE_PATH', runningExePath);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_BUILD_SHA', AppBuildInfo.gitCommit);
     if (isInstalledApp) {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_INSTALLED_APP_CONFIRMED');
+      if (AppBuildInfo.gitCommit != 'dev' &&
+          AppBuildInfo.gitCommit != 'unknown') {
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_BUILD_SHA_MATCHES_RUNNING_APP');
+      }
     }
     if (staleBuildWarning) {
       DesktopVoicePipeline.mark(
         'DESKTOP_VOICE_STALE_BUILD_WARNING',
         runningExePath,
       );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_STALE_APP_BUILD_BLOCKED');
     }
   }
 

@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-09] - P0 Desktop Voice: install identity fix + smoke SHA guard [engineering]
+
+* **`scripts/manual/install_desktop_voice_release.ps1`:** Stops counter+helper, builds with `GIT_COMMIT`/`BUILD_TIME`, robocopy full Release tree (app+helper), verifies `app.so` embeds current SHA — blocks mixed helper-only installs.
+* **`scripts/manual/smoke_desktop_voice_installed.ps1` + `desktop_voice_install_smoke_policy.dart`:** Fails on SHA mismatch, missing endpoint id/role/volume, stale `df696fc`; requires `DESKTOP_VOICE_BUILD_SHA` in pipeline log.
+* **`desktop_stt_diagnostics.dart`:** `selected_capture_endpoint`, `capture_mix_format` in `last_attempt_diag.txt`.
+
 ## [2026-07-09] - P0 Desktop Voice: Windows endpoint diagnostics + capture role selection [engineering]
 
 * **`installer/windows/stt_helper_src/win_audio_endpoint.rs` + `capture.rs`:** MMDevice console/communications endpoint id, volume, mute, mix format; `/capture/device_diag`; auto endpoint role + cpal device match; capture gain experiment on STT copy only (`COUNTER_CAPTURE_GAIN_EXPERIMENT=1`).
