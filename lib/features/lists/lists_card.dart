@@ -122,6 +122,29 @@ class BacklogPlanCard extends StatelessWidget {
     }
   }
 
+  /// Returns a short preview of the note body for the row, stripping the
+  /// `LIFEOS_LINK::` prefix and any leading URL line that backlog ideas use.
+  /// Returns '' when the note is empty so the preview line is hidden.
+  static String _notePreview(PlanningTask task) {
+    final raw = task.notesPlain ?? '';
+    var s = raw.trim();
+    if (s.isEmpty) return '';
+    const prefix = 'LIFEOS_LINK::';
+    if (s.startsWith(prefix)) {
+      s = s.substring(prefix.length).trim();
+      // Drop a leading URL line (backlog idea link) — keep only the body.
+      final nl = s.indexOf('\n');
+      if (nl >= 0) {
+        final firstLine = s.substring(0, nl).trim();
+        if (firstLine.startsWith('http://') ||
+            firstLine.startsWith('https://')) {
+          s = s.substring(nl + 1).trim();
+        }
+      }
+    }
+    return s;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -137,7 +160,7 @@ class BacklogPlanCard extends StatelessWidget {
         onTap: onBodyTap,
         onLongPress: onLongPress,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -163,15 +186,37 @@ class BacklogPlanCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        task.title,
+                        task.title.trim().isEmpty
+                            ? t(locale, 'notes_editor_title_hint')
+                            : task.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: task.isDone
                             ? const TextStyle(
                                 decoration: TextDecoration.lineThrough,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                               )
-                            : null,
+                            : const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                       ),
+                      // Notes preview line — makes the row feel like a note,
+                      // not a thin task row. Strips the LIFEOS_LINK:: prefix.
+                      if (_notePreview(task).isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          _notePreview(task),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.35,
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                       if (showTagsStrip && listTags.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 6),

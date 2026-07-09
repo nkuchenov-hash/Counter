@@ -1,11 +1,79 @@
 //! CPAL/WASAPI microphone capture for Counter Desktop Voice.
 //! Handy/GOLOS parity: device-native F32 (preferred) via cpal default host (WASAPI on Windows).
 
+#[cfg(windows)]
+#[path = "win_audio_endpoint.rs"]
+mod win_audio_endpoint;
+
+#[cfg(not(windows))]
+mod win_audio_endpoint {
+    use serde::Serialize;
+    #[derive(Clone, Debug, Serialize)]
+    pub struct EndpointDiag {
+        pub device_id: String,
+        pub friendly_name: String,
+        pub role: String,
+        pub volume_scalar: Option<f32>,
+        pub muted: bool,
+    }
+    #[derive(Clone, Debug, Serialize)]
+    pub struct CaptureEndpointReport {
+        pub console_default: Option<EndpointDiag>,
+        pub communications_default: Option<EndpointDiag>,
+        pub selected_role: String,
+        pub selected_device_id: String,
+        pub selected_device_name: String,
+        pub endpoint_volume: Option<f32>,
+        pub endpoint_muted: bool,
+        pub session_volume: Option<f32>,
+        pub mic_boost_db: Option<f32>,
+        pub enhancements_enabled: Option<bool>,
+        pub enhancements_notes: String,
+        pub raw_capture_likely_bypasses_enhancements: bool,
+        pub mix_sample_rate: Option<u32>,
+        pub mix_channels: Option<u16>,
+        pub mix_sample_format: Option<String>,
+        pub cpal_device_name: String,
+        pub cpal_host_id: String,
+    }
+    pub fn build_endpoint_report(
+        _: &str,
+        cpal_device_name: &str,
+        cpal_host_id: &str,
+        mix_rate: Option<u32>,
+        mix_channels: Option<u16>,
+        mix_format: Option<&str>,
+    ) -> CaptureEndpointReport {
+        CaptureEndpointReport {
+            console_default: None,
+            communications_default: None,
+            selected_role: "console".into(),
+            selected_device_id: String::new(),
+            selected_device_name: cpal_device_name.to_string(),
+            endpoint_volume: None,
+            endpoint_muted: false,
+            session_volume: None,
+            mic_boost_db: None,
+            enhancements_enabled: None,
+            enhancements_notes: "non_windows_stub".into(),
+            raw_capture_likely_bypasses_enhancements: false,
+            mix_sample_rate: mix_rate,
+            mix_channels: mix_channels,
+            mix_sample_format: mix_format.map(|s| s.to_string()),
+            cpal_device_name: cpal_device_name.to_string(),
+            cpal_host_id: cpal_host_id.to_string(),
+        }
+    }
+    pub async fn device_diag_http() -> actix_web::HttpResponse {
+        actix_web::HttpResponse::Ok().json(serde_json::json!({"ok": false, "error": "non_windows"}))
+    }
+}
+
 use actix_web::{web, HttpResponse};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{BufferSize, SampleFormat, StreamConfig};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -24,7 +92,111 @@ struct ActiveCapture {
     sample_format: String,
     device_name: String,
     host_id: String,
+    endpoint_report: win_audio_endpoint::CaptureEndpointReport,
     _stream: cpal::Stream,
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct CaptureGainDiag {
+    capture_gain_mode: String,
+    capture_gain_db: f32,
+    agc_enabled: bool,
+    limiter_enabled: bool,
+    raw_rms: f32,
+    raw_peak: f32,
+    processed_rms: f32,
+    processed_peak: f32,
+    clipped_samples: u32,
+    selected_gain_reason: String,
+}
+
+impl CaptureGainDiag {
+    fn disabled(raw_rms: f32, raw_peak: f32, processed_rms: f32, processed_peak: f32) -> Self {
+        Self {
+            capture_gain_mode: "off".into(),
+            capture_gain_db: 0.0,
+            agc_enabled: false,
+            limiter_enabled: false,
+            raw_rms,
+            raw_peak,
+            processed_rms,
+            processed_peak,
+            clipped_samples: 0,
+            selected_gain_reason: "capture_gain_experiment_disabled".into(),
+        }
+    }
+}
+
+#[derive(Deserialize)]
+struct CaptureStartRequest {
+    endpoint_role: Option<String>,
+}
+
+fn open_input_device(host: &cpal::Host, preferred_name: &str) -> Result<cpal::Device, String> {
+    if !preferred_name.is_empty() {
+        if let Ok(devices) = host.input_devices() {
+            for device in devices {
+                if let Ok(name) = device.name() {
+                    if name == preferred_name {
+                        eprintln!("[capture] DESKTOP_VOICE_CAPTURE_ENDPOINT_SELECTED device={name}");
+                        return Ok(device);
+                    }
+                }
+            }
+            eprintln!(
+                "[capture] DESKTOP_VOICE_CAPTURE_ENDPOINT_FALLBACK_READY preferred={preferred_name} not in cpal list"
+            );
+        }
+    }
+    host.default_input_device()
+        .ok_or_else(|| "no default input device".to_string())
+}
+
+fn apply_capture_gain_stt(stt: &mut [f32], raw_rms: f32, raw_peak: f32) -> CaptureGainDiag {
+    let (stt_rms, stt_peak) = float_rms_peak(stt);
+    let enabled = std::env::var("COUNTER_CAPTURE_GAIN_EXPERIMENT")
+        .ok()
+        .as_deref()
+        == Some("1");
+    if !enabled || stt.is_empty() {
+        return CaptureGainDiag::disabled(raw_rms, raw_peak, stt_rms, stt_peak);
+    }
+    const TARGET_RMS: f32 = 0.058;
+    const PEAK_CEILING: f32 = 0.90;
+    if stt_rms <= 0.0001 {
+        return CaptureGainDiag::disabled(raw_rms, raw_peak, stt_rms, stt_peak);
+    }
+    let mut gain = TARGET_RMS / stt_rms;
+    if stt_peak * gain > PEAK_CEILING {
+        gain = PEAK_CEILING / stt_peak.max(0.0001);
+    }
+    let gain_db = 20.0 * (gain.max(0.0001)).log10();
+    let mut clipped = 0u32;
+    for s in stt.iter_mut() {
+        let v = (*s * gain).clamp(-PEAK_CEILING, PEAK_CEILING);
+        if v.abs() >= PEAK_CEILING - 0.0001 {
+            clipped += 1;
+        }
+        *s = v;
+    }
+    let (processed_rms, processed_peak) = float_rms_peak(stt);
+    eprintln!(
+        "[capture] DESKTOP_VOICE_CAPTURE_GAIN_EXPERIMENT_READY \
+         DESKTOP_VOICE_CAPTURE_GAIN_NOT_COUNTED_AS_RAW_CAPTURE_PARITY \
+         DESKTOP_VOICE_RAW_WAV_UNCHANGED gain_db={gain_db:.2}"
+    );
+    CaptureGainDiag {
+        capture_gain_mode: "stt_copy_rms_target_058".into(),
+        capture_gain_db: gain_db,
+        agc_enabled: false,
+        limiter_enabled: true,
+        raw_rms,
+        raw_peak,
+        processed_rms,
+        processed_peak,
+        clipped_samples: clipped,
+        selected_gain_reason: "handy_baseline_rms_experiment_new_capture_only".into(),
+    }
 }
 
 // SAFETY: cpal::Stream on Windows WASAPI is Send+Sync for our use.
@@ -150,12 +322,19 @@ fn append_converted(
     }
 }
 
-fn start_cpal_capture() -> Result<ActiveCapture, String> {
+fn start_cpal_capture(endpoint_role: &str) -> Result<ActiveCapture, String> {
     let host = cpal::default_host();
     let host_id = format!("{:?}", host.id());
-    let device = host
-        .default_input_device()
-        .ok_or_else(|| "no default input device".to_string())?;
+    let probe = win_audio_endpoint::build_endpoint_report(
+        endpoint_role,
+        "",
+        &host_id,
+        None,
+        None,
+        None,
+    );
+    let preferred_name = probe.selected_device_name.clone();
+    let device = open_input_device(&host, &preferred_name)?;
     let device_name = device
         .name()
         .unwrap_or_else(|_| "default".to_string());
@@ -165,6 +344,19 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
     let native_rate = def.sample_rate().0;
     let channels = def.channels();
     let sample_format = def.sample_format();
+    let format_name = format!("{sample_format:?}");
+    let endpoint_report = win_audio_endpoint::build_endpoint_report(
+        endpoint_role,
+        &device_name,
+        &host_id,
+        Some(native_rate),
+        Some(channels),
+        Some(&format_name),
+    );
+    eprintln!(
+        "[capture] DESKTOP_VOICE_CAPTURE_ENDPOINT_ROLE_SELECTED role={}",
+        endpoint_report.selected_role,
+    );
     let config = StreamConfig {
         channels,
         sample_rate: def.sample_rate(),
@@ -177,7 +369,6 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
     let running = Arc::new(AtomicBool::new(true));
     let level = Arc::new(Mutex::new(0.0f32));
     let level_rms = Arc::new(Mutex::new(0.0f32));
-    let format_name = format!("{sample_format:?}");
 
     let stream = match sample_format {
         SampleFormat::F32 => {
@@ -246,6 +437,7 @@ fn start_cpal_capture() -> Result<ActiveCapture, String> {
         sample_format: format_name,
         device_name,
         host_id,
+        endpoint_report,
         _stream: stream,
     })
 }
@@ -265,6 +457,20 @@ struct CaptureStopResponse {
     device_name: String,
     session_volume: Option<f32>,
     endpoint_volume: Option<f32>,
+    endpoint_id: Option<String>,
+    endpoint_role: Option<String>,
+    endpoint_muted: Option<bool>,
+    console_default_device: Option<String>,
+    communications_default_device: Option<String>,
+    mic_boost_db: Option<f32>,
+    enhancements_notes: Option<String>,
+    capture_gain_mode: String,
+    capture_gain_db: f32,
+    agc_enabled: bool,
+    limiter_enabled: bool,
+    clipped_samples: u32,
+    selected_gain_reason: String,
+    endpoint_report: win_audio_endpoint::CaptureEndpointReport,
     raw_wav_path: String,
     stt_wav_path: String,
     /// Small STT PCM16 payload (16 kHz mono) for in-process transcribe without re-read.
@@ -275,7 +481,7 @@ struct CaptureStopResponse {
     audio_level_seen: bool,
 }
 
-pub async fn capture_start() -> HttpResponse {
+pub async fn capture_start(body: Option<web::Json<CaptureStartRequest>>) -> HttpResponse {
     // Drop any previous session.
     {
         let mut slot = capture_slot().lock().unwrap_or_else(|e| e.into_inner());
@@ -285,8 +491,13 @@ pub async fn capture_start() -> HttpResponse {
         }
     }
 
-    match start_cpal_capture() {
+    let role = body
+        .and_then(|b| b.endpoint_role.clone())
+        .unwrap_or_else(|| "auto".to_string());
+
+    match start_cpal_capture(&role) {
         Ok(session) => {
+            let ep = &session.endpoint_report;
             let body = json!({
                 "ok": true,
                 "capture_backend": "cpal_wasapi",
@@ -296,6 +507,19 @@ pub async fn capture_start() -> HttpResponse {
                 "raw_capture_channels": session.channels,
                 "device_name": session.device_name,
                 "f32_available": session.sample_format.contains("F32"),
+                "endpoint_id": ep.selected_device_id,
+                "endpoint_role": ep.selected_role,
+                "endpoint_volume": ep.endpoint_volume,
+                "endpoint_muted": ep.endpoint_muted,
+                "session_volume": ep.session_volume,
+                "console_default_device": ep.console_default.as_ref().map(|c| &c.friendly_name),
+                "communications_default_device": ep.communications_default.as_ref().map(|c| &c.friendly_name),
+                "mix_sample_rate": ep.mix_sample_rate,
+                "mix_channels": ep.mix_channels,
+                "mix_sample_format": ep.mix_sample_format,
+                "enhancements_notes": ep.enhancements_notes,
+                "raw_capture_likely_bypasses_enhancements": ep.raw_capture_likely_bypasses_enhancements,
+                "endpoint_report": ep,
             });
             *capture_slot().lock().unwrap_or_else(|e| e.into_inner()) = Some(session);
             HttpResponse::Ok().json(body)
@@ -398,6 +622,7 @@ pub async fn capture_stop() -> HttpResponse {
     let sample_format = session.sample_format.clone();
     let device_name = session.device_name.clone();
     let host_id = session.host_id.clone();
+    let endpoint_report = session.endpoint_report.clone();
     let raw = session
         .raw_f32
         .lock()
@@ -407,7 +632,8 @@ pub async fn capture_stop() -> HttpResponse {
 
     let (raw_rms, raw_peak) = float_rms_peak(&raw);
     let mono = downmix_interleaved_avg(&raw, channels);
-    let stt = resample_linear(&mono, sample_rate, 16_000);
+    let mut stt = resample_linear(&mono, sample_rate, 16_000);
+    let gain_diag = apply_capture_gain_stt(&mut stt, raw_rms, raw_peak);
     let (stt_rms, stt_peak) = float_rms_peak(&stt);
     let duration_ms = if sample_rate > 0 && channels > 0 {
         ((raw.len() as u64) * 1000) / ((sample_rate as u64) * (channels as u64))
@@ -445,8 +671,28 @@ pub async fn capture_stop() -> HttpResponse {
         processed_wav_rms: stt_rms,
         processed_wav_peak: stt_peak,
         device_name,
-        session_volume: None,
-        endpoint_volume: None,
+        session_volume: endpoint_report.session_volume,
+        endpoint_volume: endpoint_report.endpoint_volume,
+        endpoint_id: Some(endpoint_report.selected_device_id.clone()),
+        endpoint_role: Some(endpoint_report.selected_role.clone()),
+        endpoint_muted: Some(endpoint_report.endpoint_muted),
+        console_default_device: endpoint_report
+            .console_default
+            .as_ref()
+            .map(|c| c.friendly_name.clone()),
+        communications_default_device: endpoint_report
+            .communications_default
+            .as_ref()
+            .map(|c| c.friendly_name.clone()),
+        mic_boost_db: endpoint_report.mic_boost_db,
+        enhancements_notes: Some(endpoint_report.enhancements_notes.clone()),
+        capture_gain_mode: gain_diag.capture_gain_mode,
+        capture_gain_db: gain_diag.capture_gain_db,
+        agc_enabled: gain_diag.agc_enabled,
+        limiter_enabled: gain_diag.limiter_enabled,
+        clipped_samples: gain_diag.clipped_samples,
+        selected_gain_reason: gain_diag.selected_gain_reason,
+        endpoint_report,
         raw_wav_path: raw_path.display().to_string(),
         stt_wav_path: stt_path.display().to_string(),
         stt_pcm16_base64: STANDARD.encode(&stt_pcm16),
@@ -472,5 +718,6 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .route("/capture/stop", web::post().to(capture_stop))
         .route("/capture/level", web::get().to(capture_level))
         .route("/capture/partial_pcm", web::get().to(capture_partial_pcm))
-        .route("/capture/cancel", web::post().to(capture_cancel));
+        .route("/capture/cancel", web::post().to(capture_cancel))
+        .route("/capture/device_diag", web::get().to(win_audio_endpoint::device_diag_http));
 }

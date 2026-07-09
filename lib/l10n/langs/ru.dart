@@ -872,7 +872,10 @@ const Map<String, String> kRuL10n = {
         'Это действие появится в следующем релизе Life OS Notes и пока недоступно.',
     'notes_editor_status_idle': 'Все изменения сохранены',
     'notes_editor_status_editing': 'Редактирование…',
-    'notes_editor_placeholder_empty': 'Начните заметку…',
+    'notes_editor_placeholder_empty': 'Начните писать…',
     'notes_editor_title_hint': 'Заголовок',
     'notes_editor_checklist_progress': '{done}/{total}',
+    'notes_editor_future_summary': 'Скоро: Конвертация, ИИ, Поделиться, Вложения',
+    'notes_editor_show_future': 'Показать скоро',
+    'notes_editor_hide_future': 'Скрыть',
 };

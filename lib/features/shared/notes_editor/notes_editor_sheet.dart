@@ -400,23 +400,9 @@ class _NotesEditorSheetState extends State<NotesEditorSheet> {
                   _insertDivider();
                 },
               ),
-              _MoreSectionHeader(text: t(loc, 'notes_editor_group_future')),
-              _ComingNextTile(
-                icon: Icons.swap_horiz_rounded,
-                label: t(loc, 'notes_editor_action_convert_to_plan'),
-              ),
-              _ComingNextTile(
-                icon: Icons.auto_awesome_rounded,
-                label: t(loc, 'notes_editor_action_ai_helper'),
-              ),
-              _ComingNextTile(
-                icon: Icons.ios_share_rounded,
-                label: t(loc, 'notes_editor_action_share'),
-              ),
-              _ComingNextTile(
-                icon: Icons.attach_file_rounded,
-                label: t(loc, 'notes_editor_action_attach'),
-              ),
+              // Collapsed "Coming next" group — one row, expands to reveal the
+              // four future affordances so they don't dominate the menu.
+              _ComingNextExpansion(),
               if (_isPersisted && widget.onDeleted != null) ...[
                 _MoreSectionHeader(text: t(loc, 'notes_editor_group_danger')),
                 ListTile(
@@ -794,8 +780,89 @@ class _MoreSectionHeader extends StatelessWidget {
   }
 }
 
-/// A "Coming next" tile: visible in the right product location, disabled,
-/// taps open a calm explanation sheet. No fake backend behavior.
+/// Collapsible "Coming next" group. Renders as ONE compact row by default
+/// (so the four future affordances don't dominate the More menu). Expands on
+/// tap to reveal the four items, each of which opens a calm "not ready yet"
+/// sheet — no fake backend behavior.
+class _ComingNextExpansion extends StatefulWidget {
+  @override
+  State<_ComingNextExpansion> createState() => _ComingNextExpansionState();
+}
+
+class _ComingNextExpansionState extends State<_ComingNextExpansion> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final loc = currentLocale.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          dense: true,
+          leading: Icon(
+            Icons.schedule_rounded,
+            color: scheme.tertiary,
+            size: 22,
+          ),
+          title: Text(
+            t(loc, 'notes_editor_group_future'),
+            style: TextStyle(
+              color: scheme.tertiary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            t(loc, 'notes_editor_future_summary'),
+            style: TextStyle(
+              fontSize: 12,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          trailing: Icon(
+            _expanded
+                ? Icons.expand_less_rounded
+                : Icons.expand_more_rounded,
+            color: scheme.tertiary,
+          ),
+          onTap: () => setState(() => _expanded = !_expanded),
+        ),
+        if (_expanded)
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ComingNextTile(
+                  icon: Icons.swap_horiz_rounded,
+                  label: t(loc, 'notes_editor_action_convert_to_plan'),
+                ),
+                _ComingNextTile(
+                  icon: Icons.auto_awesome_rounded,
+                  label: t(loc, 'notes_editor_action_ai_helper'),
+                ),
+                _ComingNextTile(
+                  icon: Icons.ios_share_rounded,
+                  label: t(loc, 'notes_editor_action_share'),
+                ),
+                _ComingNextTile(
+                  icon: Icons.attach_file_rounded,
+                  label: t(loc, 'notes_editor_action_attach'),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// A dense "Coming next" tile used inside [_ComingNextExpansion]. Disabled
+/// state is clear via opacity + "soon" badge. Tap opens a calm explanation
+/// sheet — no fake backend behavior.
 class _ComingNextTile extends StatelessWidget {
   const _ComingNextTile({required this.icon, required this.label});
 
@@ -805,17 +872,19 @@ class _ComingNextTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final loc = currentLocale.value;
     return Opacity(
-      opacity: 0.55,
+      opacity: 0.6,
       child: ListTile(
-        leading: Icon(icon),
+        dense: true,
+        visualDensity: VisualDensity.compact,
+        leading: Icon(icon, size: 20),
         title: Row(
           children: [
             Flexible(child: Text(label)),
             const SizedBox(width: 8),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: scheme.tertiary.withValues(alpha: 0.16),
                 borderRadius: BorderRadius.circular(4),
@@ -832,9 +901,6 @@ class _ComingNextTile extends StatelessWidget {
           ],
         ),
         onTap: () {
-          // Defer to the sheet's _showComingNextSheet via context lookup:
-          // we cannot reach the State from here, so replicate the small sheet.
-          final loc = currentLocale.value;
           showModalBottomSheet<void>(
             context: context,
             showDragHandle: true,

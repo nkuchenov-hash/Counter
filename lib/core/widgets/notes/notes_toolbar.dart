@@ -1,15 +1,13 @@
 // Canonical notes editor toolbar.
 //
-// Wraps `flutter_quill` simple toolbar with the formatting that a Notes-class
-// editor needs (B/I/U/strike/bullet/numbered/checklist/link/clear) and appends
-// app-owned trailing actions:
-//   - divider insertion
-//   - copy-as-markdown / paste-from-markdown (callback-only)
-//   - a More (...) menu entry point forwarded to the composing surface
+// A single, always-visible, horizontally-scrollable row of writing tools:
+//   - Quill simple toolbar (B/I/U/strike/lists/checklist/link/clear)
+//   - app-owned trailing actions (divider, copy/paste markdown, more)
 //
-// Pure UI — no Brain/PocketBase imports. The composition surface owns the
-// `QuillController`, clipboard calls, and any autosave gate. This widget only
-// forwards callbacks.
+// All buttons share ONE scroll axis so they never fight for width on narrow
+// screens or collapse to zero on web. Pure UI — no Brain/PocketBase imports.
+// The composition surface owns the `QuillController`, clipboard calls, and any
+// autosave gate. This widget only forwards callbacks.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,8 +33,7 @@ class AppNotesToolbarActions {
   /// Convert clipboard Markdown into the editor's rich content.
   final VoidCallback? onPasteFromMarkdown;
 
-  /// Open the editor's More (...) menu. The composing surface owns the menu
-  /// contents (Edit details, Convert to Plan, AI, Share, Attach, Delete, etc.).
+  /// Open the editor's More (...) menu.
   final VoidCallback? onOpenMore;
 
   /// Locale-aware tooltips surfaced on the trailing action buttons.
@@ -60,16 +57,16 @@ class AppNotesToolbarTooltips {
 
 /// Compact single-row formatting toolbar for the Notes editor.
 ///
-/// Wraps [quill.QuillSimpleToolbar] (with native link support enabled) then
-/// appends app-owned actions (divider, markdown, more) when provided by the
-/// composing surface.
+/// Renders Quill's simple toolbar and the app-owned trailing actions in ONE
+/// horizontally scrollable row so they always share the same scroll axis and
+/// never collapse to zero width on web.
 class AppNotesToolbar extends StatelessWidget {
   const AppNotesToolbar({
     super.key,
     required this.controller,
     this.actions = const AppNotesToolbarActions(),
     this.configBuilder,
-    this.minHeight = 44,
+    this.minHeight = 48,
   });
 
   final quill.QuillController controller;
@@ -84,79 +81,69 @@ class AppNotesToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final trailing = <Widget>[];
 
+    final trailing = <Widget>[];
     if (actions.onInsertDivider != null) {
-      trailing.add(
-        _NotesToolbarIconButton(
-          icon: Icons.horizontal_rule_rounded,
-          tooltip: actions.tooltips.insertDivider,
-          onTap: actions.onInsertDivider!,
-        ),
-      );
+      trailing.add(_divider());
+      trailing.add(_NotesToolbarIconButton(
+        icon: Icons.horizontal_rule_rounded,
+        tooltip: actions.tooltips.insertDivider,
+        onTap: actions.onInsertDivider!,
+      ));
     }
     if (actions.onCopyAsMarkdown != null) {
-      trailing.add(
-        _NotesToolbarIconButton(
-          icon: Icons.content_copy_rounded,
-          tooltip: actions.tooltips.copyAsMarkdown,
-          onTap: actions.onCopyAsMarkdown!,
-        ),
-      );
+      trailing.add(_divider());
+      trailing.add(_NotesToolbarIconButton(
+        icon: Icons.content_copy_rounded,
+        tooltip: actions.tooltips.copyAsMarkdown,
+        onTap: actions.onCopyAsMarkdown!,
+      ));
     }
     if (actions.onPasteFromMarkdown != null) {
-      trailing.add(
-        _NotesToolbarIconButton(
-          icon: Icons.content_paste_rounded,
-          tooltip: actions.tooltips.pasteFromMarkdown,
-          onTap: actions.onPasteFromMarkdown!,
-        ),
-      );
+      trailing.add(_NotesToolbarIconButton(
+        icon: Icons.content_paste_rounded,
+        tooltip: actions.tooltips.pasteFromMarkdown,
+        onTap: actions.onPasteFromMarkdown!,
+      ));
     }
     if (actions.onOpenMore != null) {
-      trailing.add(
-        _NotesToolbarIconButton(
-          icon: Icons.more_horiz_rounded,
-          tooltip: actions.tooltips.more,
-          onTap: actions.onOpenMore!,
-          emphasize: true,
-        ),
-      );
+      trailing.add(_divider());
+      trailing.add(_NotesToolbarIconButton(
+        icon: Icons.more_horiz_rounded,
+        tooltip: actions.tooltips.more,
+        onTap: actions.onOpenMore!,
+        emphasize: true,
+      ));
     }
 
     final config = configBuilder?.call(context) ?? _defaultConfig(scheme);
 
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: minHeight),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: quill.QuillSimpleToolbar(
-                controller: controller,
-                config: config,
-              ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            quill.QuillSimpleToolbar(
+              controller: controller,
+              config: config,
             ),
-          ),
-          if (trailing.isNotEmpty)
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: scheme.outlineVariant.withValues(alpha: 0.5),
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Row(children: trailing),
-              ),
-            ),
-        ],
+            ...trailing,
+            const SizedBox(width: 4),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 10),
+      child: VerticalDivider(
+        width: 1,
+        thickness: 1,
+        color: Colors.transparent,
       ),
     );
   }
@@ -169,7 +156,7 @@ class AppNotesToolbar extends StatelessWidget {
       toolbarRunSpacing: 0,
       buttonOptions: const quill.QuillSimpleToolbarButtonOptions(
         base: quill.QuillToolbarBaseButtonOptions(
-          iconSize: 19,
+          iconSize: 20,
           iconButtonFactor: 1.35,
         ),
       ),
@@ -201,7 +188,9 @@ class AppNotesToolbar extends StatelessWidget {
       showSmallButton: false,
       showLineHeightButton: false,
       showDirection: false,
-      color: scheme.surface,
+      // Distinct background so the toolbar never blends invisibly into the
+      // editor surface (a common "invisible toolbar" complaint on web).
+      color: Colors.transparent,
     );
   }
 }
@@ -227,11 +216,11 @@ class _NotesToolbarIconButton extends StatelessWidget {
       message: tooltip,
       child: IconButton(
         onPressed: onTap,
-        icon: Icon(icon, size: 19),
+        icon: Icon(icon, size: 20),
         color: color,
         splashRadius: 18,
         visualDensity: VisualDensity.compact,
-        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
         padding: EdgeInsets.zero,
       ),
     );

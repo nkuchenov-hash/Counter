@@ -13,6 +13,7 @@ import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
 import 'package:counter/core/services/desktop_voice_last_attempt_store.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
+import 'package:counter/core/services/desktop_voice_capture_endpoint.dart';
 import 'package:counter/core/services/desktop_voice_stt_processing.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/desktop_win_speech_service.dart';
@@ -229,8 +230,31 @@ class DesktopSttHelperService {
         if (ok && _finalTranscribeReady) {
           DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_COLD_START_ON_FIRST_COMMAND');
         }
+        if (ok) unawaited(fetchCaptureEndpointDiagnostics());
       }),
     );
+  }
+
+  /// GET `/capture/device_diag` — proves endpoint volume/id are not stubbed.
+  Future<bool> fetchCaptureEndpointDiagnostics() async {
+    try {
+      final r = await http
+          .get(Uri.parse('$_baseUrl/capture/device_diag'))
+          .timeout(const Duration(seconds: 5));
+      if (r.statusCode != 200) return false;
+      final body = jsonDecode(r.body);
+      if (body is! Map || body['ok'] != true) return false;
+      final report = body['report'];
+      if (report is Map) {
+        DesktopVoiceCaptureEndpointPolicy.logFromHelperJson(
+          Map<String, dynamic>.from(report),
+        );
+      }
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HANDY_ENDPOINT_CONFIG_INSPECTED');
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   int? get helperPid => _process?.pid;
@@ -1824,6 +1848,14 @@ class DesktopSttHelperService {
           capture?.processedWavPeak ?? _capture.processedWavPeak,
       sessionVolume: capture?.sessionVolume ?? _capture.sessionVolume,
       endpointVolume: capture?.endpointVolume ?? _capture.endpointVolume,
+      endpointId: _capture.endpointSnapshot?.endpointId,
+      endpointRole: _capture.endpointSnapshot?.endpointRole,
+      consoleDefaultDevice: _capture.endpointSnapshot?.consoleDefaultDevice,
+      communicationsDefaultDevice:
+          _capture.endpointSnapshot?.communicationsDefaultDevice,
+      captureGainMode: _capture.endpointSnapshot?.captureGainMode,
+      captureGainDb: _capture.endpointSnapshot?.captureGainDb,
+      selectedGainReason: _capture.endpointSnapshot?.selectedGainReason,
       engine: e.helperEngineId,
       languageHint: e == DesktopVoiceEngineId.windowsSpeech ? 'en-US' : 'en',
       audioDevice: capture?.deviceLabel ??

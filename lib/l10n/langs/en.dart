@@ -870,7 +870,10 @@ const Map<String, String> kEnL10n = {
         'This action is part of the next Life OS Notes release and is not ready yet.',
     'notes_editor_status_idle': 'All changes saved',
     'notes_editor_status_editing': 'Editing…',
-    'notes_editor_placeholder_empty': 'Start your note…',
+    'notes_editor_placeholder_empty': 'Start writing…',
     'notes_editor_title_hint': 'Title',
     'notes_editor_checklist_progress': '{done}/{total}',
+    'notes_editor_future_summary': 'Coming next: Convert, AI, Share, Attach',
+    'notes_editor_show_future': 'Show coming next',
+    'notes_editor_hide_future': 'Hide',
 };

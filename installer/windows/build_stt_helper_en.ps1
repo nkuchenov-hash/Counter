@@ -10,6 +10,8 @@ $outDir = Join-Path $PSScriptRoot 'stt_helper_build'
 $mainRs = Join-Path $backendSrcRoot 'src\main.rs'
 $captureSrc = Join-Path $PSScriptRoot 'stt_helper_src\capture.rs'
 $captureDst = Join-Path $backendSrcRoot 'src\capture.rs'
+$winAudioSrc = Join-Path $PSScriptRoot 'stt_helper_src\win_audio_endpoint.rs'
+$winAudioDst = Join-Path $backendSrcRoot 'src\win_audio_endpoint.rs'
 $cargoToml = Join-Path $backendSrcRoot 'Cargo.toml'
 $cargoBak = Join-Path $backendSrcRoot 'Cargo.toml.bak_counter_capture'
 
@@ -108,16 +110,39 @@ Write-Host 'DESKTOP_VOICE_LAST_PARTIAL_ROUTE_INJECTED'
 
 Set-Content -Encoding UTF8 -NoNewline -Path $mainRs -Value $content
 Copy-Item -Force $captureSrc $captureDst
+if (Test-Path $winAudioSrc) {
+    Copy-Item -Force $winAudioSrc $winAudioDst
+    Write-Host 'DESKTOP_VOICE_WIN_AUDIO_ENDPOINT_MODULE_COPIED'
+}
 
 # Ensure cpal dependency (restore Cargo.toml from backup after build).
 if (-not (Test-Path $cargoBak)) {
     Copy-Item -Force $cargoToml $cargoBak
 }
 $cargo = Get-Content -Raw $cargoBak
+$depsToInject = @()
 if ($cargo -notmatch '(?m)^cpal\s*=') {
-    $cargo = $cargo.TrimEnd() + "`ncpal = `"0.15`"`n"
+    $depsToInject += 'cpal = "0.15"'
+}
+if ($cargo -notmatch '(?m)^windows\s*=') {
+    $depsToInject += @'
+windows = { version = "0.58", features = [
+  "Win32_Foundation",
+  "Win32_Media_Audio",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Variant",
+  "Win32_UI_Shell_PropertiesSystem",
+  "Win32_Devices_FunctionDiscovery",
+  "Win32_Devices_Properties",
+] }
+'@
+}
+if ($depsToInject.Count -gt 0) {
+    $cargo = $cargo.TrimEnd() + "`n" + ($depsToInject -join "`n") + "`n"
     Set-Content -Encoding UTF8 -NoNewline -Path $cargoToml -Value $cargo
-    Write-Host 'DESKTOP_VOICE_CPAL_DEP_ADDED'
+    Write-Host 'DESKTOP_VOICE_HELPER_DEPS_INJECTED'
 } else {
     Copy-Item -Force $cargoBak $cargoToml
 }
@@ -140,5 +165,6 @@ try {
     Copy-Item -Force $backup $mainRs
     if (Test-Path $cargoBak) { Copy-Item -Force $cargoBak $cargoToml }
     if (Test-Path $captureDst) { Remove-Item -Force $captureDst }
+    if (Test-Path $winAudioDst) { Remove-Item -Force $winAudioDst }
     Pop-Location
 }

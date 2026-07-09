@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_audio_presentation.dart';
+import 'package:counter/core/services/desktop_voice_capture_endpoint.dart';
 import 'package:counter/core/services/desktop_voice_windows_audio_diagnostics.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
 import 'package:http/http.dart' as http;
@@ -51,6 +52,7 @@ class DesktopVoiceAudioCapture {
   double _processedWavPeak = 0;
   double? _sessionVolume;
   double? _endpointVolume;
+  DesktopVoiceCaptureEndpointSnapshot? _endpointSnapshot;
   bool _usingHelperCapture = false;
   String? _lastError;
   bool _levelMarkerLogged = false;
@@ -132,6 +134,7 @@ class DesktopVoiceAudioCapture {
   double get processedWavPeak => _processedWavPeak;
   double? get sessionVolume => _sessionVolume;
   double? get endpointVolume => _endpointVolume;
+  DesktopVoiceCaptureEndpointSnapshot? get endpointSnapshot => _endpointSnapshot;
   String? get lastError => _lastError;
   bool get isCapturing => _usingHelperCapture || _recorder != null;
 
@@ -182,6 +185,7 @@ class DesktopVoiceAudioCapture {
       _processedWavPeak = 0;
       _sessionVolume = null;
       _endpointVolume = null;
+      _endpointSnapshot = null;
       _ampController = StreamController<double>.broadcast();
 
       // Primary: Handy-like CPAL/WASAPI F32 via STT helper.
@@ -205,8 +209,14 @@ class DesktopVoiceAudioCapture {
   Future<bool> _startHelperCapture() async {
     try {
       final r = await http
-          .post(Uri.parse('$_helperBase/capture/start'))
-          .timeout(const Duration(seconds: 3));
+          .post(
+            Uri.parse('$_helperBase/capture/start'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(
+              DesktopVoiceCaptureEndpointPolicy.startRequestBody(),
+            ),
+          )
+          .timeout(const Duration(seconds: 5));
       if (r.statusCode != 200) {
         DesktopVoicePipeline.mark(
           'DESKTOP_VOICE_CPAL_CAPTURE_START_FAILED',
@@ -239,6 +249,17 @@ class DesktopVoiceAudioCapture {
           (body['device_name'] as String?)?.trim().isNotEmpty == true
               ? (body['device_name'] as String)
               : (_deviceLabel ?? 'default');
+      _endpointSnapshot = DesktopVoiceCaptureEndpointSnapshot.fromJson(
+        Map<String, dynamic>.from(body),
+      );
+      _endpointVolume = _endpointSnapshot?.endpointVolume ??
+          (body['endpoint_volume'] as num?)?.toDouble();
+      _sessionVolume = _endpointSnapshot?.sessionVolume ??
+          (body['session_volume'] as num?)?.toDouble();
+      DesktopVoiceCaptureEndpointPolicy.logFromHelperJson(
+        Map<String, dynamic>.from(body),
+      );
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CORE_AUDIO_DEVICE_DIAGNOSTICS');
       final f32 = body['f32_available'] == true;
       DesktopVoicePipeline.mark('DESKTOP_VOICE_CPAL_WASAPI_CAPTURE_ACTIVE');
       DesktopVoicePipeline.mark(
@@ -456,8 +477,14 @@ class DesktopVoiceAudioCapture {
           (body['processed_wav_rms'] as num?)?.toDouble() ?? 0;
       _processedWavPeak =
           (body['processed_wav_peak'] as num?)?.toDouble() ?? 0;
-      _sessionVolume = (body['session_volume'] as num?)?.toDouble();
       _endpointVolume = (body['endpoint_volume'] as num?)?.toDouble();
+      _sessionVolume = (body['session_volume'] as num?)?.toDouble();
+      _endpointSnapshot = DesktopVoiceCaptureEndpointSnapshot.fromJson(
+        Map<String, dynamic>.from(body),
+      );
+      DesktopVoiceCaptureEndpointPolicy.logFromHelperJson(
+        Map<String, dynamic>.from(body),
+      );
       _deviceLabel =
           (body['device_name'] as String?)?.trim().isNotEmpty == true
               ? (body['device_name'] as String)

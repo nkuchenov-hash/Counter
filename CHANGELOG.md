@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-09] - P0 Desktop Voice: Windows endpoint diagnostics + capture role selection [engineering]
+
+* **`installer/windows/stt_helper_src/win_audio_endpoint.rs` + `capture.rs`:** MMDevice console/communications endpoint id, volume, mute, mix format; `/capture/device_diag`; auto endpoint role + cpal device match; capture gain experiment on STT copy only (`COUNTER_CAPTURE_GAIN_EXPERIMENT=1`).
+* **`lib/core/services/desktop_voice_capture_endpoint.dart`:** Posts `endpoint_role: auto` on capture start; parses endpoint fields into diagnostics / `last_attempt_diag.txt`.
+* **`docs/reports/DESKTOP_VOICE_HANDY_ENDPOINT_PARITY_2026-07-09.md`:** Handy vs Counter endpoint evidence; df696fc remains STT-unrecoverable.
+
 ## [2026-07-08] - P0 Desktop Voice: df696fc live quiet offline proof + capture diagnostics [engineering]
 
 * **`test/fixtures/desktop_voice_wav/`:** Archived `scw_delmod_submit_df696fc_live_quiet*.wav` + `last_attempt_diag_df696fc_live_quiet.txt`; `golden_manifest.json` v4 documents offline whisper blocker (RMS gain variants do not recover "Southern").

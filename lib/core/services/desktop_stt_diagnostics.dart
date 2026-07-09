@@ -65,6 +65,13 @@ class DesktopSttDiagnostics {
     this.processedWavPeak = 0,
     this.sessionVolume,
     this.endpointVolume,
+    this.endpointId,
+    this.endpointRole,
+    this.consoleDefaultDevice,
+    this.communicationsDefaultDevice,
+    this.captureGainMode,
+    this.captureGainDb,
+    this.selectedGainReason,
     this.engine,
     this.languageHint = 'en-US',
     this.audioDevice = 'default',
@@ -195,6 +202,13 @@ class DesktopSttDiagnostics {
   final double processedWavPeak;
   final double? sessionVolume;
   final double? endpointVolume;
+  final String? endpointId;
+  final String? endpointRole;
+  final String? consoleDefaultDevice;
+  final String? communicationsDefaultDevice;
+  final String? captureGainMode;
+  final double? captureGainDb;
+  final String? selectedGainReason;
   final String? engine;
   final String languageHint;
   final String audioDevice;
@@ -385,6 +399,13 @@ class DesktopSttDiagnostics {
       'processed_wav_peak=${processedWavPeak.toStringAsFixed(4)}',
       'session_volume=${sessionVolume?.toStringAsFixed(3) ?? '—'}',
       'endpoint_volume=${endpointVolume?.toStringAsFixed(3) ?? '—'}',
+      'endpoint_id=${endpointId ?? '—'}',
+      'endpoint_role=${endpointRole ?? '—'}',
+      'console_default_device=${consoleDefaultDevice ?? '—'}',
+      'communications_default_device=${communicationsDefaultDevice ?? '—'}',
+      'capture_gain_mode=${captureGainMode ?? '—'}',
+      'capture_gain_db=${captureGainDb?.toStringAsFixed(2) ?? '—'}',
+      'selected_gain_reason=${selectedGainReason ?? '—'}',
       'device_name=$audioDevice',
       'engine=${engine ?? '—'}',
       'language_hint=$languageHint',

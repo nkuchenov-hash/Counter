@@ -2,10 +2,13 @@
 //
 // Apple-Notes-style layout:
 //   - large, borderless title (strong typography, no boxed input look)
-//   - compact context row (category chip / tags / save status / checklist)
+//   - compact context row (category chip / tags; save status optional)
 //   - thin hairline divider (only visual separator)
-//   - single-row formatting toolbar
-//   - large body editor that fills remaining space with a clear placeholder
+//   - large body editor with a SAFE overlay placeholder ("Start writing…")
+//     that is always visible when the document is empty — even on web where
+//     Quill's built-in placeholder is unreliable. Tapping the body requests
+//     focus so the cursor appears immediately.
+//   - persistent single-row formatting toolbar pinned above the keyboard
 //   - keyboard-safe padding (no clipping when the IME opens)
 //
 // Pure UI. The composing feature surface supplies the `QuillController`,
@@ -25,7 +28,11 @@ typedef NotesEditorPlaceholderBuilder = String Function(BuildContext);
 /// The caller owns all state; this widget is presentational. Layout is
 /// keyboard-safe via [MediaQuery.viewInsetsOf] so the body never gets clipped
 /// when the IME opens on mobile web / mobile native.
-class AppNotesEditorSurface extends StatelessWidget {
+///
+/// This widget is a [StatefulWidget] only so it can listen to Quill document
+/// changes and focus changes to drive the safe overlay placeholder. No business
+/// state is held here.
+class AppNotesEditorSurface extends StatefulWidget {
   const AppNotesEditorSurface({
     super.key,
     required this.titleController,
@@ -43,6 +50,7 @@ class AppNotesEditorSurface extends StatelessWidget {
     this.titleMaxLinesWhenKeyboardOpen = 2,
     this.titleMaxLinesWhenKeyboardClosed = 3,
     this.configBuilder,
+    this.showStatusInContextRow = false,
   });
 
   final TextEditingController titleController;
@@ -68,6 +76,57 @@ class AppNotesEditorSurface extends StatelessWidget {
 
   /// Optional override of the Quill toolbar config.
   final quill.QuillSimpleToolbarConfig? Function(BuildContext)? configBuilder;
+
+  /// When false (default), the save status is NOT rendered inside the context
+  /// row — the composing sheet is expected to surface it once (e.g. in the top
+  /// bar) to avoid duplicate "All changes saved" chips.
+  final bool showStatusInContextRow;
+
+  @override
+  State<AppNotesEditorSurface> createState() => _AppNotesEditorSurfaceState();
+}
+
+class _AppNotesEditorSurfaceState extends State<AppNotesEditorSurface> {
+  bool _bodyEmpty = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _bodyEmpty = _isBodyPlainEmpty();
+    widget.quillController.document.changes.listen(_onDocChange);
+    widget.quillFocusNode.addListener(_onFocusChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.quillFocusNode.removeListener(_onFocusChanged);
+    super.dispose();
+  }
+
+  bool _isBodyPlainEmpty() {
+    final plain = widget.quillController.document
+        .toPlainText()
+        .replaceAll('\u200b', '')
+        .trim();
+    return plain.isEmpty;
+  }
+
+  void _onDocChange(_) {
+    if (!mounted) return;
+    final next = _isBodyPlainEmpty();
+    if (next != _bodyEmpty) {
+      setState(() => _bodyEmpty = next);
+    }
+  }
+
+  void _onFocusChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _requestBodyFocus() {
+    FocusScope.of(context).requestFocus(widget.quillFocusNode);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,18 +159,18 @@ class AppNotesEditorSurface extends StatelessWidget {
               4,
             ),
             child: TextField(
-              controller: titleController,
-              focusNode: titleFocusNode,
-              autofocus: autofocusTitle,
+              controller: widget.titleController,
+              focusNode: widget.titleFocusNode,
+              autofocus: widget.autofocusTitle,
               style: titleStyle,
               minLines: 1,
               maxLines: keyboardOpen
-                  ? titleMaxLinesWhenKeyboardOpen
-                  : titleMaxLinesWhenKeyboardClosed,
+                  ? widget.titleMaxLinesWhenKeyboardOpen
+                  : widget.titleMaxLinesWhenKeyboardClosed,
               textCapitalization: TextCapitalization.sentences,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
-                hintText: titleHint,
+                hintText: widget.titleHint,
                 hintStyle: titleStyle?.copyWith(
                   color: scheme.onSurface.withValues(alpha: 0.32),
                   fontWeight: FontWeight.w600,
@@ -123,14 +182,17 @@ class AppNotesEditorSurface extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 filled: false,
               ),
-              onChanged: onTitleChanged,
+              onChanged: widget.onTitleChanged,
             ),
           ),
-          // Compact context row directly under title.
+          // Compact context row directly under title. Status is rendered here
+          // only when the host opts in; otherwise the host surfaces it once
+          // (e.g. in the top bar) to avoid duplicate chips.
           AppNotesContextRow(
-            data: contextRowData,
-            onTap: onContextRowTap,
+            data: widget.contextRowData,
+            onTap: widget.onContextRowTap,
             fallbackCategoryLabel: '',
+            showStatus: widget.showStatusInContextRow,
           ),
           // Single thin hairline divider — the only structural separator.
           Padding(
@@ -142,25 +204,58 @@ class AppNotesEditorSurface extends StatelessWidget {
             ),
           ),
           // Body editor — fills remaining space, no boxed border.
+          // A safe overlay placeholder is shown whenever the document is empty,
+          // so the user always sees "Start writing…" even on web where Quill's
+          // built-in placeholder is unreliable. Tapping anywhere in the body
+          // area requests focus so the cursor appears immediately.
           Expanded(
-            child: quill.QuillEditor.basic(
-              controller: quillController,
-              focusNode: quillFocusNode,
-              scrollController: quillScrollController,
-              config: quill.QuillEditorConfig(
-                expands: true,
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-                placeholder: placeholder(context),
-                keyboardAppearance: theme.brightness == Brightness.dark
-                    ? Brightness.dark
-                    : Brightness.light,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _requestBodyFocus,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: quill.QuillEditor.basic(
+                      controller: widget.quillController,
+                      focusNode: widget.quillFocusNode,
+                      scrollController: widget.quillScrollController,
+                      config: quill.QuillEditorConfig(
+                        expands: true,
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+                        // Keep Quill's placeholder too (harmless redundancy).
+                        placeholder: widget.placeholder(context),
+                        keyboardAppearance:
+                            theme.brightness == Brightness.dark
+                                ? Brightness.dark
+                                : Brightness.light,
+                      ),
+                    ),
+                  ),
+                  // Safe overlay placeholder: visible when empty AND not focused.
+                  if (_bodyEmpty && !widget.quillFocusNode.hasFocus)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+                          child: Text(
+                            widget.placeholder(context),
+                            style: (tt.bodyLarge ?? tt.bodyMedium)?.copyWith(
+                              color: scheme.onSurface.withValues(alpha: 0.38),
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
           // Persistent formatting toolbar pinned above the keyboard.
+          // Distinct background so it never blends invisibly into the surface.
           Container(
             decoration: BoxDecoration(
-              color: scheme.surface,
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
               border: Border(
                 top: BorderSide(
                   color: scheme.outlineVariant.withValues(alpha: 0.5),
@@ -170,9 +265,9 @@ class AppNotesEditorSurface extends StatelessWidget {
             ),
             padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
             child: AppNotesToolbar(
-              controller: quillController,
-              actions: toolbarActions,
-              configBuilder: configBuilder,
+              controller: widget.quillController,
+              actions: widget.toolbarActions,
+              configBuilder: widget.configBuilder,
             ),
           ),
           // Keyboard-safe bottom inset so the IME never overlaps the toolbar.
