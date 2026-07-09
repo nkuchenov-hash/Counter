@@ -1,6 +1,6 @@
 // Launcher for the Notes editor sheet. Mirrors the existing pattern used by
 // `showModalBottomSheet` callers (e.g. ActivityDetailSheet) so the editor is
-// reachable from Lists without forking the Lists page architecture.
+// reachable from Lists as the PRIMARY editing experience.
 //
 // Always full-height on mobile and centered on wide screens.
 
@@ -13,12 +13,17 @@ import 'package:flutter/material.dart';
 /// Returns the latest draft via [onSaved] after explicit Save OR after the
 /// autosave flush that runs on dispose. The caller may use this to refresh
 /// Lists UI without waiting for the Brain refresh broadcast.
+///
+/// [onEditDetails] opens the legacy PlanningTaskEditSheet when the user picks
+/// "Edit details" from the editor's More menu. The Notes editor closes itself
+/// before invoking this so only one modal is open at a time.
 Future<void> showNotesEditorSheet({
   required BuildContext context,
   required PlanningTask task,
   ScrollController? scrollController,
   void Function(PlanningTask updated)? onSaved,
   void Function(PlanningTask task)? onDeleted,
+  Future<void> Function(PlanningTask task)? onEditDetails,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -45,6 +50,7 @@ Future<void> showNotesEditorSheet({
                 scrollController: scrollController,
                 onSaved: onSaved,
                 onDeleted: onDeleted,
+                onEditDetails: onEditDetails,
               ),
             );
           },

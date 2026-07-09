@@ -691,6 +691,8 @@ class _ListsPageState extends State<ListsPage>
     required bool showTagsStrip,
   }) {
     final key = _listKey(task);
+    final isOptimistic =
+        task.planRowIdForBackend.startsWith('optimistic-');
     return BacklogPlanCard(
       task: task,
       locale: loc,
@@ -700,25 +702,36 @@ class _ListsPageState extends State<ListsPage>
       onBodyTap: () {
         if (_listsSelectMode) {
           _toggleListKey(key);
-        } else {
+        } else if (isOptimistic) {
+          // Optimistic rows are not persisted yet — fall back to the legacy
+          // edit sheet so the user can finish creating the row safely.
           widget.onEditTask?.call(task);
+        } else {
+          // Persisted row: Notes editor is the PRIMARY editing experience.
+          unawaited(
+            showNotesEditorSheet(
+              context: context,
+              task: task,
+              onSaved: (updated) {
+                // Brain already applied optimistically + notified; just
+                // refresh the local snapshot so frequency chips update.
+                _applyBacklogFromBrainSnapshot();
+              },
+              onDeleted: (removed) {
+                _applyBacklogFromBrainSnapshot();
+              },
+              onEditDetails: (latest) async {
+                // Open the legacy PlanningTaskEditSheet (schedule,
+                // recurrence, checklist, etc.) for the same row.
+                widget.onEditTask?.call(latest);
+              },
+            ),
+          );
         }
       },
-      onLongPressOpenInNotes: task.planRowIdForBackend.startsWith('optimistic-')
-          ? null
-          : () {
-              unawaited(
-                showNotesEditorSheet(
-                  context: context,
-                  task: task,
-                  onSaved: (updated) {
-                    // Brain already applied optimistically + notified; just
-                    // refresh the local snapshot so frequency chips update.
-                    _applyBacklogFromBrainSnapshot();
-                  },
-                ),
-              );
-            },
+      // Long-press opens the existing radial `...` menu (Edit details,
+      // done toggle, delete, etc.) — same affordance as before.
+      onLongPress: () => _showListsRadialMenu(context, task, key),
       onToggleDone: (done) => _onListToggleDone(task, done),
       onDelete: () => unawaited(_confirmAndDelete(task)),
       onOpenMenu: (anchorCtx) => _showListsRadialMenu(anchorCtx, task, key),

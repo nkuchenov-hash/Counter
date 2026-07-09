@@ -37,7 +37,7 @@ class AppNotesSaveStatusData {
 
   final NotesSaveStatusKind kind;
 
-  /// Optional localized "Saved · <timestamp>" label for [NotesSaveStatusKind.saved].
+  /// Optional localized "Saved · timestamp" label for [NotesSaveStatusKind.saved].
   final String? lastSavedLabel;
 
   /// Localized message for [NotesSaveStatusKind.error].
@@ -109,17 +109,17 @@ class AppNotesSaveStatus extends StatelessWidget {
           children: [
             if (data.kind == NotesSaveStatusKind.saving)
               SizedBox(
-                width: 11,
-                height: 11,
+                width: 10,
+                height: 10,
                 child: CircularProgressIndicator(
-                  strokeWidth: 1.6,
+                  strokeWidth: 1.4,
                   valueColor: AlwaysStoppedAnimation<Color>(fg),
                 ),
               )
             else if (icon != null)
               Padding(
                 padding: const EdgeInsetsDirectional.only(end: 5),
-                child: Icon(icon, size: 13, color: fg),
+                child: Icon(icon, size: 12, color: fg),
               ),
             Flexible(
               child: Text(
@@ -171,14 +171,14 @@ class AppNotesSaveStatus extends StatelessWidget {
       case NotesSaveStatusKind.idle:
         return (
           scheme.onSurfaceVariant,
-          scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-          null,
+          Colors.transparent,
+          Icons.check_rounded,
           data.lastSavedLabel ?? '',
         );
       case NotesSaveStatusKind.editing:
         return (
           scheme.onSurfaceVariant,
-          scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+          scheme.surfaceContainerHighest.withValues(alpha: 0.35),
           Icons.edit_rounded,
           data.lastSavedLabel ?? '',
         );

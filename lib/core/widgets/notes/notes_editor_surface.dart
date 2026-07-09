@@ -1,10 +1,11 @@
 // Canonical notes editor surface.
 //
-// A reusable container that gives the editor:
-//   - large comfortable title field
-//   - compact context row (category chip / tags / save status)
+// Apple-Notes-style layout:
+//   - large, borderless title (strong typography, no boxed input look)
+//   - compact context row (category chip / tags / save status / checklist)
+//   - thin hairline divider (only visual separator)
 //   - single-row formatting toolbar
-//   - large body editor that fills remaining space
+//   - large body editor that fills remaining space with a clear placeholder
 //   - keyboard-safe padding (no clipping when the IME opens)
 //
 // Pure UI. The composing feature surface supplies the `QuillController`,
@@ -40,9 +41,7 @@ class AppNotesEditorSurface extends StatelessWidget {
     this.titleHint,
     this.autofocusTitle = false,
     this.titleMaxLinesWhenKeyboardOpen = 2,
-    this.titleMaxLinesWhenKeyboardClosed = 4,
-    this.bodyMinHeight = 220,
-    this.fallbackCategoryLabel = 'Uncategorized',
+    this.titleMaxLinesWhenKeyboardClosed = 3,
     this.configBuilder,
   });
 
@@ -66,15 +65,8 @@ class AppNotesEditorSurface extends StatelessWidget {
   final bool autofocusTitle;
   final int titleMaxLinesWhenKeyboardOpen;
   final int titleMaxLinesWhenKeyboardClosed;
-  final double bodyMinHeight;
 
-  /// Localized "Uncategorized" label surfaced when the context row has no
-  /// category. Provided by the composing surface so the canonical widget
-  /// never hardcodes user-facing strings.
-  final String fallbackCategoryLabel;
-
-  /// Optional override of the Quill toolbar config (used by the Component Lab
-  /// mock to show disabled states).
+  /// Optional override of the Quill toolbar config.
   final quill.QuillSimpleToolbarConfig? Function(BuildContext)? configBuilder;
 
   @override
@@ -83,89 +75,107 @@ class AppNotesEditorSurface extends StatelessWidget {
     final scheme = theme.colorScheme;
     final kbBottom = MediaQuery.viewInsetsOf(context).bottom;
     final keyboardOpen = kbBottom > 0;
+    final tt = theme.textTheme;
+
+    // Apple-Notes-style title: large, plain, strong weight, no input border.
+    final titleStyle = (tt.headlineSmall ?? tt.titleLarge ?? tt.titleMedium)
+        ?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.2,
+          height: 1.2,
+          color: scheme.onSurface,
+        );
 
     return Material(
       color: scheme.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Title — borderless, large, comfortable.
           Padding(
             padding: EdgeInsets.fromLTRB(
-              16,
-              keyboardOpen ? 6 : 12,
-              8,
-              keyboardOpen ? 4 : 8,
+              20,
+              keyboardOpen ? 8 : 14,
+              20,
+              4,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: titleController,
-                    focusNode: titleFocusNode,
-                    autofocus: autofocusTitle,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                    minLines: 1,
-                    maxLines: keyboardOpen
-                        ? titleMaxLinesWhenKeyboardOpen
-                        : titleMaxLinesWhenKeyboardClosed,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(
-                      hintText: titleHint ?? 'Title',
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    onChanged: onTitleChanged,
-                  ),
+            child: TextField(
+              controller: titleController,
+              focusNode: titleFocusNode,
+              autofocus: autofocusTitle,
+              style: titleStyle,
+              minLines: 1,
+              maxLines: keyboardOpen
+                  ? titleMaxLinesWhenKeyboardOpen
+                  : titleMaxLinesWhenKeyboardClosed,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                hintText: titleHint,
+                hintStyle: titleStyle?.copyWith(
+                  color: scheme.onSurface.withValues(alpha: 0.32),
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+                filled: false,
+              ),
+              onChanged: onTitleChanged,
             ),
           ),
+          // Compact context row directly under title.
           AppNotesContextRow(
             data: contextRowData,
             onTap: onContextRowTap,
-            fallbackCategoryLabel: fallbackCategoryLabel,
+            fallbackCategoryLabel: '',
           ),
-          const Divider(height: 1),
+          // Single thin hairline divider — the only structural separator.
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Divider(
+              height: 1,
+              thickness: 1,
+              color: scheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+          ),
+          // Body editor — fills remaining space, no boxed border.
+          Expanded(
+            child: quill.QuillEditor.basic(
+              controller: quillController,
+              focusNode: quillFocusNode,
+              scrollController: quillScrollController,
+              config: quill.QuillEditorConfig(
+                expands: true,
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+                placeholder: placeholder(context),
+                keyboardAppearance: theme.brightness == Brightness.dark
+                    ? Brightness.dark
+                    : Brightness.light,
+              ),
+            ),
+          ),
+          // Persistent formatting toolbar pinned above the keyboard.
+          Container(
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              border: Border(
+                top: BorderSide(
+                  color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  width: 1,
+                ),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
             child: AppNotesToolbar(
               controller: quillController,
               actions: toolbarActions,
               configBuilder: configBuilder,
             ),
           ),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: scheme.outlineVariant.withValues(alpha: 0.5),
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              constraints: BoxConstraints(minHeight: bodyMinHeight),
-              child: quill.QuillEditor.basic(
-                controller: quillController,
-                focusNode: quillFocusNode,
-                scrollController: quillScrollController,
-                config: quill.QuillEditorConfig(
-                  expands: true,
-                  padding: const EdgeInsets.all(12),
-                  placeholder: placeholder(context),
-                  keyboardAppearance: theme.brightness == Brightness.dark
-                      ? Brightness.dark
-                      : Brightness.light,
-                ),
-              ),
-            ),
-          ),
-          // Keyboard-safe bottom inset so the IME never overlaps the editor.
+          // Keyboard-safe bottom inset so the IME never overlaps the toolbar.
           SizedBox(height: keyboardOpen ? kbBottom : 0),
         ],
       ),

@@ -1,10 +1,11 @@
 // Canonical notes editor toolbar.
 //
-// Wraps the existing `flutter_quill` simple toolbar and layers Apple-Notes-style
-// affordances the Quill simple toolbar does not expose by default:
-//   - inline link insertion
-//   - horizontal divider insertion
-//   - copy-as-markdown / paste-from-markdown hooks (callback-only)
+// Wraps `flutter_quill` simple toolbar with the formatting that a Notes-class
+// editor needs (B/I/U/strike/bullet/numbered/checklist/link/clear) and appends
+// app-owned trailing actions:
+//   - divider insertion
+//   - copy-as-markdown / paste-from-markdown (callback-only)
+//   - a More (...) menu entry point forwarded to the composing surface
 //
 // Pure UI — no Brain/PocketBase imports. The composition surface owns the
 // `QuillController`, clipboard calls, and any autosave gate. This widget only
@@ -18,15 +19,12 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 /// icon-only button appended after the standard Quill simple toolbar buttons.
 class AppNotesToolbarActions {
   const AppNotesToolbarActions({
-    this.onInsertLink,
     this.onInsertDivider,
     this.onCopyAsMarkdown,
     this.onPasteFromMarkdown,
+    this.onOpenMore,
     this.tooltips = const AppNotesToolbarTooltips(),
   });
-
-  /// Insert an inline link into the editor's current selection.
-  final VoidCallback? onInsertLink;
 
   /// Insert a horizontal-rule divider at the current selection.
   final VoidCallback? onInsertDivider;
@@ -37,6 +35,10 @@ class AppNotesToolbarActions {
   /// Convert clipboard Markdown into the editor's rich content.
   final VoidCallback? onPasteFromMarkdown;
 
+  /// Open the editor's More (...) menu. The composing surface owns the menu
+  /// contents (Edit details, Convert to Plan, AI, Share, Attach, Delete, etc.).
+  final VoidCallback? onOpenMore;
+
   /// Locale-aware tooltips surfaced on the trailing action buttons.
   final AppNotesToolbarTooltips tooltips;
 }
@@ -44,23 +46,23 @@ class AppNotesToolbarActions {
 /// Locale-aware tooltip strings for the trailing Notes toolbar buttons.
 class AppNotesToolbarTooltips {
   const AppNotesToolbarTooltips({
-    this.insertLink = 'Insert link',
     this.insertDivider = 'Divider',
     this.copyAsMarkdown = 'Copy as Markdown',
     this.pasteFromMarkdown = 'Paste from Markdown',
+    this.more = 'More',
   });
 
-  final String insertLink;
   final String insertDivider;
   final String copyAsMarkdown;
   final String pasteFromMarkdown;
+  final String more;
 }
 
 /// Compact single-row formatting toolbar for the Notes editor.
 ///
-/// Wraps [quill.QuillSimpleToolbar] to keep formatting consistent with the
-/// existing edit sheets, then appends app-owned actions (link, divider,
-/// markdown) when provided by the composing surface.
+/// Wraps [quill.QuillSimpleToolbar] (with native link support enabled) then
+/// appends app-owned actions (divider, markdown, more) when provided by the
+/// composing surface.
 class AppNotesToolbar extends StatelessWidget {
   const AppNotesToolbar({
     super.key,
@@ -74,7 +76,7 @@ class AppNotesToolbar extends StatelessWidget {
   final AppNotesToolbarActions actions;
 
   /// Optional builder to override the Quill toolbar config. When null a
-  /// sensible default matching the existing planning edit sheet is used.
+  /// sensible default matching the Notes product UX is used.
   final quill.QuillSimpleToolbarConfig? Function(BuildContext)? configBuilder;
 
   final double minHeight;
@@ -84,15 +86,6 @@ class AppNotesToolbar extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final trailing = <Widget>[];
 
-    if (actions.onInsertLink != null) {
-      trailing.add(
-        _NotesToolbarIconButton(
-          icon: Icons.link_rounded,
-          tooltip: actions.tooltips.insertLink,
-          onTap: actions.onInsertLink!,
-        ),
-      );
-    }
     if (actions.onInsertDivider != null) {
       trailing.add(
         _NotesToolbarIconButton(
@@ -120,6 +113,16 @@ class AppNotesToolbar extends StatelessWidget {
         ),
       );
     }
+    if (actions.onOpenMore != null) {
+      trailing.add(
+        _NotesToolbarIconButton(
+          icon: Icons.more_horiz_rounded,
+          tooltip: actions.tooltips.more,
+          onTap: actions.onOpenMore!,
+          emphasize: true,
+        ),
+      );
+    }
 
     final config = configBuilder?.call(context) ?? _defaultConfig(scheme);
 
@@ -129,9 +132,12 @@ class AppNotesToolbar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: quill.QuillSimpleToolbar(
-              controller: controller,
-              config: config,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: quill.QuillSimpleToolbar(
+                controller: controller,
+                config: config,
+              ),
             ),
           ),
           if (trailing.isNotEmpty)
@@ -146,7 +152,7 @@ class AppNotesToolbar extends StatelessWidget {
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: Row(children: trailing),
               ),
             ),
@@ -163,8 +169,8 @@ class AppNotesToolbar extends StatelessWidget {
       toolbarRunSpacing: 0,
       buttonOptions: const quill.QuillSimpleToolbarButtonOptions(
         base: quill.QuillToolbarBaseButtonOptions(
-          iconSize: 17,
-          iconButtonFactor: 1.42,
+          iconSize: 19,
+          iconButtonFactor: 1.35,
         ),
       ),
       showFontFamily: false,
@@ -185,7 +191,8 @@ class AppNotesToolbar extends StatelessWidget {
       showCodeBlock: false,
       showQuote: false,
       showIndent: false,
-      showLink: false,
+      // Native Quill link button — clean dialog, selection-aware.
+      showLink: true,
       showUndo: false,
       showRedo: false,
       showSearchButton: false,
@@ -194,7 +201,7 @@ class AppNotesToolbar extends StatelessWidget {
       showSmallButton: false,
       showLineHeightButton: false,
       showDirection: false,
-      color: scheme.surfaceContainerHighest,
+      color: scheme.surface,
     );
   }
 }
@@ -204,24 +211,27 @@ class _NotesToolbarIconButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onTap,
+    this.emphasize = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onTap;
+  final bool emphasize;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final color = emphasize ? scheme.primary : scheme.onSurfaceVariant;
     return Tooltip(
       message: tooltip,
       child: IconButton(
         onPressed: onTap,
-        icon: Icon(icon, size: 17),
-        color: scheme.onSurfaceVariant,
+        icon: Icon(icon, size: 19),
+        color: color,
         splashRadius: 18,
         visualDensity: VisualDensity.compact,
-        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
         padding: EdgeInsets.zero,
       ),
     );
