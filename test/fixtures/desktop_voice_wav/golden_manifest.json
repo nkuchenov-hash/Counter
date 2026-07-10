@@ -183,6 +183,32 @@
       "status": "missing",
       "expected_terms": [],
       "note": "Unrelated phrase negative control — add WAV when available"
+    },
+    {
+      "id": "scw_contaminated_67ea8eb",
+      "wav": "scw_contaminated_67ea8eb_contaminated_2026_07_10.wav",
+      "raw_wav": "scw_contaminated_67ea8eb_contaminated_2026_07_10_raw.wav",
+      "diag": "last_attempt_diag_67ea8eb_contaminated_2026_07_10.txt",
+      "status": "present",
+      "role": "session_contamination_failure",
+      "build_sha": "67ea8eb",
+      "observed_task_title": "DEL MOD Submit BLINK Laredo Technical Services SELVENT Computer Warehouse DEL MOD Submit",
+      "expected_task_title": "Submit",
+      "expected_path": "Work > Price Reporter > SOUTHERN COMPUTER warehouse > DEL MOD",
+      "forbidden_fragments": [
+        "BLINK",
+        "Laredo Technical Services",
+        "SELVENT",
+        "duplicate DEL MOD Submit"
+      ],
+      "expected_record_count": 1,
+      "expected_active_voice_session_count": 1,
+      "must_block_write": true,
+      "markers": [
+        "DESKTOP_VOICE_CONTAMINATED_TASK_FIXTURE_ARCHIVED",
+        "DESKTOP_VOICE_STALE_TRANSCRIPT_FAILURE_REPRODUCED",
+        "DESKTOP_VOICE_CORRUPTED_TITLE_PROVEN_FROM_DIAG"
+      ]
     }
   ],
   "fefb502_live_quiet_wav": "scw_delmod_submit_fefb502_live_quiet.wav",

@@ -1,5 +1,6 @@
 import 'package:counter/core/services/desktop_stt_helper_service.dart';
 import 'package:counter/core/services/desktop_voice_audio_capture.dart';
+import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/voice_command_parser.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -35,8 +36,13 @@ void main() {
       final helper = DesktopSttHelperService.instance;
       helper.evaluateCommandCandidate = (text) {
         final parsed = parseVoiceCommand(rules: rules, transcript: text);
+        final useful = DesktopVoiceContaminationGate.isUsefulCandidate(
+          transcript: text,
+          categoryRules: rules,
+          parsed: parsed,
+        );
         return (
-          useful: parsed.isSafeToStart,
+          useful: useful,
           parseStatus: parsed.confidence.name,
         );
       };

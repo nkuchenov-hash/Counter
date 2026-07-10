@@ -681,6 +681,8 @@ const Map<String, String> kRuL10n = {
     'desktop_voice_stt_no_transcript': 'Не удалось получить текст',
     'desktop_voice_stt_empty_transcript': 'Не удалось получить текст',
     'desktop_voice_write_failed': 'Не удалось запустить запись',
+    'desktop_voice_session_contaminated':
+        'Голосовая сессия сброшена. Задача не создана.',
     'desktop_voice_stale_build_warning':
         'Запущена dev-сборка — установите CounterSetup.exe',
     'desktop_voice_reason_no_root': 'Сначала скажите «Price Reporter», затем клиента и задачу',

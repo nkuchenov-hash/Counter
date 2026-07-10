@@ -18,6 +18,8 @@ import 'package:counter/core/services/desktop_voice_capture_ready_policy.dart';
 import 'package:counter/core/services/desktop_voice_native_overlay.dart';
 import 'package:counter/core/services/desktop_voice_stt_processing.dart';
 import 'package:counter/core/services/desktop_voice_ready_cue.dart';
+import 'package:counter/core/services/desktop_voice_session.dart';
+import 'package:counter/core/services/desktop_voice_transcript_merge.dart';
 import 'package:counter/core/services/desktop_voice_settings.dart';
 import 'package:counter/core/services/desktop_win_speech_service.dart';
 import 'package:counter/core/services/pcm_audio_utils.dart';
@@ -108,6 +110,78 @@ class DesktopSttHelperService {
   void Function(String text, String engineId)? onFirstCandidate;
   DesktopSttDiagnostics _lastDiagnostics = const DesktopSttDiagnostics();
   DesktopVoiceGlossaryPack? _transcribeGlossary;
+  String? _activeVoiceSessionId;
+  String? _sessionBestPartial;
+  Timer? _sessionPartialPollTimer;
+
+  String? get activeVoiceSessionId => _activeVoiceSessionId;
+
+  /// Binds helper partial cache to [sessionId] and clears Dart-side transcript state.
+  Future<void> beginVoiceSession(String sessionId) async {
+    _sessionPartialPollTimer?.cancel();
+    _sessionPartialPollTimer = null;
+    _activeVoiceSessionId = sessionId;
+    _sessionBestPartial = null;
+    _partialText = null;
+    _finalText = null;
+    _candidateText = null;
+    _candidateUseful = false;
+    _candidateVisibleToUser = false;
+    DesktopVoicePipeline.mark('voice_session_id', sessionId);
+    DesktopVoicePipeline.mark('active_session_id', sessionId);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_BUFFER_RESET_AT_START');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_PARTIAL_CACHE_RESET_AT_START');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_COMMAND_RESET_AT_START');
+    await _resetHelperSessionState(sessionId);
+    _sessionPartialPollTimer = Timer.periodic(
+      const Duration(milliseconds: 350),
+      (_) => unawaited(_pollSessionPartial()),
+    );
+  }
+
+  void endVoiceSession() {
+    _sessionPartialPollTimer?.cancel();
+    _sessionPartialPollTimer = null;
+    _activeVoiceSessionId = null;
+    _sessionBestPartial = null;
+  }
+
+  Future<void> _resetHelperSessionState(String sessionId) async {
+    try {
+      await http
+          .post(
+            Uri.parse('$_baseUrl/transcribe/reset_session'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'session_id': sessionId}),
+          )
+          .timeout(const Duration(seconds: 2));
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_HELPER_SESSION_RESET', sessionId);
+    } catch (_) {
+      DesktopVoicePipeline.mark(
+        'DESKTOP_VOICE_HELPER_SESSION_RESET',
+        'offline_or_unavailable',
+      );
+    }
+  }
+
+  Future<void> _pollSessionPartial() async {
+    if (_activeVoiceSessionId == null) return;
+    final hint = await _fetchLastPartialHint(requireSessionMatch: true);
+    if (hint == null || hint.isEmpty) return;
+    _sessionBestPartial = DesktopVoiceTranscriptMerge.applyPartial(
+      previous: _sessionBestPartial,
+      partial: hint,
+    );
+    _partialText = _sessionBestPartial;
+    if (_tRecordingStopped == null) {
+      // Mid-recording: do not count latency yet; still surface parseable preview.
+      return;
+    }
+    _emitFirstCandidate(
+      _sessionBestPartial!,
+      resolveProductionEngine().helperEngineId,
+    );
+  }
 
   void setTranscribeGlossary(DesktopVoiceGlossaryPack? pack) {
     _transcribeGlossary = pack;
@@ -723,6 +797,8 @@ class DesktopSttHelperService {
 
   Future<void> _sendPartialAudio(List<int> bytes) async {
     if (bytes.length < 48000 || !_ready) return;
+    final sessionId = _activeVoiceSessionId;
+    if (sessionId == null || sessionId.isEmpty) return;
     final rms = pcm16RmsLevel(bytes);
     if (rms < 0.012) return;
     try {
@@ -730,14 +806,17 @@ class DesktopSttHelperService {
           .post(
             Uri.parse('$_baseUrl/transcribe/partial_audio'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'audio_base64': base64Encode(bytes)}),
+            body: jsonEncode({
+              'audio_base64': base64Encode(bytes),
+              'session_id': sessionId,
+            }),
           )
           .timeout(const Duration(seconds: 10));
     } catch (_) {}
   }
 
   /// Instant first-candidate read from mid-listen cache (no full WAV wait).
-  Future<String?> _fetchLastPartialHint() async {
+  Future<String?> _fetchLastPartialHint({bool requireSessionMatch = true}) async {
     try {
       final r = await http
           .get(Uri.parse('$_baseUrl/transcribe/last_partial'))
@@ -745,6 +824,14 @@ class DesktopSttHelperService {
       if (r.statusCode != 200) return null;
       final body = jsonDecode(r.body);
       if (body is! Map) return null;
+      final respSessionId = (body['session_id'] as String?)?.trim();
+      if (requireSessionMatch &&
+          !DesktopVoiceSessionRegistry.acceptForActive(
+            resultSessionId: respSessionId ?? _activeVoiceSessionId,
+            source: 'last_partial',
+          )) {
+        return null;
+      }
       final text = (body['text'] as String?)?.trim() ?? '';
       if (text.isEmpty) return null;
       final age = (body['age_ms'] as num?)?.toInt();
@@ -758,8 +845,17 @@ class DesktopSttHelperService {
 
   void _emitFirstCandidate(String text, String engineId) {
     if (text.trim().isEmpty) return;
-    final trimmed = text.trim();
+    if (_activeVoiceSessionId != null &&
+        !DesktopVoiceSessionRegistry.acceptForActive(
+          resultSessionId: _activeVoiceSessionId,
+          source: 'first_candidate',
+        )) {
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_CROSS_SESSION_WRITE');
+      return;
+    }
+    final trimmed = DesktopVoiceTranscriptMerge.dedupeCommaSegments(text.trim());
     _candidateText = trimmed;
+    DesktopVoicePipeline.mark('candidate_session_id', _activeVoiceSessionId ?? '—');
     final eval = evaluateCommandCandidate?.call(trimmed);
     _candidateParseStatus = eval?.parseStatus ?? 'not_evaluated';
     _candidateUseful = eval?.useful ?? false;
@@ -772,6 +868,7 @@ class DesktopSttHelperService {
       'candidate_useful',
       _candidateUseful ? 'yes' : 'no',
     );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_USEFUL_CANDIDATE_METRIC_ENFORCED');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_USEFUL_CANDIDATE_METRIC_ADDED');
 
     if (!_candidateUseful) {
@@ -806,13 +903,18 @@ class DesktopSttHelperService {
         'stop_to_useful_candidate_ms',
         '$_stopToUsefulCandidateMs',
       );
-      if (_candidateUseful && _stopToUsefulCandidateMs! <= 500) {
+      final ms = _stopToUsefulCandidateMs ?? 9999;
+      if (_candidateUseful && ms < 500) {
         DesktopVoicePipeline.mark(
           'DESKTOP_VOICE_STOP_TO_FIRST_CANDIDATE_UNDER_500MS',
         );
         DesktopVoicePipeline.mark(
           'DESKTOP_VOICE_STOP_TO_USEFUL_CANDIDATE_UNDER_500MS',
         );
+        DesktopVoicePipeline.mark('useful_latency_pass', 'yes');
+      } else if (_candidateUseful) {
+        DesktopVoicePipeline.mark('useful_latency_pass', 'no');
+        DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_FAKE_LATENCY_PASS');
       }
     }
     onFirstCandidate?.call(trimmed, engineId);
@@ -865,14 +967,18 @@ class DesktopSttHelperService {
       't_recording_stopped',
       '${_tRecordingStopped!.millisecondsSinceEpoch}',
     );
-    final earlyPartialFuture = _fetchLastPartialHint();
+    final earlyPartialFuture = _fetchLastPartialHint(requireSessionMatch: true);
     final captureFuture = _capture.stopAndSaveWav();
 
     final earlyPartial = await earlyPartialFuture;
     if (earlyPartial != null && earlyPartial.isNotEmpty) {
-      _partialText = earlyPartial;
+      _partialText = DesktopVoiceTranscriptMerge.applyPartial(
+        previous: _sessionBestPartial,
+        partial: earlyPartial,
+      );
+      _sessionBestPartial = _partialText;
       _emitFirstCandidate(
-        earlyPartial,
+        _partialText!,
         resolveProductionEngine().helperEngineId,
       );
       DesktopVoicePipeline.mark(
@@ -1401,7 +1507,10 @@ class DesktopSttHelperService {
           .post(
             Uri.parse('$_baseUrl$endpoint'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'audio_base64': base64Encode(pcm)}),
+            body: jsonEncode({
+              'audio_base64': base64Encode(pcm),
+              'session_id': _activeVoiceSessionId,
+            }),
           )
           .timeout(kVoiceProcessingMaxWait);
       _lastTranscribeHttpResult = 'HTTP ${r.statusCode}';
@@ -1468,7 +1577,20 @@ class DesktopSttHelperService {
       final inferenceLatencyMs = (body['final_inference_latency_ms'] as num?)?.toInt();
 
       _partialText = partialHint.isEmpty ? null : partialHint;
-      _finalText = (finalTextField ?? text).isEmpty ? null : (finalTextField ?? text);
+      var authoritativeRaw = (finalTextField ?? text).trim();
+      authoritativeRaw = DesktopVoiceTranscriptMerge.applyFinal(
+        partial: _partialText,
+        finalText: authoritativeRaw,
+      );
+      authoritativeRaw =
+          DesktopVoiceTranscriptMerge.dedupeCommaSegments(authoritativeRaw);
+      DesktopVoicePipeline.mark(
+        DesktopVoiceTranscriptMerge.markerFinalReplacesPartial,
+      );
+      DesktopVoicePipeline.mark(
+        DesktopVoiceTranscriptMerge.markerNoConcat,
+      );
+      _finalText = authoritativeRaw.isEmpty ? null : authoritativeRaw;
       _usedPartialAsFinal = usedPartial;
       _stopReturnReason = stopReason.isEmpty ? null : stopReason;
       _finalInferenceLatencyMs = inferenceLatencyMs;
@@ -1485,12 +1607,18 @@ class DesktopSttHelperService {
         'final_transcript_source',
         _finalTranscriptSource ?? '—',
       );
-      if (partialHint.isNotEmpty) {
+      if (partialHint.isNotEmpty &&
+          DesktopVoiceSessionRegistry.acceptForActive(
+            resultSessionId: _activeVoiceSessionId,
+            source: 'partial_hint',
+          )) {
         DesktopVoicePipeline.mark('partial_text', partialHint);
-        _emitFirstCandidate(
-          partialHint,
-          resolveProductionEngine().helperEngineId,
-        );
+        if (!_candidateUseful) {
+          _emitFirstCandidate(
+            partialHint,
+            resolveProductionEngine().helperEngineId,
+          );
+        }
       }
       if (_finalText != null) {
         DesktopVoicePipeline.mark('final_text', _finalText!);
@@ -1499,7 +1627,7 @@ class DesktopSttHelperService {
         DesktopVoicePipeline.mark('stop_return_reason', stopReason);
       }
 
-      final authoritativeText = _finalText ?? text;
+      final authoritativeText = _finalText ?? authoritativeRaw;
       if (authoritativeText.isEmpty) {
         _lastError = 'Empty transcript';
         _lastTranscribeErrorKind = 'empty_transcript';
@@ -1526,10 +1654,12 @@ class DesktopSttHelperService {
         'engine_used_for_final_text',
         _engineUsedForFinalText!,
       );
-      _emitFirstCandidate(
-        authoritativeText,
-        resolveProductionEngine().helperEngineId,
-      );
+      if (!_candidateUseful || _candidateText != authoritativeText) {
+        _emitFirstCandidate(
+          authoritativeText,
+          resolveProductionEngine().helperEngineId,
+        );
+      }
       if (_tRecordingStopped != null && _tFinalTranscriptReady != null) {
         _stopToFinalTextMs = _tFinalTranscriptReady!
             .difference(_tRecordingStopped!)

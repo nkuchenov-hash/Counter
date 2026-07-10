@@ -11,6 +11,13 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-10] - P0 Desktop Voice: session contamination + latency gate [engineering]
+
+* **`desktop_voice_session.dart` + `desktop_stt_helper_service.dart`:** Immutable `voiceSessionId` per hotkey; `/transcribe/reset_session` clears helper `last_partial`; stale async results discarded; session-tagged partials.
+* **`desktop_voice_contamination_gate.dart`:** Blocks multi-client / stale-fragment / duplicate-segment commands before pending and `writeRecord`; corrupted 67ea8eb title fixture archived.
+* **`desktop_voice_transcript_merge.dart`:** Final replaces partial (no full-hypothesis concatenation); comma dedupe; `build_stt_helper_en.ps1` trims BLINK/Laredo from whisper initial_prompt.
+* **Latency:** Useful candidate strict `<500ms`; contaminated/garbage partials not counted; early useful candidate can show pending before final inference.
+
 ## [2026-07-10] - P0 Desktop Voice: desktop shortcut for installed app [engineering]
 
 * **`scripts/manual/desktop_voice_desktop_shortcut.ps1`:** Creates/updates `%USERPROFILE%\Desktop\Counter.lnk` → `%LOCALAPPDATA%\Programs\Counter\counter.exe` (working dir + icon); replaces stale dev/build targets.

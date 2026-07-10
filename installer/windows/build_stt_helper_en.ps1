@@ -32,7 +32,7 @@ $content = $content -replace "`r`n", "`n"
 $content = $content -replace 'params\.set_language\(Some\("ru"\)\);', 'params.set_language(Some("en"));'
 $content = $content -replace 'params\.set_initial_prompt\([\s\S]*?\);', @'
 params.set_initial_prompt(
-        "Price Reporter, Planning, Southern Computer Warehouse, SCW, DEL MOD, ADD MOD, ADD SIN, Submit, BLINK, Laredo Technical Services, Laredo TS, AGE SOLUTIONS, client, task, record, timeline."
+        "Price Reporter, Planning, Southern Computer Warehouse, SCW, DEL MOD, ADD MOD, ADD SIN, Submit, client, task, record."
     );
 '@
 # Command-VAD parity: benchmark selected NO VAD trim for command-length audio.
@@ -107,6 +107,85 @@ if ($content -notmatch 'web::get\(\)\.to\(transcribe_last_partial\)') {
 }
 Write-Host 'DESKTOP_VOICE_CPAL_WASAPI_CAPTURE_INJECTED'
 Write-Host 'DESKTOP_VOICE_LAST_PARTIAL_ROUTE_INJECTED'
+
+# Session-scoped partial cache — prevents cross-recording contamination (P0).
+if ($content -notmatch 'voice_session_id:') {
+    $content = $content -replace '(last_partial_busy:\s+AtomicBool,)', "`$1`n    voice_session_id:     Mutex<Option<String>>,"
+    $content = $content -replace '(last_partial_busy:\s+AtomicBool::new\(false\),)', "`$1`n            voice_session_id:     Mutex::new(None),"
+}
+if ($content -notmatch 'struct ResetSessionReq') {
+    $resetFn = @'
+
+#[derive(Deserialize)]
+struct ResetSessionReq {
+    session_id: String,
+}
+
+/// POST /transcribe/reset_session — bind helper partial cache to one Dart voice session.
+async fn transcribe_reset_session(
+    req:   web::Json<ResetSessionReq>,
+    state: web::Data<Arc<AppState>>,
+) -> HttpResponse {
+    *state.voice_session_id.lock().unwrap() = Some(req.session_id.clone());
+    *state.last_partial.lock().unwrap() = None;
+    HttpResponse::Ok().json(serde_json::json!({
+        "ok": true,
+        "session_id": req.session_id,
+    }))
+}
+
+'@
+    $partialAnchor = 'async fn transcribe_partial_audio('
+    $pIdx = $content.IndexOf($partialAnchor)
+    if ($pIdx -lt 0) { throw 'transcribe_partial_audio anchor not found for reset_session' }
+    $content = $content.Insert($pIdx, $resetFn)
+}
+if ($content -notmatch 'session_id: Option<String>' -or $content -notmatch 'struct PartialAudioReq') {
+    $content = $content -replace '(struct PartialAudioReq \{\r?\n\s+audio_base64: String,)', "`$1`n    session_id: Option<String>,"
+}
+if ($content -notmatch 'req_session_id') {
+    $content = $content -replace '(let audio_b64\s+= req\.audio_base64\.clone\(\);)', "`$1`n    let req_session_id = req.session_id.clone();"
+    $oldPartialStore = '*state_arc.last_partial.lock().unwrap() = Some((text, std::time::Instant::now()));'
+    $newPartialStore = @'
+                let active_sid = state_arc.voice_session_id.lock().unwrap().clone();
+                let store = match (&active_sid, &req_session_id) {
+                    (Some(active), Some(req_sid)) if active == req_sid => true,
+                    (Some(_), None) => false,
+                    (None, _) => false,
+                    _ => false,
+                };
+                if store {
+                    *state_arc.last_partial.lock().unwrap() = Some((text, std::time::Instant::now()));
+                }
+'@
+    if ($content.IndexOf($oldPartialStore) -lt 0) { throw 'partial store anchor not found' }
+    $content = $content.Replace($oldPartialStore, $newPartialStore)
+}
+if ($content -match 'async fn transcribe_last_partial' -and $content -notmatch 'session_id.*transcribe_last_partial') {
+    $content = $content -replace '(async fn transcribe_last_partial\(state: web::Data<Arc<AppState>>\) -> HttpResponse \{\s+let g = state\.last_partial\.lock\(\)\.unwrap\(\);)', @'
+async fn transcribe_last_partial(state: web::Data<Arc<AppState>>) -> HttpResponse {
+    let sid = state.voice_session_id.lock().unwrap().clone().unwrap_or_default();
+    let g = state.last_partial.lock().unwrap();
+'@
+    $content = $content -replace '("text": text,\s+"age_ms": at\.elapsed\(\)\.as_millis\(\) as u64,)', '"text": text, "session_id": sid, "age_ms": at.elapsed().as_millis() as u64,'
+    $content = $content -replace '("text": "",\s+"age_ms": null,)', '"text": "", "session_id": sid, "age_ms": null,'
+}
+if ($content -notmatch '\.route\("/transcribe/reset_session"') {
+    $routeNeedle = '.route("/transcribe/last_partial",       web::get().to(transcribe_last_partial))'
+    $routeInsert = @'
+.route("/transcribe/last_partial",       web::get().to(transcribe_last_partial))
+            .route("/transcribe/reset_session",    web::post().to(transcribe_reset_session))
+'@
+    if ($content.IndexOf($routeNeedle) -lt 0) { throw 'last_partial route anchor not found for reset_session' }
+    $content = $content.Replace($routeNeedle, $routeInsert)
+}
+Write-Host 'DESKTOP_VOICE_HELPER_SESSION_RESET'
+if ($content -notmatch '\.route\("/transcribe/reset_session"') {
+    throw 'DESKTOP_VOICE_HELPER_SESSION_RESET_ROUTE_MISSING'
+}
+if ($content -notmatch 'voice_session_id:') {
+    throw 'DESKTOP_VOICE_HELPER_VOICE_SESSION_ID_FIELD_MISSING'
+}
 
 Set-Content -Encoding UTF8 -NoNewline -Path $mainRs -Value $content
 Copy-Item -Force $captureSrc $captureDst

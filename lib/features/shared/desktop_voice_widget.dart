@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_confirmation_timer.dart';
+import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
+import 'package:counter/core/services/desktop_voice_session.dart';
 import 'package:counter/core/navigation/app_navigator.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
 import 'package:counter/core/services/desktop_voice_native_overlay.dart';
@@ -82,6 +84,9 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
   bool _commitInFlight = false;
   DesktopVoiceCorrectionSession? _correctionSession;
   String? _pendingCommandId;
+  DesktopVoiceSession? _voiceSession;
+  bool _earlyPendingShown = false;
+  int _writeCallCount = 0;
 
   double _micLevel = 0;
   bool _audioLevelSeen = false;
@@ -143,6 +148,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     DesktopVoiceNativeOverlay.onCloseRequested = null;
     DesktopVoiceNativeOverlay.onBodyClicked = null;
     _confirmTimer.cancel();
+    DesktopVoiceSessionRegistry.end(reason: 'dispose');
+    _helper.endVoiceSession();
     DesktopVoiceOverlayBridge.clearSession();
     _listenTimer?.cancel();
     _uiTimer?.cancel();
@@ -176,6 +183,38 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     if (!mounted || _sessionCancelled) return;
 
     DesktopVoiceAudioCapture.instance.noteHotkeyReceived();
+    _voiceSession = DesktopVoiceSessionRegistry.begin();
+    _pendingCommandId = null;
+    _earlyPendingShown = false;
+    _correctionOpen = false;
+    _correctionSession = null;
+    _confirmTimer.cancel();
+    await _helper.beginVoiceSession(_voiceSession!.id);
+    DesktopVoicePipeline.mark('pending_session_id', _voiceSession!.id);
+
+    _helper.onFirstCandidate = (text, engineId) {
+      if (!mounted || _sessionCancelled) return;
+      if (_voiceSession?.id != DesktopVoiceSessionRegistry.active?.id) return;
+      unawaited(_maybeEnterEarlyPending(text));
+    };
+    _helper.evaluateCommandCandidate = (text) {
+      final parsed = parseVoiceCommand(
+        rules: widget.categoryRules,
+        transcript: text,
+        taskTitleHints: _lastGlossary?.taskTitles ?? const [],
+      );
+      final useful = DesktopVoiceContaminationGate.isUsefulCandidate(
+        transcript: text,
+        categoryRules: widget.categoryRules,
+        parsed: parsed,
+      );
+      return (
+        useful: useful,
+        parseStatus:
+            '${parsed.confidence.name}${parsed.ambiguityReason == null ? '' : ':${parsed.ambiguityReason}'}',
+      );
+    };
+
     DesktopVoiceAudioCapture.instance.onReadyCuePlayed = () {
       if (!mounted || _sessionCancelled) return;
       if (_phase != DesktopVoiceOverlayPhase.listening) return;
@@ -195,20 +234,6 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     if (_sessionCancelled || !mounted) return;
 
     _helper.prewarmRecognizerInBackground();
-    _helper.evaluateCommandCandidate = (text) {
-      final parsed = parseVoiceCommand(
-        rules: widget.categoryRules,
-        transcript: text,
-        taskTitleHints: _lastGlossary?.taskTitles ?? const [],
-      );
-      final useful = parsed.isSafeToStart &&
-          parsed.confidence == VoiceCommandMatchConfidence.exact;
-      return (
-        useful: useful,
-        parseStatus:
-            '${parsed.confidence.name}${parsed.ambiguityReason == null ? '' : ':${parsed.ambiguityReason}'}',
-      );
-    };
 
     final started = await _recognizer!.startCapture();
     DesktopVoiceLog.instance.mark(
@@ -426,6 +451,24 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     // later rejects is visible in the runtime smoke log (root-cause tracing).
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIPT_RECEIVED', _transcript);
     DesktopVoiceAttemptLog.instance.recordTranscript(_transcript);
+    if (_earlyPendingShown &&
+        _phase == DesktopVoiceOverlayPhase.pendingConfirmation) {
+      final gate = DesktopVoiceContaminationGate.evaluate(
+        transcript: _transcript,
+        categoryRules: widget.categoryRules,
+      );
+      if (gate.detected) {
+        _confirmTimer.cancel();
+        _failFriendly(
+          null,
+          message: t(loc, 'desktop_voice_session_contaminated'),
+          diag: gate.reason ?? 'contaminated_final',
+          stage: DesktopVoiceErrorStage.parsing,
+          kind: DesktopVoiceFailureKind.parserRejected,
+        );
+      }
+      return;
+    }
     await _parseTranscript();
   }
 
@@ -435,6 +478,27 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIPT_EMPTY');
       return;
     }
+
+    final contamination = DesktopVoiceContaminationGate.evaluate(
+      transcript: _transcript,
+      categoryRules: widget.categoryRules,
+    );
+    if (contamination.detected) {
+      DesktopVoicePipeline.mark('write_blocked', 'yes');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_GARBAGE_RECORD');
+      DesktopVoiceAttemptLog.instance.markNotRecognized();
+      _failFriendly(
+        null,
+        message: t(loc, 'desktop_voice_session_contaminated'),
+        diag: contamination.reason ?? 'contaminated',
+        stage: DesktopVoiceErrorStage.parsing,
+        kind: DesktopVoiceFailureKind.parserRejected,
+        autoCloseAfter: const Duration(milliseconds: 2200),
+      );
+      return;
+    }
+    _transcript = contamination.canonicalTranscript;
+
     _setPhase(
       DesktopVoiceOverlayPhase.processing,
       status: t(loc, 'desktop_voice_transcribing'),
@@ -572,6 +636,39 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     return heard.isEmpty
         ? 'Could not recognise the command.'
         : 'Heard: "$heard". Could not match command.';
+  }
+
+  Future<void> _maybeEnterEarlyPending(String text) async {
+    if (_earlyPendingShown) return;
+    if (_phase != DesktopVoiceOverlayPhase.processing &&
+        _phase != DesktopVoiceOverlayPhase.listening) {
+      return;
+    }
+    final loc = currentLocale.value;
+    final gate = DesktopVoiceContaminationGate.evaluate(
+      transcript: text,
+      categoryRules: widget.categoryRules,
+    );
+    if (gate.detected) return;
+    final parsed = parseVoiceCommand(
+      rules: widget.categoryRules,
+      transcript: gate.canonicalTranscript,
+      taskTitleHints: _lastGlossary?.taskTitles ?? const [],
+    );
+    final norm = normalizeDesktopVoiceCommand(parsed);
+    if (norm == null || !norm.autoStartAllowed) return;
+    if (norm.effectiveResult.confidence != VoiceCommandMatchConfidence.exact ||
+        !norm.effectiveResult.isSafeToStart) {
+      return;
+    }
+    _earlyPendingShown = true;
+    _transcript = gate.canonicalTranscript;
+    _setPhase(
+      DesktopVoiceOverlayPhase.processing,
+      status: t(loc, 'desktop_voice_transcribing'),
+    );
+    _enterPendingConfirmation(norm.effectiveResult);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_EARLY_USEFUL_CANDIDATE_PENDING');
   }
 
   void _enterPendingConfirmation(VoiceCommandParseResult parsed) {
@@ -855,6 +952,8 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     _confirmTimer.cancel();
     _correctionOpen = false;
     _correctionSession?.pendingStateCleared = true;
+    DesktopVoiceSessionRegistry.end(reason: 'cancel_pending');
+    _helper.endVoiceSession();
     DesktopVoicePipeline.mark('DESKTOP_VOICE_CURRENT_RECORD_UNCHANGED_ON_FAILURE');
     await DesktopVoiceOverlayService.forceHide();
     if (mounted) widget.onClose();
@@ -901,6 +1000,29 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       return;
     }
     final loc = currentLocale.value;
+    final preWriteGate = DesktopVoiceContaminationGate.evaluate(
+      transcript: _transcript.isNotEmpty ? _transcript : parsed.recordTitle,
+      categoryRules: widget.categoryRules,
+    );
+    if (preWriteGate.detected) {
+      DesktopVoicePipeline.mark('write_blocked', 'yes');
+      DesktopVoicePipeline.mark('write_payload_title', parsed.recordTitle);
+      DesktopVoicePipeline.mark(
+        'write_payload_path',
+        parsed.matchedCategoryDisplayPath ?? '—',
+      );
+      DesktopVoicePipeline.mark('write_session_id', _voiceSession?.id ?? '—');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_CONTAMINATED_TITLE_NOT_WRITTEN');
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_GARBAGE_RECORD');
+      _fail(
+        t(loc, 'desktop_voice_session_contaminated'),
+        diag: preWriteGate.reason ?? 'contaminated',
+      );
+      return;
+    }
+    _writeCallCount++;
+    DesktopVoicePipeline.mark('write_call_count', '$_writeCallCount');
+    DesktopVoicePipeline.mark('write_session_id', _voiceSession?.id ?? '—');
     DesktopVoiceLog.instance.mark('writeRecord_called', 'yes');
     _setPhase(
       DesktopVoiceOverlayPhase.processing,
