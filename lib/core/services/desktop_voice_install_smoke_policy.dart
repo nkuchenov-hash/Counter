@@ -94,4 +94,33 @@ abstract final class DesktopVoiceInstallSmokePolicy {
     const blocked = {'dev', 'unknown', 'df696fc'};
     return blocked.contains(sha);
   }
+
+  /// True when [shortcutTarget] resolves to the same path as [installedExePath].
+  static bool desktopShortcutPointsToInstalled({
+    required String shortcutTarget,
+    required String installedExePath,
+  }) {
+    return _normalizeWinPath(shortcutTarget) ==
+        _normalizeWinPath(installedExePath);
+  }
+
+  /// Dev/build-tree paths must not remain on the desktop shortcut.
+  static bool isStaleShortcutTarget(String target) {
+    final norm = _normalizeWinPath(target);
+    if (norm.isEmpty) return true;
+    if (norm.contains(r'\build\windows\')) return true;
+    if (norm.contains(r'\development\apps\counter\')) return true;
+    if (norm.contains(r'\runner\debug\')) return true;
+    if (norm.contains(r'\runner\release\') &&
+        !norm.contains(r'\programs\counter\')) {
+      return true;
+    }
+    return false;
+  }
+
+  static String _normalizeWinPath(String path) {
+    final trimmed = path.trim().replaceAll('/', r'\');
+    if (trimmed.isEmpty) return '';
+    return trimmed.replaceAll(RegExp(r'\\+$'), '').toLowerCase();
+  }
 }

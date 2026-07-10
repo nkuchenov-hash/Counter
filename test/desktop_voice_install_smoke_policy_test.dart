@@ -126,5 +126,35 @@ void main() {
       expect(DesktopVoiceInstallSmokePolicy.isStaleBuildSha('df696fc'), isTrue);
       expect(DesktopVoiceInstallSmokePolicy.isStaleBuildSha('dev'), isTrue);
     });
+
+    test('desktop shortcut must point to installed exe not dev build', () {
+      const installed =
+          r'C:\Users\me\AppData\Local\Programs\Counter\counter.exe';
+      expect(
+        DesktopVoiceInstallSmokePolicy.desktopShortcutPointsToInstalled(
+          shortcutTarget: installed,
+          installedExePath: installed,
+        ),
+        isTrue,
+      );
+      expect(
+        DesktopVoiceInstallSmokePolicy.desktopShortcutPointsToInstalled(
+          shortcutTarget:
+              r'C:\Users\me\Development\Apps\counter\build\windows\x64\runner\Release\counter.exe',
+          installedExePath: installed,
+        ),
+        isFalse,
+      );
+      expect(
+        DesktopVoiceInstallSmokePolicy.isStaleShortcutTarget(
+          r'C:\Users\me\Development\Apps\counter\build\windows\x64\runner\Release\counter.exe',
+        ),
+        isTrue,
+      );
+      expect(
+        DesktopVoiceInstallSmokePolicy.isStaleShortcutTarget(installed),
+        isFalse,
+      );
+    });
   });
 }

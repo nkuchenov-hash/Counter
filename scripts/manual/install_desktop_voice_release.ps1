@@ -48,6 +48,8 @@ function Test-StaleBuildShaInAppSo {
     return $ascii.Contains('df696fc') -or $ascii.Contains('dev')
 }
 
+. (Join-Path $PSScriptRoot 'desktop_voice_desktop_shortcut.ps1')
+
 Write-Host '=== Desktop Voice Release Install ==='
 $expectedSha = (git rev-parse --short HEAD).Trim()
 $buildTime = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
@@ -132,5 +134,8 @@ if ($embedded -ne $expectedSha) {
 
 Write-Host 'DESKTOP_VOICE_INSTALL_IDENTITY_VERIFIED'
 Write-Host 'DESKTOP_VOICE_NO_MIXED_APP_HELPER_INSTALL'
+
+$null = Ensure-CounterDesktopShortcut
+
 Write-Host "INSTALLED_OK path=$installDir sha=$expectedSha"
 exit 0

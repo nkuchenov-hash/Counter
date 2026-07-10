@@ -53,6 +53,8 @@ function Parse-DiagValue {
     return ''
 }
 
+. (Join-Path $PSScriptRoot 'desktop_voice_desktop_shortcut.ps1')
+
 Write-Host '=== Desktop Voice Installed Smoke (identity) ==='
 Write-Host 'DESKTOP_VOICE_INSTALLED_SMOKE_FAILS_ON_SHA_MISMATCH'
 Write-Host 'DESKTOP_VOICE_INSTALLED_SMOKE_FAILS_ON_MISSING_ENDPOINT_DIAG'
@@ -76,6 +78,14 @@ try {
         Write-Host 'INSTALLED_SMOKE_FAIL reason=helper_missing'
         exit 2
     }
+
+    $shortcutInfo = Get-CounterDesktopShortcutInfo
+    Write-CounterDesktopShortcutSmokeFields $shortcutInfo
+    if (-not $shortcutInfo.DesktopShortcutPointsToInstalledApp) {
+        Write-Host 'INSTALLED_SMOKE_FAIL reason=desktop_shortcut_missing_or_stale'
+        exit 4
+    }
+    Write-Host 'DESKTOP_VOICE_DESKTOP_SHORTCUT_POINTS_TO_INSTALLED_APP'
 
     $appTs = (Get-Item $appSo).LastWriteTime.ToString('o')
     $helperTs = (Get-Item $installedHelper).LastWriteTime.ToString('o')

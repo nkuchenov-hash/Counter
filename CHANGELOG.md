@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-10] - P0 Desktop Voice: desktop shortcut for installed app [engineering]
+
+* **`scripts/manual/desktop_voice_desktop_shortcut.ps1`:** Creates/updates `%USERPROFILE%\Desktop\Counter.lnk` → `%LOCALAPPDATA%\Programs\Counter\counter.exe` (working dir + icon); replaces stale dev/build targets.
+* **`install_desktop_voice_release.ps1` / `smoke_desktop_voice_installed.ps1`:** Install ensures shortcut; smoke verifies `desktop_shortcut_*` fields and fails if not pointing at installed app.
+
 ## [2026-07-09] - P0 Desktop Voice: live UX fail — cue / overlay / correction [engineering]
 
 * **`desktop_voice_ready_cue.dart` + native `PlayReadyCue`:** Replaced silent PowerShell `[console]::beep` with Win32 `PlaySound` WAV click; `ready_cue_played=yes` only when `output_ok`; installed smoke self-test.
