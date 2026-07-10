@@ -252,18 +252,22 @@ class _AppNotesEditorSurfaceState extends State<AppNotesEditorSurface> {
             ),
           ),
           // Persistent formatting toolbar pinned above the keyboard.
-          // Distinct background so it never blends invisibly into the surface.
+          // Distinct background + hairline border so the toolbar is ALWAYS
+          // visually unmistakable on web/mobile (the previous "invisible
+          // toolbar" failure was caused by Quill's toolbar widget collapsing
+          // to zero height; this container now hosts our deterministic custom
+          // toolbar of fixed height 48px).
           Container(
             decoration: BoxDecoration(
-              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              color: scheme.surfaceContainerHighest,
               border: Border(
                 top: BorderSide(
-                  color: scheme.outlineVariant.withValues(alpha: 0.5),
+                  color: scheme.outlineVariant.withValues(alpha: 0.7),
                   width: 1,
                 ),
               ),
             ),
-            padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
             child: AppNotesToolbar(
               controller: widget.quillController,
               actions: widget.toolbarActions,

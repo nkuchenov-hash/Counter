@@ -363,18 +363,7 @@ class _NotesEditorSheetState extends State<NotesEditorSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _MoreSectionHeader(text: t(loc, 'notes_editor_group_primary')),
-              if (widget.onEditDetails != null)
-                ListTile(
-                  leading: const Icon(Icons.tune_rounded),
-                  title: Text(t(loc, 'notes_editor_action_edit_details')),
-                  subtitle:
-                      Text(t(loc, 'notes_editor_action_edit_details_sub')),
-                  onTap: () {
-                    Navigator.of(sheetCtx).pop();
-                    _openEditDetails();
-                  },
-                ),
+              _MoreSectionHeader(text: t(loc, 'notes_editor_group_format')),
               ListTile(
                 leading: const Icon(Icons.content_copy_rounded),
                 title: Text(t(loc, 'notes_editor_action_copy_md')),
@@ -391,7 +380,6 @@ class _NotesEditorSheetState extends State<NotesEditorSheet> {
                   unawaited(_pasteFromMarkdown());
                 },
               ),
-              _MoreSectionHeader(text: t(loc, 'notes_editor_group_format')),
               ListTile(
                 leading: const Icon(Icons.horizontal_rule_rounded),
                 title: Text(t(loc, 'notes_editor_action_insert_divider')),
@@ -400,9 +388,6 @@ class _NotesEditorSheetState extends State<NotesEditorSheet> {
                   _insertDivider();
                 },
               ),
-              // Collapsed "Coming next" group — one row, expands to reveal the
-              // four future affordances so they don't dominate the menu.
-              _ComingNextExpansion(),
               if (_isPersisted && widget.onDeleted != null) ...[
                 _MoreSectionHeader(text: t(loc, 'notes_editor_group_danger')),
                 ListTile(
@@ -428,21 +413,6 @@ class _NotesEditorSheetState extends State<NotesEditorSheet> {
         );
       },
     );
-  }
-
-  Future<void> _openEditDetails() async {
-    // Snapshot the latest draft before closing so the legacy sheet sees it.
-    final draft = _buildDraftTask();
-    if (draft == null) return;
-    DatabaseService.instance.applyOptimisticPlanningTask(draft);
-    DatabaseService.instance.notifyPlanningRefresh(scheduleNetworkRefresh: false);
-    final cb = widget.onEditDetails;
-    final navigator = Navigator.of(context);
-    // Close the Notes editor first so only one modal is open at a time.
-    await navigator.maybePop();
-    if (cb != null) {
-      await cb(draft);
-    }
   }
 
   Future<void> _confirmDelete() async {
@@ -605,7 +575,6 @@ class _NotesEditorSheetState extends State<NotesEditorSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final loc = currentLocale.value;
-    final isWide = MediaQuery.sizeOf(context).width >= 720;
     final scheme = theme.colorScheme;
 
     // Compact top bar: back + center status + More (...).
@@ -689,23 +658,12 @@ class _NotesEditorSheetState extends State<NotesEditorSheet> {
       ],
     );
 
-    if (isWide) {
-      // Center the editor on tablet / desktop / wide web.
-      return Material(
-        color: scheme.surface,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 820),
-            child: body,
-          ),
-        ),
-      );
-    }
-
-    return Material(
-      color: scheme.surface,
-      child: body,
-    );
+    // The sheet does NOT center or constrain itself — the route host owns
+    // layout (full screen on mobile; centered max-width column with a bounded
+    // height on wide screens). Re-wrapping here caused nested
+    // Center/ConstrainedBox + Expanded constraint conflicts that collapsed the
+    // toolbar below the visible viewport on web.
+    return Material(color: scheme.surface, child: body);
   }
 
   // ---- Tags picker (compact sheet) --------------------------------------
@@ -775,162 +733,6 @@ class _MoreSectionHeader extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: 0.4,
         ),
-      ),
-    );
-  }
-}
-
-/// Collapsible "Coming next" group. Renders as ONE compact row by default
-/// (so the four future affordances don't dominate the More menu). Expands on
-/// tap to reveal the four items, each of which opens a calm "not ready yet"
-/// sheet — no fake backend behavior.
-class _ComingNextExpansion extends StatefulWidget {
-  @override
-  State<_ComingNextExpansion> createState() => _ComingNextExpansionState();
-}
-
-class _ComingNextExpansionState extends State<_ComingNextExpansion> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final loc = currentLocale.value;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ListTile(
-          dense: true,
-          leading: Icon(
-            Icons.schedule_rounded,
-            color: scheme.tertiary,
-            size: 22,
-          ),
-          title: Text(
-            t(loc, 'notes_editor_group_future'),
-            style: TextStyle(
-              color: scheme.tertiary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          subtitle: Text(
-            t(loc, 'notes_editor_future_summary'),
-            style: TextStyle(
-              fontSize: 12,
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Icon(
-            _expanded
-                ? Icons.expand_less_rounded
-                : Icons.expand_more_rounded,
-            color: scheme.tertiary,
-          ),
-          onTap: () => setState(() => _expanded = !_expanded),
-        ),
-        if (_expanded)
-          Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _ComingNextTile(
-                  icon: Icons.swap_horiz_rounded,
-                  label: t(loc, 'notes_editor_action_convert_to_plan'),
-                ),
-                _ComingNextTile(
-                  icon: Icons.auto_awesome_rounded,
-                  label: t(loc, 'notes_editor_action_ai_helper'),
-                ),
-                _ComingNextTile(
-                  icon: Icons.ios_share_rounded,
-                  label: t(loc, 'notes_editor_action_share'),
-                ),
-                _ComingNextTile(
-                  icon: Icons.attach_file_rounded,
-                  label: t(loc, 'notes_editor_action_attach'),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-/// A dense "Coming next" tile used inside [_ComingNextExpansion]. Disabled
-/// state is clear via opacity + "soon" badge. Tap opens a calm explanation
-/// sheet — no fake backend behavior.
-class _ComingNextTile extends StatelessWidget {
-  const _ComingNextTile({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final loc = currentLocale.value;
-    return Opacity(
-      opacity: 0.6,
-      child: ListTile(
-        dense: true,
-        visualDensity: VisualDensity.compact,
-        leading: Icon(icon, size: 20),
-        title: Row(
-          children: [
-            Flexible(child: Text(label)),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: scheme.tertiary.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                'soon',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: scheme.tertiary,
-                ),
-              ),
-            ),
-          ],
-        ),
-        onTap: () {
-          showModalBottomSheet<void>(
-            context: context,
-            showDragHandle: true,
-            builder: (c) => Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.schedule_rounded,
-                          color: Theme.of(c).colorScheme.tertiary),
-                      const SizedBox(width: 10),
-                      Text(
-                        t(loc, 'notes_editor_coming_soon_title'),
-                        style: Theme.of(c).textTheme.titleMedium,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    t(loc, 'notes_editor_coming_soon_body'),
-                    style: Theme.of(c).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
       ),
     );
   }

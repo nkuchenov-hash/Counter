@@ -154,7 +154,8 @@ class _NotesEditorRouteHostState extends State<_NotesEditorRouteHost> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final width = MediaQuery.sizeOf(context).width;
+    final mq = MediaQuery.of(context);
+    final width = mq.size.width;
     final isWide = width >= 720;
     final editor = NotesEditorSheet(
       task: widget.task,
@@ -165,36 +166,32 @@ class _NotesEditorRouteHostState extends State<_NotesEditorRouteHost> {
     );
 
     if (!isWide) {
-      // Mobile: full-screen editor, no chrome added.
+      // Mobile/narrow: full-screen editor, no chrome added. The route host
+      // supplies the full screen height; the sheet fills it top-to-bottom.
       return Material(color: scheme.surface, child: editor);
     }
 
-    // Desktop/tablet: centered editor panel over a clean neutral background.
-    // No dimmed/scrim backdrop — just a calm surface.
+    // Desktop/tablet/wide web: a centered editor column with a deterministic
+    // bounded height (full viewport minus safe areas). The sheet itself must
+    // NOT re-center — centering is owned here, exactly once, to avoid nested
+    // Center/ConstrainedBox chains that on web collapsed the toolbar below the
+    // visible area. We do NOT use clipBehavior on an unbounded container.
     return Material(
       color: scheme.surface,
       child: SafeArea(
-        child: Center(
+        child: Align(
+          alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 880),
-            child: Container(
-              decoration: BoxDecoration(
-                color: scheme.surface,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(0),
-                ),
-                border: Border(
-                  left: BorderSide(
-                    color: scheme.outlineVariant.withValues(alpha: 0.4),
-                  ),
-                  right: BorderSide(
-                    color: scheme.outlineVariant.withValues(alpha: 0.4),
-                  ),
-                ),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: editor,
+            constraints: BoxConstraints(
+              maxWidth: 880,
+              // Bounded height = available area. This guarantees the inner
+              // Column's Expanded (body) + fixed toolbar both paint inside the
+              // viewport. Without a bounded height, Expanded can collapse.
+              maxHeight: mq.size.height -
+                  mq.padding.top -
+                  mq.padding.bottom,
             ),
+            child: editor,
           ),
         ),
       ),
