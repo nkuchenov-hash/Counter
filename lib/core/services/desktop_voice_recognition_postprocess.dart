@@ -130,11 +130,15 @@ abstract final class DesktopVoiceRecognitionPostprocess {
   ) {
     final lower = text.toLowerCase();
     if (lower.contains('price reporter')) return text;
-    final needsPrefix = lower.startsWith('southern computer warehouse') ||
+    // Client-first comma grammar (SCW / BLINK / SCW …) — parser resolves Price Reporter.
+    if (lower.startsWith('southern computer warehouse') ||
         lower.startsWith('scw ') ||
         lower == 'scw' ||
         lower.startsWith('blink ') ||
-        lower == 'blink' ||
+        lower == 'blink') {
+      return text;
+    }
+    final needsPrefix =
         (lower.contains('age solutions') && !lower.startsWith('laredo'));
     if (!needsPrefix) return text;
     if (!glossary.terms.any((t) => t.toLowerCase() == 'price reporter')) {

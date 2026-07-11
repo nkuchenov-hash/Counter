@@ -4,6 +4,7 @@ import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_confirmation_timer.dart';
 import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
+import 'package:counter/core/services/desktop_voice_useful_candidate_evaluator.dart';
 import 'package:counter/core/services/desktop_voice_session.dart';
 import 'package:counter/core/navigation/app_navigator.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
@@ -198,20 +199,15 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       unawaited(_maybeEnterEarlyPending(text));
     };
     _helper.evaluateCommandCandidate = (text) {
-      final parsed = parseVoiceCommand(
-        rules: widget.categoryRules,
-        transcript: text,
-        taskTitleHints: _lastGlossary?.taskTitles ?? const [],
-      );
-      final useful = DesktopVoiceContaminationGate.isUsefulCandidate(
+      final eval = DesktopVoiceUsefulCandidateEvaluation.evaluate(
         transcript: text,
         categoryRules: widget.categoryRules,
-        parsed: parsed,
+        glossary: _lastGlossary,
+        taskTitleHints: _lastGlossary?.taskTitles ?? const [],
       );
       return (
-        useful: useful,
-        parseStatus:
-            '${parsed.confidence.name}${parsed.ambiguityReason == null ? '' : ':${parsed.ambiguityReason}'}',
+        useful: eval.pendingEligible,
+        parseStatus: eval.parseStatus,
       );
     };
 

@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-10] - P0 Desktop Voice: warm P95 useful-candidate latency proof [engineering]
+
+* **`desktop_stt_helper_service.dart`:** 100ms session partial poll; session-scoped `_sessionBestPartialUseful`; zero-await cached useful candidate on stop (`DESKTOP_VOICE_IMMEDIATE_STOP_CANDIDATE`).
+* **`desktop_voice_recognition_postprocess.dart`:** Client-first SCW/BLINK comma grammar no longer gets erroneous `Price Reporter` prefix (fixes `Submit` title).
+* **`desktop_voice_real_helper_latency_benchmark.dart` + installed-helper harness:** 20 warm SCW runs against `counter_stt_helper.exe`; P95 `stop_to_useful_candidate_ms` = 0ms (strict `<500ms`); contamination/stale regression scenarios; artifact `benchmark_reports/real_helper_latency_latest.json`.
+
 ## [2026-07-10] - GLM Notes v3: block editor port [product]
 
 * **`lib/data/models/note_document.dart` + `lib/data/plans/notes_brain_helpers.dart`:** Versioned `lifeos_notes_blocks_v1` envelope in `plans.notes_delta`; legacy Quill/plain/checklist migration; `notes_plain` + `checklist` mirrors; pin in `meta.pinned`; `createEmptyNote` backlog optimistic path.

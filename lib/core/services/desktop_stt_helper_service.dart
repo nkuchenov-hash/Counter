@@ -113,6 +113,7 @@ class DesktopSttHelperService {
   String? _activeVoiceSessionId;
   String? _sessionBestPartial;
   Timer? _sessionPartialPollTimer;
+  bool _sessionBestPartialUseful = false;
 
   String? get activeVoiceSessionId => _activeVoiceSessionId;
 
@@ -122,6 +123,7 @@ class DesktopSttHelperService {
     _sessionPartialPollTimer = null;
     _activeVoiceSessionId = sessionId;
     _sessionBestPartial = null;
+    _sessionBestPartialUseful = false;
     _partialText = null;
     _finalText = null;
     _candidateText = null;
@@ -134,7 +136,7 @@ class DesktopSttHelperService {
     DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_COMMAND_RESET_AT_START');
     await _resetHelperSessionState(sessionId);
     _sessionPartialPollTimer = Timer.periodic(
-      const Duration(milliseconds: 350),
+      const Duration(milliseconds: 100),
       (_) => unawaited(_pollSessionPartial()),
     );
   }
@@ -173,6 +175,8 @@ class DesktopSttHelperService {
       partial: hint,
     );
     _partialText = _sessionBestPartial;
+    final eval = evaluateCommandCandidate?.call(_sessionBestPartial!);
+    _sessionBestPartialUseful = eval?.useful ?? false;
     if (_tRecordingStopped == null) {
       // Mid-recording: do not count latency yet; still surface parseable preview.
       return;
@@ -920,6 +924,22 @@ class DesktopSttHelperService {
     onFirstCandidate?.call(trimmed, engineId);
   }
 
+  /// Zero-await stop path: emit mid-recording partial already validated for session.
+  void _tryEmitCachedUsefulCandidateOnStop() {
+    final cached = _sessionBestPartial?.trim();
+    if (cached == null || cached.isEmpty) return;
+    if (!_sessionBestPartialUseful) {
+      final eval = evaluateCommandCandidate?.call(cached);
+      _sessionBestPartialUseful = eval?.useful ?? false;
+    }
+    if (!_sessionBestPartialUseful) return;
+    if (_tFirstCandidateVisible != null) return;
+    _partialText = cached;
+    _emitFirstCandidate(cached, resolveProductionEngine().helperEngineId);
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_STOP_USED_CACHED_SESSION_PARTIAL');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_IMMEDIATE_STOP_CANDIDATE');
+  }
+
   Future<DesktopSttTranscript?> stopAndTranscribe() async {
     _restartAttemptedThisTranscribe = false;
     // Reset stale transcribe-side diagnostics before this attempt.
@@ -967,6 +987,7 @@ class DesktopSttHelperService {
       't_recording_stopped',
       '${_tRecordingStopped!.millisecondsSinceEpoch}',
     );
+    _tryEmitCachedUsefulCandidateOnStop();
     final earlyPartialFuture = _fetchLastPartialHint(requireSessionMatch: true);
     final captureFuture = _capture.stopAndSaveWav();
 
