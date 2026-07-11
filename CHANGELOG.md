@@ -17,6 +17,10 @@
 * **`desktop_voice_recognition_postprocess.dart`:** Client-first SCW/BLINK comma grammar no longer gets erroneous `Price Reporter` prefix (fixes `Submit` title).
 * **`desktop_voice_real_helper_latency_benchmark.dart` + installed-helper harness:** 20 warm SCW runs against `counter_stt_helper.exe`; P95 `stop_to_useful_candidate_ms` = 0ms (strict `<500ms`); contamination/stale regression scenarios; artifact `benchmark_reports/real_helper_latency_latest.json`.
 
+## [2026-07-10] - GLM Notes v3: visual fidelity pass [product]
+
+* **`lib/features/notes/notes_visual_tokens.dart` + editor/library widgets:** GLM-matched spacing, typography, glass surfaces, pill add-block row, accent-filled toolbar buttons, calm top bar, and refined note cards (grid/list).
+
 ## [2026-07-10] - GLM Notes v3: block editor port [product]
 
 * **`lib/data/models/note_document.dart` + `lib/data/plans/notes_brain_helpers.dart`:** Versioned `lifeos_notes_blocks_v1` envelope in `plans.notes_delta`; legacy Quill/plain/checklist migration; `notes_plain` + `checklist` mirrors; pin in `meta.pinned`; `createEmptyNote` backlog optimistic path.

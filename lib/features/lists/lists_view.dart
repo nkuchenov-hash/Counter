@@ -28,6 +28,7 @@ import 'package:counter/features/lists/lists_bulk_actions.dart';
 import 'package:counter/features/lists/lists_empty_state.dart';
 import 'package:counter/features/lists/lists_filters.dart';
 import 'package:counter/features/lists/lists_inline_add.dart';
+import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_library_body.dart';
@@ -1247,7 +1248,7 @@ class _NotesLibraryHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 8, 4),
+      padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -1262,18 +1263,18 @@ class _NotesLibraryHeader extends StatelessWidget {
                     Text(
                       t(locale, 'notes_v3_subtitle'),
                       style: TextStyle(
-                        fontSize: 12,
-                        color: scheme.onSurfaceVariant,
+                        fontSize: 14,
+                        color: notesMutedColor(scheme),
                       ),
                     ),
                     Text(
                       t(locale, 'notes_v3_title'),
-                      style: (theme.textTheme.headlineSmall ??
-                              const TextStyle())
-                          .copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.3,
-                          ),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.4,
+                        height: 1.15,
+                      ),
                     ),
                   ],
                 ),
@@ -1359,14 +1360,14 @@ class _NotesLibraryHeader extends StatelessWidget {
                     )
                   : null,
               filled: true,
-              fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+              fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.42),
               isDense: true,
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: scheme.outlineVariant.withValues(alpha: 0.4),
+                  color: scheme.outlineVariant.withValues(alpha: 0.28),
                 ),
               ),
               focusedBorder: OutlineInputBorder(

@@ -5,6 +5,7 @@
 // and emits tap / pin / done / radial callbacks. No Brain imports.
 
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
 
@@ -105,14 +106,8 @@ class _GridCard extends StatelessWidget {
         opacity: isDone ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: scheme.outlineVariant.withValues(alpha: 0.5),
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+          decoration: notesGlassDecoration(scheme, radius: 16, fillAlpha: 0.42),
+          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
           child: Stack(
             children: [
               // Left accent rail
@@ -121,7 +116,7 @@ class _GridCard extends StatelessWidget {
                 top: 0,
                 bottom: 0,
                 child: Container(
-                  width: 3,
+                  width: 4,
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: const BorderRadius.only(
@@ -244,11 +239,8 @@ class _ListRow extends StatelessWidget {
         opacity: isDone ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
+          decoration: notesGlassDecoration(scheme, radius: 12, fillAlpha: 0.4),
+          padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
           child: Row(
             children: [
               // Accent rail
@@ -434,8 +426,8 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(4),
+        color: notesTintBackground(color),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -645,17 +637,15 @@ class _LargeDoneCheck extends StatelessWidget {
       onTap: onToggle,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 34,
-        height: 34,
+        width: kNotesLargeCheckSize,
+        height: kNotesLargeCheckSize,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isDone ? scheme.primary : scheme.outlineVariant,
+            color: isDone ? scheme.primary : scheme.outlineVariant.withValues(alpha: 0.7),
             width: 2,
           ),
-          color: isDone
-              ? scheme.primary
-              : color.withValues(alpha: 0.08),
+          color: isDone ? scheme.primary : notesTintBackground(color),
         ),
         child: isDone
             ? const Icon(Icons.check_rounded, size: 20, color: Colors.white)
@@ -681,10 +671,10 @@ class _CategoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 34,
-      height: 34,
+      width: kNotesLargeCheckSize,
+      height: kNotesLargeCheckSize,
       decoration: BoxDecoration(
-        color: data.categoryColor.withValues(alpha: 0.14),
+        color: notesTintBackground(data.categoryColor),
         borderRadius: BorderRadius.circular(8),
       ),
       child: data.categoryIconCodePoint != null

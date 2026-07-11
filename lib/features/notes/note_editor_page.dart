@@ -18,6 +18,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/notes/drawing_canvas_page.dart';
+import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:file_selector/file_selector.dart';
@@ -400,10 +401,14 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     final catColor = cat?.colorOrDefault ?? scheme.primary;
     final pinned = _doc.meta.pinned;
     final kb = MediaQuery.viewInsetsOf(context).bottom;
+    final wide = MediaQuery.sizeOf(context).width >= 768;
+    final titleSize = wide ? kNotesTitleSizeWide : kNotesTitleSize;
 
     return Scaffold(
       backgroundColor: scheme.surface,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             _TopBar(
@@ -415,36 +420,42 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               onDelete: _confirmDelete,
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(20, 12, 20, 80),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 720),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: kNotesEditorMaxWidth),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                      kNotesEditorPadH,
+                      kNotesEditorPadV,
+                      kNotesEditorPadH,
+                      0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Title
                         TextField(
                           controller: _titleController,
                           textCapitalization: TextCapitalization.sentences,
                           textInputAction: TextInputAction.next,
-                          style: (theme.textTheme.headlineSmall ??
-                                  const TextStyle())
-                              .copyWith(
-                                fontWeight: FontWeight.w700,
-                                height: 1.2,
-                              ),
+                          style: TextStyle(
+                            fontSize: titleSize,
+                            fontWeight: FontWeight.w700,
+                            height: 1.15,
+                            letterSpacing: -0.3,
+                            color: scheme.onSurface,
+                          ),
                           minLines: 1,
-                          maxLines: 3,
+                          maxLines: 4,
                           decoration: InputDecoration(
                             hintText: t(loc, 'notes_v3_editor_title_hint'),
-                            hintStyle: (theme.textTheme.headlineSmall ??
-                                    const TextStyle())
-                                .copyWith(
-                                  color: scheme.onSurface
-                                      .withValues(alpha: 0.32),
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            hintStyle: TextStyle(
+                              fontSize: titleSize,
+                              fontWeight: FontWeight.w700,
+                              height: 1.15,
+                              letterSpacing: -0.3,
+                              color: notesMutedColor(scheme).withValues(alpha: 0.65),
+                            ),
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
@@ -483,9 +494,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                             loc: loc,
                           ),
                         ],
-                        const SizedBox(height: 12),
-                        // Blocks
-                        for (int i = 0; i < _doc.blocks.length; i++)
+                        const SizedBox(height: 16),
+                        for (int i = 0; i < _doc.blocks.length; i++) ...[
+                          if (i > 0) const SizedBox(height: kNotesBlockGap),
                           _BlockRow(
                             key: ValueKey(_doc.blocks[i].id),
                             block: _doc.blocks[i],
@@ -533,16 +544,21 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                             },
                             loc: loc,
                           ),
+                        ],
                         const SizedBox(height: 12),
-                        // Add-block row
-                        _AddBlockRow(loc: loc, onAdd: _addBlock, onImage: _pickImage, onDraw: () => _openDrawing()),
+                        _AddBlockRow(
+                          loc: loc,
+                          onAdd: _addBlock,
+                          onImage: _pickImage,
+                          onDraw: () => _openDrawing(),
+                        ),
+                        const SizedBox(height: 80),
                       ],
                     ),
                   ),
                 ),
               ),
             ),
-            // Fixed formatting toolbar (always visible)
             _EditorToolbar(
               activeBlock: _activeBlock,
               showColorPicker: _showColorPicker,
@@ -620,58 +636,116 @@ class _TopBar extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: scheme.outlineVariant.withValues(alpha: 0.5),
+              color: scheme.outlineVariant.withValues(alpha: 0.35),
             ),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            TextButton.icon(
+            TextButton(
               onPressed: onDone,
-              icon: const Icon(Icons.arrow_back_rounded, size: 20),
-              label: Text(t(loc, 'notes_v3_editor_done')),
-            ),
-            const SizedBox(width: 4),
-            if (status == _SaveStatus.saving)
-              SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.4,
-                  color: statusColor,
+              style: TextButton.styleFrom(
+                foregroundColor: scheme.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-              )
-            else
-              Icon(Icons.check_rounded, size: 14, color: statusColor),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                statusText,
-                style: TextStyle(fontSize: 12, color: statusColor),
-                overflow: TextOverflow.ellipsis,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.arrow_back_rounded, size: 16),
+                  const SizedBox(width: 4),
+                  Text(t(loc, 'notes_v3_editor_done')),
+                ],
               ),
             ),
+            if (status != _SaveStatus.saved) ...[
+              const SizedBox(width: 8),
+              if (status == _SaveStatus.saving)
+                SizedBox(
+                  width: 10,
+                  height: 10,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    color: scheme.primary.withValues(alpha: 0.7),
+                  ),
+                )
+              else
+                Icon(
+                  status == _SaveStatus.error
+                      ? Icons.error_outline_rounded
+                      : Icons.cloud_off_outlined,
+                  size: 12,
+                  color: statusColor.withValues(alpha: 0.75),
+                ),
+              const SizedBox(width: 4),
+              Text(
+                statusText,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: statusColor.withValues(alpha: 0.75),
+                ),
+              ),
+            ],
             const Spacer(),
-            IconButton(
+            _RoundIconBtn(
               tooltip: pinned
                   ? t(loc, 'notes_v3_editor_unpin')
                   : t(loc, 'notes_v3_editor_pin'),
-              icon: Icon(
-                pinned ? Icons.push_pin_rounded : Icons.push_pin_outlined,
-                size: 20,
-                color: pinned ? scheme.primary : scheme.onSurfaceVariant,
-              ),
-              onPressed: onTogglePin,
+              icon: pinned
+                  ? Icons.push_pin_rounded
+                  : Icons.push_pin_outlined,
+              color: pinned ? scheme.primary : notesMutedColor(scheme),
+              onTap: onTogglePin,
             ),
-            if (canDelete)
-              IconButton(
+            if (canDelete) ...[
+              const SizedBox(width: 4),
+              _RoundIconBtn(
                 tooltip: t(loc, 'notes_v3_editor_delete'),
-                icon: Icon(Icons.delete_outline_rounded,
-                    size: 20, color: scheme.error),
-                onPressed: onDelete,
+                icon: Icons.delete_outline_rounded,
+                color: notesMutedColor(scheme),
+                onTap: onDelete,
               ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoundIconBtn extends StatelessWidget {
+  const _RoundIconBtn({
+    required this.tooltip,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: SizedBox(
+            width: kNotesIconBtnSize,
+            height: kNotesIconBtnSize,
+            child: Icon(icon, size: 16, color: color),
+          ),
         ),
       ),
     );
@@ -702,99 +776,100 @@ class _MetaDataRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final updated = task.updatedAt ?? task.createdAt;
     final when = updated != null ? _formatRelative(updated) : '';
-    return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        if (when.isNotEmpty)
-          Text(
-            t(loc, 'notes_v3_edited').replaceAll('{when}', when),
-            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant),
-          ),
-        InkWell(
-          onTap: onPickCategory,
-          borderRadius: BorderRadius.circular(6),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: catColor.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(6),
+    final muted = notesMutedColor(scheme);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (when.isNotEmpty)
+            Text(
+              t(loc, 'notes_v3_edited').replaceAll('{when}', when),
+              style: TextStyle(fontSize: kNotesMetaSize, color: muted),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (cat?.iconCodePoint != null)
-                  Icon(
-                    IconData(
-                      cat!.iconCodePoint!,
-                      fontFamily: 'MaterialIcons',
-                    ),
-                    size: 11,
-                    color: catColor,
-                  ),
-                if (cat?.iconCodePoint != null) const SizedBox(width: 3),
-                Text(
-                  cat?.name ?? '',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: catColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (task.tags.isNotEmpty)
+          if (when.isNotEmpty)
+            Text('·', style: TextStyle(fontSize: kNotesMetaSize, color: muted)),
           InkWell(
-            onTap: onPickTags,
-            child: Wrap(
-              spacing: 4,
-              runSpacing: 2,
-              children: [
-                for (final tag in task.tags.take(3))
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: (_parseHexColor(tag.color) ?? scheme.primary)
-                          .withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(4),
+            onTap: onPickCategory,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: notesTintBackground(catColor),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (cat?.iconCodePoint != null)
+                    Icon(
+                      IconData(cat!.iconCodePoint!, fontFamily: 'MaterialIcons'),
+                      size: 10,
+                      color: catColor,
                     ),
-                    child: Text(
-                      tag.name,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: _parseHexColor(tag.color) ?? scheme.primary,
+                  if (cat?.iconCodePoint != null) const SizedBox(width: 4),
+                  Text(
+                    cat?.name ?? '',
+                    style: TextStyle(
+                      fontSize: kNotesBadgeSize,
+                      fontWeight: FontWeight.w500,
+                      color: catColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (task.tags.isNotEmpty) ...[
+            Text('·', style: TextStyle(fontSize: kNotesMetaSize, color: muted)),
+            InkWell(
+              onTap: onPickTags,
+              child: Wrap(
+                spacing: 4,
+                runSpacing: 2,
+                children: [
+                  for (final tag in task.tags.take(3))
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: notesTintBackground(
+                          _parseHexColor(tag.color) ?? scheme.primary,
+                        ),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        tag.name,
+                        style: TextStyle(
+                          fontSize: kNotesBadgeSize,
+                          fontWeight: FontWeight.w500,
+                          color: _parseHexColor(tag.color) ?? scheme.primary,
+                        ),
                       ),
                     ),
-                  ),
-                if (task.tags.length > 3)
-                  Text(
-                    '+${task.tags.length - 3}',
-                    style: TextStyle(
-                        fontSize: 10, color: scheme.onSurfaceVariant),
-                  ),
-              ],
+                ],
+              ),
             ),
-          )
-        else
-          TextButton.icon(
-            onPressed: onPickTags,
-            icon: const Icon(Icons.label_outline_rounded, size: 14),
-            label: Text(
-              t(loc, 'notes_v3_editor_open_note'),
-              style: const TextStyle(fontSize: 11),
+          ] else ...[
+            Text('·', style: TextStyle(fontSize: kNotesMetaSize, color: muted)),
+            InkWell(
+              onTap: onPickTags,
+              child: Text(
+                t(loc, 'notes_editor_tags_tooltip'),
+                style: TextStyle(
+                  fontSize: kNotesMetaSize,
+                  color: scheme.primary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
-              minimumSize: const Size(0, 28),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          ),
-      ],
+          ],
+        ],
+      ),
     );
   }
 }
@@ -970,7 +1045,6 @@ class _BlockRowState extends State<_BlockRow> {
   Widget build(BuildContext context) {
     final block = widget.block;
     final scheme = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final loc = widget.loc;
 
     if (block.type == NoteBlockType.image && block.imageData != null) {
@@ -993,58 +1067,60 @@ class _BlockRowState extends State<_BlockRow> {
 
     final isChecklist = block.type == NoteBlockType.checklist;
     final isHeading = block.type == NoteBlockType.heading;
-    final textStyle = (isHeading
-            ? (block.level == 1
-                ? tt.headlineSmall
-                : block.level == 3
-                    ? tt.titleMedium
-                    : tt.titleLarge)
-            : tt.bodyLarge)
-        ?.copyWith(
-          fontWeight:
-              isHeading ? FontWeight.w700 : (block.bold ? FontWeight.w700 : null),
-          fontStyle: block.italic ? FontStyle.italic : null,
-          decoration: block.underline ? TextDecoration.underline : null,
-          color: _parseHexColor(block.color) ?? scheme.onSurface,
-        );
+    final headingSize = block.level == 1
+        ? 24.0
+        : block.level == 3
+            ? 18.0
+            : 20.0;
+    final headingWeight =
+        block.level == 3 ? FontWeight.w600 : FontWeight.w700;
+    final textStyle = TextStyle(
+      fontSize: isHeading ? headingSize : kNotesBodySize,
+      fontWeight: isHeading
+          ? headingWeight
+          : (block.bold ? FontWeight.w700 : FontWeight.w400),
+      fontStyle: block.italic ? FontStyle.italic : null,
+      decoration: block.underline ? TextDecoration.underline : null,
+      color: _parseHexColor(block.color) ?? scheme.onSurface,
+      height: isHeading ? 1.25 : 1.45,
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: widget.onActivate,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
         decoration: BoxDecoration(
-          color: widget.isActive
-              ? scheme.surfaceContainerHighest.withValues(alpha: 0.4)
-              : null,
-          borderRadius: BorderRadius.circular(6),
+          color: widget.isActive ? notesBlockActiveFill(scheme) : null,
+          borderRadius: BorderRadius.circular(8),
         ),
-        padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (isChecklist)
               Padding(
-                padding: const EdgeInsets.only(top: 6, right: 8),
+                padding: const EdgeInsets.only(top: 4, right: 8),
                 child: InkWell(
                   onTap: () =>
                       widget.onUpdate(_BlockPatch(checked: !block.checked)),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(999),
                   child: Container(
-                    width: 20,
-                    height: 20,
+                    width: kNotesCheckCircleSize,
+                    height: kNotesCheckCircleSize,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: block.checked
                             ? scheme.primary
-                            : scheme.outlineVariant,
+                            : scheme.outlineVariant.withValues(alpha: 0.7),
                         width: 2,
                       ),
                       color: block.checked ? scheme.primary : null,
                     ),
                     child: block.checked
-                        ? const Icon(Icons.check_rounded,
-                            size: 12, color: Colors.white)
+                        ? Icon(Icons.check_rounded,
+                            size: 12, color: scheme.onPrimary)
                         : null,
                   ),
                 ),
@@ -1056,21 +1132,31 @@ class _BlockRowState extends State<_BlockRow> {
                 minLines: 1,
                 maxLines: null,
                 textCapitalization: TextCapitalization.sentences,
-                style: textStyle,
+                style: textStyle.copyWith(
+                  decoration: (isChecklist && block.checked)
+                      ? TextDecoration.lineThrough
+                      : textStyle.decoration,
+                  color: (isChecklist && block.checked)
+                      ? notesMutedColor(scheme)
+                      : textStyle.color,
+                ),
                 decoration: InputDecoration(
                   hintText: isChecklist
                       ? t(loc, 'notes_v3_editor_list_item_hint')
                       : isHeading
                           ? t(loc, 'notes_v3_editor_heading_hint')
                           : t(loc, 'notes_v3_editor_start_writing'),
-                  hintStyle: (textStyle ?? tt.bodyMedium)?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.32),
+                  hintStyle: TextStyle(
+                    fontSize: isHeading ? headingSize : kNotesBodySize,
+                    fontWeight: isHeading ? headingWeight : FontWeight.w400,
+                    color: notesMutedColor(scheme).withValues(alpha: 0.65),
+                    height: isHeading ? 1.25 : 1.45,
                   ),
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 2),
                   filled: false,
                 ),
                 onChanged: (v) => widget.onUpdate(_BlockPatch(text: v)),
@@ -1305,40 +1391,34 @@ class _AddBlockRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+      spacing: 4,
+      runSpacing: 4,
       children: [
         _AddButton(
           icon: Icons.add_rounded,
           label: t(loc, 'notes_v3_editor_add_text'),
           onTap: () => onAdd(NoteBlockType.paragraph),
-          scheme: scheme,
         ),
         _AddButton(
           icon: Icons.checklist_rounded,
           label: t(loc, 'notes_v3_editor_add_checklist'),
           onTap: () => onAdd(NoteBlockType.checklist),
-          scheme: scheme,
         ),
         _AddButton(
           icon: Icons.title_rounded,
           label: t(loc, 'notes_v3_editor_add_heading'),
           onTap: () => onAdd(NoteBlockType.heading),
-          scheme: scheme,
         ),
         _AddButton(
           icon: Icons.image_outlined,
           label: t(loc, 'notes_v3_editor_add_image'),
           onTap: onImage,
-          scheme: scheme,
         ),
         _AddButton(
           icon: Icons.draw_outlined,
           label: t(loc, 'notes_v3_editor_add_draw'),
           onTap: onDraw,
-          scheme: scheme,
         ),
       ],
     );
@@ -1350,22 +1430,41 @@ class _AddButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    required this.scheme,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final ColorScheme scheme;
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: Icon(icon, size: 16, color: scheme.onSurfaceVariant),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      onPressed: onTap,
-      visualDensity: VisualDensity.compact,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    final scheme = Theme.of(context).colorScheme;
+    final muted = notesMutedColor(scheme);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Ink(
+          decoration: notesPillDecoration(scheme),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: muted),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1412,7 +1511,7 @@ class _EditorToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surfaceContainerHighest.withValues(alpha: 0.7),
+      color: scheme.surface,
       elevation: 0,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1421,11 +1520,11 @@ class _EditorToolbar extends StatelessWidget {
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: scheme.outlineVariant.withValues(alpha: 0.6),
+                  color: scheme.outlineVariant.withValues(alpha: 0.35),
                 ),
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -1596,25 +1695,30 @@ class _ToolBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 36,
-          height: 36,
-          margin: const EdgeInsets.symmetric(horizontal: 1),
-          decoration: BoxDecoration(
-            color: active
-                ? scheme.primary.withValues(alpha: 0.16)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            constraints: const BoxConstraints(
+              minWidth: kNotesToolBtnSize,
+              minHeight: kNotesToolBtnSize,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            margin: const EdgeInsets.symmetric(horizontal: 1),
+            decoration: BoxDecoration(
+              color: active ? scheme.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            alignment: Alignment.center,
+            child: customChild ??
+                Icon(
+                  icon,
+                  size: 16,
+                  color: active ? scheme.onPrimary : notesMutedColor(scheme),
+                ),
           ),
-          child: customChild ??
-              Icon(
-                icon,
-                size: 20,
-                color: active ? scheme.primary : scheme.onSurfaceVariant,
-              ),
         ),
       ),
     );
