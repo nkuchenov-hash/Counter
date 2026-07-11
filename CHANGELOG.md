@@ -11,6 +11,12 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-10] - GLM Notes v3: block editor port [product]
+
+* **`lib/data/models/note_document.dart` + `lib/data/plans/notes_brain_helpers.dart`:** Versioned `lifeos_notes_blocks_v1` envelope in `plans.notes_delta`; legacy Quill/plain/checklist migration; `notes_plain` + `checklist` mirrors; pin in `meta.pinned`; `createEmptyNote` backlog optimistic path.
+* **`lib/features/notes/` + `lib/features/lists/lists_view.dart`:** GLM v3 Notes library (grid/list, checkbox modes, search, category chips, card previews); full-screen block editor with formatting toolbar, image pick, drawing canvas; card tap → editor; radial menu pin/done; inline add → empty paragraph + editor.
+* **`test/note_document_test.dart`:** Serialization, legacy migration, projection, and malformed JSON coverage.
+
 ## [2026-07-10] - P0 Desktop Voice: session contamination + latency gate [engineering]
 
 * **`desktop_voice_session.dart` + `desktop_stt_helper_service.dart`:** Immutable `voiceSessionId` per hotkey; `/transcribe/reset_session` clears helper `last_partial`; stale async results discarded; session-tagged partials.

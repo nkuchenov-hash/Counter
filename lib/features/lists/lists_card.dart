@@ -351,6 +351,10 @@ class ListsSemicircleMenuOverlay extends StatefulWidget {
     required this.onEdit,
     required this.onSelect,
     required this.onDelete,
+    required this.isPinned,
+    required this.isDone,
+    required this.onTogglePin,
+    required this.onToggleDone,
   });
 
   final Offset anchorCenter;
@@ -358,6 +362,10 @@ class ListsSemicircleMenuOverlay extends StatefulWidget {
   final VoidCallback onEdit;
   final VoidCallback onSelect;
   final VoidCallback onDelete;
+  final bool isPinned;
+  final bool isDone;
+  final VoidCallback onTogglePin;
+  final VoidCallback onToggleDone;
 
   @override
   State<ListsSemicircleMenuOverlay> createState() =>
@@ -482,7 +490,7 @@ class ListsSemicircleMenuOverlayState
     );
 
     double angleForSatellite(int i) {
-      return math.pi + i * (math.pi / 3);
+      return math.pi + i * (math.pi / 4);
     }
 
     return Material(
@@ -525,6 +533,32 @@ class ListsSemicircleMenuOverlayState
                 _labeledAction(
                   index: 2,
                   offsetFromHub: _orbitOffsetLeftArc(angleForSatellite(2)),
+                  icon: widget.isPinned
+                      ? Icons.push_pin_rounded
+                      : Icons.push_pin_outlined,
+                  label: widget.isPinned
+                      ? t(loc, 'notes_v3_editor_unpin')
+                      : t(loc, 'notes_v3_editor_pin'),
+                  background: scheme.tertiaryContainer,
+                  foreground: scheme.onTertiaryContainer,
+                  onTap: widget.onTogglePin,
+                ),
+                _labeledAction(
+                  index: 3,
+                  offsetFromHub: _orbitOffsetLeftArc(angleForSatellite(3)),
+                  icon: widget.isDone
+                      ? Icons.radio_button_checked_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  label: widget.isDone
+                      ? t(loc, 'mark_incomplete')
+                      : t(loc, 'mark_done'),
+                  background: scheme.surfaceContainerHighest,
+                  foreground: scheme.onSurface,
+                  onTap: widget.onToggleDone,
+                ),
+                _labeledAction(
+                  index: 4,
+                  offsetFromHub: _orbitOffsetLeftArc(angleForSatellite(4)),
                   icon: Icons.delete_outline_rounded,
                   label: t(loc, 'delete'),
                   background: scheme.errorContainer,

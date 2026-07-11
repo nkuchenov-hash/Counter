@@ -16,6 +16,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:math' show max;
 
 import 'package:counter/data/category_fuzzy_match.dart';
@@ -29,3 +30,4 @@ part 'models/record.dart';
 part 'models/planning.dart';
 part 'models/tag.dart';
 part 'models/stats.dart';
+part 'models/note_document.dart';

@@ -88,6 +88,8 @@ class PlanningTask {
     this.recurrenceInstanceDateKey,
     this.startUtcInstant,
     this.endUtcInstant,
+    this.createdAt,
+    this.updatedAt,
   })  : date = date ?? _dateFromDateKey(dateKey),
         endDateKey = endDateKey ?? (endDateTime != null ? _dateKeyFromDate(endDateTime) : dateKey),
         subRecordIds = subRecordIds ?? const [],
@@ -168,6 +170,15 @@ class PlanningTask {
 
   /// Stored PocketBase `end_time` as UTC instant.
   final DateTime? endUtcInstant;
+
+  /// PocketBase auto-managed `created` timestamp (engine-level; not in
+  /// DATA_MAP plans listing but present on every collection row). Used by the
+  /// Notes library for relative-time labels and "latest first" sorting.
+  final DateTime? createdAt;
+
+  /// PocketBase auto-managed `updated` timestamp. Drives Notes library
+  /// sort order (pinned first, then by updated desc) and card labels.
+  final DateTime? updatedAt;
 
   /// True when rich notes or legacy plain-only content exists.
   bool get hasNotes {
@@ -367,7 +378,19 @@ class PlanningTask {
       recurrenceInstanceDateKey: _normRecurrenceInstanceKey(
         g('recurrenceInstanceDateKey', 'recurrence_instance_date_key')?.toString(),
       ),
+      createdAt: _parseIsoDateTime(g('createdAt', 'created')),
+      updatedAt: _parseIsoDateTime(g('updatedAt', 'updated')),
     );
+  }
+
+  static DateTime? _parseIsoDateTime(dynamic raw) {
+    if (raw is DateTime) return raw;
+    if (raw is String) {
+      final s = raw.trim();
+      if (s.isEmpty) return null;
+      return DateTime.tryParse(s);
+    }
+    return null;
   }
 
   static String? _normRruleField(String? raw) {
@@ -579,6 +602,8 @@ class PlanningTask {
     DateTime? startUtcInstant,
     DateTime? endUtcInstant,
     bool clearEndUtc = false,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     final eDt = clearEnd ? null : (endDateTime ?? this.endDateTime);
     final eDk = endDateKey ?? (eDt != null ? _dateKeyFromDate(eDt) : (clearEnd ? (dateKey ?? this.dateKey) : this.endDateKey));
@@ -616,6 +641,8 @@ class PlanningTask {
       endUtcInstant: clearEndUtc || clearEnd
           ? null
           : (endUtcInstant ?? this.endUtcInstant),
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

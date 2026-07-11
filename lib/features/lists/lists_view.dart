@@ -28,7 +28,9 @@ import 'package:counter/features/lists/lists_bulk_actions.dart';
 import 'package:counter/features/lists/lists_empty_state.dart';
 import 'package:counter/features/lists/lists_filters.dart';
 import 'package:counter/features/lists/lists_inline_add.dart';
-import 'package:counter/features/shared/notes_editor/notes_editor_launcher.dart';
+import 'package:counter/features/notes/note_editor_page.dart';
+import 'package:counter/features/notes/widgets/note_card.dart';
+import 'package:counter/features/notes/widgets/notes_library_body.dart';
 
 /// Backlog screen: grouped headers by category path, Done + Delete, inline add.
 class ListsPage extends StatefulWidget {
@@ -91,6 +93,12 @@ class _ListsPageState extends State<ListsPage>
   final TextEditingController _notesSearchController = TextEditingController();
   final FocusNode _notesSearchFocus = FocusNode();
 
+  // GLM Notes v3 library view preferences.
+  static const String _kPrefNotesView = 'lifeos.notes.view';
+  static const String _kPrefNotesCheckboxMode = 'lifeos.notes.checkboxMode';
+  NotesLibraryView _notesView = NotesLibraryView.list;
+  bool _notesCheckboxesOn = false;
+
   /// Stable key for backlog rows (matches Planning bulk selection).
   static String _listKey(PlanningTask t) {
     final p = t.planRowIdForBackend.trim();
@@ -120,12 +128,74 @@ class _ListsPageState extends State<ListsPage>
   List<PlanningTask> _applyNotesSearch(List<PlanningTask> in_) {
     final q = _notesSearchQuery.trim().toLowerCase();
     if (q.isEmpty) return in_;
+    final db = DatabaseService.instance;
     return [
       for (final t in in_)
         if (t.title.toLowerCase().contains(q) ||
-            (t.notesPlain ?? '').toLowerCase().contains(q))
+            (t.notesPlain ?? '').toLowerCase().contains(q) ||
+            db.parseNoteDocument(t).blocks.any(
+              (b) => b.hasText && b.text.toLowerCase().contains(q),
+            ) ||
+            t.tags.any((tag) => tag.name.toLowerCase().contains(q)))
           t,
     ];
+  }
+
+  Future<void> _loadNotesLibraryPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final v = prefs.getString(_kPrefNotesView);
+      final c = prefs.getBool(_kPrefNotesCheckboxMode);
+      if (!mounted) return;
+      setState(() {
+        if (v == 'grid') _notesView = NotesLibraryView.grid;
+        if (c == true) _notesCheckboxesOn = true;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _persistNotesView(NotesLibraryView v) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _kPrefNotesView,
+        v == NotesLibraryView.grid ? 'grid' : 'list',
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _persistNotesCheckboxMode(bool on) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kPrefNotesCheckboxMode, on);
+    } catch (_) {}
+  }
+
+  /// GLM v3 sort: unfinished first, pinned first, updated desc, stable fallback.
+  void _notesLibrarySort(List<PlanningTask> list) {
+    final db = DatabaseService.instance;
+    list.sort((a, b) {
+      if (a.isDone != b.isDone) return a.isDone ? 1 : -1;
+      final ap = db.isNotePinned(a);
+      final bp = db.isNotePinned(b);
+      if (ap != bp) return ap ? -1 : 1;
+      final au = a.updatedAt ?? a.createdAt;
+      final bu = b.updatedAt ?? b.createdAt;
+      if (au != null && bu != null) return bu.compareTo(au);
+      if (au != null) return -1;
+      if (bu != null) return 1;
+      return _sortTasks(a, b);
+    });
+  }
+
+  void _openNoteEditor(PlanningTask task) {
+    unawaited(
+      showNoteEditorPage(
+        context: context,
+        task: task,
+        onClosed: _applyBacklogFromBrainSnapshot,
+      ),
+    );
   }
 
   void _syncListsShellFabBulkReserve() {
@@ -296,6 +366,7 @@ class _ListsPageState extends State<ListsPage>
     await CategoryVisibilityPrefs.ensureLoaded();
     await _loadPersistedFilter();
     await _loadChipModeAndPinnedIds();
+    await _loadNotesLibraryPrefs();
     await _maybeMigrateListTagsPrefToUserScope();
     await _loadListTagsForFilter();
     if (!mounted) return;
@@ -338,6 +409,18 @@ class _ListsPageState extends State<ListsPage>
         return ListsSemicircleMenuOverlay(
           anchorCenter: anchorCenter,
           onDismiss: dismiss,
+          isPinned: DatabaseService.instance.isNotePinned(task),
+          isDone: task.isDone,
+          onTogglePin: () {
+            dismiss();
+            DatabaseService.instance.toggleNotePin(task.planRowIdForBackend);
+            setState(() {});
+          },
+          onToggleDone: () {
+            dismiss();
+            DatabaseService.instance.toggleNoteDone(task.planRowIdForBackend);
+            setState(() {});
+          },
           onEdit: () {
             dismiss();
             widget.onEditTask?.call(task);
@@ -713,49 +796,35 @@ class _ListsPageState extends State<ListsPage>
     final key = _listKey(task);
     final isOptimistic =
         task.planRowIdForBackend.startsWith('optimistic-');
-    return BacklogPlanCard(
-      task: task,
-      locale: loc,
-      showTagsStrip: showTagsStrip,
-      selectionMode: _listsSelectMode,
-      isSelected: _selectedListKeys.contains(key),
-      onBodyTap: () {
-        if (_listsSelectMode) {
-          _toggleListKey(key);
-        } else if (isOptimistic) {
-          // Optimistic rows are not persisted yet — fall back to the legacy
-          // edit sheet so the user can finish creating the row safely.
-          widget.onEditTask?.call(task);
-        } else {
-          // Persisted row: Notes editor is the PRIMARY editing experience.
-          unawaited(
-            showNotesEditorSheet(
-              context: context,
-              task: task,
-              onSaved: (updated) {
-                // Brain already applied optimistically + notified; just
-                // refresh the local snapshot so frequency chips update.
-                _applyBacklogFromBrainSnapshot();
-              },
-              onDeleted: (removed) {
-                _applyBacklogFromBrainSnapshot();
-              },
-              onEditDetails: (latest) async {
-                // Open the legacy PlanningTaskEditSheet (schedule,
-                // recurrence, checklist, etc.) for the same row.
-                widget.onEditTask?.call(latest);
-              },
-            ),
-          );
-        }
-      },
-      // Long-press opens the existing radial `...` menu (Edit details,
-      // done toggle, delete, etc.) — same affordance as before.
-      onLongPress: () => _showListsRadialMenu(context, task, key),
-      onToggleDone: (done) => _onListToggleDone(task, done),
-      onDelete: () => unawaited(_confirmAndDelete(task)),
-      onOpenMenu: (anchorCtx) => _showListsRadialMenu(anchorCtx, task, key),
-    );
+    if (_listsSelectMode) {
+      return BacklogPlanCard(
+        task: task,
+        locale: loc,
+        showTagsStrip: showTagsStrip,
+        selectionMode: true,
+        isSelected: _selectedListKeys.contains(key),
+        onBodyTap: () => _toggleListKey(key),
+        onToggleDone: (done) => _onListToggleDone(task, done),
+        onDelete: () => unawaited(_confirmAndDelete(task)),
+        onOpenMenu: (anchorCtx) => _showListsRadialMenu(anchorCtx, task, key),
+      );
+    }
+    if (isOptimistic) {
+      return BacklogPlanCard(
+        task: task,
+        locale: loc,
+        showTagsStrip: showTagsStrip,
+        selectionMode: false,
+        isSelected: false,
+        onBodyTap: () => widget.onEditTask?.call(task),
+        onToggleDone: (done) => _onListToggleDone(task, done),
+        onDelete: () => unawaited(_confirmAndDelete(task)),
+        onOpenMenu: (anchorCtx) => _showListsRadialMenu(anchorCtx, task, key),
+      );
+    }
+    // Persisted notes use the GLM v3 library body at the list level — this
+    // path is only reached in bulk-select mode (handled above).
+    return const SizedBox.shrink();
   }
 
   void _onListToggleDone(PlanningTask task, bool toDone) {
@@ -824,11 +893,6 @@ class _ListsPageState extends State<ListsPage>
 
   void _submitInline() {
     final raw = _inlineController.text.trim();
-    if (raw.isEmpty) return;
-    final stripped = SmartInputParser.backlogTitleFromRaw(raw);
-    final gt = DatabaseService.instance.getCleanTitleAndTags(stripped);
-    final title = gt.title.trim();
-    if (title.isEmpty) return;
     final cat = _effectiveCategoryIdForNewTask();
     if (cat == null) {
       if (!mounted) return;
@@ -840,26 +904,26 @@ class _ListsPageState extends State<ListsPage>
       return;
     }
 
+    var title = '';
+    if (raw.isNotEmpty) {
+      final stripped = SmartInputParser.backlogTitleFromRaw(raw);
+      final gt = DatabaseService.instance.getCleanTitleAndTags(stripped);
+      title = gt.title.trim();
+    }
+
     _inlineController.clear();
     setState(() {});
     unawaited(() async {
       final db = DatabaseService.instance;
-      final ord = await db.nextBacklogPlanningOrder();
-      final ok = await db.addPlanningTask(
-        PlanningTask(
-          id: 0,
-          title: title,
-          categoryId: cat,
-          dateKey: '',
-          order: ord,
-          startTime: null,
-          endDateTime: null,
-          rrule: null,
-        ),
-      );
+      final rowId = await db.createEmptyNote(categoryId: cat, title: title);
       if (!mounted) return;
-      if (!ok) {
+      if (rowId == null) {
         AppSnack.failed();
+        return;
+      }
+      final task = db.getCachedPlanningTaskForEdit(rowId);
+      if (task != null) {
+        _openNoteEditor(task);
       }
     }());
   }
@@ -941,8 +1005,16 @@ class _ListsPageState extends State<ListsPage>
             final hasActiveTagFilter =
                 (_filterTagPbId?.trim() ?? '').isNotEmpty;
             final forGrouping = listBeh == 'archive'
-                ? (flat.where((t) => !t.isDone).toList()..sort(_sortTasks))
-                : _listsApplyCompletionLayout(flat, listBeh);
+                ? () {
+                    final o = flat.where((t) => !t.isDone).toList();
+                    _notesLibrarySort(o);
+                    return o;
+                  }()
+                : () {
+                    final o = _listsApplyCompletionLayout(flat, listBeh);
+                    _notesLibrarySort(o);
+                    return o;
+                  }();
             final archiveSlice = listBeh == 'archive'
                 ? _listsArchiveDoneSlice(flat)
                 : const <PlanningTask>[];
@@ -989,6 +1061,16 @@ class _ListsPageState extends State<ListsPage>
                             visible: forGrouping,
                           ),
                         ),
+                        notesView: _notesView,
+                        checkboxesOn: _notesCheckboxesOn,
+                        onViewChanged: (v) {
+                          setState(() => _notesView = v);
+                          unawaited(_persistNotesView(v));
+                        },
+                        onCheckboxModeChanged: (on) {
+                          setState(() => _notesCheckboxesOn = on);
+                          unawaited(_persistNotesCheckboxMode(on));
+                        },
                       ),
                     ],
                     Expanded(
@@ -1029,111 +1111,78 @@ class _ListsPageState extends State<ListsPage>
                                 ? ListsNoCategoryEmptyPanel(locale: loc)
                                 : _loading
                                 ? const ListsLoadingPanel()
-                                : RefreshIndicator(
+                                : listBodyEmpty
+                                ? (_notesSearchQuery.trim().isNotEmpty
+                                    ? _NotesLibraryEmptyState(
+                                        locale: loc,
+                                        noResults: true,
+                                      )
+                                    : ListsFilteredEmptyPanel(
+                                        locale: loc,
+                                      ))
+                                : _listsSelectMode
+                                ? RefreshIndicator(
                                     onRefresh: _reload,
-                                    child: listBodyEmpty
-                                        ? (_notesSearchQuery.trim().isNotEmpty
-                                            ? _NotesLibraryEmptyState(
-                                                locale: loc,
-                                                noResults: true,
-                                              )
-                                            : ListsFilteredEmptyPanel(
-                                                locale: loc,
-                                              ))
-                                        : CustomScrollView(
-                                            physics:
-                                                const AlwaysScrollableScrollPhysics(),
-                                            slivers: [
-                                              SliverPadding(
-                                                padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                      16,
-                                                      8,
-                                                      16,
-                                                      8,
-                                                    ),
-                                                sliver: SliverReorderableList(
-                                                  itemCount: flatRows.length,
-                                                  onReorder: (oldI, newI) =>
-                                                      _onListsReorder(
-                                                        oldI,
-                                                        newI,
-                                                        listBeh,
-                                                      ),
-                                                  itemBuilder: (context, index) {
-                                                    final row = flatRows[index];
-                                                    final t = row.task;
-                                                    return ReorderableDelayedDragStartListener(
-                                                      key: ValueKey<String>(
-                                                        _listKey(t),
-                                                      ),
-                                                      index: index,
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets.only(
-                                                              bottom: 8,
-                                                            ),
-                                                        child: _listsBacklogCard(
-                                                          t,
-                                                          loc,
-                                                          showTagsStrip:
-                                                              showListTagsOnCards,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
+                                    child: CustomScrollView(
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(),
+                                      slivers: [
+                                        SliverPadding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                            16,
+                                            8,
+                                            16,
+                                            8,
+                                          ),
+                                          sliver: SliverReorderableList(
+                                            itemCount: flatRows.length,
+                                            onReorder: (oldI, newI) =>
+                                                _onListsReorder(
+                                                  oldI,
+                                                  newI,
+                                                  listBeh,
                                                 ),
-                                              ),
-                                              if (archiveSlice.isNotEmpty)
-                                                SliverToBoxAdapter(
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.fromLTRB(
-                                                          16,
-                                                          0,
-                                                          16,
-                                                          24,
-                                                        ),
-                                                    child: ExpansionTile(
-                                                      initiallyExpanded:
-                                                          _listsArchiveSectionExpanded,
-                                                      onExpansionChanged: (x) {
-                                                        setState(
-                                                          () =>
-                                                              _listsArchiveSectionExpanded =
-                                                                  x,
-                                                        );
-                                                      },
-                                                      title: Text(
-                                                        t(
-                                                          loc,
-                                                          'lists_archive_section',
-                                                        ).replaceFirst(
-                                                          '%s',
-                                                          '${archiveSlice.length}',
-                                                        ),
+                                            itemBuilder: (context, index) {
+                                              final row = flatRows[index];
+                                              final t = row.task;
+                                              return ReorderableDelayedDragStartListener(
+                                                key: ValueKey<String>(
+                                                  _listKey(t),
+                                                ),
+                                                index: index,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        bottom: 8,
                                                       ),
-                                                      children: [
-                                                        for (final t
-                                                            in archiveSlice)
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets.only(
-                                                                  bottom: 8,
-                                                                ),
-                                                            child: _listsBacklogCard(
-                                                              t,
-                                                              loc,
-                                                              showTagsStrip:
-                                                                  showListTagsOnCards,
-                                                            ),
-                                                          ),
-                                                      ],
-                                                    ),
+                                                  child: _listsBacklogCard(
+                                                    t,
+                                                    loc,
+                                                    showTagsStrip:
+                                                        showListTagsOnCards,
                                                   ),
                                                 ),
-                                            ],
+                                              );
+                                            },
                                           ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : NotesLibraryBody(
+                                    tasks: [
+                                      ...forGrouping,
+                                      ...archiveSlice,
+                                    ],
+                                    view: _notesView,
+                                    checkboxesOn: _notesCheckboxesOn,
+                                    onTap: _openNoteEditor,
+                                    onLongPress: (t) => _showListsRadialMenu(
+                                      context,
+                                      t,
+                                      _listKey(t),
+                                    ),
+                                    onRefresh: _reload,
                                   ),
                           ),
                         ],
@@ -1172,6 +1221,10 @@ class _NotesLibraryHeader extends StatelessWidget {
     required this.onOpenSettings,
     required this.showExport,
     required this.onExport,
+    required this.notesView,
+    required this.checkboxesOn,
+    required this.onViewChanged,
+    required this.onCheckboxModeChanged,
   });
 
   final String locale;
@@ -1184,6 +1237,10 @@ class _NotesLibraryHeader extends StatelessWidget {
   final VoidCallback onOpenSettings;
   final bool showExport;
   final VoidCallback onExport;
+  final NotesLibraryView notesView;
+  final bool checkboxesOn;
+  final ValueChanged<NotesLibraryView> onViewChanged;
+  final ValueChanged<bool> onCheckboxModeChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1199,14 +1256,62 @@ class _NotesLibraryHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Text(
-                  t(locale, 'notes_library_title'),
-                  style: (theme.textTheme.headlineSmall ??
-                          const TextStyle())
-                      .copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      t(locale, 'notes_v3_subtitle'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurfaceVariant,
                       ),
+                    ),
+                    Text(
+                      t(locale, 'notes_v3_title'),
+                      style: (theme.textTheme.headlineSmall ??
+                              const TextStyle())
+                          .copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: checkboxesOn
+                    ? t(locale, 'notes_v3_checkbox_mode_off')
+                    : t(locale, 'notes_v3_checkbox_mode_on'),
+                onPressed: () => onCheckboxModeChanged(!checkboxesOn),
+                icon: Icon(
+                  checkboxesOn
+                      ? Icons.check_box_rounded
+                      : Icons.check_box_outline_blank_rounded,
+                  size: 20,
+                  color: checkboxesOn ? scheme.primary : scheme.onSurfaceVariant,
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: Row(
+                  children: [
+                    _HeaderSegBtn(
+                      icon: Icons.grid_view_rounded,
+                      selected: notesView == NotesLibraryView.grid,
+                      onTap: () => onViewChanged(NotesLibraryView.grid),
+                      tooltip: t(locale, 'notes_v3_view_grid'),
+                    ),
+                    _HeaderSegBtn(
+                      icon: Icons.view_list_rounded,
+                      selected: notesView == NotesLibraryView.list,
+                      onTap: () => onViewChanged(NotesLibraryView.list),
+                      tooltip: t(locale, 'notes_v3_view_list'),
+                    ),
+                  ],
                 ),
               ),
               if (showExport)
@@ -1227,7 +1332,6 @@ class _NotesLibraryHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // Search field — calm, rounded, no heavy chrome.
           TextField(
             controller: searchController,
             focusNode: searchFocus,
@@ -1236,7 +1340,7 @@ class _NotesLibraryHeader extends StatelessWidget {
             onChanged: onSearchChanged,
             style: theme.textTheme.bodyMedium,
             decoration: InputDecoration(
-              hintText: t(locale, 'notes_library_search_hint'),
+              hintText: t(locale, 'notes_v3_search_hint'),
               hintStyle: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurface.withValues(alpha: 0.4),
               ),
@@ -1257,7 +1361,8 @@ class _NotesLibraryHeader extends StatelessWidget {
               filled: true,
               fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
@@ -1276,13 +1381,52 @@ class _NotesLibraryHeader extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 6, left: 2),
               child: Text(
-                t(locale, 'notes_library_count').replaceAll('{n}', '$notesCount'),
+                t(locale, 'notes_v3_count').replaceAll('{n}', '$notesCount'),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeaderSegBtn extends StatelessWidget {
+  const _HeaderSegBtn({
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: selected ? scheme.primary : Colors.transparent,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+          ),
+        ),
       ),
     );
   }
