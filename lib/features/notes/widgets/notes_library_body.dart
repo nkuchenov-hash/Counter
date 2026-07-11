@@ -5,7 +5,6 @@
 
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
-import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:flutter/material.dart';
 
@@ -52,9 +51,9 @@ class NotesLibraryBody extends StatelessWidget {
     Widget body;
     if (view == NotesLibraryView.grid) {
       body = GridView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 400,
+        padding: const EdgeInsets.only(top: 4, bottom: 24),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
           childAspectRatio: 1.35,
@@ -64,7 +63,7 @@ class NotesLibraryBody extends StatelessWidget {
       );
     } else {
       body = ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        padding: const EdgeInsets.only(top: 4, bottom: 24),
         itemCount: cards.length,
         separatorBuilder: (_, __) => const SizedBox(height: 6),
         itemBuilder: (_, i) => _card(cards[i], db),

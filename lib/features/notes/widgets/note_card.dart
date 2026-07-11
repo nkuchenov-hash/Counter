@@ -5,6 +5,7 @@
 // and emits tap / pin / done / radial callbacks. No Brain imports.
 
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/material.dart';
@@ -106,7 +107,7 @@ class _GridCard extends StatelessWidget {
         opacity: isDone ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          decoration: notesGlassDecoration(scheme, radius: 16, fillAlpha: 0.42),
+          decoration: notesGlmGlassCardDecoration(radius: 16),
           padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
           child: Stack(
             children: [
@@ -239,8 +240,9 @@ class _ListRow extends StatelessWidget {
         opacity: isDone ? 0.5 : 1.0,
         duration: const Duration(milliseconds: 180),
         child: Container(
-          decoration: notesGlassDecoration(scheme, radius: 12, fillAlpha: 0.4),
-          padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+          constraints: const BoxConstraints(minHeight: 80),
+          decoration: notesGlmGlassCardDecoration(radius: 12),
+          padding: const EdgeInsets.fromLTRB(12, 14, 8, 14),
           child: Row(
             children: [
               // Accent rail

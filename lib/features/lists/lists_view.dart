@@ -28,7 +28,7 @@ import 'package:counter/features/lists/lists_bulk_actions.dart';
 import 'package:counter/features/lists/lists_empty_state.dart';
 import 'package:counter/features/lists/lists_filters.dart';
 import 'package:counter/features/lists/lists_inline_add.dart';
-import 'package:counter/features/notes/notes_visual_tokens.dart';
+import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_library_body.dart';
@@ -1024,9 +1024,8 @@ class _ListsPageState extends State<ListsPage>
             final listBodyEmpty = forGrouping.isEmpty && archiveSlice.isEmpty;
             _syncListsShellFabBulkReserve();
             return Scaffold(
-              body: SafeArea(
-                top: false,
-                bottom: false,
+              backgroundColor: Colors.transparent,
+              body: NotesGlmLibraryFrame(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -1247,8 +1246,9 @@ class _NotesLibraryHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final wide = MediaQuery.sizeOf(context).width >= 900;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
+      padding: EdgeInsets.fromLTRB(wide ? 0 : 0, 12, 12, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
@@ -1264,16 +1264,17 @@ class _NotesLibraryHeader extends StatelessWidget {
                       t(locale, 'notes_v3_subtitle'),
                       style: TextStyle(
                         fontSize: 14,
-                        color: notesMutedColor(scheme),
+                        color: kGlmMetaColor,
                       ),
                     ),
                     Text(
                       t(locale, 'notes_v3_title'),
-                      style: const TextStyle(
-                        fontSize: 24,
+                      style: TextStyle(
+                        fontSize: wide ? 30 : 24,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.4,
                         height: 1.15,
+                        color: const Color(0xFF0F172A),
                       ),
                     ),
                   ],

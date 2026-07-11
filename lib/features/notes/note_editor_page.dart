@@ -18,6 +18,7 @@ import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/categories/category_recursive_tree.dart';
 import 'package:counter/features/notes/drawing_canvas_page.dart';
+import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/features/notes/notes_visual_tokens.dart';
 import 'package:counter/features/shared/edit_sheet/sheet_autosave_gate.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -44,10 +45,18 @@ Future<void> showNoteEditorPage({
 }
 
 class NoteEditorPage extends StatefulWidget {
-  const NoteEditorPage({super.key, required this.task, this.onClosed});
+  const NoteEditorPage({
+    super.key,
+    required this.task,
+    this.onClosed,
+    this.parityPreview = false,
+  });
 
   final PlanningTask task;
   final VoidCallback? onClosed;
+
+  /// Visual parity harness: skip network tag load; use fixture metadata only.
+  final bool parityPreview;
 
   @override
   State<NoteEditorPage> createState() => _NoteEditorPageState();
@@ -87,12 +96,18 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       );
     }
     _activeBlockId = _doc.blocks.isNotEmpty ? _doc.blocks.first.id : null;
-    _loadTags();
+    if (!widget.parityPreview) {
+      _loadTags();
+    } else {
+      _tagsLoading = false;
+    }
   }
 
   @override
   void dispose() {
-    _flushSync();
+    if (!widget.parityPreview) {
+      _flushSync();
+    }
     _gate.dispose();
     _titleController.dispose();
     widget.onClosed?.call();
@@ -131,6 +146,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   }
 
   void _syncToBrain() {
+    if (widget.parityPreview) return;
     final title = _titleController.text.trim();
     setState(() => _status = _SaveStatus.saving);
     final doc = _doc;
@@ -394,186 +410,184 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
+    final scheme = Theme.of(context).colorScheme;
     final loc = currentLocale.value;
-    final cat = DatabaseService.instance.getCategoryRuleById(_task.categoryId);
+    final cat = widget.parityPreview
+        ? CategoryRule(
+            id: _task.categoryId,
+            name: 'Personal',
+            colorValue: scheme.primary.toARGB32(),
+          )
+        : DatabaseService.instance.getCategoryRuleById(_task.categoryId);
     final catColor = cat?.colorOrDefault ?? scheme.primary;
     final pinned = _doc.meta.pinned;
     final kb = MediaQuery.viewInsetsOf(context).bottom;
     final wide = MediaQuery.sizeOf(context).width >= 768;
-    final titleSize = wide ? kNotesTitleSizeWide : kNotesTitleSize;
+    final titleSize = wide ? kGlmTitleSizeDesktop : kGlmTitleSizeMobile;
 
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _TopBar(
-              status: _status,
-              pinned: pinned,
-              canDelete: _task.planRowIdForBackend.isNotEmpty,
-              onDone: () => Navigator.of(context).pop(),
-              onTogglePin: _togglePin,
-              onDelete: _confirmDelete,
+    final editorBody = SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        kGlmEditorPadH,
+        kGlmEditorPadV,
+        kGlmEditorPadH,
+        24,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _titleController,
+            textCapitalization: TextCapitalization.sentences,
+            textInputAction: TextInputAction.next,
+            style: TextStyle(
+              fontSize: titleSize,
+              fontWeight: FontWeight.w700,
+              height: 1.12,
+              letterSpacing: -0.5,
+              color: const Color(0xFF0F172A),
             ),
-            Expanded(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: kNotesEditorMaxWidth),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(
-                      kNotesEditorPadH,
-                      kNotesEditorPadV,
-                      kNotesEditorPadH,
-                      0,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _titleController,
-                          textCapitalization: TextCapitalization.sentences,
-                          textInputAction: TextInputAction.next,
-                          style: TextStyle(
-                            fontSize: titleSize,
-                            fontWeight: FontWeight.w700,
-                            height: 1.15,
-                            letterSpacing: -0.3,
-                            color: scheme.onSurface,
-                          ),
-                          minLines: 1,
-                          maxLines: 4,
-                          decoration: InputDecoration(
-                            hintText: t(loc, 'notes_v3_editor_title_hint'),
-                            hintStyle: TextStyle(
-                              fontSize: titleSize,
-                              fontWeight: FontWeight.w700,
-                              height: 1.15,
-                              letterSpacing: -0.3,
-                              color: notesMutedColor(scheme).withValues(alpha: 0.65),
-                            ),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          onChanged: (v) {
-                            _status = _SaveStatus.editing;
-                            _gate.schedule(_syncToBrain);
-                          },
-                        ),
-                        const SizedBox(height: 4),
-                        // Metadata row
-                        _MetaDataRow(
-                          task: _task,
-                          cat: cat,
-                          catColor: catColor,
-                          onPickCategory: _pickCategory,
-                          onPickTags: () => setState(
-                              () => _showTagPicker = !_showTagPicker),
-                          loc: loc,
-                        ),
-                        if (_showCategoryPicker) ...[
-                          const SizedBox(height: 8),
-                          _CategoryPickerSheet(
-                            currentCategoryId: _task.categoryId,
-                          ),
-                        ],
-                        if (_showTagPicker) ...[
-                          const SizedBox(height: 8),
-                          _TagPickerSheet(
-                            selectedTags: _task.tags,
-                            availableTags: _availableTags,
-                            loading: _tagsLoading,
-                            onToggle: _toggleTag,
-                            loc: loc,
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        for (int i = 0; i < _doc.blocks.length; i++) ...[
-                          if (i > 0) const SizedBox(height: kNotesBlockGap),
-                          _BlockRow(
-                            key: ValueKey(_doc.blocks[i].id),
-                            block: _doc.blocks[i],
-                            isActive: _doc.blocks[i].id == _activeBlockId,
-                            canMoveUp: i > 0,
-                            canMoveDown: i < _doc.blocks.length - 1,
-                            onActivate: () => setState(
-                                () => _activeBlockId = _doc.blocks[i].id),
-                            onUpdate: (patch) => _updateBlock(
-                                _doc.blocks[i].id, (b) => b.copyWith(
-                                      type: patch.type ?? b.type,
-                                      text: patch.text ?? b.text,
-                                      checked: patch.checked ?? b.checked,
-                                      level: patch.level ?? b.level,
-                                      bold: patch.bold ?? b.bold,
-                                      italic: patch.italic ?? b.italic,
-                                      underline: patch.underline ?? b.underline,
-                                      color: identical(patch.color, _sentinel)
-                                          ? b.color
-                                          : patch.color as String?,
-                                      imageData: identical(patch.imageData, _sentinel)
-                                          ? b.imageData
-                                          : patch.imageData as String?,
-                                      drawingData:
-                                          identical(patch.drawingData, _sentinel)
-                                              ? b.drawingData
-                                              : patch.drawingData as String?,
-                                    )),
-                            onDelete: () => _deleteBlock(_doc.blocks[i].id),
-                            onMoveUp: () => _moveBlock(_doc.blocks[i].id, -1),
-                            onMoveDown: () => _moveBlock(_doc.blocks[i].id, 1),
-                            onEditDrawing: () =>
-                                _openDrawing(editBlockId: _doc.blocks[i].id),
-                            onEnter: () {
-                              final b = _doc.blocks[i];
-                              if (b.type == NoteBlockType.checklist ||
-                                  b.type == NoteBlockType.paragraph) {
-                                _addBlock(
-                                  b.type == NoteBlockType.checklist
-                                      ? NoteBlockType.checklist
-                                      : NoteBlockType.paragraph,
-                                  afterId: b.id,
-                                );
-                              }
-                            },
-                            loc: loc,
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        _AddBlockRow(
-                          loc: loc,
-                          onAdd: _addBlock,
-                          onImage: _pickImage,
-                          onDraw: () => _openDrawing(),
-                        ),
-                        const SizedBox(height: 80),
-                      ],
-                    ),
-                  ),
-                ),
+            minLines: 1,
+            maxLines: 6,
+            decoration: InputDecoration(
+              hintText: t(loc, 'notes_v3_editor_title_hint'),
+              hintStyle: TextStyle(
+                fontSize: titleSize,
+                fontWeight: FontWeight.w700,
+                height: 1.12,
+                letterSpacing: -0.5,
+                color: kGlmMetaColor.withValues(alpha: 0.55),
               ),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
             ),
-            _EditorToolbar(
-              activeBlock: _activeBlock,
-              showColorPicker: _showColorPicker,
-              onToggleChecklist: _toggleChecklist,
-              onHeading: _setHeading,
-              onToggleFormat: _toggleFormat,
-              onToggleColorPicker: () => setState(
-                  () => _showColorPicker = !_showColorPicker),
-              onSetColor: _setColor,
-              onImage: _pickImage,
-              onDraw: () => _openDrawing(),
+            onChanged: (v) {
+              _status = _SaveStatus.editing;
+              _gate.schedule(_syncToBrain);
+            },
+          ),
+          const SizedBox(height: 8),
+          _MetaDataRow(
+            task: _task,
+            cat: cat,
+            catColor: catColor,
+            onPickCategory: _pickCategory,
+            onPickTags: () =>
+                setState(() => _showTagPicker = !_showTagPicker),
+            loc: loc,
+            parityPreview: widget.parityPreview,
+          ),
+          if (_showCategoryPicker && !widget.parityPreview) ...[
+            const SizedBox(height: 8),
+            _CategoryPickerSheet(currentCategoryId: _task.categoryId),
+          ],
+          if (_showTagPicker && !widget.parityPreview) ...[
+            const SizedBox(height: 8),
+            _TagPickerSheet(
+              selectedTags: _task.tags,
+              availableTags: _availableTags,
+              loading: _tagsLoading,
+              onToggle: _toggleTag,
               loc: loc,
             ),
-            if (kb > 0) SizedBox(height: kb),
           ],
+          const SizedBox(height: 20),
+          for (int i = 0; i < _doc.blocks.length; i++) ...[
+            if (i > 0)
+              SizedBox(
+                height: _doc.blocks[i].type == NoteBlockType.heading
+                    ? 10
+                    : kNotesBlockGap,
+              ),
+            _BlockRow(
+              key: ValueKey(_doc.blocks[i].id),
+              block: _doc.blocks[i],
+              isActive: _doc.blocks[i].id == _activeBlockId,
+              canMoveUp: i > 0,
+              canMoveDown: i < _doc.blocks.length - 1,
+              onActivate: () =>
+                  setState(() => _activeBlockId = _doc.blocks[i].id),
+              onUpdate: (patch) => _updateBlock(
+                _doc.blocks[i].id,
+                (b) => b.copyWith(
+                  type: patch.type ?? b.type,
+                  text: patch.text ?? b.text,
+                  checked: patch.checked ?? b.checked,
+                  level: patch.level ?? b.level,
+                  bold: patch.bold ?? b.bold,
+                  italic: patch.italic ?? b.italic,
+                  underline: patch.underline ?? b.underline,
+                  color: identical(patch.color, _sentinel)
+                      ? b.color
+                      : patch.color as String?,
+                  imageData: identical(patch.imageData, _sentinel)
+                      ? b.imageData
+                      : patch.imageData as String?,
+                  drawingData: identical(patch.drawingData, _sentinel)
+                      ? b.drawingData
+                      : patch.drawingData as String?,
+                ),
+              ),
+              onDelete: () => _deleteBlock(_doc.blocks[i].id),
+              onMoveUp: () => _moveBlock(_doc.blocks[i].id, -1),
+              onMoveDown: () => _moveBlock(_doc.blocks[i].id, 1),
+              onEditDrawing: () =>
+                  _openDrawing(editBlockId: _doc.blocks[i].id),
+              onEnter: () {
+                final b = _doc.blocks[i];
+                if (b.type == NoteBlockType.checklist ||
+                    b.type == NoteBlockType.paragraph) {
+                  _addBlock(
+                    b.type == NoteBlockType.checklist
+                        ? NoteBlockType.checklist
+                        : NoteBlockType.paragraph,
+                    afterId: b.id,
+                  );
+                }
+              },
+              loc: loc,
+            ),
+          ],
+          const SizedBox(height: 12),
+          _AddBlockRow(
+            loc: loc,
+            onAdd: _addBlock,
+            onImage: _pickImage,
+            onDraw: () => _openDrawing(),
+          ),
+        ],
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: false,
+      body: NotesGlmEditorFrame(
+        keyboardInset: kb,
+        topBar: _TopBar(
+          status: _status,
+          pinned: pinned,
+          canDelete: !widget.parityPreview &&
+              _task.planRowIdForBackend.isNotEmpty,
+          onDone: () => Navigator.of(context).pop(),
+          onTogglePin: _togglePin,
+          onDelete: _confirmDelete,
+        ),
+        body: editorBody,
+        toolbar: _EditorToolbar(
+          activeBlock: _activeBlock,
+          showColorPicker: _showColorPicker,
+          onToggleChecklist: _toggleChecklist,
+          onHeading: _setHeading,
+          onToggleFormat: _toggleFormat,
+          onToggleColorPicker: () =>
+              setState(() => _showColorPicker = !_showColorPicker),
+          onSetColor: _setColor,
+          onImage: _pickImage,
+          onDraw: () => _openDrawing(),
+          loc: loc,
         ),
       ),
     );
@@ -630,17 +644,18 @@ class _TopBar extends StatelessWidget {
         break;
     }
     return Material(
-      color: scheme.surface,
+      color: Colors.transparent,
       elevation: 0,
       child: Container(
+        height: kGlmTopBarHeight,
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
-              color: scheme.outlineVariant.withValues(alpha: 0.35),
+              color: const Color(0xFFE8ECF4).withValues(alpha: 0.9),
             ),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(
           children: [
             TextButton(
@@ -762,6 +777,7 @@ class _MetaDataRow extends StatelessWidget {
     required this.onPickCategory,
     required this.onPickTags,
     required this.loc,
+    this.parityPreview = false,
   });
 
   final PlanningTask task;
@@ -770,106 +786,116 @@ class _MetaDataRow extends StatelessWidget {
   final VoidCallback onPickCategory;
   final VoidCallback onPickTags;
   final String loc;
+  final bool parityPreview;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final updated = task.updatedAt ?? task.createdAt;
     final when = updated != null ? _formatRelative(updated) : '';
-    final muted = notesMutedColor(scheme);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 6,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          if (when.isNotEmpty)
-            Text(
-              t(loc, 'notes_v3_edited').replaceAll('{when}', when),
-              style: TextStyle(fontSize: kNotesMetaSize, color: muted),
+    final tags = parityPreview
+        ? [const Tag(tagId: 1, name: 'routine', color: '#6366F1')]
+        : task.tags;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (when.isNotEmpty)
+          Text(
+            parityPreview
+                ? 'Edited $when'
+                : t(loc, 'notes_v3_edited').replaceAll('{when}', when),
+            style: const TextStyle(
+              fontSize: kGlmMetaSize,
+              color: kGlmMetaColor,
+              height: 1.3,
             ),
-          if (when.isNotEmpty)
-            Text('·', style: TextStyle(fontSize: kNotesMetaSize, color: muted)),
-          InkWell(
-            onTap: onPickCategory,
-            borderRadius: BorderRadius.circular(6),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: notesTintBackground(catColor),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (cat?.iconCodePoint != null)
-                    Icon(
-                      IconData(cat!.iconCodePoint!, fontFamily: 'MaterialIcons'),
-                      size: 10,
-                      color: catColor,
+          ),
+        if (when.isNotEmpty)
+          const Text(
+            '·',
+            style: TextStyle(fontSize: kGlmMetaSize, color: kGlmMetaColor),
+          ),
+        InkWell(
+          onTap: onPickCategory,
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: notesTintBackground(catColor),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (cat?.iconCodePoint != null)
+                  Icon(
+                    IconData(cat!.iconCodePoint!, fontFamily: 'MaterialIcons'),
+                    size: 10,
+                    color: catColor,
+                  ),
+                if (cat?.iconCodePoint != null) const SizedBox(width: 4),
+                Text(
+                  cat?.name ?? '',
+                  style: TextStyle(
+                    fontSize: kNotesBadgeSize,
+                    fontWeight: FontWeight.w500,
+                    color: catColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (tags.isNotEmpty) ...[
+          const Text(
+            '·',
+            style: TextStyle(fontSize: kGlmMetaSize, color: kGlmMetaColor),
+          ),
+          Wrap(
+            spacing: 4,
+            runSpacing: 2,
+            children: [
+              for (final tag in tags.take(3))
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: notesTintBackground(
+                      _parseHexColor(tag.color) ?? scheme.primary,
                     ),
-                  if (cat?.iconCodePoint != null) const SizedBox(width: 4),
-                  Text(
-                    cat?.name ?? '',
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    tag.name,
                     style: TextStyle(
                       fontSize: kNotesBadgeSize,
                       fontWeight: FontWeight.w500,
-                      color: catColor,
+                      color: _parseHexColor(tag.color) ?? scheme.primary,
                     ),
                   ),
-                ],
+                ),
+            ],
+          ),
+        ] else if (!parityPreview) ...[
+          const Text(
+            '·',
+            style: TextStyle(fontSize: kGlmMetaSize, color: kGlmMetaColor),
+          ),
+          InkWell(
+            onTap: onPickTags,
+            child: Text(
+              t(loc, 'notes_editor_tags_tooltip'),
+              style: TextStyle(
+                fontSize: kGlmMetaSize,
+                color: scheme.primary,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
-          if (task.tags.isNotEmpty) ...[
-            Text('·', style: TextStyle(fontSize: kNotesMetaSize, color: muted)),
-            InkWell(
-              onTap: onPickTags,
-              child: Wrap(
-                spacing: 4,
-                runSpacing: 2,
-                children: [
-                  for (final tag in task.tags.take(3))
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: notesTintBackground(
-                          _parseHexColor(tag.color) ?? scheme.primary,
-                        ),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        tag.name,
-                        style: TextStyle(
-                          fontSize: kNotesBadgeSize,
-                          fontWeight: FontWeight.w500,
-                          color: _parseHexColor(tag.color) ?? scheme.primary,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ] else ...[
-            Text('·', style: TextStyle(fontSize: kNotesMetaSize, color: muted)),
-            InkWell(
-              onTap: onPickTags,
-              child: Text(
-                t(loc, 'notes_editor_tags_tooltip'),
-                style: TextStyle(
-                  fontSize: kNotesMetaSize,
-                  color: scheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
         ],
-      ),
+      ],
     );
   }
 }
@@ -1068,33 +1094,37 @@ class _BlockRowState extends State<_BlockRow> {
     final isChecklist = block.type == NoteBlockType.checklist;
     final isHeading = block.type == NoteBlockType.heading;
     final headingSize = block.level == 1
-        ? 24.0
+        ? 26.0
         : block.level == 3
-            ? 18.0
-            : 20.0;
+            ? 19.0
+            : 22.0;
     final headingWeight =
         block.level == 3 ? FontWeight.w600 : FontWeight.w700;
     final textStyle = TextStyle(
-      fontSize: isHeading ? headingSize : kNotesBodySize,
+      fontSize: isHeading ? headingSize : kGlmBodySize,
       fontWeight: isHeading
           ? headingWeight
           : (block.bold ? FontWeight.w700 : FontWeight.w400),
       fontStyle: block.italic ? FontStyle.italic : null,
       decoration: block.underline ? TextDecoration.underline : null,
-      color: _parseHexColor(block.color) ?? scheme.onSurface,
+      color: _parseHexColor(block.color) ??
+          (isChecklist && block.checked
+              ? kGlmMetaColor
+              : const Color(0xFF1E293B)),
       height: isHeading ? 1.25 : 1.45,
     );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: widget.onActivate,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        decoration: BoxDecoration(
-          color: widget.isActive ? notesBlockActiveFill(scheme) : null,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+      child: Container(
+        decoration: widget.isActive
+            ? BoxDecoration(
+                color: kGlmActiveBlockWash,
+                borderRadius: BorderRadius.circular(8),
+              )
+            : null,
+        padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1137,7 +1167,7 @@ class _BlockRowState extends State<_BlockRow> {
                       ? TextDecoration.lineThrough
                       : textStyle.decoration,
                   color: (isChecklist && block.checked)
-                      ? notesMutedColor(scheme)
+                      ? kGlmMetaColor
                       : textStyle.color,
                 ),
                 decoration: InputDecoration(
@@ -1147,9 +1177,9 @@ class _BlockRowState extends State<_BlockRow> {
                           ? t(loc, 'notes_v3_editor_heading_hint')
                           : t(loc, 'notes_v3_editor_start_writing'),
                   hintStyle: TextStyle(
-                    fontSize: isHeading ? headingSize : kNotesBodySize,
+                    fontSize: isHeading ? headingSize : kGlmBodySize,
                     fontWeight: isHeading ? headingWeight : FontWeight.w400,
-                    color: notesMutedColor(scheme).withValues(alpha: 0.65),
+                    color: kGlmMetaColor.withValues(alpha: 0.65),
                     height: isHeading ? 1.25 : 1.45,
                   ),
                   border: InputBorder.none,
@@ -1439,20 +1469,21 @@ class _AddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final muted = notesMutedColor(scheme);
+    final muted = kGlmPillTextColor;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Ink(
-          decoration: notesPillDecoration(scheme),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: notesGlmGlassPillDecoration(),
+          height: kGlmPillHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 14, color: muted),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
@@ -1511,24 +1542,27 @@ class _EditorToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surface,
+      color: Colors.transparent,
       elevation: 0,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
+            height: kGlmToolbarHeight,
             decoration: BoxDecoration(
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.55),
               border: Border(
                 top: BorderSide(
-                  color: scheme.outlineVariant.withValues(alpha: 0.35),
+                  color: const Color(0xFFE8ECF4).withValues(alpha: 0.95),
                 ),
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Center(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
                   _ToolBtn(
                     icon: Icons.checklist_rounded,
                     label: t(loc, 'notes_v3_editor_checklist_toggle'),
@@ -1614,7 +1648,9 @@ class _EditorToolbar extends StatelessWidget {
               ),
             ),
           ),
-          if (showColorPicker) _ColorPickerRow(onSetColor: onSetColor, scheme: scheme, loc: loc),
+          ),
+          if (showColorPicker)
+            _ColorPickerRow(onSetColor: onSetColor, scheme: scheme, loc: loc),
         ],
       ),
     );
@@ -1708,7 +1744,7 @@ class _ToolBtn extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 6),
             margin: const EdgeInsets.symmetric(horizontal: 1),
             decoration: BoxDecoration(
-              color: active ? scheme.primary : Colors.transparent,
+              color: active ? const Color(0xFF6366F1) : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
@@ -1716,7 +1752,7 @@ class _ToolBtn extends StatelessWidget {
                 Icon(
                   icon,
                   size: 16,
-                  color: active ? scheme.onPrimary : notesMutedColor(scheme),
+                  color: active ? Colors.white : kGlmPillTextColor,
                 ),
           ),
         ),
