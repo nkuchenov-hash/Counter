@@ -443,7 +443,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     }
 
     DesktopVoiceTranscriptProvenance.logAttempt(
-      partialText: result.partialHint,
+      partialText: _helper.lastDiagnostics.partialText,
       finalText: _transcript,
       effectiveInitialPrompt: DesktopVoiceInitialPrompt.effectivePrompt,
       postprocessedText: result.postprocessedText,
@@ -455,7 +455,7 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     );
     DesktopVoiceTranscriptProvenance.traceCorruptedLogicalMarketing(
       finalText: _transcript,
-      partialText: result.partialHint,
+      partialText: _helper.lastDiagnostics.partialText,
     );
 
     DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMAND_TRANSCRIPT_READY', _transcript);
