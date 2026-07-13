@@ -129,11 +129,31 @@ bool _isIntentionalCategoryStart(
   final segments =
       path.split('>').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
   if (segments.isEmpty) return false;
-  final leafNorm = normalizeCategoryLabel(segments.last);
+  final leaf = segments.last;
+  final leafNorm = normalizeCategoryLabel(leaf);
   if (leafNorm.isEmpty) return false;
   final lower = transcript.toLowerCase();
+  final pathLower = path.toLowerCase();
+
+  // Client warehouse echo without a task token is garbage, not navigation.
+  if (leafNorm.contains('warehouse') &&
+      !RegExp(r'\bdel\s*mod\b|\bdelmod\b|\bsubmit\b', caseSensitive: false)
+          .hasMatch(lower)) {
+    return false;
+  }
+
+  if (pathLower.contains('price reporter')) {
+    return leafNorm == 'planning' && lower.contains('planning');
+  }
+  if (pathLower.contains('blink')) {
+    return lower.contains('blink') || lower.contains('laredo');
+  }
+  if (leafNorm.contains('laredo')) {
+    return lower.contains('laredo');
+  }
+
   if (lower.contains(leafNorm)) return true;
-  final leafWords = segments.last.toLowerCase().split(RegExp(r'\s+'));
+  final leafWords = leaf.toLowerCase().split(RegExp(r'\s+'));
   var hits = 0;
   for (final w in leafWords) {
     if (w.length >= 4 && lower.contains(w)) hits++;
