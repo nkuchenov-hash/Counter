@@ -1,14 +1,15 @@
-import 'package:counter/core/services/desktop_voice_transcript_merge.dart';
+import 'package:counter/core/services/desktop_voice_hallucination_gate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'desktop_voice_test_category_trees.dart';
+
 void main() {
-  group('duplicate segment gate — comma dedupe', () {
-    test('dedupes and Taxis segments', () {
-      const raw =
-          'Logical Marketing, Taxis, and Technical Marketing, and Taxis.';
-      final deduped = DesktopVoiceTranscriptMerge.dedupeCommaSegments(raw);
-      expect(deduped.toLowerCase().split('taxis').length - 1, lessThan(2));
-      expect(deduped.toLowerCase(), isNot(contains('and taxis')));
-    });
+  test('duplicate title segment blocked', () {
+    final r = DesktopVoiceHallucinationGate.evaluate(
+      transcript: 'Logical Marketing Taxis and Taxis',
+      categoryRules: desktopVoiceLogicalMarketingRules(),
+    );
+    expect(r.detected, isTrue);
+    expect(r.duplicateTokens, isNotEmpty);
   });
 }

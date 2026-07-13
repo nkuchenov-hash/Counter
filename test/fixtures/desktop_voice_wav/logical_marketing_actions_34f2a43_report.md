@@ -1,4 +1,4 @@
-# Desktop Voice Logical Marketing failure (34f2a43 live)
+# Desktop Voice Logical Marketing failure fixture (34f2a43 live)
 
 DESKTOP_VOICE_LOGICAL_MARKETING_FAILURE_ARCHIVED
 DESKTOP_VOICE_LOGICAL_MARKETING_FAILURE_REPRODUCED
@@ -8,59 +8,71 @@ DESKTOP_VOICE_CORRUPTED_TITLE_SOURCE_TRACED
 
 Logical Marketing Actions
 
-## Observed result
+## Observed result (live, build 34f2a43)
 
-Logical Marketing - Taxis and Technical Marketing and Taxis
-
-(final STT: `Logical Marketing, Taxis, and Technical Marketing, and Taxis.`)
+**Logical Marketing, Taxis, and Technical Marketing, and Taxis.**
 
 ## Expected
 
 | Field | Value |
 |-------|--------|
-| category/client path | Logical Marketing |
-| task title | Actions |
-| write count before confirm | 0 |
-| final record count after valid confirm | exactly 1 |
+| Category/client path | Logical Marketing (deepest safe match) |
+| Task title | Actions |
+| Write count before confirm | 0 until clean command |
+| Final record count | exactly 1 only after valid confirmation |
 
 ## Forbidden
 
-- Technical Marketing (unspoken insertion)
-- Taxis (misrecognition of Actions + duplicate)
-- second Taxis
+- Inserted **Technical Marketing** (not spoken)
+- **Taxis** instead of **Actions** (whisper mis-hear)
+- Repeated **Taxis**
+- Title **Logical Marketing - Taxis and Technical Marketing and Taxis**
 
-## Diagnostics summary (last_attempt_diag_34f2a43)
+## Root cause (offline trace)
+
+| Fragment | Source | Provenance |
+|----------|--------|------------|
+| Logical Marketing | whisper final | `final` — user speech (correct) |
+| Taxis (first) | whisper final | `final` — mis-hear of **Actions** |
+| Technical Marketing | whisper final | `final` — hallucination (not in neutral prompt; likely acoustic bleed + “Marketing” repetition) |
+| Taxis (second) | whisper final | `final` — duplicate tail hallucination |
+
+**Not caused by:**
+
+- Partial/final concatenation (`partial_text=—`, `used_partial_as_final=no`)
+- Prior session cache (`stop_return_reason=final_inference` only)
+- Parser/postprocess inserting Technical Marketing (raw helper text already corrupted)
+
+**Contributing factors:**
+
+1. **Domain-heavy whisper `initial_prompt`** in installed helper (pre-fix) listed Price Reporter / SCW / BLINK vocabulary → biases hallucinated domain terms.
+2. **No hallucination/duplicate gate** on 4-segment corrupted final → marked `candidate_useful=yes`.
+3. **Latency counted on final inference** (~6856ms) — no rolling useful partial.
+
+## Diagnostics summary (`logical_marketing_actions_34f2a43_diag.txt`)
 
 | Field | Value |
-|-------|-------|
+|-------|--------|
 | build_sha | 34f2a43 |
-| partial_text | — (no rolling partial) |
+| voice_session_id | (see diag at capture) |
+| partial_text | — |
 | final_text | Logical Marketing, Taxis, and Technical Marketing, and Taxis. |
 | candidate_useful (incorrect) | yes |
 | stop_to_useful_candidate_ms | 6856 |
 | final_inference_latency_ms | 2534 |
-| effective initial_prompt (pre-fix) | Price Reporter, Planning, Southern Computer Warehouse, SCW, DEL MOD, … |
 
-## Root cause (offline repro)
-
-1. **Whisper hallucination** — broad domain `initial_prompt` + whisper misheard “Actions” as “Taxis”; invented “Technical Marketing”.
-2. **No partial** — useful candidate only at final inference (~6.8s), not &lt;500ms.
-3. **No hallucination gate** — duplicate Taxis + conflicting marketing scopes not blocked before pending/write.
-4. **Not merge concat** — `partial_text=—`; corruption is in whisper `final_text` only.
-
-## Provenance
-
-| Fragment | Source |
-|----------|--------|
-| Logical Marketing | whisper final (spoken) |
-| Taxis | whisper final (misrecognition of Actions) |
-| Technical Marketing | whisper final (hallucination / prompt bias) |
-| second Taxis | whisper final (duplicate segment) |
-
-## Fix markers
+## Fix markers (this checkpoint)
 
 - DESKTOP_VOICE_INITIAL_PROMPT_DOMAIN_LIST_REMOVED
 - DESKTOP_VOICE_HALLUCINATED_TEXT_BLOCKED
 - DESKTOP_VOICE_DUPLICATE_TITLE_SEGMENT_BLOCKED
+- DESKTOP_VOICE_CONFLICTING_CLIENT_COMMAND_BLOCKED
+- DESKTOP_VOICE_CORRUPTED_TITLE_NOT_WRITTEN
 - DESKTOP_VOICE_FINAL_REPLACES_PARTIAL
 - DESKTOP_VOICE_LOGICAL_MARKETING_EXACT_PARSE
+
+## Fixtures
+
+- `logical_marketing_actions_34f2a43_live.wav`
+- `logical_marketing_actions_34f2a43_live_raw.wav`
+- `logical_marketing_actions_34f2a43_diag.txt`

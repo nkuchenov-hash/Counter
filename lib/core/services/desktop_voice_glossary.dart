@@ -1,4 +1,5 @@
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_voice_hallucination_gate.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/voice_command_parser.dart';
 
@@ -18,15 +19,9 @@ class DesktopVoiceGlossaryPack {
 
   int get termsCount => terms.length;
 
-  /// Compact prompt for cloud STT / Whisper initial context (≤ ~800 chars).
+  /// Compact prompt for cloud STT / Whisper — neutral only (no domain names).
   String toSttPrompt({int maxTerms = 48}) {
-    final buf = <String>[];
-    for (final t in terms.take(maxTerms)) {
-      final s = t.trim();
-      if (s.isEmpty) continue;
-      buf.add(s);
-    }
-    return buf.join(', ');
+    return DesktopVoiceHallucinationGate.neutralWhisperInitialPrompt;
   }
 
   List<String> topTermsForDiagnostics({int n = 12}) =>

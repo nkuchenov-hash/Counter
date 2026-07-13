@@ -4,9 +4,9 @@ import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_confirmation_timer.dart';
 import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
-import 'package:counter/core/services/desktop_voice_initial_prompt.dart';
-import 'package:counter/core/services/desktop_voice_transcript_provenance.dart';
 import 'package:counter/core/services/desktop_voice_useful_candidate_evaluator.dart';
+import 'package:counter/core/services/desktop_voice_transcript_provenance.dart';
+import 'package:counter/core/services/desktop_voice_hallucination_gate.dart';
 import 'package:counter/core/services/desktop_voice_session.dart';
 import 'package:counter/core/navigation/app_navigator.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
@@ -442,22 +442,6 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       return;
     }
 
-    DesktopVoiceTranscriptProvenance.logAttempt(
-      partialText: _helper.lastDiagnostics.partialText,
-      finalText: _transcript,
-      effectiveInitialPrompt: DesktopVoiceInitialPrompt.effectivePrompt,
-      postprocessedText: result.postprocessedText,
-      parserInput: _transcript,
-      parserTitle: null,
-      selectedPath: null,
-      voiceSessionId: _voiceSession?.id,
-      helperSessionId: _helper.activeVoiceSessionId,
-    );
-    DesktopVoiceTranscriptProvenance.traceCorruptedLogicalMarketing(
-      finalText: _transcript,
-      partialText: _helper.lastDiagnostics.partialText,
-    );
-
     DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMAND_TRANSCRIPT_READY', _transcript);
     DesktopVoiceLog.instance.mark('transcript_returned', 'yes');
     DesktopVoiceLog.instance.mark('transcript_text', _transcript);
@@ -465,6 +449,18 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
     // later rejects is visible in the runtime smoke log (root-cause tracing).
     DesktopVoicePipeline.mark('DESKTOP_VOICE_TRANSCRIPT_RECEIVED', _transcript);
     DesktopVoiceAttemptLog.instance.recordTranscript(_transcript);
+    DesktopVoiceTranscriptProvenance.logAttemptSummary(
+      partialText: _helper.lastDiagnostics.partialText,
+      finalText: _transcript,
+      cachedCandidate: _helper.lastDiagnostics.candidateText,
+      effectiveInitialPrompt:
+          DesktopVoiceHallucinationGate.neutralWhisperInitialPrompt,
+      postprocessedText: null,
+      parserInput: null,
+      parserPath: null,
+      parserTitle: null,
+      voiceSessionId: _voiceSession?.id,
+    );
     if (_earlyPendingShown &&
         _phase == DesktopVoiceOverlayPhase.pendingConfirmation) {
       final gate = DesktopVoiceContaminationGate.evaluate(
@@ -501,19 +497,20 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       DesktopVoicePipeline.mark('write_blocked', 'yes');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_GARBAGE_RECORD');
       DesktopVoiceAttemptLog.instance.markNotRecognized();
-      final isHallucination = contamination.reason?.contains('duplicate') == true ||
-          contamination.reason?.contains('conflicting') == true ||
-          contamination.reason?.contains('hallucination') == true ||
-          contamination.reason?.contains('title_not_derivable') == true;
+      final reason = contamination.reason ?? 'contaminated';
+      final hallucinated = reason.contains('duplicate') ||
+          reason.contains('hallucination') ||
+          reason.contains('conflicting') ||
+          reason.contains('marketing');
       _failFriendly(
         null,
         message: t(
           loc,
-          isHallucination
-              ? 'desktop_voice_hallucinated_duplicate_text'
+          hallucinated
+              ? 'desktop_voice_hallucinated_transcript'
               : 'desktop_voice_session_contaminated',
         ),
-        diag: contamination.reason ?? 'contaminated',
+        diag: reason,
         stage: DesktopVoiceErrorStage.parsing,
         kind: DesktopVoiceFailureKind.parserRejected,
         autoCloseAfter: const Duration(milliseconds: 2200),

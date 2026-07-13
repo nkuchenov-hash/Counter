@@ -32,7 +32,7 @@ $content = $content -replace "`r`n", "`n"
 $content = $content -replace 'params\.set_language\(Some\("ru"\)\);', 'params.set_language(Some("en"));'
 $content = $content -replace 'params\.set_initial_prompt\([\s\S]*?\);', @'
 params.set_initial_prompt(
-        "Category name, task title. English command."
+        "English. Short voice task command. Comma-separated scope and action."
     );
 '@
 # Command-VAD parity: benchmark selected NO VAD trim for command-length audio.

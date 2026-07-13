@@ -57,10 +57,25 @@ abstract final class DesktopVoiceContaminationGate {
     required List<CategoryRule> categoryRules,
     String? expectedClientLeafHint,
     Set<String> forbiddenFragments = forbiddenStaleFragments,
+    VoiceCommandParseResult? parsed,
   }) {
     final canonical = DesktopVoiceTranscriptMerge.dedupeCommaSegments(
       transcript.trim(),
     );
+
+    final hallucination = DesktopVoiceHallucinationGate.evaluate(
+      transcript: canonical,
+      categoryRules: categoryRules,
+      parsed: parsed,
+    );
+    if (hallucination.detected) {
+      return _blocked(
+        reason: hallucination.reason ?? 'hallucination',
+        canonical: hallucination.canonicalTranscript,
+        clients: hallucination.conflictingClients,
+        repeated: hallucination.duplicateTokens,
+      );
+    }
 
     final lower = canonical.toLowerCase();
     final staleHits = <String>[];
@@ -108,19 +123,6 @@ abstract final class DesktopVoiceContaminationGate {
       );
     }
 
-    final hallucination = DesktopVoiceHallucinationGate.evaluate(
-      transcript: canonical,
-      categoryRules: categoryRules,
-    );
-    if (hallucination.detected) {
-      return _blocked(
-        reason: hallucination.reason ?? 'hallucination',
-        canonical: hallucination.canonicalTranscript,
-        clients: clientLeaves,
-        repeated: repeated,
-      );
-    }
-
     return DesktopVoiceContaminationResult.clean(
       canonicalTranscript: canonical,
     );
@@ -138,6 +140,7 @@ abstract final class DesktopVoiceContaminationGate {
     final gate = evaluate(
       transcript: transcript,
       categoryRules: categoryRules,
+      parsed: parsed,
     );
     if (gate.detected) {
       DesktopVoicePipeline.mark(

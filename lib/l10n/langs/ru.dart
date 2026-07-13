@@ -683,8 +683,8 @@ const Map<String, String> kRuL10n = {
     'desktop_voice_write_failed': 'Не удалось запустить запись',
     'desktop_voice_session_contaminated':
         'Голосовая сессия сброшена. Задача не создана.',
-    'desktop_voice_hallucinated_duplicate_text':
-        'В результате есть повторы или конфликтующий текст. Задача не создана.',
+    'desktop_voice_hallucinated_transcript':
+        'В голосовом результате дубли или конфликт текста. Задача не создана.',
     'desktop_voice_stale_build_warning':
         'Запущена dev-сборка — установите CounterSetup.exe',
     'desktop_voice_reason_no_root': 'Сначала скажите «Price Reporter», затем клиента и задачу',

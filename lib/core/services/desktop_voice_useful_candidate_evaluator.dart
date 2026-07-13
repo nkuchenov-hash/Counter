@@ -1,5 +1,4 @@
 import 'package:counter/core/services/desktop_voice_command_normalize.dart';
-import 'package:counter/core/services/desktop_voice_hallucination_gate.dart';
 import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
 import 'package:counter/core/services/desktop_voice_recognition_postprocess.dart';
@@ -58,9 +57,16 @@ class DesktopVoiceUsefulCandidateEvaluation {
         ? post.finalCommandText.trim()
         : trimmed;
 
+    final preParsed = parseVoiceCommand(
+      rules: categoryRules,
+      transcript: commandText,
+      taskTitleHints: hints,
+    );
+
     final gate = DesktopVoiceContaminationGate.evaluate(
       transcript: commandText,
       categoryRules: categoryRules,
+      parsed: preParsed,
     );
     if (gate.detected) {
       return DesktopVoiceUsefulCandidateEvaluation(
@@ -73,11 +79,7 @@ class DesktopVoiceUsefulCandidateEvaluation {
     }
 
     final canonical = gate.canonicalTranscript;
-    final parsed = parseVoiceCommand(
-      rules: categoryRules,
-      transcript: canonical,
-      taskTitleHints: hints,
-    );
+    final parsed = preParsed;
     final parseStatus =
         '${parsed.confidence.name}${parsed.ambiguityReason == null ? '' : ':${parsed.ambiguityReason}'}';
 
@@ -86,22 +88,6 @@ class DesktopVoiceUsefulCandidateEvaluation {
       categoryRules: categoryRules,
       parsed: parsed,
     );
-
-    final hallucination = DesktopVoiceHallucinationGate.evaluate(
-      transcript: canonical,
-      categoryRules: categoryRules,
-      parsed: parsed,
-    );
-    if (hallucination.detected) {
-      return DesktopVoiceUsefulCandidateEvaluation(
-        transcript: hallucination.canonicalTranscript,
-        useful: false,
-        parseStatus: parseStatus,
-        contaminationDetected: true,
-        contaminationReason: hallucination.reason,
-        parseResult: parsed,
-      );
-    }
 
     if (!useful) {
       return DesktopVoiceUsefulCandidateEvaluation(
@@ -146,14 +132,4 @@ bool desktopVoicePathMatchesScwDelMod(String? path) {
 bool desktopVoiceTitleIsSubmit(String? title) {
   if (title == null) return false;
   return title.trim().toLowerCase() == 'submit';
-}
-
-bool desktopVoiceTitleIsActions(String? title) {
-  if (title == null) return false;
-  return title.trim().toLowerCase() == 'actions';
-}
-
-bool desktopVoicePathMatchesLogicalMarketing(String? path) {
-  if (path == null || path.isEmpty) return false;
-  return path.toLowerCase().contains('logical marketing');
 }

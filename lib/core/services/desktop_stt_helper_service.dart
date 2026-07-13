@@ -11,6 +11,7 @@ import 'package:counter/core/services/desktop_voice_delayed_transcribe.dart';
 import 'package:counter/core/services/desktop_stt_orchestrator.dart';
 import 'package:counter/core/services/desktop_voice_engine.dart';
 import 'package:counter/core/services/desktop_voice_glossary.dart';
+import 'package:counter/core/services/desktop_voice_hallucination_gate.dart';
 import 'package:counter/core/services/desktop_voice_last_attempt_store.dart';
 import 'package:counter/core/services/desktop_voice_overlay_service.dart';
 import 'package:counter/core/services/desktop_voice_capture_endpoint.dart';
@@ -134,6 +135,12 @@ class DesktopSttHelperService {
     DesktopVoicePipeline.mark('DESKTOP_VOICE_AUDIO_BUFFER_RESET_AT_START');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_PARTIAL_CACHE_RESET_AT_START');
     DesktopVoicePipeline.mark('DESKTOP_VOICE_PENDING_COMMAND_RESET_AT_START');
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_EFFECTIVE_INITIAL_PROMPT_LOGGED');
+    DesktopVoicePipeline.mark(
+      'effective_initial_prompt',
+      DesktopVoiceHallucinationGate.neutralWhisperInitialPrompt,
+    );
+    DesktopVoicePipeline.mark('DESKTOP_VOICE_INITIAL_PROMPT_DOMAIN_LIST_REMOVED');
     await _resetHelperSessionState(sessionId);
     _sessionPartialPollTimer = Timer.periodic(
       const Duration(milliseconds: 100),
@@ -800,7 +807,7 @@ class DesktopSttHelperService {
   }
 
   Future<void> _sendPartialAudio(List<int> bytes) async {
-    if (bytes.length < 32000 || !_ready) return;
+    if (bytes.length < 48000 || !_ready) return;
     final sessionId = _activeVoiceSessionId;
     if (sessionId == null || sessionId.isEmpty) return;
     final rms = pcm16RmsLevel(bytes);

@@ -544,7 +544,7 @@ const Map<String, String> kEnL10n = {
     'desktop_voice_write_failed': 'Could not start the record',
     'desktop_voice_session_contaminated':
         'Voice session was reset. No task was created.',
-    'desktop_voice_hallucinated_duplicate_text':
+    'desktop_voice_hallucinated_transcript':
         'Voice result contained duplicated or conflicting text. No task was created.',
     'desktop_voice_stale_build_warning':
         'Dev build running — install CounterSetup.exe for production voice',
