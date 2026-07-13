@@ -119,6 +119,28 @@ bool _isParentOnlyCategoryEcho(VoiceCommandParseResult parsed) {
   return false;
 }
 
+bool _isIntentionalCategoryStart(
+  String transcript,
+  VoiceCommandParseResult parsed,
+) {
+  if (!_isParentOnlyCategoryEcho(parsed)) return false;
+  final path = parsed.matchedCategoryDisplayPath?.trim() ?? '';
+  if (path.isEmpty) return false;
+  final segments =
+      path.split('>').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+  if (segments.isEmpty) return false;
+  final leafNorm = normalizeCategoryLabel(segments.last);
+  if (leafNorm.isEmpty) return false;
+  final lower = transcript.toLowerCase();
+  if (lower.contains(leafNorm)) return true;
+  final leafWords = segments.last.toLowerCase().split(RegExp(r'\s+'));
+  var hits = 0;
+  for (final w in leafWords) {
+    if (w.length >= 4 && lower.contains(w)) hits++;
+  }
+  return hits >= 2 || (hits == 1 && leafWords.length == 1);
+}
+
 VoiceCommandParseResult _withNormalizedTitle(
   VoiceCommandParseResult parsed,
   String normalizedTitle,
@@ -165,7 +187,8 @@ DesktopVoiceNormalizedCommand? normalizeDesktopVoiceCommand(
   }
 
   final transcript = parsed.originalTranscript.trim();
-  if (_isParentOnlyCategoryEcho(parsed)) {
+  if (_isParentOnlyCategoryEcho(parsed) &&
+      !_isIntentionalCategoryStart(transcript, parsed)) {
     DesktopVoicePipeline.mark(
       'DESKTOP_VOICE_PARENT_ONLY_RECORD_BLOCKED',
       parsed.matchedCategoryDisplayPath ?? parsed.rootLabel,

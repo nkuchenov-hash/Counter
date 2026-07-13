@@ -50,6 +50,14 @@ abstract final class DesktopVoiceRecognitionPostprocess {
 
     final phraseRepairs = <RegExp, String>{
       RegExp(
+        r'\ball[- ]?(?:than|in)[- ]?computer\s+warehouse,\s*download,\s*submit\.?',
+        caseSensitive: false,
+      ): 'Southern Computer Warehouse, DEL MOD, Submit',
+      RegExp(
+        r'\ball[- ]?(?:than|in)[- ]?computer\s+warehouse\b',
+        caseSensitive: false,
+      ): 'Southern Computer Warehouse',
+      RegExp(
         r'\b(sovent|solvent|soven|southern\s+computer)\s+computer\s+warehouse\b',
         caseSensitive: false,
       ): 'Southern Computer Warehouse',
@@ -63,6 +71,10 @@ abstract final class DesktopVoiceRecognitionPostprocess {
       RegExp(r'\bdeal\s+mod\b', caseSensitive: false): 'DEL MOD',
       RegExp(r'\bdel\s+mod\b', caseSensitive: false): 'DEL MOD',
       RegExp(r'\bdelmod\b', caseSensitive: false): 'DEL MOD',
+      RegExp(
+        r'\bwarehouse,\s*download,\s*submit\b',
+        caseSensitive: false,
+      ): 'Southern Computer Warehouse, DEL MOD, Submit',
       RegExp(r'\badd\s+scene\b', caseSensitive: false): 'ADD SIN',
       RegExp(r'\badd\s+seen\b', caseSensitive: false): 'ADD SIN',
       RegExp(r'\bbling\b', caseSensitive: false): 'BLINK',

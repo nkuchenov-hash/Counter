@@ -57,6 +57,34 @@ void main() {
       expect(gate.detected, isFalse);
     });
 
+    test('legitimate BLINK command is not blocked as stale fragment', () {
+      final blinkRules = [
+        CategoryRule(
+          id: 300,
+          name: 'BLINK',
+          backendRowId: 'blinkroot123456',
+          children: [
+            CategoryRule(
+              id: 301,
+              name: 'Laredo Technical Services',
+              backendRowId: 'blinklaredo1234',
+            ),
+          ],
+        ),
+      ];
+      final transcript = 'Blink-Lorado Technical Services.';
+      final parsed = parseVoiceCommand(
+        rules: blinkRules,
+        transcript: transcript,
+      );
+      final gate = DesktopVoiceContaminationGate.evaluate(
+        transcript: transcript,
+        categoryRules: blinkRules,
+        parsed: parsed,
+      );
+      expect(gate.detected, isFalse);
+    });
+
     test('Scenario A — BLINK then SCW: second must not include BLINK', () {
       const scw =
           'Southern Computer Warehouse, DEL MOD, Submit.';

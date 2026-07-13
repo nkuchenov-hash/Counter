@@ -133,3 +133,54 @@ bool desktopVoiceTitleIsSubmit(String? title) {
   if (title == null) return false;
   return title.trim().toLowerCase() == 'submit';
 }
+
+bool desktopVoicePathMatchesLogicalMarketing(String? path) {
+  if (path == null || path.isEmpty) return false;
+  return path.toLowerCase().contains('logical marketing');
+}
+
+bool desktopVoiceTitleIsActions(String? title) {
+  if (title == null) return false;
+  final t = title.trim().toLowerCase();
+  return t == 'actions' || t == 'action';
+}
+
+bool desktopVoicePathMatchesBlinkLaredo(String? path) {
+  if (path == null || path.isEmpty) return false;
+  final lower = path.toLowerCase();
+  return lower.contains('blink') && lower.contains('laredo');
+}
+
+bool desktopVoicePathMatchesPlanning(String? path) {
+  if (path == null || path.isEmpty) return false;
+  return path.toLowerCase().contains('planning');
+}
+
+bool desktopVoicePathMatchesLaredoRoot(String? path) {
+  if (path == null || path.isEmpty) return false;
+  return path.toLowerCase().contains('laredo');
+}
+
+bool desktopVoiceTitleIsAddSin(String? title) {
+  if (title == null) return false;
+  return title.trim().toLowerCase() == 'add sin';
+}
+
+bool desktopVoiceTitleIsEmptyOrPlanning(String? title) {
+  if (title == null || title.trim().isEmpty) return true;
+  return title.trim().toLowerCase() == 'planning';
+}
+
+bool desktopVoiceTranscriptHasForbiddenLmTerms(String? text) {
+  if (text == null || text.isEmpty) return false;
+  final lower = text.toLowerCase();
+  return lower.contains('taxis') ||
+      lower.contains('technical marketing') ||
+      RegExp(r'\bactions\b.*\bactions\b', caseSensitive: false).hasMatch(lower);
+}
+
+bool desktopVoiceTranscriptHasScwBlinkLeakage(String? text) {
+  if (text == null || text.isEmpty) return false;
+  final lower = text.toLowerCase();
+  return lower.contains('blink') || lower.contains('laredo');
+}

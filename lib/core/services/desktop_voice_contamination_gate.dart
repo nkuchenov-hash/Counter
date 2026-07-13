@@ -99,6 +99,15 @@ abstract final class DesktopVoiceContaminationGate {
     }
 
     if (staleHits.isNotEmpty) {
+      final explained = _staleFragmentsExplainedByParse(
+        staleHits,
+        parsed: parsed,
+        categoryRules: categoryRules,
+      );
+      staleHits.removeWhere(explained.contains);
+    }
+
+    if (staleHits.isNotEmpty) {
       return _blocked(
         reason: 'stale_fragment:${staleHits.join('|')}',
         canonical: canonical,
@@ -208,6 +217,37 @@ abstract final class DesktopVoiceContaminationGate {
       }
     }
     return false;
+  }
+
+  static Set<String> _staleFragmentsExplainedByParse(
+    List<String> staleHits, {
+    VoiceCommandParseResult? parsed,
+    required List<CategoryRule> categoryRules,
+  }) {
+    if (parsed == null ||
+        parsed.confidence != VoiceCommandMatchConfidence.exact ||
+        !parsed.isSafeToStart) {
+      return const {};
+    }
+    final path = (parsed.matchedCategoryDisplayPath ?? '').toLowerCase();
+    final title = (parsed.recordTitle ?? '').toLowerCase();
+    final combined = '$path $title';
+    final explained = <String>{};
+    for (final frag in staleHits) {
+      if (combined.contains(frag)) {
+        explained.add(frag);
+        continue;
+      }
+      if (frag == 'blink' && path.contains('blink')) {
+        explained.add(frag);
+        continue;
+      }
+      if (frag == 'laredo technical services' &&
+          (path.contains('laredo') || title.contains('laredo'))) {
+        explained.add(frag);
+      }
+    }
+    return explained;
   }
 
   static bool _hasDuplicateDelModSubmit(String text) {

@@ -24,8 +24,6 @@ void main() {
       );
 
       await DesktopVoiceRealHelperLatencyBenchmark.writeReportArtifact(report);
-
-      // Always print summary for CI / manual logs.
       // ignore: avoid_print
       print(report.summary());
       for (final m in report.markers) {
@@ -35,7 +33,7 @@ void main() {
 
       expect(
         report.iterations.length,
-        greaterThanOrEqualTo(warmRuns),
+        greaterThanOrEqualTo(warmRuns * 5),
         reason: report.blocker ?? 'no_iterations',
       );
       expect(
@@ -43,6 +41,6 @@ void main() {
         isTrue,
         reason: report.summary(),
       );
-    }, timeout: const Timeout(Duration(minutes: 45)));
+    }, timeout: const Timeout(Duration(minutes: 90)));
   });
 }
