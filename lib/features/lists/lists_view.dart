@@ -27,8 +27,8 @@ import 'package:counter/features/lists/lists_export.dart';
 import 'package:counter/features/lists/lists_bulk_actions.dart';
 import 'package:counter/features/lists/lists_empty_state.dart';
 import 'package:counter/features/lists/lists_filters.dart';
-import 'package:counter/features/lists/lists_inline_add.dart';
 import 'package:counter/features/notes/notes_glm_surface.dart';
+import 'package:counter/features/notes/widgets/notes_library_production_shell.dart';
 import 'package:counter/features/notes/note_editor_page.dart';
 import 'package:counter/features/notes/widgets/note_card.dart';
 import 'package:counter/features/notes/widgets/notes_library_body.dart';
@@ -97,7 +97,7 @@ class _ListsPageState extends State<ListsPage>
   // GLM Notes v3 library view preferences.
   static const String _kPrefNotesView = 'lifeos.notes.view';
   static const String _kPrefNotesCheckboxMode = 'lifeos.notes.checkboxMode';
-  NotesLibraryView _notesView = NotesLibraryView.list;
+  NotesLibraryView _notesView = NotesLibraryView.grid;
   bool _notesCheckboxesOn = false;
 
   /// Stable key for backlog rows (matches Planning bulk selection).
@@ -150,6 +150,7 @@ class _ListsPageState extends State<ListsPage>
       if (!mounted) return;
       setState(() {
         if (v == 'grid') _notesView = NotesLibraryView.grid;
+        if (v == 'list') _notesView = NotesLibraryView.list;
         if (c == true) _notesCheckboxesOn = true;
       });
     } catch (_) {}
@@ -1025,12 +1026,9 @@ class _ListsPageState extends State<ListsPage>
             _syncListsShellFabBulkReserve();
             return Scaffold(
               backgroundColor: Colors.transparent,
-              body: NotesGlmLibraryFrame(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_listsSelectMode)
-                      ListsBulkSelectModeBar(
+              body: NotesLibraryProductionShell(
+                topBar: _listsSelectMode
+                    ? ListsBulkSelectModeBar(
                         locale: loc,
                         filterCategoryId: filterId,
                         visibleFlat: flat,
@@ -1039,8 +1037,10 @@ class _ListsPageState extends State<ListsPage>
                         onToggleSelectAllVisible: () =>
                             _toggleSelectAllVisibleLists(flat),
                       )
-                    else ...[
-                      _NotesLibraryHeader(
+                    : null,
+                header: _listsSelectMode
+                    ? const SizedBox.shrink()
+                    : _NotesLibraryHeader(
                         locale: loc,
                         notesCount: forGrouping.length,
                         searchController: _notesSearchController,
@@ -1072,124 +1072,97 @@ class _ListsPageState extends State<ListsPage>
                           unawaited(_persistNotesCheckboxMode(on));
                         },
                       ),
-                    ],
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SizedBox(
-                            height: 48,
-                            child: ListsCategoryChipBar(
-                              chipIds: chipIds,
-                              chipMode: _chipMode,
-                              filterCategoryId: filterId,
-                              scrollController: _chipBarScrollController,
-                              onFilterChanged: _onFilterChanged,
-                              onManualChipReorder: (oldI, newI) =>
-                                  _onManualChipReorder(chipIds, oldI, newI),
-                            ),
-                          ),
-                          if (filterId != null &&
-                              _tagsForFilterBar().isNotEmpty)
-                            ListsTagFilterBar(
-                              locale: loc,
-                              tags: _tagsForFilterBar(),
-                              filterTagPbId: _filterTagPbId,
-                              hasActiveTagFilter: hasActiveTagFilter,
-                              scrollController: _tagFilterScrollController,
-                              onTagFilterChanged: _onTagFilterChanged,
-                            ),
-                          if (filterId != null)
-                            ListsInlineAddRow(
-                              locale: loc,
-                              controller: _inlineController,
-                              focusNode: _inlineFocus,
-                              onSubmit: _submitInline,
-                            ),
-                          Expanded(
-                            child: filterId == null
-                                ? ListsNoCategoryEmptyPanel(locale: loc)
-                                : _loading
-                                ? const ListsLoadingPanel()
-                                : listBodyEmpty
-                                ? (_notesSearchQuery.trim().isNotEmpty
-                                    ? _NotesLibraryEmptyState(
-                                        locale: loc,
-                                        noResults: true,
-                                      )
-                                    : ListsFilteredEmptyPanel(
-                                        locale: loc,
-                                      ))
-                                : _listsSelectMode
-                                ? RefreshIndicator(
-                                    onRefresh: _reload,
-                                    child: CustomScrollView(
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      slivers: [
-                                        SliverPadding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            16,
-                                            8,
-                                            16,
-                                            8,
-                                          ),
-                                          sliver: SliverReorderableList(
-                                            itemCount: flatRows.length,
-                                            onReorder: (oldI, newI) =>
-                                                _onListsReorder(
-                                                  oldI,
-                                                  newI,
-                                                  listBeh,
-                                                ),
-                                            itemBuilder: (context, index) {
-                                              final row = flatRows[index];
-                                              final t = row.task;
-                                              return ReorderableDelayedDragStartListener(
-                                                key: ValueKey<String>(
-                                                  _listKey(t),
-                                                ),
-                                                index: index,
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                        bottom: 8,
-                                                      ),
-                                                  child: _listsBacklogCard(
-                                                    t,
-                                                    loc,
-                                                    showTagsStrip:
-                                                        showListTagsOnCards,
-                                                  ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                : NotesLibraryBody(
-                                    tasks: [
-                                      ...forGrouping,
-                                      ...archiveSlice,
-                                    ],
-                                    view: _notesView,
-                                    checkboxesOn: _notesCheckboxesOn,
-                                    onTap: _openNoteEditor,
-                                    onLongPress: (t) => _showListsRadialMenu(
-                                      context,
-                                      t,
-                                      _listKey(t),
-                                    ),
-                                    onRefresh: _reload,
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                categoryBar: SizedBox(
+                  height: 40,
+                  child: ListsCategoryChipBar(
+                    chipIds: chipIds,
+                    chipMode: _chipMode,
+                    filterCategoryId: filterId,
+                    scrollController: _chipBarScrollController,
+                    onFilterChanged: _onFilterChanged,
+                    onManualChipReorder: (oldI, newI) =>
+                        _onManualChipReorder(chipIds, oldI, newI),
+                    glmPresentation: true,
+                  ),
                 ),
+                tagBar: filterId != null && _tagsForFilterBar().isNotEmpty
+                    ? ListsTagFilterBar(
+                        locale: loc,
+                        tags: _tagsForFilterBar(),
+                        filterTagPbId: _filterTagPbId,
+                        hasActiveTagFilter: hasActiveTagFilter,
+                        scrollController: _tagFilterScrollController,
+                        onTagFilterChanged: _onTagFilterChanged,
+                        glmPresentation: true,
+                      )
+                    : null,
+                inlineAdd: filterId != null
+                    ? NotesGlmInlineAddRow(
+                        locale: loc,
+                        controller: _inlineController,
+                        focusNode: _inlineFocus,
+                        onSubmit: _submitInline,
+                      )
+                    : null,
+                content: filterId == null
+                    ? ListsNoCategoryEmptyPanel(locale: loc)
+                    : _loading
+                    ? const ListsLoadingPanel()
+                    : listBodyEmpty
+                    ? (_notesSearchQuery.trim().isNotEmpty
+                        ? _NotesLibraryEmptyState(
+                            locale: loc,
+                            noResults: true,
+                          )
+                        : ListsFilteredEmptyPanel(locale: loc))
+                    : _listsSelectMode
+                    ? RefreshIndicator(
+                        onRefresh: _reload,
+                        child: CustomScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          slivers: [
+                            SliverPadding(
+                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 8),
+                              sliver: SliverReorderableList(
+                                itemCount: flatRows.length,
+                                onReorder: (oldI, newI) =>
+                                    _onListsReorder(oldI, newI, listBeh),
+                                itemBuilder: (context, index) {
+                                  final row = flatRows[index];
+                                  final t = row.task;
+                                  return ReorderableDelayedDragStartListener(
+                                    key: ValueKey<String>(_listKey(t)),
+                                    index: index,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: _listsBacklogCard(
+                                        t,
+                                        loc,
+                                        showTagsStrip: showListTagsOnCards,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : NotesLibraryBody(
+                        tasks: [
+                          ...forGrouping,
+                          ...archiveSlice,
+                        ],
+                        view: _notesView,
+                        checkboxesOn: _notesCheckboxesOn,
+                        onTap: _openNoteEditor,
+                        onLongPress: (t) => _showListsRadialMenu(
+                          context,
+                          t,
+                          _listKey(t),
+                        ),
+                        onRefresh: _reload,
+                      ),
               ),
               bottomNavigationBar:
                   filterId != null && _selectedListKeys.isNotEmpty
@@ -1340,17 +1313,9 @@ class _NotesLibraryHeader extends StatelessWidget {
             textInputAction: TextInputAction.search,
             textCapitalization: TextCapitalization.sentences,
             onChanged: onSearchChanged,
-            style: theme.textTheme.bodyMedium,
-            decoration: InputDecoration(
+            style: const TextStyle(fontSize: 14, color: Color(0xFF1E293B)),
+            decoration: notesGlmSearchDecoration(
               hintText: t(locale, 'notes_v3_search_hint'),
-              hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurface.withValues(alpha: 0.4),
-              ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                size: 20,
-                color: scheme.onSurfaceVariant,
-              ),
               suffixIcon: searchQuery.trim().isNotEmpty
                   ? IconButton(
                       tooltip: t(locale, 'cancel'),
@@ -1360,23 +1325,6 @@ class _NotesLibraryHeader extends StatelessWidget {
                       onPressed: onClearSearch,
                     )
                   : null,
-              filled: true,
-              fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.42),
-              isDense: true,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: scheme.outlineVariant.withValues(alpha: 0.28),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: scheme.primary.withValues(alpha: 0.6),
-                ),
-              ),
             ),
           ),
           if (notesCount > 0)

@@ -5,6 +5,7 @@ import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/core/widgets/chip_component.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
+import 'package:counter/features/notes/notes_glm_surface.dart';
 import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/core/widgets/radial_menu_viewport.dart';
 import 'package:counter/l10n/dictionary.dart';
@@ -19,17 +20,55 @@ class ListsQuadraticChip extends StatelessWidget {
     required this.categoryColor,
     required this.selected,
     required this.onTap,
+    this.glmPresentation = false,
   });
 
   final String label;
   final Color categoryColor;
   final bool selected;
   final VoidCallback onTap;
+  final bool glmPresentation;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final base = categoryColor;
+    if (glmPresentation) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            height: 34,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: selected
+                  ? base.withValues(alpha: 0.18)
+                  : base.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selected
+                    ? base.withValues(alpha: 0.65)
+                    : base.withValues(alpha: 0.28),
+                width: selected ? 1.5 : 1,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                color: selected ? base : kGlmPillTextColor,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(8),

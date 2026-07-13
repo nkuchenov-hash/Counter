@@ -49,14 +49,15 @@ class NotesLibraryBody extends StatelessWidget {
     }
 
     Widget body;
+    final crossAxisCount = MediaQuery.sizeOf(context).width >= 720 ? 2 : 1;
     if (view == NotesLibraryView.grid) {
       body = GridView.builder(
         padding: const EdgeInsets.only(top: 4, bottom: 24),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 1.35,
+          childAspectRatio: crossAxisCount == 2 ? 1.22 : 1.35,
         ),
         itemCount: cards.length,
         itemBuilder: (_, i) => _card(cards[i], db),

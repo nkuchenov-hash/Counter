@@ -44,53 +44,55 @@ class NotesGlmBackground extends StatelessWidget {
         child: child,
       );
     }
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFF8F9FD),
-            Color(0xFFF5F6FC),
-          ],
-          stops: [0.0, 0.55],
+    return SizedBox.expand(
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF8F9FD),
+              Color(0xFFF5F6FC),
+            ],
+            stops: [0.0, 0.55],
+          ),
         ),
-      ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(-0.85, 0.95),
-                radius: 1.1,
-                colors: [
-                  Color(0x38EEF0FF),
-                  Color(0x00EEF0FF),
-                ],
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(-0.85, 0.95),
+                  radius: 1.1,
+                  colors: [
+                    Color(0x38EEF0FF),
+                    Color(0x00EEF0FF),
+                  ],
+                ),
               ),
             ),
-          ),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment(0.9, 0.92),
-                radius: 1.0,
-                colors: [
-                  Color(0x30FFF1F5),
-                  Color(0x00FFF1F5),
-                ],
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment(0.9, 0.92),
+                  radius: 1.0,
+                  colors: [
+                    Color(0x30FFF1F5),
+                    Color(0x00FFF1F5),
+                  ],
+                ),
               ),
             ),
-          ),
-          child,
-        ],
+            child,
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Centers Notes library content at GLM `max-w-5xl`.
+/// Centers Notes library content at GLM `max-w-5xl` on a full-bleed gradient.
 class NotesGlmLibraryFrame extends StatelessWidget {
   const NotesGlmLibraryFrame({
     super.key,
@@ -105,16 +107,20 @@ class NotesGlmLibraryFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final wide = MediaQuery.sizeOf(context).width >= 900;
     return NotesGlmBackground(
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: wide ? 32 : 20,
-              vertical: 16,
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: wide ? 32 : 20,
+                vertical: 16,
+              ),
+              child: child,
             ),
-            child: child,
           ),
         ),
       ),
@@ -179,6 +185,35 @@ BoxDecoration notesGlmGlassPillDecoration() {
         offset: const Offset(0, 1),
       ),
     ],
+  );
+}
+
+/// GLM library search field surface.
+InputDecoration notesGlmSearchDecoration({
+  required String hintText,
+  Widget? suffixIcon,
+}) {
+  return InputDecoration(
+    hintText: hintText,
+    hintStyle: const TextStyle(fontSize: 14, color: kGlmMetaColor),
+    prefixIcon: const Icon(Icons.search_rounded, size: 18, color: kGlmMetaColor),
+    suffixIcon: suffixIcon,
+    filled: true,
+    fillColor: const Color(0xFFFFFFFF).withValues(alpha: 0.75),
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: const Color(0xFFE2E8F0).withValues(alpha: 0.95)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: const Color(0xFF6366F1).withValues(alpha: 0.55)),
+    ),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: const Color(0xFFE2E8F0).withValues(alpha: 0.95)),
+    ),
   );
 }
 

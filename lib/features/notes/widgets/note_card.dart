@@ -108,96 +108,58 @@ class _GridCard extends StatelessWidget {
         duration: const Duration(milliseconds: 180),
         child: Container(
           decoration: notesGlmGlassCardDecoration(radius: 16),
-          padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
-          child: Stack(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Left accent rail
-              Positioned(
-                left: 0,
-                top: 0,
-                bottom: 0,
-                child: Container(
-                  width: 4,
-                  decoration: BoxDecoration(
+              Row(
+                children: [
+                  _CategoryTile(data: data),
+                  const SizedBox(width: 10),
+                  Expanded(child: _BadgesRow(data: data, loc: loc)),
+                  if (data.pinned)
+                    Icon(Icons.push_pin_rounded,
+                        size: 14, color: scheme.primary),
+                  _DoneCheck(
+                    isDone: isDone,
+                    checkboxesOn: checkboxesOn,
                     color: color,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
-                    ),
+                    onToggle: onToggleDone,
                   ),
-                ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header row: badges + actions
-                    Row(
-                      children: [
-                        Expanded(child: _BadgesRow(data: data, loc: loc)),
-                        _DoneCheck(
-                          isDone: isDone,
-                          checkboxesOn: checkboxesOn,
-                          color: color,
-                          onToggle: onToggleDone,
-                        ),
-                        IconButton(
-                          tooltip: data.pinned
-                              ? t(loc, 'notes_v3_editor_unpin')
-                              : t(loc, 'notes_v3_editor_pin'),
-                          icon: Icon(
-                            data.pinned
-                                ? Icons.push_pin_rounded
-                                : Icons.push_pin_outlined,
-                            size: 16,
-                            color: data.pinned
-                                ? scheme.primary
-                                : scheme.onSurfaceVariant,
-                          ),
-                          onPressed: onTogglePin,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(
-                              minWidth: 28, minHeight: 28),
-                          splashRadius: 16,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    // Title
-                    Text(
-                      data.task.title.isEmpty
-                          ? t(loc, 'notes_v3_untitled')
-                          : data.task.title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        decoration:
-                            isDone ? TextDecoration.lineThrough : null,
-                        color: isDone ? scheme.onSurfaceVariant : null,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    // Preview blocks
-                    _BlockPreview(data: data, loc: loc, isDone: isDone),
-                    const SizedBox(height: 6),
-                    // Footer
-                    Row(
-                      children: [
-                        _CategoryBadge(data: data),
-                        const Spacer(),
-                        Text(
-                          _relative(data.task.updatedAt ?? data.task.createdAt),
-                          style: TextStyle(
-                              fontSize: 10, color: scheme.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ],
+              const SizedBox(height: 10),
+              Text(
+                data.task.title.isEmpty
+                    ? t(loc, 'notes_v3_untitled')
+                    : data.task.title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                  letterSpacing: -0.2,
+                  decoration: isDone ? TextDecoration.lineThrough : null,
+                  color: isDone
+                      ? kGlmMetaColor
+                      : const Color(0xFF0F172A),
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              Expanded(
+                child: _BlockPreview(data: data, loc: loc, isDone: isDone),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _CategoryBadge(data: data),
+                  const Spacer(),
+                  Text(
+                    _relative(data.task.updatedAt ?? data.task.createdAt),
+                    style: const TextStyle(fontSize: 11, color: kGlmMetaColor),
+                  ),
+                ],
               ),
             ],
           ),

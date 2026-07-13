@@ -11,6 +11,11 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-13] - GLM Notes library: production shell replacement [product]
+
+* **`notes_library_production_shell.dart` + `lists_view.dart`:** Replaced the live Lists-tab widget tree with a full-bleed GLM gradient workspace, centered 1024px column, GLM search/pills/add row, and grid-first `NotesLibraryBody` (default grid on desktop).
+* **`note_card.dart` + `notes_glm_surface.dart`:** Premium two-column glass grid cards; full-height library background; production capture fixtures updated.
+
 ## [2026-07-10] - GLM Notes v3: strict UI composition port [product]
 
 * **`lib/features/notes/notes_glm_surface.dart` + `note_editor_page.dart`:** Rebuilt editor as centered 768px column (`NotesGlmEditorFrame`) with soft GLM gradient background, integrated bottom toolbar, subtle active-block wash, glass add-block pills, and stronger title/metadata hierarchy.

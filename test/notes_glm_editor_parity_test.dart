@@ -37,15 +37,16 @@ void main() {
       expect(find.text('Broken links on the website'), findsOneWidget);
     });
 
-    test('parity PNG artifacts exist (run capture_notes_glm_main.dart)', () {
+    test('production PNG artifacts exist (run capture_notes_glm_main.dart)', () {
       expect(
-        File('test/fixtures/notes_glm_parity_capture.png').existsSync(),
+        File('test/fixtures/notes_glm_production_editor_capture.png').existsSync(),
         isTrue,
         reason:
             'Run: flutter run -d windows -t lib/features/notes/debug/capture_notes_glm_main.dart',
       );
       expect(
-        File('test/fixtures/notes_glm_library_parity_capture.png').existsSync(),
+        File('test/fixtures/notes_glm_production_library_capture.png')
+            .existsSync(),
         isTrue,
         reason:
             'Run: flutter run -d windows -t lib/features/notes/debug/capture_notes_glm_main.dart',

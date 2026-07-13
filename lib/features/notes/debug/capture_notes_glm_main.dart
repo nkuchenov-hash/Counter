@@ -5,8 +5,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:counter/features/notes/debug/notes_glm_library_parity_fixture.dart';
 import 'package:counter/features/notes/debug/notes_glm_parity_fixture.dart';
+import 'package:counter/features/notes/debug/notes_production_library_capture.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -19,14 +19,14 @@ Future<void> main() async {
   await _captureWidget(
     key: _editorKey,
     child: const NotesGlmParityFixture(),
-    path: 'test/fixtures/notes_glm_parity_capture.png',
+    path: 'test/fixtures/notes_glm_production_editor_capture.png',
     size: kNotesGlmParityViewport,
   );
 
   await _captureWidget(
     key: _libraryKey,
-    child: const NotesGlmLibraryParityFixture(),
-    path: 'test/fixtures/notes_glm_library_parity_capture.png',
+    child: const NotesProductionLibraryCapture(),
+    path: 'test/fixtures/notes_glm_production_library_capture.png',
     size: kNotesGlmParityViewport,
   );
 

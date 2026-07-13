@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:counter/features/notes/notes_glm_surface.dart';
+
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
@@ -18,16 +20,53 @@ class ListsTagFilterChip extends StatelessWidget {
     required this.selected,
     required this.color,
     required this.onTap,
+    this.glmPresentation = false,
   });
 
   final String label;
   final bool selected;
   final Color color;
   final VoidCallback onTap;
+  final bool glmPresentation;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    if (glmPresentation) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            height: 32,
+            padding: const EdgeInsets.symmetric(horizontal: 11),
+            decoration: BoxDecoration(
+              color: selected
+                  ? color.withValues(alpha: 0.16)
+                  : const Color(0xFFFFFFFF).withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selected
+                    ? color.withValues(alpha: 0.55)
+                    : const Color(0xFFE2E8F0),
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? color : kGlmPillTextColor,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(8),
@@ -73,6 +112,7 @@ class ListsCategoryChipBar extends StatelessWidget {
     required this.scrollController,
     required this.onFilterChanged,
     required this.onManualChipReorder,
+    this.glmPresentation = false,
   });
 
   final List<int> chipIds;
@@ -81,6 +121,7 @@ class ListsCategoryChipBar extends StatelessWidget {
   final ScrollController scrollController;
   final ValueChanged<int?> onFilterChanged;
   final void Function(int oldIndex, int newIndex) onManualChipReorder;
+  final bool glmPresentation;
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +132,10 @@ class ListsCategoryChipBar extends StatelessWidget {
         buildDefaultDragHandles: false,
         shrinkWrap: true,
         physics: const ClampingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: EdgeInsets.symmetric(
+          horizontal: glmPresentation ? 0 : 12,
+          vertical: glmPresentation ? 2 : 4,
+        ),
         itemCount: chipIds.length,
         onReorder: onManualChipReorder,
         itemBuilder: (ctx, idx) {
@@ -105,6 +149,7 @@ class ListsCategoryChipBar extends StatelessWidget {
                 label: categoryRawName(id),
                 categoryColor: listsCategoryAccentColor(id),
                 selected: filterCategoryId == id,
+                glmPresentation: glmPresentation,
                 onTap: () {
                   onFilterChanged(filterCategoryId == id ? null : id);
                 },
@@ -117,7 +162,10 @@ class ListsCategoryChipBar extends StatelessWidget {
     return ListView(
       controller: scrollController,
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: glmPresentation ? 0 : 12,
+        vertical: glmPresentation ? 2 : 8,
+      ),
       children: [
         for (final id in chipIds)
           Padding(
@@ -126,6 +174,7 @@ class ListsCategoryChipBar extends StatelessWidget {
               label: categoryRawName(id),
               categoryColor: listsCategoryAccentColor(id),
               selected: filterCategoryId == id,
+              glmPresentation: glmPresentation,
               onTap: () {
                 onFilterChanged(filterCategoryId == id ? null : id);
               },
@@ -146,6 +195,7 @@ class ListsTagFilterBar extends StatelessWidget {
     required this.hasActiveTagFilter,
     required this.scrollController,
     required this.onTagFilterChanged,
+    this.glmPresentation = false,
   });
 
   final String locale;
@@ -154,16 +204,20 @@ class ListsTagFilterBar extends StatelessWidget {
   final bool hasActiveTagFilter;
   final ScrollController scrollController;
   final ValueChanged<String?> onTagFilterChanged;
+  final bool glmPresentation;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SizedBox(
-      height: 44,
+      height: glmPresentation ? 36 : 44,
       child: ListView(
         controller: scrollController,
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: EdgeInsets.symmetric(
+          horizontal: glmPresentation ? 0 : 12,
+          vertical: glmPresentation ? 2 : 4,
+        ),
         children: [
           if (!hasActiveTagFilter)
             Padding(
@@ -172,6 +226,7 @@ class ListsTagFilterBar extends StatelessWidget {
                 label: t(locale, 'lists_filter_tag_all'),
                 selected: filterTagPbId == null,
                 color: theme.colorScheme.outline,
+                glmPresentation: glmPresentation,
                 onTap: () => onTagFilterChanged(null),
               ),
             ),
@@ -185,6 +240,7 @@ class ListsTagFilterBar extends StatelessWidget {
                 selected:
                     (filterTagPbId ?? '') == (tag.pbRecordId ?? '').trim(),
                 color: parseTagHexColor(tag.color) ?? theme.colorScheme.primary,
+                glmPresentation: glmPresentation,
                 onTap: () {
                   final id = (tag.pbRecordId ?? '').trim();
                   if (id.isEmpty) return;
@@ -199,6 +255,7 @@ class ListsTagFilterBar extends StatelessWidget {
                 label: t(locale, 'lists_filter_tag_all'),
                 selected: filterTagPbId == null,
                 color: theme.colorScheme.outline,
+                glmPresentation: glmPresentation,
                 onTap: () => onTagFilterChanged(null),
               ),
             ),
