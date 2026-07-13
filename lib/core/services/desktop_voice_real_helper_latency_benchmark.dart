@@ -14,6 +14,8 @@ import 'package:counter/core/services/pcm_audio_utils.dart';
 import 'package:counter/data/models.dart';
 import 'package:http/http.dart' as http;
 
+enum DesktopVoiceBenchmarkPhrase { scw, logicalMarketing }
+
 /// Per-iteration latency trace against the real installed STT helper.
 class DesktopVoiceLatencyIteration {
   DesktopVoiceLatencyIteration({
@@ -209,11 +211,32 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
   static const defaultInstalledHelper = r'C:\Users\nkuch\AppData\Local\Programs\Counter\stt_helper\counter_stt_helper.exe';
   static const helperUrl = 'http://127.0.0.1:8765';
   static const fixtureDir = 'test/fixtures/desktop_voice_wav';
-  static const minPartialBytes = 48000;
+  static const minPartialBytes = 32000;
   static const partialPollMs = 100;
 
   static Process? _helperProcess;
   static Map<String, dynamic>? _statusBeforeIteration;
+
+  static List<CategoryRule> benchmarkCategoryRules() => [
+        CategoryRule(
+          id: 400,
+          name: 'Logical Marketing',
+          backendRowId: 'logicalmkt12345',
+        ),
+        CategoryRule(
+          id: 300,
+          name: 'BLINK',
+          backendRowId: 'blinkroot123456',
+          children: [
+            CategoryRule(
+              id: 301,
+              name: 'Laredo Technical Services',
+              backendRowId: 'blinklaredo1234',
+            ),
+          ],
+        ),
+        ...scwCategoryRules(),
+      ];
 
   static List<CategoryRule> scwCategoryRules() => [
         CategoryRule(
@@ -437,6 +460,7 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
     required DesktopVoiceGlossaryPack glossary,
     required int benchmarkEpochMs,
     bool simulateStaleSession = false,
+    DesktopVoiceBenchmarkPhrase phrase = DesktopVoiceBenchmarkPhrase.scw,
   }) async {
     var staleDiscarded = 0;
     final session = DesktopVoiceSessionRegistry.begin();
@@ -583,11 +607,17 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
         _statusBeforeIteration!['warmup_done'] == true;
 
     var counted = false;
+    final pathOk = phrase == DesktopVoiceBenchmarkPhrase.logicalMarketing
+        ? desktopVoicePathMatchesLogicalMarketing(matchedPath)
+        : desktopVoicePathMatchesScwDelMod(matchedPath);
+    final titleOk = phrase == DesktopVoiceBenchmarkPhrase.logicalMarketing
+        ? desktopVoiceTitleIsActions(recordTitle)
+        : desktopVoiceTitleIsSubmit(recordTitle);
     if (candidateUseful &&
         stopToUseful != null &&
         stopToUseful < 500 &&
-        desktopVoicePathMatchesScwDelMod(matchedPath) &&
-        desktopVoiceTitleIsSubmit(recordTitle) &&
+        pathOk &&
+        titleOk &&
         candidateContamination == 'clean' &&
         candidateSid == sessionId) {
       counted = true;
@@ -598,9 +628,9 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
             : 'not_useful';
       } else if (stopToUseful == null || stopToUseful >= 500) {
         rejectReason = 'slow_${stopToUseful ?? 'null'}';
-      } else if (!desktopVoicePathMatchesScwDelMod(matchedPath)) {
+      } else if (!pathOk) {
         rejectReason = 'wrong_path';
-      } else if (!desktopVoiceTitleIsSubmit(recordTitle)) {
+      } else if (!titleOk) {
         rejectReason = 'wrong_title';
       } else if (candidateContamination != 'clean') {
         rejectReason = 'contaminated';
@@ -680,7 +710,7 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
       'scw_delmod_submit_cpal_4f9c984.wav',
       'scw_delmod_submit_df696fc_live_quiet.wav',
       'scw_delmod_submit_fefb502_live_quiet.wav',
-      'scw_contaminated_67ea8eb_contaminated_2026_07_10.wav',
+      'logical_marketing_actions_34f2a43_live.wav',
     ];
 
     final ready = await ensureInstalledHelperRunning(helperPath: helperPath);
@@ -740,6 +770,33 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
       );
     }
     DesktopVoicePipeline.mark(marker20Warm);
+
+    // Logical Marketing warm runs (multi-phrase latency proof).
+    final lmWav = File(
+      '$fixtureDir/logical_marketing_actions_34f2a43_live.wav',
+    );
+    if (lmWav.existsSync()) {
+      final lmPcmRaw = extractPcm16FromWav(lmWav.readAsBytesSync());
+      final lmProc = applyProductionWhisperSttProcessing(lmPcmRaw);
+      final lmPcm = lmProc.applied ? lmProc.pcm : lmPcmRaw;
+      final benchRules = benchmarkCategoryRules();
+      final benchGlossary =
+          DesktopVoiceGlossaryPack.buildFromCategoryRules(benchRules);
+      for (var i = 1; i <= warmIterations; i++) {
+        allIterations.add(
+          await runScwIteration(
+            iteration: warmIterations + i,
+            scenario: 'warm_logical_marketing',
+            pcm: lmPcm,
+            rules: benchRules,
+            glossary: benchGlossary,
+            benchmarkEpochMs: epoch,
+            phrase: DesktopVoiceBenchmarkPhrase.logicalMarketing,
+          ),
+        );
+      }
+      DesktopVoicePipeline.mark('DESKTOP_VOICE_MULTI_PHRASE_REAL_HELPER_BENCHMARK');
+    }
 
     // First command immediately after ready (iteration 21).
     allIterations.add(
@@ -839,10 +896,16 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
     final warmRuns = allIterations
         .where((i) => i.scenario == 'warm_scw')
         .toList(growable: false);
+    final lmWarmRuns = allIterations
+        .where((i) => i.scenario == 'warm_logical_marketing')
+        .toList(growable: false);
     final counted = warmRuns.where((i) => i.counted).toList();
+    final lmCounted = lmWarmRuns.where((i) => i.counted).toList();
     final rejected = warmRuns.where((i) => !i.counted).toList();
     final usefulMs =
         counted.map((i) => i.stopToUsefulCandidateMs!).toList(growable: false);
+    final lmUsefulMs =
+        lmCounted.map((i) => i.stopToUsefulCandidateMs!).toList(growable: false);
     final pendingMs = counted
         .map((i) => i.stopToPendingEligibleMs ?? i.stopToUsefulCandidateMs!)
         .toList(growable: false);
@@ -864,9 +927,14 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
           it.candidateUseful) {
         contaminationFailures++;
       }
-      if (it.candidateUseful &&
+      if (it.candidateUseful && it.scenario == 'warm_scw' &&
           (!desktopVoicePathMatchesScwDelMod(it.matchedPath) ||
               !desktopVoiceTitleIsSubmit(it.recordTitle))) {
+        wrongPath++;
+      }
+      if (it.candidateUseful && it.scenario == 'warm_logical_marketing' &&
+          (!desktopVoicePathMatchesLogicalMarketing(it.matchedPath) ||
+              !desktopVoiceTitleIsActions(it.recordTitle))) {
         wrongPath++;
       }
     }
@@ -874,10 +942,13 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
     final p50 = usefulMs.isEmpty ? null : percentile(usefulMs, 0.50);
     final p90 = usefulMs.isEmpty ? null : percentile(usefulMs, 0.90);
     final p95 = usefulMs.isEmpty ? null : percentile(usefulMs, 0.95);
+    final lmP95 =
+        lmUsefulMs.isEmpty ? null : percentile(lmUsefulMs, 0.95);
     final p95Pending =
         pendingMs.isEmpty ? null : percentile(pendingMs, 0.95);
     final maxMs = usefulMs.isEmpty ? null : usefulMs.reduce(max);
 
+    final lmRequired = lmWav.existsSync();
     final strictPass = counted.length >= warmIterations &&
         p95 != null &&
         p95 < 500 &&
@@ -887,7 +958,11 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
         firstAfterReady < 500 &&
         staleLeaks == 0 &&
         contaminationFailures == 0 &&
-        wrongPath == 0;
+        wrongPath == 0 &&
+        (!lmRequired ||
+            (lmCounted.length >= warmIterations &&
+                lmP95 != null &&
+                lmP95 < 500));
 
     final markers = <String>[
       markerBenchmark,
@@ -904,6 +979,12 @@ abstract final class DesktopVoiceRealHelperLatencyBenchmark {
       markers.add(markerP95Pass);
       markers.add(markerFirstReady);
       markers.add(markerZeroStale);
+      if (lmRequired) {
+        markers.add('DESKTOP_VOICE_LOGICAL_MARKETING_LATENCY_P95_UNDER_500MS');
+        markers.add('DESKTOP_VOICE_ALL_PHRASES_LATENCY_P95_UNDER_500MS');
+        markers.add('DESKTOP_VOICE_ZERO_HALLUCINATED_CLIENT_INSERTIONS');
+        markers.add('DESKTOP_VOICE_ZERO_DUPLICATE_TITLE_SEGMENTS');
+      }
     }
 
     String? blocker;

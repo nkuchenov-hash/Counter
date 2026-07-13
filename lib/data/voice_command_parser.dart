@@ -483,6 +483,7 @@ const Set<String> kVoiceCommandTaskTitleNorms = {
   'add mod',
   'add sin',
   'planning',
+  'actions',
 };
 
 Set<String> _normalizedPhrasesForCategoryRule(CategoryRule rule) {

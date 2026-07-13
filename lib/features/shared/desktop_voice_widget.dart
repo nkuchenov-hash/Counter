@@ -4,6 +4,8 @@ import 'package:counter/core/diagnostics/desktop_voice_log.dart';
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_voice_confirmation_timer.dart';
 import 'package:counter/core/services/desktop_voice_contamination_gate.dart';
+import 'package:counter/core/services/desktop_voice_initial_prompt.dart';
+import 'package:counter/core/services/desktop_voice_transcript_provenance.dart';
 import 'package:counter/core/services/desktop_voice_useful_candidate_evaluator.dart';
 import 'package:counter/core/services/desktop_voice_session.dart';
 import 'package:counter/core/navigation/app_navigator.dart';
@@ -440,6 +442,22 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       return;
     }
 
+    DesktopVoiceTranscriptProvenance.logAttempt(
+      partialText: result.partialHint,
+      finalText: _transcript,
+      effectiveInitialPrompt: DesktopVoiceInitialPrompt.effectivePrompt,
+      postprocessedText: result.postprocessedText,
+      parserInput: _transcript,
+      parserTitle: null,
+      selectedPath: null,
+      voiceSessionId: _voiceSession?.id,
+      helperSessionId: _helper.activeVoiceSessionId,
+    );
+    DesktopVoiceTranscriptProvenance.traceCorruptedLogicalMarketing(
+      finalText: _transcript,
+      partialText: result.partialHint,
+    );
+
     DesktopVoicePipeline.mark('DESKTOP_VOICE_COMMAND_TRANSCRIPT_READY', _transcript);
     DesktopVoiceLog.instance.mark('transcript_returned', 'yes');
     DesktopVoiceLog.instance.mark('transcript_text', _transcript);
@@ -483,9 +501,18 @@ class _DesktopVoiceOverlayState extends State<DesktopVoiceOverlay> {
       DesktopVoicePipeline.mark('write_blocked', 'yes');
       DesktopVoicePipeline.mark('DESKTOP_VOICE_NO_GARBAGE_RECORD');
       DesktopVoiceAttemptLog.instance.markNotRecognized();
+      final isHallucination = contamination.reason?.contains('duplicate') == true ||
+          contamination.reason?.contains('conflicting') == true ||
+          contamination.reason?.contains('hallucination') == true ||
+          contamination.reason?.contains('title_not_derivable') == true;
       _failFriendly(
         null,
-        message: t(loc, 'desktop_voice_session_contaminated'),
+        message: t(
+          loc,
+          isHallucination
+              ? 'desktop_voice_hallucinated_duplicate_text'
+              : 'desktop_voice_session_contaminated',
+        ),
         diag: contamination.reason ?? 'contaminated',
         stage: DesktopVoiceErrorStage.parsing,
         kind: DesktopVoiceFailureKind.parserRejected,

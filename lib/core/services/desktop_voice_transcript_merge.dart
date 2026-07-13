@@ -34,7 +34,10 @@ abstract final class DesktopVoiceTranscriptMerge {
     final seen = <String>{};
     final out = <String>[];
     for (final part in raw.split(',')) {
-      final seg = part.trim();
+      var seg = part.trim().replaceAll(RegExp(r'[.!?]+$'), '').trim();
+      seg = seg
+          .replaceFirst(RegExp(r'^and\s+', caseSensitive: false), '')
+          .trim();
       if (seg.isEmpty) continue;
       final key = seg.toLowerCase();
       if (seen.add(key)) {

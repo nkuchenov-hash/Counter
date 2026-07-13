@@ -25,6 +25,13 @@
 * **`lib/features/notes/notes_glm_surface.dart` + `note_editor_page.dart`:** Rebuilt editor as centered 768px column (`NotesGlmEditorFrame`) with soft GLM gradient background, integrated bottom toolbar, subtle active-block wash, glass add-block pills, and stronger title/metadata hierarchy.
 * **`lib/features/lists/lists_view.dart` + `note_card.dart` + `notes_library_body.dart`:** Library wrapped in `NotesGlmLibraryFrame` (1024px centered), glass list/grid cards, and parity harness + capture script (`test/fixtures/notes_glm_*_capture.png`).
 
+## [2026-07-13] - P0 Desktop Voice: Logical Marketing corruption blocked [engineering]
+
+* **`desktop_voice_hallucination_gate.dart`:** Blocks duplicate segments (Taxis×2), conflicting marketing scopes, non-derivable titles; live 34f2a43 fixture archived.
+* **`build_stt_helper_en.ps1`:** Neutral whisper `initial_prompt` — no domain/client vocabulary lists (fixes Technical Marketing / Taxis hallucination bias).
+* **`desktop_voice_transcript_merge.dart`:** Comma dedupe strips leading `and` so duplicate segments collapse.
+* **Multi-phrase latency benchmark:** SCW + Logical Marketing warm runs with per-phrase P95 gates.
+
 ## [2026-07-10] - P0 Desktop Voice: warm P95 useful-candidate latency proof [engineering]
 
 * **`desktop_stt_helper_service.dart`:** 100ms session partial poll; session-scoped `_sessionBestPartialUseful`; zero-await cached useful candidate on stop (`DESKTOP_VOICE_IMMEDIATE_STOP_CANDIDATE`).

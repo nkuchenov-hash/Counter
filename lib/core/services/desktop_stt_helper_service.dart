@@ -800,7 +800,7 @@ class DesktopSttHelperService {
   }
 
   Future<void> _sendPartialAudio(List<int> bytes) async {
-    if (bytes.length < 48000 || !_ready) return;
+    if (bytes.length < 32000 || !_ready) return;
     final sessionId = _activeVoiceSessionId;
     if (sessionId == null || sessionId.isEmpty) return;
     final rms = pcm16RmsLevel(bytes);

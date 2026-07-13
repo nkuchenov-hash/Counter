@@ -1,4 +1,5 @@
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
+import 'package:counter/core/services/desktop_voice_hallucination_gate.dart';
 import 'package:counter/core/services/desktop_voice_transcript_merge.dart';
 import 'package:counter/data/category_fuzzy_match.dart';
 import 'package:counter/data/models.dart';
@@ -102,6 +103,19 @@ abstract final class DesktopVoiceContaminationGate {
       return _blocked(
         reason: 'duplicate_segments',
         canonical: canonical,
+        clients: clientLeaves,
+        repeated: repeated,
+      );
+    }
+
+    final hallucination = DesktopVoiceHallucinationGate.evaluate(
+      transcript: canonical,
+      categoryRules: categoryRules,
+    );
+    if (hallucination.detected) {
+      return _blocked(
+        reason: hallucination.reason ?? 'hallucination',
+        canonical: hallucination.canonicalTranscript,
         clients: clientLeaves,
         repeated: repeated,
       );
