@@ -371,22 +371,35 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   // ---- Category / tags ---------------------------------------------------
 
-  Future<void> _pickCategory() async {
-    final next = await showCategoryTreePicker(context, initialCategoryId: _task.categoryId);
-    if (next == null) return;
+  Future<void> _selectCategory(int categoryId) async {
+    if (categoryId == _task.categoryId) {
+      setState(() => _showCategoryPicker = false);
+      return;
+    }
     final doc = _doc;
     DatabaseService.instance.applyNoteEdit(
       planRowIdForBackend: _task.planRowIdForBackend,
       doc: doc,
       title: _titleController.text.trim(),
-      categoryId: next,
+      categoryId: categoryId,
       tags: _task.tags,
       isDone: _task.isDone,
     );
     setState(() {
-      _task = _task.copyWith(categoryId: next);
+      _task = _task.copyWith(categoryId: categoryId);
       _showCategoryPicker = false;
     });
+  }
+
+  void _toggleCategoryPicker() {
+    setState(() => _showCategoryPicker = !_showCategoryPicker);
+  }
+
+  Future<void> _openFullCategoryPicker() async {
+    final next =
+        await showCategoryTreePicker(context, initialCategoryId: _task.categoryId);
+    if (next == null) return;
+    await _selectCategory(next);
   }
 
   void _toggleTag(Tag tag) {
@@ -468,20 +481,23 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               _gate.schedule(_syncToBrain);
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           _MetaDataRow(
             task: _task,
             cat: cat,
             catColor: catColor,
-            onPickCategory: _pickCategory,
+            onPickCategory: _toggleCategoryPicker,
             onPickTags: () =>
                 setState(() => _showTagPicker = !_showTagPicker),
             loc: loc,
             parityPreview: widget.parityPreview,
           ),
-          if (_showCategoryPicker && !widget.parityPreview) ...[
-            const SizedBox(height: 8),
-            _CategoryPickerSheet(currentCategoryId: _task.categoryId),
+          if (_showCategoryPicker) ...[
+            _CategoryPickerSheet(
+              currentCategoryId: _task.categoryId,
+              onSelect: _selectCategory,
+              onOpenFullPicker: widget.parityPreview ? null : _openFullCategoryPicker,
+            ),
           ],
           if (_showTagPicker && !widget.parityPreview) ...[
             const SizedBox(height: 8),
@@ -493,14 +509,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               loc: loc,
             ),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           for (int i = 0; i < _doc.blocks.length; i++) ...[
-            if (i > 0)
-              SizedBox(
-                height: _doc.blocks[i].type == NoteBlockType.heading
-                    ? 10
-                    : kNotesBlockGap,
-              ),
+            if (i > 0) const SizedBox(height: kNotesBlockGap),
             _BlockRow(
               key: ValueKey(_doc.blocks[i].id),
               block: _doc.blocks[i],
@@ -655,7 +666,7 @@ class _TopBar extends StatelessWidget {
             ),
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             TextButton(
@@ -713,9 +724,9 @@ class _TopBar extends StatelessWidget {
                   ? t(loc, 'notes_v3_editor_unpin')
                   : t(loc, 'notes_v3_editor_pin'),
               icon: pinned
-                  ? Icons.push_pin_rounded
+                  ? Icons.push_pin
                   : Icons.push_pin_outlined,
-              color: pinned ? scheme.primary : notesMutedColor(scheme),
+              color: pinned ? scheme.primary : kGlmMetaColor,
               onTap: onTogglePin,
             ),
             if (canDelete) ...[
@@ -723,7 +734,8 @@ class _TopBar extends StatelessWidget {
               _RoundIconBtn(
                 tooltip: t(loc, 'notes_v3_editor_delete'),
                 icon: Icons.delete_outline_rounded,
-                color: notesMutedColor(scheme),
+                color: kGlmMetaColor,
+                hoverDanger: true,
                 onTap: onDelete,
               ),
             ],
@@ -740,12 +752,14 @@ class _RoundIconBtn extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.onTap,
+    this.hoverDanger = false,
   });
 
   final String tooltip;
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
+  final bool hoverDanger;
 
   @override
   Widget build(BuildContext context) {
@@ -756,6 +770,9 @@ class _RoundIconBtn extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(999),
+          hoverColor: hoverDanger
+              ? const Color(0xFFEF4444).withValues(alpha: 0.12)
+              : const Color(0xFF6366F1).withValues(alpha: 0.08),
           child: SizedBox(
             width: kNotesIconBtnSize,
             height: kNotesIconBtnSize,
@@ -928,16 +945,91 @@ String _formatRelative(DateTime dt) {
 class _CategoryPickerSheet extends StatelessWidget {
   const _CategoryPickerSheet({
     required this.currentCategoryId,
+    required this.onSelect,
+    this.onOpenFullPicker,
   });
 
   final int currentCategoryId;
+  final ValueChanged<int> onSelect;
+  final VoidCallback? onOpenFullPicker;
 
   @override
   Widget build(BuildContext context) {
-    // The real category picker is a modal sheet opened via
-    // showCategoryTreePicker in _pickCategory(). This placeholder is kept
-    // empty so the inline expansion slot does not render stray UI.
-    return const SizedBox.shrink();
+    final loc = currentLocale.value;
+    final rules = DatabaseService.instance.rules
+        .where((r) => !r.isArchived)
+        .toList();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: notesGlmGlassCardDecoration(radius: 16),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          for (final rule in rules)
+            _CategoryPickerPill(
+              rule: rule,
+              selected: rule.id == currentCategoryId,
+              onTap: () => onSelect(rule.id),
+            ),
+          if (onOpenFullPicker != null)
+            _CategoryPickerPill(
+              label: t(loc, 'notes_editor_more_tooltip'),
+              color: kGlmMetaColor,
+              selected: false,
+              onTap: onOpenFullPicker!,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryPickerPill extends StatelessWidget {
+  const _CategoryPickerPill({
+    this.rule,
+    this.label,
+    this.color,
+    required this.selected,
+    required this.onTap,
+  }) : assert(rule != null || label != null);
+
+  final CategoryRule? rule;
+  final String? label;
+  final Color? color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = rule?.colorOrDefault ?? color ?? kGlmMetaColor;
+    final text = label ?? rule?.name ?? '';
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? c : const Color(0xFFFFFFFF).withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected ? c : const Color(0xFFE2E8F0),
+            ),
+          ),
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : kGlmPillTextColor,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -1094,10 +1186,10 @@ class _BlockRowState extends State<_BlockRow> {
     final isChecklist = block.type == NoteBlockType.checklist;
     final isHeading = block.type == NoteBlockType.heading;
     final headingSize = block.level == 1
-        ? 26.0
+        ? 24.0
         : block.level == 3
-            ? 19.0
-            : 22.0;
+            ? 18.0
+            : 20.0;
     final headingWeight =
         block.level == 3 ? FontWeight.w600 : FontWeight.w700;
     final textStyle = TextStyle(
@@ -1120,17 +1212,17 @@ class _BlockRowState extends State<_BlockRow> {
       child: Container(
         decoration: widget.isActive
             ? BoxDecoration(
-                color: kGlmActiveBlockWash,
+                color: notesBlockActiveFill(scheme),
                 borderRadius: BorderRadius.circular(8),
               )
             : null,
-        padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (isChecklist)
               Padding(
-                padding: const EdgeInsets.only(top: 4, right: 8),
+                padding: const EdgeInsets.only(top: 4, right: 0),
                 child: InkWell(
                   onTap: () =>
                       widget.onUpdate(_BlockPatch(checked: !block.checked)),
@@ -1142,19 +1234,20 @@ class _BlockRowState extends State<_BlockRow> {
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: block.checked
-                            ? scheme.primary
-                            : scheme.outlineVariant.withValues(alpha: 0.7),
+                            ? const Color(0xFF6366F1)
+                            : const Color(0xFFE2E8F0),
                         width: 2,
                       ),
-                      color: block.checked ? scheme.primary : null,
+                      color: block.checked ? const Color(0xFF6366F1) : null,
                     ),
                     child: block.checked
-                        ? Icon(Icons.check_rounded,
-                            size: 12, color: scheme.onPrimary)
+                        ? const Icon(Icons.check_rounded,
+                            size: 12, color: Colors.white)
                         : null,
                   ),
                 ),
               ),
+            if (isChecklist) const SizedBox(width: 8),
             Expanded(
               child: TextField(
                 controller: _textController,
@@ -1177,7 +1270,7 @@ class _BlockRowState extends State<_BlockRow> {
                           ? t(loc, 'notes_v3_editor_heading_hint')
                           : t(loc, 'notes_v3_editor_start_writing'),
                   hintStyle: TextStyle(
-                    fontSize: isHeading ? headingSize : kGlmBodySize,
+                    fontSize: isHeading ? headingSize : kNotesBodySize,
                     fontWeight: isHeading ? headingWeight : FontWeight.w400,
                     color: kGlmMetaColor.withValues(alpha: 0.65),
                     height: isHeading ? 1.25 : 1.45,
@@ -1186,7 +1279,7 @@ class _BlockRowState extends State<_BlockRow> {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 2),
+                  contentPadding: EdgeInsets.zero,
                   filled: false,
                 ),
                 onChanged: (v) => widget.onUpdate(_BlockPatch(text: v)),
@@ -1194,41 +1287,90 @@ class _BlockRowState extends State<_BlockRow> {
               ),
             ),
             if (widget.isActive)
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_horiz_rounded,
-                    size: 18, color: scheme.onSurfaceVariant),
-                tooltip: t(loc, 'notes_v3_editor_block_menu'),
-                itemBuilder: (ctx) => [
-                  if (widget.canMoveUp)
-                    PopupMenuItem(
-                      value: 'up',
-                      child: Text(t(loc, 'notes_v3_editor_move_up')),
-                    ),
-                  if (widget.canMoveDown)
-                    PopupMenuItem(
-                      value: 'down',
-                      child: Text(t(loc, 'notes_v3_editor_move_down')),
-                    ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text(t(loc, 'notes_v3_editor_delete_block')),
-                  ),
-                ],
-                onSelected: (v) {
-                  switch (v) {
-                    case 'up':
-                      widget.onMoveUp();
-                      break;
-                    case 'down':
-                      widget.onMoveDown();
-                      break;
-                    case 'delete':
-                      widget.onDelete();
-                      break;
-                  }
-                },
+              _BlockActiveControls(
+                canMoveUp: widget.canMoveUp,
+                canMoveDown: widget.canMoveDown,
+                onMoveUp: widget.onMoveUp,
+                onMoveDown: widget.onMoveDown,
+                onDelete: widget.onDelete,
+                loc: loc,
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BlockActiveControls extends StatelessWidget {
+  const _BlockActiveControls({
+    required this.canMoveUp,
+    required this.canMoveDown,
+    required this.onMoveUp,
+    required this.onMoveDown,
+    required this.onDelete,
+    required this.loc,
+  });
+
+  final bool canMoveUp;
+  final bool canMoveDown;
+  final VoidCallback onMoveUp;
+  final VoidCallback onMoveDown;
+  final VoidCallback onDelete;
+  final String loc;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (canMoveUp)
+          _BlockControlBtn(
+            icon: Icons.keyboard_arrow_up_rounded,
+            tooltip: t(loc, 'notes_v3_editor_move_up'),
+            onTap: onMoveUp,
+          ),
+        if (canMoveDown)
+          _BlockControlBtn(
+            icon: Icons.keyboard_arrow_down_rounded,
+            tooltip: t(loc, 'notes_v3_editor_move_down'),
+            onTap: onMoveDown,
+          ),
+        _BlockControlBtn(
+          icon: Icons.delete_outline_rounded,
+          tooltip: t(loc, 'notes_v3_editor_delete_block'),
+          onTap: onDelete,
+        ),
+      ],
+    );
+  }
+}
+
+class _BlockControlBtn extends StatelessWidget {
+  const _BlockControlBtn({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: Icon(icon, size: 14, color: kGlmMetaColor),
+          ),
         ),
       ),
     );
@@ -1281,7 +1423,9 @@ class _ImageBlock extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onActivate,
-      child: Stack(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Stack(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -1299,20 +1443,15 @@ class _ImageBlock extends StatelessWidget {
           ),
           if (isActive)
             Positioned(
-              top: 6,
-              right: 6,
-              child: CircleAvatar(
-                radius: 14,
-                backgroundColor: Colors.black.withValues(alpha: 0.6),
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded,
-                      size: 14, color: Colors.white),
-                  padding: EdgeInsets.zero,
-                  onPressed: onDelete,
-                ),
+              top: 8,
+              right: 8,
+              child: _MediaOverlayBtn(
+                icon: Icons.close_rounded,
+                onTap: onDelete,
               ),
             ),
         ],
+        ),
       ),
     );
   }
@@ -1338,7 +1477,9 @@ class _DrawingBlock extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onActivate,
-      child: Stack(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Stack(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -1357,37 +1498,51 @@ class _DrawingBlock extends StatelessWidget {
               ),
             ),
           ),
-          if (isActive) ...[
+          if (isActive)
             Positioned(
-              top: 6,
-              right: 6,
-              child: CircleAvatar(
-                radius: 14,
-                backgroundColor: Colors.black.withValues(alpha: 0.6),
-                child: IconButton(
-                  icon: const Icon(Icons.edit_rounded,
-                      size: 14, color: Colors.white),
-                  padding: EdgeInsets.zero,
-                  onPressed: onEditDrawing,
-                ),
+              top: 8,
+              right: 8,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _MediaOverlayBtn(
+                    icon: Icons.edit_rounded,
+                    onTap: onEditDrawing,
+                  ),
+                  const SizedBox(width: 4),
+                  _MediaOverlayBtn(
+                    icon: Icons.close_rounded,
+                    onTap: onDelete,
+                  ),
+                ],
               ),
             ),
-            Positioned(
-              top: 6,
-              right: 40,
-              child: CircleAvatar(
-                radius: 14,
-                backgroundColor: Colors.black.withValues(alpha: 0.6),
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded,
-                      size: 14, color: Colors.white),
-                  padding: EdgeInsets.zero,
-                  onPressed: onDelete,
-                ),
-              ),
-            ),
-          ],
         ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MediaOverlayBtn extends StatelessWidget {
+  const _MediaOverlayBtn({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.6),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: Icon(icon, size: 14, color: Colors.white),
+        ),
       ),
     );
   }
@@ -1477,8 +1632,7 @@ class _AddButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         child: Ink(
           decoration: notesGlmGlassPillDecoration(),
-          height: kGlmPillHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1488,7 +1642,7 @@ class _AddButton extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                   color: muted,
                 ),
               ),
@@ -1503,7 +1657,7 @@ class _AddButton extends StatelessWidget {
 // ---- Editor formatting toolbar ------------------------------------------
 
 const List<String> _kTextColors = <String>[
-  '#000000',
+  '#0F172A',
   '#EF4444',
   '#F59E0B',
   '#10B981',
@@ -1544,25 +1698,24 @@ class _EditorToolbar extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       elevation: 0,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.bottomCenter,
         children: [
           Container(
             height: kGlmToolbarHeight,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF).withValues(alpha: 0.55),
               border: Border(
                 top: BorderSide(
                   color: const Color(0xFFE8ECF4).withValues(alpha: 0.95),
                 ),
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Center(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
                   _ToolBtn(
                     icon: Icons.checklist_rounded,
                     label: t(loc, 'notes_v3_editor_checklist_toggle'),
@@ -1626,7 +1779,10 @@ class _EditorToolbar extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _parseHexColor(activeBlock?.color) ??
-                            scheme.onSurface,
+                            const Color(0xFF0F172A),
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0),
+                        ),
                       ),
                     ),
                     onTap: onToggleColorPicker,
@@ -1648,63 +1804,83 @@ class _EditorToolbar extends StatelessWidget {
               ),
             ),
           ),
-          ),
           if (showColorPicker)
-            _ColorPickerRow(onSetColor: onSetColor, scheme: scheme, loc: loc),
+            Positioned(
+              bottom: kGlmToolbarHeight + 8,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: _ColorPickerPopover(
+                  onSetColor: onSetColor,
+                  loc: loc,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-class _ColorPickerRow extends StatelessWidget {
-  const _ColorPickerRow({
+class _ColorPickerPopover extends StatelessWidget {
+  const _ColorPickerPopover({
     required this.onSetColor,
-    required this.scheme,
     required this.loc,
   });
 
   final void Function(String?) onSetColor;
-  final ColorScheme scheme;
   final String loc;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        border: Border(
-          top: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.4),
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          for (final c in _kTextColors) ...[
-            GestureDetector(
-              onTap: () => onSetColor(c),
-              child: Container(
-                width: 24,
-                height: 24,
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _parseHexColor(c),
-                  border: c == '#FFFFFF'
-                      ? Border.all(color: scheme.outlineVariant)
-                      : null,
+    return Material(
+      elevation: 8,
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: notesGlmGlassCardDecoration(radius: 16),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final c in _kTextColors) ...[
+              GestureDetector(
+                onTap: () => onSetColor(c == '#0F172A' ? null : c),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _parseHexColor(c),
+                    border: c == '#0F172A'
+                        ? Border.all(color: const Color(0xFFE2E8F0))
+                        : null,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(width: 4),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => onSetColor(null),
+                borderRadius: BorderRadius.circular(999),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: notesGlmGlassPillDecoration(),
+                  child: Text(
+                    t(loc, 'notes_v3_editor_color_auto'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: kGlmPillTextColor,
+                    ),
+                  ),
                 ),
               ),
             ),
           ],
-          const Spacer(),
-          TextButton(
-            onPressed: () => onSetColor(null),
-            child: Text(t(loc, 'notes_v3_editor_color_auto')),
-          ),
-        ],
+        ),
       ),
     );
   }

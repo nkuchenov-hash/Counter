@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-13] - Notes editor: faithful NoteEditor.tsx composition port [product]
+
+* **`note_editor_page.dart`:** Mechanical TSX translation — 768px column, compact top bar (px-4/py-3), borderless title/metadata, inline glass category picker, 4px block rhythm, right-side active controls (no hover menu), add-block pills, exact toolbar order with popover color picker above toolbar.
+
 ## [2026-07-13] - GLM Notes library: production shell replacement [product]
 
 * **`notes_library_production_shell.dart` + `lists_view.dart`:** Replaced the live Lists-tab widget tree with a full-bleed GLM gradient workspace, centered 1024px column, GLM search/pills/add row, and grid-first `NotesLibraryBody` (default grid on desktop).

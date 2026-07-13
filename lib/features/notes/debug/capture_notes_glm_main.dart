@@ -23,13 +23,6 @@ Future<void> main() async {
     size: kNotesGlmParityViewport,
   );
 
-  await _captureWidget(
-    key: _libraryKey,
-    child: const NotesProductionLibraryCapture(),
-    path: 'test/fixtures/notes_glm_production_library_capture.png',
-    size: kNotesGlmParityViewport,
-  );
-
   exit(0);
 }
 

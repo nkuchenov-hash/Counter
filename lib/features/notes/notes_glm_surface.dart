@@ -10,13 +10,13 @@ const double kGlmEditorMaxWidth = 768;
 const double kGlmLibraryMaxWidth = 1024;
 
 const double kGlmEditorPadH = 20;
-const double kGlmEditorPadV = 20;
+const double kGlmEditorPadV = 16;
 const double kGlmTopBarHeight = 56;
 const double kGlmToolbarHeight = 56;
 
-const double kGlmTitleSizeDesktop = 32;
-const double kGlmTitleSizeMobile = 30;
-const double kGlmBodySize = 17;
+const double kGlmTitleSizeDesktop = 30;
+const double kGlmTitleSizeMobile = 28;
+const double kGlmBodySize = 16;
 const double kGlmMetaSize = 12;
 const double kGlmPillHeight = 32;
 
@@ -150,9 +150,12 @@ class NotesGlmEditorFrame extends StatelessWidget {
         bottom: false,
         child: LayoutBuilder(
           builder: (context, constraints) {
+            final columnWidth = constraints.maxWidth < kGlmEditorMaxWidth
+                ? constraints.maxWidth
+                : kGlmEditorMaxWidth;
             return Center(
               child: SizedBox(
-                width: kGlmEditorMaxWidth,
+                width: columnWidth,
                 height: constraints.maxHeight,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
