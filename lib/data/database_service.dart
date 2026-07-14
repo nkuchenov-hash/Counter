@@ -53,6 +53,7 @@ part 'plans/plan_projection_types.dart';
 part 'plans/plan_recurrence_helpers.dart';
 part 'plans/plan_time_cascade_helpers.dart';
 part 'plans/plan_tags_helpers.dart';
+part 'plans/plan_ai_backend.dart';
 part 'plans/plan_cache_helpers.dart';
 part 'plans/plan_outbox_helpers.dart';
 part 'plans/notes_brain_helpers.dart';
