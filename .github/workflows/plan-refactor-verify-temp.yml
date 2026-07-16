@@ -1,0 +1,60 @@
+name: Plan refactor verification (temporary)
+
+on:
+  push:
+    branches:
+      - review/plan-service-decomposition-2026-07-16
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plan-refactor-verification
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout review branch
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter 3.41.6
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Create env.dart
+        shell: bash
+        run: |
+          mkdir -p lib/core/env
+          printf '%s\n' 'abstract final class Env {' "  static const String placeholder = '';" '}' > lib/core/env/env.dart
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib/data/database_service.dart lib/data/plan_service.dart lib/data/plans/plan_auto_schedule.dart
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Planning list modes tests
+        run: flutter test test/planning_page_list_modes_test.dart
+
+      - name: Planning quick add tests
+        run: flutter test test/planning_page_quick_add_test.dart
+
+      - name: Plan timezone projection tests
+        run: flutter test test/plan_time_timezone_projection_test.dart
+
+      - name: Full test suite
+        run: flutter test
+
+      - name: Build release web
+        run: flutter build web --release --base-href="/Counter/" --no-tree-shake-icons --no-wasm-dry-run
