@@ -56,6 +56,7 @@ part 'plans/plan_tags_helpers.dart';
 part 'plans/plan_ai_backend.dart';
 part 'plans/plan_wall_time.dart';
 part 'plans/plan_optimistic.dart';
+part 'plans/plan_queries.dart';
 part 'plans/plan_cache_helpers.dart';
 part 'plans/plan_outbox_helpers.dart';
 part 'plans/notes_brain_helpers.dart';
