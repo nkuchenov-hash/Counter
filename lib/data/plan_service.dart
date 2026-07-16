@@ -480,36 +480,6 @@ extension PlanServiceExtension on DatabaseService {
     _emitTimelineRefreshRaw();
   }
 
-  /// Ping planning/list subscribers. UI streams emit cache+overlay first; network refresh is debounced.
-  void notifyPlanningRefresh({
-    bool scheduleNetworkRefresh = true,
-    bool pumpNetworkNow = false,
-  }) {
-    if (pumpNetworkNow) {
-      _planningRefreshWantsNetworkPump = true;
-    }
-    if (!_planningRefreshController.isClosed) {
-      _planningRefreshController.add(null);
-    }
-    _requestPlanAlarmReschedule();
-    _refreshPlansWarmSnapshotsAfterCacheMutation();
-    persistPlansWarmSnapshotsToDisk();
-    if (scheduleNetworkRefresh) {
-      _planningNotifyNetworkDebounceTimer?.cancel();
-      _planningNotifyNetworkDebounceTimer = Timer(
-        const Duration(milliseconds: 400),
-        () {
-          unawaited(() async {
-            await _ensureAllPlansUserCacheFresh(force: true);
-            _planningRefreshWantsNetworkPump = true;
-            if (!_planningRefreshController.isClosed) {
-              _planningRefreshController.add(null);
-            }
-          }());
-        },
-      );
-    }
-  }
 
   /// Stable business **plan_id** (UUID) for merge/dedupe — not PocketBase system id.
   String? _planBusinessUuidFromTask(PlanningTask task) {
@@ -671,11 +641,6 @@ extension PlanServiceExtension on DatabaseService {
     ];
   }
 
-  void _pokeAllPlanningStreamHubsFromCache() {
-    for (final hub in _planningStreamHubs.values) {
-      hub.emitCachedPlans(this);
-    }
-  }
 
   Future<void> _ensureAllPlansUserCacheFresh({bool force = false}) async {
     if (!_isPlansTableConfigured) return;
@@ -690,14 +655,6 @@ extension PlanServiceExtension on DatabaseService {
     await _fetchAllPlanningTasksForCurrentUser();
   }
 
-  /// Stats / Plan-vs-fact audit: listen to refresh planning data (same signal as [notifyPlanningRefresh]).
-  Stream<void> get planningRefreshNotifications =>
-      _planningRefreshController.stream;
-
-  Stream<List<PlanningTask>> get tasksStream => Stream.multi((c) {
-    c.add(List.from(_tasksCache));
-    _tasksController.stream.listen(c.add, onError: c.addError);
-  });
 
   /// 0..1 title similarity for plan–record linking heuristics (not category matching).
 
@@ -758,8 +715,6 @@ extension PlanServiceExtension on DatabaseService {
     }
   }
 
-  /// Broadcast when planning cache should be re-read by UI (optimistic PATCH, realtime, etc.).
-  Stream<void> get planningRefreshEvents => _planningRefreshController.stream;
 
   /// Next `order` for a new plan on this wall day (for optimistic + POST).
   /// Plans for a wall day (same source as Planning tab). For UI manual `source_plan_id` linking.
@@ -1548,48 +1503,6 @@ extension PlanServiceExtension on DatabaseService {
     }());
   }
 
-  /// Planning list stream. **No periodic polling** (PageView keeps many days alive).
-  /// [listenToGlobalPlanningRefresh]: only the **visible** planning day should be `true` so [notifyPlanningRefresh]
-  /// does not fan out identical GETs to every off-screen [PlanningPage].
-  ///
-  /// One shared hub per (wall-day, global-listen) — ref-counted; replaces snapshot on emit (never append).
-  Stream<List<PlanningTask>> planningStream(
-    DateTime selectedDate, {
-    bool listenToGlobalPlanningRefresh = true,
-  }) {
-    final targetDayStr =
-        '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
-    final hubKey = '$targetDayStr|$listenToGlobalPlanningRefresh';
-    final hub = _planningStreamHubs.putIfAbsent(
-      hubKey,
-      () => _PlanningDayStreamHub(
-        streamId: 'ps-${++_planningStreamIdSeq}',
-        dayKey: targetDayStr,
-        wallDay: selectedDate,
-        listenGlobal: listenToGlobalPlanningRefresh,
-      ),
-    );
-    return Stream.multi((controller) {
-      hub.acquire(this);
-      final sub = hub.controller.stream.listen(
-        controller.add,
-        onError: controller.addError,
-      );
-      if (_allPlansUserCache.isEmpty) {
-        unawaited(() async {
-          final offline = await _loadPlanningTasksDayCache(targetDayStr);
-          if (!hub.controller.isClosed && offline.isNotEmpty) {
-            final merged = _mergePlanningOptimistic(targetDayStr, offline);
-            hub.controller.add(merged);
-          }
-        }());
-      }
-      controller.onCancel = () {
-        sub.cancel();
-        hub.release();
-      };
-    });
-  }
 
   Future<Map<String, dynamic>> _buildPocketPlanCreateBody(
     PlanningTask task, {

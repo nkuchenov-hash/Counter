@@ -133,3 +133,98 @@ final class _PlanningDayStreamHub {
 
   void emitCachedPlans(DatabaseService db) => _emitFromCache(db);
 }
+
+/// Planning/list refresh signals and shared day-stream orchestration.
+extension PlanStreamsExtension on DatabaseService {
+  /// Ping planning/list subscribers. UI streams emit cache+overlay first; network refresh is debounced.
+  void notifyPlanningRefresh({
+    bool scheduleNetworkRefresh = true,
+    bool pumpNetworkNow = false,
+  }) {
+    if (pumpNetworkNow) {
+      _planningRefreshWantsNetworkPump = true;
+    }
+    if (!_planningRefreshController.isClosed) {
+      _planningRefreshController.add(null);
+    }
+    _requestPlanAlarmReschedule();
+    _refreshPlansWarmSnapshotsAfterCacheMutation();
+    persistPlansWarmSnapshotsToDisk();
+    if (scheduleNetworkRefresh) {
+      _planningNotifyNetworkDebounceTimer?.cancel();
+      _planningNotifyNetworkDebounceTimer = Timer(
+        const Duration(milliseconds: 400),
+        () {
+          unawaited(() async {
+            await _ensureAllPlansUserCacheFresh(force: true);
+            _planningRefreshWantsNetworkPump = true;
+            if (!_planningRefreshController.isClosed) {
+              _planningRefreshController.add(null);
+            }
+          }());
+        },
+      );
+    }
+  }
+
+  void _pokeAllPlanningStreamHubsFromCache() {
+    for (final hub in _planningStreamHubs.values) {
+      hub.emitCachedPlans(this);
+    }
+  }
+
+  /// Stats / Plan-vs-fact audit: listen to refresh planning data (same signal as [notifyPlanningRefresh]).
+  Stream<void> get planningRefreshNotifications =>
+      _planningRefreshController.stream;
+
+  Stream<List<PlanningTask>> get tasksStream => Stream.multi((c) {
+    c.add(List.from(_tasksCache));
+    _tasksController.stream.listen(c.add, onError: c.addError);
+  });
+
+  /// Broadcast when planning cache should be re-read by UI (optimistic PATCH, realtime, etc.).
+  Stream<void> get planningRefreshEvents => _planningRefreshController.stream;
+
+  /// Planning list stream. **No periodic polling** (PageView keeps many days alive).
+  /// [listenToGlobalPlanningRefresh]: only the **visible** planning day should be `true` so [notifyPlanningRefresh]
+  /// does not fan out identical GETs to every off-screen [PlanningPage].
+  ///
+  /// One shared hub per (wall-day, global-listen) — ref-counted; replaces snapshot on emit (never append).
+  Stream<List<PlanningTask>> planningStream(
+    DateTime selectedDate, {
+    bool listenToGlobalPlanningRefresh = true,
+  }) {
+    final targetDayStr =
+        '${selectedDate.year}-${_two(selectedDate.month)}-${_two(selectedDate.day)}';
+    final hubKey = '$targetDayStr|$listenToGlobalPlanningRefresh';
+    final hub = _planningStreamHubs.putIfAbsent(
+      hubKey,
+      () => _PlanningDayStreamHub(
+        streamId: 'ps-${++_planningStreamIdSeq}',
+        dayKey: targetDayStr,
+        wallDay: selectedDate,
+        listenGlobal: listenToGlobalPlanningRefresh,
+      ),
+    );
+    return Stream.multi((controller) {
+      hub.acquire(this);
+      final sub = hub.controller.stream.listen(
+        controller.add,
+        onError: controller.addError,
+      );
+      if (_allPlansUserCache.isEmpty) {
+        unawaited(() async {
+          final offline = await _loadPlanningTasksDayCache(targetDayStr);
+          if (!hub.controller.isClosed && offline.isNotEmpty) {
+            final merged = _mergePlanningOptimistic(targetDayStr, offline);
+            hub.controller.add(merged);
+          }
+        }());
+      }
+      controller.onCancel = () {
+        sub.cancel();
+        hub.release();
+      };
+    });
+  }
+}
