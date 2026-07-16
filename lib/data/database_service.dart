@@ -51,6 +51,7 @@ part 'profile/profile_settings.dart';
 part 'profile_service.dart';
 part 'plans/plan_projection_types.dart';
 part 'plans/plan_recurrence_helpers.dart';
+part 'plans/plan_recurrence_materialization.dart';
 part 'plans/plan_time_cascade_helpers.dart';
 part 'plans/plan_tags_helpers.dart';
 part 'plans/plan_ai_backend.dart';
