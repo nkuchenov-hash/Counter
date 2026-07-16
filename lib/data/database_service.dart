@@ -60,6 +60,7 @@ part 'plans/plan_queries.dart';
 part 'plans/plan_alarm_scheduler.dart';
 part 'plans/plan_snapshot_cache.dart';
 part 'plans/plan_auto_schedule.dart';
+part 'plans/plan_create.dart';
 part 'plans/plan_ordering.dart';
 part 'plans/plan_cache_helpers.dart';
 part 'plans/plan_offline_day_cache.dart';
