@@ -1,24 +1,25 @@
 part of '../database_service.dart';
 
+({String parentPocketId, String instanceDateKey})? _parseVirtualPlanRowId(
+  String raw,
+) {
+  final s = raw.trim();
+  final m = RegExp(r'^virt-(.+)-(\d{4}-\d{2}-\d{2})$').firstMatch(s);
+  if (m == null) return null;
+  final pid = m.group(1)!.trim();
+  final dk = m.group(2)!.trim();
+  if (!DatabaseService._isLikelyPocketBaseRowId(pid)) return null;
+  final y = int.tryParse(dk.substring(0, 4));
+  final mo = int.tryParse(dk.substring(5, 7));
+  final d = int.tryParse(dk.substring(8, 10));
+  if (y == null || mo == null || d == null) return null;
+  final dt = DateTime(y, mo, d);
+  if (dt.year != y || dt.month != mo || dt.day != d) return null;
+  return (parentPocketId: pid, instanceDateKey: dk);
+}
+
 /// JIT recurrence exception and instance materialization flows.
 extension PlanRecurrenceMaterializationExtension on DatabaseService {
-  static ({String parentPocketId, String instanceDateKey})?
-  _parseVirtualPlanRowId(String raw) {
-    final s = raw.trim();
-    final m = RegExp(r'^virt-(.+)-(\d{4}-\d{2}-\d{2})$').firstMatch(s);
-    if (m == null) return null;
-    final pid = m.group(1)!.trim();
-    final dk = m.group(2)!.trim();
-    if (!DatabaseService._isLikelyPocketBaseRowId(pid)) return null;
-    final y = int.tryParse(dk.substring(0, 4));
-    final mo = int.tryParse(dk.substring(5, 7));
-    final d = int.tryParse(dk.substring(8, 10));
-    if (y == null || mo == null || d == null) return null;
-    final dt = DateTime(y, mo, d);
-    if (dt.year != y || dt.month != mo || dt.day != d) return null;
-    return (parentPocketId: pid, instanceDateKey: dk);
-  }
-
   /// Skip or restore one recurring instance by mutating the template’s [exception_dates] only.
   Future<bool> _patchRecurringTemplateExceptionDates({
     required String parentPlanPocketId,
