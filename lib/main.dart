@@ -121,7 +121,9 @@ Future<void> _mainAsync() async {
     await DesktopMainWindow.ensureInitialized();
   }
   if (!kIsWeb) {
-    unawaited(NotificationService.instance.ensureInitialized());
+    unawaited(
+      NotificationService.instance.initializeAndRequestPermissionsIfNeeded(),
+    );
     try {
       appWearHost = await WearPlatform.isWearHost();
     } catch (_) {

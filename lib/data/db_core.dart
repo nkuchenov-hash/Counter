@@ -256,6 +256,7 @@ extension DbCoreExtension on DatabaseService {
     _unregisterAppLifecycleObserver();
     _planAlarmRescheduleDebounceTimer?.cancel();
     _planAlarmRescheduleDebounceTimer = null;
+    unawaited(NotificationService.instance.clearPlanAlarms());
     _planningNotifyNetworkDebounceTimer?.cancel();
     _planningNotifyNetworkDebounceTimer = null;
     unawaited(_cancelPlansRealtimeSubscription());

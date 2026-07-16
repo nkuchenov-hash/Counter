@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:counter/data/models.dart';
+import 'package:counter/services/notifications/plan_alarm_policy.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -8,288 +9,307 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-/// OS plan reminders: [flutter_local_notifications] + [timezone] (@APP_STRUCTURE).
-const int kPlanAlarmNotificationLimit = 50;
+part 'notifications/desktop_voice_notifications.dart';
+part 'notifications/plan_alarm_notifications.dart';
 
 const String _kPrefsNotifPermRequested = 'notif_perm_requested_v1';
+const int _kNotificationTestId = 0x7f00d004;
 
-class _AlarmCandidate {
-  _AlarmCandidate({
-    required this.id,
-    required this.when,
-    required this.title,
-    required this.reminderMinutes,
+enum NotificationPermissionStatus { allowed, denied, unavailable }
+
+/// Result of replacing Counter's pending plan-reminder queue.
+final class PlanAlarmSyncResult {
+  const PlanAlarmSyncResult({
+    required this.selected,
+    required this.scheduled,
+    required this.failed,
+    required this.cancelFailed,
+    this.unsupported = false,
   });
 
-  final int id;
-  final tz.TZDateTime when;
-  final String title;
-  final int reminderMinutes;
+  const PlanAlarmSyncResult.unsupported()
+    : selected = 0,
+      scheduled = 0,
+      failed = 0,
+      cancelFailed = 0,
+      unsupported = true;
+
+  final int selected;
+  final int scheduled;
+  final int failed;
+  final int cancelFailed;
+  final bool unsupported;
+
+  bool get succeeded => !unsupported && failed == 0 && cancelFailed == 0;
 }
 
-/// 32-bit FNV-1a over UTF-16 code units, masked to a **positive 31-bit** int (dart2js-safe).
+/// Device bridge for local notification initialization and permissions.
 ///
-/// Stable across app restarts (unlike relying on VM [Object.hashCode] quirks).
-/// [stableKey] must be [PlanningTask.recordIdForBackend] (PocketBase row id or `virt-…`).
-int planAlarmNotificationIdFromStableKey(String stableKey) {
-  var hash = 0x811c9dc5;
-  for (final u in stableKey.codeUnits) {
-    hash = hash ^ u;
-    hash = (hash * 0x01000193) & 0xffffffff;
-  }
-  return hash & 0x7fffffff;
-}
-
-/// Singleton: timezone init, permissions, [syncAlarms] (@ARCHITECTURE.md — Brain calls only).
+/// Plan-alarm and desktop-voice behavior live in focused parts under
+/// `services/notifications/`; PocketBase and plan-domain orchestration stay in
+/// the Brain.
 class NotificationService {
   NotificationService._();
+
   static final NotificationService instance = NotificationService._();
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _plugin =
+      FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   Completer<void>? _initCompleter;
+  String? _lastError;
 
-  /// Idempotent; safe to call from background. Does not block the UI isolate beyond `await` in callers.
+  String? get lastError => _lastError;
+
+  /// Initializes the platform bridge, then performs the existing one-time
+  /// native permission prompt. Explicit requests from Settings bypass this
+  /// one-time gate.
+  Future<void> initializeAndRequestPermissionsIfNeeded() async {
+    await ensureInitialized();
+    await requestPermissionsIfNeeded();
+  }
+
+  /// Idempotent and safe for concurrent callers.
   Future<void> ensureInitialized() {
     if (kIsWeb) return Future.value();
     if (_initialized) return Future.value();
-    if (_initCompleter != null) return _initCompleter!.future;
-    final c = Completer<void>();
-    _initCompleter = c;
-    unawaited(_initInner(c));
-    return c.future;
+    final pending = _initCompleter;
+    if (pending != null) return pending.future;
+
+    final completer = Completer<void>();
+    _initCompleter = completer;
+    unawaited(_initInner(completer));
+    return completer.future;
   }
 
   Future<void> _initInner(Completer<void> completer) async {
     try {
+      tz_data.initializeTimeZones();
       try {
-        tz_data.initializeTimeZones();
         final tzInfo = await FlutterTimezone.getLocalTimezone();
         tz.setLocalLocation(tz.getLocation(tzInfo.identifier));
-      } catch (_) {
-        try {
-          tz.setLocalLocation(tz.UTC);
-        } catch (_) {}
+      } catch (error, stackTrace) {
+        tz.setLocalLocation(tz.UTC);
+        _recordError('timezone-fallback', error, stackTrace);
       }
 
-      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const darwinInit = DarwinInitializationSettings(
+      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const darwin = DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,
         requestSoundPermission: false,
       );
-      const initSettings = InitializationSettings(
-        android: androidInit,
-        iOS: darwinInit,
-        macOS: darwinInit,
+      final linux = LinuxInitializationSettings(
+        defaultActionName: 'Open notification',
       );
+      final windows = WindowsInitializationSettings(
+        appName: 'Counter',
+        appUserModelId: 'com.example.counter',
+        guid: '4dc83395-e2c3-4f1e-bfd2-4b17d774a0d8',
+      );
+      final initialized = await _plugin.initialize(
+        settings: InitializationSettings(
+          android: android,
+          iOS: darwin,
+          macOS: darwin,
+          linux: linux,
+          windows: windows,
+        ),
+      );
+      if (initialized == false) {
+        throw StateError('Local notification plugin returned false');
+      }
 
-      await _plugin.initialize(settings: initSettings);
       _initialized = true;
+      _lastError = null;
       completer.complete();
-      await requestPermissionsIfNeeded();
-    } catch (e, st) {
+    } catch (error, stackTrace) {
+      _recordError('initialize', error, stackTrace);
       if (!completer.isCompleted) {
-        completer.completeError(e, st);
+        completer.completeError(error, stackTrace);
       }
       _initCompleter = null;
     }
   }
 
-  /// First run only (persisted): Android 13+ notification permission + iOS alert/sound.
-  Future<void> requestPermissionsIfNeeded() async {
-    if (kIsWeb) return;
+  Future<NotificationPermissionStatus> permissionStatus() async {
+    if (kIsWeb) return NotificationPermissionStatus.unavailable;
     try {
       await ensureInitialized();
-    } catch (_) {
-      return;
+      switch (defaultTargetPlatform) {
+        case TargetPlatform.android:
+          final enabled = await _plugin
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >()
+              ?.areNotificationsEnabled();
+          return _statusFromNullableBool(enabled);
+        case TargetPlatform.iOS:
+          final options = await _plugin
+              .resolvePlatformSpecificImplementation<
+                IOSFlutterLocalNotificationsPlugin
+              >()
+              ?.checkPermissions();
+          return _statusFromDarwinOptions(options);
+        case TargetPlatform.macOS:
+          final options = await _plugin
+              .resolvePlatformSpecificImplementation<
+                MacOSFlutterLocalNotificationsPlugin
+              >()
+              ?.checkPermissions();
+          return _statusFromDarwinOptions(options);
+        case TargetPlatform.linux:
+        case TargetPlatform.windows:
+          return NotificationPermissionStatus.allowed;
+        case TargetPlatform.fuchsia:
+          return NotificationPermissionStatus.unavailable;
+      }
+    } catch (error, stackTrace) {
+      _recordError('permission-status', error, stackTrace);
+      return NotificationPermissionStatus.unavailable;
     }
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_kPrefsNotifPermRequested) ?? false) return;
-    await prefs.setBool(_kPrefsNotifPermRequested, true);
-
-    try {
-      final android = _plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      await android?.requestNotificationsPermission();
-
-      final ios = _plugin.resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>();
-      await ios?.requestPermissions(alert: true, badge: true, sound: true);
-    } catch (_) {}
   }
 
-  /// Replaces the entire pending queue: [tasks] should cover the next 7 wall days (Brain-built).
-  Future<void> syncAlarms(List<PlanningTask> tasks) async {
-    if (kIsWeb) return;
+  /// Explicit user action. Unlike [requestPermissionsIfNeeded], this always
+  /// reaches the platform API and therefore remains usable after a prior deny.
+  Future<NotificationPermissionStatus> requestPermissions() async {
+    if (kIsWeb) return NotificationPermissionStatus.unavailable;
     try {
       await ensureInitialized();
-    } catch (_) {
-      return;
+      return await _requestPermissionsInitialized();
+    } catch (error, stackTrace) {
+      _recordError('permission-request', error, stackTrace);
+      return NotificationPermissionStatus.unavailable;
     }
+  }
 
-    final now = tz.TZDateTime.now(tz.local);
-    final candidates = <_AlarmCandidate>[];
+  /// One automatic native prompt per install. The persisted flag is written
+  /// only after the platform request completes, not before it starts.
+  Future<NotificationPermissionStatus> requestPermissionsIfNeeded() async {
+    if (kIsWeb) return NotificationPermissionStatus.unavailable;
+    try {
+      await ensureInitialized();
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_kPrefsNotifPermRequested) ?? false) {
+        return permissionStatus();
+      }
+      final status = await _requestPermissionsInitialized();
+      if (status != NotificationPermissionStatus.unavailable) {
+        await prefs.setBool(_kPrefsNotifPermRequested, true);
+      }
+      return status;
+    } catch (error, stackTrace) {
+      _recordError('automatic-permission-request', error, stackTrace);
+      return NotificationPermissionStatus.unavailable;
+    }
+  }
 
-    for (final t in tasks) {
-      if (t.isDone) continue;
-      final off = t.reminderOffset;
-      if (off == null || off < 0) continue;
-      final st = t.startTime;
-      if (st == null) continue;
-      final key = t.recordIdForBackend.trim();
-      if (key.isEmpty) continue;
+  Future<NotificationPermissionStatus> _requestPermissionsInitialized() async {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        final granted = await _plugin
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+            ?.requestNotificationsPermission();
+        return granted == null
+            ? permissionStatus()
+            : _statusFromNullableBool(granted);
+      case TargetPlatform.iOS:
+        final granted = await _plugin
+            .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin
+            >()
+            ?.requestPermissions(alert: true, badge: true, sound: true);
+        return granted == null
+            ? permissionStatus()
+            : _statusFromNullableBool(granted);
+      case TargetPlatform.macOS:
+        final granted = await _plugin
+            .resolvePlatformSpecificImplementation<
+              MacOSFlutterLocalNotificationsPlugin
+            >()
+            ?.requestPermissions(alert: true, badge: true, sound: true);
+        return granted == null
+            ? permissionStatus()
+            : _statusFromNullableBool(granted);
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
+        return NotificationPermissionStatus.allowed;
+      case TargetPlatform.fuchsia:
+        return NotificationPermissionStatus.unavailable;
+    }
+  }
 
-      final fire = tz.TZDateTime(
-        tz.local,
-        st.year,
-        st.month,
-        st.day,
-        st.hour,
-        st.minute,
-        st.second,
-      ).subtract(Duration(minutes: off));
-
-      if (!fire.isAfter(now)) continue;
-
-      candidates.add(
-        _AlarmCandidate(
-          id: planAlarmNotificationIdFromStableKey(key),
-          when: fire,
-          title: t.title.trim().isEmpty ? 'Plan' : t.title.trim(),
-          reminderMinutes: off,
+  Future<bool> showTestNotification({
+    required String title,
+    required String body,
+  }) async {
+    final status = await permissionStatus();
+    if (status != NotificationPermissionStatus.allowed) return false;
+    return _showImmediate(
+      id: _kNotificationTestId,
+      title: title,
+      body: body,
+      details: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'notification_test',
+          'Notification test',
+          channelDescription: 'Confirms that Counter notifications work',
+          importance: Importance.high,
+          priority: Priority.high,
         ),
-      );
-    }
-
-    candidates.sort((a, b) => a.when.compareTo(b.when));
-    final picked = candidates.take(kPlanAlarmNotificationLimit).toList();
-
-    await _plugin.cancelAll();
-
-    const androidDetails = AndroidNotificationDetails(
-      'plan_alarms',
-      'Plan reminders',
-      channelDescription: 'Reminders before scheduled plan start times',
-      importance: Importance.high,
-      priority: Priority.high,
+        iOS: DarwinNotificationDetails(),
+        macOS: DarwinNotificationDetails(),
+        linux: LinuxNotificationDetails(),
+        windows: WindowsNotificationDetails(),
+      ),
     );
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: DarwinNotificationDetails(),
-      macOS: DarwinNotificationDetails(),
-    );
-
-    for (final c in picked) {
-      final body = c.reminderMinutes == 1
-          ? 'Starting in 1 minute'
-          : 'Starting in ${c.reminderMinutes} minutes';
-      try {
-        await _plugin.zonedSchedule(
-          id: c.id,
-          scheduledDate: c.when,
-          notificationDetails: details,
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-          title: c.title,
-          body: body,
-        );
-      } catch (_) {}
-    }
   }
 
-  static const int _kDesktopVoiceNotificationId = 0x7f00d001;
-  static const int _kDesktopVoiceStopNotificationId = 0x7f00d002;
-  static const int _kDesktopVoiceOverlayUnavailableId = 0x7f00d003;
-
-  /// Immediate OS toast when a desktop voice command starts a record (tray-hidden).
-  Future<bool> showDesktopVoiceRecordStarted({required String message}) async {
-    if (kIsWeb) return false;
-    try {
-      await ensureInitialized();
-    } catch (_) {
-      return false;
-    }
-    try {
-      await _plugin.show(
-        id: _kDesktopVoiceNotificationId,
-        title: message,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'desktop_voice',
-            'Desktop voice',
-            channelDescription: 'Record started from desktop voice command',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: DarwinNotificationDetails(),
-          macOS: DarwinNotificationDetails(),
-        ),
-      );
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Immediate OS toast when the desktop voice hotkey stops a running record.
-  Future<bool> showDesktopVoiceRecordStopped({required String message}) async {
-    if (kIsWeb) return false;
-    try {
-      await ensureInitialized();
-    } catch (_) {
-      return false;
-    }
-    try {
-      await _plugin.show(
-        id: _kDesktopVoiceStopNotificationId,
-        title: message,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'desktop_voice',
-            'Desktop voice',
-            channelDescription: 'Record stopped from desktop voice hotkey',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: DarwinNotificationDetails(),
-          macOS: DarwinNotificationDetails(),
-        ),
-      );
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  /// Tray-hidden hotkey fallback — voice overlay cannot show without a visible window.
-  Future<bool> showDesktopVoiceOverlayUnavailable({
-    required String message,
+  Future<bool> _showImmediate({
+    required int id,
+    required String title,
+    String? body,
+    required NotificationDetails details,
   }) async {
     if (kIsWeb) return false;
     try {
       await ensureInitialized();
-    } catch (_) {
-      return false;
-    }
-    try {
       await _plugin.show(
-        id: _kDesktopVoiceOverlayUnavailableId,
-        title: message,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'desktop_voice',
-            'Desktop voice',
-            channelDescription: 'Desktop voice overlay unavailable',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: DarwinNotificationDetails(),
-          macOS: DarwinNotificationDetails(),
-        ),
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: details,
       );
       return true;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      _recordError('show-immediate', error, stackTrace);
       return false;
+    }
+  }
+
+  NotificationPermissionStatus _statusFromNullableBool(bool? value) {
+    if (value == null) return NotificationPermissionStatus.unavailable;
+    return value
+        ? NotificationPermissionStatus.allowed
+        : NotificationPermissionStatus.denied;
+  }
+
+  NotificationPermissionStatus _statusFromDarwinOptions(
+    NotificationsEnabledOptions? options,
+  ) {
+    if (options == null) return NotificationPermissionStatus.unavailable;
+    return options.isEnabled || options.isProvisionalEnabled
+        ? NotificationPermissionStatus.allowed
+        : NotificationPermissionStatus.denied;
+  }
+
+  void _recordError(String operation, Object error, StackTrace stackTrace) {
+    _lastError = '$operation: $error';
+    if (kDebugMode) {
+      debugPrint('[NOTIFICATIONS] $_lastError');
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
 }

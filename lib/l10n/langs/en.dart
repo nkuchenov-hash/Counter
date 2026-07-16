@@ -226,13 +226,20 @@ const Map<String, String> kEnL10n = {
         'Series split is not available yet for this repeat rule.',
     'profile_notifications_section': 'Notifications',
     'profile_notifications_subtitle':
-        'Allow the app to schedule local reminders for plans (Android / iOS).',
+        'Allow Counter to schedule local plan reminders on this device.',
     'profile_notifications_request_button': 'Allow & test notifications',
     'profile_notifications_web_hint':
-        'Not available in the web build. Use Android or iOS.',
+        'Scheduled reminders are not available in the web build.',
     'notif_status_allowed': 'Notifications allowed',
     'notif_status_denied': 'Notifications denied or off',
     'notif_status_unknown': 'Status unavailable',
+    'notif_test_title': 'Counter notifications work',
+    'notif_test_body': 'Plan reminders can now appear on this device.',
+    'notif_test_sent': 'Test notification sent.',
+    'notif_test_failed':
+        'The test notification could not be shown. Check system settings.',
+    'notif_permission_denied_hint':
+        'Permission is still off. Enable notifications in system settings.',
     'record_synced': 'Record synced',
     'changes_saved': 'Changes saved',
     'edit_save_title_required': 'Enter a title before saving.',
