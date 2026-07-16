@@ -480,7 +480,6 @@ extension PlanServiceExtension on DatabaseService {
     _emitTimelineRefreshRaw();
   }
 
-
   /// Stable business **plan_id** (UUID) for merge/dedupe — not PocketBase system id.
   String? _planBusinessUuidFromTask(PlanningTask task) {
     final row = task.planRowId?.trim() ?? '';
@@ -641,7 +640,6 @@ extension PlanServiceExtension on DatabaseService {
     ];
   }
 
-
   Future<void> _ensureAllPlansUserCacheFresh({bool force = false}) async {
     if (!_isPlansTableConfigured) return;
     if (!_isInitialized || !(currentProfileId?.isNotEmpty ?? false)) return;
@@ -654,7 +652,6 @@ extension PlanServiceExtension on DatabaseService {
     }
     await _fetchAllPlanningTasksForCurrentUser();
   }
-
 
   /// 0..1 title similarity for plan–record linking heuristics (not category matching).
 
@@ -714,7 +711,6 @@ extension PlanServiceExtension on DatabaseService {
       _tasksCache = [];
     }
   }
-
 
   /// Next `order` for a new plan on this wall day (for optimistic + POST).
   /// Plans for a wall day (same source as Planning tab). For UI manual `source_plan_id` linking.
@@ -1502,7 +1498,6 @@ extension PlanServiceExtension on DatabaseService {
       } catch (_) {}
     }());
   }
-
 
   Future<Map<String, dynamic>> _buildPocketPlanCreateBody(
     PlanningTask task, {
