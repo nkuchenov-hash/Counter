@@ -66,6 +66,7 @@ part 'plans/plan_ordering.dart';
 part 'plans/plan_cache_helpers.dart';
 part 'plans/plan_offline_day_cache.dart';
 part 'plans/plan_outbox_helpers.dart';
+part 'plans/plan_mutations.dart';
 part 'plans/notes_brain_helpers.dart';
 part 'plans/plan_streams.dart';
 part 'plans/plan_realtime.dart';
