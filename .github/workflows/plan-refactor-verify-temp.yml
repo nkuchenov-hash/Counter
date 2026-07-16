@@ -1,4 +1,5 @@
 name: Plan refactor verification (temporary)
+# Temporary review-branch verification trigger.
 
 on:
   push:
