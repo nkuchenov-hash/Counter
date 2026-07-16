@@ -1012,44 +1012,4 @@ extension PlanServiceExtension on DatabaseService {
       await prefs.setInt(kPrefsPlanActiveTab, clamped);
     } catch (_) {}
   }
-
-
-
-  /// Deletes one plan row via [deletePlanningTasksBulk].
-  Future<void> deletePlanningTask(String planRowId) async {
-    if (!_isInitialized || !_hasAuthenticatedUserId) return;
-    if (!_isPlansTableConfigured) {
-      DatabaseService._log(
-        'TABLE_GUARD: blocked deletePlanningTask because plans table id equals records table id.',
-      );
-      return;
-    }
-    final id = planRowId.trim();
-    if (id.isEmpty) return;
-    unawaited(deletePlanningTasksBulk([id]));
-  }
-
-  /// Creates a child backlog plan linked via [parent_plan_id] → parent pocket id.
-  Future<bool> addBacklogChildPlan({
-    required String parentPocketPlanId,
-    required String title,
-    required int categoryId,
-  }) async {
-    final parent = parentPocketPlanId.trim();
-    final titleTrimmed = title.trim();
-    if (parent.isEmpty || titleTrimmed.isEmpty) return false;
-    final ord = await nextBacklogPlanningOrder();
-    return addPlanningTask(
-      PlanningTask(
-        id: 0,
-        title: titleTrimmed,
-        categoryId: categoryId,
-        dateKey: '',
-        order: ord,
-        startTime: null,
-        endDateTime: null,
-        parentPlanPocketId: parent,
-      ),
-    );
-  }
 }

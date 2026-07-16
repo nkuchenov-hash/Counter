@@ -458,4 +458,27 @@ extension PlanCreateExtension on DatabaseService {
     }
   }
 
+  /// Creates a child backlog plan linked via [parent_plan_id] → parent pocket id.
+  Future<bool> addBacklogChildPlan({
+    required String parentPocketPlanId,
+    required String title,
+    required int categoryId,
+  }) async {
+    final parent = parentPocketPlanId.trim();
+    final titleTrimmed = title.trim();
+    if (parent.isEmpty || titleTrimmed.isEmpty) return false;
+    final ord = await nextBacklogPlanningOrder();
+    return addPlanningTask(
+      PlanningTask(
+        id: 0,
+        title: titleTrimmed,
+        categoryId: categoryId,
+        dateKey: '',
+        order: ord,
+        startTime: null,
+        endDateTime: null,
+        parentPlanPocketId: parent,
+      ),
+    );
+  }
 }

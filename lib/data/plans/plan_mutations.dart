@@ -655,4 +655,18 @@ extension PlanMutationsExtension on DatabaseService {
     }
     return allOk;
   }
+
+  /// Deletes one plan row via [deletePlanningTasksBulk].
+  Future<void> deletePlanningTask(String planRowId) async {
+    if (!_isInitialized || !_hasAuthenticatedUserId) return;
+    if (!_isPlansTableConfigured) {
+      DatabaseService._log(
+        'TABLE_GUARD: blocked deletePlanningTask because plans table id equals records table id.',
+      );
+      return;
+    }
+    final id = planRowId.trim();
+    if (id.isEmpty) return;
+    unawaited(deletePlanningTasksBulk([id]));
+  }
 }
