@@ -64,6 +64,7 @@ part 'plans/plan_cache_helpers.dart';
 part 'plans/plan_outbox_helpers.dart';
 part 'plans/notes_brain_helpers.dart';
 part 'plans/plan_streams.dart';
+part 'plans/plan_realtime.dart';
 part 'plan_service.dart';
 part 'records/record_crud.dart';
 part 'records/record_optimistic.dart';

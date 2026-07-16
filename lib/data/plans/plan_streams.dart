@@ -10,8 +10,6 @@ final StreamController<void> _planningRefreshController =
 
 Timer? _planningNotifyNetworkDebounceTimer;
 bool _planningRefreshWantsNetworkPump = false;
-Future<void>? _plansRealtimeSubscribeFuture;
-Future<void> Function()? _plansRealtimeUnsubscribe;
 
 int _planningStreamIdSeq = 0;
 final Map<String, _PlanningDayStreamHub> _planningStreamHubs = {};
