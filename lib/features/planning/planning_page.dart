@@ -7,67 +7,30 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
-import 'dart:ui' show Offset, lerpDouble;
 
-import 'package:counter/core/date_pager_settle_gate.dart';
 import 'package:counter/core/date_swipe_physics.dart';
 import 'package:counter/core/performance/runtime_flags.dart';
-import 'package:counter/core/diagnostics/runtime_log.dart';
-import 'package:counter/core/diagnostics/platform_log.dart';
 import 'package:counter/core/widgets/day_content_strip.dart';
 import 'package:counter/core/widgets/day_window.dart';
 import 'package:counter/core/performance/rebuild_metrics.dart';
-import 'package:counter/core/performance/shell_flags.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/core/shell_layout_state.dart';
-import 'package:counter/core/picker_entry_modes.dart';
-import 'package:counter/core/widgets/app_button.dart';
-import 'package:counter/core/widgets/compact_nav_controls.dart';
-import 'package:counter/core/widgets/global_app_header.dart';
-import 'package:counter/core/widgets/mouse_drag_scroll_behavior.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/features/planning/bulk_planning_edit_sheet.dart';
 import 'package:counter/features/planning/recurrence_scope_dialog.dart';
-import 'package:counter/data/plan_time_sequential_cascade.dart';
-import 'package:counter/data/time_view_fixed_time_policy.dart';
-import 'package:counter/features/planning/plan_time_gesture_contract.dart';
-import 'package:counter/features/planning/plan_time_view_layout.dart';
-import 'package:counter/features/planning/planning_day_start_prefs.dart';
 import 'package:counter/data/smart_input_parser.dart';
 import 'package:counter/features/planning/smart_plan_sheet.dart';
 import 'package:counter/core/tag_contrast.dart';
 import 'package:counter/features/profile/tag_settings_hub.dart';
-import 'package:counter/features/profile/timezone_settings.dart' as tz_settings;
-import 'package:counter/core/widgets/chip_component.dart';
-import 'package:counter/features/shared/shared_widgets.dart';
-import 'package:counter/l10n/category_db_display.dart';
 import 'package:counter/l10n/dictionary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart' show SchedulerBinding, Ticker;
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:counter/core/widgets/app_state_views.dart';
-import 'package:counter/core/time/plan_time_labels.dart';
 import 'package:counter/core/widgets/plan_card.dart';
-import 'package:counter/core/widgets/plan_time_task_card.dart';
-import 'package:counter/features/planning/settings/default_plan_category_search.dart';
-import 'package:counter/features/planning/settings/default_plan_timezone_search.dart';
-import 'package:counter/features/planning/settings/plan_record_link_settings.dart';
-import 'package:counter/features/planning/settings/planning_no_tags_settings.dart';
-import 'package:counter/features/planning/settings/planning_timeline_bounds_sheet.dart';
-import 'package:counter/features/planning/time_view/time_view_drag_state.dart';
-import 'package:counter/features/planning/time_view/time_view_fixed_time_settings.dart';
-import 'package:counter/features/planning/time_view/time_view_interaction_block.dart';
 import 'package:counter/features/planning/time_view/time_view_settings_sheet.dart';
-import 'package:counter/features/planning/time_view/time_view_search_delegate.dart';
-import 'package:counter/features/planning/time_view/time_view_resize_controller.dart';
 import 'package:counter/features/planning/time_view/time_view_hour_grid.dart';
-import 'package:counter/features/planning/time_view/time_view_drop_preview.dart';
-import 'package:counter/features/planning/time_view/time_view_drag_controller.dart';
-import 'package:counter/features/planning/time_view/time_view_card_layer.dart';
-import 'package:counter/features/planning/time_view/time_view_canvas.dart';
 import 'package:counter/features/planning/time_view/planning_time_view.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_host.dart';
 import 'package:counter/features/planning/time_view/planning_time_view_coordinator.dart';
@@ -236,100 +199,6 @@ class _PlanningPageState extends State<PlanningPage>
 
   String _dateKeyFromDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
-  DateTime? _planDateFromTaskDateKey(String key) {
-    if (key.length < 10) return null;
-    final y = int.tryParse(key.substring(0, 4));
-    final m = int.tryParse(key.substring(5, 7));
-    final d = int.tryParse(key.substring(8, 10));
-    if (y == null || m == null || d == null) return null;
-    return DateTime.utc(y, m, d);
-  }
-
-  Future<void> _changeSingleTaskDate(PlanningTask task) async {
-    if (task.planRowIdForBackend.startsWith('optimistic-')) return;
-    if (task.id <= 0) return;
-    final loc = currentLocale.value;
-    final initial =
-        _planDateFromTaskDateKey(task.dateKey) ?? widget.selectedDate ?? _today;
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.utc(initial.year, initial.month, initial.day),
-      firstDate: DateTime.utc(2020),
-      lastDate: DateTime.utc(2035),
-      initialEntryMode: appDatePickerEntryModeFromContext(context),
-    );
-    if (picked == null || !mounted) return;
-    var h = 9;
-    var min = 0;
-    if (task.startTime != null) {
-      h = task.startTime!.hour;
-      min = task.startTime!.minute;
-    }
-    final wallStart = DateTime(picked.year, picked.month, picked.day, h, min);
-    DateTime? wallEnd;
-    if (task.endDateTime != null) {
-      wallEnd = DateTime(
-        picked.year,
-        picked.month,
-        picked.day,
-        task.endDateTime!.hour,
-        task.endDateTime!.minute,
-      );
-    }
-    final newKey = _dateKeyFromDate(picked);
-    final anchorShort = DatabaseService.instance.planningAuditAnchorDateKey(
-      task,
-    );
-    const minKeyLen = 10;
-    final persistInitial = anchorShort.length >= minKeyLen
-        ? anchorShort
-        : DatabaseService.instance.planningWallScheduleDateKey(task);
-    final initForPatch = persistInitial.length >= minKeyLen
-        ? persistInitial
-        : newKey;
-    final postponed =
-        !task.isDone &&
-        DatabaseService.instance.planningShouldMarkPostponed(
-          anchorKey: initForPatch,
-          newScheduleKey: newKey,
-        );
-    final updated = task.copyWith(
-      dateKey: newKey,
-      date: DateTime.utc(picked.year, picked.month, picked.day),
-      startTime: wallStart,
-      endDateTime: wallEnd,
-      endDateKey: wallEnd != null ? newKey : null,
-      clearEnd: task.endDateTime == null,
-      initialDateKey: initForPatch,
-      isPostponed: postponed,
-    );
-    DatabaseService.instance.applyOptimisticPlanningTask(updated);
-    DatabaseService.instance.notifyPlanningRefresh();
-    setState(() {});
-    final ok = await DatabaseService.instance.updatePlanningTask(
-      task.planRowIdForBackend,
-      planBusinessId: task.planRowId,
-      startTimeDisplay: wallStart,
-      endDateTimeDisplay: wallEnd,
-      clearEnd: task.endDateTime == null,
-      suppressAppSnack: true,
-      recurrenceInstanceDateKey: task.recurrenceInstanceDateKey,
-      planInitialDateKey: initForPatch.length >= minKeyLen
-          ? initForPatch
-          : null,
-      planIsPostponed: postponed,
-    );
-    if (!mounted) return;
-    if (!ok) {
-      DatabaseService.instance.applyOptimisticPlanningTask(task);
-      DatabaseService.instance.notifyPlanningRefresh();
-      setState(() {});
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(t(loc, 'plan_save_failed'))));
-    }
-  }
 
   /// Stable unique key for list tiles. Never use bare `id` alone — Noco `id` can be 0 for
   /// multiple rows before sync, which duplicates [ValueKey]s and crashes the Time grid.
@@ -1915,9 +1784,6 @@ DatabaseService.instance.persistPlanningTaskOrder(
   DateTime _dateForPageIndex(int index) =>
       widget.mountedWindow?.dateAt(index) ??
       (widget.selectedDate ?? _today);
-
-  String _dateKeyForPageIndex(int index) =>
-      DayWindow.dateKey(_dateForPageIndex(index));
 
   /// Stable PageView path — live planning stream for this page's day.
   Widget _buildActiveDayBody(

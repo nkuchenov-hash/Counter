@@ -1,4 +1,4 @@
-import 'dart:math' as math;import 'package:counter/features/planning/plan_time_gesture_contract.dart';import 'package:counter/features/planning/time_view/time_view_drag_state.dart';import 'package:flutter/foundation.dart';import 'package:flutter/material.dart';import 'package:flutter/services.dart';/// Invisible move/resize gesture zones for proportional timeline plan blocks.
+import 'dart:math' as math;import 'package:counter/features/planning/plan_time_gesture_contract.dart';import 'package:counter/features/planning/time_view/time_view_drag_state.dart';import 'package:flutter/foundation.dart';import 'package:flutter/material.dart';/// Invisible move/resize gesture zones for proportional timeline plan blocks.
 class TimelinePlanInteractionBlock extends StatefulWidget {
   const TimelinePlanInteractionBlock({
     required this.canMove,
