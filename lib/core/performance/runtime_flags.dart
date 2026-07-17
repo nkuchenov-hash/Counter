@@ -29,6 +29,13 @@ const bool kPlansWarmWindowEnabled = false;
 /// Planning stream / realtime lifecycle diagnostics (works in release when true).
 const bool kPlanStreamLifecycleDiag = true;
 
+/// Plan alarm / local notification diagnostics (`[PLAN_ALARM] …`).
+/// Default false — enable with `--dart-define=PLAN_ALARM_DIAG=true`.
+const bool kPlanAlarmDiag = bool.fromEnvironment(
+  'PLAN_ALARM_DIAG',
+  defaultValue: false,
+);
+
 /// Desktop Price Reporter structured voice command panel + Ctrl+Shift+Space hotkey.
 /// **KILL SWITCH (P0V):** default **false** — enable only with
 /// `--dart-define=DESKTOP_VOICE_COMMAND=true` after Windows/desktop verification.

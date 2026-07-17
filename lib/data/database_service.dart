@@ -55,6 +55,7 @@ part 'plans/plan_tags_helpers.dart';
 part 'plans/plan_cache_helpers.dart';
 part 'plans/plan_outbox_helpers.dart';
 part 'plans/notes_brain_helpers.dart';
+part 'plans/plan_alarm_helpers.dart';
 part 'plan_service.dart';
 part 'records/record_crud.dart';
 part 'records/record_optimistic.dart';
@@ -413,7 +414,8 @@ class DatabaseService {
     _timelineDayIndexDirty = true;
     _timelineDayViewCache.clear();
     _timeUpdateController.add(null);
-    _requestPlanAlarmReschedule();
+    // Plan alarms are reconciled from planning refresh / resume / hydrate only
+    // (not on every record timeline emit — Law of the Main Thread).
   }
 
   Future<T> _runBatchedRecordCacheTimelineNotify<T>(

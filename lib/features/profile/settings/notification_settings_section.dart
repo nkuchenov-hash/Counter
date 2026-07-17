@@ -1,4 +1,12 @@
-import 'dart:async';import 'package:counter/core/widgets/app_button.dart';import 'package:counter/l10n/dictionary.dart';import 'package:counter/services/notification_service.dart';import 'package:flutter/foundation.dart' show kIsWeb;import 'package:flutter/material.dart';import 'package:flutter_local_notifications/flutter_local_notifications.dart';/// OS notification permission + local plan reminders (Android / iOS).
+import 'dart:async';
+
+import 'package:counter/core/widgets/app_button.dart';
+import 'package:counter/l10n/dictionary.dart';
+import 'package:counter/services/notification_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+
+/// OS notification permission + local plan reminders (Android / iOS / desktop).
 class ProfileNotificationsSection extends StatefulWidget {
   const ProfileNotificationsSection({this.embedded = false});
 
@@ -11,32 +19,33 @@ class ProfileNotificationsSection extends StatefulWidget {
 
 class ProfileNotificationsSectionState
     extends State<ProfileNotificationsSection> {
-  Future<bool?>? _statusFuture;
+  Future<PlanAlarmPermissionStatus>? _statusFuture;
 
   @override
   void initState() {
     super.initState();
-    _statusFuture = _loadAndroidNotificationEnabled();
-  }
-
-  Future<bool?> _loadAndroidNotificationEnabled() async {
-    if (kIsWeb) return null;
-    try {
-      final plugin = FlutterLocalNotificationsPlugin();
-      final android = plugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >();
-      return android?.areNotificationsEnabled();
-    } catch (_) {
-      return null;
-    }
+    _statusFuture = NotificationService.instance.permissionStatus();
   }
 
   void _refreshStatus() {
     setState(() {
-      _statusFuture = _loadAndroidNotificationEnabled();
+      _statusFuture = NotificationService.instance.permissionStatus();
     });
+  }
+
+  String _statusLine(String loc, PlanAlarmPermissionStatus? v) {
+    switch (v) {
+      case PlanAlarmPermissionStatus.allowed:
+        return t(loc, 'notif_status_allowed');
+      case PlanAlarmPermissionStatus.denied:
+      case PlanAlarmPermissionStatus.permanentlyDenied:
+        return t(loc, 'notif_status_denied');
+      case PlanAlarmPermissionStatus.unsupported:
+        return t(loc, 'profile_notifications_web_hint');
+      case PlanAlarmPermissionStatus.unknown:
+      case null:
+        return t(loc, 'notif_status_unknown');
+    }
   }
 
   @override
@@ -66,16 +75,13 @@ class ProfileNotificationsSectionState
           ),
           const SizedBox(height: 12),
         ],
-        FutureBuilder<bool?>(
+        FutureBuilder<PlanAlarmPermissionStatus>(
           future: _statusFuture,
           builder: (context, snap) {
-            final v = snap.data;
-            final line = v == null
-                ? t(loc, 'notif_status_unknown')
-                : (v
-                      ? t(loc, 'notif_status_allowed')
-                      : t(loc, 'notif_status_denied'));
-            return Text(line, style: theme.textTheme.bodyMedium);
+            return Text(
+              _statusLine(loc, snap.data),
+              style: theme.textTheme.bodyMedium,
+            );
           },
         ),
         const SizedBox(height: 12),
@@ -83,12 +89,10 @@ class ProfileNotificationsSectionState
           label: t(loc, 'profile_notifications_request_button'),
           icon: Icons.notifications_active_outlined,
           onPressed: () {
-            unawaited(
-              NotificationService.instance.requestPermissionsIfNeeded(),
-            );
-            WidgetsBinding.instance.addPostFrameCallback((_) {
+            unawaited(() async {
+              await NotificationService.instance.requestPermissions();
               if (mounted) _refreshStatus();
-            });
+            }());
           },
         ),
       ],

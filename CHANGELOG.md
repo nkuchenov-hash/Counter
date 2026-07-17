@@ -11,6 +11,14 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-17] - Plan reminder alarms: canonical scheduler + Windows init fix [engineering]
+
+* **Root cause:** `NotificationService.ensureInitialized` omitted `WindowsInitializationSettings` (and treated Linux as schedulable), so plugin init threw and every `syncAlarms` call no-oped; fire times used device `tz.local` instead of profile wall UTC; Android lacked boot receivers / `RECEIVE_BOOT_COMPLETED`.
+* **`plan_alarm_schedule.dart` + `notification_service.dart`:** Canonical schedule/cancel/reconcile API; profile-timezone fire UTC; Windows init GUID/AUMID; gated `[PLAN_ALARM]` diags; `inexactAllowWhileIdle` (no exact-alarm privilege).
+* **`plans/plan_alarm_helpers.dart`:** `reconcilePlanNotifications()` from hydrated `_allPlansUserCache` only (no network); debounced from planning refresh / hydrate / resume; removed alarm work from timeline record emits; sign-out cancels pending.
+* **AndroidManifest + Profile notifications:** Boot receivers + vibrate; Profile button calls `requestPermissions()` (not one-shot `IfNeeded`).
+* **`test/services/plan_alarm_schedule_test.dart`:** Occurrence id stability, past/done/deleted skip, same-id finalize without duplication.
+
 ## [2026-07-13] - Notes editor: faithful NoteEditor.tsx composition port [product]
 
 * **`note_editor_page.dart`:** Mechanical TSX translation — 768px column, compact top bar (px-4/py-3), borderless title/metadata, inline glass category picker, 4px block rhythm, right-side active controls (no hover menu), add-block pills, exact toolbar order with popover color picker above toolbar.
