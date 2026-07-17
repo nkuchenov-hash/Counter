@@ -56,6 +56,7 @@ part 'plans/plan_cache_helpers.dart';
 part 'plans/plan_outbox_helpers.dart';
 part 'plans/notes_brain_helpers.dart';
 part 'plans/plan_alarm_helpers.dart';
+part 'plans/plan_ai_parse_helpers.dart';
 part 'plan_service.dart';
 part 'records/record_crud.dart';
 part 'records/record_optimistic.dart';

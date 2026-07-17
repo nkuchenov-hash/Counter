@@ -116,13 +116,14 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `records/record_overlap_helpers.dart` | Highlander local apply, singleton reconcile, overlap probes *(part)* |
 | `records/record_ghost_cleanup.dart` | 404 deadletter prune against live cache *(part)* |
 | `records/record_cache_helpers.dart` | Per-day filter, `recordsStream`, display-time helpers *(part)* |
-| `plan_service.dart` | Plans/lists coordinator: CRUD, streams, wall-time projection, alarms, AI parse *(part)* |
+| `plan_service.dart` | Plans/lists coordinator: CRUD, streams, wall-time projection, alarms *(part)* |
 | `plans/plan_projection_types.dart` | `TimeModeProjectedPlan`, `PlanTimeModeProjection` *(part)* |
 | `plans/plan_recurrence_helpers.dart` | RRULE JIT expansion, exception-date parse helpers *(part)* |
 | `plans/plan_time_cascade_helpers.dart` | Time View cascade, duration consts, `planningWallEstimateSeconds` *(part)* |
 | `plans/plan_tags_helpers.dart` | Plan/list tag catalog fetch + PB `tags_link` sync *(part)* |
 | `plans/plan_cache_helpers.dart` | Plan dedupe/scrub, title link scoring heuristics *(part)* |
 | `plans/plan_outbox_helpers.dart` | Plan mutation outbox enqueue/flush/replay *(part)* |
+| `plans/plan_ai_parse_helpers.dart` | AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend` *(part)* |
 | `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
 | `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
 | `categories/category_tree.dart` | Category hierarchy build/sort, parent/child, subtree record ids *(part)* |

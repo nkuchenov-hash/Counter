@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-17] - Plans: extract AI parse helpers [engineering]
+
+* **`plans/plan_ai_parse_helpers.dart`:** Moved `parseTaskViaAiBackend` / `parsePlanningItemsViaAiBackend` (+ HH:mm / item normalization helpers) out of `plan_service.dart` into a focused Brain `part`; DatabaseService API unchanged.
+
 ## [2026-07-17] - Plan reminder alarms: canonical scheduler + Windows init fix [engineering]
 
 * **Root cause:** `NotificationService.ensureInitialized` omitted `WindowsInitializationSettings` (and treated Linux as schedulable), so plugin init threw and every `syncAlarms` call no-oped; fire times used device `tz.local` instead of profile wall UTC; Android lacked boot receivers / `RECEIVE_BOOT_COMPLETED`.
