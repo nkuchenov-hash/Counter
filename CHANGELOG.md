@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-17] - Architecture guard baseline and first cluster [engineering]
+
+* **`ARCHITECTURE_GUARD_BASELINE_2026-07-17.md` + `APP_STRUCTURE.md`:** Classified all 63 strict diagnostics (A=5, B=58); documented the two valid plan-alarm modules as the first safe cluster, reducing the expected strict count to 61 without changing guard severity or runtime code.
+
 ## [2026-07-17] - Plans: extract AI parse helpers [engineering]
 
 * **`plans/plan_ai_parse_helpers.dart`:** Moved `parseTaskViaAiBackend` / `parsePlanningItemsViaAiBackend` (+ HH:mm / item normalization helpers) out of `plan_service.dart` into a focused Brain `part`; DatabaseService API unchanged.

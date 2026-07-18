@@ -14,7 +14,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **Structure audit verdict** | **ACCEPTED WITH WATCHLIST** — see [`docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`](reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md) |
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
-| **Strict architecture guard** | Green (0 violations) |
+| **Strict architecture guard** | Baseline captured 2026-07-17: 63 classified violations; first cluster removes 2, leaving 61 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable unique EN/RU entry per tracked folder and file (regenerate via `generate_app_structure_detailed.py`) |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
 | **Prior parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
@@ -124,6 +124,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `plans/plan_cache_helpers.dart` | Plan dedupe/scrub, title link scoring heuristics *(part)* |
 | `plans/plan_outbox_helpers.dart` | Plan mutation outbox enqueue/flush/replay *(part)* |
 | `plans/plan_ai_parse_helpers.dart` | AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend` *(part)* |
+| `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `category_service.dart` | Category coordinator: flatten/PB bridge statics, stats duration helpers, local task prefs helpers *(part)* |
 | `categories/category_cache_helpers.dart` | Category fetch, slug reservation, `_loadRulesFromNoco` *(part)* |
 | `categories/category_tree.dart` | Category hierarchy build/sort, parent/child, subtree record ids *(part)* |
@@ -357,6 +358,7 @@ Desktop voice modules follow the `desktop_voice_*.dart` naming pattern under `co
 | File | Role |
 | :--- | :--- |
 | `notification_service.dart` | Local notifications and plan alarms |
+| `plan_alarm_schedule.dart` | UI-free plan reminder schedule specifications, wall-time conversion, dedupe, and limits |
 
 ---
 
