@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:counter/data/database_service.dart';
 import 'package:counter/data/models.dart';
 import 'package:counter/data/plan_time_sequential_cascade.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _dayKey = '2026-06-23';
 
@@ -186,6 +189,58 @@ void main() {
       );
       expect(out.length, 1);
       expect(out.first.pocketRecordId, parentPb);
+    });
+  });
+
+  group('scrubPersistedPlanningDayCachesOnRestore', () {
+    test('rewrites day cache after dropping virt-* via offline codec', () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      const key = 'cache_plans_day_v1_anon_$_dayKey';
+      const parentPb = 'abcdefghijklmno';
+      await prefs.setString(
+        key,
+        jsonEncode([
+          {
+            'pocketRecordId': parentPb,
+            'plan_row_id': 'biz-real',
+            'id': 0,
+            'title': 'Price Reporter Email check',
+            'category_id': 1,
+            'is_done': false,
+            'dateKey': _dayKey,
+            'endDateKey': _dayKey,
+            'order': 0,
+            'start_wall': [2026, 6, 23, 0, 10, 0],
+            'end_wall': [2026, 6, 23, 0, 40, 0],
+            'isSynced': true,
+          },
+          {
+            'plan_row_id': 'virt-$parentPb-$_dayKey',
+            'id': 0,
+            'title': 'Price Reporter Email check',
+            'category_id': 1,
+            'is_done': false,
+            'dateKey': _dayKey,
+            'endDateKey': _dayKey,
+            'order': 0,
+            'start_wall': [2026, 6, 23, 0, 10, 0],
+            'end_wall': [2026, 6, 23, 0, 40, 0],
+            'isSynced': true,
+          },
+        ]),
+      );
+
+      await DatabaseService.instance.scrubPersistedPlanningDayCachesOnRestore();
+
+      final raw = prefs.getString(key);
+      expect(raw, isNotNull);
+      final decoded = jsonDecode(raw!) as List<dynamic>;
+      expect(decoded, hasLength(1));
+      final row = Map<String, dynamic>.from(decoded.single as Map);
+      expect(row['pocketRecordId'], parentPb);
+      expect(row['plan_row_id'], 'biz-real');
+      expect(row['start_wall'], [2026, 6, 23, 0, 10, 0]);
     });
   });
 

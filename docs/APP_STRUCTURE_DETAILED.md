@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `b389163` on 2026-07-20.**
+**Generated at git SHA `bf33d33` on 2026-07-20.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10917,14 +10917,14 @@ RU:
 
 EN:
 
-- **What this is:** Maintains the local plan list clean and scores title similarity for smart linking.
-- **Why needed:** Duplicate plan rows or bad merges would break Planning and Lists tabs.
-- **What it contains:** Plan dedupe/scrub, title link scoring heuristics.
+- **What this is:** Maintains the local plan list clean, persists/restores offline day caches, and scores title similarity for smart linking.
+- **Why needed:** Duplicate plan rows, stale virt-* day-cache entries, or bad merges would break Planning and Lists tabs.
+- **What it contains:** Plan dedupe/scrub; offline day-cache codec (`cache_plans_day_v1_*`); SharedPreferences day-cache persist/restore; title link scoring.
 - **Key code names:** `PlanCacheProjectionExtension`
-- **Responsibilities:** Plan dedupe/scrub, title link scoring heuristics
+- **Responsibilities:** Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring
 - **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Plan dedupe/scrub, title link scoring heuristics
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring
 - **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
 
 RU:
@@ -10932,7 +10932,7 @@ RU:
 - **Что это:** Модуль brain для plans and lists — файл `plan_cache_helpers`.
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
 - **Содержимое:** Dart-код (`PlanCacheProjectionExtension`).
-- **Обязанности:** Реализует в коде: Plan dedupe/scrub, title link scoring heuristics.
+- **Обязанности:** Реализует в коде: Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View

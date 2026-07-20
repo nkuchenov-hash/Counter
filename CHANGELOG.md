@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Plans: consolidate offline day cache [engineering]
+
+* **`plans/plan_cache_helpers.dart`:** Moved offline Planning day-cache codec + SharedPreferences persist/load (`_planningTaskToDayCacheMap`, `_planningTaskFromOfflineDayMap`, `_persistPlanningTasksDayCache`, `_loadPlanningTasksDayCache`) from `plan_service.dart` into `PlanCacheProjectionExtension` (**4875 → 4663** / **260 → 473** Measure-Object lines). Key `cache_plans_day_v1_<dateKey>`, field aliases, scrub-before-persist/after-load, and wall-time reprojection unchanged. LARGE_FILE remains **1**.
+
 ## [2026-07-20] - Voice: extract helper process lifecycle [engineering]
 
 * **`desktop_stt_helper_process_lifecycle.dart`:** Extracted helper process/install lifecycle (`helperPath`, `ensureStarted`, `_ensureHelperRunning`, `_restartHelper`, `_killHelperProcess`, stdout/stderr tails) from `desktop_stt_helper_service.dart` as `part of` (**1916 → 1715** Measure-Object lines; new part **206**). LARGE_FILE warnings **2 → 1** (`plan_service.dart` remains). HTTP readiness, transcribe, and diagnostics parts unchanged.

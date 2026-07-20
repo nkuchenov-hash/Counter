@@ -85,9 +85,9 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Tag catalog fetch, PB link sync for plans/lists.",
     ),
     "plan_cache_helpers": (
-        "Maintains the local plan list clean and scores title similarity for smart linking.",
-        "Duplicate plan rows or bad merges would break Planning and Lists tabs.",
-        "Plan dedupe/scrub, title link scoring heuristics.",
+        "Maintains the local plan list clean, persists/restores offline day caches, and scores title similarity for smart linking.",
+        "Duplicate plan rows, stale virt-* day-cache entries, or bad merges would break Planning and Lists tabs.",
+        "Plan dedupe/scrub; offline day-cache codec (`cache_plans_day_v1_*`); SharedPreferences day-cache persist/restore; title link scoring.",
     ),
     "plan_outbox_helpers": (
         "Queues plan/list edits when offline and flushes when connection returns.",
