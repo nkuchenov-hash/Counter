@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Architecture: document Desktop Voice modules [engineering]
+
+* **`APP_STRUCTURE.md`:** Added exact entries for all 32 legitimate Desktop Voice / STT production modules (`core/services/*` + `desktop_voice_correction_sheet.dart`). Strict guard **56 → 24** (A=0, B=24). Documentation-only; no source changes.
+
 ## [2026-07-20] - Notes: move capture fixtures out of production lib [engineering]
 
 * **`test/notes/fixtures/` + `scripts/manual/capture_notes_glm_main.dart`:** Relocated four test-only GLM Notes capture/fixture files from `lib/features/notes/debug/`; updated parity test + `capture_notes_glm_parity.ps1`. Strict guard **60 → 56** (A=0, B=56). Production Notes code unchanged.
