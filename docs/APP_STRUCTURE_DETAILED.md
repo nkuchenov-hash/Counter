@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `bf33d33` on 2026-07-20.**
+**Generated at git SHA `c822a95` on 2026-07-20.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -10943,14 +10943,14 @@ RU:
 
 EN:
 
-- **What this is:** Queues plan/list edits when offline and flushes when connection returns.
-- **Why needed:** Checking off a list item offline must stick and sync later.
-- **What it contains:** Plan mutation outbox enqueue/flush/replay.
+- **What this is:** Runs immediate plan update/delete network phases and queues/replays mutations when offline or auth-paused.
+- **Why needed:** Checking off a list item or editing a plan offline must stick locally, then sync later without losing retry/auth classification.
+- **What it contains:** Immediate `_patchPlanUpdateNetworkPhase` / `_deletePlanNetworkPhase`; outbox enqueue/flush/replay; mutation retry and auth pause classification.
 - **Key code names:** `PlanOutboxSyncExtension`
-- **Responsibilities:** Plan mutation outbox enqueue/flush/replay
+- **Responsibilities:** Immediate update/delete network phase, offline enqueue, queued replay, mutation retry/auth classification
 - **When to open:** Plan/list save, Time View layout, recurrence, tags on plans, offline queue.
 - **Can it be deleted?** No — required for app runtime.
-- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Plan mutation outbox enqueue/flush/replay
+- **Connected to:** UI calls via `DatabaseService.instance`; Plans tab, Lists tab, Time View; APP_STRUCTURE role: Immediate update/delete network phase, offline enqueue, queued replay, mutation retry/auth classification
 - **Layer / owner:** Brain module — `part` file merged into `database_service.dart`.
 
 RU:
@@ -10958,7 +10958,7 @@ RU:
 - **Что это:** Модуль brain для plans and lists — файл `plan_outbox_helpers`.
 - **Зачем:** Держит plans and lists согласованным с PocketBase и UI.
 - **Содержимое:** Dart-код (`PlanOutboxSyncExtension`).
-- **Обязанности:** Реализует в коде: Plan mutation outbox enqueue/flush/replay.
+- **Обязанности:** Реализует в коде: Immediate update/delete network phase, offline enqueue, queued replay, mutation retry/auth classification.
 - **Когда открывать:** Планы/списки: сохранение, Time View, повтор, теги.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** UI вызывает `DatabaseService.instance`; Plans, Lists, Time View

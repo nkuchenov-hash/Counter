@@ -90,9 +90,9 @@ PLAN_PART: dict[str, tuple[str, str, str]] = {
         "Plan dedupe/scrub; offline day-cache codec (`cache_plans_day_v1_*`); SharedPreferences day-cache persist/restore; title link scoring.",
     ),
     "plan_outbox_helpers": (
-        "Queues plan/list edits when offline and flushes when connection returns.",
-        "Checking off a list item offline must stick and sync later.",
-        "Plan mutation outbox enqueue/flush/replay.",
+        "Runs immediate plan update/delete network phases and queues/replays mutations when offline or auth-paused.",
+        "Checking off a list item or editing a plan offline must stick locally, then sync later without losing retry/auth classification.",
+        "Immediate `_patchPlanUpdateNetworkPhase` / `_deletePlanNetworkPhase`; outbox enqueue/flush/replay; mutation retry and auth pause classification.",
     ),
     "plan_ai_parse_helpers": (
         "Calls the AI parse-task backend and normalizes planning items from the response.",

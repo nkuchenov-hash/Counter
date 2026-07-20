@@ -1,6 +1,14 @@
 part of '../database_service.dart';
 
+bool _planMutationRetriableHttpCode(int code) {
+  if (code == 401 || code == 403 || code == 404) return false;
+  if (code == 400 || code == 422) return false;
+  if (code >= 200 && code < 300) return false;
+  return true;
+}
+
 extension PlanOutboxSyncExtension on DatabaseService {
+  /// Drains queued PocketBase **plans** mutations (offline outbox). Safe to call from [SyncManager].
   Future<void> flushPendingPlanMutations() async {
     if (!_isInitialized || !_hasAuthenticatedUserId) return;
     if (!_isPlansTableConfigured) return;
@@ -603,5 +611,172 @@ extension PlanOutboxSyncExtension on DatabaseService {
       }
     }
     return true;
+  }
+
+  // --- Immediate update/delete network phase (not flush/replay) ---
+
+  Future<bool> _patchPlanUpdateNetworkPhase({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+    required Map<String, dynamic> patchBody,
+    List<Tag>? tags,
+    bool suppressAppSnack = false,
+  }) async {
+    final scalarBody = Map<String, dynamic>.from(patchBody);
+    scalarBody.remove('user_id');
+    try {
+      if (scalarBody.isNotEmpty) {
+        await _pb
+            .collection(PbCollections.plans)
+            .update(resolvedPbId, body: scalarBody);
+      }
+      if (tags != null) {
+        await _syncPlanTagsPocket(resolvedPbId, tags);
+      }
+      final tagCatalog = await _fetchPlanAndListTagCatalog();
+      final merged = await _pb
+          .collection(PbCollections.plans)
+          .getOne(resolvedPbId, expand: kPbPlanTagsExpand);
+      final taskFromServer = _planningTaskFromPocketRecord(
+        merged,
+        pocketTagCatalog: tagCatalog,
+      );
+      _upsertPlanInUserCache(taskFromServer);
+      _allPlansUserCacheFetchedAt = DateTime.now();
+      clearOptimisticPlanningForPlanRow(originalInput);
+      clearOptimisticPlanningForPlanRow(resolvedPbId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      unawaited(offlineSync.refreshPendingCount());
+      return true;
+    } on ClientException catch (e) {
+      final code = e.statusCode;
+      if (code == 404) {
+        _removePlanFromUserCache(resolvedPbId);
+        _removePlanFromUserCache(originalInput);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        if (!suppressAppSnack) AppSnack.failed();
+        return false;
+      }
+      if (code == 401 || code == 403) {
+        List<String>? tagIds;
+        if (tags != null) {
+          tagIds = await _pbTagRecordIdsFromTags(tags);
+        }
+        await _enqueuePlanUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: scalarBody,
+          pocketBaseId: resolvedPbId,
+          tagsLinkPbIds: tagIds,
+          error: code,
+          syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
+        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $code');
+        if (!suppressAppSnack) AppSnack.failed();
+        return true;
+      }
+      if (_planMutationRetriableHttpCode(code)) {
+        List<String>? tagIds;
+        if (tags != null) {
+          tagIds = await _pbTagRecordIdsFromTags(tags);
+        }
+        await _enqueuePlanUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: scalarBody,
+          pocketBaseId: resolvedPbId,
+          tagsLinkPbIds: tagIds,
+          error: code,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    } catch (e, st) {
+      DatabaseService._log('PATCH_PLAN_NETWORK: $e');
+      DatabaseService._log(st.toString());
+      if (_planMutationRetriableHttpCode(0)) {
+        List<String>? tagIds;
+        if (tags != null) {
+          tagIds = await _pbTagRecordIdsFromTags(tags);
+        }
+        await _enqueuePlanUpdateMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          patchFields: scalarBody,
+          pocketBaseId: resolvedPbId,
+          tagsLinkPbIds: tagIds,
+          error: e,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return true;
+      }
+      if (!suppressAppSnack) AppSnack.failed();
+      return false;
+    }
+  }
+
+  Future<({bool ok, bool queued})> _deletePlanNetworkPhase({
+    required String originalInput,
+    required String resolvedPbId,
+    required String businessId,
+  }) async {
+    try {
+      await _pb.collection(PbCollections.plans).delete(resolvedPbId);
+      _removePlanFromUserCache(originalInput);
+      _removePlanFromUserCache(resolvedPbId);
+      clearOptimisticPlanningForPlanRow(originalInput);
+      clearOptimisticPlanningForPlanRow(resolvedPbId);
+      notifyPlanningRefresh(scheduleNetworkRefresh: false);
+      _notifyTimelineAfterRecordCacheMutation();
+      unawaited(offlineSync.refreshPendingCount());
+      return (ok: true, queued: false);
+    } on ClientException catch (e) {
+      final code = e.statusCode;
+      if (code == 404) {
+        _removePlanFromUserCache(resolvedPbId);
+        _removePlanFromUserCache(originalInput);
+        notifyPlanningRefresh(scheduleNetworkRefresh: false);
+        return (ok: true, queued: false);
+      }
+      if (code == 401 || code == 403) {
+        await _enqueuePlanDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          pocketBaseId: resolvedPbId,
+          error: code,
+          syncStatus: PlanMutationOutbox.syncStatusPausedAuth,
+        );
+        offlineSync.setAuthPaused(true, message: 'HTTP $code');
+        return (ok: true, queued: true);
+      }
+      if (_planMutationRetriableHttpCode(code)) {
+        await _enqueuePlanDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          pocketBaseId: resolvedPbId,
+          error: code,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return (ok: true, queued: true);
+      }
+      return (ok: false, queued: false);
+    } catch (e, st) {
+      DatabaseService._log('DELETE_PLAN_NETWORK: $e');
+      DatabaseService._log(st.toString());
+      if (_planMutationRetriableHttpCode(0)) {
+        await _enqueuePlanDeleteMutation(
+          originalInput: originalInput,
+          businessId: businessId,
+          pocketBaseId: resolvedPbId,
+          error: e,
+        );
+        offlineSync.setConnectivityOffline(true);
+        return (ok: true, queued: true);
+      }
+      return (ok: false, queued: false);
+    }
   }
 }

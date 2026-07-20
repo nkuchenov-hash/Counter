@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Plans: consolidate mutation network phase [engineering]
+
+* **`plans/plan_outbox_helpers.dart`:** Moved immediate update/delete network phase (`_planMutationRetriableHttpCode`, `_patchPlanUpdateNetworkPhase`, `_deletePlanNetworkPhase`) from `plan_service.dart` into `PlanOutboxSyncExtension` (**4663 → 4493** / **591 → 762** Measure-Object lines). Flush/replay left undeduplicated; AppSnack, 404/401/403/retriable enqueue, and `(ok, queued)` delete semantics unchanged. LARGE_FILE remains **1**.
+
 ## [2026-07-20] - Plans: consolidate offline day cache [engineering]
 
 * **`plans/plan_cache_helpers.dart`:** Moved offline Planning day-cache codec + SharedPreferences persist/load (`_planningTaskToDayCacheMap`, `_planningTaskFromOfflineDayMap`, `_persistPlanningTasksDayCache`, `_loadPlanningTasksDayCache`) from `plan_service.dart` into `PlanCacheProjectionExtension` (**4875 → 4663** / **260 → 473** Measure-Object lines). Key `cache_plans_day_v1_<dateKey>`, field aliases, scrub-before-persist/after-load, and wall-time reprojection unchanged. LARGE_FILE remains **1**.

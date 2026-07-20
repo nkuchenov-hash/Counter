@@ -123,7 +123,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `plans/plan_time_cascade_helpers.dart` | Time View cascade, duration consts, `planningWallEstimateSeconds` *(part)* |
 | `plans/plan_tags_helpers.dart` | Plan/list tag catalog fetch + PB `tags_link` sync *(part)* |
 | `plans/plan_cache_helpers.dart` | Plan dedupe/scrub, offline day-cache codec + SharedPreferences persistence, title link scoring *(part)* |
-| `plans/plan_outbox_helpers.dart` | Plan mutation outbox enqueue/flush/replay *(part)* |
+| `plans/plan_outbox_helpers.dart` | Immediate update/delete network phase, offline enqueue, queued replay, mutation retry/auth classification *(part)* |
 | `plans/plan_ai_parse_helpers.dart` | AI `parse-task` helpers: `parseTaskViaAiBackend`, `parsePlanningItemsViaAiBackend` *(part)* |
 | `plans/plan_alarm_helpers.dart` | Hydrated-cache plan reminder reconciliation and debounced OS alarm bridge *(part)* |
 | `plans/notes_brain_helpers.dart` | Notes Brain extension — parse/apply/pin/done + debounced `notes_delta` PATCH *(part)* |
