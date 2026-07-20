@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Architecture: document production Notes modules [engineering]
+
+* **`APP_STRUCTURE.md`:** Added exact entries for all 19 legitimate production Notes modules (`core/widgets/notes/*`, `models/note_document.dart`, `plans/notes_brain_helpers.dart`, `features/notes/*`, `shared/notes_editor/*`). Strict guard **24 → 5** (A=0, B=5). Documentation-only; no source changes. `APP_STRUCTURE_DETAILED` regeneration deferred.
+
 ## [2026-07-20] - Architecture: document Desktop Voice modules [engineering]
 
 * **`APP_STRUCTURE.md`:** Added exact entries for all 32 legitimate Desktop Voice / STT production modules (`core/services/*` + `desktop_voice_correction_sheet.dart`). Strict guard **56 → 24** (A=0, B=24). Documentation-only; no source changes.

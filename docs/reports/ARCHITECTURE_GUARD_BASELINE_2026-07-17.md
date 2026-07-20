@@ -29,7 +29,8 @@ The 63 diagnostics below are each listed exactly once. Classification totals at 
 | First cluster (plan-alarm docs) | `2079e072` | 61 | 5 / 56 |
 | Core STT cloud boundary | `80ce66a8` | 60 | 4 / 56 |
 | Notes capture out of `lib/` | `ecff32a4` | 56 | 0 / 56 |
-| Desktop Voice structure docs | this pass | **24** | **0 / 24** |
+| Desktop Voice structure docs | `576777f2` | 24 | 0 / 24 |
+| Production Notes structure docs | this pass | **5** | **0 / 5** |
 
 ## Guard inputs and configuration
 
@@ -117,10 +118,10 @@ The generated detailed guide records SHA `205c6b8` from 2026-07-06. All 62 undoc
 - **Resolution:** Added exact filename entries under `core/services/` (31) and `features/shared/` (`desktop_voice_correction_sheet.dart`) in `APP_STRUCTURE.md`, grouped by unique responsibility. No wildcard substitutes. Brain `desktop_stt_cloud_backend.dart` was already documented.
 - **Risk:** Low (documentation-only).
 
-### 4. Production Notes modules added after the structure snapshot
+### 4. Production Notes modules added after the structure snapshot — **RESOLVED**
 
 - **Diagnostic:** `UNDOCUMENTED_IN_APP_STRUCTURE`
-- **Count:** 19
+- **Count:** 19 (resolved)
 - **Affected paths:**
   - `lib/core/widgets/notes/notes.dart`
   - `lib/core/widgets/notes/notes_context_row.dart`
@@ -143,8 +144,8 @@ The generated detailed guide records SHA `205c6b8` from 2026-07-06. All 62 undoc
   - `lib/features/shared/notes_editor/notes_editor_sheet.dart`
 - **Why invalid:** The model, Brain helper, canonical note widgets, feature screens, and shared launch surfaces have valid owners but post-date the canonical structure snapshot.
 - **Classification:** **B. Legitimate file missing from structure documentation**
-- **Proposed resolution:** Add exact model/Brain/Core/Feature/shared entries and regenerate the detailed guide in one Notes documentation pass. Keep the four test-only capture files out of this valid production group.
-- **Risk:** Medium. Documentation-only, but the owner boundaries across four layers require careful descriptions.
+- **Resolution:** Added exact filename entries under `core/widgets/notes/` (7), `models/note_document.dart`, `plans/notes_brain_helpers.dart`, `features/notes/` (8), and `features/shared/notes_editor/` (2) in `APP_STRUCTURE.md`, each with a unique responsibility. No wildcard substitutes. Test-only capture fixtures under `test/notes/fixtures/` and `scripts/manual/` were not documented as production modules.
+- **Risk:** Low (documentation-only).
 
 ### 5. Other valid post-snapshot modules
 
@@ -213,17 +214,36 @@ All 32 legitimate Desktop Voice / STT production modules are documented by exact
 
 Remaining classification totals are **A=0, B=24, C=0, D=0, E=0**.
 
+## Production Notes structure documentation result
+
+All 19 legitimate production Notes modules are documented by exact path in `APP_STRUCTURE.md`:
+
+- previous remaining: **24**;
+- this cluster: **19**;
+- expected and final remaining count: **5**.
+
+Remaining classification totals are **A=0, B=5, C=0, D=0, E=0**.
+
+Final undocumented cluster (all class B):
+
+- `lib/core/widgets/radial_menu_viewport.dart`
+- `lib/data/voice_domain_resolver.dart`
+- `lib/features/categories/create_category_from_picker.dart`
+- `lib/features/shared/edit_sheet/record_edit_save_policy.dart`
+- `lib/shell/shell_bottom_navigation.dart`
+
+`APP_STRUCTURE_DETAILED.md` regeneration remains a separate final pass.
+
 ## Remaining work
 
 Ordered first by architecture risk, then dependency, then expected effort:
 
 | Order | Remaining cluster | Class | Count | Dependency / removal condition | Expected effort |
 | ---: | :--- | :---: | ---: | :--- | :--- |
-| 1 | Production Notes structure documentation | B | 19 | Document production Notes only (test capture files already moved) | Medium |
-| 2 | Other valid post-snapshot modules | B | 5 | Split into narrow owner-based documentation updates | Small |
-| 3 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
+| 1 | Other valid post-snapshot modules | B | 5 | Split into narrow owner-based documentation updates | Small |
+| 2 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
 
-After this pass, remaining classification totals are **A=0, B=24, C=0, D=0, E=0** (24 diagnostics).
+After this pass, remaining classification totals are **A=0, B=5, C=0, D=0, E=0** (5 diagnostics).
 
 ## Source documents inspected
 
