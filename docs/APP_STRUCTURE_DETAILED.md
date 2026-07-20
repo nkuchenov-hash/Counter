@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `61358cc` on 2026-07-20.**
+**Generated at git SHA `b389163` on 2026-07-20.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -6907,6 +6907,32 @@ RU:
 - **Содержимое:** `part of desktop_stt_helper_service.dart`; `_updateDiagnostics`, `_resolveRawWavDurationMs`, `_resolveWavDurationMs`, `fetchDiagnostics`, helpers capture-mix/ms.
 - **Обязанности:** Снимок diagnostics; pipeline markers; запись `DesktopVoiceLastAttemptStore`; семантика null/default и WAV duration fallback.
 - **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_helper_diagnostics_builder.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
+- **Слой:** Foundation — тема, время, voice, диагностика.
+
+
+### `lib/core/services/desktop_stt_helper_process_lifecycle.dart`
+
+EN:
+
+- **What this is:** `DesktopSttHelperProcessLifecycle` — spawns, restarts, and kills the GOLOS STT helper process; resolves helper/model/settings paths.
+- **Why needed:** Isolates process install/lifecycle from HTTP readiness interpretation and transcription without duplicating `_process` / `_ready` ownership.
+- **What it contains:** `part of desktop_stt_helper_service.dart`; `helperPath`, `modelPathFor`, `ensureStarted`, `_ensureHelperRunning`, `_restartHelper`, `_killHelperProcess`, stdout/stderr tails.
+- **Key code names:** `DesktopSttHelperProcessLifecycle`
+- **Responsibilities:** Find helper exe; start/restart/kill subprocess; poll until ping responds; call shared `_configureAndWaitReady`; preserve spawn markers and restart policy.
+- **When to open:** When behavior tied to `desktop_stt_helper_process_lifecycle.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Spawns, restarts, and kills the GOLOS STT helper process
+- **Layer / owner:** Foundation code — theme, time, voice services, diagnostics (not a full screen).
+
+RU:
+
+- **Что это:** `DesktopSttHelperProcessLifecycle` — spawn/restart/kill процесса GOLOS STT helper; пути helper/model/settings.
+- **Зачем:** Отделяет process lifecycle от HTTP readiness и transcription без дублирования владения `_process` / `_ready`.
+- **Содержимое:** `part of desktop_stt_helper_service.dart`; `helperPath`, `modelPathFor`, `ensureStarted`, `_ensureHelperRunning`, `_restartHelper`, `_killHelperProcess`, хвосты stdout/stderr.
+- **Обязанности:** Находит exe; start/restart/kill; ждёт ping; вызывает `_configureAndWaitReady`; маркеры spawn и restart policy.
+- **Когда открывать:** Когда ломается поведение, связанное с `desktop_stt_helper_process_lifecycle.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/core/services/`, `docs/APP_STRUCTURE.md`
 - **Слой:** Foundation — тема, время, voice, диагностика.

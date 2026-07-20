@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Voice: extract helper process lifecycle [engineering]
+
+* **`desktop_stt_helper_process_lifecycle.dart`:** Extracted helper process/install lifecycle (`helperPath`, `ensureStarted`, `_ensureHelperRunning`, `_restartHelper`, `_killHelperProcess`, stdout/stderr tails) from `desktop_stt_helper_service.dart` as `part of` (**1916 → 1715** Measure-Object lines; new part **206**). LARGE_FILE warnings **2 → 1** (`plan_service.dart` remains). HTTP readiness, transcribe, and diagnostics parts unchanged.
+
 ## [2026-07-20] - Voice: extract helper diagnostics assembly [engineering]
 
 * **`desktop_stt_helper_diagnostics_builder.dart`:** Extracted diagnostics assembly (`_updateDiagnostics`, WAV duration resolvers, `fetchDiagnostics`, last-attempt write) from `desktop_stt_helper_service.dart` as `part of` (**2233 → 1916** Measure-Object lines; new part **322**). `_lastDiagnostics` ownership, public API, and helper/capture/transcribe orchestration unchanged.

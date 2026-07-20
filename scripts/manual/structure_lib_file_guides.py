@@ -15,6 +15,16 @@ GENERIC_ROLE_MARKERS: tuple[str, ...] = (
 
 # Full guides keyed by repo path (forward slashes).
 LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
+    "lib/core/services/desktop_stt_helper_process_lifecycle.dart": {
+        "what": "`DesktopSttHelperProcessLifecycle` — spawns, restarts, and kills the GOLOS STT helper process; resolves helper/model/settings paths.",
+        "why": "Isolates process install/lifecycle from HTTP readiness interpretation and transcription without duplicating `_process` / `_ready` ownership.",
+        "contains": "`part of desktop_stt_helper_service.dart`; `helperPath`, `modelPathFor`, `ensureStarted`, `_ensureHelperRunning`, `_restartHelper`, `_killHelperProcess`, stdout/stderr tails.",
+        "responsibilities": "Find helper exe; start/restart/kill subprocess; poll until ping responds; call shared `_configureAndWaitReady`; preserve spawn markers and restart policy.",
+        "what_ru": "`DesktopSttHelperProcessLifecycle` — spawn/restart/kill процесса GOLOS STT helper; пути helper/model/settings.",
+        "why_ru": "Отделяет process lifecycle от HTTP readiness и transcription без дублирования владения `_process` / `_ready`.",
+        "contains_ru": "`part of desktop_stt_helper_service.dart`; `helperPath`, `modelPathFor`, `ensureStarted`, `_ensureHelperRunning`, `_restartHelper`, `_killHelperProcess`, хвосты stdout/stderr.",
+        "responsibilities_ru": "Находит exe; start/restart/kill; ждёт ping; вызывает `_configureAndWaitReady`; маркеры spawn и restart policy.",
+    },
     "lib/core/services/desktop_stt_helper_diagnostics_builder.dart": {
         "what": "`DesktopSttHelperDiagnosticsBuilder` — assembles `DesktopSttDiagnostics`, WAV duration fallbacks, and last-attempt persistence for the GOLOS STT helper.",
         "why": "Isolates diagnostics/reporting from helper spawn, capture, and transcribe orchestration without duplicating `_lastDiagnostics` ownership.",
