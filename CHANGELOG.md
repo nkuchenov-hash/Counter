@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Voice: remove Core dependency on Brain [engineering]
+
+* **`desktop_stt_cloud_backend.dart` + `DesktopSttCloudBackendHooks`:** Moved PocketBase readiness, auth token, `/api/ai/transcribe-command` POST, and 25s timeout into Brain; Core cloud STT maps HTTP results via main.dart injection (AppClock-style). Strict guard **61 → 60**.
+
 ## [2026-07-17] - Architecture guard baseline and first cluster [engineering]
 
 * **`ARCHITECTURE_GUARD_BASELINE_2026-07-17.md` + `APP_STRUCTURE.md`:** Classified all 63 strict diagnostics (A=5, B=58); documented the two valid plan-alarm modules as the first safe cluster, reducing the expected strict count to 61 without changing guard severity or runtime code.

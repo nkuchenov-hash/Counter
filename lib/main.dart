@@ -6,12 +6,14 @@ import 'package:counter/core/navigation/app_navigator.dart';
 
 import 'package:counter/core/app_build_info.dart';
 import 'package:counter/core/services/desktop_main_window.dart';
+import 'package:counter/core/services/desktop_stt_cloud_service.dart';
 import 'package:counter/core/performance/rebuild_metrics.dart';
 import 'package:counter/core/app_snackbar.dart';
 import 'package:counter/app_shell.dart';
 import 'package:counter/features/auth/auth_screen.dart';
 import 'package:counter/features/auth/oauth_session.dart';
 import 'package:counter/data/auth_bridge.dart';
+import 'package:counter/data/desktop_stt_cloud_backend.dart';
 import 'package:counter/data/local_sync/offline_sync_state.dart';
 import 'package:counter/data/database_service.dart';
 import 'package:counter/services/notification_service.dart';
@@ -72,6 +74,13 @@ void _wirePlanCategoryLookup() {
         icon: db.getCategoryRuleById(categoryId)?.iconOrDefault,
         breadcrumbPath: db.getCategoryPath(categoryId),
       );
+}
+
+void _wireDesktopSttCloudBackend() {
+  DesktopSttCloudBackendHooks.isSessionReady =
+      DesktopSttCloudBackend.isSessionReady;
+  DesktopSttCloudBackendHooks.postTranscribeCommand =
+      DesktopSttCloudBackend.postTranscribeCommand;
 }
 
 void main() {
@@ -137,6 +146,7 @@ Future<void> _mainAsync() async {
       blocksFirstFrame: true,
     );
   } catch (_) {}
+  _wireDesktopSttCloudBackend();
   final bootLocale =
       materialLocaleForUiLanguage(currentLocale.value).toString();
   try {
@@ -352,6 +362,7 @@ class _RootAuthWrapperState extends State<RootAuthWrapper> {
       _wireAppClock();
       _wireProfileTimezoneActions();
       _wirePlanCategoryLookup();
+      _wireDesktopSttCloudBackend();
       setState(() {
         _profileId = id;
         _checked = true;

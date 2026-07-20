@@ -10,7 +10,7 @@ Baseline commit: `c8a78c42e7d744b9a369d47ac6a7e6cf6c7b6317` (`origin/main`).
 - 62 `UNDOCUMENTED_IN_APP_STRUCTURE`;
 - warnings: 4 `LARGE_FILE` and 4 `RAW_UI`.
 
-The 63 diagnostics below are each listed exactly once. Classification totals are:
+The 63 diagnostics below are each listed exactly once. Classification totals at baseline are:
 
 | Classification | Count |
 | :--- | ---: |
@@ -20,6 +20,14 @@ The 63 diagnostics below are each listed exactly once. Classification totals are
 | D. Explicit legacy exception | 0 |
 | E. False positive or parser defect | 0 |
 | **Total** | **63** |
+
+## Progress
+
+| Pass | Commit / change | Strict count | Remaining A / B |
+| :--- | :--- | ---: | :--- |
+| Baseline | `c8a78c42` | 63 | 5 / 58 |
+| First cluster (plan-alarm docs) | `2079e072` | 61 | 5 / 56 |
+| Core STT cloud boundary | this pass | **60** | **4 / 56** |
 
 ## Guard inputs and configuration
 
@@ -41,15 +49,15 @@ The generated detailed guide records SHA `205c6b8` from 2026-07-06. All 62 undoc
 
 ## Violation groups
 
-### 1. Core service imports the Brain
+### 1. Core service imports the Brain — **RESOLVED**
 
 - **Diagnostic:** `FORBIDDEN_IMPORT (core->database_service) lib/core/services/desktop_stt_cloud_service.dart`
-- **Count:** 1
+- **Count:** 1 (resolved)
 - **Affected path:** `lib/core/services/desktop_stt_cloud_service.dart`
-- **Why invalid:** `lib/core/` is Foundation and must not import `lib/data/database_service.dart`. The cloud STT adapter directly crosses that boundary.
+- **Why invalid:** `lib/core/` is Foundation and must not import `lib/data/database_service.dart`. The cloud STT adapter directly crossed that boundary.
 - **Classification:** **A. Real architecture violation**
-- **Proposed resolution:** Move the app-owned cloud/PocketBase request behind a Brain-owned interface or inject a narrow callback/client into the core STT engine. Do not allowlist the import.
-- **Risk:** High. This is a real ownership correction touching the desktop voice pipeline and requires focused behavior tests.
+- **Resolution:** Brain owns PocketBase readiness, auth token, base URL, route, Authorization, HTTP POST, JSON payload, and 25s timeout in `lib/data/desktop_stt_cloud_backend.dart`. Core keeps WAV read, result mapping, pipeline markers, and `DesktopSttCloudEngine` via injected `DesktopSttCloudBackendHooks` wired from `main.dart` (AppClock-style). Core no longer imports `database_service.dart` or `pb_config.dart`.
+- **Risk:** Medium (behavior-preserving transport split; covered by injection unit test + existing STT quality tests).
 
 ### 2. Test-only Notes capture code lives under production `lib/`
 
@@ -104,8 +112,8 @@ The generated detailed guide records SHA `205c6b8` from 2026-07-06. All 62 undoc
   - `lib/features/shared/desktop_voice_correction_sheet.dart`
 - **Why invalid:** The guard requires every `lib/**/*.dart` file to appear in `APP_STRUCTURE.md`; these intentional desktop voice modules were added after the 2026-07-06 structure snapshot.
 - **Classification:** **B. Legitimate file missing from structure documentation**
-- **Proposed resolution:** After resolving the separate cloud-service boundary violation, add exact entries grouped by desktop voice responsibility and regenerate the detailed guide. Keep benchmark/dev modules explicit rather than using a wildcard.
-- **Risk:** Medium. Documentation is safe, but the cluster should not mark the cloud import itself acceptable.
+- **Proposed resolution:** Add exact entries grouped by desktop voice responsibility and regenerate the detailed guide. Keep benchmark/dev modules explicit rather than using a wildcard. Cloud import boundary is now fixed; documentation may proceed.
+- **Risk:** Medium. Documentation-only once paths are accepted.
 
 ### 4. Production Notes modules added after the structure snapshot
 
@@ -151,16 +159,16 @@ The generated detailed guide records SHA `205c6b8` from 2026-07-06. All 62 undoc
 - **Proposed resolution:** Add exact entries in small responsibility-based documentation clusters; do not add broad folder exclusions.
 - **Risk:** Low.
 
-### 6. Selected first cluster: plan reminder scheduling
+### 6. Selected first cluster: plan reminder scheduling — **RESOLVED**
 
 - **Diagnostic:** `UNDOCUMENTED_IN_APP_STRUCTURE`
-- **Count:** 2
+- **Count:** 2 (resolved)
 - **Affected paths:**
   - `lib/data/plans/plan_alarm_helpers.dart`
   - `lib/services/plan_alarm_schedule.dart`
 - **Why invalid:** Both files were added on 2026-07-17 after the structure snapshot. The Brain helper owns hydrated-cache reconciliation; the service file owns UI-free deterministic OS schedule specifications and policy.
 - **Classification:** **B. Legitimate file missing from structure documentation**
-- **Proposed resolution:** Add the two exact paths to their existing canonical sections in `APP_STRUCTURE.md`.
+- **Resolution:** Exact entries added to `APP_STRUCTURE.md` in the first cluster pass.
 - **Risk:** Low. Documentation-only, one root cause, no runtime or schema behavior change.
 
 ## First-cluster result
@@ -173,20 +181,29 @@ The selected plan-reminder cluster removes exactly 2 diagnostics:
 
 No guard rule, severity, wildcard, or baseline-count suppression is changed.
 
+## Core STT cloud boundary result
+
+The Core → Brain forbidden import is removed without allowlisting:
+
+- previous remaining: **61**;
+- this cluster: **1**;
+- expected and final remaining count: **60**.
+
+New production file documented: `lib/data/desktop_stt_cloud_backend.dart`.
+
 ## Remaining work
 
 Ordered first by architecture risk, then dependency, then expected effort:
 
 | Order | Remaining cluster | Class | Count | Dependency / removal condition | Expected effort |
 | ---: | :--- | :---: | ---: | :--- | :--- |
-| 1 | Core cloud STT service imports `database_service.dart` | A | 1 | Establish a Brain-owned request boundary while preserving STT behavior | Medium |
-| 2 | Test-only Notes capture code under `lib/features/` | A | 4 | Move fixtures/entrypoint and update visual test + capture script paths | Small–medium |
-| 3 | Desktop voice structure documentation | B | 32 | Resolve order 1 first so documentation does not bless the invalid import | Medium |
-| 4 | Production Notes structure documentation | B | 19 | Keep test-only files from order 2 out of the production manifest | Medium |
-| 5 | Other valid post-snapshot modules | B | 5 | Split into narrow owner-based documentation updates | Small |
-| 6 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
+| 1 | Test-only Notes capture code under `lib/features/` | A | 4 | Move fixtures/entrypoint and update visual test + capture script paths | Small–medium |
+| 2 | Desktop voice structure documentation | B | 32 | Cloud import boundary resolved; document exact modules | Medium |
+| 3 | Production Notes structure documentation | B | 19 | Keep test-only files from order 1 out of the production manifest | Medium |
+| 4 | Other valid post-snapshot modules | B | 5 | Split into narrow owner-based documentation updates | Small |
+| 5 | Regenerate `APP_STRUCTURE_DETAILED.md` | B follow-up | 0 direct diagnostics | Run the canonical deterministic generator after accepted path classifications | Medium review |
 
-After the selected cluster, remaining classification totals are **A=5, B=56, C=0, D=0, E=0** (61 diagnostics).
+After this pass, remaining classification totals are **A=4, B=56, C=0, D=0, E=0** (60 diagnostics).
 
 ## Source documents inspected
 

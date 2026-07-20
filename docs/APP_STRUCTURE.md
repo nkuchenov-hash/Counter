@@ -14,7 +14,7 @@ Physical map of the Flutter application: what exists, which layer owns it, who m
 | **Structure audit verdict** | **ACCEPTED WITH WATCHLIST** — see [`docs/reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md`](reports/FINAL_STRUCTURE_AUDIT_2026-07-06.md) |
 | **UI decomposition** | Pass 3 / 3B complete (shell, planning, timeline, lists, shared edit sheets, plan card) |
 | **Brain decomposition** | Pass 4A–4D complete (`plans/*`, `records/*`, `categories/*`, `profile/*`) |
-| **Strict architecture guard** | Baseline captured 2026-07-17: 63 classified violations; first cluster removes 2, leaving 61 |
+| **Strict architecture guard** | Baseline 2026-07-17: 63 → first cluster 61 → Core STT cloud boundary fix 60 |
 | **Detailed file guide** | [`docs/APP_STRUCTURE_DETAILED.md`](APP_STRUCTURE_DETAILED.md) — owner-readable unique EN/RU entry per tracked folder and file (regenerate via `generate_app_structure_detailed.py`) |
 | **Project Knowledge pack** | [`docs/PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md) — 14-doc upload checklist |
 | **Prior parity report** | [`docs/reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md`](reports/FINAL_STRUCTURE_PARITY_AND_DOC_CLEANUP_2026-07-03.md) |
@@ -155,6 +155,7 @@ Re-export stubs remain at `core/navigation/shell_side_navigation.dart`, `feature
 | `category_fuzzy_match.dart` | Category name scoring |
 | `price_reporter_client_match.dart` | Price Reporter client-category token guard for voice parse |
 | `voice_command_parser.dart` | Deterministic desktop/mobile voice command parse (`parsePriceReporterVoiceCommand`, `VoiceCommandCategoryIndex`) |
+| `desktop_stt_cloud_backend.dart` | Brain-owned cloud command STT transport: PocketBase auth, `/api/ai/transcribe-command` POST, 25s timeout |
 | `smart_input_parser.dart` | Natural-language plan/list parse (client + AI backend hook) |
 | `recurrence_edit_scope.dart` | `RecurrenceEditScope` enum for recurring plan edit/delete scope |
 | `plan_time_sequential_cascade.dart` | Plan time sequential layout math + `computeTimeViewInsertionCascade` |

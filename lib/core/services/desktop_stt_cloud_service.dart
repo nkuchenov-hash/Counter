@@ -3,9 +3,32 @@ import 'dart:io';
 
 import 'package:counter/core/diagnostics/desktop_voice_pipeline.dart';
 import 'package:counter/core/services/desktop_stt_engine.dart';
-import 'package:counter/data/database_service.dart';
-import 'package:counter/data/pb_config.dart';
-import 'package:http/http.dart' as http;
+
+/// Raw HTTP result from Brain-owned `/api/ai/transcribe-command` POST.
+class DesktopSttCloudHttpResult {
+  const DesktopSttCloudHttpResult({
+    required this.statusCode,
+    required this.body,
+  });
+
+  final int statusCode;
+  final String body;
+}
+
+typedef DesktopSttCloudSessionReadyFn = Future<bool> Function();
+typedef DesktopSttCloudPostTranscribeFn = Future<DesktopSttCloudHttpResult>
+    Function({
+  required String audioBase64,
+  required String languageHint,
+  required List<String> glossaryTerms,
+  required String glossaryPrompt,
+});
+
+/// Injected from `main.dart` — keeps Core free of DatabaseService / pb_config.
+abstract final class DesktopSttCloudBackendHooks {
+  static DesktopSttCloudSessionReadyFn? isSessionReady;
+  static DesktopSttCloudPostTranscribeFn? postTranscribeCommand;
+}
 
 /// Secure cloud STT — calls app-owned PocketBase route only (no client secrets).
 class DesktopSttCloudService {
@@ -19,9 +42,9 @@ class DesktopSttCloudService {
   /// True when user session exists — endpoint may still be unavailable server-side.
   Future<bool> isConfigured() async {
     try {
-      await DatabaseService.instance.ensurePocketBaseReady();
-      final token = DatabaseService.instance.pocketBase.authStore.token.trim();
-      return token.isNotEmpty;
+      final check = DesktopSttCloudBackendHooks.isSessionReady;
+      if (check == null) return false;
+      return await check();
     } catch (_) {
       return false;
     }
@@ -36,10 +59,21 @@ class DesktopSttCloudService {
     final t0 = DateTime.now();
 
     try {
-      await DatabaseService.instance.ensurePocketBaseReady();
-      final token =
-          DatabaseService.instance.pocketBase.authStore.token.trim();
-      if (token.isEmpty) {
+      final sessionReady = DesktopSttCloudBackendHooks.isSessionReady;
+      final post = DesktopSttCloudBackendHooks.postTranscribeCommand;
+      if (sessionReady == null || post == null) {
+        _lastError = 'auth_required';
+        return DesktopSttEngineResult(
+          engineId: 'cloud_best_quality',
+          displayName: 'Cloud Best Quality',
+          qualityTier: DesktopSttQualityTier.best,
+          errorKind: 'auth_required',
+          supportsGlossary: true,
+        );
+      }
+
+      final ready = await sessionReady();
+      if (!ready) {
         _lastError = 'auth_required';
         return DesktopSttEngineResult(
           engineId: 'cloud_best_quality',
@@ -66,27 +100,12 @@ class DesktopSttCloudService {
         DesktopVoicePipeline.mark('DESKTOP_VOICE_GLOSSARY_CONTEXT_SENT_TO_STT');
       }
 
-      final base = kPocketBaseUrl.replaceAll(RegExp(r'/$'), '');
-      final uri = Uri.parse('$base${PbAppApiRoutes.aiTranscribeCommand}');
-      final payload = <String, dynamic>{
-        'audio_base64': base64Encode(wavBytes),
-        'language_hint': context.languageHint,
-        'command_mode': true,
-        'glossary_terms': context.glossaryTerms.take(64).toList(),
-        if (context.glossaryPrompt.isNotEmpty)
-          'glossary_prompt': context.glossaryPrompt,
-      };
-
-      final res = await http
-          .post(
-            uri,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $token',
-            },
-            body: jsonEncode(payload),
-          )
-          .timeout(const Duration(seconds: 25));
+      final res = await post(
+        audioBase64: base64Encode(wavBytes),
+        languageHint: context.languageHint,
+        glossaryTerms: context.glossaryTerms,
+        glossaryPrompt: context.glossaryPrompt,
+      );
 
       final latencyMs = DateTime.now().difference(t0).inMilliseconds;
 
