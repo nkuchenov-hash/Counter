@@ -11,6 +11,10 @@
 > 4. DO NOT delete or modify any existing entries.
 > ***
 
+## [2026-07-20] - Notes: extract editor block widgets [engineering]
+
+* **`notes/widgets/note_editor_block_widgets.dart`:** Extracted block rendering + add-block chrome (`NoteEditorBlockRow`, `NoteEditorBlockPatch`, `NoteEditorAddBlockRow`) from `note_editor_page.dart` (**1837 → 1294** Measure-Object lines). Page keeps document/autosave/Brain orchestration; widgets receive data + callbacks only. LARGE_FILE warnings **3 → 2**.
+
 ## [2026-07-20] - Plans: extract quick-add tags controller [engineering]
 
 * **`planning_quick_add_tags_controller.dart`:** Extracted quick-add tag strip state (catalog merge, “No Tags” prefs, creation selection, reorder persistence) from `planning_page.dart` (**1964 → 1794** Measure-Object lines). `PlanningPage` constructor / host contract / optimistic submit unchanged. LARGE_FILE warnings **4 → 3** (`planning_page.dart` cleared).

@@ -15,6 +15,16 @@ GENERIC_ROLE_MARKERS: tuple[str, ...] = (
 
 # Full guides keyed by repo path (forward slashes).
 LIB_FILE_GUIDES: dict[str, dict[str, str]] = {
+    "lib/features/notes/widgets/note_editor_block_widgets.dart": {
+        "what": "`NoteEditorBlockRow` / `NoteEditorAddBlockRow` — visual note blocks and add-block chrome for the full-screen Notes editor.",
+        "why": "Separates block-local input UI from editor document orchestration, autosave, and Brain writes.",
+        "contains": "`NoteEditorBlockPatch`, `NoteEditorBlockRow`, `NoteEditorAddBlockRow`; private image/drawing/control helpers.",
+        "responsibilities": "Render text/checklist/heading/image/drawing blocks; emit patches and add/media callbacks — no DatabaseService.",
+        "what_ru": "`NoteEditorBlockRow` / `NoteEditorAddBlockRow` — визуальные блоки заметки и ряд «добавить блок» полноэкранного редактора Notes.",
+        "why_ru": "Отделяет локальный UI блока от оркестрации документа, autosave и записи в Brain.",
+        "contains_ru": "`NoteEditorBlockPatch`, `NoteEditorBlockRow`, `NoteEditorAddBlockRow`; приватные helpers image/drawing/control.",
+        "responsibilities_ru": "Рисует text/checklist/heading/image/drawing; отдаёт patches и add/media callbacks — без DatabaseService.",
+    },
     "lib/features/planning/planning_quick_add_tags_controller.dart": {
         "what": "`PlanningQuickAddTagsController` — quick-add tag strip state: catalog merge, synthetic “No Tags” prefs, creation selection, reorder persistence.",
         "why": "Moves tag-strip prefs and selection out of the Planning day-page orchestrator without changing submit or Time View behavior.",

@@ -2,7 +2,7 @@
 
 Owner-readable guide: every tracked folder and file in plain language (EN + RU).
 
-**Generated at git SHA `3498d0e` on 2026-07-20.**
+**Generated at git SHA `fc71070` on 2026-07-20.**
 
 Concise map: [`APP_STRUCTURE.md`](APP_STRUCTURE.md) · Upload checklist: [`PROJECT_KNOWLEDGE_PACK.md`](PROJECT_KNOWLEDGE_PACK.md)
 
@@ -12667,6 +12667,32 @@ RU:
 - **Содержимое:** Dart-модуль `note_card.dart` — классы и helpers в исходнике.
 - **Обязанности:** Поддерживает поведение `note_card` в этой feature-зоне.
 - **Когда открывать:** Когда ломается поведение, связанное с `note_card.dart`.
+- **Можно удалить?** Нет — нужен для работы приложения.
+- **Связано с:** `lib/features/notes/widgets/`, `docs/APP_STRUCTURE.md`
+- **Слой:** UI — экран/виджет (notes).
+
+
+### `lib/features/notes/widgets/note_editor_block_widgets.dart`
+
+EN:
+
+- **What this is:** `NoteEditorBlockRow` / `NoteEditorAddBlockRow` — visual note blocks and add-block chrome for the full-screen Notes editor.
+- **Why needed:** Separates block-local input UI from editor document orchestration, autosave, and Brain writes.
+- **What it contains:** `NoteEditorBlockPatch`, `NoteEditorBlockRow`, `NoteEditorAddBlockRow`; private image/drawing/control helpers.
+- **Key code names:** `NoteEditorBlockPatch`, `NoteEditorBlockRow`, `_NoteEditorBlockRowState`, `_NoteEditorBlockActiveControls`, `_NoteEditorBlockControlBtn`, `_NoteEditorImageBlock`
+- **Responsibilities:** Render text/checklist/heading/image/drawing blocks; emit patches and add/media callbacks — no DatabaseService.
+- **When to open:** When behavior tied to `note_editor_block_widgets.dart` breaks or you need to change its documented role.
+- **Can it be deleted?** No — required for app runtime.
+- **Connected to:** APP_STRUCTURE role: Editor block rows + add-block chrome (text/checklist/heading/image/drawing
+- **Layer / owner:** UI code for the notes area of the app (what users see and tap).
+
+RU:
+
+- **Что это:** `NoteEditorBlockRow` / `NoteEditorAddBlockRow` — визуальные блоки заметки и ряд «добавить блок» полноэкранного редактора Notes.
+- **Зачем:** Отделяет локальный UI блока от оркестрации документа, autosave и записи в Brain.
+- **Содержимое:** `NoteEditorBlockPatch`, `NoteEditorBlockRow`, `NoteEditorAddBlockRow`; приватные helpers image/drawing/control.
+- **Обязанности:** Рисует text/checklist/heading/image/drawing; отдаёт patches и add/media callbacks — без DatabaseService.
+- **Когда открывать:** Когда ломается поведение, связанное с `note_editor_block_widgets.dart`.
 - **Можно удалить?** Нет — нужен для работы приложения.
 - **Связано с:** `lib/features/notes/widgets/`, `docs/APP_STRUCTURE.md`
 - **Слой:** UI — экран/виджет (notes).
